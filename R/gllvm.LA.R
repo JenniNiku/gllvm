@@ -418,7 +418,7 @@ if(is.null(start.params)){
       }
 
      if(phi.upd=="phi"){
-       update.phis <- try(optim(par = phis, fn = ll.nb, gr = phi.gradient, method = "L-BFGS-B", lower = 1e-8, upper = 1e4, control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)
+       update.phis <- try(optim(par = phis, fn = ll.nb, gr = phi.gradient, method = "L-BFGS-B", lower = 1e-4, upper = 1e4, control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)
        #update.phis <- try(optim(par = phis, fn = ll.nb, gr = phi.gradient, method = "BFGS", control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)#,reltol=1e-4,maxit=maxit
       if(!inherits( update.phis, "try-error")) {
           if(trace) cat("Dispersion parameters updated", "\n")
@@ -427,7 +427,7 @@ if(is.null(start.params)){
       else { phis <- phis }}
 
       if(phi.upd=="inv.phi"){
-        update.phis <- try(optim(par = 1/phis, fn = ll.nb2, gr = phi.gradient2, method = "L-BFGS-B", lower = 1e-8, upper = 1e4, control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)
+        update.phis <- try(optim(par = 1/phis, fn = ll.nb2, gr = phi.gradient2, method = "L-BFGS-B", lower = 1e-4, upper = 1e4, control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)
         #update.phis <- try(optim(par = 1/phis, fn = ll.nb2, gr = phi.gradient2, method = "BFGS", control = list(trace = 0, fnscale = -1), lvs = lvs, y = y, params = new.params), silent = TRUE)
       if(!inherits( update.phis, "try-error")) {
         if(trace) cat("Dispersion parameters updated", "\n")
