@@ -31,6 +31,7 @@ confint.gllvm <- function(object, level = 0.95, ...) {
   num.lv <- object$num.lv
   if (object$family=="negative.binomial") {
     object$params$phi <- NULL
+    object$sd$phi <- NULL
   }
   alfa <- (1 - level) / 2
   cilow <- unlist(object$params) + qnorm(alfa) * unlist(object$sd)
