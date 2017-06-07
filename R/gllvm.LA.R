@@ -518,8 +518,8 @@ if(is.null(start.params)){
     if(trace) cat("Calculating standard errors for parameters...\n")
 
     if(num.lv>0){for(i in 1:n) {
-      update.lvs <- try(optim(out$lvs[i,], fn = ll.i, gr = NULL, method = "BFGS", control = list(trace = 0, fnscale = -1, maxit = 1), y = y, params = out$params, phis = out$phis, i = i, hessian = info))
-      if(info) covM.lvs[i,,]<-solve(-update.lvs$hessian)
+      update.lvs <- try(optimHess(out$lvs[i,], fn = ll.i, gr = NULL, control = list(trace = 0, fnscale = -1, maxit = 0), y = y, params = out$params, phis = out$phis, i = i))
+      if(info) covM.lvs[i,,]<-solve(-update.lvs)
     }}
 
     ## Gradients of all model parameters in order: row.params, beta0, lambdas, betas, phis
@@ -636,7 +636,13 @@ if(is.null(start.params)){
         out$se.lambdas<-se.lambdas; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];}
       if(!is.null(X)){ out$se.Xcoef <- matrix(se[1:(p*ncol(X))],nrow=p); se<-se[-(1:(p*ncol(X)))]
       rownames(out$se.Xcoef) <- colnames(y); colnames(out$se.Xcoef) <- colnames(X);}
-      if(family == "negative.binomial") { out$se.phis=se;  names(out$se.phis) <- colnames(y);}
+      if(family == "negative.binomial") { out$se.phis=se;  names(out$se.phis) <- colnames(y);
+      if(phi.upd=="phi"){
+        hess.phis <- try(optimHess(par = out$phis, fn = ll.nb, gr = phi.gradient, control = list(trace = 0, fnscale = -1,maxit=0), lvs = lvs, y = y, params = c(out$row.params, out$beta0, out$lambdas, c(out$betas)) ))
+        if(!inherits( update.phis, "try-error")) {
+        out$se.phis1 <- try(sqrt(diag(abs(MASS::ginv(-hess.phis)))))
+      }
+      }}
     }
     if(inherits(get.info, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
     if(num.lv>0) out$lvs.cov=covM.lvs
