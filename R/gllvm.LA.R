@@ -637,12 +637,11 @@ if(is.null(start.params)){
       if(!is.null(X)){ out$se.Xcoef <- matrix(se[1:(p*ncol(X))],nrow=p); se<-se[-(1:(p*ncol(X)))]
       rownames(out$se.Xcoef) <- colnames(y); colnames(out$se.Xcoef) <- colnames(X);}
       if(family == "negative.binomial") { out$se.phis=se;  names(out$se.phis) <- colnames(y);
-      if(phi.upd=="phi"){
         hess.phis <- try(optimHess(par = out$phis, fn = ll.nb, gr = phi.gradient, control = list(trace = 0, fnscale = -1,maxit=0), lvs = lvs, y = y, params = c(out$row.params, out$beta0, out$lambdas, c(out$betas)) ))
         if(!inherits( update.phis, "try-error")) {
-        out$se.phis1 <- try(sqrt(diag(abs(MASS::ginv(-hess.phis)))))
+          out$se.phis1 <- try(sqrt(diag(abs(MASS::ginv(-hess.phis)))))
+        }
       }
-      }}
     }
     if(inherits(get.info, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
     if(num.lv>0) out$lvs.cov=covM.lvs
