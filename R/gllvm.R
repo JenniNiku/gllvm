@@ -253,11 +253,13 @@ gllvm<-function(y, X = NULL, TR = NULL,data=NULL, n.X=0,n.TR=0, num.lv = 2, fami
       out$X <- fitg$X;
       out$params <- list(theta = fitg$lambdas, beta0 = fitg$beta0, Xcoef = fitg$betas, row.params = fitg$row.params)
       if(sd.errors) {
-        out$sd <- list(theta = fitg$se.lambdas, beta0 = fitg$se.beta0, Xcoef = fitg$se.Xcoefs, row.params = fitg$se.row.params,inv.phi = fitg$se.phis)
+        out$sd <- list(theta = fitg$se.lambdas, beta0 = fitg$se.beta0, Xcoef = fitg$se.Xcoefs, row.params = fitg$se.row.params)
         out$lvs.cov <- fitg$lvs.cov
       }
       if(family == "negative.binomial") {
         out$params$phi <- fitg$phis
+        out$sd$phi = fitg$se.phis1
+        out$sd$inv.phi = fitg$se.phis
       }
     }
   }
