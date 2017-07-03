@@ -12,7 +12,10 @@
 ##############################################################
 
 
-gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.iter = 200, eps = 1e-4, row.eff = TRUE, Lambda.struc = "unstructured", trace = TRUE, plot = FALSE, sd.errors = FALSE, start.lvs = NULL, offset=NULL, maxit = 100, diag.iter = 5, seed=seed,get.fourth=TRUE,get.trait=TRUE,n.init=1,constrOpt=FALSE,restrict=30,start.params=NULL) {
+gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.iter = 200, eps = 1e-4, row.eff = TRUE,
+                     Lambda.struc = "unstructured", trace = TRUE, plot = FALSE, sd.errors = FALSE, start.lvs = NULL, 
+                     offset=NULL, maxit = 100, diag.iter = 5, seed=seed, get.fourth=TRUE, get.trait=TRUE, n.init=1,
+                     constrOpt=FALSE, restrict=30, start.params=NULL) {
 
   if(is.null(X) && !is.null(T)) stop("Unable to fit a model that includes only trait covariates")
 
@@ -80,7 +83,8 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
   while(n.i<=n.init){
     if(n.init>1 && trace) cat("initial run ",n.i,"\n");
 
-    res <- start.values.gllvm(y = y, X = X, T = T, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i])
+    res <- start.values.gllvm(y = y, X = X, T = T, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, 
+                              start.lvs = start.lvs, seed = seed[n.i])
     if(is.null(start.params)){
       new.beta0 <- beta0 <- res$params[,1]
       # common env params or different env response for each spp
@@ -97,7 +101,8 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
     } else{
-      if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && get.fourth==start.params$get.fourth && get.trait==start.params$get.trait && row.eff == start.params$row.eff){
+      if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && 
+         get.fourth==start.params$get.fourth && get.trait==start.params$get.trait && row.eff == start.params$row.eff){
       new.beta0 <- beta0 <- start.params$params$beta0
       # common env params or different env response for each spp
       new.env <- env <- NULL
@@ -138,7 +143,7 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
 
     if(num.lv > 0) {
       new.vameans <- vameans <- res$index
-      new.theta <- theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])#fts$coef$theta#
+      new.theta <- theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])
       new.theta[upper.tri(new.theta)] <- theta[upper.tri(theta)] <- 0
       if(Lambda.struc == "unstructured") {
         new.lambda <- lambda <- array(NA,dim=c(n,num.lv,num.lv))
@@ -151,7 +156,9 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
     }
 
     new.zeta <- zeta <- NULL; if(family == "ordinal") { new.zeta <- zeta <- res$zeta }
-    new.phi <- phi <- NULL; if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>100]=100; if(any(phis<0.10))phis[phis<0.10]=0.10; new.phi <- phi <- 1/phis }
+    new.phi <- phi <- NULL; 
+    if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>100]=100; 
+                                        if(any(phis<0.10))phis[phis<0.10]=0.10; new.phi <- phi <- 1/phis }
 
     if(constrOpt ){
       const=min(restrict,15)/5
@@ -193,7 +200,8 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
         }
         new.inter <- NULL; if(!is.null(T) && get.fourth) { new.inter <- x2[1:(num.X * num.T)]; x2 <- x2[-(1:(num.X * num.T))] }
         new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
-        new.trait <- NULL; if(!is.null(T) && get.trait) { new.trait <- x2[1:num.T]; x2 <- x2[-(1:num.T)]; new.trait=matrix(rep(new.trait,each=n),nrow=n)}
+        new.trait <- NULL; if(!is.null(T) && get.trait) { new.trait <- x2[1:num.T]; x2 <- x2[-(1:num.T)]; 
+                                                         new.trait=matrix(rep(new.trait,each=n),nrow=n)}
 
         mu.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
         if(!is.null(X)) mu.mat <- mu.mat + X %*% t(new.env)
@@ -461,9 +469,13 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
 
         U=cbind(G,B1,B2,Bf,A,Bt)
 
-        q <- try(constrOptim(c(theta,beta0,env,inter,row.params,new.trait), v = c(new.vameans), lambda = new.lambda, phi = phi, zeta = zeta, method = "BFGS", f = ll0, grad = grad.mod, control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=rep(-restrict,NROW(U)*2)), silent = TRUE)
+        q <- try(constrOptim(c(theta,beta0,env,inter,row.params,new.trait), v = c(new.vameans), lambda = new.lambda, 
+                             phi = phi, zeta = zeta, method = "BFGS", f = ll0, grad = grad.mod, 
+                             control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=rep(-restrict,NROW(U)*2)), silent = TRUE)
       } else {
-        q <- try(optim(c(theta,beta0,env,inter,row.params,new.trait), v = c(new.vameans), lambda = new.lambda, phi = phi, zeta = zeta, method = "BFGS", fn = ll0, gr = grad.mod, control = list(trace = 0, fnscale = -1, maxit = maxit)), silent = TRUE)
+        q <- try(optim(c(theta,beta0,env,inter,row.params,new.trait), v = c(new.vameans), lambda = new.lambda, 
+                       phi = phi, zeta = zeta, method = "BFGS", fn = ll0, gr = grad.mod, 
+                       control = list(trace = 0, fnscale = -1, maxit = maxit)), silent = TRUE)
       }
 
 
@@ -530,7 +542,9 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
           return(out)
         }
 
-        q <- try(optim(phi, x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), v = c(new.vameans), lambda = new.lambda, zeta = zeta, method = "L-BFGS-B", lower = 1e-4, upper = 1e4, fn = ll0, gr = grad.phi, control = list(trace=0, fnscale=-1)), silent = TRUE) #, factr = 1e-3,maxit=maxit
+        q <- try(optim(phi, x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), v = c(new.vameans), 
+                       lambda = new.lambda, zeta = zeta, method = "L-BFGS-B", lower = 1e-4, upper = 1e4, fn = ll0, 
+                       gr = grad.phi, control = list(trace=0, fnscale=-1)), silent = TRUE) 
 
         if(!inherits(q, "try-error")) {
           if(iter > 1 && current.loglik > q$value) { if(trace) cat("Optimization did not improve estimates of dispersion parameters on iteration step ",iter,"\n"); new.phi <- phi }
@@ -583,7 +597,9 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
               for(k in 2:nrow(constraint.mat)) constraint.mat[k,(k-1):k] <- c(-1,1)
             }
 
-            update.zeta <- constrOptim(theta = zeta[j,2:(max(y[,j])-1)], f = func.zetaj, grad = grad.zetaj, ui = constraint.mat, ci = rep(0,max(y[,j])-2), j = j, outer.eps = 1e-3, control = list(trace=0, fnscale = -1))
+            update.zeta <- constrOptim(theta = zeta[j,2:(max(y[,j])-1)], f = func.zetaj, grad = grad.zetaj, 
+                                       ui = constraint.mat, ci = rep(0,max(y[,j])-2), j = j, outer.eps = 1e-3, 
+                                       control = list(trace=0, fnscale = -1))
             if(!inherits(update.zeta, "try-error")) new.zeta[j,2:(max(y[,j])-1)] <- update.zeta$par
             if(inherits(update.zeta, "try-error")) new.zeta[j,] <- zeta[j,]
           }
@@ -673,9 +689,13 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
           if(!is.null(T) && get.trait) etas <- etas +  new.trait1 %*% t(T)
           if(row.eff) etas <- etas + matrix(new.row.params,n,p)
           ci=c(-restrict-c(etas),-restrict+c(etas))
-          q <- constrOptim(c(vameans), method = "BFGS", f = ll0, grad = grad.var, x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), lambda = lambda, phi = new.phi, zeta = zeta, control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=ci)
+          q <- constrOptim(c(vameans), method = "BFGS", f = ll0, grad = grad.var, 
+                           x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), lambda = lambda, phi = new.phi, 
+                           zeta = zeta, control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=ci)
         } else {
-          q <- try(optim(c(vameans), method = "BFGS", fn = ll0, gr = grad.var, x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), lambda = lambda, phi = new.phi, zeta = zeta, control = list(trace = 0, fnscale = -1, maxit = maxit,reltol=1e-6)), silent = TRUE)
+          q <- try(optim(c(vameans), method = "BFGS", fn = ll0, gr = grad.var, 
+                         x = c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), lambda = lambda, phi = new.phi, 
+                         zeta = zeta, control = list(trace = 0, fnscale = -1, maxit = maxit,reltol=1e-6)), silent = TRUE)
         }
         if(!inherits(q, "try-error")) {
           if(q$convergence != 0) { if(trace) cat("Optimization algorithm did not converge when it tried to update variational parameters on step ", iter,"\n") }
@@ -757,7 +777,8 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
 
 
       ## Take values of loglik from optim -function to define stopping rule
-      q <- list(value = ll0(c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), v = c(new.vameans), lambda = new.lambda, phi = new.phi, zeta = new.zeta))
+      q <- list(value = ll0(c(new.theta,new.beta0,new.env,new.inter,new.row.params,new.trait), v = c(new.vameans), 
+                            lambda = new.lambda, phi = new.phi, zeta = new.zeta))
       new.loglik <- q$value
       err <- abs(new.loglik/current.loglik);
       if(trace) cat("New Loglik:", new.loglik,"Current Loglik:", current.loglik, "Ratio", err, "\n")
@@ -837,7 +858,11 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
 
   if(sd.errors) {
     if(trace) cat("Calculating standard errors for parameters...\n")
-    tr <- try({get.sds <- calc.infomat(out.list$coef$theta, out.list$coef$beta0, out.list$coef$Xcoef, out.list$coef$row.params, out.list$lvs, out.list$Lambda, 1/out.list$coef$phi, out.list$coef$zeta, num.lv = num.lv, family = family, Lambda.struc = tmp.Lambda.struc, row.eff = row.eff, y = y, X = X, T = T, inter = fourth,trait=out.list$coef$Tcoef,get.fourth=get.fourth,get.trait=get.trait)
+    tr <- try({get.sds <- calc.infomat(out.list$coef$theta, out.list$coef$beta0, out.list$coef$Xcoef, 
+                                       out.list$coef$row.params, out.list$lvs, out.list$Lambda, 1/out.list$coef$phi, 
+                                       out.list$coef$zeta, num.lv = num.lv, family = family, Lambda.struc = tmp.Lambda.struc, 
+                                       row.eff = row.eff, y = y, X = X, T = T, inter = fourth,trait=out.list$coef$Tcoef,
+                                       get.fourth=get.fourth,get.trait=get.trait)
     out.list$sd <- get.sds})
     if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
   }
