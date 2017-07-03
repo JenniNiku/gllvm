@@ -639,8 +639,8 @@ if(is.null(start.params)){
       if(family == "negative.binomial") { out$se.phis=se;  names(out$se.phis) <- colnames(y);
         hess.phis <- try(optimHess(par = out$phis, fn = ll.nb, gr = phi.gradient, control = list(trace = 0, fnscale = -1,maxit=0), lvs = lvs, y = y, params = c(out$row.params, out$beta0, out$lambdas, c(out$betas)) ))
         if(!any(is.nan(hess.phis)) || inherits(hess.phis, "try-error")) {
-        out$se.phis1 <- try(sqrt(diag(abs(MASS::ginv(-hess.phis)))))
-      } else { out$se.phis1<-(out$se.phis*(out$phis)^(2)); }
+        out$se.phis1 <- try(sqrt(diag(abs(MASS::ginv(-hess.phis))))); names(out$se.phis1) <- colnames(y);
+        } else { out$se.phis1<-(out$se.phis*(out$phis)^(2)); names(out$se.phis1) <- colnames(y);}
       }
     }
     if(inherits(get.info, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
