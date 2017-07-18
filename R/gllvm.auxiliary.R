@@ -91,6 +91,12 @@ start.values.gllvm <- function(y, X = NULL, T=NULL, family, offset= NULL, trial.
                             }
                      }
               }
+  if(num.lv>1){
+    theta<-params[,(ncol(params) - num.lv + 1):ncol(params)]
+    qr.theta <- qr(t(theta))
+    params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.theta))
+    index<-(index%*%qr.Q(qr.theta))
+  }
 
        out <- list(params=params,phi=phi)
        if(num.lv > 0) out$index <- index
