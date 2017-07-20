@@ -100,6 +100,20 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
       new.row.params <- row.params <- NULL; if(row.eff) new.row.params <- row.params <- rep(0,n)
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
+    if(num.lv > 0) {
+      new.vameans <- vameans <- res$index
+      new.theta <- theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])
+      new.theta[upper.tri(new.theta)] <- theta[upper.tri(theta)] <- 0
+      if(Lambda.struc == "unstructured") {
+        new.lambda <- lambda <- array(NA,dim=c(n,num.lv,num.lv))
+        for(i in 1:n) { new.lambda[i,,] <- lambda[i,,] <- diag(rep(1,num.lv)) }
+      }
+      if(Lambda.struc == "diagonal") {
+        new.lambda <- lambda <- matrix(1,n,num.lv)
+      }
+      zero.cons <- which(new.theta == 0)
+    }
+      
     } else{
       if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && 
          get.fourth==start.params$get.fourth && get.trait==start.params$get.trait && row.eff == start.params$row.eff){
@@ -125,35 +139,8 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
       covM.lvs<- array(NA,dim=c(n,num.lv,num.lv))}## LVs
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR, row.eff, get.fourth and get.trait match to each other.");}
     }
-    new.beta0 <- beta0 <- res$params[,1]
-    # common env params or different env response for each spp
-    new.env <- env <- NULL
-    new.trait <- trait <- NULL
-    if(is.null(T)) {
-      if(!is.null(X)) new.env <- env <- res$params[,2:(num.X + 1)]
-    } else {
-      if(!is.null(X)) new.env <- env <- rep(0,num.X)
-      if(get.trait) new.trait <- trait <- rep(0,num.T)
-    }
-    fourth<-new.inter <- inter <- NULL; if(!is.null(T) && get.fourth) new.inter <- inter <- rep(0, num.T * num.X)   # let's treat this as a vector (vec(B'))'
-    new.row.params <- row.params <- NULL; if(row.eff) new.row.params <- row.params <- rep(0,n)
-    new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
-
-    if(num.lv > 0) {
-      new.vameans <- vameans <- res$index
-      new.theta <- theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])
-      new.theta[upper.tri(new.theta)] <- theta[upper.tri(theta)] <- 0
-      if(Lambda.struc == "unstructured") {
-        new.lambda <- lambda <- array(NA,dim=c(n,num.lv,num.lv))
-        for(i in 1:n) { new.lambda[i,,] <- lambda[i,,] <- diag(rep(1,num.lv)) }
-      }
-      if(Lambda.struc == "diagonal") {
-        new.lambda <- lambda <- matrix(1,n,num.lv)
-      }
-      zero.cons <- which(new.theta == 0)
-    }
 
     new.zeta <- zeta <- NULL; if(family == "ordinal") { new.zeta <- zeta <- res$zeta }
     new.phi <- phi <- NULL; 
