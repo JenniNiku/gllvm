@@ -115,8 +115,7 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
     }
       
     } else{
-      if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && 
-         get.fourth==start.params$get.fourth && get.trait==start.params$get.trait && row.eff == start.params$row.eff){
+      if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && get.fourth==start.params$get.fourth && get.trait==start.params$get.trait && row.eff == start.params$row.eff){
       new.beta0 <- beta0 <- start.params$params$beta0
       # common env params or different env response for each spp
       new.env <- env <- NULL
@@ -128,15 +127,12 @@ gllvm.VA <- function(y, X = NULL, T = NULL, family = "poisson", num.lv = 2, max.
         if(get.trait) new.trait <- trait <- start.params$params$Tcoef
       }
       fourth<-new.inter <- inter <- NULL; if(!is.null(T) && get.fourth) new.inter <- inter <- start.params$params$fourth   # let's treat this as a vector (vec(B'))'
-      new.row.params <- row.params <- NULL; if(row.eff) new.row.params <- row.params <- rep(0,n)
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
-      beta0 <- start.params$params$beta0 ## column intercepts
-      betas <- NULL; if(!is.null(X)) betas <- c(start.params$params$Xcoef) ## covariates coefficients
-      lambdas <- NULL; if(num.lv > 0) lambdas <- c(start.params$params$theta) ## LV coefficients
-      row.params <- NULL; if(row.eff) row.params <- start.params$params$row.params ## row parameters
-      lvs <- NULL; if(num.lv > 0){ lvs <- matrix(start.params$lvs, ncol = num.lv);
-      covM.lvs<- array(NA,dim=c(n,num.lv,num.lv))}## LVs
+      if(num.lv > 0) new.theta <- theta<- c(start.params$params$theta) ## LV coefficients
+      if(row.eff) new.row.params <- row.params <- start.params$params$row.params ## row parameters
+      if(num.lv > 0) { new.vameans <- vameans <- matrix(start.params$lvs, ncol = num.lv);
+        new.lambda <- lambda <- start.params$Lambda}
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR, row.eff, get.fourth and get.trait match to each other.");}
     }
 
