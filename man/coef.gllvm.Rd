@@ -2,25 +2,25 @@
 % Please edit documentation in R/coef.gllvm.R
 \name{coef.gllvm}
 \alias{coef.gllvm}
-\title{Extract gllvm coefficients}
+\title{Extract coefficients from gllvm}
 \usage{
 \method{coef}{gllvm}(object, ...)
 }
 \arguments{
-\item{object}{An object of class 'gllvm'}
+\item{object}{an object of class 'gllvm'.}
 
-\item{...}{Not used.}
+\item{...}{not used.}
 }
 \description{
 Extracts model coefficients from 'gllvm' objects.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit GLLVM model
-fit <- gllvm(y = y, family = "negative.binomial")
+# Fit gllvm model
+fit <- gllvm(y, family = "negative.binomial")
 # Coefficients
 coef(fit)
 }

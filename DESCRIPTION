@@ -2,14 +2,16 @@ Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
 Version: 0.1.0
-Author: Jenni Niku, Francis K.C. Hui, Sara Taskinen, David I. Warton
+Author: Jenni Niku, Francis K.C. Hui, Sara Taskinen, David I. Warton, Riki Herliansyah, Wesley Brooks
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
-Description: Generalized linear latent variable model (GLLVM) for analyzing multivariate data. 
-    Estimation is performed using either Laplace approximation or Variational approximation method.
+Description: Generalized linear latent variable model (GLLVM) for analyzing multivariate data. Estimation is performed using either Laplace approximation or variational approximation method implemented via Template Model Builder.
 License: GPL-2
-Imports: mvtnorm, mvabund, MASS, Matrix, statmod, fishMod
-Depends: mvabund
+Imports: Rcpp (>= 0.12.11), mvabund, MASS, Matrix, mvtnorm, statmod, fishMod
+Depends: TMB, mvabund
+Suggests: corrplot, gclus
 Encoding: UTF-8
 LazyData: true
+LinkingTo: Rcpp, TMB, RcppEigen
 RoxygenNote: 6.0.1
+NeedsCompilation: yes
 URL: https://github.com/JenniNiku/gllvm.git

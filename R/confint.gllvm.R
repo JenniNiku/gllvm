@@ -1,19 +1,20 @@
 #' @title Confidence intervals for model parameters
-#' @description Computes confidence intervals for  parameters in a fitted GLLVM model.
+#' @description Computes confidence intervals for  parameters in a fitted gllvm model.
 #'
-#' @param object An object of class 'gllvm'.
-#' @param level The confidence level. Scalar between 0 and 1.
-#' @param ...	Not used.
+#' @param object an object of class 'gllvm'.
+#' @param level the confidence level. Scalar between 0 and 1.
+#' @param parm a specification of which parameters are to be given confidence intervals, a vector of names. If missing, all parameters are considered.
+#' @param ...	not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #' \dontrun{
-#' library(mvabund) ## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env[,4:5])
-#'# Fit GLLVM model
+#'# Fit gllvm model
 #'fit <- gllvm(y = y, X = X, family = "negative.binomial")
 #'# 95 % confidence intervals
 #'confint(fit, level = 0.95)
@@ -22,18 +23,20 @@
 
 
 
-confint.gllvm <- function(object, level = 0.95, ...) {
+confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   if(is.logical(object$sd)) stop("Standard errors for parameters haven't been calculated, so confidence intervals can not be calculated.");
   n <- NROW(object$y)
   p <- NCOL(object$y)
   nX <- 0; if(!is.null(object$X)) nX <- dim(object$X)[2]
   nTR <- 0; if(!is.null(object$TR)) nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
+  alfa <- (1 - level) / 2
+
+  if(is.null(parm)){
   if (object$family=="negative.binomial") {
     object$params$phi <- NULL
     object$sd$phi <- NULL
   }
-  alfa <- (1 - level) / 2
   cilow <- unlist(object$params) + qnorm(alfa) * unlist(object$sd)
   ciup <- unlist(object$params) + qnorm(1 - alfa) * unlist(object$sd)
   M <- cbind(cilow, ciup)
@@ -50,13 +53,9 @@ confint.gllvm <- function(object, level = 0.95, ...) {
   rnames[(cal+1):(cal+p)] <- paste("Intercept",names(object$params$beta0), sep = ".")
   cal <- cal+p
   if (!is.null(object$TR)) {
-    cal <- cal + nX
-    if(object$get.fourth){
-    nr <- rep(rownames(object$params$fourth), nX)
-    nc <- rep(colnames(object$params$fourth), each = nTR)
-    rnames[(cal + 1):(cal + nX * nTR)] <- paste(nr, nc, sep = "*")
-    cal <- cal + nX * nTR}
-    if(object$get.trait) cal <- cal + nTR
+    nr <- names(object$params$B)
+    rnames[(cal + 1):(cal + length(nr))] <- nr
+    cal <- cal + length(nr)
   }
 
   if (is.null(object$TR) && !is.null(object$X)) {
@@ -66,7 +65,7 @@ confint.gllvm <- function(object, level = 0.95, ...) {
     rnames[(cal + 1):(cal + nX * p)] <- paste("Xcoef", newnam, sep = ".")
     cal <- cal + nX * p
   }
-  if (object$row.eff) {
+  if (object$row.eff=="fixed") {
     rnames[(cal+1):(cal+n)] <- paste("Row.Intercept",1:n, sep = ".")
     cal <- cal + n
   }
@@ -76,12 +75,19 @@ confint.gllvm <- function(object, level = 0.95, ...) {
   }
   if(object$family=="tweedie"){
     s <- dim(M)[1]
-    rnames[(cal+1):s] <- paste("Dispersion phi", names(object$params$inv.phi), sep = ".")
+    rnames[(cal+1):s] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
   }
   if(object$family=="ZIP"){
     s <- dim(M)[1]
     rnames[(cal+1):s] <- paste("p", names(object$params$p), sep = ".")
   }
   rownames(M) <- rnames
+  } else {
+    if("beta0" %in% parm){ object$params$Intercept=object$params$beta0; parm["beta0"]="Intercept"}
+    cilow <- unlist(object$params[parm]) + qnorm(alfa) * unlist(object$sd[parm])
+    ciup <- unlist(object$params[parm]) + qnorm(1 - alfa) * unlist(object$sd[parm])
+    M <- cbind(cilow, ciup)
+
+  }
   return(M)
 }

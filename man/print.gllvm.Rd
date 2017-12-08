@@ -2,24 +2,24 @@
 % Please edit documentation in R/print.gllvm.R
 \name{print.gllvm}
 \alias{print.gllvm}
-\title{Print GLLVM}
+\title{Print gllvm}
 \usage{
 \method{print}{gllvm}(x, ...)
 }
 \arguments{
-\item{x}{An object of class 'gllvm'}
+\item{x}{an object of class 'gllvm'.}
 
-\item{...}{Not used.}
+\item{...}{not used.}
 }
 \description{
-Print an object of class 'gllvm'
+Print an object of class 'gllvm'.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit GLLVM model
+# Fit gllvm model
 fit <- gllvm(y = y, family = "negative.binomial")
 # Print:
 print(fit)

@@ -4,25 +4,27 @@
 \alias{confint.gllvm}
 \title{Confidence intervals for model parameters}
 \usage{
-\method{confint}{gllvm}(object, level = 0.95, ...)
+\method{confint}{gllvm}(object, parm = NULL, level = 0.95, ...)
 }
 \arguments{
-\item{object}{An object of class 'gllvm'.}
+\item{object}{an object of class 'gllvm'.}
 
-\item{level}{The confidence level. Scalar between 0 and 1.}
+\item{parm}{a specification of which parameters are to be given confidence intervals, a vector of names. If missing, all parameters are considered.}
 
-\item{...}{Not used.}
+\item{level}{the confidence level. Scalar between 0 and 1.}
+
+\item{...}{not used.}
 }
 \description{
-Computes confidence intervals for  parameters in a fitted GLLVM model.
+Computes confidence intervals for  parameters in a fitted gllvm model.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 X <- as.matrix(antTraits$env[,4:5])
-# Fit GLLVM model
+# Fit gllvm model
 fit <- gllvm(y = y, X = X, family = "negative.binomial")
 # 95 \% confidence intervals
 confint(fit, level = 0.95)

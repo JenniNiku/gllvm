@@ -4,44 +4,41 @@
 \alias{coefplot.gllvm}
 \title{Plot covariate coefficients and confidence intervals}
 \usage{
-coefplot.gllvm(fit, y.label = TRUE, which.Xcoef = NULL, cex.ylab = 1,
-  mfrow = NULL, mar = c(4, 5, 2, 1), ...)
+coefplot.gllvm(fit, y.label = TRUE, which.Xcoef = NULL, cex.ylab = 0.5,
+  mfrow = NULL, mar = c(4, 6, 2, 1), ...)
 }
 \arguments{
-\item{fit}{An object of class 'gllvm'}
+\item{fit}{an object of class 'gllvm'.}
 
-\item{y.label}{Logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.}
+\item{y.label}{logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.}
 
 \item{which.Xcoef}{vector indicating which X-coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.}
 
-\item{cex.ylab}{The magnification to be used for axis annotation relative to the current setting of cex.}
+\item{cex.ylab}{the magnification to be used for axis annotation relative to the current setting of cex.}
 
-\item{mfrow}{Same as \code{mfrow} in \code{par}. If \code{NULL} (default) it is determined automatically.}
+\item{mfrow}{same as \code{mfrow} in \code{par}. If \code{NULL} (default) it is determined automatically.}
 
 \item{mar}{vector of length 4, which defines the margin sizes: \code{c(bottom, left, top, right)}. Defaults to \code{c(4,5,2,1)}.}
 
-\item{...}{Additional graphical arguments.}
+\item{...}{additional graphical arguments.}
 }
 \description{
-Plot covariate coefficients and their confidence intervals
-}
-\details{
-Plot covariate coefficients and their confidence intervals
+Plots covariate coefficients and their confidence intervals.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
-data("antTraits")
-y <- antTraits$abund
+## Load a dataset from the mvabund package
+data(antTraits)
+y <- as.matrix(antTraits$abund)
 X <- antTraits$env
 TR <- antTraits$traits
-X <- scale(X)
 
-fitx <- gllvm(y = y, X = X, family = "negative.binomial")
-coefplot.gllvm(fitx,mfrow=c(3,2), mar = c(4,8,2,1),cex.ylab=0.8)
-coefplot.gllvm(fitx, which.Xcoef = c("Bare.ground","Shrub.cover"),
-          mar = c(4,8,2,1), cex.ylab = 0.8)
+# Fit gllvm model with environmental covariates
+fitx <- gllvm(y, X, family = "negative.binomial")
+coefplot.gllvm(fitx, mfrow = c(3,2), mar = c(4,8,2,1), cex.ylab = 0.8)
+coefplot.gllvm(fitx, which.Xcoef = 1:2, mar = c(4,8,2,1), cex.ylab = 0.8)
 
+# Fit gllvm model with environmental and trait covariates
 fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 coefplot.gllvm(fitT, mar = c(4,8,2,1))
 }

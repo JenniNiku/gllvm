@@ -1,18 +1,18 @@
-#' @title Extract gllvm coefficients
+#' @title Extract coefficients from gllvm
 #' @description  Extracts model coefficients from 'gllvm' objects.
 #'
-#' @param object   An object of class 'gllvm'
-#' @param ...	Not used.
+#' @param object   an object of class 'gllvm'.
+#' @param ...	not used.
 #'
 #' @author David Warton, Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #' \dontrun{
-#' library(mvabund) ## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'# Fit GLLVM model
-#'fit <- gllvm(y = y, family = "negative.binomial")
+#'# Fit gllvm model
+#'fit <- gllvm(y, family = "negative.binomial")
 #'# Coefficients
 #'coef(fit)
 #'}

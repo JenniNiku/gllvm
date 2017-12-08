@@ -2,21 +2,21 @@
 % Please edit documentation in R/summary.gllvm.R
 \name{summary.gllvm}
 \alias{summary.gllvm}
-\title{Summary of fitted gllvm object}
+\title{Summarizing gllvm model fits}
 \usage{
 \method{summary}{gllvm}(object, ...)
 }
 \arguments{
-\item{object}{An object of class 'gllvm'}
+\item{object}{an object of class 'gllvm'}
 
-\item{...}{Not used.}
+\item{...}{not used.}
 }
 \description{
-A summary of the fitted gllvm object, including function call, distribution family and model parameters.
+A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit GLLVM model

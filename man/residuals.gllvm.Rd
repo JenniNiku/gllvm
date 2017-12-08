@@ -2,46 +2,46 @@
 % Please edit documentation in R/residuals.gllvm.R
 \name{residuals.gllvm}
 \alias{residuals.gllvm}
-\title{Dunn-Smyth -residuals for GLLVM model}
+\title{Dunn-Smyth -residuals for gllvm model}
 \usage{
-\method{residuals}{gllvm}(object, plot = TRUE, by.index = NULL,
-  xlim = NULL, ...)
+\method{residuals}{gllvm}(object, ...)
 }
 \arguments{
-\item{object}{An object of class 'gllvm'}
+\item{object}{an object of class 'gllvm'.}
 
-\item{plot}{Logical, construct a plot of residuals. Defaults to \code{FALSE}}
-
-\item{by.index}{If \code{NULL} (default), residuals are plotted by linear predictors. If \code{by.index="site"}, residuals are plotted by row index. If \code{by.index="spp"} residuals are plotted by column index.}
-
-\item{...}{Additional graphical arguments.}
+\item{...}{not used.}
 }
 \value{
 A list containing \code{residuals} which is a matrix of residuals and \code{linpred} which is a matrix of linear predictors.
 }
 \description{
-Calculates Dunn-Smyth -residuals for GLLVM model and plots them.
+Calculates Dunn-Smyth -residuals for gllvm model.
 }
 \details{
-Computes Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) for GLLVM model.
+Computes Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) for gllvm model.
+For the observation \eqn{Y_{ij}} Dunn-Smyth residuals are defined as
+
+\deqn{r_{ij}=\Phi^{-1}(u_{ij}F_{ij}(y_{ij})  + (1-u_{ij})F_{ij}^-(y_{ij})),}
+
+where \eqn{\Phi(.)} and \eqn{F_{ij}(.)} are the cumulative probability functions of the standard normal
+distribution, \eqn{F_{ij}^-(y))} is the limit as \eqn{F_{ij}(y)} is approached from the negative side, and \eqn{u_{ij}} has been
+generated at random from the standard uniform distribution.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit GLLVM model
+# Fit gllvm model
 fit <- gllvm(y = y, family = "negative.binomial")
-# residuals saved and plotted by linear predictors
-res <- residuals(fit, plot = TRUE, by.index = NULL)
-# residuals plotted by site index
-res <- residuals(fit, plot = TRUE, by.index = "site")
-# residuals plotted by column index
-res <- residuals(fit, plot = TRUE, by.index = "spp")
+# residuals saved
+res <- residuals(fit)
 }
 }
 \references{
 Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
+
+Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-Based Approaches to Unconstrained Ordination. Methods in Ecology and Evolution, 6:399-411.
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>

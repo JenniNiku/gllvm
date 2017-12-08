@@ -7,24 +7,24 @@
 \method{logLik}{gllvm}(object, ...)
 }
 \arguments{
-\item{object}{An object of class 'gllvm'}
+\item{object}{an object of class 'gllvm'.}
 
-\item{...}{Not used.}
+\item{...}{not used.}
 }
 \description{
 Extracts Log-likelihood from 'gllvm' objects.
 }
 \examples{
 \dontrun{
-library(mvabund) ## Load a dataset from the mvabund package
+## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit GLLVM model
+# Fit gllvm model
 fit <- gllvm(y = y, family = "negative.binomial")
 # log-Likelihood:
 logLik(fit)
 }
 }
 \author{
-David Warton
+David Warton, Jenni Niku
 }

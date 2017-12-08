@@ -1,17 +1,17 @@
-#' @title Print GLLVM
-#' @description Print an object of class 'gllvm'
+#' @title Print gllvm
+#' @description Print an object of class 'gllvm'.
 #'
-#' @param x   An object of class 'gllvm'
-#' @param ...	Not used.
+#' @param x   an object of class 'gllvm'.
+#' @param ...	not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #' \dontrun{
-#' library(mvabund) ## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'# Fit GLLVM model
+#'# Fit gllvm model
 #'fit <- gllvm(y = y, family = "negative.binomial")
 #'# Print:
 #'print(fit)
@@ -27,7 +27,10 @@ print.gllvm <- function(x, ...) {
   print(x$method)
   cat("\n")
   cat("log-likelihood: ",x$logL,"\n")
-  cat("Degrees of freedom: ",length(unlist(x$params)),"\n")
+  if(!is.null(x$params$inv.phi)){ x$params$inv.phi<-NULL; }
+  df=length(unlist(x$params))-object$num.lv*(object$num.lv-1)/2
+  if(row.eff %in% c("fixed",TRUE) ) df=df-1
+  cat("Degrees of freedom: ",df,"\n")
   cat("AIC: ",AIC(x),"\n")
 }
 #print(fit)

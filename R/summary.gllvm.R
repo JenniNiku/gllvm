@@ -1,14 +1,14 @@
-#' @title Summary of fitted gllvm object
-#' @description A summary of the fitted gllvm object, including function call, distribution family and model parameters.
+#' @title Summarizing gllvm model fits
+#' @description A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 #'
-#' @param object   An object of class 'gllvm'
-#' @param ...	Not used.
+#' @param object   an object of class 'gllvm'
+#' @param ...	not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #' \dontrun{
-#' library(mvabund) ## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'# Fit GLLVM model
@@ -46,21 +46,12 @@ summary.gllvm <- function(object, ...) {
   cat("\n")
   if (!is.null(object$TR)) {
     if (!is.null(object$X)) {
-    cat("X Covariate coefficients: \n")
-    print(object$params$Xcoef)}
-    if (object$get.trait) {
-      cat("Trait covariate coefficients: \n")
-      print(object$params$Tcoef)
-      cat("\n")
-    }
-    if (object$get.trait) {
-      cat("Interaction terms: \n")
-      print(object$params$fourth)
-      cat("\n")
-    }
+    cat("Covariate coefficients: \n")
+    print(object$params$B)}
+    cat("\n")
   } else {
     if (!is.null(object$X)) {
-      cat("X Covariate coefficients: \n")
+      cat("Covariate coefficients: \n")
       print(object$params$Xcoef)
       cat("\n")
     }
@@ -81,6 +72,6 @@ summary.gllvm <- function(object, ...) {
   }
   if(object$family=="ZIP"){
     cat("Zero inflation p: \n")
-    print(object$params$p)
+    print(object$params$phi)
   }
 }
