@@ -1,81 +1,80 @@
-#' @title Generalized Linear Latent Variable Models.
-#' @description Fit generalized linear latent variable models for multivariate data. The models can be fitted using Laplace approximation method or Variational
+#' @title Generalized Linear Latent Variable Models
+#' @description Fits generalized linear latent variable models for multivariate data. The models can be fitted using Laplace approximation method or variational
 #' approximation method.
 #'
-#' @param y (n x m) matrix of responses. If data is in long format, \code{y} is a data.frame including a row index vector, a column index vector and a vector of response variables in this order.
-#' @param X Matrix of environmental covariates.
-#' @param TR Matrix of trait covariates. Can be used only with VA method
-#' @param data Matrix of environmental and trait covariates. Can be used only if responses y are in long format.
-#' @param n.X Number of  environmental covariates in data matrix above.
-#' @param n.TR Number of  trait covariates in data matrix above.
-#' @param num.lv  Number of latent variables, d in GLLVM model. Non-negative integer. Defaults to 2.
-#' @param family  Distribution function to be used in the model. Options are "poisson" (with log link), "negative.binomial" (with log link) and "ZIP" (with log link), "binomial" (with logit/cloglog link when method="LA" and probit link when method="VA"), Tweedie (with log link, only with "LA"-method), "ordinal" (only with "VA"-method).
-#' @param method  Model can be fitted using Laplace Approximation method (\code{method="LA"}) or Variational Approximation method (\code{method="VA"}). Defaults to \code{"VA"}.
-#' @param row.eff  Logical, indicating whether row effects are included in the model. Defaults to \code{FALSE}.
-#' @param get.fourth Logical. If \code{TRUE} (default) fourth corner/interaction terms of environmental and trait covariates are included in the model.
-#' @param get.trait Logical. If \code{TRUE} (default) main effects of trait covariates are included in the model.
-#' @param start.lvs Initialize starting values for latent variables with (n x \code{num.lv}) matrix. Defaults to NULL when starting values are generated randomly.
-#' @param start.params object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).
-#' @param sd.errors  Logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
-#' @param n.init Number of initial runs. Uses multiple runs and picks the one giving highest log-likelihood value. This is recommendable because the method is quite sensitive to initial values of the latent variables. Defaults to 1.
-#' @param offset Vector or matrix of offset terms
-#' @param la.phi.upd  Defaults to "phi" when dispersion parameters with LA method are updated using parametrization \eqn{\phi}. If "inv.phi", dispersion parameters are updated using parametrization \eqn{1/\phi}.
-#' @param la.link.bin Link function for binomial family if \code{method="LA"}. Options are "logit" and "cloglog".
-#' @param constrOpt Logical, if \code{TRUE} parameters are estimated by constraining linear predictors in optimization. This is recommendable if algorithm is very unstable in different runs. Defaults to \code{FALSE}. Cannot be used when family is "tweedie" or "ZIP". Constraint for the absolute value of the linear predictor is defined by \code{restrict}.
-#' @param fixed.power Logical, if \code{TRUE} (default) the power parameter in Tweedie model is fixed.
-#' @param Power Fixed power parameter if \code{fixed.power=TRUE} or starting value for power parameter if \code{fixed.power=FALSE} in Tweedie model. Scalar from interval (1,2). Defaults to 1.5.
-#' @param Lambda.struc  Covariance structure for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".
-#' @param diag.iter  Non-negative integer which is used to speed up the updating of variational parameters Lambda in VA method. Defaults to 5.
-#' @param trace  Logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}.
-#' @param plot  Logical, if \code{TRUE} ordination plots will be printed on each iteration step. Defaults to \code{FALSE}.
-#' @param eps  Convergence criteria for log likelihood, defaults to 1e-4.
-#' @param max.iter Maximum number of iterations, defaults to 100.
-#' @param maxit Maximum number of iterations within \code{optim} function, defaults to 1000.
+#' @param y (n x m) matrix of responses.
+#' @param X matrix of environmental covariates.
+#' @param TR matrix of trait covariates.
+#' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as ’id’. When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
+#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
+#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
+#' @param family  distribution function for responses. Options are "poisson" (with log link), "negative.binomial" (with log link), "binomial" (with logit/probit link when \code{method = "LA"} and probit link when \code{method = "VA"}), zero inflated poisson ("ZIP") and Tweedie ("tweedie") (with log link, only with "LA"-method), "ordinal" (only with "VA"-method).
+#' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
+#' @param TMB  logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.
+#' @param row.eff  logical, Indicating whether row effects are included in the model. Defaults to \code{FALSE}.
+#' @param starting.val starting values can be generated by fitting model without latent variables, and applying factorial analysis to residuals to get starting values for latent variables and their coefficients (\code{starting.val = "res"}). Another options are to use zeros as a starting values (\code{starting.val = "zero"}) or initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{"res"}, which is recommended.
+#' @param start.fit object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).
+#' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
+#' @param n.init number of initial runs. Uses multiple runs and picks up the one giving highest log-likelihood value. Defaults to 1.
+#' @param offset vector or matrix of offset terms.
+#' @param la.link.bin link function for binomial family if \code{method = "LA"}. Options are "logit" and "probit.
+#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.5.
+#' @param Lambda.struc  covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".
+#' @param diag.iter  non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5.
+#' @param Lambda.start starting values for variances in VA distributions for latent variables in variational approximation method. Defaults to 0.1.
+#' @param trace  logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}.
+#' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
+#' @param reltol  convergence criteria for log-likelihood, defaults to 1e-6.
+#' @param max.iter maximum number of iterations when \code{TMB = FALSE}, defaults to 200.
+#' @param maxit maximum number of iterations within \code{optim} function, defaults to 1000.
 #' @param seed a single seed value, defaults to \code{NULL}.
+#' @param optimizer if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.
+#' @param jitter.var jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.
 #'
 #' @details
-#' Fits generalized linear latent variable models.
+#' Fits generalized linear latent variable models as in Hui et al. (2015 and 2016) and Niku et al. (2017).
 #' Method can be used with two types of latent variable models depending on covariates. If only
 #' site related environmental covariates are used, the expectation of response \eqn{Y_{ij}} is determined by
 #'
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables, \eqn{\alpha_i} is an optional row effect
-#' at site \eqn{i}, \eqn{beta_{0j}} is intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
+#' where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional row effect
+#' at site \eqn{i}, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 #' specific coefficients related to covariates and the latent variables, respectively.
-#' If also trait covariates are included, the expectation of response \eqn{Y_{ij}} is
 #'
-#'\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_x + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
+#' The alternative model is fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
+#' are included. The expectation of response \eqn{Y_{ij}} is
 #'
-#' where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{beta_x} and \eqn{beta_t} are main effects
+#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_x + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
+#'
+#' where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are main effects
 #' or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms.
-#' This is the so called 'fourth corner model', but now interaction/fourth corner terms are optional as
-#' well as are the main effects of trait covariates. The fourth corner model is implemented only using
-#' variational approximation method.
+#' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
+#'
+#'
+#' The method is sensitive for the choices of initial values of the latent variables. Therefore it is
+#' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
+#' However, sometimes this is computationally too demanding, and default option \code{starting.val = "res"}
+#' usually gives reasonably good results.
+#'
+#' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2016) and Laplace approximation (Niku et al., 2017).
 #'
 #'
 #' \subsection{Distributions}{
+#'
 #'   Mean and variance for distributions are defined as follows.
+#'\itemize{
+#'   \item{For count data \code{family = "poisson"}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
+#'   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\phi_j*\mu_{ij}^2}, or}
+#'   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)}.}
 #'
-#'   For count data \code{family="poisson"}: Expectation \eqn{E[Y_{ij}]=\mu_{ij}}, variance \eqn{V(\mu_{ij})=\mu_{ij}}.
-#'   OR \code{family="negative.binomial"}: Expectation \eqn{E[Y_{ij}]=\mu_{ij}}, variance \eqn{V(\mu_{ij})=\mu_{ij}+\phi_j*\mu_{ij}^2}
-#'   OR \code{family="ZIP"}: Expectation \eqn{E[Y_{ij}]=(1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij})=\mu_{ij}(1-p)(1+\mu_{ij}p)}
+#'   \item{For binary data \code{family = "binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
 #'
-#'   For binary data \code{family="binomial"}: Expectation \eqn{E[Y_{ij}]=\mu_{ij}}, variance \eqn{V(\mu_{ij})=\mu_{ij}(1-\mu_{ij})}.
+#'   \item{For biomass data \code{family = "tweedie"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
 #'
-#'   For biomass data \code{family="tweedie"}: Expectation \eqn{E[Y_{ij}]=\mu_{ij}}, variance \eqn{V(\mu_{ij})=\phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).
-#'
-#'   For ordinal data \code{family="ordinal"}: See Hui et.al. (2016).
+#'   \item{For ordinal data \code{family = "ordinal"}:}{ See Hui et.al. (2016).}
+#'   }
 #' }
-#'
-#' - Method is sensitive for the choices of initial values of the latent variables. Therefore it is
-#' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
-#' However, if this is computationally too demanding you can use the result of some classical
-#' ordination method (for example nMDS) as initial values for latent variables.
-#'
-#' - If algorithm is very unstable in different runs, it is recommendable to use \code{constrOpt=TRUE}. The parameters are then estimated by constraining linear predictors in optimization. This has been done using function \code{constrOptim}.
-#' Especially with binomial family, algorithm may often converge to a poor local maximum and constrained optimization may help in such cases.
-#'
 #'
 #'
 #'
@@ -87,115 +86,191 @@
 #'  \item{lvs }{latent variables}
 #'  \item{params}{list of parameters
 #'  \itemize{
-#'    \item{theta }{ coefficients related to latent variables}
+#'    \item{$theta }{ coefficients related to latent variables}
 #'    \item{$beta0 }{ column specific intercepts}
 #'    \item{$Xcoef }{ coefficients related to environmental covariates X}
-#'    \item{$Tcoef }{ coefficients related to trait covariates TR}
-#'    \item{$fourth }{ interaction terms}
-#'    \item{$row.params }{ row specific intercepts}
-#'    \item{$phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family}
+#'    \item{$B }{ coefficients in fourth corner model}
+#'    \item{$row.params }{ row-specific intercepts}
+#'    \item{$phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, or probability of zero inflation for ZIP family}
 #'    \item{$inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
-#'    \item{$p }{ Probability of zero inflation for ZIP family}
 #'    }}
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
 #'  \item{sd }{list of standard errors of parameters}
 #'
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen, David Warton
 #' @references
+#' Brown, A. M., Warton, D. I., Andrew, N. R., Binns, M., Cassis, G., and Gibb, H. (2014). The fourth-corner solution - using predictive models to understand how species traits interact with the environment. Methods in Ecology and Evolution, 5:344-352.
+#'
 #' Dunn, P. K. and Smyth, G. K. (2005).  Series evaluation of tweedie exponential dispersion model densities. Statistics and Computing, 15:267-280.
 #'
 #' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-Based Approaches to Unconstrained Ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
 #' Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2016).  Variational Approximations for Generalized Linear Latent Variable Models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
 #'
-#' Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized Linear Latent Variable Models for Multivariate Count and Biomass Data in Ecology. Under revision.
+#' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., Bell, B. (2015). Template model builder TMB. Journal of statistical software, 70:1-21.
 #'
-#' Warton, D. I., Guillaume Blanchet, F., O’Hara, R. B., Ovaskainen, O., Taskinen, s., Walker, S. C. and Hui, F. K. C. (2015). So Many Variables: Joint Modeling in Community Ecology. Trends in Ecology & Evolution, 30:766-779.
+#' Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized Linear Latent Variable Models for Multivariate Count and Biomass Data in Ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
 #'
-#'@seealso \code{\link{ordplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
+#' Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So Many Variables: Joint Modeling in Community Ecology. Trends in Ecology & Evolution, 30:766-779.
+#'
+#'@seealso \code{\link{ordiplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
 #' @examples
 #' \dontrun{
-#'library(mvabund) ## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'X <- as.matrix(antTraits$env[,4:5])
-#'TR <- antTraits$traits[,4:5]
+#'X <- as.matrix(antTraits$env)
+#'TR <- antTraits$traits
 #'
 #'## Example 1: Fit model with two latent variables
+#'# Using variational approximation:
+#'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
+#'ordiplot.gllvm(fitv0)
+#'summary(fitv0)
+#'confint(fitv0)
 #'# Using Laplace approximation:
-#'fitl0 <- gllvm(y=y,family = "negative.binomial", method="LA",seed=1)
-#'ordplot.gllvm(fitl0)
-#'# Using Variational analysis:
-#'fitv0 <- gllvm(y=y,family = "negative.binomial", method="VA",seed=1)
-#'ordplot.gllvm(fitv0)
+#'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
+#'ordiplot.gllvm(fitl0)
 #'
 #'# Poisson family:
-#'fit.p <- gllvm(y=y,family = "poisson", method="LA")
-#'ordplot.gllvm(fit.p)
-#'# Use poisson model as a starting parameters for ZIP-model:
-#'fit.z <- gllvm(y=y,family = "ZIP", method="LA",start.param = fit.p)
-#'ordplot.gllvm(fit.z)
+#'fit.p <- gllvm(y, family = "poisson", method = "LA")
+#'ordiplot.gllvm(fit.p)
+#'# Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
+#'fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
+#'ordiplot.gllvm(fit.z)
 #'
 #'
-#'## Example 2: Fit model with two latent variables and environmental covariates,
-#'fitlX <- gllvm(y=y, X = X,family = "negative.binomial", method="LA")
-#'ordplot.gllvm(fitlX)
+#'## Example 2: gllvm with environmental variables
+#'# Fit model with two latent variables and all environmental covariates,
+#'fitvX <- gllvm(formula = y~X, family = "negative.binomial")
+#'ordiplot.gllvm(fitvX2,biplot=TRUE)
+#'coefplot.gllvm(fitvX)}
+#'# Fit model with environmental covariates Bare.ground and Feral.mammal.dung
+#'fitvX2 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
+#'  family = "negative.binomial")
+#'ordiplot.gllvm(fitvX2)
+#'coefplot.gllvm(fitvX2)
+#' \dontrun{
 #'# Use 5 initial runs and pick the best one
-#'fitlX_5 <- gllvm(y=y, X = X,family = "negative.binomial", method="LA")
-#'ordplot.gllvm(fitlX_5)
+#'fitvX_5 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
+#'  family = "negative.binomial", n.init = 5)
+#'ordiplot.gllvm(fitvX_5)
+#'coefplot.gllvm(fitvX_5)
 #'
+#'## Example 3: Data in long format
+#'# Reshape data to long format:
+#'datalong <- reshape(data.frame(cbind(y,X)),direction = "long", varying = colnames(y),v.names = "y")
+#'head(datalong)
+#'fitvLong <- gllvm(data=datalong, formula = y~Bare.ground + Feral.mammal.dung,
+#'                family = "negative.binomial")
 #'
-#'# Example 3: Fit fourth corner model with two latent variables
-#'# This can be fitted using only Variational analysis:
-#'fitF <- gllvm(y=y, X = X, TR=TR,family = "negative.binomial", method="VA")
-#'ordplot.gllvm(fitF)
+#'## Example 4: Fourth corner model
+#'# Fit fourth corner model with two latent variables
+#'fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
+#'coefplot.gllvm(fitF1, mar = c(4,8,2,1))
+#'# Specify model using formula
+#'fitF2 <- gllvm(y = y, X = X, TR = TR,
+#'  formula = ~Bare.ground + Canopy.cover*(Pilosity + Webers.length),
+#'  family = "negative.binomial")
+#'ordiplot.gllvm(fitF2)
+#'coefplot.gllvm(fitF2, mar = c(4,8,2,1))
 #'
-#'# Example 4: Fit Tweedie model for coral data
+#'## Example 5: Fit Tweedie model for coral data
 #'data(tikus)
 #'ycoral <- tikus$abund
-#'# Exclude species which have observed at less than 5 sites
-#'ycoral <- ycoral[(colSums(ycoral>0)>4)]
-#'fit.twe <- gllvm(y=ycoral,family = "tweedie", method="LA")
-#'ordplot.gllvm(fit.twe)
+#'# Let's consider only years 1981 and 1983
+#'ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0,]
+#'# Exclude species which have observed at less than 4 sites
+#'ycoral <- ycoral[(colSums(ycoral>0)>3)]
+#'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
+#'ordiplot.gllvm(fit.twe)
 #'}
 #' @export
 #'
+#'@useDynLib gllvm
+#'@importFrom TMB MakeADFun
+#'@importFrom mvabund manyglm
+#'@importFrom graphics abline axis par plot segments text
+#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms
+#'@importFrom Matrix bdiag
+#'@importFrom MASS ginv polr
+#'@importFrom mvtnorm rmvnorm
 
-gllvm<-function(y, X = NULL, TR = NULL,data=NULL, n.X=0,n.TR=0, num.lv = 2, family, method = "VA", row.eff = FALSE, get.fourth=TRUE, get.trait=TRUE, offset=NULL, start.lvs = NULL, start.params=NULL, sd.errors = TRUE, Lambda.struc = "unstructured", diag.iter = 5, trace = FALSE, plot = FALSE,la.phi.upd="phi",la.link.bin="logit",n.init=1,fixed.power=TRUE,Power=1.5,constrOpt=FALSE,restrict=30, eps = 1e-5, seed = NULL, max.iter = 200, maxit = 1000){
-  if(is.data.frame(y) && ncol(y)==3){
-    id1<-!duplicated(y[,1])
-    id2<-!duplicated(y[,2])
-    n <- sum(id1); p <- sum(id2);
-    Y<-reshape(y, direction = "wide", idvar = names(y)[1], timevar = names(y)[2],v.names = names(y)[3])[,-1]
-    if(nrow(Y)!=n || ncol(Y)!=p) {stop("Data format of y not allowed. See instructions from help.");} else{y <- Y}
+gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2, family, method = "VA", row.eff = FALSE, offset=NULL, sd.errors = TRUE, Lambda.struc = "unstructured", diag.iter = 5, trace = FALSE, plot = FALSE,la.link.bin="logit",n.init=1,Power=1.5, reltol = 1e-6, seed = NULL, max.iter = 200, maxit = 1000, start.fit=NULL, starting.val="res",TMB=TRUE,optimizer="optim",Lambda.start=0.1, jitter.var=0){
+  constrOpt <- FALSE; restrict <- 30; randomX <- NULL
+  #if(!is.null(y) || !is.null(data)) stop("Data is missing. Use 'y' or 'data' attribute to give the data.");
+  if(!is.null(data)){
+    if(is.null(formula)) stop("Define formula when 'data' attribute is used.")
+    if("id" %in% colnames(data)){
+    id <- data[,"id"]; n <- max(id); p <- dim(data)[1]/n
+    } else {n=NROW(data); p=1; id=1:n}
+    frame1 <- model.frame(formula,data = data)
+    y <- model.extract(frame1, "response"); y <- matrix(y,n,p); colnames(y) <- paste("y",1:p,sep = "")
+    term <- terms(frame1)
+    X <- TR <- NULL
+    if(length(attr(term, "term.labels"))>0){
+      datax=(frame1[,attr(term, "term.labels")[attr(term, "order")==1]]); colnames(datax)=attr(term, "term.labels")[attr(term, "order")==1]
 
-    if(n.X>0){
-      X<-data[id1,1:n.X]
+    for(k in 1:ncol(datax)){
+      lngth <- NULL
+      namek <- colnames(datax)[k]
+      for(i in 1:n){
+        lngth <- c(lngth,length(unique(datax[(id==i),k])))
+      }
+      if(max(lngth)==1){
+        if(!is.null(X)) X <- data.frame(X,datax[1:n,k]) else X <- data.frame(datax[1:n,k]);
+        colnames(X)[ncol(X)] <- namek
+      } else {
+        if(!is.null(TR)) TR <- data.frame(TR,datax[id==1,k]) else TR <- data.frame(datax[id==1,k]);
+        colnames(TR)[ncol(TR)] <- namek
+      }
     }
-    if(n.TR>0){
-      TR<-data[id2,(n.X+1):(n.X+n.TR)]
     }
+  } else if(!is.null(y)){
+    p=NCOL(y)
+    n=NROW(y)
+    if(p==1) y=as.matrix(y)
+  } else {
+    cl <- match.call()
+    mf <- match.call(expand.dots = FALSE)
+    m <- match(c("formula", "data", "na.action"),names(mf), 0)
+    mf <- mf[c(1, m)]
+    mf$drop.unused.levels <- TRUE
+    mf[[1]] <- as.name("model.frame")
+    mf <- eval(mf, parent.frame())
+    mt <- attr(mf, "terms")
+    abundances <- as.matrix(model.response(mf, "numeric"))
+    if (any(is.na(abundances)))
+      stop("There are NA values in the response.")
+    y <- abundances
+    X <- model.matrix(mt, mf)
+    atr<-c(attr(X,"assign"))
+    if(sum(atr)>0){X=X[,(atr>0)*1:ncol(X)]} else{ X=NULL;}
+    p=NCOL(y)
+    n=NROW(y)
+    if(p==1) y=as.matrix(y)
   }
 
-  if((family == "tweedie" || family == "ZIP") && !is.null(TR)) {
-    stop(paste(family," family cannot yet handle trait covariates."));
-  }
+
   if(method == "LA" && family == "ordinal") {
     cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
     method = "VA"
+  }
+  if(family == "ordinal") {
+    TMB=FALSE
   }
   if(method == "VA" && (family == "tweedie" || family == "ZIP")) {
     cat("VA method cannot handle", family," family, so LA method is used instead. \n")
     method = "LA"
   }
-  if(method=="LA" && !is.null(TR)) {
-    cat("Laplace's method cannot yet handle trait covariates, so VA method is used instead. \n")
-    method = "VA"
+  if(p<3 && !is.null(TR)) {
+    stop("Fourth corner model can not be fitted. Number of response variables must be bigger.\n")
   }
-  if(!is.null(start.params)){
-    if(class(start.params)!="gllvm") stop("Only object of class 'gllvm' can be given as a starting parameters.");
+  if(!is.null(start.fit)){
+    if(class(start.fit)!="gllvm") stop("Only object of class 'gllvm' can be given as a starting parameters.");
     if(!(family %in% c("poisson","negative.binomial","ZIP"))) stop("Starting parameters can be given only for count data.");
-    }
+  }
+  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
   n<-nrow(y); p<-ncol(y);
   if (is.null(offset))
@@ -204,66 +279,50 @@ gllvm<-function(y, X = NULL, TR = NULL,data=NULL, n.X=0,n.TR=0, num.lv = 2, fami
     O <- matrix(rep(offset), nrow = n, ncol = p)
   else O <- as.matrix(offset)
 
+  start.lvs=NULL
+  if(is.matrix(starting.val)){
+    start.lvs=starting.val; starting.val="random"
+    if(ncol(start.lvs)!=num.lv || nrow(start.lvs)!=n) stop("Given starting value matrix for latent variables has a wrong dimension.");
+    }
   n.i<-1;
-  out<-list(y = y, X = X, TR = TR, num.lv = num.lv, method = method, family=family, row.eff = row.eff,n.init=n.init,get.fourth=get.fourth, get.trait=get.trait,sd=FALSE)
+  out<-list(y = y, X = X, TR = TR, num.lv = num.lv, method = method, family=family, row.eff = row.eff,n.init=n.init,sd=FALSE,Lambda.struc=Lambda.struc)
   if(family=="binomial"){
     if(method=="LA") out$link=la.link.bin
     if(method=="VA") out$link="probit"
   }
   out$offset <- offset;
 
-  if(method == "VA") {
+if(TMB){
+  if(row.eff) row.eff="fixed"
+  if(!is.null(TR)){
+    fitg <- trait.TMB(y, X = X, TR=TR, formula = formula, num.lv = num.lv, family = family,Lambda.struc=Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed,maxit = maxit, start.lvs = start.lvs, offset=O, sd.errors = sd.errors,trace=trace,link=la.link.bin,n.init=n.init,start.params=start.fit,optimizer=optimizer,starting.val=starting.val,method=method,randomX=randomX,Power=Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
+      out$X = fitg$X; out$TR <- fitg$TR; out$X.design=fitg$X.design
+  } else {
+      fitg <- gllvm.TMB(y, X = X, formula = formula, num.lv = num.lv, family = family, method = method, Lambda.struc = Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed, maxit = maxit, start.lvs = start.lvs, offset = O, sd.errors = sd.errors, trace = trace, link = la.link.bin, n.init = n.init, restrict = restrict, start.params = start.fit, optimizer = optimizer, starting.val = starting.val, Power = Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
+  }
 
-    fitg <- gllvm.VA(y, X = X, T = TR, family = family, num.lv = num.lv, max.iter = max.iter, eps = eps, row.eff = row.eff, get.fourth=get.fourth, get.trait=get.trait, Lambda.struc = Lambda.struc, trace = trace, plot = plot, sd.errors = sd.errors, start.lvs = start.lvs, offset=O, maxit = maxit, diag.iter = diag.iter, seed=seed,n.init = n.init,restrict=restrict,constrOpt=constrOpt,start.params=start.params)
+    out$logL <- fitg$logL
+    if(num.lv > 0) out$lvs <- fitg$lvs
+    out$X <- fitg$X;
+    out$params <- fitg$params
+    if(sd.errors) { out$sd <- fitg$sd }
+    if(family=="tweedie"){ out$Power <- fitg$Power }
+    if(method=="VA"){out$Lambda=fitg$A;}# out$Ar=fitg$Ar;}
+    if(!is.null(randomX)){out$corr <- fitg$corr; out$Xrandom <- fitg$Xrandom}
+    out$start <- fitg$start
+
+  } else {
+    fitg <- gllvm.VA(y, X = X, TR = TR, family = family, formula = formula, num.lv = num.lv, max.iter = max.iter, eps = reltol, row.eff = row.eff, Lambda.struc = Lambda.struc, trace = trace, plot = plot, sd.errors = sd.errors, start.lvs = start.lvs, offset=O, maxit = maxit, diag.iter = diag.iter, seed=seed,n.init = n.init,restrict=restrict,constrOpt=constrOpt,start.params=start.fit,starting.val=starting.val,Lambda.start=Lambda.start, jitter.var=jitter.var)
     out$logL <- fitg$logLik
     if(num.lv>0) out$lvs <- fitg$lvs
-    out$X = fitg$X; out$TR <- fitg$T
+    out$X = fitg$X; out$TR <- fitg$TR; out$X.design=fitg$X.design
     out$params <- fitg$coef
     if(sd.errors){ out$sd <- fitg$sd}
     out$Lambda.struc <- fitg$Lambda.struc
     out$Lambda <- fitg$Lambda
+    out$start <- fitg$start
   }
-  if(method == "LA"){
-    if(family=="tweedie"){
-      fitg <- gllvm.tweedie(y, X = X, num.lv = num.lv, row.eff = row.eff, max.iter = max.iter, eps = eps, seed = seed, maxit = maxit, start.lvs = start.lvs, offset=O, info = sd.errors, trace = trace, plot = plot, n.init = n.init,fixed.power=fixed.power,Power=Power)
-      out$logL <- fitg$logL
-      if(num.lv > 0) out$lvs <- fitg$lvs
-      out$Power <- fitg$Power
-      out$X <- fitg$X;
-      out$params <- fitg$params
-      if(sd.errors) {
-        out$sd <- fitg$sd
-        out$lvs.cov <- fitg$lvs.cov
-      }
-    } else if(family=="ZIP"){
-      fitg <- gllvm.ZIP(y, X = X, num.lv = num.lv, row.eff = row.eff, max.iter = max.iter, eps = eps, seed = seed, maxit = maxit, start.lvs = start.lvs, offset=O, info = sd.errors, trace = trace, plot = plot, n.init = n.init,start.params=start.params)
-      out$logL <- fitg$logL
-      if(num.lv > 0) out$lvs <- fitg$lvs
-      out$X <- fitg$X;
-      out$params <- fitg$params
-      if(sd.errors) {
-        out$sd <- fitg$sd
-        out$lvs.cov <- fitg$lvs.cov
-      }
-      out$p0=fitg$p0
-    } else {
-      fitg <- gllvm.LA(y, X = X, num.lv = num.lv, family = family, row.eff = row.eff, max.iter = max.iter, eps = eps, seed = seed, maxit = maxit, start.lvs = start.lvs, offset=O, info = sd.errors, trace = trace, plot = plot,link=la.link.bin, n.init = n.init,phi.upd=la.phi.upd,restrict=restrict,constrOpt=constrOpt,start.params=start.params)
-      out$logL <- fitg$logL
-      if(num.lv > 0) out$lvs <- fitg$lvs
-      out$X <- fitg$X;
-      out$params <- list(theta = fitg$lambdas, beta0 = fitg$beta0, Xcoef = fitg$betas, row.params = fitg$row.params)
-      if(sd.errors) {
-        out$sd <- list(theta = fitg$se.lambdas, beta0 = fitg$se.beta0, Xcoef = fitg$se.Xcoef, row.params = fitg$se.row.params)
-        out$lvs.cov <- fitg$lvs.cov
-      }
-      if(family == "negative.binomial") {
-        out$params$phi <- fitg$phis
-        out$sd$phi = fitg$se.phis1
-        out$sd$inv.phi = fitg$se.phis
-      }
-    }
-  }
-  if(family=="negative.binomial") out$params$inv.phi=1/out$params$phi
+  if(family=="negative.binomial") out$params$inv.phi <- 1/out$params$phi
   out$call <- match.call()
   class(out) <- "gllvm"
   return(out)
