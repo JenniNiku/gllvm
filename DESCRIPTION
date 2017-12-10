@@ -8,7 +8,6 @@ Description: Generalized linear latent variable model (GLLVM) for analyzing mult
 License: GPL-2
 Imports: Rcpp (>= 0.12.11), mvabund, MASS, Matrix, mvtnorm, statmod, fishMod
 Depends: TMB, mvabund
-Suggests: corrplot, gclus
 Encoding: UTF-8
 LazyData: true
 LinkingTo: Rcpp, TMB, RcppEigen

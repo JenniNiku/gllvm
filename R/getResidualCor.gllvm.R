@@ -15,13 +15,14 @@
 #'# residual correlations:
 #'cr <- getResidualCor.gllvm(fit)
 #'# Plot residual correlations:
+#'install.packages("corrplot", "gclus")
 #'library(corrplot)
 #'library(gclus)
 #'rbPal <- colorRampPalette(c('darkblue','white','darkred'))
-#'breaks <- seq(min(cr$cor), max(cr$cor),length.out=40)
-#'Colors <- rbPal(100)[as.numeric(cut(cr$cor,breaks = breaks))]
-#'corrplot(cr$cor[order.single(cr$cor),order.single(cr$cor)], diag = F,
-#'   type = "lower", method = "square", tl.cex=0.8, tl.srt=45, tl.col="red")
+#'breaks <- seq(min(cr$cor), max(cr$cor), length.out = 40)
+#'Colors <- rbPal(100)[as.numeric(cut(cr$cor, breaks = breaks))]
+#'corrplot(cr$cor[order.single(cr$cor), order.single(cr$cor)], diag = F,
+#'   type = "lower", method = "square", tl.cex = 0.8, tl.srt = 45, tl.col = "red")
 #'}
 #'@export
 #'
