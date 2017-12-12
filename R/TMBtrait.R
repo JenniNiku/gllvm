@@ -293,8 +293,8 @@ if(diag.iter>0 && Lambda.struc=="unstructured" && method =="VA" && num.lv>0 && r
   lambda1=param1[nam=="lambda"]
   u1=matrix(param1[nam=="u"],n,num.lv)
   lg_phi1=param1[nam=="lg_phi"]
-  Au1=c(param1[nam=="Au"],rep(0,n))
-
+  Au1=c(param1[nam=="Au"],rep(0,num.lv*(num.lv-1)/2*n))
+  
         #dyn.load(dynlib("VAtraits"))
         objr <- TMB::MakeADFun(
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1), silent=!trace,

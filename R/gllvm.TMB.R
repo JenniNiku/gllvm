@@ -158,7 +158,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       u1=matrix(param1[nam=="u"],n,num.lv)
       lg_phi1=param1[nam=="lg_phi"]
       log_sigma1=param1[nam=="log_sigma"]
-      Au1=c(param1[nam=="Au"],rep(0,n))
+      Au1=c(param1[nam=="Au"],rep(0,num.lv*(num.lv-1)/2*n))
       lg_Ar1=matrix(param1[nam=="lg_Ar"])
       if(row.eff=="random"){
         if(num.lv>0){
