@@ -26,5 +26,5 @@ logLik(fit)
 }
 }
 \author{
-David Warton, Jenni Niku
+David I. Warton, Jenni Niku
 }

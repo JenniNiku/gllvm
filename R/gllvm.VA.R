@@ -765,7 +765,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       new.loglik <- q$value
       div=abs(new.loglik-current.loglik)
       err <- abs(new.loglik/current.loglik);
-      if(trace) cat("New Loglik:", new.loglik,"Current Loglik:", current.loglik, "Ratio", err, ". Improve:",div,"\n")
+      if(trace) cat("New Loglik:", new.loglik,"Current Loglik:", current.loglik, "Ratio", err, ". Difference in log-likelihoods:",div,"\n")
 
       ## Plot new ordination points for spp's and sites
       if( num.lv <= 2 && num.lv > 0 && plot == TRUE) {

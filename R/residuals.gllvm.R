@@ -21,7 +21,7 @@
 #'
 #' Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
 #'
-#' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-Based Approaches to Unconstrained Ordination. Methods in Ecology and Evolution, 6:399-411.
+#' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
 #' @examples
 #' \dontrun{

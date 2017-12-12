@@ -94,7 +94,7 @@ Fits generalized linear latent variable models for multivariate data. The models
 approximation method.
 }
 \details{
-Fits generalized linear latent variable models as in Hui et al. (2015 and 2016) and Niku et al. (2017).
+Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
 Method can be used with two types of latent variable models depending on covariates. If only
 site related environmental covariates are used, the expectation of response \eqn{Y_{ij}} is determined by
 
@@ -109,7 +109,7 @@ are included. The expectation of response \eqn{Y_{ij}} is
 
 \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_x + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
 
-where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are main effects
+where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are the main effects
 or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms.
 The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 
@@ -119,7 +119,7 @@ recommendable to use multiple runs and pick up the one giving the highest log-li
 However, sometimes this is computationally too demanding, and default option \code{starting.val = "res"}
 usually gives reasonably good results.
 
-Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2016) and Laplace approximation (Niku et al., 2017).
+Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 
 
 \subsection{Distributions}{
@@ -150,9 +150,10 @@ TR <- antTraits$traits
 # Using variational approximation:
 fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
 ordiplot.gllvm(fitv0)
+plot(fitv0, mfrow = c(2,2))
 summary(fitv0)
 confint(fitv0)
-# Using Laplace approximation:
+# Using Laplace approximation: (this line may take about 30 sec to run)
 fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 ordiplot.gllvm(fitl0)
 
@@ -167,7 +168,7 @@ ordiplot.gllvm(fit.z)
 ## Example 2: gllvm with environmental variables
 # Fit model with two latent variables and all environmental covariates,
 fitvX <- gllvm(formula = y~X, family = "negative.binomial")
-ordiplot.gllvm(fitvX2,biplot=TRUE)
+ordiplot.gllvm(fitvX,biplot=TRUE)
 coefplot.gllvm(fitvX)}
 # Fit model with environmental covariates Bare.ground and Feral.mammal.dung
 fitvX2 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
@@ -177,15 +178,15 @@ coefplot.gllvm(fitvX2)
 \dontrun{
 # Use 5 initial runs and pick the best one
 fitvX_5 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
- family = "negative.binomial", n.init = 5)
+ family = "negative.binomial", n.init = 5, jitter.var = 0.1)
 ordiplot.gllvm(fitvX_5)
 coefplot.gllvm(fitvX_5)
 
 ## Example 3: Data in long format
 # Reshape data to long format:
-datalong <- reshape(data.frame(cbind(y,X)),direction = "long", varying = colnames(y),v.names = "y")
+datalong <- reshape(data.frame(cbind(y,X)), direction = "long", varying = colnames(y), v.names = "y")
 head(datalong)
-fitvLong <- gllvm(data=datalong, formula = y~Bare.ground + Feral.mammal.dung,
+fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Feral.mammal.dung,
                family = "negative.binomial")
 
 ## Example 4: Fourth corner model
@@ -194,18 +195,20 @@ fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 coefplot.gllvm(fitF1, mar = c(4,8,2,1))
 # Specify model using formula
 fitF2 <- gllvm(y = y, X = X, TR = TR,
- formula = ~Bare.ground + Canopy.cover*(Pilosity + Webers.length),
+ formula = ~ Bare.ground + Canopy.cover*(Pilosity + Webers.length),
  family = "negative.binomial")
 ordiplot.gllvm(fitF2)
 coefplot.gllvm(fitF2, mar = c(4,8,2,1))
 
-## Example 5: Fit Tweedie model for coral data
+## Example 5: Fit Tweedie model
+# Load coral data
 data(tikus)
 ycoral <- tikus$abund
 # Let's consider only years 1981 and 1983
 ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0,]
 # Exclude species which have observed at less than 4 sites
-ycoral <- ycoral[(colSums(ycoral>0)>3)]
+ycoral <- ycoral[(colSums(ycoral > 0) > 3)]
+# Fit Tweedie model for coral data (this line may take few minutes to run)
 fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
 ordiplot.gllvm(fit.twe)
 }
@@ -215,19 +218,19 @@ Brown, A. M., Warton, D. I., Andrew, N. R., Binns, M., Cassis, G., and Gibb, H. 
 
 Dunn, P. K. and Smyth, G. K. (2005).  Series evaluation of tweedie exponential dispersion model densities. Statistics and Computing, 15:267-280.
 
-Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-Based Approaches to Unconstrained Ordination. Methods in Ecology and Evolution, 6:399-411.
+Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 
-Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2016).  Variational Approximations for Generalized Linear Latent Variable Models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
+Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).  Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
 
 Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., Bell, B. (2015). Template model builder TMB. Journal of statistical software, 70:1-21.
 
-Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized Linear Latent Variable Models for Multivariate Count and Biomass Data in Ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
+Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
 
-Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So Many Variables: Joint Modeling in Community Ecology. Trends in Ecology & Evolution, 30:766-779.
+Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }
 \seealso{
 \code{\link{ordiplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui, Sara Taskinen, David Warton
+Jenni Niku <jenni.m.e.niku@jyu.fi>, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton
 }

@@ -9,7 +9,7 @@
 #' @param ...	additional graphical arguments.
 #'
 #' @details
-#' plot.gllvm is used for model diagnostics. Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) are used in plots.
+#' plot.gllvm is used for model diagnostics. Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
@@ -17,7 +17,7 @@
 #'
 #' Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
 #'
-#' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-Based Approaches to Unconstrained Ordination. Methods in Ecology and Evolution, 6:399-411.
+#' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
 #'@seealso \code{\link{gllvm}}, \code{\link{residuals.gllvm}}
 #' @examples
@@ -28,7 +28,8 @@
 #'# Fit gllvm model
 #'fit <- gllvm(y = y, family = "negative.binomial")
 #'# Plot residuals
-#'plot(fit,mfrow=c(2,2))
+#'plot(fit, mfrow = c(2,2))
+#'plot(fit, which = 1:2, mfrow = c(1,2))
 #'}
 #'@export
 

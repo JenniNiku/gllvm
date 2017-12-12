@@ -123,14 +123,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(num.lv>0){
         #dyn.load(dynlib("VArandom"))
         objr <- TMB::MakeADFun(
-          data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn), silent=!trace,
+          data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn), silent=TRUE,
           parameters = list(r0=matrix(r0), b = rbind(a,b),lambda = lambda, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=Au,lg_Ar=log(Ar)),
           inner.control=list(mgcmax = 1e+200,maxit = 1000),
           DLL = "VArandom")
       } else {
         #dyn.load(dynlib("VArandom0"))
         objr <- TMB::MakeADFun(
-          data = list(y = y, x = Xd,xr=xr,offset=offset,family=familyn), silent=!trace,
+          data = list(y = y, x = Xd,xr=xr,offset=offset,family=familyn), silent=TRUE,
           parameters = list(r0=matrix(r0), b = rbind(a,b),lg_phi=log(phi),log_sigma=log(sigma),lg_Ar=log(Ar)),
           inner.control=list(mgcmax = 1e+200,maxit = 1000),
           DLL = "VArandom0")
@@ -138,7 +138,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     } else {
       #dyn.load(dynlib("VAfixed2"))
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0), silent=!trace,
+        data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0), silent=TRUE,
         parameters = list(r0=matrix(r0), b = rbind(a,b),B=matrix(0),lambda = lambda, u = u,lg_phi=log(phi),Au=Au),
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
         DLL = "gllvm")##GLLVM
@@ -164,14 +164,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(num.lv>0){
           #dyn.load(dynlib("VArandom"))
           objr <- TMB::MakeADFun(
-            data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn), silent=!trace,
+            data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn), silent=TRUE,
             parameters = list(r0=r1, b = b1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=log_sigma1,Au=Au1,lg_Ar=lg_Ar1),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
             DLL = "VArandom")
         } else {
           #dyn.load(dynlib("VArandom0"))
           objr <- TMB::MakeADFun(
-            data = list(y = y, x = Xd,xr=xr,offset=offset,family=familyn), silent=!trace,
+            data = list(y = y, x = Xd,xr=xr,offset=offset,family=familyn), silent=TRUE,
             parameters = list(r0=r1, b = b1,lg_phi=lg_phi1,log_sigma=log_sigma1,lg_Ar=lg_Ar1),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
             DLL = "VArandom0")
@@ -179,7 +179,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       } else {
         #dyn.load(dynlib("VAfixed2"))
         objr <- TMB::MakeADFun(
-          data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0), silent=!trace,
+          data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0), silent=TRUE,
           parameters = list(r0=r1, b = b1,B=matrix(0),lambda = lambda1, u = u1,lg_phi=lg_phi1,Au=Au1), #log(phi)
           inner.control=list(mgcmax = 1e+200,maxit = maxit),
           DLL = "gllvm")#GLLVM#
@@ -379,7 +379,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
     n.i <- n.i+1;
   }
-
   tr<-try({
     if(sd.errors && !is.infinite(out$logL)) {
       if(trace) cat("Calculating standard errors for parameters...\n")

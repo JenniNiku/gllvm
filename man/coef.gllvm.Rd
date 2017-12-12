@@ -26,5 +26,5 @@ coef(fit)
 }
 }
 \author{
-David Warton, Jenni Niku <jenni.m.e.niku@jyu.fi>
+David I. Warton, Jenni Niku
 }

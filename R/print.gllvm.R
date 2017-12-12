@@ -28,9 +28,9 @@ print.gllvm <- function(x, ...) {
   cat("\n")
   cat("log-likelihood: ",x$logL,"\n")
   if(!is.null(x$params$inv.phi)){ x$params$inv.phi<-NULL; }
-  df=length(unlist(x$params))-object$num.lv*(object$num.lv-1)/2
-  if(row.eff %in% c("fixed",TRUE) ) df=df-1
+  df=length(unlist(x$params))-x$num.lv*(x$num.lv-1)/2
+  if(x$row.eff %in% c("fixed",TRUE) ) df=df-1
   cat("Degrees of freedom: ",df,"\n")
   cat("AIC: ",AIC(x),"\n")
+  cat("BIC: ",BIC(x),"\n")
 }
-#print(fit)

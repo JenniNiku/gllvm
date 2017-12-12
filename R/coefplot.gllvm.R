@@ -36,17 +36,18 @@ coefplot.gllvm <- function(fit, y.label = TRUE, which.Xcoef=NULL,cex.ylab=0.5, m
   if(is.null(fit$X)) stop("No X covariates in the model.");
   if(is.null(fit$TR)){
     if(is.null(which.Xcoef)) which.Xcoef <- c(1:NCOL(fit$params$Xcoef))
-    Xcoef <-fit$params$Xcoef[,which.Xcoef]
-  cnames <- colnames(Xcoef)
+    Xcoef <-as.matrix(fit$params$Xcoef[,which.Xcoef])
+  cnames <- colnames(fit$params$Xcoef)[which.Xcoef]
   k <- length(cnames)
   labely <- rownames(Xcoef)
   m <- length(labely)
   Xc <- Xcoef
-  if(is.null(mfrow)) mfrow=c(1,k);
-  par(mfrow = mfrow, mar = mar)
+  if(is.null(mfrow) && k>1) mfrow=c(1,k);
+  if(!is.null(mfrow)) par(mfrow = mfrow, mar = mar)
+  if(is.null(mfrow)) par(mar = mar)
   for (i in 1:k) {
     Xc <- Xcoef[,i]
-    sdXcoef<-fit$sd$Xcoef[,which.Xcoef]
+    sdXcoef<-as.matrix(fit$sd$Xcoef[,which.Xcoef])
     lower <- Xc - 1.96 * sdXcoef[,i]
     upper <- Xc + 1.96 * sdXcoef[,i]
     Xc <- sort(Xc)

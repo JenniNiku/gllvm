@@ -3,7 +3,7 @@
 #'
 #' @param object   an object of class 'gllvm'.
 #'
-#' @author Francis K.C. Hui, David Warton, Jenni Niku
+#' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'
 #' @examples
 #' \dontrun{

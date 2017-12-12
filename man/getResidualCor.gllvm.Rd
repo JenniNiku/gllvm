@@ -33,5 +33,5 @@ corrplot(cr$cor[order.single(cr$cor), order.single(cr$cor)], diag = F,
 }
 }
 \author{
-Francis K.C. Hui, David Warton, Jenni Niku
+Francis K.C. Hui, Jenni Niku, David I. Warton
 }

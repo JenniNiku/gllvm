@@ -4,7 +4,7 @@
 #' @param object   an object of class 'gllvm'.
 #' @param ...	not used.
 #'
-#' @author David Warton, Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @author David I. Warton, Jenni Niku
 #'
 #' @examples
 #' \dontrun{
