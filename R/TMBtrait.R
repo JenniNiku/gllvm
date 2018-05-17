@@ -238,13 +238,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=Au,lg_Ar=log(Ar)),
             inner.control=list(mgcmax = 1e+200,maxit = maxit),
-            DLL = "gllvmr")
+            DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=1), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
-            random = c("r0","u"), DLL = "gllvmr")
+            random = c("r0","u"), DLL = "gllvm")
         }
       } else {
         if(method=="VA"){
@@ -252,13 +252,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=TRUE,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=log(Ar)), #log(phi)
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
-            DLL = "gllvmr")
+            DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=1), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
-            random = c("r0"), DLL = "gllvmr")
+            random = c("r0"), DLL = "gllvm")
         }
         
       }
@@ -289,7 +289,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=Au,lg_Ar=0),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
-            DLL = "gllvmr")
+            DLL = "gllvm")
         } else {
           #compile("LAtraits.cpp")
           #dyn.load(dynlib("LAtraits"))
@@ -297,7 +297,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=0), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0),
             inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
-            random = c("u"), DLL = "gllvmr")
+            random = c("u"), DLL = "gllvm")
         }
       } else {
         #dyn.load(dynlib("LAtraits0"))
@@ -305,7 +305,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=0), silent=!trace,
           parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0),
           inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
-          DLL = "gllvmr")
+          DLL = "gllvm")
       }
       
     }
@@ -339,13 +339,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
             parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=Au1,lg_Ar=Ar1),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
-            DLL = "gllvmr")
+            DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=TRUE,
             parameters = list(r0=r1, b = b1,B=B1,lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=0,lg_Ar=Ar1), #log(phi)
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
-            DLL = "gllvmr")
+            DLL = "gllvm")
           
         }
         
@@ -355,7 +355,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
           parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=0),
           inner.control=list(mgcmax = 1e+200,maxit = 1000),
-          DLL = "gllvmr")
+          DLL = "gllvm")
       }
       
       if(optimizer=="nlminb") {
