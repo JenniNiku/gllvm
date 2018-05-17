@@ -22,6 +22,8 @@ logLik.gllvm <- function(object, ...)
 {
   logL = object$logL
   if(!is.null(object$params$inv.phi)){ object$params$inv.phi<-NULL; }
+  if(object$row.eff%in%c("fixed",TRUE)) object$params$row.params=object$params$row.params[-1]
+  if(object$row.eff=="random") object$params$row.params=NULL
   attributes(logL)$df <- length(unlist(object$params))-object$num.lv*(object$num.lv-1)/2
   attributes(logL)$nobs <- dim(object$y)[1]
   class(logL) <- "logLik"

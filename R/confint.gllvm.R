@@ -31,6 +31,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   nTR <- 0; if(!is.null(object$TR)) nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
   alfa <- (1 - level) / 2
+  if(object$row.eff=="random") object$params$row.params=NULL
 
   if(is.null(parm)){
   if (object$family=="negative.binomial") {
