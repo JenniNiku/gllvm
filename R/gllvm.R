@@ -115,7 +115,6 @@
 #'
 #'@seealso \code{\link{ordiplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
 #' @examples
-#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -140,7 +139,7 @@
 #'fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
 #'ordiplot.gllvm(fit.z)
 #'
-#'
+#' \dontrun{
 #'## Example 2: gllvm with environmental variables
 #'# Fit model with two latent variables and all environmental covariates,
 #'fitvX <- gllvm(formula = y~X, family = "negative.binomial")
