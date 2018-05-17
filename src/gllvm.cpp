@@ -2,46 +2,53 @@
 #include <TMB.hpp>
 #include<math.h>
 //--------------------------------------------------------
-  //GLLVM
-  //Author: Jenni Niku
-  //------------------------------------------------------------
-  template<class Type>
-  Type objective_function<Type>::operator() ()
-  {
-    //declares all data and parameters used
-    DATA_MATRIX(y);
-    DATA_MATRIX(x);
-    DATA_MATRIX(xr);
-    DATA_MATRIX(offset);
-
-    PARAMETER_MATRIX(r0);
-    PARAMETER_MATRIX(b);
-    PARAMETER_MATRIX(B);
-    PARAMETER_VECTOR(lambda);
-
-    //latent variables, u, are treated as parameters
-    PARAMETER_MATRIX(u);
-    PARAMETER_VECTOR(lg_phi);
-    DATA_INTEGER(num_lv);
-    DATA_INTEGER(family);
-
-    PARAMETER_VECTOR(Au);
-    DATA_SCALAR(extra);
-    DATA_INTEGER(method);
-    DATA_INTEGER(model);
-
-    int n = y.rows();
-    int p = y.cols();
-    vector<Type> iphi = exp(lg_phi);
-    //if(family>2 || num_lv<1) method=2;
-    r0(0,0) = 0;
-
-    matrix<Type> eta(n,p);
-
-    matrix<Type> newlam(num_lv,p);
-    if(num_lv>0){
-
-      for (int j=0; j<p; j++){
+//GLLVM
+//Author: Jenni Niku
+//------------------------------------------------------------
+template<class Type>
+Type objective_function<Type>::operator() ()
+{
+  //declares all data and parameters used
+  DATA_MATRIX(y);
+  DATA_MATRIX(x);
+  DATA_MATRIX(xr);
+  DATA_MATRIX(offset);
+  
+  PARAMETER_MATRIX(r0);
+  PARAMETER_MATRIX(b);
+  PARAMETER_MATRIX(B);
+  PARAMETER_VECTOR(lambda);
+  
+  //latent variables, u, are treated as parameters
+  PARAMETER_MATRIX(u);
+  PARAMETER_VECTOR(lg_phi);
+  PARAMETER(log_sigma);// log(SD for row effect)
+  
+  DATA_INTEGER(num_lv);
+  DATA_INTEGER(family);
+  
+  PARAMETER_VECTOR(Au);
+  PARAMETER_VECTOR(lg_Ar);
+  DATA_SCALAR(extra);
+  DATA_INTEGER(method);// 0=VA, 1=LA
+  DATA_INTEGER(model);
+  DATA_VECTOR(random);//random row?
+  
+  int n = y.rows();
+  int p = y.cols();
+  vector<Type> iphi = exp(lg_phi);
+  vector<Type> Ar = exp(lg_Ar);
+  Type sigma = exp(log_sigma);
+  
+  //if(family>2 || num_lv<1) method=2;
+  if(random(0)<1){  r0(0,0) = 0;}
+  
+  matrix<Type> eta(n,p);
+  
+  matrix<Type> newlam(num_lv,p);
+  if(num_lv>0){
+    
+    for (int j=0; j<p; j++){
       for (int i=0; i<num_lv; i++){
         if (j < i){
           newlam(i,j) = 0;
@@ -53,20 +60,30 @@
         }
       }
     }
-
+    
     //To create lambda as matrix upper triangle
-
+    
     matrix<Type> lam = u*newlam;
-      eta = lam;
+    eta = lam;
+  }
+  
+  matrix<Type> mu(n,p);
+  
+  Type nll = 0.0; // initial value of log-likelihood
+  
+  
+  if(method<1){
+    eta += r0*xr + offset;
+    
+    matrix<Type> cQ(n,p);
+    
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        cQ(i,j) = 0.5* Ar(i)*random(0);
+      }
     }
-
-    matrix<Type> mu(n,p);
-
-    Type nll = 0.0; // initial value of log-likelihood
-
-    if(method<1){
-      eta += r0*xr + offset;
-
+    
+    if(num_lv>0){
       array<Type> A(num_lv,num_lv,n);
       for (int d=0; d<(num_lv); d++){
         for(int i=0; i<n; i++){
@@ -86,16 +103,19 @@
       }
       /*Calculates the commonly used (1/2) theta'_j A_i theta_j
       A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
-      matrix<Type> cQ(n,p);
-      for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
-          cQ(i,j) = 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          //cQ(i,j) = 0.5*(((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum() + Ar(i)*random(0));//newlam.col(j)**newlam.col(j)*(newlam.col(j).transpose())).sum();
+          cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
         }
+        nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
       }
-
-      if(model<1){
-        eta += x*b;
-      } else {
+      
+    }
+    
+    if(model<1){
+      eta += x*b;
+    } else {
       matrix<Type> eta1=x*B;
       int m=0;
       for (int j=0; j<p;j++){
@@ -104,65 +124,72 @@
           m++;
         }
       }
-      }
-      //likelihood
-      if(family<1){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
-          }
-          nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
-        }
-      } else if(family<2){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
-          }
-          nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
-        }
-      } else {
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
-          }
-          nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
-        }
-      }
-      nll -= -0.5*(u.array()*u.array()).sum();// -0.5*t(u_i)*u_i
-
-
-    } else {
-      eta += r0*xr + offset;
-
-      if(model<1){
-
-        eta += x*b;
-        for (int j=0; j<p; j++){
-          for(int i=0; i<n; i++){
-            mu(i,j) = exp(eta(i,j));
-          }
-        }
-      } else {
-
-        matrix<Type> eta1=x*B;
-        int m=0;
+    }
+    //likelihood
+    if(family<1){
+      for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            eta(i,j)+=b(0,j)+eta1(m,0);
-            m++;
-            mu(i,j) = exp(eta(i,j));
-          }
+          nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
+        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
+      }
+    } else if(family<2){
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
+        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum() + (log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0));// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
+      }
+    } else {
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
+          nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
+        }
+        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum() + (log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0));// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
+      }
+    }
+    nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
+    //nll -= -0.5*(u.array()*u.array()).sum();// -0.5*t(u_i)*u_i
+    
+    
+  } else {
+    eta += r0*xr + offset;
+    
+    if(model<1){
+      
+      eta += x*b;
+      for (int j=0; j<p; j++){
+        for(int i=0; i<n; i++){
+          mu(i,j) = exp(eta(i,j));
+        }
+      }
+    } else {
+      
+      matrix<Type> eta1=x*B;
+      int m=0;
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          eta(i,j)+=b(0,j)+eta1(m,0);
+          m++;
+          mu(i,j) = exp(eta(i,j));
+        }
+      }
+    }
     //latent variable is assumed to be from N(0,1)
     if(num_lv>0){
-    for (int j=0; j<u.cols();j++){
-      for (int i=0; i<n; i++) {
-        nll -= dnorm(u(i,j),Type(0),Type(1),true);
-      }
-    }}
-
+      for (int j=0; j<u.cols();j++){
+        for (int i=0; i<n; i++) {
+          nll -= dnorm(u(i,j),Type(0),Type(1),true);
+        }
+      }}
+    for(int i = 0; i < n; i++){
+      nll -= dnorm(r0(i,0), Type(0), sigma, true)*random(0);
+    }
+    
     //likelihood model with the log link function
     if(family<1){
       for (int j=0; j<p;j++){
@@ -196,6 +223,6 @@
             nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); //zero-infl-poisson
           }
         }}
-    }
-          return nll;
   }
+  return nll;
+}

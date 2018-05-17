@@ -29,7 +29,7 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
 \item{method}{model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.}
 
-\item{row.eff}{logical, Indicating whether row effects are included in the model. Defaults to \code{FALSE}.}
+\item{row.eff}{\code{FALSE}, \code{TRUE} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE}.}
 
 \item{offset}{vector or matrix of offset terms.}
 
@@ -139,7 +139,6 @@ Models are implemented using TMB (Kristensen et al., 2015) applied to variationa
 }
 }
 \examples{
-\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -164,7 +163,7 @@ ordiplot.gllvm(fit.p)
 fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
 ordiplot.gllvm(fit.z)
 
-
+\dontrun{
 ## Example 2: gllvm with environmental variables
 # Fit model with two latent variables and all environmental covariates,
 fitvX <- gllvm(formula = y~X, family = "negative.binomial")
