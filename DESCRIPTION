@@ -6,11 +6,11 @@ Author: Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Task
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
 Description: Generalized linear latent variable model (GLLVM) for analyzing multivariate data. Estimation is performed using either Laplace approximation or variational approximation method implemented via Template Model Builder.
 License: GPL-2
-Imports: Rcpp (>= 0.12.11), mvabund, MASS, Matrix, mvtnorm, statmod, fishMod
+Imports: TMB, mvabund, MASS, Matrix, mvtnorm, statmod, fishMod
 Depends: TMB, mvabund
 Encoding: UTF-8
 LazyData: true
-LinkingTo: Rcpp, TMB, RcppEigen
+LinkingTo: TMB, RcppEigen
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
 URL: https://github.com/JenniNiku/gllvm.git
