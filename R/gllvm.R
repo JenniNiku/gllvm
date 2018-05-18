@@ -315,7 +315,7 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
     out$params <- fitg$params
     if(sd.errors) { out$sd <- fitg$sd }
     if(family=="tweedie"){ out$Power <- fitg$Power }
-    if(method=="VA"){out$Lambda=fitg$A;}# out$Ar=fitg$Ar;}
+    if(method=="VA"){out$A=fitg$A; out$Ar=fitg$Ar;}
     if(!is.null(randomX)){out$corr <- fitg$corr; out$Xrandom <- fitg$Xrandom}
     out$start <- fitg$start
     

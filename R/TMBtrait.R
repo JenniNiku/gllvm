@@ -198,22 +198,21 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     if(num.lv>0){
       if(is.null(start.params) || start.params$method!="VA"){
         if(Lambda.struc=="diagonal" || diag.iter>0){
-          Au=log(rep(Lambda.start,num.lv*n)) #1/2, 1
+          Au=log(rep(Lambda.start[1],num.lv*n)) #1/2, 1
         } else{
-          Au=c(log(rep(Lambda.start,num.lv*n)),rep(0,num.lv*(num.lv-1)/2*n)) #1/2, 1
+          Au=c(log(rep(Lambda.start[1],num.lv*n)),rep(0,num.lv*(num.lv-1)/2*n)) #1/2, 1
         }
       } else {
         Au=NULL
         for(d in 1:num.lv) {
           if(start.params$Lambda.struc=="unstructured" || length(dim(start.params$Lambda))==3){ Au=c(Au,log(start.params$Lambda[,d,d]))
           } else { Au=c(Au,log(start.params$Lambda[,d])) }
-          #if(start.params$Lambda.struc=="diagonal") Au=c(Au,log(start.params$Lambda[,d]))
         }
         if(Lambda.struc!="diagonal" && diag.iter==0){
           Au=c(Au,rep(0,num.lv*(num.lv-1)/2*n))
         }
-      }}
-    Ar=rep(1,n)
+      }} else { Au=0}
+    if(length(Lambda.start)<2){ Ar=rep(1,n)} else {Ar=rep(Lambda.start[2],n)}
     
     
     optr<-NULL
@@ -221,7 +220,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     se=NULL
     
     
-    if(row.eff==FALSE){xr=matrix(0,1,p)} else {xr=matrix(1,1,p); xr[1,1]=0}
+    if(row.eff==FALSE){xr=matrix(0,1,p)} else {xr=matrix(1,1,p)}
     #if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
     extra=0
     if(family == "poisson") { familyn=0}
@@ -287,7 +286,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           #dyn.load(dynlib("VAtraits"))
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=Au,lg_Ar=0),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=Au,lg_Ar=log(Ar)),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
             DLL = "gllvm")
         } else {
@@ -478,7 +477,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       
       if(method=="VA" && row.eff=="random"){
         Ar=exp(param[names(param)=="lg_Ar"])
-        out$Ar
+        out$Ar=Ar
       }
     }
     
