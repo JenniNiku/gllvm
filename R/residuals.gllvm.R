@@ -24,15 +24,14 @@
 #' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
 #' @examples
-#' \dontrun{
-#'## Load a dataset from the mvabund package
+#'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
-#'fit <- gllvm(y = y, family = "negative.binomial")
-#'# residuals saved
+#'fit <- gllvm(y = y, family = "poisson")
+#'# residuals
 #'res <- residuals(fit)
-#'}
+#'
 #'@export
 
 

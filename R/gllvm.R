@@ -59,7 +59,7 @@
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #' 
-#' Exception is ordinal family, which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
+#' An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 #' With ordinal family response classes must start from 0 or 1.
 #'
 #'
@@ -123,65 +123,66 @@
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env)
 #'TR <- antTraits$traits
+#'# Fit model with environmental covariates Bare.ground and Shrub.cover
+#'fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
+#'             family = "poisson")
+#'ordiplot.gllvm(fit)
+#'coefplot.gllvm(fit)
 #'
+#' \donttest{
 #'## Example 1: Fit model with two latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
-#'fitv0
 #'ordiplot.gllvm(fitv0)
 #'plot(fitv0, mfrow = c(2,2))
 #'summary(fitv0)
 #'confint(fitv0)
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
-#'plot(fitl0)
 #'ordiplot.gllvm(fitl0)
 #'
 #'# Poisson family:
 #'fit.p <- gllvm(y, family = "poisson", method = "LA")
-#'plot(fit.p)
 #'ordiplot.gllvm(fit.p)
 #'# Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 #'fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
-#'plot(fit.z)
 #'ordiplot.gllvm(fit.z)
 #'
-#' \dontrun{
+#'
 #'## Example 2: gllvm with environmental variables
 #'# Fit model with two latent variables and all environmental covariates,
-#'fitvX <- gllvm(formula = y~X, family = "negative.binomial")
-#'ordiplot.gllvm(fitvX,biplot=TRUE)
-#'coefplot.gllvm(fitvX)}
-#'# Fit model with environmental covariates Bare.ground and Feral.mammal.dung
-#'fitvX2 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
+#'fitvX <- gllvm(formula = y ~ X, family = "negative.binomial")
+#'ordiplot.gllvm(fitvX, biplot = TRUE)
+#'coefplot.gllvm(fitvX)
+#'# Fit model with environmental covariates Bare.ground and Shrub.cover
+#'fitvX2 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial")
 #'ordiplot.gllvm(fitvX2)
 #'coefplot.gllvm(fitvX2)
-#' \dontrun{
 #'# Use 5 initial runs and pick the best one
-#'fitvX_5 <- gllvm(y, X, formula = ~Bare.ground + Feral.mammal.dung,
+#'fitvX_5 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial", n.init = 5, jitter.var = 0.1)
 #'ordiplot.gllvm(fitvX_5)
 #'coefplot.gllvm(fitvX_5)
 #'
 #'## Example 3: Data in long format
 #'# Reshape data to long format:
-#'datalong <- reshape(data.frame(cbind(y,X)), direction = "long", varying = colnames(y), v.names = "y")
+#'datalong <- reshape(data.frame(cbind(y,X)), direction = "long",
+#'                    varying = colnames(y), v.names = "y")
 #'head(datalong)
-#'fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Feral.mammal.dung,
+#'fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Shrub.cover,
 #'                family = "negative.binomial")
-#'coefplot.gllvm(fitvLong)
 #'
 #'## Example 4: Fourth corner model
 #'# Fit fourth corner model with two latent variables
 #'fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-#'coefplot.gllvm(fitF1, mar = c(4,8,2,1))
+#'coefplot.gllvm(fitF1)
 #'# Specify model using formula
 #'fitF2 <- gllvm(y = y, X = X, TR = TR,
 #'  formula = ~ Bare.ground + Canopy.cover*(Pilosity + Webers.length),
 #'  family = "negative.binomial")
 #'ordiplot.gllvm(fitF2)
-#'coefplot.gllvm(fitF2, mar = c(4,8,2,1))
+#'coefplot.gllvm(fitF2)
 #'
 #'## Example 5: Fit Tweedie model
 #'# Load coral data
@@ -204,9 +205,9 @@
 #'@useDynLib gllvm
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
-#'@importFrom graphics abline axis par plot segments text
+#'@importFrom graphics abline axis par plot segments text points
 #'@importFrom grDevices rainbow
-#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms
+#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd
 #'@importFrom Matrix bdiag
 #'@importFrom MASS ginv polr
 #'@importFrom mvtnorm rmvnorm

@@ -4,9 +4,13 @@ Title: Generalized Linear Latent Variable Models
 Version: 0.1.0
 Author: Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
-Description: Generalized linear latent variable model (GLLVM) for analyzing multivariate data. Estimation is performed using either Laplace approximation or variational approximation method implemented via Template Model Builder.
+Description: Generalized linear latent variable model (gllvm) for analyzing multivariate data. 
+      Estimation is performed using either Laplace approximation or variational approximation method implemented via TMB (Kristensen et al., (2016), <doi:10.18637/jss.v070.i05>). 
+      Details for gllvm, see Hui et al. (2015) <doi:10.1111/2041-210X.12236> 
+      and (2017) <doi:10.1080/10618600.2016.1164708> and Niku et al. (2017) 
+      <doi:10.1007/s13253-017-0304-7>.
 License: GPL-2
-Imports: TMB, mvabund, MASS, Matrix, mvtnorm, statmod, fishMod
+Imports: MASS, Matrix, mvtnorm, statmod, fishMod
 Depends: TMB, mvabund
 Encoding: UTF-8
 LazyData: true

@@ -15,15 +15,14 @@
 Extracts Log-likelihood from 'gllvm' objects.
 }
 \examples{
-\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
-fit <- gllvm(y = y, family = "negative.binomial")
+fit <- gllvm(y = y, family = "poisson")
 # log-Likelihood:
 logLik(fit)
-}
+
 }
 \author{
 David I. Warton, Jenni Niku

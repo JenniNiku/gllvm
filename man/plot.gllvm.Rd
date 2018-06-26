@@ -4,13 +4,13 @@
 \alias{plot.gllvm}
 \title{Plot Diagnostics for an gllvm Object}
 \usage{
-\method{plot}{gllvm}(object, which = 1:4,
+\method{plot}{gllvm}(x, which = 1:4,
   caption = c("Residuals vs linear predictors", "Normal Q-Q",
   "Residuals vs row index", "Residuals vs column index"), var.colors = NULL,
   ...)
 }
 \arguments{
-\item{object}{an object of class 'gllvm'.}
+\item{x}{an object of class 'gllvm'.}
 
 \item{which}{if a subset of the plots is required, specify a subset of the numbers 1:4, see caption below.}
 
@@ -28,15 +28,21 @@ linear predictors of fitted values, a Normal Q-Q plot of residuals, residuals ag
 plot.gllvm is used for model diagnostics. Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
 }
 \examples{
-\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit gllvm model
-fit <- gllvm(y = y, family = "negative.binomial")
+# Fit gllvm model with Poisson family
+fit <- gllvm(y, family = "poisson")
 # Plot residuals
 plot(fit, mfrow = c(2,2))
-plot(fit, which = 1:2, mfrow = c(1,2))
+
+\donttest{
+# Fit gllvm model with negative binomial family
+fitnb <- gllvm(y = y, family = "negative.binomial")
+# Plot residuals
+plot(fitnb, mfrow = c(2,2))
+# Plot only two first plots
+plot(fitnb, which = 1:2, mfrow = c(1,2))
 }
 }
 \references{

@@ -999,14 +999,9 @@ inf.criteria <- function(fit)
   abund=fit$y
   num.lv=fit$num.lv
   n <- dim(abund)[1]
-  #k <- length(fit$params$row.params) + length(fit$params$beta0)+ length(fit$params$B) + length(c(fit$params$Xcoef)) + length(c(fit$params$theta))-(num.lv-1)*num.lv/2
-  #if(object$row.eff=="random") k=k-n+1
-  #if(!is.null(fit$TR)) k<-k+length(c(fit$params$B))
-  #if (family == "negative.binomial") { k <- k + length(fit$params$phi) }
-  #if (family == "ZIP") { k <- k + length(fit$p0) }
-  k<-attributes(logLik(fit))$df
+  k<-attributes(logLik.gllvm(fit))$df
   
-  BIC <- -2*fit$logL + (k) * log(n)# vai (k-1) * log(n)
+  BIC <- -2*fit$logL + (k) * log(n)
   # AIC
   AIC <- -2*fit$logL + (k) * 2
   # AICc

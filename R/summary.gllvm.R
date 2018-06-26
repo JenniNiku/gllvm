@@ -9,12 +9,12 @@
 #' @examples
 #' \dontrun{
 #'## Load a dataset from the mvabund package
-#'data(antTraits)
-#'y <- as.matrix(antTraits$abund)
-#'# Fit GLLVM model
-#'fit <- gllvm(y = y, family = "negative.binomial")
-#'summary(fit)
-#'}
+#' data(antTraits)
+#' y <- as.matrix(antTraits$abund)
+#'# Fit gllvm model
+#' fit <- gllvm(y = y, family = "poisson")
+#' summary(fit)
+#'
 #'@export
 
 

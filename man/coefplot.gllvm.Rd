@@ -26,21 +26,26 @@ coefplot.gllvm(fit, y.label = TRUE, which.Xcoef = NULL, cex.ylab = 0.5,
 Plots covariate coefficients and their confidence intervals.
 }
 \examples{
-\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-X <- antTraits$env
+X <- as.matrix(antTraits$env)
 TR <- antTraits$traits
+# Fit model with environmental covariates
+fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
+            family = "poisson")
+coefplot.gllvm(fit)
 
-# Fit gllvm model with environmental covariates
+\donttest{
+# Fit model with all environmental covariates
 fitx <- gllvm(y, X, family = "negative.binomial")
-coefplot.gllvm(fitx, mfrow = c(3,2), mar = c(4,8,2,1), cex.ylab = 0.8)
-coefplot.gllvm(fitx, which.Xcoef = 1:2, mar = c(4,8,2,1), cex.ylab = 0.8)
+coefplot.gllvm(fitx, mfrow = c(3,2))
+coefplot.gllvm(fitx, which.Xcoef = 1:2)
 
 # Fit gllvm model with environmental and trait covariates
+TR <- antTraits$traits
 fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-coefplot.gllvm(fitT, mar = c(4,8,2,1))
+coefplot.gllvm(fitT)
 }
 }
 \author{

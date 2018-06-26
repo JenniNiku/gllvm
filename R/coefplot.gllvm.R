@@ -12,21 +12,26 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
 #'
 #' @examples
-#' \dontrun{
 #'## Load a dataset from the mvabund package
-#' data(antTraits)
-#' y <- as.matrix(antTraits$abund)
-#' X <- antTraits$env
-#' TR <- antTraits$traits
+#'data(antTraits)
+#'y <- as.matrix(antTraits$abund)
+#'X <- as.matrix(antTraits$env)
+#'TR <- antTraits$traits
+#'# Fit model with environmental covariates
+#'fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
+#'             family = "poisson")
+#'coefplot.gllvm(fit)
 #'
-#'# Fit gllvm model with environmental covariates
-#' fitx <- gllvm(y, X, family = "negative.binomial")
-#' coefplot.gllvm(fitx, mfrow = c(3,2), mar = c(4,8,2,1), cex.ylab = 0.8)
-#' coefplot.gllvm(fitx, which.Xcoef = 1:2, mar = c(4,8,2,1), cex.ylab = 0.8)
+#'\donttest{
+#'# Fit model with all environmental covariates
+#'fitx <- gllvm(y, X, family = "negative.binomial")
+#'coefplot.gllvm(fitx, mfrow = c(3,2))
+#'coefplot.gllvm(fitx, which.Xcoef = 1:2)
 #'
 #'# Fit gllvm model with environmental and trait covariates
-#' fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-#' coefplot.gllvm(fitT, mar = c(4,8,2,1))
+#'TR <- antTraits$traits
+#'fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
+#'coefplot.gllvm(fitT)
 #'}
 #'@export
 

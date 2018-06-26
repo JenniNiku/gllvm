@@ -14,16 +14,6 @@
 \description{
 A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 }
-\examples{
-\dontrun{
-## Load a dataset from the mvabund package
-data(antTraits)
-y <- as.matrix(antTraits$abund)
-# Fit GLLVM model
-fit <- gllvm(y = y, family = "negative.binomial")
-summary(fit)
-}
-}
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>
 }

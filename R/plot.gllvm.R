@@ -2,7 +2,7 @@
 #' @description Four plots (selectable by which) are currently available: a plot of residuals against
 #' linear predictors of fitted values, a Normal Q-Q plot of residuals, residuals against row index and residuals against column index.
 #'
-#' @param object an object of class 'gllvm'.
+#' @param x an object of class 'gllvm'.
 #' @param which if a subset of the plots is required, specify a subset of the numbers 1:4, see caption below.
 #' @param caption captions to appear above the plots.
 #' @param var.colors colors for responses, vector with length of number of response variables or 1. Defaults to NULL, when different responses have different colors.
@@ -21,30 +21,36 @@
 #'
 #'@seealso \code{\link{gllvm}}, \code{\link{residuals.gllvm}}
 #' @examples
-#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'# Fit gllvm model
-#'fit <- gllvm(y = y, family = "negative.binomial")
+#'# Fit gllvm model with Poisson family
+#'fit <- gllvm(y, family = "poisson")
 #'# Plot residuals
 #'plot(fit, mfrow = c(2,2))
-#'plot(fit, which = 1:2, mfrow = c(1,2))
+#'
+#' \donttest{
+#'# Fit gllvm model with negative binomial family
+#'fitnb <- gllvm(y = y, family = "negative.binomial")
+#'# Plot residuals
+#'plot(fitnb, mfrow = c(2,2))
+#'# Plot only two first plots
+#'plot(fitnb, which = 1:2, mfrow = c(1,2))
 #'}
 #'@export
 
 
-plot.gllvm <- function(object, which=1:4, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index"),var.colors=NULL, ...) {
-  n <- NROW(object$y)
-  p <- NCOL(object$y)
+plot.gllvm <- function(x, which=1:4, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index"),var.colors=NULL, ...) {
+  n <- NROW(x$y)
+  p <- NCOL(x$y)
 
   mains=rep("",4)
   mains[which]=caption[which]
 
-  res=residuals.gllvm(object)
+  res=residuals.gllvm(x)
   ds.res <- res$residuals
   eta.mat <- res$linpred
-  csum=order(colSums(as.matrix(object$y)))
+  csum=order(colSums(as.matrix(x$y)))
   if(!is.null(var.colors)){
     col=rep(1,p)
     col[1:p]=(var.colors)
@@ -52,7 +58,7 @@ plot.gllvm <- function(object, which=1:4, caption=c("Residuals vs linear predict
   if(p<8)
     col=(1:p)[csum]
   else
-    col = (rainbow(p+1)[2:(p+1)])[csum]
+    col = (grDevices::rainbow(p+1)[2:(p+1)])[csum]
 
 par(...)
 

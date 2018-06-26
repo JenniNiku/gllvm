@@ -19,16 +19,15 @@
 Computes confidence intervals for  parameters in a fitted gllvm model.
 }
 \examples{
-\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-X <- as.matrix(antTraits$env[,4:5])
+X <- as.matrix(antTraits$env[,1:2])
 # Fit gllvm model
-fit <- gllvm(y = y, X = X, family = "negative.binomial")
+fit <- gllvm(y = y, X = X, family = "poisson")
 # 95 \% confidence intervals
 confint(fit, level = 0.95)
-}
+
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>
