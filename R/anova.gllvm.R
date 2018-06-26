@@ -21,9 +21,9 @@
 #'TR <- antTraits$traits
 #'# Fit gllvm model
 #'fit1 <- gllvm(y, X, TR, formula = ~ Bare.ground+Shrub.cover
-#'              +Pilosity+Webers.length, family = "poisson")
+#'              +Webers.length, family = "poisson")
 #'fit2 <- gllvm(y, X, TR, formula = ~ (Bare.ground+Shrub.cover)*
-#'              (Pilosity+Webers.length), family = "poisson")
+#'              Webers.length, family = "poisson")
 #'# Let's test the need for fourth corner interaction terms using likelihood-ratio test:
 #'anova(fit1, fit2)
 #'

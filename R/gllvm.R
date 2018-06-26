@@ -207,7 +207,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points
 #'@importFrom grDevices rainbow
-#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd
+#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq
 #'@importFrom Matrix bdiag
 #'@importFrom MASS ginv polr
 #'@importFrom mvtnorm rmvnorm

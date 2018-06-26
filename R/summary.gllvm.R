@@ -14,7 +14,7 @@
 #'# Fit gllvm model
 #' fit <- gllvm(y = y, family = "poisson")
 #' summary(fit)
-#'
+#'}
 #'@export
 
 
