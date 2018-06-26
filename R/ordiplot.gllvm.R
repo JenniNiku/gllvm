@@ -8,6 +8,8 @@
 #' @param main  main title.
 #' @param which.lvs indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}.
 #' @param jitter   if \code{TRUE}, jittering is applied on points.
+#' @param s.colors colors for sites
+#' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -24,24 +26,22 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
 #'
 #' @examples
-#' \dontrun{
-#'## Load a dataset from the mvabund package
+#' #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'# Fit gllvm model
-#'fit <- gllvm(y = y, family = "negative.binomial")
+#'fit <- gllvm(y, family = "poisson")
 #'# Ordination plot:
 #'ordiplot.gllvm(fit)
 #'# Biplot with 10 species
 #'ordiplot.gllvm(fit, biplot = TRUE, ind.spp = 10)
-#'}
+#'
 #'@export
 
 
-ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE, ...) {
+ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE, s.colors=1, symbols=FALSE,...) {
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-
+  
   n <- NROW(object$y)
   p <- NCOL(object$y)
   if (!is.null(ind.spp)) {
@@ -51,16 +51,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }
   if (object$num.lv == 0)
     stop("No latent variables to plot.")
-
+  
   if (is.null(rownames(object$params$theta)))
     rownames(object$params$theta) = paste("V", 1:p)
-
-  par(mfrow = c(1, 1), cex = 1, cex.axis = 1, cex.lab = 1, cex.main = 1.2)
-
+  
   if (object$num.lv == 1) {
     plot(1:n, object$lvs, ylab = "LV1", xlab = "Row index")
   }
-
+  
   if (object$num.lv > 1) {
     testcov <- object$lvs %*% t(object$params$theta)
     do.svd <- svd(testcov, object$num.lv, object$num.lv)
@@ -70,27 +68,26 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     choose.lv.coefs <- scale(
       do.svd$v * matrix( do.svd$d[1:object$num.lv] ^ (1 - alpha),nrow = p,ncol = object$num.lv,byrow = TRUE),
       center = TRUE,scale = F)
-
+    
     if (!biplot) {
       plot(object$lvs[, which.lvs],xlab = paste("Latent variable ", which.lvs[1]),
-           ylab = paste("Latent variable ", which.lvs[2]),main = main,cex = 1.2 ,type = "n", ...)
+           ylab = paste("Latent variable ", which.lvs[2]),main = main ,type = "n", ...)
       if (!jitter)
-        text(object$lvs[, which.lvs], label = 1:n, cex = 1.2)
+        if(symbols){points(object$lvs[, which.lvs],col=s.colors,...)} else {text(object$lvs[, which.lvs], label = 1:n, cex = 1.2,col=s.colors)}
       if (jitter)
-        text(jitter(object$lvs[, which.lvs][, 1]),jitter(object$lvs[, which.lvs][, 2]),label = 1:n,cex = 1.2)
+        if(symbols){points(jitter(object$lvs[, which.lvs][, 1]),jitter(object$lvs[, which.lvs][, 2]),col=s.colors,...)} else {text(jitter(object$lvs[, which.lvs][, 1]),jitter(object$lvs[, which.lvs][, 2]),label = 1:n,cex = 1.2,col=s.colors)}
     }
-
+    
     if (biplot) {
       largest.lnorms <- order(rowSums(choose.lv.coefs[, which.lvs] ^ 2), decreasing = TRUE)[1:ind.spp]
-      plot(rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs]),xlab = paste("Latent variable ", which.lvs[1]),ylab = paste("Latent variable ", which.lvs[2]),main = main,type = "n",
-           xlim = 1.1 * range(rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs])[, 1]),
-           ylim = 1.1 * range(rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs])[, 2]))
-      if (!jitter)
-        text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2)
-      if (jitter)
-        text(jitter(choose.lvs[, which.lvs][, 1]),jitter(choose.lvs[, which.lvs][, 2]),label = 1:n,cex = 1.2)
-      text(choose.lv.coefs[, which.lvs][largest.lnorms,],label = rownames(object$params$theta[, which.lvs][largest.lnorms,]),col = 4,cex = 0.9)
-    }
+      plot(rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs]),xlab = paste("Latent variable ", which.lvs[1]),ylab = paste("Latent variable ", which.lvs[2]),main = main,type = "n",...)
 
+      if (!jitter)
+        if(symbols){points(choose.lvs[, which.lvs],col=s.colors,...)} else {text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2,col=s.colors)}
+      if (jitter)
+        if(symbols){points(jitter(choose.lvs[, which.lvs][, 1]),jitter(choose.lvs[, which.lvs][, 2]),col=s.colors,...)} else {text(jitter(choose.lvs[, which.lvs][, 1]),jitter(choose.lvs[, which.lvs][, 2]),label = 1:n,cex = 1.2,col=s.colors)}
+      text(jitter(choose.lv.coefs[, which.lvs][largest.lnorms,],amount=0.2),label = rownames(object$params$theta[, which.lvs][largest.lnorms,]),col = 4,cex = 0.7)
+    }
+    
   }
 }

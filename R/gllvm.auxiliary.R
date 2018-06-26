@@ -1,4 +1,4 @@
-start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, seed = NULL,power=NULL,starting.val="res",formula=NULL, jitter.var=0) {
+start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, seed = NULL,power=NULL,starting.val="res",formula=NULL, jitter.var=0,yXT=NULL) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -41,44 +41,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
   if(family != "tweedie" && family!="ordinal") { ## Using logistic instead of prbit regession here for binomial, but whatever...
     if(starting.val=="res" && is.null(start.lvs) ){# && num.lv>0
       if(is.null(TR)){
-        if(FALSE){
-          fit.mva <- gllvm.VA(y, X = X, TR = NULL, family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="random")
-          #fit.mva=traitglm(data.frame(y),data.frame(X),data.frame(TR),formula=formula(formula),family=family,method="manyglm")
-          coef <- cbind(fit.mva$coef$beta0,fit.mva$coef$Xcoef)
-          
-          fit.mva$phi <- phi <- fit.mva$coef$phi
-          ds.res <- matrix(NA, n, p)
-          rownames(ds.res) <- rownames(y)
-          colnames(ds.res) <- colnames(y)
-          mu <- exp(matrix(cbind(1,X)%*%t(coef),n,p))
-          for (i in 1:n) {
-            for (j in 1:p) {
-              if (family == "poisson") {
-                a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
-                b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
-                u <- runif(n = 1, min = a, max = b)
-                ds.res[i, j] <- qnorm(u)
-              }
-              if (family == "negative.binomial") {
-                phis <- fit.mva$coef$phi + 1e-05
-                a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
-                b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
-                u <- runif(n = 1, min = a, max = b)
-                ds.res[i, j] <- qnorm(u)
-              }
-              if (family == "binomial") {
-                a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
-                b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
-                u <- runif(n = 1, min = a, max = b)
-                ds.res[i, j] <- qnorm(u)
-              }
-            }
-          }
-          resi <- as.matrix(ds.res); resi[is.infinite(resi)]=0
-        }
         if(!is.null(X)) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
         if(is.null(X)) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
-        resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0
+        resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
         coef <- t(fit.mva$coef)
       } else {
         n1 <- colnames(X)
@@ -94,9 +59,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
           }
           formula=form1
         }
-        #fit.mva=traitglm(data.frame(y),data.frame(X),data.frame(TR),formula=formula(form1),family=family,method="glm1path")
-        fit.mva <- gllvm.VA(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="random")
-        #fit.mva=traitglm(data.frame(y),data.frame(X),data.frame(TR),formula=formula(formula),family=family,method="manyglm")
+        fit.mva <- gllvm.VA(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="zero",yXT=yXT)
         if(!is.null(form1)){
           env <- (fit.mva$coef$B)[n1]
           trait <- (fit.mva$coef$B)[n2]
@@ -131,11 +94,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
             }
           }
         }
-        resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0
+        resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
       }
       gamma=NULL
       if(num.lv>0){
         if(p>2 && n>2){
+          if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
+          
           if(n>p){
             fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
             if(inherits(fa,"try-error")) stop("Too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
@@ -1028,5 +993,25 @@ lambda.convert <- function(lambda,type=1) {
   }
 }
 
+inf.criteria <- function(fit) 
+{
+  family=fit$family
+  abund=fit$y
+  num.lv=fit$num.lv
+  n <- dim(abund)[1]
+  #k <- length(fit$params$row.params) + length(fit$params$beta0)+ length(fit$params$B) + length(c(fit$params$Xcoef)) + length(c(fit$params$theta))-(num.lv-1)*num.lv/2
+  #if(object$row.eff=="random") k=k-n+1
+  #if(!is.null(fit$TR)) k<-k+length(c(fit$params$B))
+  #if (family == "negative.binomial") { k <- k + length(fit$params$phi) }
+  #if (family == "ZIP") { k <- k + length(fit$p0) }
+  k<-attributes(logLik(fit))$df
+  
+  BIC <- -2*fit$logL + (k) * log(n)# vai (k-1) * log(n)
+  # AIC
+  AIC <- -2*fit$logL + (k) * 2
+  # AICc
+  AICc <- AIC + 2*k*(k+1)/(n-k-1) 
+  list(BIC = BIC, AIC = AIC, AICc = AICc, prm = k)
+}
 
 

@@ -5,7 +5,8 @@
 \title{Plot latent variables from gllvm model}
 \usage{
 ordiplot.gllvm(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5,
-  main = NULL, which.lvs = c(1, 2), jitter = FALSE, ...)
+  main = NULL, which.lvs = c(1, 2), jitter = FALSE, s.colors = 1,
+  symbols = FALSE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
@@ -21,6 +22,10 @@ ordiplot.gllvm(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5,
 \item{which.lvs}{indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}.}
 
 \item{jitter}{if \code{TRUE}, jittering is applied on points.}
+
+\item{s.colors}{colors for sites}
+
+\item{symbols}{logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used}
 
 \item{...}{additional graphical arguments.}
 }
@@ -39,17 +44,15 @@ is used to control the relative scaling of the latent variables and their coeffi
 If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 }
 \examples{
-\dontrun{
-## Load a dataset from the mvabund package
+#'## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-# Fit gllvm model
-fit <- gllvm(y = y, family = "negative.binomial")
+fit <- gllvm(y, family = "poisson")
 # Ordination plot:
 ordiplot.gllvm(fit)
 # Biplot with 10 species
 ordiplot.gllvm(fit, biplot = TRUE, ind.spp = 10)
-}
+
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui

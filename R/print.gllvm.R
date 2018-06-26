@@ -28,9 +28,10 @@ print.gllvm <- function(x, ...) {
   cat("\n")
   cat("log-likelihood: ",x$logL,"\n")
   if(!is.null(x$params$inv.phi)){ x$params$inv.phi<-NULL; }
+  crit=inf.criteria(x)
   df=attributes(logLik(x))$df
-  if(x$row.eff %in% c("fixed",TRUE) ) df=df-1
   cat("Degrees of freedom: ",df,"\n")
-  cat("AIC: ",AIC(x),"\n")
-  cat("BIC: ",BIC(x),"\n")
+  cat("BIC: ",crit$BIC,"\n")
+  cat("AIC: ",crit$AIC,"\n")
+  cat("AICc: ",crit$AICc,"\n")
 }

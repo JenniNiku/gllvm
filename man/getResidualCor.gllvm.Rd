@@ -22,7 +22,7 @@ fit <- gllvm(y = y, family = "negative.binomial")
 # residual correlations:
 cr <- getResidualCor.gllvm(fit)
 # Plot residual correlations:
-install.packages("corrplot", "gclus")
+#install.packages("corrplot", "gclus")
 library(corrplot)
 library(gclus)
 rbPal <- colorRampPalette(c('darkblue','white','darkred'))

@@ -6,41 +6,51 @@
 
 gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson",method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=TRUE,link="logit",n.init=1,restrict=30,start.params=NULL, optimizer="optim",starting.val="res",Power=1.5,diag.iter=1,Lambda.start=0.1, jitter.var=0) {
   n <- dim(y)[1]; p <- dim(y)[2];
+  tr=NULL
   num.lv <- num.lv
   y <- as.matrix(y)
+  formula1=formula
   if(!is.numeric(y)) stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
   if((family %in% c("tweedie","ZIP")) && method=="VA") stop("family=\"",family,"\" : family not implemented with VA method, change the method to 'LA'")
   if(is.null(rownames(y))) rownames(y) <- paste("Row",1:n,sep="")
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   
+  
   num.X=0;
   if(!is.null(X)){
     if(!is.null(formula)){
       xb=as.matrix(model.matrix(formula,data = data.frame(X)))
-      X=as.matrix(xb[,!(colnames(xb) %in% c("(Intercept)"))])
+      X<-as.matrix(xb[,!(colnames(xb) %in% c("(Intercept)"))])
+      colnames(X)<- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
+      Xd<-X1<-X
+      
       num.X <- dim(X)[2]
     } else {
-      X.new <- NULL
-      num.X <- dim(X)[2];
-      if(is.null(colnames(X)))	colnames(X)=paste("x",1:num.X,sep = "")
-      for (i in 1:num.X) {
-        if(is.factor(X[,i])) {
-          dum <- model.matrix(~X[,i])#-1
-          dum <- dum[,!(colnames(dum) %in% c("(Intercept)"))]
-          colnames(dum)<-paste(names(X)[i],levels(X[,i])[-1],sep="")
-          X.new <- cbind(X.new,dum)
-        } else {
-          X.new <- cbind(X.new,X[,i]); if(!is.null(colnames(X)[i])) colnames(X.new)[dim(X.new)[2]] <- colnames(X)[i]
-        }
-      }
-      X <- data.matrix(X.new);
-      num.X <- dim(X)[2];
+      n1 <- colnames(X)
+      formula=paste("~",n1[1],sep = "")
+      if(length(n1)>1){
+        for(i1 in 2:length(n1)){
+          formula <- paste(formula,n1[i1],sep = "+")
+        }}
+      formula=formula(formula)
+      xb=as.matrix(model.matrix(formula,data = data.frame(X)))
+      X<-as.matrix(xb[,!(colnames(xb) %in% c("(Intercept)"))])
+      num.X <- dim(X)[2]
+      colnames(X)<- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
+      Xd<-X1<-X
+      
+      nxd <- colnames(Xd)
+      formulab <- paste("~",nxd[1],sep = "");
+      for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
+      formula1 <- formulab
     }}
+  if(is.null(formula) && is.null(X)){formula = "~ 1"}
+  
   ## Set initial values for model parameters (including dispersion prm) and latent variables
   if(!is.null(seed)) {set.seed(seed);}
   
   n.i<-1;
-  out <- list(y=y,X=X, logL = Inf)
+  out <- list(y=y,X=X, logL = Inf,X.design=X)
   if(n.init>1) seed<-sample(1:10000,n.init)
   while(n.i<=n.init){
     if(n.init>1 && trace) cat("Initial run ",n.i,"\n");
@@ -151,6 +161,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         timeo<-system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       if(diag.iter>0 && Lambda.struc=="unstructured" && num.lv>1){
+        objr1=objr
+        optr1=optr
         param1=optr$par
         nam=names(param1)
         r1=matrix(param1[nam=="r0"])
@@ -163,7 +175,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         lg_Ar1=(param1[nam=="lg_Ar"])
         if(row.eff=="random"){
           if(num.lv>0){
-            #dyn.load(dynlib("VArandom"))
             objr <- TMB::MakeADFun(
               data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0,random=1), silent=TRUE,
               parameters = list(r0=r1, b = b1,B=matrix(0),lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=lg_Ar1), #log(phi)
@@ -177,7 +188,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
               DLL = "gllvm")
           }
         } else {
-          #dyn.load(dynlib("VAfixed2"))
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0,random=0), silent=TRUE,
             parameters = list(r0=r1, b = b1,B=matrix(0),lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=lg_Ar1), #log(phi)
@@ -190,6 +200,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(optimizer=="optim") {
           timeo<-system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
+        if(inherits(optr, "try-error")){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+        
       }
       
       param<-objr$env$last.par.best
@@ -466,6 +478,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     }})
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
   
+  if(is.null(formula1)){ out$formula=formula} else {out$formula=formula1}
   
   out$logL=-out$logL
   return(out)

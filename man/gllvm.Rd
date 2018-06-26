@@ -39,7 +39,7 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
 \item{diag.iter}{non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5.}
 
-\item{trace}{logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}.}
+\item{trace}{logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 
 \item{plot}{logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
@@ -121,6 +121,9 @@ usually gives reasonably good results.
 
 Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 
+Exception is ordinal family, which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
+With ordinal family response classes must start from 0 or 1.
+
 
 \subsection{Distributions}{
 
@@ -148,19 +151,23 @@ TR <- antTraits$traits
 ## Example 1: Fit model with two latent variables
 # Using variational approximation:
 fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
+fitv0
 ordiplot.gllvm(fitv0)
 plot(fitv0, mfrow = c(2,2))
 summary(fitv0)
 confint(fitv0)
 # Using Laplace approximation: (this line may take about 30 sec to run)
 fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
+plot(fitl0)
 ordiplot.gllvm(fitl0)
 
 # Poisson family:
 fit.p <- gllvm(y, family = "poisson", method = "LA")
+plot(fit.p)
 ordiplot.gllvm(fit.p)
 # Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
+plot(fit.z)
 ordiplot.gllvm(fit.z)
 
 \dontrun{
@@ -187,6 +194,7 @@ datalong <- reshape(data.frame(cbind(y,X)), direction = "long", varying = colnam
 head(datalong)
 fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Feral.mammal.dung,
                family = "negative.binomial")
+coefplot.gllvm(fitvLong)
 
 ## Example 4: Fourth corner model
 # Fit fourth corner model with two latent variables
@@ -210,6 +218,10 @@ ycoral <- ycoral[(colSums(ycoral > 0) > 3)]
 # Fit Tweedie model for coral data (this line may take few minutes to run)
 fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
 ordiplot.gllvm(fit.twe)
+
+## Example 6: Random row effects
+fitRand <- gllvm(y, family = "negative.binomial", row.eff = "random")
+ordiplot.gllvm(fitRand,biplot=TRUE)
 }
 }
 \references{

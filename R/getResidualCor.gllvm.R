@@ -15,7 +15,7 @@
 #'# residual correlations:
 #'cr <- getResidualCor.gllvm(fit)
 #'# Plot residual correlations:
-#'install.packages("corrplot", "gclus")
+#'#install.packages("corrplot", "gclus")
 #'library(corrplot)
 #'library(gclus)
 #'rbPal <- colorRampPalette(c('darkblue','white','darkred'))
@@ -32,9 +32,9 @@ getResidualCor.gllvm = function(object)
 {
   ResCov <- object$params$theta%*%t(object$params$theta)
   if (object$family == "negative.binomial")
-    ResCov <- ResCov + diag(log(object$params$phi+1))
+    ResCov <- ResCov + diag(log(1/object$params$phi+1))
   Res.sd <- 1/sqrt(diag(ResCov))
-  Res.Cor <- diag(Res.sd) %*% ResCov %*% diag(Res.sd)
+  Res.Cor <- diag(Res.sd) %*% ResCov %*% diag(Res.sd)*0.99999
   colnames(Res.Cor) <- colnames(object$y)
   rownames(Res.Cor) <- colnames(object$y)
   out <- list(cor=Res.Cor, cov=ResCov, trace=sum(diag(ResCov)))

@@ -22,7 +22,7 @@
 #' @param Lambda.struc  covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".
 #' @param diag.iter  non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5.
 #' @param Lambda.start starting values for variances in VA distributions for latent variables in variational approximation method. Defaults to 0.1.
-#' @param trace  logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}.
+#' @param trace  logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param reltol  convergence criteria for log-likelihood, defaults to 1e-6.
 #' @param max.iter maximum number of iterations when \code{TMB = FALSE}, defaults to 200.
@@ -58,6 +58,9 @@
 #' usually gives reasonably good results.
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
+#' 
+#' Exception is ordinal family, which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
+#' With ordinal family response classes must start from 0 or 1.
 #'
 #'
 #' \subsection{Distributions}{
@@ -124,19 +127,23 @@
 #'## Example 1: Fit model with two latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
+#'fitv0
 #'ordiplot.gllvm(fitv0)
 #'plot(fitv0, mfrow = c(2,2))
 #'summary(fitv0)
 #'confint(fitv0)
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
+#'plot(fitl0)
 #'ordiplot.gllvm(fitl0)
 #'
 #'# Poisson family:
 #'fit.p <- gllvm(y, family = "poisson", method = "LA")
+#'plot(fit.p)
 #'ordiplot.gllvm(fit.p)
 #'# Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 #'fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
+#'plot(fit.z)
 #'ordiplot.gllvm(fit.z)
 #'
 #' \dontrun{
@@ -163,6 +170,7 @@
 #'head(datalong)
 #'fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Feral.mammal.dung,
 #'                family = "negative.binomial")
+#'coefplot.gllvm(fitvLong)
 #'
 #'## Example 4: Fourth corner model
 #'# Fit fourth corner model with two latent variables
@@ -186,6 +194,10 @@
 #'# Fit Tweedie model for coral data (this line may take few minutes to run)
 #'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
 #'ordiplot.gllvm(fit.twe)
+#'
+#'## Example 6: Random row effects
+#'fitRand <- gllvm(y, family = "negative.binomial", row.eff = "random")
+#'ordiplot.gllvm(fitRand,biplot=TRUE)
 #'}
 #' @export
 #'
@@ -253,7 +265,9 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
     if(p==1) y=as.matrix(y)
   }
   
-  
+  if(row.eff == "random" && family=="ordinal") {
+    stop("Random row effect model is not implemented for ordinal family. \n")
+  }
   if(method == "LA" && family == "ordinal") {
     cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
     method = "VA"
@@ -266,14 +280,19 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
     cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
     TMB=TRUE
   }
-  
   if(method == "VA" && (family == "tweedie" || family == "ZIP")) {
     cat("VA method cannot handle", family," family, so LA method is used instead. \n")
     method = "LA"
   }
   if(p<3 && !is.null(TR)) {
-    stop("Fourth corner model can not be fitted. Number of response variables must be bigger.\n")
+    stop("Fourth corner model can not be fitted with less than three response variables.\n")
   }
+  if(row.eff == "random" && !TMB) {
+    cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
+    TMB=TRUE
+  }
+  
+  
   if(!is.null(start.fit)){
     if(class(start.fit)!="gllvm") stop("Only object of class 'gllvm' can be given as a starting parameters.");
     if(!(family %in% c("poisson","negative.binomial","ZIP"))) stop("Starting parameters can be given only for count data.");
@@ -293,7 +312,7 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
     if(ncol(start.lvs)!=num.lv || nrow(start.lvs)!=n) stop("Given starting value matrix for latent variables has a wrong dimension.");
   }
   n.i<-1;
-  out<-list(y = y, X = X, TR = TR, num.lv = num.lv, method = method, family=family, row.eff = row.eff,n.init=n.init,sd=FALSE,Lambda.struc=Lambda.struc)
+  out<-list(y = y, X = X, TR = TR, num.lv = num.lv, method = method, family=family, row.eff = row.eff,n.init=n.init,sd=FALSE,Lambda.struc=Lambda.struc, TMB=TMB)
   if(family=="binomial"){
     if(method=="LA") out$link=la.link.bin
     if(method=="VA") out$link="probit"
@@ -301,14 +320,16 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
   out$offset <- offset;
   
   if(TMB){
+    trace=FALSE
     if(row.eff==TRUE) row.eff="fixed"
     if(!is.null(TR)){
       fitg <- trait.TMB(y, X = X, TR=TR, formula = formula, num.lv = num.lv, family = family,Lambda.struc=Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed,maxit = maxit, start.lvs = start.lvs, offset=O, sd.errors = sd.errors,trace=trace,link=la.link.bin,n.init=n.init,start.params=start.fit,optimizer=optimizer,starting.val=starting.val,method=method,randomX=randomX,Power=Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
-      out$X = fitg$X; out$TR <- fitg$TR; out$X.design=fitg$X.design
+      out$X = fitg$X; out$TR <- fitg$TR; 
     } else {
       fitg <- gllvm.TMB(y, X = X, formula = formula, num.lv = num.lv, family = family, method = method, Lambda.struc = Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed, maxit = maxit, start.lvs = start.lvs, offset = O, sd.errors = sd.errors, trace = trace, link = la.link.bin, n.init = n.init, restrict = restrict, start.params = start.fit, optimizer = optimizer, starting.val = starting.val, Power = Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
     }
     
+    out$X.design <- fitg$X.design
     out$logL <- fitg$logL
     if(num.lv > 0) out$lvs <- fitg$lvs
     out$X <- fitg$X;
@@ -320,6 +341,7 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
     out$start <- fitg$start
     
   } else {
+    if(row.eff=="fixed") row.eff <- TRUE;
     fitg <- gllvm.VA(y, X = X, TR = TR, family = family, formula = formula, num.lv = num.lv, max.iter = max.iter, eps = reltol, row.eff = row.eff, Lambda.struc = Lambda.struc, trace = trace, plot = plot, sd.errors = sd.errors, start.lvs = start.lvs, offset=O, maxit = maxit, diag.iter = diag.iter, seed=seed,n.init = n.init,restrict=restrict,constrOpt=constrOpt,start.params=start.fit,starting.val=starting.val,Lambda.start=Lambda.start, jitter.var=jitter.var)
     out$logL <- fitg$logLik
     if(num.lv>0) out$lvs <- fitg$lvs
@@ -332,6 +354,7 @@ gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2
   }
   if(family=="negative.binomial") out$params$inv.phi <- 1/out$params$phi
   if(is.infinite(out$logL)) warning("Algorithm converged to infinity, try other starting values or different method.")
+  out$formula <- fitg$formula
   
   out$call <- match.call()
   class(out) <- "gllvm"

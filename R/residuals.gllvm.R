@@ -108,15 +108,16 @@ residuals.gllvm <- function(object, ...) {
         ds.res[i, j] <- qnorm(u)
       }
       if (object$family == "ordinal") {
+        
         probK <- NULL
-        probK[1] <- pnorm(object$params$zeta[j,1]-eta.mat[i,j],log=FALSE)
-        probK[max(y[,j])] <- 1 - pnorm(object$params$zeta[j,max(y[,j]) - 1] - eta.mat[i,j])
+        probK[1] <- pnorm(object$params$zeta[j,1]-eta.mat[i,j],log.p=FALSE)
+        probK[max(y[,j])+1-min(y[,j])] <- 1 - pnorm(object$params$zeta[j,max(y[,j]) - min(y[,j])] - eta.mat[i,j])
         if(max(y[,j]) > 2) {
-          j.levels <- 2:(max(y[,j])-1)
+          j.levels <- 2:(max(y[,j])-min(y[,j]))#
           for(k in j.levels) { probK[k] <- pnorm(object$params$zeta[j,k] - eta.mat[i,j]) - pnorm(object$params$zeta[j,k - 1] - eta.mat[i,j]) }
         }
         probK <- c(0,probK)
-        cumsum.b <- sum(probK[1:(y[i,j]+1)])
+        cumsum.b <- sum(probK[1:(y[i,j]+2-min(y[,j]))])
         cumsum.a <- sum(probK[1:(y[i,j])])
         u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
         if (abs(u - 1) < 1e-05)
