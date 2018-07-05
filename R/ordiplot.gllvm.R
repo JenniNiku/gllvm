@@ -36,9 +36,19 @@
 #'ordiplot.gllvm(fit, biplot = TRUE, ind.spp = 10)
 #'
 #'@export
+ordiplot <- function(object, ...)
+{
+  UseMethod(generic="ordiplot")
+}
 
+#'@export ordiplot.gllvm
+ordiplot.gllvm <- function(...)
+{
+  ordiplot.default(...)
+}
 
-ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE, s.colors=1, symbols=FALSE,...) {
+#'@export ordiplot.default
+ordiplot.default <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE, s.colors=1, symbols=FALSE,...) {
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   
@@ -91,3 +101,4 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
   }
 }
+

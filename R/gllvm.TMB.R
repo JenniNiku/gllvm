@@ -438,7 +438,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         D.mat=-sdr[incld,incld] # d x d
         B.mat=-sdr[incl,incld] # a x d
         cov.mat.mod <- MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))
-        #cov.mat.mod <- MASS::ginv(A.mat)
         se<- sqrt(diag(abs(cov.mat.mod)))
       }
       

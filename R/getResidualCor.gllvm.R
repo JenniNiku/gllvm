@@ -26,10 +26,19 @@
 #'   type = "lower", method = "square", tl.cex = 0.8, tl.srt = 45, tl.col = "red")
 #'   }
 #'@export
-#'
+getResidualCor <- function(object, ...)
+{
+  UseMethod(generic="getResidualCor")
+}
 
+#'@export getResidualCor.gllvm
+getResidualCor.gllvm <- function(...)
+{
+  getResidualCor.default(...)
+}
 
-getResidualCor.gllvm = function(object)
+#'@export getResidualCor.default
+getResidualCor.default = function(object)
 {
   ResCov <- object$params$theta%*%t(object$params$theta)
   if (object$family == "negative.binomial")
