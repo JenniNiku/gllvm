@@ -4,21 +4,19 @@
 \alias{anova.gllvm}
 \title{Analysis Of Deviance for gllvm}
 \usage{
-\method{anova}{gllvm}(object, ..., test = "LR")
+\method{anova}{gllvm}(object, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{...}{one or more objects of class 'gllvm'}
-
-\item{test}{only option "LR", likelihood-ratio test, is available}
 }
 \description{
 Compute an analysis of deviance table for two or more generalized linear latent variable model fits.
 }
 \details{
-Computes likelihood-ratio test for two or more gllvm models. 
-Test results makes sense only for nested models. 
+Computes likelihood-ratio test for two or more gllvm models.
+Test results makes sense only for nested models.
 Notice also that this test was not designed for tests which have df difference larger than 20,
 so for those tests the P-value should be treated as very approximate.
 }

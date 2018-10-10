@@ -15,9 +15,9 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 \arguments{
 \item{y}{(n x m) matrix of responses.}
 
-\item{X}{matrix of environmental covariates.}
+\item{X}{matrix or data.frame of environmental covariates.}
 
-\item{TR}{matrix of trait covariates.}
+\item{TR}{matrix or data.frame of trait covariates.}
 
 \item{data}{data in long format, that is, matrix of responses, environmental and trait covariates and row index named as ’id’. When used, model needs to be defined using formula. This is alternative data input for y, X and TR.}
 
@@ -124,7 +124,6 @@ Models are implemented using TMB (Kristensen et al., 2015) applied to variationa
 An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 With ordinal family response classes must start from 0 or 1.
 
-
 \subsection{Distributions}{
 
   Mean and variance for distributions are defined as follows.
@@ -150,44 +149,44 @@ TR <- antTraits$traits
 # Fit model with environmental covariates Bare.ground and Shrub.cover
 fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
             family = "poisson")
-ordiplot.gllvm(fit)
-coefplot.gllvm(fit)
+ordiplot(fit)
+coefplot(fit)
 
 \donttest{
 ## Example 1: Fit model with two latent variables
 # Using variational approximation:
 fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
-ordiplot.gllvm(fitv0)
+ordiplot(fitv0)
 plot(fitv0, mfrow = c(2,2))
 summary(fitv0)
 confint(fitv0)
 # Using Laplace approximation: (this line may take about 30 sec to run)
 fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
-ordiplot.gllvm(fitl0)
+ordiplot(fitl0)
 
 # Poisson family:
 fit.p <- gllvm(y, family = "poisson", method = "LA")
-ordiplot.gllvm(fit.p)
+ordiplot(fit.p)
 # Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
-ordiplot.gllvm(fit.z)
+ordiplot(fit.z)
 
 
 ## Example 2: gllvm with environmental variables
 # Fit model with two latent variables and all environmental covariates,
 fitvX <- gllvm(formula = y ~ X, family = "negative.binomial")
-ordiplot.gllvm(fitvX, biplot = TRUE)
-coefplot.gllvm(fitvX)
+ordiplot(fitvX, biplot = TRUE)
+coefplot(fitvX)
 # Fit model with environmental covariates Bare.ground and Shrub.cover
 fitvX2 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
  family = "negative.binomial")
-ordiplot.gllvm(fitvX2)
-coefplot.gllvm(fitvX2)
+ordiplot(fitvX2)
+coefplot(fitvX2)
 # Use 5 initial runs and pick the best one
 fitvX_5 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
  family = "negative.binomial", n.init = 5, jitter.var = 0.1)
-ordiplot.gllvm(fitvX_5)
-coefplot.gllvm(fitvX_5)
+ordiplot(fitvX_5)
+coefplot(fitvX_5)
 
 ## Example 3: Data in long format
 # Reshape data to long format:
@@ -200,29 +199,39 @@ fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Shrub.cover,
 ## Example 4: Fourth corner model
 # Fit fourth corner model with two latent variables
 fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-coefplot.gllvm(fitF1)
+coefplot(fitF1)
+# Fourth corner can be plotted also with next lines
+#fourth = fitF1$fourth.corner
+#library(lattice)
+#a = max( abs(fourth) )
+#colort = colorRampPalette(c("blue","white","red"))
+#plot.4th = levelplot(t(as.matrix(fourth)), xlab="Environmental Variables",
+#                     ylab="Species traits", col.regions=colort(100), at=seq(-a, a, length=100),
+#                     scales = list( x= list(rot = 45)))
+#print(plot.4th)
+
 # Specify model using formula
 fitF2 <- gllvm(y = y, X = X, TR = TR,
  formula = ~ Bare.ground + Canopy.cover*(Pilosity + Webers.length),
  family = "negative.binomial")
-ordiplot.gllvm(fitF2)
-coefplot.gllvm(fitF2)
+ordiplot(fitF2)
+coefplot(fitF2)
 
 ## Example 5: Fit Tweedie model
 # Load coral data
 data(tikus)
 ycoral <- tikus$abund
 # Let's consider only years 1981 and 1983
-ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0,]
+ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0, ]
 # Exclude species which have observed at less than 4 sites
 ycoral <- ycoral[(colSums(ycoral > 0) > 3)]
 # Fit Tweedie model for coral data (this line may take few minutes to run)
 fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
-ordiplot.gllvm(fit.twe)
+ordiplot(fit.twe)
 
 ## Example 6: Random row effects
 fitRand <- gllvm(y, family = "negative.binomial", row.eff = "random")
-ordiplot.gllvm(fitRand,biplot=TRUE)
+ordiplot(fitRand, biplot = TRUE)
 }
 }
 \references{
@@ -234,14 +243,14 @@ Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015
 
 Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).  Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
 
-Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., Bell, B. (2015). Template model builder TMB. Journal of statistical software, 70:1-21.
+Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21.
 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
 
 Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }
 \seealso{
-\code{\link{ordiplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
+\code{\link{coefplot.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{ordiplot.gllvm}}, \code{\link{plot.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{summary.gllvm}}.
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton

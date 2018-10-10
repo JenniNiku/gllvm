@@ -4,19 +4,27 @@
 \alias{plot.gllvm}
 \title{Plot Diagnostics for an gllvm Object}
 \usage{
-\method{plot}{gllvm}(x, which = 1:4,
+\method{plot}{gllvm}(x, which = 1:5,
   caption = c("Residuals vs linear predictors", "Normal Q-Q",
-  "Residuals vs row index", "Residuals vs column index"), var.colors = NULL,
-  ...)
+  "Residuals vs row index", "Residuals vs column index", "Scale-Location"),
+  var.colors = NULL, panel = if (add.smooth) panel.smooth else points,
+  add.smooth = if (!is.null(getOption("add.smooth"))) {    
+  getOption("add.smooth") } else TRUE, envelopes = TRUE, ...)
 }
 \arguments{
 \item{x}{an object of class 'gllvm'.}
 
-\item{which}{if a subset of the plots is required, specify a subset of the numbers 1:4, see caption below.}
+\item{which}{if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below.}
 
 \item{caption}{captions to appear above the plots.}
 
 \item{var.colors}{colors for responses, vector with length of number of response variables or 1. Defaults to NULL, when different responses have different colors.}
+
+\item{panel}{panel function}
+
+\item{add.smooth}{logical indicating if a smoother should be added to most plots; see also panel above.}
+
+\item{envelopes}{logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}}
 
 \item{...}{additional graphical arguments.}
 }

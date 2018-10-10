@@ -7,11 +7,12 @@
 
 trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-5, seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=TRUE,link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1,Lambda.start=0.1, jitter.var=0) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
-  
+
+  term=NULL
   n<-dim(y)[1]; p<-dim(y)[2];
   y <- as.data.frame(y)
   formula1=formula
-  
+
   # change categorical variables to dummy variables
   num.X <- 0
   if(!is.null(X)) {
@@ -38,8 +39,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     Br <- matrix(0,ncol(xb),p)
     sigmaB <- diag(ncol(xb))
   }
-  
-  
+
+
   num.T <- 0
   if(!is.null(TR)) {
     num.T <- dim(TR)[2]
@@ -56,8 +57,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     }
     T.new <- data.matrix(T.new);
   }
-  
-  
+
+
   if(is.null(formula)){
     n1 <- colnames(X)
     n2 <- colnames(TR)
@@ -68,24 +69,27 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       }}
     formula=paste(formula,")*(",sep = "")
     formula=paste(formula,n2[1],sep = "")
-    
+
     if(length(n2)>1){
-      for(i2 in 1:length(n2)){
+      for(i2 in 2:length(n2)){
         formula <- paste(formula,n2[i2],sep = "+")
       }}
     formula1=paste(formula,")",sep = "")
     formula=formula(formula1)
   }
-  
+
   if(!is.null(X) || !is.null(TR)){
     yX <- reshape(data.frame(cbind(y,X)),direction = "long", varying = colnames(y),v.names = "y")
     TR2<-data.frame(time=1:p,TR)
     yXT <- merge(yX,TR2,by="time")
     data <- yXT
-    
+
+    m1<-model.frame(formula,data = data)
+    term<-terms(m1)
+
     Xd <- as.matrix(model.matrix(formula,data = data))
     Xd <- as.matrix(Xd[,!(colnames(Xd) %in% c("(Intercept)"))])
-    X <- Xd[data$time==1,]; X1=as.matrix(X.new[,colnames(X.new) %in% colnames(Xd)]); 
+    X <- Xd[data$time==1,]; X1=as.matrix(X.new[,colnames(X.new) %in% colnames(Xd)]);
     TR <- Xd[data$id==1,]; TR1=as.matrix(T.new[,colnames(T.new) %in% colnames(Xd)]);
     colnames(X1) <- colnames(X.new)[colnames(X.new) %in% colnames(Xd)]; colnames(TR1)=colnames(T.new)[colnames(T.new) %in% colnames(Xd)];
     nxd <- colnames(Xd)
@@ -93,35 +97,35 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
     formula1 <- formulab
   }
-  
-  
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal")))
+
+
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
   if(num.lv == 1) Lambda.struc <- "diagonal" ## Prevents it going to "unstructured" loops and causing chaos
   trial.size <- 1
-  
+
   y <- as.matrix(y)
   if(!is.numeric(y)) stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
-  
+
   if(is.null(rownames(y))) rownames(y) <- paste("Row",1:n,sep="")
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
-  
-  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd)
+
+  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term)
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
-  
+
   n.i<-1;
   if(n.init>1) seed <- sample(1:10000,n.init)
   while(n.i<=n.init){
-    
+
     num.X <- dim(X)[2]
     num.T <- dim(TR)[2]
-    
+
     if(n.init>1 && trace) cat("initial run ",n.i,"\n");
     #offset=NULL
-    res <- start.values.gllvm.TMB(y = y, X = X, TR = TR, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,formula = formula, jitter.var=jitter.var,yXT=yXT)
+    res <- start.values.gllvm.TMB(y = y, X = X, TR = TR, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,power=Power,formula = formula, jitter.var=jitter.var,yXT=yXT)
     if(is.null(start.params)){
       beta0 <- res$params[,1]
       # common env params or different env response for each spp
@@ -141,7 +145,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         res$row.params<-row.params
       }#rep(0,n)
       vameans <- theta <- lambda <- NULL
-      
+
       if(num.lv > 0) {
         vameans <- res$index
         theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])#fts$coef$theta#
@@ -165,7 +169,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         }
         fourth<-inter <- NULL; if(!is.null(TR) ) inter <- start.params$params$fourth   # let's treat this as a vector (vec(B'))'
         vameans <- theta <- lambda <- NULL
-        
+
         if(num.lv > 0) theta<- c(start.params$params$theta) ## LV coefficients
         if(row.eff) row.params <- start.params$params$row.params ## row parameters
         if(num.lv > 0) { vameans <- matrix(start.params$lvs, ncol = num.lv);
@@ -173,18 +177,21 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other.");}
     }
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
-    
-    phi <- NULL; if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>10]=10; if(any(phis<0.10))phis[phis<0.10]=0.10; phi <- 1/phis }
+
+    phi <- phis <- NULL; if(family == "negative.binomial") {phis <- 1/res$phi; if(any(phis>10))phis[phis>10]=10; if(any(phis<0.10))phis[phis<0.10]=0.10;}# && phi.upd=="inv.phi"
+    if(family == "tweedie") {phis <- res$phi; if(any(phis>10))phis[phis>10]=10; if(any(phis<0.10))phis[phis<0.10]=0.10; phis= (phis)}
+    if (family == "ZIP") {phis <- (colMeans(y==0)*0.98)+0.01; phis<-phis/(1-phis)} # ZIP probability
+
     q=num.lv
-    
+
     if(!is.null(row.params)){ r0=row.params} else {r0=rep(0,n)}
     a=c(beta0)
     if(num.lv > 0) theta=theta[lower.tri(theta,diag = TRUE)]
     if(num.lv > 0) u=vameans
-    if(!is.null(phi)) {phi=(phi)} else {phi=rep(1,p)}
+    if(!is.null(phi)) {phi=(phis)} else {phi=rep(1,p)}
     q = num.lv
     sigma=1
-    
+
     if(num.lv>0){
       if(is.null(start.params) || start.params$method!="VA"){
         if(Lambda.struc=="diagonal" || diag.iter>0){
@@ -203,25 +210,30 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         }
       }} else { Au=0}
     if(length(Lambda.start)<2){ Ar=rep(1,n)} else {Ar=rep(Lambda.start[2],n)}
-    
-    
+
+
     optr<-NULL
     timeo<-NULL
     se=NULL
-    
-    
+
+
     if(row.eff==FALSE){xr=matrix(0,1,p)} else {xr=matrix(1,1,p)}
     #if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
     extra=0
     if(family == "poisson") { familyn=0}
     if(family == "negative.binomial") { familyn=1}
-    if(family == "binomial") { familyn=2}
-    
-    
+    if(family == "binomial") {
+      familyn=2;
+      if(link=="probit") extra=1
+    }
+    if(family=="tweedie"){ familyn=3; extra=Power}
+    if(family=="ZIP"){ familyn=4;}
+
+
     if(row.eff=="random"){# || !is.null(randomX)
-      
+
       if(num.lv>0){
-        
+
         if(method=="VA"){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
@@ -249,9 +261,9 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             random = c("r0"), DLL = "gllvm")
         }
-        
+
       }
-      
+
       #if(num.lv>0){
       # #compile("LAtraitsrandomb.cpp")
       # #dyn.load(dynlib("LAtraitsrandomb"))
@@ -268,7 +280,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       #  inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
       #  random = c("Br"), DLL = "LAtraitsrandomb0")
       #}
-      
+
     } else {
       if(num.lv>0) {
         if(method=="VA"){
@@ -291,16 +303,17 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
           DLL = "gllvm")
       }
-      
+
     }
-    
+
     if(optimizer=="nlminb") {
       timeo<-system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,maxit=maxit)),silent = TRUE))
     }
     if(optimizer=="optim") {
       timeo<-system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
     }
-    
+    if(inherits(optr,"try-error")) warning(optr[1]);
+
     if(diag.iter>0 && Lambda.struc=="unstructured" && method =="VA" && (num.lv>0 || row.eff=="random") && is.null(randomX)){
       objr1=objr
       optr1=optr
@@ -313,13 +326,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       u1=matrix(param1[nam=="u"],n,num.lv)
       lg_phi1=param1[nam=="lg_phi"]
       lg_sigma1=param1[nam=="log_sigma"]
-      
+
       Au1=c(param1[nam=="Au"],rep(0,num.lv*(num.lv-1)/2*n))
       Ar1=c(param1[nam=="lg_Ar"])
-      
-      
+
+
       if(row.eff=="random"){# || !is.null(randomX)
-        
+
         if(num.lv>0){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
@@ -329,12 +342,12 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=TRUE,
-            parameters = list(r0=r1, b = b1,B=B1,lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=0,lg_Ar=Ar1), 
+            parameters = list(r0=r1, b = b1,B=B1,lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=0,lg_Ar=Ar1),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             DLL = "gllvm")
-          
+
         }
-        
+
       } else {
         objr <- TMB::MakeADFun(
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
@@ -342,7 +355,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           inner.control=list(mgcmax = 1e+200,maxit = 1000),
           DLL = "gllvm")
       }
-      
+
       if(optimizer=="nlminb") {
         timeo<-system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
       }
@@ -350,11 +363,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         timeo<-system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       if(inherits(optr, "try-error")){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
-      
+
     }
-    
+
     param<-objr$env$last.par.best
-    if(family =="negative.binomial") {
+    if(family %in% c("negative.binomial","tweedie")) {
       phis=exp(param[names(param)=="lg_phi"])
     }
     if(family=="ZIP") {
@@ -387,7 +400,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       }
       sigmaB_=solve(sqrt(D))%*%(t(L)%*%L)%*%solve(sqrt(D))
       sigmaB=sigmaB%*%sigmaB_%*%t(sigmaB)
-      
+
     }
     beta0=param[bi]
     B=param[Bi]
@@ -397,8 +410,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       theta[lower.tri(theta,diag = TRUE)] <- param[li];
     }
     new.loglik<-objr$env$value.best[1]
-    
-    
+
+
     if((n.i==1 || out$logL > abs(new.loglik)) && !inherits(optr, "try-error") && new.loglik>0){
       objr1=objr;optr1=optr;
       out$logL <- new.loglik
@@ -411,7 +424,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       }
       names(beta0) <- colnames(out$y); out$params$beta0 <- beta0;
       out$params$B <- B; names(out$params$B)=colnames(Xd)
-      
+
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ out$params$sigma=sigma; names(out$params$sigma)="sigma"}
         out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)
@@ -432,8 +445,9 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       out$row.eff=row.eff
       out$time=timeo
       out$start<-res
+      out$Power=Power
       pars=optr$par
-      
+
       if(method=="VA" && num.lv>0){
         param<-objr$env$last.par.best
         Au=param[names(param)=="Au"]
@@ -462,27 +476,27 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         }
         out$A=A
       }
-      
+
       if(method=="VA" && row.eff=="random"){
         Ar=exp(param[names(param)=="lg_Ar"])
         out$Ar=Ar
       }
     }
-    
-    
-    
+
+
+
     tr<-try({
       if(sd.errors) {
         if(trace) cat("Calculating standard errors for parameters...\n")
-        
+
         sdr <- optimHess(pars, objr$fn, objr$gr,control = list(reltol=reltol,maxit=maxit))
-        
+
         m<-dim(sdr)[1]; incl=rep(TRUE,m); incld=rep(FALSE,m)
         incl[names(objr$par)=="lg_Ar"]=FALSE;
         if(row.eff!="random") {incl[names(objr$par)=="log_sigma"]=FALSE}
-        
+
         incl[names(objr$par)=="Au"]=FALSE; if(num.lv>0) incld[names(objr$par)=="Au"]=TRUE
-        
+
         if(row.eff=="random") {
           incl[names(objr$par)=="lg_Ar"]=FALSE; incld[names(objr$par)=="lg_Ar"]=TRUE
           incl[names(objr$par)=="r0"]=FALSE; incld[names(objr$par)=="r0"]=TRUE
@@ -498,7 +512,25 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         }
         if(method=="LA" || (num.lv==0 && row.eff!="random")){
           incl[names(objr$par)=="Au"]=FALSE;
-          se<- try(sqrt(diag(abs(MASS::ginv(-sdr[incl,incl])))))
+
+          covM<- try(MASS::ginv(sdr[incl,incl]))
+          se<- try(sqrt(diag(abs(covM))))
+          if(num.lv>0 || row.eff=="random" || !is.null(randomX)){
+            sd.random <- abs(sdrandom(objr, covM, incl))
+            prediction.errors=list()
+            if(row.eff=="random"){
+              prediction.errors$row.params=sd.random[1:n];
+              sd.random<-sd.random[-(1:n)]
+            }
+            if(num.lv>0){
+              prediction.errors$lvs=matrix(sd.random[1:(n*num.lv)],n,num.lv);
+              sd.random<-sd.random[-(1:(n*num.lv))]
+            }
+            if(!is.null(randomX)){
+              prediction.errors$random = matrix(sd.random[1:(length(Br))],n,num.lv);
+            }
+            out$prediction.errors = prediction.errors
+          }
         } else {
           A.mat=-sdr[incl,incl] # a x a
           D.mat=-sdr[incld,incld] # d x d
@@ -506,7 +538,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           cov.mat.mod <- MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))
           se<- sqrt(diag(abs(cov.mat.mod)))
         }
-        
+
         if(row.eff=="fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params)  = rownames(out$y); se <- se[-(1:(n-1))] }
         se.beta0 <- se[1:p]; se<-se[-(1:p)];
         #if(!is.null(X)){ out$sd$Xcoef <- as.matrix(sebetaM[,-1]);
@@ -521,7 +553,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         out$sd$beta0=se.beta0; names(out$sd$beta0)  = colnames(out$y);
         out$sd$B=se.B; names(out$sd$B)  = colnames(Xd)
         if(row.eff=="fixed") {out$sd$row.params=se.row.params}
-        
+
         if(family %in% c("negative.binomial","tweedie")) {
           se.lphis=se[1:p];  out$sd$inv.phi=se.lphis*out$params$inv.phi;
           #out$sd$lphi=se.lphis; out$params$lphi=log(out$params$phi)
@@ -538,15 +570,15 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           nr=ncol(xb)
           out$sd$sigmaB <- se*c(diag(out$params$sigmaB), rep(1,nr*(nr-1)/2 ) )
         }
-        
+
       }})
-    
+
     n.i <- n.i+1;
   }
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
-  
+
   if(is.null(formula1)){ out$formula=formula} else {out$formula=formula1}
-  
+
   out$D=Xd
   out$logL=-out$logL
   return(out)

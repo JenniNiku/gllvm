@@ -3,8 +3,8 @@
 #' approximation method.
 #'
 #' @param y (n x m) matrix of responses.
-#' @param X matrix of environmental covariates.
-#' @param TR matrix of trait covariates.
+#' @param X matrix or data.frame of environmental covariates.
+#' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as ’id’. When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
@@ -58,10 +58,9 @@
 #' usually gives reasonably good results.
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
-#' 
+#'
 #' An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 #' With ordinal family response classes must start from 0 or 1.
-#'
 #'
 #' \subsection{Distributions}{
 #'
@@ -110,13 +109,13 @@
 #'
 #' Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).  Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
 #'
-#' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., Bell, B. (2015). Template model builder TMB. Journal of statistical software, 70:1-21.
+#' Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21.
 #'
 #' Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
 #'
 #' Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 #'
-#'@seealso \code{\link{ordiplot.gllvm}}, \code{\link{summary.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{coefplot.gllvm}}.
+#'@seealso  \code{\link{coefplot.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{ordiplot.gllvm}}, \code{\link{plot.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{summary.gllvm}}.
 #' @examples
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
@@ -126,44 +125,44 @@
 #'# Fit model with environmental covariates Bare.ground and Shrub.cover
 #'fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'             family = "poisson")
-#'ordiplot.gllvm(fit)
-#'coefplot.gllvm(fit)
+#'ordiplot(fit)
+#'coefplot(fit)
 #'
 #' \donttest{
 #'## Example 1: Fit model with two latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
-#'ordiplot.gllvm(fitv0)
+#'ordiplot(fitv0)
 #'plot(fitv0, mfrow = c(2,2))
 #'summary(fitv0)
 #'confint(fitv0)
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
-#'ordiplot.gllvm(fitl0)
+#'ordiplot(fitl0)
 #'
 #'# Poisson family:
 #'fit.p <- gllvm(y, family = "poisson", method = "LA")
-#'ordiplot.gllvm(fit.p)
+#'ordiplot(fit.p)
 #'# Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 #'fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
-#'ordiplot.gllvm(fit.z)
+#'ordiplot(fit.z)
 #'
 #'
 #'## Example 2: gllvm with environmental variables
 #'# Fit model with two latent variables and all environmental covariates,
 #'fitvX <- gllvm(formula = y ~ X, family = "negative.binomial")
-#'ordiplot.gllvm(fitvX, biplot = TRUE)
-#'coefplot.gllvm(fitvX)
+#'ordiplot(fitvX, biplot = TRUE)
+#'coefplot(fitvX)
 #'# Fit model with environmental covariates Bare.ground and Shrub.cover
 #'fitvX2 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial")
-#'ordiplot.gllvm(fitvX2)
-#'coefplot.gllvm(fitvX2)
+#'ordiplot(fitvX2)
+#'coefplot(fitvX2)
 #'# Use 5 initial runs and pick the best one
 #'fitvX_5 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial", n.init = 5, jitter.var = 0.1)
-#'ordiplot.gllvm(fitvX_5)
-#'coefplot.gllvm(fitvX_5)
+#'ordiplot(fitvX_5)
+#'coefplot(fitvX_5)
 #'
 #'## Example 3: Data in long format
 #'# Reshape data to long format:
@@ -176,192 +175,392 @@
 #'## Example 4: Fourth corner model
 #'# Fit fourth corner model with two latent variables
 #'fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-#'coefplot.gllvm(fitF1)
+#'coefplot(fitF1)
+#'# Fourth corner can be plotted also with next lines
+#'#fourth = fitF1$fourth.corner
+#'#library(lattice)
+#'#a = max( abs(fourth) )
+#'#colort = colorRampPalette(c("blue","white","red"))
+#'#plot.4th = levelplot(t(as.matrix(fourth)), xlab="Environmental Variables",
+#'#                     ylab="Species traits", col.regions=colort(100), at=seq(-a, a, length=100),
+#'#                     scales = list( x= list(rot = 45)))
+#'#print(plot.4th)
+#'
 #'# Specify model using formula
 #'fitF2 <- gllvm(y = y, X = X, TR = TR,
 #'  formula = ~ Bare.ground + Canopy.cover*(Pilosity + Webers.length),
 #'  family = "negative.binomial")
-#'ordiplot.gllvm(fitF2)
-#'coefplot.gllvm(fitF2)
+#'ordiplot(fitF2)
+#'coefplot(fitF2)
 #'
 #'## Example 5: Fit Tweedie model
 #'# Load coral data
 #'data(tikus)
 #'ycoral <- tikus$abund
 #'# Let's consider only years 1981 and 1983
-#'ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0,]
+#'ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0, ]
 #'# Exclude species which have observed at less than 4 sites
 #'ycoral <- ycoral[(colSums(ycoral > 0) > 3)]
 #'# Fit Tweedie model for coral data (this line may take few minutes to run)
 #'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
-#'ordiplot.gllvm(fit.twe)
+#'ordiplot(fit.twe)
 #'
 #'## Example 6: Random row effects
 #'fitRand <- gllvm(y, family = "negative.binomial", row.eff = "random")
-#'ordiplot.gllvm(fitRand,biplot=TRUE)
+#'ordiplot(fitRand, biplot = TRUE)
 #'}
 #' @export
 #'
-#'@useDynLib gllvm
+#'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
-#'@importFrom graphics abline axis par plot segments text points
+#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines
 #'@importFrom grDevices rainbow
-#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq
-#'@importFrom Matrix bdiag
+#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq formula ppoints quantile qchisq
+#'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mvtnorm rmvnorm
 
-gllvm<-function(y=NULL, X = NULL, TR = NULL, data=NULL, formula=NULL, num.lv = 2, family, method = "VA", row.eff = FALSE, offset=NULL, sd.errors = TRUE, Lambda.struc = "unstructured", diag.iter = 5, trace = FALSE, plot = FALSE,la.link.bin="logit",n.init=1,Power=1.5, reltol = 1e-6, seed = NULL, max.iter = 200, maxit = 1000, start.fit=NULL, starting.val="res",TMB=TRUE,optimizer="optim",Lambda.start=0.1, jitter.var=0){
-  constrOpt <- FALSE; restrict <- 30; randomX <- NULL
-  if(!is.null(data)){
-    if(is.null(formula)) stop("Define formula when 'data' attribute is used.")
-    if("id" %in% colnames(data)){
-      id <- data[,"id"]; n <- max(id); p <- dim(data)[1]/n
-    } else {n=NROW(data); p=1; id=1:n}
-    frame1 <- model.frame(formula,data = data)
-    y <- model.extract(frame1, "response"); y <- matrix(y,n,p); colnames(y) <- paste("y",1:p,sep = "")
-    term <- terms(frame1)
-    X <- TR <- NULL
-    if(length(attr(term, "term.labels"))>0){
-      datax=(frame1[,attr(term, "term.labels")[attr(term, "order")==1]]); colnames(datax)=attr(term, "term.labels")[attr(term, "order")==1]
-      
-      for(k in 1:ncol(datax)){
-        lngth <- NULL
-        namek <- colnames(datax)[k]
-        for(i in 1:n){
-          lngth <- c(lngth,length(unique(datax[(id==i),k])))
-        }
-        if(max(lngth)==1){
-          if(!is.null(X)) X <- data.frame(X,datax[1:n,k]) else X <- data.frame(datax[1:n,k]);
-          colnames(X)[ncol(X)] <- namek
+gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, num.lv = 2, family, method = "VA", row.eff = FALSE, offset = NULL, sd.errors = TRUE, Lambda.struc = "unstructured", diag.iter = 5, trace = FALSE, plot = FALSE, la.link.bin = "logit", n.init = 1, Power = 1.5, reltol = 1e-6, seed = NULL, max.iter = 200, maxit = 1000, start.fit = NULL, starting.val = "res", TMB = TRUE, optimizer = "optim", Lambda.start = 0.1, jitter.var = 0) {
+    constrOpt <- FALSE
+    restrict <- 30
+    randomX <- NULL
+    term <- NULL
+    datayx <- NULL
+
+    if (!is.null(y)) {
+      y <- as.matrix(y)
+      if (is.null(X) && is.null(TR)) {
+        datayx <- list(y)
+        m1 <- model.frame(y ~ NULL, data = datayx)
+        term <- terms(m1)
+      } else if (is.null(TR)) {
+        if (is.null(formula)) {
+          ff <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
+          if (is.data.frame(X)) {
+            datayx <- list(y = y, X = model.matrix(ff, X))
+          } else {
+            datayx <- list(y = y, X = X)
+          }
+          m1 <- model.frame(y ~ X, data = datayx)
+          term <- terms(m1)
         } else {
-          if(!is.null(TR)) TR <- data.frame(TR,datax[id==1,k]) else TR <- data.frame(datax[id==1,k]);
-          colnames(TR)[ncol(TR)] <- namek
+          datayx <- data.frame(y, X)
+          m1 <- model.frame(formula, data = datayx)
+        }
+        term <- terms(m1)
+      } else {
+        term <- NULL
+      }
+      p <- NCOL(y)
+      n <- NROW(y)
+      if (p == 1)
+        y <- as.matrix(y)
+    } else {
+      if (!is.null(data)) {
+        if (is.null(formula))
+          stop("Define formula when 'data' attribute is used.")
+        if ("id" %in% colnames(data)) {
+          id <- data[, "id"]
+          n <- max(id)
+          p <- dim(data)[1] / n
+        } else {
+          n <- NROW(data)
+          p <- 1
+          id <- 1:n
+        }
+      }
+
+      cl <- match.call()
+      mf <- match.call(expand.dots = FALSE)
+      m <- match(c("formula", "data", "na.action"), names(mf), 0)
+      mf <- mf[c(1, m)]
+      mf$drop.unused.levels <- TRUE
+      mf[[1]] <- as.name("model.frame")
+      mf <- eval(mf, parent.frame())
+      term <- attr(mf, "terms")
+      abundances <- model.response(mf, "numeric")
+      if (any(is.na(abundances)))
+        stop("There are NA values in the response.")
+      y <- abundances
+      #
+      X <- model.matrix(term, mf)
+
+      atr <- c(attr(X, "assign"))
+      if (sum(atr) > 0) {
+        X <- X[, (atr > 0) * 1:ncol(X)]
+      } else{
+        X <- NULL
+      }
+      datayx <- data.frame(y, X)
+
+      if (NCOL(y) == 1 &&
+          !is.null(data)) {
+        y <- matrix(y, n, p)
+        colnames(y) <- paste("y", 1:p, sep = "")
+      }
+
+      if (!is.null(data)) {
+        frame1 <- mf
+        X <- TR <- NULL
+        if (length(attr(term, "term.labels")) > 0) {
+          datax <- frame1[, attr(term, "term.labels")[attr(term, "order") == 1]]
+          colnames(datax) <- attr(term, "term.labels")[attr(term, "order") == 1]
+
+          for (k in 1:ncol(datax)) {
+            lngth <- NULL
+            namek <- colnames(datax)[k]
+            for (i in 1:n) {
+              lngth <- c(lngth, length(unique(datax[(id == i), k])))
+            }
+            if (max(lngth) == 1) {
+              if (!is.null(X))
+                X <- data.frame(X, datax[1:n, k])
+              else
+                X <- data.frame(datax[1:n, k])
+
+              colnames(X)[ncol(X)] <- namek
+            } else {
+              if (!is.null(TR)){
+                TR <- data.frame(TR, datax[id == 1, k])
+              } else{
+                TR <- data.frame(datax[id == 1, k])
+                }
+              colnames(TR)[ncol(TR)] <- namek
+            }
+          }
         }
       }
     }
-  } else if(!is.null(y)){
-    p=NCOL(y)
-    n=NROW(y)
-    if(p==1) y=as.matrix(y)
-  } else {
-    cl <- match.call()
-    mf <- match.call(expand.dots = FALSE)
-    m <- match(c("formula", "data", "na.action"),names(mf), 0)
-    mf <- mf[c(1, m)]
-    mf$drop.unused.levels <- TRUE
-    mf[[1]] <- as.name("model.frame")
-    mf <- eval(mf, parent.frame())
-    mt <- attr(mf, "terms")
-    abundances <- as.matrix(model.response(mf, "numeric"))
-    if (any(is.na(abundances)))
-      stop("There are NA values in the response.")
-    y <- abundances
-    X <- model.matrix(mt, mf)
-    atr<-c(attr(X,"assign"))
-    if(sum(atr)>0){X=X[,(atr>0)*1:ncol(X)]} else{ X=NULL;}
-    p=NCOL(y)
-    n=NROW(y)
-    if(p==1) y=as.matrix(y)
-  }
-  
-  if(row.eff == "random" && family=="ordinal") {
-    stop("Random row effect model is not implemented for ordinal family. \n")
-  }
-  if(method == "LA" && family == "ordinal") {
-    cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
-    method = "VA"
-  }
-  if(family == "ordinal" && TMB) {
-    TMB=FALSE; cat("TMB method cannot handle", family," data, so 'TMB = FALSE' is used instead. \n")
-  }
-  
-  if(method == "LA" && !TMB) {
-    cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
-    TMB=TRUE
-  }
-  if(method == "VA" && (family == "tweedie" || family == "ZIP")) {
-    cat("VA method cannot handle", family," family, so LA method is used instead. \n")
-    method = "LA"
-  }
-  if(p<3 && !is.null(TR)) {
-    stop("Fourth corner model can not be fitted with less than three response variables.\n")
-  }
-  if(row.eff == "random" && !TMB) {
-    cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
-    TMB=TRUE
-  }
-  
-  
-  if(!is.null(start.fit)){
-    if(class(start.fit)!="gllvm") stop("Only object of class 'gllvm' can be given as a starting parameters.");
-    if(!(family %in% c("poisson","negative.binomial","ZIP"))) stop("Starting parameters can be given only for count data.");
-  }
-  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
-  
-  n<-nrow(y); p<-ncol(y);
-  if (is.null(offset))
-    O <- matrix(0, nrow = n, ncol = p)
-  else if (NCOL(offset) == 1)
-    O <- matrix(rep(offset), nrow = n, ncol = p)
-  else O <- as.matrix(offset)
-  
-  start.lvs=NULL
-  if(is.matrix(starting.val)){
-    start.lvs=starting.val; starting.val="random"
-    if(ncol(start.lvs)!=num.lv || nrow(start.lvs)!=n) stop("Given starting value matrix for latent variables has a wrong dimension.");
-  }
-  n.i<-1;
-  out<-list(y = y, X = X, TR = TR, num.lv = num.lv, method = method, family=family, row.eff = row.eff,n.init=n.init,sd=FALSE,Lambda.struc=Lambda.struc, TMB=TMB)
-  if(family=="binomial"){
-    if(method=="LA") out$link=la.link.bin
-    if(method=="VA") out$link="probit"
-  }
-  out$offset <- offset;
-  
-  if(TMB){
-    trace=FALSE
-    if(row.eff==TRUE) row.eff="fixed"
-    if(!is.null(TR)){
-      fitg <- trait.TMB(y, X = X, TR=TR, formula = formula, num.lv = num.lv, family = family,Lambda.struc=Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed,maxit = maxit, start.lvs = start.lvs, offset=O, sd.errors = sd.errors,trace=trace,link=la.link.bin,n.init=n.init,start.params=start.fit,optimizer=optimizer,starting.val=starting.val,method=method,randomX=randomX,Power=Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
-      out$X = fitg$X; out$TR <- fitg$TR; 
-    } else {
-      fitg <- gllvm.TMB(y, X = X, formula = formula, num.lv = num.lv, family = family, method = method, Lambda.struc = Lambda.struc, row.eff = row.eff, reltol = reltol, seed = seed, maxit = maxit, start.lvs = start.lvs, offset = O, sd.errors = sd.errors, trace = trace, link = la.link.bin, n.init = n.init, restrict = restrict, start.params = start.fit, optimizer = optimizer, starting.val = starting.val, Power = Power,diag.iter = diag.iter,Lambda.start=Lambda.start, jitter.var=jitter.var)
+    p <- NCOL(y)
+    n <- NROW(y)
+    if (p == 1)
+      y <- as.matrix(y)
+
+    if (class(family) == "family") {
+      la.link.bin <- family$link
+      family <- family$family
     }
-    
-    out$X.design <- fitg$X.design
-    out$logL <- fitg$logL
-    if(num.lv > 0) out$lvs <- fitg$lvs
-    out$X <- fitg$X;
-    out$params <- fitg$params
-    if(sd.errors) { out$sd <- fitg$sd }
-    if(family=="tweedie"){ out$Power <- fitg$Power }
-    if(method=="VA"){out$A=fitg$A; out$Ar=fitg$Ar;}
-    if(!is.null(randomX)){out$corr <- fitg$corr; out$Xrandom <- fitg$Xrandom}
-    out$start <- fitg$start
-    
-  } else {
-    if(row.eff=="fixed") row.eff <- TRUE;
-    fitg <- gllvm.VA(y, X = X, TR = TR, family = family, formula = formula, num.lv = num.lv, max.iter = max.iter, eps = reltol, row.eff = row.eff, Lambda.struc = Lambda.struc, trace = trace, plot = plot, sd.errors = sd.errors, start.lvs = start.lvs, offset=O, maxit = maxit, diag.iter = diag.iter, seed=seed,n.init = n.init,restrict=restrict,constrOpt=constrOpt,start.params=start.fit,starting.val=starting.val,Lambda.start=Lambda.start, jitter.var=jitter.var)
-    out$logL <- fitg$logLik
-    if(num.lv>0) out$lvs <- fitg$lvs
-    out$X = fitg$X; out$TR <- fitg$TR; out$X.design=fitg$X.design
-    out$params <- fitg$coef
-    if(sd.errors){ out$sd <- fitg$sd}
-    out$Lambda.struc <- fitg$Lambda.struc
-    out$Lambda <- fitg$Lambda
-    out$start <- fitg$start
+
+
+    if (row.eff == "random" && family == "ordinal") {
+      stop("Random row effect model is not implemented for ordinal family. \n")
+    }
+    if (method == "LA" && family == "ordinal") {
+      cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
+      method <- "VA"
+    }
+    if (family == "ordinal" && TMB) {
+      TMB <- FALSE
+      cat("TMB method cannot handle", family, " data, so 'TMB = FALSE' is used instead. \n")
+    }
+
+    if (method == "LA" && !TMB) {
+      cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
+      TMB = TRUE
+    }
+    if (method == "VA" && (family == "tweedie" || family == "ZIP")) {
+      cat("VA method cannot handle", family, " family, so LA method is used instead. \n")
+      method <- "LA"
+    }
+    if (p < 3 && !is.null(TR)) {
+      stop("Fourth corner model can not be fitted with less than three response variables.\n")
+    }
+    if (row.eff == "random" && !TMB) {
+      cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
+      TMB <- TRUE
+    }
+
+
+    if (!is.null(start.fit)) {
+      if (class(start.fit) != "gllvm")
+        stop("Only object of class 'gllvm' can be given as a starting parameters.")
+
+      if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
+        stop("Starting parameters can be given only for count data.")
+
+    }
+    #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
+
+
+    if (is.null(offset))
+      O <- matrix(0, nrow = n, ncol = p)
+    else if (NCOL(offset) == 1)
+      O <- matrix(rep(offset), nrow = n, ncol = p)
+    else
+      O <- as.matrix(offset)
+
+    start.lvs = NULL
+    if (is.matrix(starting.val)) {
+      start.lvs <- starting.val
+      starting.val <- "random"
+      if (ncol(start.lvs) != num.lv || nrow(start.lvs) != n)
+        stop("Given starting value matrix for latent variables has a wrong dimension.")
+    }
+    n.i <- 1
+
+    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
+        method = method, family = family, row.eff = row.eff, n.init = n.init,
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, terms = term)
+
+    if (family == "binomial") {
+      if (method == "LA")
+        out$link <- la.link.bin
+      if (method == "VA")
+        out$link <- "probit"
+    }
+    out$offset <- offset
+
+
+    if (TMB) {
+      trace = FALSE
+      if (row.eff == TRUE)
+        row.eff <- "fixed"
+      if (!is.null(TR)) {
+        fitg <- trait.TMB(
+            y,
+            X = X,
+            TR = TR,
+            formula = formula,
+            num.lv = num.lv,
+            family = family,
+            Lambda.struc = Lambda.struc,
+            row.eff = row.eff,
+            reltol = reltol,
+            seed = seed,
+            maxit = maxit,
+            start.lvs = start.lvs,
+            offset = O,
+            sd.errors = sd.errors,
+            trace = trace,
+            link = la.link.bin,
+            n.init = n.init,
+            start.params = start.fit,
+            optimizer = optimizer,
+            starting.val = starting.val,
+            method = method,
+            randomX = randomX,
+            Power = Power,
+            diag.iter = diag.iter,
+            Lambda.start = Lambda.start,
+            jitter.var = jitter.var
+          )
+        out$X <- fitg$X
+        out$TR <- fitg$TR
+
+      } else {
+        fitg <- gllvm.TMB(
+            y,
+            X = X,
+            formula = formula,
+            num.lv = num.lv,
+            family = family,
+            method = method,
+            Lambda.struc = Lambda.struc,
+            row.eff = row.eff,
+            reltol = reltol,
+            seed = seed,
+            maxit = maxit,
+            start.lvs = start.lvs,
+            offset = O,
+            sd.errors = sd.errors,
+            trace = trace,
+            link = la.link.bin,
+            n.init = n.init,
+            restrict = restrict,
+            start.params = start.fit,
+            optimizer = optimizer,
+            starting.val = starting.val,
+            Power = Power,
+            diag.iter = diag.iter,
+            Lambda.start = Lambda.start,
+            jitter.var = jitter.var
+          )
+      }
+
+      out$X.design <- fitg$X.design
+      out$logL <- fitg$logL
+      if (num.lv > 0)
+        out$lvs <- fitg$lvs
+      out$X <- fitg$X
+
+      out$params <- fitg$params
+      if (sd.errors) {
+        out$sd <- fitg$sd
+      }
+      if (family == "tweedie") {
+        out$Power <- fitg$Power
+      }
+      if (method == "VA") {
+        out$A <- fitg$A
+        out$Ar <- fitg$Ar
+      }
+      if (!is.null(randomX)) {
+        out$corr <- fitg$corr
+        out$Xrandom <- fitg$Xrandom
+      }
+      out$start <- fitg$start
+
+    } else {
+      if (row.eff == "fixed")
+        row.eff <- TRUE
+
+      fitg <- gllvm.VA(
+          y,
+          X = X,
+          TR = TR,
+          family = family,
+          formula = formula,
+          num.lv = num.lv,
+          max.iter = max.iter,
+          eps = reltol,
+          row.eff = row.eff,
+          Lambda.struc = Lambda.struc,
+          trace = trace,
+          plot = plot,
+          sd.errors = sd.errors,
+          start.lvs = start.lvs,
+          offset = O,
+          maxit = maxit,
+          diag.iter = diag.iter,
+          seed = seed,
+          n.init = n.init,
+          restrict = restrict,
+          constrOpt = constrOpt,
+          start.params = start.fit,
+          starting.val = starting.val,
+          Lambda.start = Lambda.start,
+          jitter.var = jitter.var
+        )
+      out$logL <- fitg$logLik
+      if (num.lv > 0)
+        out$lvs <- fitg$lvs
+      out$X <- fitg$X
+      out$TR <- fitg$TR
+      out$X.design <- fitg$X.design
+      out$params <- fitg$coef
+      if (sd.errors) {
+        out$sd <- fitg$sd
+      }
+      out$Lambda.struc <- fitg$Lambda.struc
+      out$A <- fitg$Lambda
+      out$start <- fitg$start
+    }
+    if (family == "negative.binomial")
+      out$params$inv.phi <- 1 / out$params$phi
+    if (is.infinite(out$logL)){
+      warning("Algorithm converged to infinity, try other starting values or different method.")
+      cat("Algorithm converged to infinity, try other starting values or different method. \n")
+      }
+    out$formula <- fitg$formula
+    if (is.null(out$terms))
+      out$terms <- fitg$terms
+    if (!is.null(TR)) {
+      out$fourth.corner <- try(getFourthCorner(out))
+    }
+    if (method == "LA")
+      out$prediction.errors = fitg$prediction.errors
+    out$call <- match.call()
+    class(out) <- "gllvm"
+    return(out)
   }
-  if(family=="negative.binomial") out$params$inv.phi <- 1/out$params$phi
-  if(is.infinite(out$logL)) warning("Algorithm converged to infinity, try other starting values or different method.")
-  out$formula <- fitg$formula
-  
-  out$call <- match.call()
-  class(out) <- "gllvm"
-  return(out)
-}
-
-
-
-

@@ -14,12 +14,13 @@
 
 gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", num.lv = 2, max.iter = 200, eps = 1e-4, row.eff = TRUE, Lambda.struc = "unstructured", trace = TRUE, plot = FALSE, sd.errors = FALSE, start.lvs = NULL, offset=NULL, maxit = 100, diag.iter = 5, seed=NULL,get.fourth=TRUE,get.trait=TRUE,n.init=1,constrOpt=FALSE,restrict=30,start.params=NULL,starting.val="res",Lambda.start=0.1, jitter.var=0, yXT = NULL) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
-  
+
+  term=NULL
   n<-dim(y)[1]; p<-dim(y)[2];
   y=as.data.frame(y)
   X1=X; TR1=TR;
   formula1=formula
-  
+
   # change categorical variables to dummy variables
   num.X <- 0
   if(!is.null(X)) {
@@ -40,7 +41,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     }
     X.new <- data.frame(X.new);
   }
-  
+
   num.T <- 0
   if(!is.null(TR)) {
     num.T <- dim(TR)[2]
@@ -59,8 +60,8 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       T.new <- data.matrix(T.new);
     }
   }
-  
-  
+
+
   if(is.null(TR)){
     if(!is.null(formula) && !is.null(X)){
       xb=as.matrix(model.matrix(formula,data = data.frame(X)))
@@ -68,7 +69,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       colnames(X)<- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       num.X <- dim(X)[2]
     }
-    if(is.null(formula) && !is.null(X)){ 
+    if(is.null(formula) && !is.null(X)){
       n1 <- colnames(X)
       formula=paste("~",n1[1],sep = "")
       if(length(n1)>1){
@@ -80,7 +81,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       xb=as.matrix(model.matrix(formula,data = data.frame(X)))
       X<-as.matrix(xb[,!(colnames(xb) %in% c("(Intercept)"))])
       colnames(X)<- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
-      
+
       num.X=ncol(X);
     }
     Xd<-X1<-X
@@ -95,26 +96,29 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         }}
       formula=paste(formula,")*(",sep = "")
       formula=paste(formula,n2[1],sep = "")
-      
+
       if(length(n2)>1){
-        for(i2 in 1:length(n2)){
+        for(i2 in 2:length(n2)){
           formula <- paste(formula,n2[i2],sep = "+")
         }}
       formula1=paste(formula,")",sep = "")
       formula=formula(formula1)
     }
-    
+
     yX <- reshape(data.frame(cbind(y,X)),direction = "long", varying = colnames(y),v.names = "y")
     TR2<-data.frame(time=1:p,TR)
     if(is.null(yXT)){
       yXT=merge(yX,TR2,by="time")
     }
     data <- yXT
-    
+
+    m1<-model.frame(formula,data = data)
+    term<-terms(m1)
+
     Xd <- as.matrix(model.matrix(formula,data = data))
     Xd <- as.matrix(Xd[,!(colnames(Xd) %in% c("(Intercept)"))])
     # Tässä ongelma, miten saada vain X tai TR muuttujat minne kuuluukin
-    X <- Xd[data$time==1,]; X1=as.matrix(X.new[,colnames(X.new) %in% colnames(Xd)]); 
+    X <- Xd[data$time==1,]; X1=as.matrix(X.new[,colnames(X.new) %in% colnames(Xd)]);
     TR <- Xd[data$id==1,]; TR1=as.matrix(T.new[,colnames(T.new) %in% colnames(Xd)]);
     colnames(X1) <- colnames(X.new)[colnames(X.new) %in% colnames(Xd)]; colnames(TR1)=colnames(T.new)[colnames(T.new) %in% colnames(Xd)];
     nxd <- colnames(Xd)
@@ -122,24 +126,24 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
     formula1 <- formulab
     nd=ncol(Xd)
-    
+
   }
-  
+
   if(!(family %in% c("poisson","negative.binomial","binomial","ordinal")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
   if(num.lv == 1) Lambda.struc <- "diagonal" ## Prevents it going to "unstructured" loops and causing chaos
   trial.size <- 1
-  
+
   y <- as.matrix(y)
   if(!is.numeric(y)) stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
-  
+
   if(is.null(rownames(y))) rownames(y) <- paste("Row",1:n,sep="")
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
   if(is.null(formula) && is.null(X) && is.null(TR)){formula1 =  "~ 1"}
-  
+
   y00=y
   if(family == "ordinal") {
     if(min(y)==0){ y=y+1}
@@ -147,15 +151,15 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     if(any(max.levels == 1) || all(max.levels == 2))
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
   }
-  
-  out.list <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logLik = -Inf, family = family, offset=offset,X.design=Xd)
-  
+
+  out.list <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logLik = -Inf, family = family, offset=offset,X.design=Xd, terms=term)
+
   tstart<-Sys.time()
   n.i<-1;
   if(n.init>1) seed<-sample(1:10000,n.init)
   while(n.i<=n.init){
     if(n.init>1 && trace) cat("initial run ",n.i,"\n");
-    
+
     res <- start.values.gllvm.TMB(y = y, X = X, TR = TR, family = family, formula = formula, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val, jitter.var=jitter.var, yXT=yXT)
     if(is.null(start.params)){
       new.beta0 <- beta0 <- res$params[,1]
@@ -170,7 +174,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         new.row.params <- row.params <- rep(0,n);#log(rowMeans(y))-log(mean(y[1,]));
         res$row.params <- row.params}#rep(0,n)
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
-      
+
       if(num.lv > 0) {
         new.vameans <- vameans <- res$index
         new.theta <- theta <- as.matrix(res$params[,(ncol(res$params) - num.lv + 1):ncol(res$params)])#fts$coef$theta#
@@ -195,9 +199,9 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           if(!is.null(X)) new.env <- env <- start.params$params$Xcoef
         }
         new.B=B=NULL; if(!is.null(TR)) B=c(start.params$params$B)[1:nd]
-        
+
         new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
-        
+
         if(num.lv > 0) new.theta <- theta<- c(start.params$params$theta) ## LV coefficients
         if(row.eff) new.row.params <- row.params <- start.params$params$row.params ## row parameters
         if(num.lv > 0) { new.vameans <- vameans <- matrix(start.params$lvs, ncol = num.lv);
@@ -205,10 +209,10 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other.");}
     }
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
-    
+
     new.zeta <- zeta <- NULL; if(family == "ordinal") { new.zeta <- zeta <- res$zeta }
     new.phi <- phi <- NULL; if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>100]=100; if(any(phis<0.10))phis[phis<0.10]=0.10; new.phi <- phi <- 1/phis }
-    
+
     if(constrOpt ){
       const=min(restrict,15)/5
       new.beta0 <- beta0<-beta0*const/max(c(abs(beta0),1))
@@ -216,21 +220,21 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       if(num.lv>0) new.theta <- theta<-theta*const/max(c(abs(theta),1))
     }
     q=num.lv
-    
-    
+
+
     current.loglik <- -1e6; iter <- 1; err <- 10; div=1e5
     while((div> eps*(abs(current.loglik)+eps)) && iter <= max.iter) {
       #while((err > (1 + eps) || err < (1 - eps)) && iter <= max.iter) {
-      
+
       if(trace) cat("Iteration:", iter, "\n")
-      
+
       if(Lambda.struc == "unstructured" & iter <= diag.iter) {
         tmp.Lambda.struc <- "diagonal"
         if(iter == 1)  new.lambda <- lambda <- matrix(Lambda.start,n,num.lv)#0.1
         if(iter == diag.iter) { tmp.Lambda.struc <- "unstructured"; new.lambda <- lambda <- lambda.convert(lambda,type=2) }
       } else { tmp.Lambda.struc <- Lambda.struc }
-      
-      
+
+
       ## log-likelihood
       ll0 <- function(x,v=NULL,lambda=NULL,phi,zeta=NULL) {
         x2 <- x
@@ -250,7 +254,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
         }
         new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
-        
+
         mu.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
         if(!is.null(X) && is.null(TR)) mu.mat <- mu.mat + X %*% t(new.env)
         if(!is.null(TR)) mu.mat <- mu.mat + matrix((Xd %*% B),n,p)
@@ -258,22 +262,22 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         if(num.lv > 0) mu.mat <- mu.mat  + new.vameans %*% t(new.theta)
         eta.mat <- mu.mat
         if(num.lv > 0) eta.mat <- eta.mat + calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
-        
+
         if(family=="poisson") { out1 <- sum(y * mu.mat - lfactorial(y) - exp(eta.mat)) }
-        
+
         if(family=="negative.binomial") {
           phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
           if(num.lv > 0) eta.mat <- mu.mat - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
           out1 <- sum(-phi.mat * mu.mat - lfactorial(y) + phi.mat * log(phi.mat) - lgamma(phi.mat) - (y + phi.mat) * log(1 + phi.mat / exp(eta.mat)) + lgamma(y + phi.mat))
         }
-        
+
         if(family=="binomial") {
           probs<-pnorm(mu.mat);
           out1 <- dbinom(as.matrix(y),size=trial.size,prob=probs,log=TRUE)
           out1 <- sum(out1[is.finite(out1)])
           if(num.lv > 0) out1 <- out1 - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat.sum
         }
-        
+
         if(family == "ordinal") {
           out1 <- matrix(NA,n,p)
           for(j in 1:p) {
@@ -287,22 +291,22 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           out1 <- sum(out1[is.finite(out1)])
           if(num.lv > 0) out1 <- out1 - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat.sum
         }
-        
+
         if(num.lv > 0) {
           if(tmp.Lambda.struc == "unstructured") {
             foo2 <- function(i) { 0.5 * (log(det(new.lambda[i,,])) - sum(diag(new.lambda[i,,])) - sum(new.vameans[i,]^2)) }
           }
-          
+
           if(tmp.Lambda.struc == "diagonal") {
             foo2 <- function(i) { 0.5 * (sum(log(t(new.lambda)[,i])) - sum(t(new.lambda)[,i]) - sum(new.vameans[i,]^2)) }
           }
-          
+
           out1 <- out1 + sum(sapply(1:n,foo2))
         }
-        
+
         return(out1)
       }
-      
+
       ## Update model params by maximizing lower bound for loglik
       grad.mod <- function(x,v=NULL,lambda=NULL,phi,zeta=NULL) {
         x2 <- x
@@ -322,21 +326,21 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
         }
         new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
-        
+
         grad.theta <- grad.beta0 <- grad.env <- grad.B <- grad.row.params <- NULL
-        
+
         if(tmp.Lambda.struc == "unstructured" & num.lv > 0) {
           Lambda.theta <- array(NA,dim=c(p,n,num.lv))
           for(i in 1:n) { Lambda.theta[,i,] <- new.theta %*% new.lambda[i,,] }
         }
-        
-        
+
+
         eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
         if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
         if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
         if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
         if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
-        
+
         if(family=="poisson") {
           if(num.lv > 0) eta.mat <- eta.mat + calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
           grad.beta0 <- colSums(y - exp(eta.mat))
@@ -359,7 +363,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           if(row.eff)  grad.row.params <- rowSums(y - exp(eta.mat))
         }
-        
+
         if(family=="negative.binomial") {
           phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
           if(num.lv > 0) eta.mat <- eta.mat - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
@@ -383,10 +387,10 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           if(row.eff)  grad.row.params <- rowSums(-phi.mat - (y + phi.mat) * (-phi.mat/(exp(eta.mat) + phi.mat)))
         }
-        
+
         if(family=="binomial") {
           probs<-pnorm(eta.mat);
-          
+
           grad.beta0 <- colSums(dnorm(eta.mat)*(y-trial.size*probs)/(probs*(1-probs)+1e-5),na.rm=TRUE)
           if(num.lv > 0) {
             for(l in 1:num.lv) {
@@ -407,7 +411,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           if(row.eff)  grad.row.params <- rowSums(dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1 - probs) + 1e-5),na.rm=TRUE)
         }
-        
+
         if(family=="ordinal") {
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
@@ -415,7 +419,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd),n,p)
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
           deriv.trunnorm <- matrix(0,n,p)
-          
+
           for(j in 1:p) {
             deriv.trunnorm[y[,j] == 1,j] <- -dnorm(new.zeta[j,1] - eta.mat[y[,j] == 1,j]) / pnorm(new.zeta[j,1] - eta.mat[y[,j] == 1,j])
             deriv.trunnorm[y[,j] == max(y[,j]),j] <- dnorm(new.zeta[j,max(y[,j]) - 1] - eta.mat[y[,j] == max(y[,j]),j]) / (1 - pnorm(new.zeta[j,max(y[,j]) - 1] - eta.mat[y[,j] == max(y[,j]),j]))
@@ -425,7 +429,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           deriv.trunnorm[!is.finite(deriv.trunnorm)] <- 0
           grad.beta0 <- colSums(deriv.trunnorm)
-          
+
           if(num.lv > 0) {
             for(l in 1:num.lv) {
               if(tmp.Lambda.struc == "unstructured") sum1 <- sweep(deriv.trunnorm,1,new.vameans[,l],"*") - t(Lambda.theta[,,l])
@@ -444,27 +448,27 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           if(row.eff) { grad.row.params <- rowSums(deriv.trunnorm,na.rm=TRUE) }
         }
-        
+
         if(num.lv>0){
           grad.theta=matrix(grad.theta,nrow=p,ncol=num.lv)
           grad.theta[upper.tri(grad.theta)] <- 0}
         if(row.eff) grad.row.params[1]=0;
         return(c(grad.theta, grad.beta0, grad.env, grad.B, grad.row.params))
       }
-      
-      
+
+
       if(constrOpt) {
         A=NULL;
         if(row.eff){for(i in 1:p){
           A=rbind(A,diag(n))
         }}
-        
+
         B0<-matrix(1,n,1)
         B1=B0
         for(i in 1:(p-1)){
           B1=as.matrix(Matrix::bdiag(B1,B0))
         }
-        
+
         B2=NULL;
         if(!is.null(X) && is.null(TR)){
           for(s in 1:num.X){
@@ -476,7 +480,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
             B2=cbind(B2,B2.)
           }
         }
-        
+
         G=NULL;
         if(num.lv>0){for(s in 1:num.lv){
           G0=new.vameans[,s]
@@ -486,20 +490,20 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           G=cbind(G,Gi)
         }}
-        
+
         Bf=NULL;
         if(!is.null(TR)){
           Bf=Xd
         }
-        
+
         U=cbind(G,B1,B2,Bf,A)
-        
+
         q <- try(constrOptim(c(theta,beta0,env,B,row.params), v = c(new.vameans), lambda = new.lambda, phi = phi, zeta = zeta, method = "BFGS", f = ll0, grad = grad.mod, control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=rep(-restrict,NROW(U)*2)), silent = TRUE)
       } else {
         q <- try(optim(c(theta,beta0,env,B,row.params), v = c(new.vameans), lambda = new.lambda, phi = phi, zeta = zeta, method = "BFGS", fn = ll0, gr = grad.mod, control = list(trace = 0, fnscale = -1, maxit = maxit)), silent = TRUE)
       }
-      
-      
+
+
       if(!inherits(q, "try-error")) {
         if(q$convergence != 0) { if(trace) cat("Optimization algorithm did not converge when trying to update model parameters on iteration step ", iter,"\n") }
         if(iter > 1 && current.loglik > q$value) { if(trace) cat("Optimization did not improve estimates of model parameters on iteration step ",iter,"\n"); new.theta <- theta; new.beta0 <- beta0; new.env <- env; new.row.params <- row.params}
@@ -524,9 +528,9 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         }
       }
       else { new.theta <- theta; new.beta0 <- beta0; new.env <- env; new.B <- B; new.row.params <- row.params }
-      
-      
-      
+
+
+
       # Update dispersion parameters for NB distribution
       if(family=="negative.binomial") {
         grad.phi <- function(x,v=NULL,lambda=NULL,phi,zeta = NULL) {
@@ -541,16 +545,16 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
             } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
           }
           new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
-          
+
           phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
-          
+
           #grad.theta <- grad.beta0 <- grad.env <- grad.row.params <- NULL
-          
+
           if(tmp.Lambda.struc == "unstructured" & num.lv > 0) {
             Lambda.theta <- array(NA,dim=c(p,n,num.lv));
             for(i in 1:n) { Lambda.theta[,i,] <- new.theta%*%new.lambda[i,,] }
           }
-          
+
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
@@ -558,13 +562,13 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
           mu.mat <- eta.mat
           if(num.lv > 0) mu.mat <- eta.mat - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
-          
+
           out <- colSums(-eta.mat + 1 + log(phi.mat) - digamma(phi.mat) - log(1 + phi.mat / exp(mu.mat)) - (y + phi.mat) / (phi.mat + exp(mu.mat)) + digamma(y + phi.mat))
           return(out)
         }
-        
+
         q <- try(optim(phi, x = c(new.theta,new.beta0,new.env,new.B,new.row.params), v = c(new.vameans), lambda = new.lambda, zeta = zeta, method = "L-BFGS-B", lower = 1e-4, upper = 1e4, fn = ll0, gr = grad.phi, control = list(trace=0, fnscale=-1)), silent = TRUE) #, factr = 1e-3,maxit=maxit
-        
+
         if(!inherits(q, "try-error")) {
           if(iter > 1 && current.loglik > q$value) { if(trace) cat("Optimization did not improve estimates of dispersion parameters on iteration step ",iter,"\n"); new.phi <- phi }
           else {
@@ -574,7 +578,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         }
         else { new.phi <- phi }
       }
-      
+
       ## Update zeta (cutoffs for ordinal data)
       if(family == "ordinal") {
         eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
@@ -582,7 +586,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% new.B),n,p)
         if(!is.null(row.params)) eta.mat <- eta.mat + matrix(new.row.params,n,p)
         if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
-        
+
         func.zetaj <- function(cw.zeta, j) { ## Exclude the first column of zeta, which is fixed at 0
           zeta0 <- c(0,cw.zeta); out <- 0
           out <- out + sum(pnorm(zeta0[1]-eta.mat[which(y[,j] == 1),j],log.p=TRUE))
@@ -593,7 +597,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           out
         }
-        
+
         grad.zetaj <- function(cw.zeta, j) { ## Exclude the first column of zeta, which is fixed at 0
           zeta0 <- c(0,cw.zeta); deriv.trunnorm <- numeric(length(zeta0)); ## L-1 length
           deriv.trunnorm[length(deriv.trunnorm)] <- deriv.trunnorm[length(deriv.trunnorm)] - sum(dnorm(zeta0[max(y[,j]) - 1] - eta.mat[which(y[,j] == max(y[,j])),j]) / (1 - pnorm(zeta0[max(y[,j]) - 1] - eta.mat[which(y[,j] == max(y[,j])),j])))
@@ -606,7 +610,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
           deriv.trunnorm[-1]
         }
-        
+
         for(j in 1:p) {
           if(max(y[,j]) == 2) { new.zeta[j,] <- zeta[j,] }
           if(max(y[,j]) > 2) {
@@ -614,7 +618,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
             if(nrow(constraint.mat) > 1) {
               for(k in 2:nrow(constraint.mat)) constraint.mat[k,(k-1):k] <- c(-1,1)
             }
-            
+
             update.zeta <- constrOptim(theta = zeta[j,2:(max(y[,j])-1)], f = func.zetaj, grad = grad.zetaj, ui = constraint.mat, ci = rep(0,max(y[,j])-2), j = j, outer.eps = 1e-3, control = list(trace=0, fnscale = -1))
             if(!inherits(update.zeta, "try-error")) new.zeta[j,2:(max(y[,j])-1)] <- update.zeta$par
             if(inherits(update.zeta, "try-error")) new.zeta[j,] <- zeta[j,]
@@ -622,8 +626,8 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         }
         if(trace) cat("Cutoffs updated \n")
       }
-      
-      
+
+
       if(num.lv > 0) {
         ## Update vameans by maximizing lower bound for loglik
         grad.var <- function(x,v=NULL,lambda=NULL,phi,zeta=NULL) {
@@ -643,34 +647,34 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
             } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
           }
           new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
-          
+
           grad.vameans <- grad.lambda <- NULL
-          
+
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
           if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
-          
+
           if(family=="poisson") {
             eta.mat <- eta.mat + calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
             sum1 <- (y-exp(eta.mat))
             for(l in 1:num.lv) { grad.vameans <- c(grad.vameans,rowSums(sweep(sum1,2,new.theta[,l],"*"))-new.vameans[,l]) }
           }
-          
+
           if(family=="negative.binomial") {
             phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
             eta.mat <- eta.mat - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
             sum1 <- -phi.mat - (y + phi.mat) * (-phi.mat / (exp(eta.mat) + phi.mat))
             for(l in 1:num.lv) { grad.vameans <- c(grad.vameans,rowSums(sweep(sum1,2,new.theta[,l],"*"))-new.vameans[,l]) }
           }
-          
+
           if(family=="binomial") {
             probs<-pnorm(eta.mat);
             sum1 <- dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1-probs) + 1e-5)
             for(l in 1:num.lv) { grad.vameans <- c(grad.vameans,rowSums(sweep(sum1,2,new.theta[,l],"*"),na.rm=TRUE)-new.vameans[,l]) }
           }
-          
+
           if(family=="ordinal") {
             deriv.trunnorm <- matrix(NA,n,p)
             for(j in 1:p) {
@@ -682,13 +686,13 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
               }
             }
             deriv.trunnorm[!is.finite(deriv.trunnorm)] <- 0
-            
+
             for(l in 1:num.lv) { grad.vameans <- c(grad.vameans,rowSums(sweep(deriv.trunnorm,2,new.theta[,l],"*")) - new.vameans[,l]) }
           }
-          
+
           return(c(grad.vameans))
         }
-        
+
         if(constrOpt)  {
           U=NULL
           for(d in 1:num.lv){
@@ -712,7 +716,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           }
         }
         else { new.vameans <- vameans }
-        
+
         ## Update Lambda_i via fixed-point algorithm (covariance matrix for VA distribution)
         eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + new.vameans %*% t(new.theta)   + offset
         if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
@@ -724,33 +728,33 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           eta.mat <- eta.mat -  calc.quad(lambda,new.theta,tmp.Lambda.struc)$mat
           mu.mat <- (y + phi.mat) * (phi.mat / (exp(eta.mat) + phi.mat))
         }
-        
+
         for(i in 1:n) {
           error <- 1; lambda.iter <- 0
           if(tmp.Lambda.struc == "unstructured") new.lambda.mat <- lambda[i,,]
           if(tmp.Lambda.struc == "diagonal") new.lambda.mat <- diag(x=lambda[i,],nrow=num.lv)
           #print(tmp.Lambda.struc)
           while(error > 1e-2 && lambda.iter < 100) {
-            
+
             cw.lambda.mat <- new.lambda.mat
-            
+
             if(tmp.Lambda.struc == "unstructured") {
               theta2 <- sapply(1:p,function(j,theta) theta[j,] %*% t(theta[j,]), theta = new.theta)
               theta2 <- t(theta2)
               if(family %in% c("poisson","negative.binomial"))  new.lambda.mat <- solve(diag(rep(1,num.lv)) + matrix(apply(mu.mat[i,]*theta2,2,sum),nrow=num.lv))
               if(family %in% c("binomial","ordinal"))  new.lambda.mat <- solve(diag(rep(1,num.lv)) + matrix(apply(theta2,2,sum),nrow=num.lv))
             }
-            
+
             if(tmp.Lambda.struc == "diagonal") {
               theta2 <- new.theta^2
               if(family %in% c("poisson","negative.binomial"))  new.lambda.mat <- solve(diag(rep(1,num.lv)) + diag(apply(mu.mat[i,]*theta2,2,sum),num.lv,num.lv))
               if(family %in% c("binomial","ordinal"))  new.lambda.mat <- solve(diag(rep(1,num.lv)) + diag(apply(theta2,2,sum),num.lv,num.lv))
             }
-            
+
             error <-  sum((new.lambda.mat - cw.lambda.mat)^2)
             if(tmp.Lambda.struc == "unstructured") lambda[i,,] <- new.lambda.mat
             if(tmp.Lambda.struc == "diagonal") lambda[i,] <- diag(new.lambda.mat)
-            
+
             eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset + new.vameans %*% t(new.theta)
             if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
             if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% new.B),n,p)
@@ -761,56 +765,56 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
               eta.mat <- eta.mat -  calc.quad(lambda,new.theta,tmp.Lambda.struc)$mat
               mu.mat <- (y + phi.mat) * (phi.mat / (exp(eta.mat) + phi.mat))
             }
-            
+
             lambda.iter <- lambda.iter + 1
           }
           if(tmp.Lambda.struc == "unstructured") new.lambda[i,,] <- new.lambda.mat
           if(tmp.Lambda.struc == "diagonal") new.lambda[i,] <- diag(new.lambda.mat)
-          
+
           if((family %in% c("binomial","ordinal")) & i == 1) break; ## Since same Lambda matrix for all i, then do one then finish
         }
-        
+
         if(family %in% c("binomial","ordinal")) {
           if(tmp.Lambda.struc == "diagonal") for(i2 in 2:n) new.lambda[i2,] <- new.lambda[1,]
           if(tmp.Lambda.struc == "unstructured") for(i2 in 2:n) new.lambda[i2,,] <- new.lambda[1,,]
         }
       }
-      
-      
+
+
       ## Take values of loglik from optim -function to define stopping rule
       q <- list(value = ll0(c(new.theta,new.beta0,new.env,new.B,new.row.params), v = c(new.vameans), lambda = new.lambda, phi = new.phi, zeta = new.zeta))
       new.loglik <- q$value
       div=abs(new.loglik-current.loglik)
       err <- abs(new.loglik/current.loglik);
       if(trace) cat("New Loglik:", new.loglik,"Current Loglik:", current.loglik, "Ratio", err, ". Difference in log-likelihoods:",div,"\n")
-      
+
       ## Plot new ordination points for spp's and sites
       if( num.lv <= 2 && num.lv > 0 && plot == TRUE) {
         par(mfrow=c(1,2))
         plot(new.vameans[!duplicated(new.vameans),], type = "n", xlab = ifelse(num.lv == 1, "Row index (unique elements only)", "LV1"),ylab = "LV2", main = "Ordination of rows")
         text(new.vameans[!duplicated(new.vameans),],labels = which(!duplicated(new.vameans) == 1))#,col=color)
-        
+
         plot(new.theta, type="n", xlab=ifelse(num.lv==1, "Column index", "Coefs for LV1"), ylab="Coefs for LV2", main="Ordination of columns")
         text(new.theta,labels = seq(1,dim(y)[2]))
       }
-      
+
       current.loglik <- new.loglik
       beta0 <- new.beta0; env <- new.env; theta <- new.theta;  phi <- new.phi; B<-new.B
       vameans <- new.vameans; lambda <- new.lambda; row.params <- new.row.params; zeta <- new.zeta;
       iter <- iter + 1
     }
-    
+
     tstop <- Sys.time(); time <- difftime(tstop,tstart)
-    
-    
-    
-    
+
+
+
+
     ## Bling up the output  ##
     if(n.i==1 || out.list$logL < current.loglik){
       out.list$logLik<-out.list$logL<-current.loglik
       out.list$iter=iter-1
       out.list$Lambda.struc = tmp.Lambda.struc
-      
+
       if(num.lv > 0) {
         rownames(theta) <- colnames(y); colnames(theta) <- paste("LV",1:num.lv,sep = "")
         theta[upper.tri(theta)] <- 0
@@ -819,7 +823,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         out.list$lvs[!is.finite(out.list$lvs)] <- 0
         out.list$coef$theta[!is.finite(out.list$coef$theta)] <- 0
       }
-      
+
       env.coefs <- NULL
       spp.coefs <- beta0;
       out.list$coef$beta0=spp.coefs
@@ -834,19 +838,19 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         }
       }
       out.list$start=res
-      
+
       if(row.eff) {
         names(row.params) <- rownames(y); out.list$coef$row.params <- row.params
       }
       if(family == "negative.binomial") { out.list$coef$phi <- 1/phi; names(out.list$coef$phi) <- colnames(y); } ## Flip it back so that it is V = mu + phi * mu^2
-      
+
       if(family == "ordinal") {
         out.list$coef$zeta <- zeta; rownames(out.list$coef$zeta) <- colnames(y);
         colnames(out.list$coef$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
       }}
     n.i=n.i+1;
   }
-  
+
   if(sd.errors) {
     if(trace) cat("Calculating standard errors for parameters...\n")
     tr <- try({get.sds <- calc.infomat(theta=out.list$coef$theta, beta0=out.list$coef$beta0, env=out.list$coef$Xcoef, row.params=out.list$coef$row.params, vameans=out.list$lvs, lambda=out.list$Lambda, phi=1/out.list$coef$phi, zeta=out.list$coef$zeta, num.lv = num.lv, family = family, Lambda.struc = tmp.Lambda.struc, row.eff = row.eff, y = y, X = X, TR = TR, Xd=Xd,offset=offset, B = out.list$coef$B)#, formula=formula
@@ -857,13 +861,6 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     }
   }
   if(is.null(formula1)){ out.list$formula=formula} else {out.list$formula=formula1}
-  
+
   return(out.list)
 }
-
-
-
-
-
-
-
