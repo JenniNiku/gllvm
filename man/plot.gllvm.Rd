@@ -9,7 +9,7 @@
   "Residuals vs row index", "Residuals vs column index", "Scale-Location"),
   var.colors = NULL, panel = if (add.smooth) panel.smooth else points,
   add.smooth = if (!is.null(getOption("add.smooth"))) {    
-  getOption("add.smooth") } else TRUE, envelopes = TRUE, ...)
+  getOption("add.smooth") } else TRUE, envelopes = TRUE, reps = 150, ...)
 }
 \arguments{
 \item{x}{an object of class 'gllvm'.}
@@ -25,6 +25,8 @@
 \item{add.smooth}{logical indicating if a smoother should be added to most plots; see also panel above.}
 
 \item{envelopes}{logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}}
+
+\item{reps}{number of replications when simulating confidence envelopes for normal Q-Q plot}
 
 \item{...}{additional graphical arguments.}
 }

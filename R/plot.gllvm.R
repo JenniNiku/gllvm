@@ -9,6 +9,7 @@
 #' @param panel panel function
 #' @param add.smooth	logical indicating if a smoother should be added to most plots; see also panel above.
 #' @param envelopes logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}
+#' @param reps number of replications when simulating confidence envelopes for normal Q-Q plot
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -43,7 +44,7 @@
 #'@export
 
 
-plot.gllvm <- function(x, which=1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"),var.colors=NULL, panel = if (add.smooth) panel.smooth else points, add.smooth = if(!is.null(getOption("add.smooth"))){ getOption("add.smooth") } else TRUE, envelopes=TRUE, ...) {
+plot.gllvm <- function(x, which=1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"),var.colors=NULL, panel = if (add.smooth) panel.smooth else points, add.smooth = if(!is.null(getOption("add.smooth"))){ getOption("add.smooth") } else TRUE, envelopes=TRUE, reps=150, ...) {
   n <- NROW(x$y)
   p <- NCOL(x$y)
 
@@ -82,7 +83,7 @@ par(...)
       qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.6);
       qqline(c(res$residuals), col = 2)
       if(envelopes){
-        K <- 150
+        K <- reps
         yy <- quantile(ds.res, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
         xx <- qnorm(c(0.25, 0.75))
         slope <- diff(yy) / diff(xx)
@@ -95,8 +96,8 @@ par(...)
         Xm <- qnorm(ppoints(n * p))
         cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
 
-        points(Xm, cis[1, ], type = "l", col = "grey", lty = 2, lwd = 2)
-        points(Xm, cis[2, ], type = "l", col = "grey", lty = 2, lwd = 2)
+        points(Xm, cis[1, ], type = "l", col = "red", lty = 2, lwd = 2)
+        points(Xm, cis[2, ], type = "l", col = "red", lty = 2, lwd = 2)
 
       }
       }
