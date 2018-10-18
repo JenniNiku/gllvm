@@ -1041,27 +1041,28 @@ getFourthCorner<- function(object){
 
 
 # Calculates standard errors for random effects according to TMB packages sdreport function
-sdrandom<-function(obj,Vtheta,incl){
+sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   r <- obj$env$random
   par = obj$env$last.par.best
   hessian.random <- obj$env$spHess(par, random = TRUE)
   L <- obj$env$L.created.by.newton
-
-  f <- obj$env$f
-  w <- rep(0, length(par))
-  reverse.sweep <- function(i) {
-    w[i] <- 1
-    f(par, order = 1, type = "ADGrad", rangeweight = w,
-      doforward = 0)[r]
+  if (ignore.u) {
+    diag.term2 <- 0
+  } else {
+    f <- obj$env$f
+    w <- rep(0, length(par))
+    reverse.sweep <- function(i) {
+      w[i] <- 1
+      f(par, order = 1, type = "ADGrad", rangeweight = w, doforward = 0)[r]
+    }
+    nonr <- setdiff(seq_along(par), r)
+    tmp <- sapply(nonr, reverse.sweep)
+    if (!is.matrix(tmp))
+      tmp <- matrix(tmp, ncol = length(nonr))
+    A <- solve(hessian.random, tmp[, incl])
+    diag.term2 <- diag(rowSums((A %*% Vtheta) * A))
   }
-  nonr <- setdiff(seq_along(par), r)
-  tmp <- sapply(nonr, reverse.sweep)
-  if (!is.matrix(tmp))
-    tmp <- matrix(tmp, ncol = length(nonr))
-  A <- solve(hessian.random, tmp[,incl])
-  diag.term2 <- rowSums((A %*% Vtheta) * A)
-
-  diag.term1 <- Matrix::diag(Matrix::chol2inv(L))
+  diag.term1 <- Matrix::chol2inv(L)
   diag.cov.random <- diag.term1 + diag.term2
   return(diag.cov.random)
 }

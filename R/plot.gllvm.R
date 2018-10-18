@@ -80,7 +80,7 @@ par(...)
       panel(eta.mat, ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
     }
     if(2 %in% which) {
-      qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.6);
+      qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.5);
       qqline(c(res$residuals), col = 2)
       if(envelopes){
         K <- reps
@@ -94,10 +94,13 @@ par(...)
           Ym <- cbind(Ym, sort(ri))
         }
         Xm <- qnorm(ppoints(n * p))
-        cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
+        cis <- apply(Ym, 1, quantile, probs = c(0.005, 0.995))
+        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
 
-        points(Xm, cis[1, ], type = "l", col = "red", lty = 2, lwd = 2)
-        points(Xm, cis[2, ], type = "l", col = "red", lty = 2, lwd = 2)
+        lines(Xm, cis[1, ], type = "l", col = "red", lty = 4, lwd = 2)
+        lines(Xm, cis[2, ], type = "l", col = "red", lty = 4, lwd = 2)
+#        points(Xm, cis[1, ], type = "l", col = "red", lty = 4, lwd = 1.5)
+#        points(Xm, cis[2, ], type = "l", col = "red", lty = 4, lwd = 1.5)
 
       }
       }

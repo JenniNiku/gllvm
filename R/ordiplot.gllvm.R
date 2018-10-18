@@ -25,6 +25,8 @@
 #' of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 #' is used to control the relative scaling of the latent variables and their coefficients.
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
+#' 
+#' Note that option for prediction regions is at very experimental stage at the moment, and the uncertainty of the parameters is ignored when "VA" is used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
 #'
@@ -63,12 +65,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       plot(1:n, object$lvs, ylab = "LV1", xlab = "Row index")
       if (region) {
         if (object$method == "LA") {
-          serr <- object$prediction.errors$lvs
+          serr <- c(object$prediction.errors$lvs)
         } else {
           serr <- c(object$A)
         }
-        lower <- object$lvs - 1.96 * sqrt(serr / n)
-        upper <- object$lvs + 1.96 * sqrt(serr / n)
+        lower <- object$lvs - 1.96 * sqrt(serr)
+        upper <- object$lvs + 1.96 * sqrt(serr)
         segments(y0 = lower, x0 = 1:n, y1 = upper, x1 = 1:n, col = 2)
       }
     }
@@ -105,9 +107,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
         if (region) {
           if (object$method == "LA") {
-            serr <- object$prediction.errors$lvs
+            #serr <- object$prediction.errors$lvs
             for (i in 1:n) {
-              ellipse( object$lvs[i, which.lvs], covM = diag(serr[i,which.lvs]), rad = sqrt(qchisq(level, df=object$num.lv)))
+              covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
+              ellipse( object$lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
             }
           } else {
             for (i in 1:n) {

@@ -50,6 +50,8 @@ variables if \code{biplot = TRUE}. They are labeled using the column names of y.
 of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 is used to control the relative scaling of the latent variables and their coefficients.
 If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
+
+Note that option for prediction regions is at very experimental stage at the moment, and the uncertainty of the parameters is ignored when "VA" is used.
 }
 \examples{
 #'## Load a dataset from the mvabund package

@@ -515,21 +515,22 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
           covM<- try(MASS::ginv(sdr[incl,incl]))
           se<- try(sqrt(diag(abs(covM))))
-          if(num.lv>0 || row.eff=="random" || !is.null(randomX)){
-            sd.random <- abs(sdrandom(objr, covM, incl))
-            prediction.errors=list()
+          if(num.lv>0 || row.eff=="random" || !is.null(randomX)) {
+            sd.random <- sdrandom(objr, covM, incl)
+            prediction.errors <- list()
             if(row.eff=="random"){
-              prediction.errors$row.params=sd.random[1:n];
-              sd.random<-sd.random[-(1:n)]
+              prediction.errors$row.params <- diag(as.matrix(sd.random))[1:n];
+              sd.random <- sd.random[-(1:n),-(1:n)]
             }
             if(num.lv>0){
-              prediction.errors$lvs=matrix(sd.random[1:(n*num.lv)],n,num.lv);
-              sd.random<-sd.random[-(1:(n*num.lv))]
+              cov.lvs <- array(0, dim = c(n, num.lv, num.lv))
+              for (i in 1:n) {
+                cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv-1)*n+i),(0:(num.lv-1)*n+i)])
+              }
+              prediction.errors$lvs <- cov.lvs
+              #sd.random <- sd.random[-(1:(n*num.lv))]
             }
-            if(!is.null(randomX)){
-              prediction.errors$random = matrix(sd.random[1:(length(Br))],n,num.lv);
-            }
-            out$prediction.errors = prediction.errors
+            out$prediction.errors <- prediction.errors
           }
         } else {
           A.mat=-sdr[incl,incl] # a x a

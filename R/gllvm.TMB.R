@@ -5,6 +5,7 @@
 
 
 gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson",method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=TRUE,link="logit",n.init=1,restrict=30,start.params=NULL, optimizer="optim",starting.val="res",Power=1.5,diag.iter=1,Lambda.start=0.1, jitter.var=0) {
+  ignore.u <- FALSE;
   n <- dim(y)[1]
   p <- dim(y)[2]
 
@@ -483,19 +484,23 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         }
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
-        if(num.lv>0 || row.eff=="random"){
-          sd.random <- abs(sdrandom(objr, covM, incl))
+        try({
+        if(num.lv>0 || row.eff=="random") {
+          sd.random <- sdrandom(objr, covM, incl,ignore.u = ignore.u)
           prediction.errors <- list()
           if(row.eff=="random"){
-            prediction.errors$row.params <- sd.random[1:n];
-            sd.random <- sd.random[-(1:n)]
+            prediction.errors$row.params <- diag(as.matrix(sd.random))[1:n];
+            sd.random <- sd.random[-(1:n),-(1:n)]
           }
           if(num.lv>0){
-            prediction.errors$lvs <- matrix(sd.random[1:(n*num.lv)],n,num.lv);
-            sd.random <- sd.random[-(1:(n*num.lv))]
+            cov.lvs <- array(0, dim = c(n, num.lv, num.lv))
+            for (i in 1:n) {
+              cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv-1)*n+i),(0:(num.lv-1)*n+i)])
+            }
+            prediction.errors$lvs <- cov.lvs
           }
           out$prediction.errors <- prediction.errors
-        }
+        }},silent = TRUE)
       } else {
         incl[names(objr$par)=="lg_Ar"] <- FALSE;
         incl[names(objr$par)=="Au"] <- FALSE;
