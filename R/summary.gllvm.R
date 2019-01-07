@@ -11,13 +11,11 @@
 #' data(antTraits)
 #' y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
-#' fit <- gllvm(y = y, family = "poisson")
+#' fit <- gllvm(y = y, family = poisson())
 #' summary(fit)
 #'
 #'@export
 
-
-# object: An object of class 'gllvm'
 summary.gllvm <- function(object, ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
@@ -27,58 +25,53 @@ summary.gllvm <- function(object, ...) {
   family <- object$family
 
   M <- cbind(object$params$beta0, object$params$theta)
+  sumry <- list()
+  sumry$'log-likelihood' <- object$logL
+  crit <- inf.criteria(object)
+  sumry$df <- crit$k
+  sumry$AIC <- crit$AIC
+  sumry$AICc <- crit$AICc
+  sumry$BIC <- crit$BIC
 
-  newnams <- c("Intercept")
+  crit <-
+    newnams <- c("Intercept")
 
   if (num.lv > 0)
     newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
-  cat("Call: \n")
-  print(object$call)
-  cat("family: \n")
-  print(object$family)
-  cat("\n")
-  cat("Coefficients: \n")
-  print(M)
-  cat("\n")
+  sumry$Call <- object$call
+  sumry$family <- object$family
+  sumry$Coefficients <- M
+
   if (!is.null(object$TR)) {
     if (!is.null(object$X)) {
-      cat("Covariate coefficients: \n")
-      print(object$params$B)
+      sumry$'Covariate coefficients' <- object$params$B
     }
-    cat("\n")
   } else {
     if (!is.null(object$X)) {
-      cat("Covariate coefficients: \n")
-      print(object$params$Xcoef)
-      cat("\n")
+      sumry$'Environmental coefficients' <- object$params$Xcoef
     }
   }
   if (!is.null(object$params$row.params)) {
-    cat("Row intercepts: \n")
-    print(object$params$row.params)
-    cat("\n")
+    sumry$'Row intercepts' <- object$params$row.params
   }
 
   if (object$row.eff == "random") {
-    cat("Variance of random row intercepts: \n")
     object$params$sigma2 = object$params$sigma ^ 2
     names(object$params$sigma2) = "sigma^2"
-    print(object$params$sigma2)
-    cat("\n")
+    sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
 
   if (object$family == "negative.binomial") {
-    cat("Dispersion parameters inv.phi: \n")
-    print(object$params$inv.phi)
+    sumry$'Dispersion parameters' <- object$params$phi
   }
   if (object$family == "tweedie") {
-    cat("Dispersion parameters: \n")
-    print(object$params$phi)
+    sumry$'Dispersion parameters' <- object$params$phi
   }
   if (object$family == "ZIP") {
-    cat("Zero inflation p: \n")
-    print(object$params$phi)
+    sumry$'Zero inflation p' <- object$params$phi
   }
+  class(sumry) <- "summary.gllvm"
+  return(sumry)
 }

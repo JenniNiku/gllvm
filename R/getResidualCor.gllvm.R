@@ -1,7 +1,12 @@
 #' @title Extract residual correlations from gllvm object
-#' @description  Calculates the residual correlation from gllvm models.
+#' @description  Calculates the residual covariance and correlation matrices for gllvm model.
 #'
 #' @param object   an object of class 'gllvm'.
+#'
+#' @return Function returns following components:
+#'  \item{cor }{residual correlation matrix}
+#'  \item{cov }{residual covariance matrix}
+#'  \item{trace }{trace of residual covariance matrix}
 #'
 #' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'
@@ -10,7 +15,7 @@
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
-#'fit <- gllvm(y = y, family = "poisson")
+#'fit <- gllvm(y = y, family = poisson())
 #'# residual correlations:
 #'cr <- getResidualCor(fit)
 #'

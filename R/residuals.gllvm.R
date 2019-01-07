@@ -1,11 +1,11 @@
-#' @title Dunn-Smyth -residuals for gllvm model
-#' @description Calculates Dunn-Smyth -residuals for gllvm model.
+#' @title Dunn-Smyth residuals for gllvm model
+#' @description Calculates Dunn-Smyth residuals for gllvm model.
 #'
 #' @param object an object of class 'gllvm'.
 #' @param ... not used.
 #'
 #' @details
-#' Computes Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) for gllvm model.
+#' Computes Dunn-Smyth residuals (randomized quantile residuals, Dunn and Smyth, 1996) for gllvm model.
 #' For the observation \eqn{Y_{ij}} Dunn-Smyth residuals are defined as
 #'
 #' \deqn{r_{ij}=\Phi^{-1}(u_{ij}F_{ij}(y_{ij})  + (1-u_{ij})F_{ij}^-(y_{ij})),}
@@ -28,7 +28,7 @@
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
-#'fit <- gllvm(y = y, family = "poisson")
+#'fit <- gllvm(y = y, family = poisson())
 #'# residuals
 #'res <- residuals(fit)
 #'

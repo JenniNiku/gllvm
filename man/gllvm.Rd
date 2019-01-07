@@ -5,12 +5,13 @@
 \title{Generalized Linear Latent Variable Models}
 \usage{
 gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
-  num.lv = 2, family, method = "VA", row.eff = FALSE, offset = NULL,
-  sd.errors = TRUE, Lambda.struc = "unstructured", diag.iter = 5,
-  trace = FALSE, plot = FALSE, la.link.bin = "logit", n.init = 1,
-  Power = 1.5, reltol = 1e-06, seed = NULL, max.iter = 200,
-  maxit = 1000, start.fit = NULL, starting.val = "res", TMB = TRUE,
-  optimizer = "optim", Lambda.start = 0.1, jitter.var = 0)
+  num.lv = 2, family, method = "VA", row.eff = FALSE,
+  offset = NULL, sd.errors = TRUE, Lambda.struc = "unstructured",
+  diag.iter = 5, trace = FALSE, plot = FALSE,
+  la.link.bin = "probit", n.init = 1, Power = 1.5, reltol = 1e-08,
+  seed = NULL, max.iter = 200, maxit = 1000, start.fit = NULL,
+  starting.val = "res", TMB = TRUE, optimizer = "optim",
+  Lambda.start = c(0.1, 0.5), jitter.var = 0)
 }
 \arguments{
 \item{y}{(n x m) matrix of responses.}
@@ -25,11 +26,11 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.}
 
-\item{family}{distribution function for responses. Options are "poisson" (with log link), "negative.binomial" (with log link), "binomial" (with logit/probit link when \code{method = "LA"} and probit link when \code{method = "VA"}), zero inflated poisson ("ZIP") and Tweedie ("tweedie") (with log link, only with "LA"-method), "ordinal" (only with "VA"-method).}
+\item{family}{distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}) and Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method), \code{"ordinal"} (only with \code{"VA"}-method).}
 
 \item{method}{model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.}
 
-\item{row.eff}{\code{FALSE}, \code{TRUE} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE}.}
+\item{row.eff}{\code{FALSE}, \code{TRUE} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.}
 
 \item{offset}{vector or matrix of offset terms.}
 
@@ -87,10 +88,12 @@ An object of class "gllvm" includes the following components:
    \item{$inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
    }}
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
- \item{sd }{list of standard errors of parameters}
+ \item{sd }{ list of standard errors of parameters}
+ \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
+ \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
 }
 \description{
-Fits generalized linear latent variable models for multivariate data. The models can be fitted using Laplace approximation method or variational
+Fits generalized linear latent variable model for multivariate data. The model can be fitted using Laplace approximation method or variational
 approximation method.
 }
 \details{
@@ -101,10 +104,10 @@ site related environmental covariates are used, the expectation of response \eqn
 \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
 
 where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional row effect
-at site \eqn{i}, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
+at site \eqn{i}, and it can be fixed or random effect, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 specific coefficients related to covariates and the latent variables, respectively.
 
-The alternative model is fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
+An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 are included. The expectation of response \eqn{Y_{ij}} is
 
 \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_x + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
@@ -116,8 +119,8 @@ The interaction/fourth corner terms are optional as well as are the main effects
 
 The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
-However, sometimes this is computationally too demanding, and default option \code{starting.val = "res"}
-usually gives reasonably good results.
+However, sometimes this is computationally too demanding, and default option
+\code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
 
 Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 
@@ -128,15 +131,15 @@ With ordinal family response classes must start from 0 or 1.
 
   Mean and variance for distributions are defined as follows.
 \itemize{
-  \item{For count data \code{family = "poisson"}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
+  \item{For count data \code{family = poisson()}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\phi_j*\mu_{ij}^2}, or}
   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)}.}
 
-  \item{For binary data \code{family = "binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
+  \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
 
   \item{For biomass data \code{family = "tweedie"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
 
-  \item{For ordinal data \code{family = "ordinal"}:}{ See Hui et.al. (2016).}
+  \item{For ordinal data \code{family = "ordinal"}:}{ Cumulative probit model, see Hui et.al. (2016).}
   }
 }
 }
@@ -148,7 +151,7 @@ X <- as.matrix(antTraits$env)
 TR <- antTraits$traits
 # Fit model with environmental covariates Bare.ground and Shrub.cover
 fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
-            family = "poisson")
+            family = poisson())
 ordiplot(fit)
 coefplot(fit)
 
@@ -165,7 +168,7 @@ fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 ordiplot(fitl0)
 
 # Poisson family:
-fit.p <- gllvm(y, family = "poisson", method = "LA")
+fit.p <- gllvm(y, family = poisson(), method = "LA")
 ordiplot(fit.p)
 # Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
 fit.z <- gllvm(y, family = "ZIP", method = "LA", start.fit = fit.p)
@@ -205,14 +208,14 @@ coefplot(fitF1)
 #library(lattice)
 #a = max( abs(fourth) )
 #colort = colorRampPalette(c("blue","white","red"))
-#plot.4th = levelplot(t(as.matrix(fourth)), xlab="Environmental Variables",
-#                     ylab="Species traits", col.regions=colort(100), at=seq(-a, a, length=100),
-#                     scales = list( x= list(rot = 45)))
+#plot.4th = levelplot(t(as.matrix(fourth)), xlab = "Environmental Variables",
+#              ylab = "Species traits", col.regions = colort(100),
+#              at = seq( -a, a, length = 100), scales = list( x = list(rot = 45)))
 #print(plot.4th)
 
 # Specify model using formula
 fitF2 <- gllvm(y = y, X = X, TR = TR,
- formula = ~ Bare.ground + Canopy.cover*(Pilosity + Webers.length),
+ formula = ~ Bare.ground + Canopy.cover * (Pilosity + Webers.length),
  family = "negative.binomial")
 ordiplot(fitF2)
 coefplot(fitF2)
@@ -224,7 +227,7 @@ ycoral <- tikus$abund
 # Let's consider only years 1981 and 1983
 ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0, ]
 # Exclude species which have observed at less than 4 sites
-ycoral <- ycoral[(colSums(ycoral > 0) > 3)]
+ycoral <- ycoral[-17, (colSums(ycoral > 0) > 3)]
 # Fit Tweedie model for coral data (this line may take few minutes to run)
 fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
 ordiplot(fit.twe)
@@ -246,6 +249,8 @@ Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).
 Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21.
 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
+
+Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. Submitted.
 
 Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }

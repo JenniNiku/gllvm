@@ -9,7 +9,8 @@
   "Residuals vs row index", "Residuals vs column index", "Scale-Location"),
   var.colors = NULL, panel = if (add.smooth) panel.smooth else points,
   add.smooth = if (!is.null(getOption("add.smooth"))) {    
-  getOption("add.smooth") } else TRUE, envelopes = TRUE, reps = 150, ...)
+  getOption("add.smooth") } else TRUE, envelopes = TRUE, reps = 150,
+  ...)
 }
 \arguments{
 \item{x}{an object of class 'gllvm'.}
@@ -35,22 +36,22 @@ Four plots (selectable by which) are currently available: a plot of residuals ag
 linear predictors of fitted values, a Normal Q-Q plot of residuals, residuals against row index and residuals against column index.
 }
 \details{
-plot.gllvm is used for model diagnostics. Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
+plot.gllvm is used for model diagnostics. Dunn-Smyth residuals (randomized quantile residuals) (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
 }
 \examples{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model with Poisson family
-fit <- gllvm(y, family = "poisson")
+fit <- gllvm(y, family = poisson())
 # Plot residuals
-plot(fit, mfrow = c(2,2))
+plot(fit, mfrow = c(3,2))
 
 \donttest{
 # Fit gllvm model with negative binomial family
 fitnb <- gllvm(y = y, family = "negative.binomial")
 # Plot residuals
-plot(fitnb, mfrow = c(2,2))
+plot(fitnb, mfrow = c(3,2))
 # Plot only two first plots
 plot(fitnb, which = 1:2, mfrow = c(1,2))
 }

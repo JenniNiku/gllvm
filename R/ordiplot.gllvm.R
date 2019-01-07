@@ -2,7 +2,7 @@
 #' @description Plots latent variables and their corresponding coefficients (biplot).
 #'
 #' @param object   an object of class 'gllvm'.
-#' @param biplot   \code{TRUE} if both latent variables and their coefficients are plotted, \code{FALSE} if only LVs.
+#' @param biplot   \code{TRUE} if both latent variables and their coefficients are plotted, \code{FALSE} if only latent variables.
 #' @param ind.spp  the number of response variables (usually, species) to include on the biplot. The default is none, or all if \code{biplot = TRUE}.
 #' @param alpha    a numeric scalar between 0 and 1 that is used to control the relative scaling of the latent variables and their coefficients, when constructing a biplot.
 #' @param main  main title.
@@ -10,8 +10,6 @@
 #' @param jitter   if \code{TRUE}, jittering is applied on points.
 #' @param s.colors colors for sites
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
-#' @param region logical, if \code{TRUE} ellipsoidal prediction regions are created around point predictions of latent variables. Not applicable for a biplot.
-#' @param level the confidence level of the prediction region. Scalar between 0 and 1, defaults to \code{0.95}.
 #' @param cex.spp size of species labels in biplot
 #' @param ...	additional graphical arguments.
 #'
@@ -25,8 +23,6 @@
 #' of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 #' is used to control the relative scaling of the latent variables and their coefficients.
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
-#' 
-#' Note that option for prediction regions is at very experimental stage at the moment, and the uncertainty of the parameters is ignored when "VA" is used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
 #'
@@ -34,7 +30,7 @@
 #' #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
-#'fit <- gllvm(y, family = "poisson")
+#'fit <- gllvm(y, family = poisson())
 #'# Ordination plot:
 #'ordiplot(fit)
 #'# Biplot with 10 species
@@ -44,7 +40,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2),
-                           jitter = FALSE, s.colors = 1, symbols = FALSE, region = FALSE, level = 0.95, cex.spp = 0.7, ...) {
+                           jitter = FALSE, s.colors = 1, symbols = FALSE, cex.spp = 0.7, ...) {
     if (any(class(object) != "gllvm"))
       stop("Class of the object isn't 'gllvm'.")
 
@@ -63,16 +59,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
     if (object$num.lv == 1) {
       plot(1:n, object$lvs, ylab = "LV1", xlab = "Row index")
-      if (region) {
-        if (object$method == "LA") {
-          serr <- c(object$prediction.errors$lvs)
-        } else {
-          serr <- c(object$A)
-        }
-        lower <- object$lvs - 1.96 * sqrt(serr)
-        upper <- object$lvs + 1.96 * sqrt(serr)
-        segments(y0 = lower, x0 = 1:n, y1 = upper, x1 = 1:n, col = 2)
-      }
     }
 
     if (object$num.lv > 1) {
@@ -104,25 +90,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
               jitter(object$lvs[, which.lvs][, 2]),
               label = 1:n, cex = 1.2, col = s.colors )
           }
-
-        if (region) {
-          if (object$method == "LA") {
-            #serr <- object$prediction.errors$lvs
-            for (i in 1:n) {
-              covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
-              ellipse( object$lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
-            }
-          } else {
-            for (i in 1:n) {
-              if(!object$TMB && object$Lambda.struc == "diagonal"){
-                covm <- diag(object$A[i,which.lvs]);
-              } else {
-                covm <- object$A[i,which.lvs,which.lvs];
-              }
-              ellipse( object$lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
-            }
-          }
-        }
       }
 
       if (biplot) {

@@ -17,10 +17,9 @@
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env)
-#'TR <- antTraits$traits
 #'# Fit model with environmental covariates
 #'fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
-#'             family = "poisson")
+#'             family = poisson())
 #'coefplot.gllvm(fit)
 #'
 #'\donttest{

@@ -12,7 +12,14 @@
 ##############################################################
 
 
-gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", num.lv = 2, max.iter = 200, eps = 1e-4, row.eff = TRUE, Lambda.struc = "unstructured", trace = TRUE, plot = FALSE, sd.errors = FALSE, start.lvs = NULL, offset=NULL, maxit = 100, diag.iter = 5, seed=NULL,get.fourth=TRUE,get.trait=TRUE,n.init=1,constrOpt=FALSE,restrict=30,start.params=NULL,starting.val="res",Lambda.start=0.1, jitter.var=0, yXT = NULL) {
+gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
+      num.lv = 2, max.iter = 200, eps = 1e-6, row.eff = FALSE,
+      Lambda.struc = "unstructured", trace = TRUE, plot = FALSE, sd.errors = FALSE,
+      start.lvs = NULL, offset = NULL, maxit = 100, diag.iter = 5, seed = NULL,
+      get.fourth = TRUE, get.trait = TRUE, n.init = 1, constrOpt = FALSE,
+      restrict = 30, start.params = NULL, starting.val = "res", Lambda.start = 0.1,
+      jitter.var = 0, yXT = NULL) {
+
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
 
   term=NULL
@@ -20,6 +27,8 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
   y=as.data.frame(y)
   X1=X; TR1=TR;
   formula1=formula
+
+  if(!is.null(TR) && NCOL(X)<1) stop("No covariates in the model, fit the model using gllvm(y,family=",family,"...)")
 
   # change categorical variables to dummy variables
   num.X <- 0
@@ -43,10 +52,11 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
   }
 
   num.T <- 0
+  T.new <- NULL
   if(!is.null(TR)) {
     num.T <- dim(TR)[2]
+    T.new <- matrix(0,p,0)
     if(num.T>0){
-      T.new <- NULL
       for (i in 1:num.T) {
         if(!is.factor(TR[,i])  && length(unique(TR[,i]))>2) {
           TR[,i]=scale(TR[,i])
@@ -116,11 +126,17 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     term<-terms(m1)
 
     Xd <- as.matrix(model.matrix(formula,data = data))
-    Xd <- as.matrix(Xd[,!(colnames(Xd) %in% c("(Intercept)"))])
-    # Tässä ongelma, miten saada vain X tai TR muuttujat minne kuuluukin
-    X <- Xd[data$time==1,]; X1=as.matrix(X.new[,colnames(X.new) %in% colnames(Xd)]);
-    TR <- Xd[data$id==1,]; TR1=as.matrix(T.new[,colnames(T.new) %in% colnames(Xd)]);
-    colnames(X1) <- colnames(X.new)[colnames(X.new) %in% colnames(Xd)]; colnames(TR1)=colnames(T.new)[colnames(T.new) %in% colnames(Xd)];
+    nXd <- colnames(Xd)
+    Xd <- as.matrix(Xd[,!(nXd %in% c("(Intercept)"))])
+    colnames(Xd) = nXd[!(nXd %in% c("(Intercept)"))]
+
+    if(!is.null(X.new)) fx <- apply(matrix(sapply(colnames(X.new),function(x){grepl(x, colnames(Xd))}),ncol(Xd),ncol(X.new)),2,any)
+    ft <- NULL;
+    if(NCOL(T.new)>0) ft <- apply(matrix(sapply(colnames(T.new),function(x){grepl(x, colnames(Xd))}),ncol(Xd),ncol(T.new)),2,any)
+
+    X1=as.matrix(X.new[,fx]);
+    TR1=as.matrix(T.new[,ft]);
+    colnames(X1) <- colnames(X.new)[fx]; colnames(TR1)=colnames(T.new)[ft];
     nxd <- colnames(Xd)
     formulab <- paste("~",nxd[1],sep = "");
     for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
@@ -160,7 +176,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
   while(n.i<=n.init){
     if(n.init>1 && trace) cat("initial run ",n.i,"\n");
 
-    res <- start.values.gllvm.TMB(y = y, X = X, TR = TR, family = family, formula = formula, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val, jitter.var=jitter.var, yXT=yXT)
+    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, formula = formula, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val, jitter.var=jitter.var, yXT=yXT, row.eff = row.eff, TMB=FALSE, link="probit")
     if(is.null(start.params)){
       new.beta0 <- beta0 <- res$params[,1]
       # common env params or different env response for each spp
@@ -171,8 +187,8 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
       }
       new.row.params <- row.params <- NULL;
       if(row.eff){
-        new.row.params <- row.params <- rep(0,n);#log(rowMeans(y))-log(mean(y[1,]));
-        res$row.params <- row.params}#rep(0,n)
+        new.row.params <- row.params <- res$row.params
+        }
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
       if(num.lv > 0) {
@@ -189,6 +205,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
         zero.cons <- which(new.theta == 0)
       }
       new.B=B=NULL; if(!is.null(TR)) B=c(res$B)[1:nd]
+      if(any(is.na(B))) B[is.na(B)]=0
     } else{
       if(dim(start.params$y)==dim(y) && is.null(X)==is.null(start.params$X) && is.null(TR)==is.null(start.params$TR) && row.eff == start.params$row.eff){
         new.beta0 <- beta0 <- start.params$params$beta0
@@ -211,7 +228,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
 
     new.zeta <- zeta <- NULL; if(family == "ordinal") { new.zeta <- zeta <- res$zeta }
-    new.phi <- phi <- NULL; if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>100]=100; if(any(phis<0.10))phis[phis<0.10]=0.10; new.phi <- phi <- 1/phis }
+    new.phi <- phi <- NULL; if(family == "negative.binomial") { phis <- res$phi; if(any(phis>10))phis[phis>100]=100; if(any(phis<0.10))phis[phis<0.01]=0.01; new.phi <- phi <- 1/phis; res$phi=phis }
 
     if(constrOpt ){
       const=min(restrict,15)/5
@@ -228,7 +245,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
 
       if(trace) cat("Iteration:", iter, "\n")
 
-      if(Lambda.struc == "unstructured" & iter <= diag.iter) {
+      if(Lambda.struc == "unstructured" & iter <= diag.iter && num.lv>0) {
         tmp.Lambda.struc <- "diagonal"
         if(iter == 1)  new.lambda <- lambda <- matrix(Lambda.start,n,num.lv)#0.1
         if(iter == diag.iter) { tmp.Lambda.struc <- "unstructured"; new.lambda <- lambda <- lambda.convert(lambda,type=2) }
@@ -399,7 +416,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
               grad.theta <- c(grad.theta,colSums(sum1,na.rm=TRUE))
             }
           }
-          if(!is.null(X)) {
+          if(!is.null(X) && is.null(TR)) {
             for (l in 1:num.X) {
               sum1 <- sweep(dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1 - probs) + 1e-5),1,X[,l],"*")
               grad.env <- c(grad.env,colSums(sum1))
@@ -733,7 +750,6 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson", n
           error <- 1; lambda.iter <- 0
           if(tmp.Lambda.struc == "unstructured") new.lambda.mat <- lambda[i,,]
           if(tmp.Lambda.struc == "diagonal") new.lambda.mat <- diag(x=lambda[i,],nrow=num.lv)
-          #print(tmp.Lambda.struc)
           while(error > 1e-2 && lambda.iter < 100) {
 
             cw.lambda.mat <- new.lambda.mat

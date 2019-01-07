@@ -16,4 +16,5 @@ print.gllvm <- function(x, ...) {
   cat("AIC: ", crit$AIC, "\n")
   cat("AICc: ", crit$AICc, "\n")
   cat("BIC: ", crit$BIC, "\n")
+  invisible(crit)
 }

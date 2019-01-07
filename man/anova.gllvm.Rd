@@ -12,13 +12,14 @@
 \item{...}{one or more objects of class 'gllvm'}
 }
 \description{
-Compute an analysis of deviance table for two or more generalized linear latent variable model fits.
+Computes an analysis of deviance table for two generalized linear latent variable model fits.
 }
 \details{
 Computes likelihood-ratio test for two or more gllvm models.
 Test results makes sense only for nested models.
-Notice also that this test was not designed for tests which have df difference larger than 20,
-so for those tests the P-value should be treated as very approximate.
+Notice also that this test is not designed for testing models which have
+dagrees of freedom difference larger than 20. For such models
+the P-value should be treated as very approximate.
 }
 \examples{
 ## Load a dataset from the mvabund package
@@ -27,11 +28,11 @@ y <- antTraits$abund
 X <- antTraits$env
 TR <- antTraits$traits
 # Fit gllvm model
-fit1 <- gllvm(y, X, TR, formula = ~ Bare.ground+Shrub.cover
-             +Webers.length, family = "poisson")
-fit2 <- gllvm(y, X, TR, formula = ~ (Bare.ground+Shrub.cover)*
-             Webers.length, family = "poisson")
-# Let's test the need for fourth corner interaction terms using likelihood-ratio test:
+fit1 <- gllvm(y, X, TR, formula = ~ Bare.ground + Shrub.cover, family = poisson())
+fit2 <- gllvm(y, X, TR, formula = ~ Bare.ground + Shrub.cover +
+             (Bare.ground + Shrub.cover) : Webers.length, family = poisson())
+# Test if the model with fourth corner interaction terms is significantly
+# better using likelihood-ratio test:
 anova(fit1, fit2)
 
 }

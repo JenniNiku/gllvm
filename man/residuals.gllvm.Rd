@@ -2,7 +2,7 @@
 % Please edit documentation in R/residuals.gllvm.R
 \name{residuals.gllvm}
 \alias{residuals.gllvm}
-\title{Dunn-Smyth -residuals for gllvm model}
+\title{Dunn-Smyth residuals for gllvm model}
 \usage{
 \method{residuals}{gllvm}(object, ...)
 }
@@ -15,10 +15,10 @@
 A list containing \code{residuals} which is a matrix of residuals and \code{linpred} which is a matrix of linear predictors.
 }
 \description{
-Calculates Dunn-Smyth -residuals for gllvm model.
+Calculates Dunn-Smyth residuals for gllvm model.
 }
 \details{
-Computes Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) for gllvm model.
+Computes Dunn-Smyth residuals (randomized quantile residuals, Dunn and Smyth, 1996) for gllvm model.
 For the observation \eqn{Y_{ij}} Dunn-Smyth residuals are defined as
 
 \deqn{r_{ij}=\Phi^{-1}(u_{ij}F_{ij}(y_{ij})  + (1-u_{ij})F_{ij}^-(y_{ij})),}
@@ -32,7 +32,7 @@ generated at random from the standard uniform distribution.
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
-fit <- gllvm(y = y, family = "poisson")
+fit <- gllvm(y = y, family = poisson())
 # residuals
 res <- residuals(fit)
 

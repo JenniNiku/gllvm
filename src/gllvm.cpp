@@ -32,7 +32,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(extra);
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
-  DATA_VECTOR(random);//random row?
+  DATA_VECTOR(random);//random row
 
   int n = y.rows();
   int p = y.cols();
@@ -40,7 +40,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> Ar = exp(lg_Ar);
   Type sigma = exp(log_sigma);
 
-  //if(family>2 || num_lv<1) method=2;
   if(random(0)<1){  r0(0,0) = 0;}
 
   matrix<Type> eta(n,p);
@@ -77,11 +76,13 @@ Type objective_function<Type>::operator() ()
 
     matrix<Type> cQ(n,p);
 
-    for (int j=0; j<p;j++){
+    if(random(0)>0){
       for (int i=0; i<n; i++) {
-        cQ(i,j) = 0.5* Ar(i)*random(0);
-      }
-    }
+        Ar(i)=pow(Ar(i),2);
+        for (int j=0; j<p;j++){
+          cQ(i,j) = 0.5* Ar(i);//
+        }
+      }}
 
     if(num_lv>0){
       array<Type> A(num_lv,num_lv,n);
@@ -105,7 +106,6 @@ Type objective_function<Type>::operator() ()
       A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          //cQ(i,j) = 0.5*(((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum() + Ar(i)*random(0));//newlam.col(j)**newlam.col(j)*(newlam.col(j).transpose())).sum();
           cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
         }
         nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
@@ -132,7 +132,6 @@ Type objective_function<Type>::operator() ()
           nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
       }
     } else if(family<2){
       for (int i=0; i<n; i++) {
@@ -140,7 +139,6 @@ Type objective_function<Type>::operator() ()
           nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum() + (log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0));// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
       }
     } else {
       for (int i=0; i<n; i++) {
@@ -149,11 +147,9 @@ Type objective_function<Type>::operator() ()
           nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-        //nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum() + (log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0));// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
       }
     }
     nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
-    //nll -= -0.5*(u.array()*u.array()).sum();// -0.5*t(u_i)*u_i
 
 
   } else {

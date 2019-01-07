@@ -7,13 +7,12 @@
 \usage{
 \method{ordiplot}{gllvm}(object, biplot = FALSE, ind.spp = NULL,
   alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE,
-  s.colors = 1, symbols = FALSE, region = FALSE, level = 0.95,
-  cex.spp = 0.7, ...)
+  s.colors = 1, symbols = FALSE, cex.spp = 0.7, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{biplot}{\code{TRUE} if both latent variables and their coefficients are plotted, \code{FALSE} if only LVs.}
+\item{biplot}{\code{TRUE} if both latent variables and their coefficients are plotted, \code{FALSE} if only latent variables.}
 
 \item{ind.spp}{the number of response variables (usually, species) to include on the biplot. The default is none, or all if \code{biplot = TRUE}.}
 
@@ -28,10 +27,6 @@
 \item{s.colors}{colors for sites}
 
 \item{symbols}{logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used}
-
-\item{region}{logical, if \code{TRUE} ellipsoidal prediction regions are created around point predictions of latent variables. Not applicable for a biplot.}
-
-\item{level}{the confidence level of the prediction region. Scalar between 0 and 1, defaults to \code{0.95}.}
 
 \item{cex.spp}{size of species labels in biplot}
 
@@ -50,14 +45,12 @@ variables if \code{biplot = TRUE}. They are labeled using the column names of y.
 of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 is used to control the relative scaling of the latent variables and their coefficients.
 If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
-
-Note that option for prediction regions is at very experimental stage at the moment, and the uncertainty of the parameters is ignored when "VA" is used.
 }
 \examples{
 #'## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
-fit <- gllvm(y, family = "poisson")
+fit <- gllvm(y, family = poisson())
 # Ordination plot:
 ordiplot(fit)
 # Biplot with 10 species

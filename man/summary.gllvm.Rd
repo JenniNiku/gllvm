@@ -19,7 +19,7 @@ A summary of the fitted 'gllvm' object, including function call, distribution fa
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
-fit <- gllvm(y = y, family = "poisson")
+fit <- gllvm(y = y, family = poisson())
 summary(fit)
 
 }

@@ -13,7 +13,7 @@
 #' @param ...	additional graphical arguments.
 #'
 #' @details
-#' plot.gllvm is used for model diagnostics. Dunn-Smyth residuals or randomized quantile residuals (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
+#' plot.gllvm is used for model diagnostics. Dunn-Smyth residuals (randomized quantile residuals) (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
@@ -29,22 +29,22 @@
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model with Poisson family
-#'fit <- gllvm(y, family = "poisson")
+#'fit <- gllvm(y, family = poisson())
 #'# Plot residuals
-#'plot(fit, mfrow = c(2,2))
+#'plot(fit, mfrow = c(3,2))
 #'
 #' \donttest{
 #'# Fit gllvm model with negative binomial family
 #'fitnb <- gllvm(y = y, family = "negative.binomial")
 #'# Plot residuals
-#'plot(fitnb, mfrow = c(2,2))
+#'plot(fitnb, mfrow = c(3,2))
 #'# Plot only two first plots
 #'plot(fitnb, which = 1:2, mfrow = c(1,2))
 #'}
 #'@export
 
 
-plot.gllvm <- function(x, which=1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"),var.colors=NULL, panel = if (add.smooth) panel.smooth else points, add.smooth = if(!is.null(getOption("add.smooth"))){ getOption("add.smooth") } else TRUE, envelopes=TRUE, reps=150, ...) {
+plot.gllvm <- function(x, which=1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"),var.colors=NULL, panel = if (add.smooth) panel.smooth else points, add.smooth = if(!is.null(getOption("add.smooth"))){ getOption("add.smooth") } else TRUE, envelopes=TRUE, reps = 150, ...) {
   n <- NROW(x$y)
   p <- NCOL(x$y)
 
@@ -54,6 +54,8 @@ plot.gllvm <- function(x, which=1:5, caption=c("Residuals vs linear predictors",
   res <- residuals(x)
   ds.res <- res$residuals
   eta.mat <- res$linpred
+  xxx <- boxplot(c(eta.mat), outline = FALSE,plot = FALSE)$stats
+
   csum = order(colSums(as.matrix(x$y)))
   if (!is.null(var.colors)) {
     col <- rep(1, p)
@@ -69,7 +71,6 @@ par(...)
 
     if(1 %in% which) {
       if(is.null(gr.pars$xlim)) {
-        xxx <- boxplot(c(eta.mat), outline = FALSE,plot = FALSE)$stats
         plot(eta.mat, ds.res, xlab = "linear predictors", ylab = "Dunn-Smyth-residuals",
              type = "n", col = rep(col, each = n), main = mains[1], xlim = c(min(xxx), max(xxx))); abline(0, 0, col = "grey", lty = 3)
       } else {
@@ -80,7 +81,7 @@ par(...)
       panel(eta.mat, ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
     }
     if(2 %in% which) {
-      qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.5);
+      qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.6);
       qqline(c(res$residuals), col = 2)
       if(envelopes){
         K <- reps
@@ -94,13 +95,10 @@ par(...)
           Ym <- cbind(Ym, sort(ri))
         }
         Xm <- qnorm(ppoints(n * p))
-        cis <- apply(Ym, 1, quantile, probs = c(0.005, 0.995))
-        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
+        cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
 
-        lines(Xm, cis[1, ], type = "l", col = "red", lty = 4, lwd = 2)
-        lines(Xm, cis[2, ], type = "l", col = "red", lty = 4, lwd = 2)
-#        points(Xm, cis[1, ], type = "l", col = "red", lty = 4, lwd = 1.5)
-#        points(Xm, cis[2, ], type = "l", col = "red", lty = 4, lwd = 1.5)
+        points(Xm, cis[1, ], type = "l", col = "red", lty = 2, lwd = 2)
+        points(Xm, cis[2, ], type = "l", col = "red", lty = 2, lwd = 2)
 
       }
       }
@@ -118,7 +116,12 @@ par(...)
     if(5 %in% which) {
       sqres <- sqrt(abs(ds.res))
       yl <- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name("Dunn-Smyth-residuals"))))
-      plot(eta.mat, sqres, xlab = "linear predictors", ylab = yl, col = rep(col, each = n), main = mains[5], ...);
+      if(is.null(gr.pars$xlim)) {
+        plot(eta.mat, sqres, xlab = "linear predictors", ylab = yl, col = rep(col, each = n),
+             main = mains[5], xlim = c(min(xxx), max(xxx)), ...);
+      } else {
+        plot(eta.mat, sqres, xlab = "linear predictors", ylab = yl, col = rep(col, each = n), main = mains[5], ...);
+      }
       panel(eta.mat, sqres, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
 

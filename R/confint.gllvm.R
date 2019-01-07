@@ -14,9 +14,9 @@
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env[,1:2])
 #'# Fit gllvm model
-#'fit <- gllvm(y = y, X = X, family = "poisson")
-#'# 95 % confidence intervals
-#'confint(fit, level = 0.95)
+#'fit <- gllvm(y = y, X = X, family = poisson())
+#'# 95 % confidence intervals for coefficients of X variables
+#'confint(fit, level = 0.95, parm = "Xcoef")
 #'
 #'@export
 
@@ -89,7 +89,8 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   } else {
     if ("beta0" %in% parm) {
       object$params$Intercept = object$params$beta0
-      parm["beta0"] = "Intercept"
+      object$sd$Intercept = object$sd$beta0
+      parm[parm=="beta0"] = "Intercept"
     }
     cilow <- unlist(object$params[parm]) + qnorm(alfa) * unlist(object$sd[parm])
     ciup <- unlist(object$params[parm]) + qnorm(1 - alfa) * unlist(object$sd[parm])

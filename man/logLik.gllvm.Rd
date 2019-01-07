@@ -19,7 +19,7 @@ Extracts Log-likelihood from 'gllvm' objects.
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
-fit <- gllvm(y = y, family = "poisson")
+fit <- gllvm(y = y, family = poisson())
 # log-Likelihood:
 logLik(fit)
 

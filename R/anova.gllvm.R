@@ -1,5 +1,5 @@
 #' @title Analysis Of Deviance for gllvm
-#' @description  Compute an analysis of deviance table for two or more generalized linear latent variable model fits.
+#' @description  Computes an analysis of deviance table for two generalized linear latent variable model fits.
 #'
 #' @param object   an object of class 'gllvm'.
 #' @param ...   one or more objects of class 'gllvm'
@@ -7,8 +7,9 @@
 #' @details
 #' Computes likelihood-ratio test for two or more gllvm models.
 #' Test results makes sense only for nested models.
-#' Notice also that this test was not designed for tests which have df difference larger than 20,
-#' so for those tests the P-value should be treated as very approximate.
+#' Notice also that this test is not designed for testing models which have
+#' dagrees of freedom difference larger than 20. For such models
+#' the P-value should be treated as very approximate.
 #'
 #' @author Jenni Niku
 #'
@@ -19,11 +20,11 @@
 #'X <- antTraits$env
 #'TR <- antTraits$traits
 #'# Fit gllvm model
-#'fit1 <- gllvm(y, X, TR, formula = ~ Bare.ground+Shrub.cover
-#'              +Webers.length, family = "poisson")
-#'fit2 <- gllvm(y, X, TR, formula = ~ (Bare.ground+Shrub.cover)*
-#'              Webers.length, family = "poisson")
-#'# Let's test the need for fourth corner interaction terms using likelihood-ratio test:
+#'fit1 <- gllvm(y, X, TR, formula = ~ Bare.ground + Shrub.cover, family = poisson())
+#'fit2 <- gllvm(y, X, TR, formula = ~ Bare.ground + Shrub.cover +
+#'              (Bare.ground + Shrub.cover) : Webers.length, family = poisson())
+#'# Test if the model with fourth corner interaction terms is significantly
+#'# better using likelihood-ratio test:
 #'anova(fit1, fit2)
 #'
 #'@export
@@ -62,7 +63,7 @@ anova.gllvm <- function(object, ...) {
   df.chisq <- (df.list[-1] - df.list[1:(length(df.list) - 1)])
   Pval <- 1 - pchisq(D, df.chisq)
   paste("Model", 1:length(objects_order))
-  result <- data.frame( Resid.Df = n * p - df.list, D = c(0, D), Df.diff = c(0, df.chisq), Pr = c("", signif(Pval)) )
+  result <- data.frame( Resid.Df = n * p - df.list, D = c(0, D), Df.diff = c(0, df.chisq), P.value = c("", signif(Pval)) )
   #}
   if (any(result$Df > 20))
     warning( "This test was not designed for tests with a df.diff larger than 20 so the P-value should be treated as approximate.\n")

@@ -1,8 +1,28 @@
-start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, seed = NULL,power=NULL,starting.val="res",formula=NULL, jitter.var=0,yXT=NULL) {
+start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, seed = NULL,power=NULL,starting.val="res",formula=NULL, jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, link="probit") {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
   num.X <- 0; if(!is.null(X)) num.X <- dim(X)[2]
+  row.params=rep(0, n);
+  if(starting.val %in% c("res","random") || row.eff == "random"){
+    rmeany <- rowMeans(y)
+    if(family=="binomial"){
+      rmeany=1e-3+0.99*rmeany
+      if(row.eff %in% c("fixed",TRUE)) {
+        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
+      } else{
+        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
+      }
+    } else {
+      if(row.eff %in% c("fixed",TRUE)) {
+        row.params <-  row.params <- log(rmeany)-log(rmeany[1])
+      } else{
+        row.params <-  row.params <- log(rmeany)-log(mean(y))
+      }
+    }
+    if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] <- 1.5 * sign(row.params[abs(row.params)>1.5])
+  }
+  sigma=1
   if(!is.numeric(y))
     stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
 
@@ -59,18 +79,31 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
           }
           formula=form1
         }
-        fit.mva <- gllvm.VA(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="zero",yXT=yXT)
+        if(!TMB) fit.mva <- gllvm.VA(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="zero",yXT=yXT)
+        if(TMB) {
+          fit.mva <- trait.TMB(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb");
+          fit.mva$coef=fit.mva$params
+          if(row.eff=="random") sigma=fit.mva$params$sigma
+          }
         if(!is.null(form1)){
+          if(!is.null(fit.mva$coef$row.params)) row.params=fit.mva$coef$row.params
           env <- (fit.mva$coef$B)[n1]
           trait <- (fit.mva$coef$B)[n2]
           inter <- (fit.mva$coef$B)[!names(fit.mva$coef$B) %in% c(n1,n2)]
-          B <- c(env,trait,inter)} else {B=fit.mva$coef$B}
+          B <- c(env,trait,inter)
+        } else {
+            B=fit.mva$coef$B;
+            if(!is.null(fit.mva$coef$row.params)) row.params=fit.mva$coef$row.params
+            }
 
         fit.mva$phi <- phi <- fit.mva$coef$phi
         ds.res <- matrix(NA, n, p)
         rownames(ds.res) <- rownames(y)
         colnames(ds.res) <- colnames(y)
-        mu <- exp(matrix(fit.mva$X.design%*%fit.mva$coef$B,n,p) + matrix(fit.mva$coef$beta0,n,p,byrow = TRUE))
+        if(family %in% c("poisson", "negative.binomial")) mu <- exp(matrix(fit.mva$X.design%*%fit.mva$coef$B,n,p) + matrix(fit.mva$coef$beta0,n,p,byrow = TRUE))
+        if(family == "binomial") {
+          mu <-  binomial(link = link)$linkinv(matrix(fit.mva$X.design%*%fit.mva$coef$B,n,p) + matrix(fit.mva$coef$beta0,n,p,byrow = TRUE))
+        }
         for (i in 1:n) {
           for (j in 1:p) {
             if (family == "poisson") {
@@ -123,7 +156,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
           index <- matrix(0,n,num.lv)
         }
       }
-      if(is.null(TR)){params <- cbind(coef,gamma)#cbind(t(fit.mva$coef),gamma)
+      if(is.null(TR)){params <- cbind(coef,gamma)
       } else { params <- cbind((fit.mva$coef$beta0),gamma)}
     } else {
       if(is.null(TR)){
@@ -151,7 +184,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
     if(is.null(TR)){
       indeX <- cbind(index, X)
     }else{indeX <- cbind(index)}
-    if(num.lv == 0) indeX <- X#cbind(index = rep(1,N), X)
+    if(num.lv == 0) indeX <- X
 
     phi0<-NULL
     coefs0<-NULL
@@ -198,7 +231,6 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
         params[j,] <- cw.fit$coef
       }
     }
-    #if(num.lv>1) params[,(ncol(params) - num.lv + 1):ncol(params)][upper.tri(params[,(ncol(params) - num.lv + 1):ncol(params)])]=0
     if(starting.val%in%c("res") && num.lv>0){
 
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
@@ -286,12 +318,24 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, offset= NULL, t
   if(num.lv > 0) {
     index=index+mvtnorm::rmvnorm(n, rep(0, num.lv),diag(num.lv)*jitter.var);}
 
-  if(any(abs(params)>15)) params[abs(params)>15]=params[abs(params)>15]/3
+
+  if(num.lv>0){
+    try({
+      gamma.new <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
+      sig <- sign(diag(gamma.new));
+      params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)*sig)
+      index <- t(t(index)*sig)}, silent = TRUE)
+  }
+
   out <- list(params=params,phi=phi)
   if(!is.null(TR)) { out$B <- B}
   if(num.lv > 0) out$index <- index
   if(family == "ordinal") out$zeta <- zeta
   options(warn = 0)
+  if(row.eff!=FALSE) {
+    out$row.params=row.params
+    if(row.eff=="random") out$sigma=sigma
+  }
 
   return(out)
 }
@@ -366,7 +410,7 @@ calc.infomat <- function(theta = NULL, beta0=NULL, env = NULL, row.params = NULL
       if(!is.null(X) && is.null(TR)) {
         for (l in 1:num.X) {
           sum1 <- sweep(y-exp(eta.mat),1,X[,l],"*")
-          grad.env <- c(grad.env,colSums(sum1)) # else{grad.env <- c(grad.env,sum(sum1)) }
+          grad.env <- c(grad.env,colSums(sum1))
         }
       }
       if(!is.null(TR)) {
@@ -408,31 +452,6 @@ calc.infomat <- function(theta = NULL, beta0=NULL, env = NULL, row.params = NULL
 
       grad.phi <- colSums(-mu.mat.noquad + 1 + log(phi.mat) - digamma(phi.mat) - log(1 + phi.mat / exp(eta.mat)) - (y + phi.mat)/(phi.mat + exp(eta.mat)) + digamma(y + phi.mat))
 
-      #phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
-      #eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
-      #if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
-      #if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
-      #if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
-      #if(num.lv > 0) mu.mat <- eta.mat + new.vameans %*% t(new.theta) - calc.quad(new.lambda,new.theta,Lambda.struc)$mat
-      #if(num.lv > 0) mu.mat.noquad <- eta.mat + new.vameans %*% t(new.theta)
-      #if(num.lv == 0) { mu.mat <- eta.mat;  mu.mat.noquad=mu.mat.noquad }
-
-      #grad.beta0 <- colSums(-phi.mat - (y + phi.mat) * (-phi.mat / (exp(mu.mat) + phi.mat)))
-
-      #if(num.lv > 0) {
-      #  for(l in 1:num.lv) {
-      #    if(Lambda.struc == "unstructured") sum1 <- sweep(-phi.mat,1,new.vameans[,l],"*") + sweep(t(Lambda.theta[,,l]),1,-new.vameans[,l],"+") * (-(y + phi.mat) * (phi.mat / (exp(mu.mat) + phi.mat)))
-      #    if(Lambda.struc == "diagonal") sum1 <- sweep(-phi.mat,1,new.vameans[,l],"*") + sweep((new.lambda[,l] %*% t(new.theta[,l])),1,-new.vameans[,l],"+") * (-(y + phi.mat) * (phi.mat / (exp(mu.mat) + phi.mat)))
-      #    grad.theta <- c(grad.theta,colSums(sum1))}}
-      #if(!is.null(X) && is.null(TR)) {
-      #  for(l in 1:num.X) { sum1 <- sweep(-phi.mat - (y + phi.mat) * (-phi.mat / (exp(mu.mat) + phi.mat)),1,X[,l],"*")
-      #  grad.env <- c(grad.env,colSums(sum1))}}
-      #if(!is.null(TR)) {
-      #  sum1 <- c(-phi.mat - (y + phi.mat) * (-phi.mat / (exp(eta.mat) + phi.mat))) * Xd
-      #  grad.B <- c(grad.B,colSums(sum1))}
-      #if(row.eff) { grad.row.params <- rowSums(-phi.mat - (y + phi.mat) * (-phi.mat / (exp(mu.mat) + phi.mat))) }
-
-      #grad.phi <- colSums(-mu.mat.noquad + 1 + log(phi.mat) - digamma(phi.mat) - log(1 + phi.mat / exp(mu.mat)) - (y + phi.mat)/(phi.mat + exp(mu.mat)) + digamma(y + phi.mat))
     }
 
     if(family=="binomial") {
@@ -1040,7 +1059,7 @@ getFourthCorner<- function(object){
 }
 
 
-# Calculates standard errors for random effects according to TMB packages sdreport function
+# Calculates standard errors for random effects
 sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   r <- obj$env$random
   par = obj$env$last.par.best
@@ -1066,6 +1085,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   diag.cov.random <- diag.term1 + diag.term2
   return(diag.cov.random)
 }
+
 
 # draw an ellipse
 ellipse<-function(center, covM, rad){
