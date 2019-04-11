@@ -79,13 +79,13 @@ An object of class "gllvm" includes the following components:
  \item{lvs }{latent variables}
  \item{params}{list of parameters
  \itemize{
-   \item{$theta }{ coefficients related to latent variables}
-   \item{$beta0 }{ column specific intercepts}
-   \item{$Xcoef }{ coefficients related to environmental covariates X}
-   \item{$B }{ coefficients in fourth corner model}
-   \item{$row.params }{ row-specific intercepts}
-   \item{$phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, or probability of zero inflation for ZIP family}
-   \item{$inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
+   \item{theta }{ coefficients related to latent variables}
+   \item{beta0 }{ column specific intercepts}
+   \item{Xcoef }{ coefficients related to environmental covariates X}
+   \item{B }{ coefficients in fourth corner model}
+   \item{row.params }{ row-specific intercepts}
+   \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, or probability of zero inflation for ZIP family}
+   \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
    }}
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
  \item{sd }{ list of standard errors of parameters}

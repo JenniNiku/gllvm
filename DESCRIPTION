@@ -1,7 +1,7 @@
 Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
-Version: 1.1.2
+Version: 1.1.3
 Author: Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
 Description: Analysis of multivariate data using generalized linear latent variable models (gllvm). 
@@ -10,7 +10,7 @@ Description: Analysis of multivariate data using generalized linear latent varia
       and (2017) <doi:10.1080/10618600.2016.1164708> and Niku et al. (2017) 
       <doi:10.1007/s13253-017-0304-7>.
 License: GPL-2
-Imports: MASS, Matrix, mvtnorm, statmod, fishMod
+Imports: MASS, Matrix, mvtnorm, statmod, fishMod, mgcv
 Depends: TMB, mvabund
 Encoding: UTF-8
 LazyData: true

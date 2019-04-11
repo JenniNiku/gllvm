@@ -88,13 +88,13 @@
 #'  \item{lvs }{latent variables}
 #'  \item{params}{list of parameters
 #'  \itemize{
-#'    \item{$theta }{ coefficients related to latent variables}
-#'    \item{$beta0 }{ column specific intercepts}
-#'    \item{$Xcoef }{ coefficients related to environmental covariates X}
-#'    \item{$B }{ coefficients in fourth corner model}
-#'    \item{$row.params }{ row-specific intercepts}
-#'    \item{$phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, or probability of zero inflation for ZIP family}
-#'    \item{$inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
+#'    \item{theta }{ coefficients related to latent variables}
+#'    \item{beta0 }{ column specific intercepts}
+#'    \item{Xcoef }{ coefficients related to environmental covariates X}
+#'    \item{B }{ coefficients in fourth corner model}
+#'    \item{row.params }{ row-specific intercepts}
+#'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, or probability of zero inflation for ZIP family}
+#'    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
 #'    }}
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
 #'  \item{sd }{ list of standard errors of parameters}
@@ -218,11 +218,12 @@
 #'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
-#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines
+#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
 #'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq formula ppoints quantile qchisq
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
+#'@importFrom mgcv gam predict.gam
 #'@importFrom mvtnorm rmvnorm
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,

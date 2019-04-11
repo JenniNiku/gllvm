@@ -14,7 +14,7 @@
 
 \item{y.label}{logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.}
 
-\item{which.Xcoef}{vector indicating which X-coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.}
+\item{which.Xcoef}{vector indicating which covariate coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.}
 
 \item{cex.ylab}{the magnification to be used for axis annotation relative to the current setting of cex.}
 
@@ -22,7 +22,7 @@
 
 \item{mar}{vector of length 4, which defines the margin sizes: \code{c(bottom, left, top, right)}. Defaults to \code{c(4,5,2,1)}.}
 
-\item{xlim.list}{list of vectors with length of two to define the intervals for x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals}
+\item{xlim.list}{list of vectors with length of two to define the intervals for an x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals}
 
 \item{...}{additional graphical arguments.}
 }

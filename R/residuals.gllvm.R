@@ -14,7 +14,10 @@
 #' distribution, \eqn{F_{ij}^-(y))} is the limit as \eqn{F_{ij}(y)} is approached from the negative side, and \eqn{u_{ij}} has been
 #' generated at random from the standard uniform distribution.
 #'
-#' @return A list containing \code{residuals} which is a matrix of residuals and \code{linpred} which is a matrix of linear predictors.
+#' @return 
+#'  \item{residuals }{matrix of residuals}
+#'  \item{linpred }{matrix of linear predictors}
+#'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @references

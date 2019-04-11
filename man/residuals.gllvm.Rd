@@ -12,7 +12,8 @@
 \item{...}{not used.}
 }
 \value{
-A list containing \code{residuals} which is a matrix of residuals and \code{linpred} which is a matrix of linear predictors.
+\item{residuals }{matrix of residuals}
+ \item{linpred }{matrix of linear predictors}
 }
 \description{
 Calculates Dunn-Smyth residuals for gllvm model.

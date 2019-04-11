@@ -3,11 +3,11 @@
 #'
 #' @param object an object of class 'gllvm'.
 #' @param y.label logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.
-#' @param which.Xcoef vector indicating which X-coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.
+#' @param which.Xcoef vector indicating which covariate coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.
 #' @param cex.ylab the magnification to be used for axis annotation relative to the current setting of cex.
 #' @param mfrow same as \code{mfrow} in \code{par}. If \code{NULL} (default) it is determined automatically.
 #' @param mar vector of length 4, which defines the margin sizes: \code{c(bottom, left, top, right)}. Defaults to \code{c(4,5,2,1)}.
-#' @param xlim.list list of vectors with length of two to define the intervals for x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals
+#' @param xlim.list list of vectors with length of two to define the intervals for an x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals
 #' @param ...	additional graphical arguments.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen

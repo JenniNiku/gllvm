@@ -1097,3 +1097,17 @@ ellipse<-function(center, covM, rad){
   ellips <- t(center + rad * t(unit.circ %*% Qc[, order]))
   lines(ellips, col = 4)
 }
+
+gamEnvelope <- function(x, y,line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, ...){
+  xSort <- sort(x, index.return = TRUE)
+  gam.yx <- gam(y[xSort$ix] ~ xSort$x)
+  pr.y <- predict.gam(gam.yx, se.fit = TRUE)
+  n.obs <- length(xSort$ix)
+  prHi <- pr.y$fit + 1.96*pr.y$se.fit
+  prLow <- pr.y$fit - 1.96*pr.y$se.fit
+  if(envelopes) polygon(xSort$x[c(1:n.obs,n.obs:1)], c(prHi,prLow[n.obs:1]), col = envelope.col[2], border = NA)
+  lines(xSort$x, pr.y$fit, col = envelope.col[1])
+  abline(h = 0, col = 1)
+  points(x, y, col = col, ...)
+}
+

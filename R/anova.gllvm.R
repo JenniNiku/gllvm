@@ -8,7 +8,7 @@
 #' Computes likelihood-ratio test for two or more gllvm models.
 #' Test results makes sense only for nested models.
 #' Notice also that this test is not designed for testing models which have
-#' dagrees of freedom difference larger than 20. For such models
+#' degrees of freedom difference larger than 20. For such models
 #' the P-value should be treated as very approximate.
 #'
 #' @author Jenni Niku

@@ -5,19 +5,15 @@
 \alias{getResidualCor}
 \title{Extract residual correlations from gllvm object}
 \usage{
-\method{getResidualCor}{gllvm}(object)
+\method{getResidualCor}{gllvm}(object, adjust = 1)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
-}
-\value{
-Function returns following components:
- \item{cor }{residual correlation matrix}
- \item{cov }{residual covariance matrix}
- \item{trace }{trace of residual covariance matrix}
+
+\item{adjust}{defaults to 1, when residual covariance is adjusted in the case of negative binomial and binomial distribution. Alternatives are 0, when adjustment is not used, and 2 for negative binomial distribution. See function \code{\link{getResidualCov.gllvm}}.}
 }
 \description{
-Calculates the residual covariance and correlation matrices for gllvm model.
+Calculates the residual correlation matrix for gllvm model.
 }
 \examples{
 # Load a dataset from the mvabund package
@@ -27,16 +23,12 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 # residual correlations:
 cr <- getResidualCor(fit)
-
 \dontrun{
 # Plot residual correlations:
 install.packages("corrplot", "gclus")
 library(corrplot)
 library(gclus)
-rbPal <- colorRampPalette(c('darkblue', 'white', 'darkred'))
-breaks <- seq(min(cr$cor), max(cr$cor), length.out = 40)
-Colors <- rbPal(100)[as.numeric(cut(cr$cor, breaks = breaks))]
-corrplot(cr$cor[order.single(cr$cor), order.single(cr$cor)], diag = F,
+corrplot(cr[order.single(cr), order.single(cr)], diag = F,
   type = "lower", method = "square", tl.cex = 0.8, tl.srt = 45, tl.col = "red")
   }
 

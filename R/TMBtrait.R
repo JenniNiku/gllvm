@@ -72,14 +72,16 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   if(is.null(formula)){
     n1 <- colnames(X)
     n2 <- colnames(TR)
-    formula=paste("y~(",n1[1],sep = "")
+    form1 <- paste("",n1[1],sep = "")
     if(length(n1)>1){
       for(i1 in 2:length(n1)){
-        formula <- paste(formula,n1[i1],sep = "+")
+        form1 <- paste(form1,n1[i1],sep = "+")
       }}
-    formula <- paste(formula, ") * (", sep = "")
+    formula <- paste("y~",form1,sep = "")
+    formula <- paste(formula, form1,sep = " + (")
+    
+    formula <- paste(formula, ") : (", sep = "")
     formula <- paste(formula, n2[1], sep = "")
-
     if(length(n2) > 1){
       for(i2 in 2:length(n2)){
         formula <- paste(formula, n2[i2], sep = "+")
