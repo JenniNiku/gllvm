@@ -2,7 +2,10 @@
 #' @description  Calculates the residual correlation matrix for gllvm model.
 #'
 #' @param object   an object of class 'gllvm'.
-#' @param adjust  defaults to 1, when residual covariance is adjusted in the case of negative binomial and binomial distribution. Alternatives are 0, when adjustment is not used, and 2 for negative binomial distribution. See function \code{\link{getResidualCov.gllvm}}.
+#' @param adjust  The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.
+#' 
+#' @details
+#' Residual correlation matrix is calculated based on the residual covariance matrix, see details from \code{\link{getResidualCov.gllvm}}.
 #' 
 #' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'

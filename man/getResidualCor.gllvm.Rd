@@ -10,10 +10,13 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{adjust}{defaults to 1, when residual covariance is adjusted in the case of negative binomial and binomial distribution. Alternatives are 0, when adjustment is not used, and 2 for negative binomial distribution. See function \code{\link{getResidualCov.gllvm}}.}
+\item{adjust}{The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.}
 }
 \description{
 Calculates the residual correlation matrix for gllvm model.
+}
+\details{
+Residual correlation matrix is calculated based on the residual covariance matrix, see details from \code{\link{getResidualCov.gllvm}}.
 }
 \examples{
 # Load a dataset from the mvabund package
