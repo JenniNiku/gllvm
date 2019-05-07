@@ -580,6 +580,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
 
+  
+  # DW, 7/5/19: adding TMBfn to output:
+  out$TMBfn <- objr
+  out$TMBfn$par <- optr$par #ensure params in this fn take final values
   out$logL <- -out$logL
   return(out)
 }
