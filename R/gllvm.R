@@ -506,6 +506,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       }
 
       out$X.design <- fitg$X.design
+      out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
       if (num.lv > 0)
         out$lvs <- fitg$lvs
