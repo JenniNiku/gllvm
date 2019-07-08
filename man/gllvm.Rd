@@ -97,7 +97,7 @@ Fits generalized linear latent variable model for multivariate data. The model c
 approximation method.
 }
 \details{
-Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
+Fits generalized linear latent variable models as in Hui et al. (2017) and Niku et al. (2017).
 Method can be used with two types of latent variable models depending on covariates. If only
 site related environmental covariates are used, the expectation of response \eqn{Y_{ij}} is determined by
 
@@ -122,7 +122,7 @@ recommendable to use multiple runs and pick up the one giving the highest log-li
 However, sometimes this is computationally too demanding, and default option
 \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
 
-Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
+Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017), as described in Niku et al. (2019).
 
 An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 With ordinal family response classes must start from 0 or 1.
@@ -250,7 +250,7 @@ Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (
 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522
 
-Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. Submitted.
+Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2019). Efficient estimation of generalized linear latent variable models. PLoS One 14(5) e0216129.
 
 Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }
