@@ -1,3 +1,28 @@
+#' @title Predict latent variables for gllvm Fits
+#' @description Obtains predictions for latent variables from a fitted generalized linear latent variable model object.
+#'
+#' @param object an object of class 'gllvm'.
+#' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
+#' @param newY A new response data. Defaults to the dataset used for original model fit.
+#' @param ... not used.
+#'
+#' @details
+#' 
+#' 
+#' @return A matrix containing requested predictor types.
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#'
+#' @examples
+#'# Load a dataset from the mvabund package
+#'data(antTraits)
+#'y <- as.matrix(antTraits$abund)
+#'X <- scale(antTraits$env[, 1:3])
+#'# Fit gllvm model
+#'fit <- gllvm(y = y, X, family = poisson())
+#'# fitted values
+#'predLVs <- predictLVs.gllvm(fit, type = "response")
+#'
+#'@export
 predictLVs.gllvm = function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
 {
   # create a gllvm object which refits the model using newX and newY:
