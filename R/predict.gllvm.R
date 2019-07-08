@@ -53,8 +53,10 @@
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
   newdata <- newX
   p <- ncol(object$y)
-  n <- nrow(object$y)
+  n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
+  if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
+  
   formula <- formula(terms(object))
   
   b0 <- object$params$beta0
@@ -140,8 +142,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       eta <- eta + object$lvs %*% t(theta)
     if(!is.null(newLV)) {
       if(ncol(newLV) != object$num.lv) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
-      if(is.null(newdata)==FALSE) #DW addition, 6/5/19: so no error here for intercept models
-      {  if(nrow(newLV) != nrow(Xnew)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") }
+      if(!is.null(newdata)) #DW addition, 6/5/19: so no error here for intercept models
+      {  
+        if(nrow(newLV) != nrow(Xnew)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
+      }
       lvs <- newLV
       eta <- eta + lvs %*% t(theta)
     }
@@ -187,6 +191,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }}
     out <- preds
   }
+   try(rownames(out)<-1:NROW(out), silent = TRUE)
+  
   return(out)
 }
 

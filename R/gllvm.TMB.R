@@ -583,7 +583,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   
   # DW, 7/5/19: adding TMBfn to output:
   out$TMBfn <- objr
-  out$TMBfn$par <- optr$par #ensure params in this fn take final values
+  out$TMBfn$par <- objr$env$last.par.best #optr$par #ensure params in this fn take final values
   out$logL <- -out$logL
   return(out)
 }
