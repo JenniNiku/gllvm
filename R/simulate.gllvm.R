@@ -1,8 +1,33 @@
+#' @title Simulate data from gllvm fit
+#' @description Generate new data Using the fitted values of the parameters
+#'
+#' @param object an object of class 'gllvm'.
+#' @param nsim an optional positive integer specifying the number of simulated datasets. Defaults to 1.
+#' @param seed an optional integer to set seed number, passed to set.seed. Defaults to a random seed number.
+#' @param ... not used.
+#'
+#' @details
 # simulate function for gllvm objects.  Note this simulates marginally over LVs.
 # an option is to add a conditional argument, which would fix the LVs.
 # David Warton
-# last modified 6th May 2019
-
+#' 
+#' @return A matrix containing generated data.
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#'
+#' @examples
+#'# Load a dataset from the mvabund package
+#'data(antTraits)
+#'y <- as.matrix(antTraits$abund)
+#'X <- scale(antTraits$env[, 1:3])
+#'# Fit gllvm model
+#'fit <- gllvm(y = y, X, family = poisson())
+#'# Simulate data
+#'newdata <- simulate(fit)
+#'
+#'@aliases simulate simulate.gllvm
+#'@method simulate gllvm
+#'@export
+#'@export simulate.gllvm
 simulate.gllvm = function (object, nsim = 1, seed = NULL, ...) 
 {
   # code chunk from simulate.lm to sort out the seed thing:
@@ -39,9 +64,12 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
   nTot = nsim*nRows*nCols # total number of values to generate
   if(object$family=="negative.binomial")
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
-  newDat = switch(object$family,"binomial"=rbinom(nTot,size=1,prob=prs),
-                  "poisson"=rpois(nTot,prs),
-                  "negative.binomial"=rnbinom(nTot,size=invPhis,mu=prs),
+  if(object$family=="tweedie")
+    phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
+  newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
+                  "poisson" = rpois(nTot, prs),
+                  "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
+                  "tweedie" = tweedie::rtweedie(nTot, mu = prs, phi = phis, power = object$Power),
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))
