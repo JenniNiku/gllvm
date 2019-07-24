@@ -43,7 +43,8 @@ Type objective_function<Type>::operator() ()
   if(random(0)<1){  r0(0,0) = 0;}
 
   matrix<Type> eta(n,p);
-
+  eta.fill(0.0);
+  
   matrix<Type> newlam(num_lv,p);
   if(num_lv>0){
 
@@ -57,6 +58,10 @@ Type objective_function<Type>::operator() ()
             newlam(i,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
           }
         }
+        // set diag>0 !!!!!!!!!!!
+        /*if (j == i){
+          newlam(i,j) = exp(newlam(i,j));
+        }*/
       }
     }
 
@@ -75,7 +80,8 @@ Type objective_function<Type>::operator() ()
     eta += r0*xr + offset;
 
     matrix<Type> cQ(n,p);
-
+    cQ.fill(0.0);
+    
     if(random(0)>0){
       for (int i=0; i<n; i++) {
         Ar(i)=pow(Ar(i),2);

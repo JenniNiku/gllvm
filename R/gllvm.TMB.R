@@ -101,7 +101,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if (row.eff != FALSE) {
         row.params <- fit$row.params
         if (row.eff == "random") {
-          sigma <- 1;#sd(row.params)
+          sigma <- sd(row.params)#1;#
         }
       }#rep(0,n)
       lvs <- NULL
@@ -115,6 +115,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         beta0 <- start.params$params$beta0 ## column intercepts
         betas <- NULL
         if (!is.null(X))
+          if(!(dim(X) == dim(start.params$X))) stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that predictors X are the same in both models.")
           betas <- c(start.params$params$Xcoef) ## covariates coefficients
         lambdas <- NULL
         if (num.lv > 0){
@@ -140,10 +141,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     phis <- NULL
     if (family == "negative.binomial") {
       phis <- fit$phi
-      if (any(phis > 10))
-        phis[phis > 100] <- 100
-      if (any(phis < 0.10))
-        phis[phis < 0.01] <- 0.01
+      if (any(phis > 20))
+        phis[phis > 20] <- 20
+      if (any(phis < 0.20))
+        phis[phis < 0.05] <- 0.05
       fit$phi <- phis
       phis <- 1/phis
     }
@@ -169,9 +170,17 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0,n)}
     a <- c(beta0)
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
-    if(num.lv > 0) lambda <- lambdas[lower.tri(lambdas,diag = TRUE)]
-    if(num.lv > 0) u <- lvs
-    if(!is.null(phis)) { phi <- phis } else { phi <- rep(1, p); fit$phi <- phi}
+    if(num.lv > 0) {
+      # diag(lambdas) <- log(diag(lambdas)) !!!
+      lambda <- lambdas[lower.tri(lambdas,diag = TRUE)]
+      u <- lvs
+    }
+    if(!is.null(phis)) { 
+      phi <- phis 
+    } else { 
+        phi <- rep(1, p); 
+        fit$phi <- phi
+        }
 
     q <- num.lv
 
@@ -244,28 +253,25 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         param1 <- optr$par
         nam <- names(param1)
         r1 <- matrix(param1[nam=="r0"])
-        b1 <- matrix(param1[nam=="b"] + rnorm(p,0,0.02),num.X+1,p)
+        b1 <- matrix(param1[nam=="b"],num.X+1,p)
         lambda1 <- param1[nam=="lambda"]
         u1 <- matrix(param1[nam=="u"],n,num.lv)
         lg_phi1 <- param1[nam=="lg_phi"]
         log_sigma1 <- param1[nam=="log_sigma"]
-        Au1 <- c(param1[nam=="Au"],rep(0,num.lv*(num.lv-1)/2*n))
+        Au1<- c(pmax(param1[nam=="Au"],rep(log(0.001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
         lg_Ar1 <- (param1[nam=="lg_Ar"])
-        if(row.eff=="random"){
-          r1=matrix(fit$row.params); lg_sigma1=log(sd(r1))
-          Ar1=log(exp(c(param1[nam=="lg_Ar"]))+max(Lambda.start))
-        }
+
         if(row.eff == "random"){
           if(num.lv>0){
             objr <- TMB::MakeADFun(
               data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0,random=1), silent=TRUE,
-              parameters = list(r0=r1, b = b1,B=matrix(0),lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=lg_Ar1), #log(phi)
+              parameters = list(r0=r1, b = b1,B=matrix(0),lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=log_sigma1,Au=Au1,lg_Ar=lg_Ar1), #log(phi)
               inner.control=list(mgcmax = 1e+200,maxit = maxit),
               DLL = "gllvm")
           } else {
             objr <- TMB::MakeADFun(
               data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=0,random=1), silent=TRUE,
-              parameters = list(r0=r1, b = b1,B=matrix(0),lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=0,Au=0,lg_Ar=lg_Ar1), #log(phi)
+              parameters = list(r0=r1, b = b1,B=matrix(0),lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=log_sigma1,Au=0,lg_Ar=lg_Ar1), #log(phi)
               inner.control=list(mgcmax = 1e+200,maxit = maxit),
               DLL = "gllvm")
           }
@@ -282,7 +288,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(optimizer=="optim") {
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
-        if(inherits(optr, "try-error")){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+        if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
 
       }
 
@@ -307,7 +313,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(p>1) {
           theta[lower.tri(theta,diag=TRUE)] <- param[li];
         } else {theta <- param[li]}
-
+        # diag(theta) <- exp(diag(theta)) !!!
+        
       }
       new.loglik <- objr$env$value.best[1]
 
@@ -388,6 +395,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(p>1) {
           theta[lower.tri(theta,diag=TRUE)] <- param[li];
         } else { theta <- param[li] }
+        # diag(theta) <- exp(diag(theta)) !!!
       }
       new.loglik <- objr$env$value.best[1]
       if(family %in% c("negative.binomial","tweedie","ZIP")) {
@@ -550,6 +558,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(out$y)
         out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
+        # diag(out$sd$theta) <- diag(out$sd$theta)*diag(out$params$theta) !!!
       }
       out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(out$y);
       if(!is.null(X)){
@@ -585,6 +594,12 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   out$TMBfn <- objr
   out$TMBfn$par <- objr$env$last.par.best #optr$par #ensure params in this fn take final values
   out$logL <- -out$logL
+  
+  if(method == "VA"){
+    #if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+    if(row.eff == "random") out$logL = out$logL + n*0.5
+    #if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+  }
   return(out)
 }
 

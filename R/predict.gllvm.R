@@ -24,6 +24,8 @@
 #'fit <- gllvm(y = y, X, family = poisson())
 #'# fitted values
 #'predfit <- predict(fit, type = "response")
+#'
+#' \donttest{
 #'# linear predictors
 #'predlin <- predict(fit)
 #'# Predict new sites:
@@ -32,7 +34,6 @@
 #'colnames(xnew) <- colnames(X)
 #'predfit <- predict(fit, newX = xnew, type = "response")
 #'
-#' \donttest{
 #'TR <- (antTraits$tr[, 1:3])
 #'fitt <- gllvm(y = y, X, TR, family = poisson())
 #'# linear predictors
@@ -50,6 +51,7 @@
 #'@method predict gllvm
 #'@export
 #'@export predict.gllvm
+
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
   newdata <- newX
   p <- ncol(object$y)

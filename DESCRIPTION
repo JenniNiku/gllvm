@@ -1,7 +1,7 @@
 Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
-Version: 1.1.5
+Version: 1.1.6
 Date: 2019-06-12
 Author: Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
@@ -17,3 +17,8 @@ LinkingTo: TMB, RcppEigen
 RoxygenNote: 6.1.1
 NeedsCompilation: yes
 URL: https://github.com/JenniNiku/gllvm.git
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat, gclus, corrplot, lattice
+VignetteBuilder: knitr

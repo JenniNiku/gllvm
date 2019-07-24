@@ -8,7 +8,8 @@
   caption = c("Residuals vs linear predictors", "Normal Q-Q",
   "Residuals vs row index", "Residuals vs column index", "Scale-Location"),
   var.colors = NULL, add.smooth = TRUE, envelopes = TRUE,
-  reps = 150, envelope.col = c("blue", "lightblue"), ...)
+  reps = 150, envelope.col = c("blue", "lightblue"), n.plot = NULL,
+  ...)
 }
 \arguments{
 \item{x}{an object of class 'gllvm'.}
@@ -27,11 +28,13 @@
 
 \item{envelope.col}{colors for envelopes, vector with length of two}
 
+\item{n.plot}{number of species (response variables) to be plotted. Defaults to \code{NULL} when all response variables are plotted. Might be useful when data is very high dimensional.}
+
 \item{...}{additional graphical arguments.}
 }
 \description{
-Four plots (selectable by which) are currently available: a plot of residuals against
-linear predictors of fitted values, a Normal Q-Q plot of residuals, residuals against row index and residuals against column index.
+Five plots (selectable by which) are currently available: a plot of residuals against
+linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale location plot.
 }
 \details{
 plot.gllvm is used for model diagnostics. Dunn-Smyth residuals (randomized quantile residuals) (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.

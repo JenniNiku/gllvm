@@ -118,8 +118,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
               label = 1:n, cex = 1.2, col = s.colors )
           }
         text(
-          jitter(choose.lv.coefs[largest.lnorms, which.lvs], amount = 0.2),
-          label = rownames(object$params$theta[largest.lnorms, which.lvs]),
+          jitter(matrix(choose.lv.coefs[largest.lnorms, which.lvs], nrow = length(largest.lnorms)), amount = 0.2),
+          label = rownames(object$params$theta)[largest.lnorms],
           col = 4, cex = cex.spp )
       }
 

@@ -78,7 +78,7 @@
 #'   }
 #' }
 #'
-#'
+#'@note If function gives warning: 'In f(x, order = 0) : value out of range in 'lgamma'', optimizer have visited an area where gradients become too big. It is automatically fixed by trying another step in the optimization process, and can be ignored if errors do not occur.
 #'
 #' @return An object of class "gllvm" includes the following components:
 #'
@@ -321,8 +321,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         frame1 <- mf
         X <- TR <- NULL
         if (length(attr(term, "term.labels")) > 0) {
-          datax <- frame1[, attr(term, "term.labels")[attr(term, "order") == 1]]
-          colnames(datax) <- attr(term, "term.labels")[attr(term, "order") == 1]
+          datax <- frame1[, colnames(frame1)!="y"]
+          colnames(datax) <- colnames(frame1)[colnames(frame1)!="y"]
+          #datax <- frame1[, attr(term, "term.labels")[attr(term, "order") == 1]]
+          # colnames(datax) <- attr(term, "term.labels")[attr(term, "order") == 1]
 
           for (k in 1:ncol(datax)) {
             lngth <- NULL

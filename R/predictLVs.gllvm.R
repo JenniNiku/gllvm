@@ -7,23 +7,28 @@
 #' @param ... not used.
 #'
 #' @details
-#' 
+#' Obtains predictions for latent variables from a fitted generalized linear latent variable model object.
 #' 
 #' @return A matrix containing requested predictor types.
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
-#'# Load a dataset from the mvabund package
-#'data(antTraits)
-#'y <- as.matrix(antTraits$abund)
-#'X <- scale(antTraits$env[, 1:3])
-#'# Fit gllvm model
-#'fit <- gllvm(y = y, X, family = poisson())
-#'# fitted values
-#'predLVs <- predictLVs.gllvm(fit, type = "response")
-#'
+#'  \donttest{
+#' # Load a dataset from the mvabund package
+#' data(antTraits)
+#' y <- as.matrix(antTraits$abund)
+#' X <- scale(antTraits$env[, 1:3])
+#' # Fit gllvm model
+#' fit <- gllvm(y = y, X, family = poisson())
+#' # fitted values
+#' predLVs <- predictLVs.gllvm(fit, type = "response")
+#' }
+#'@aliases predictLVs predictLVs.gllvm
+#'@method predictLVs gllvm
 #'@export
-predictLVs.gllvm = function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
+#'@export predictLVs.gllvm
+
+predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
 {
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
@@ -33,7 +38,8 @@ predictLVs.gllvm = function (object, newX = if(is.null(object$X)) NULL else obje
 
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
-  objParam = objectTest$TMBfn$par[whichLVs]
+  # objParam = objectTest$TMBfn$env$last.par.best[whichLVs]
+ objParam = objectTest$TMBfn$par[whichLVs]
 #  objParam = objectTest$TMBfn$par
 #  optLVs=optim(objParam,logL4lvs,gr=objectTest$TMBfn$gr,objectTest,object,method="BFGS")
   optLVs = optim(objParam,logL4lvs,gr=objParamGrad,objectTest,object,method="BFGS")
@@ -153,6 +159,13 @@ predictLogL.gllvm = function (object, newX = if(is.null(object$X)) NULL else obj
   # and we are done
   return(logLs)
 }
+
+#' @export predictLVs
+predictLVs <- function(object, ...)
+{
+  UseMethod(generic = "predictLVs")
+}
+
 
 # to check:
 # example(gllvm) # escape out of it after the second model, fitv0, has been fitted

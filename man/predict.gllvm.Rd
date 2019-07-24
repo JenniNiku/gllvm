@@ -40,6 +40,8 @@ X <- scale(antTraits$env[, 1:3])
 fit <- gllvm(y = y, X, family = poisson())
 # fitted values
 predfit <- predict(fit, type = "response")
+
+\donttest{
 # linear predictors
 predlin <- predict(fit)
 # Predict new sites:
@@ -48,7 +50,6 @@ xnew <- cbind(rnorm(10), rnorm(10), rnorm(10))
 colnames(xnew) <- colnames(X)
 predfit <- predict(fit, newX = xnew, type = "response")
 
-\donttest{
 TR <- (antTraits$tr[, 1:3])
 fitt <- gllvm(y = y, X, TR, family = poisson())
 # linear predictors

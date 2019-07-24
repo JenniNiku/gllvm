@@ -7,14 +7,15 @@
 #' @param ... not used.
 #'
 #' @details
-# simulate function for gllvm objects.  Note this simulates marginally over LVs.
-# an option is to add a conditional argument, which would fix the LVs.
-# David Warton
+#' simulate function for gllvm objects.  Note this simulates marginally over LVs.
+#' an option is to add a conditional argument, which would fix the LVs.
+#' David Warton
 #' 
 #' @return A matrix containing generated data.
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
+#'  \donttest{
 #'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -23,11 +24,12 @@
 #'fit <- gllvm(y = y, X, family = poisson())
 #'# Simulate data
 #'newdata <- simulate(fit)
-#'
+#'}
 #'@aliases simulate simulate.gllvm
 #'@method simulate gllvm
 #'@export
 #'@export simulate.gllvm
+
 simulate.gllvm = function (object, nsim = 1, seed = NULL, ...) 
 {
   # code chunk from simulate.lm to sort out the seed thing:
@@ -46,16 +48,9 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
   nCols = dim(object$params$theta)[1]
   # generate new latent variables
   lvsNew = matrix(rnorm(nsim*nRows*object$num.lv),ncol=object$num.lv)
-  if(is.null(object$X)) # for intercept models, there is a bug in predict fn so loop nsim times as a workaround
+  if(is.null(object$X)) 
   {
-     prs = matrix(NA,nsim*nRows,nCols)
-     for(iSim in 1:nsim)
-     {
-       whichRows = (iSim-1)*nRows+1:nRows
-       prTemp = predict.gllvm(object,newLV = lvsNew[whichRows,],type="response")
-       prs[whichRows,] = prTemp
-     }
-     dimnames(prs) = list(1:(nsim*nRows),dimnames(prTemp)[[2]]) #match up column names
+    prs = predict.gllvm(object,newLV = lvsNew,type="response")
   }
   else
     prs = predict.gllvm(object,newX=object$X[rep(1:nRows,nsim),], newLV = lvsNew,type="response")
@@ -75,4 +70,11 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
   newDat = as.data.frame(matrix(newDat,ncol=nCols))
   dimnames(newDat)=dimnames(prs)
   return(newDat)
+}
+
+
+#' @export simulate
+simulate <- function(object, ...)
+{
+  UseMethod(generic = "simulate")
 }

@@ -1,6 +1,6 @@
 #' @title Plot Diagnostics for an gllvm Object
-#' @description Four plots (selectable by which) are currently available: a plot of residuals against
-#' linear predictors of fitted values, a Normal Q-Q plot of residuals, residuals against row index and residuals against column index.
+#' @description Five plots (selectable by which) are currently available: a plot of residuals against
+#' linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale location plot.
 #'
 #' @param x an object of class 'gllvm'.
 #' @param which if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below.
@@ -10,6 +10,7 @@
 #' @param envelopes logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}
 #' @param reps number of replications when simulating confidence envelopes for normal Q-Q plot
 #' @param envelope.col colors for envelopes, vector with length of two
+#' @param n.plot number of species (response variables) to be plotted. Defaults to \code{NULL} when all response variables are plotted. Might be useful when data is very high dimensional.
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -44,19 +45,25 @@
 #'@export
 
 
-plot.gllvm <- function(x, which = 1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"), var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, envelope.col = c("blue","lightblue"), ...) {
+plot.gllvm <- function(x, which = 1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"), var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, envelope.col = c("blue","lightblue"), n.plot = NULL, ...) {
   n <- NROW(x$y)
   p <- NCOL(x$y)
+  
+  sppind=1:p
+  if(!is.null(n.plot)) {
+    sppind <- sort(sample(1:p, n.plot))
+    p <- n.plot
+    }
 
   mains <- rep("", 4)
   mains[which] <- caption[which]
 
   res <- residuals(x)
-  ds.res <- res$residuals
-  eta.mat <- res$linpred
+  ds.res <- res$residuals[,sppind]
+  eta.mat <- res$linpred[,sppind]
   xxx <- boxplot(c(eta.mat), outline = FALSE,plot = FALSE)$stats
 
-  csum = order(colSums(as.matrix(x$y)))
+  csum = order(colSums(as.matrix(x$y))[sppind])
   if (!is.null(var.colors)) {
     col <- rep(1, p)
     col[1:p] <- (var.colors)
@@ -82,7 +89,7 @@ par(...)
 #      panel(eta.mat, ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
     }
     if(2 %in% which) {
-      qq.x<-qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.5);
+      qq.x<-qqnorm(c(ds.res), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = n), cex = 0.5, xlab = "theoretical quantiles");
       qqline(c(res$residuals), col = envelope.col[1])
       if(envelopes){
         K <- reps
@@ -105,14 +112,14 @@ par(...)
       }
       }
     if(3 %in% which) {
-      plot(rep(1:n, p), ds.res, xlab = "site.index", ylab = "Dunn-Smyth-residuals", col =
+      plot(rep(1:n, p), ds.res, xlab = "site index", ylab = "Dunn-Smyth-residuals", col =
              rep(col, each = n), main = mains[3], ...);
       abline(0, 0, col = "grey", lty = 3)
       if(add.smooth) panel.smooth(rep(1:n, p), ds.res, col = rep(col, each = n), col.smooth = envelope.col[1],...)
       #panel(rep(1:n, p), ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
     }
     if(4 %in% which) {
-      plot(rep(1:p, each = n), ds.res, xlab = "spp.index", ylab = "Dunn-Smyth-residuals", col =
+      plot(rep(1:p, each = n), ds.res, xlab = "species index", ylab = "Dunn-Smyth-residuals", col =
              rep(col[csum], each = n), main = mains[4], ...);  abline(0, 0, col = "grey", lty = 3)
       if(add.smooth) panel.smooth(rep(1:p, each = n), ds.res, col = rep(col[csum], each = n), col.smooth = envelope.col[1], ...)
       #panel(rep(1:p, each = n), ds.res, col = rep(col[csum], each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)

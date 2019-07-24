@@ -158,7 +158,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       if(row.eff!=FALSE){
         row.params <- res$row.params
         if (row.eff == "random") {
-          sigma <- 1;
+          sigma <- sd(row.params);
         }
       }
       vameans <- theta <- lambda <- NULL
@@ -215,8 +215,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0, n)}
     a <- c(beta0)
-    if(num.lv > 0) theta <- theta[lower.tri(theta, diag = TRUE)]
-    if(num.lv > 0) u <- vameans
+    if(num.lv > 0) {
+      # diag(theta) <- log(diag(theta)) !!!
+      theta <- theta[lower.tri(theta, diag = TRUE)]
+      u <- vameans
+    }
     if(!is.null(phis)) {phi=(phis)} else {phi <- rep(1,p)}
     q <- num.lv
     sigma <- 1
@@ -332,19 +335,16 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       param1 <- optr$par
       nam <- names(param1)
       r1 <- matrix(param1[nam=="r0"])
-      b1 <- rbind(param1[nam=="b"]+rnorm(p,0,0.01))
+      b1 <- rbind(param1[nam=="b"])
       B1 <- matrix(param1[nam=="B"])
       lambda1 <- param1[nam=="lambda"]
       u1 <- matrix(param1[nam=="u"],n,num.lv)
       lg_phi1 <- param1[nam=="lg_phi"]
       lg_sigma1 <- param1[nam=="log_sigma"]
 
-      Au1 <- c(param1[nam=="Au"],rep(0,num.lv*(num.lv-1)/2*n))
+      Au1<- c(pmax(param1[nam=="Au"],rep(log(0.001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
       Ar1 <- c(param1[nam=="lg_Ar"])
-      if(row.eff=="random"){
-        r1 <- matrix(res$row.params); lg_sigma1 <- log(sd(r1))
-        Ar1 <- log(exp(c(param1[nam=="lg_Ar"]))+max(Lambda.start))
-      }
+
 
       if(row.eff=="random"){
 
@@ -422,7 +422,10 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     if(num.lv > 0){
       lvs <- (matrix(param[ui],n,q))
       theta <- matrix(0,p,num.lv)
-      theta[lower.tri(theta,diag = TRUE)] <- param[li];
+      if(p>1) {
+        theta[lower.tri(theta,diag=TRUE)] <- param[li];
+      } else {theta <- param[li]}
+      # diag(theta) <- exp(diag(theta)) !!!
     }
     new.loglik<-objr$env$value.best[1]
 
@@ -558,6 +561,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           colnames(se.theta) <- paste("LV", 1:num.lv, sep="");
           rownames(se.theta) <- colnames(out$y)
           out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
+          # diag(out$sd$theta) <- diag(out$sd$theta)*diag(out$params$theta) !!!
         }
         out$sd$beta0 <- se.beta0; names(out$sd$beta0)  <-  colnames(out$y);
         out$sd$B <- se.B; names(out$sd$B) <- colnames(Xd)
@@ -589,6 +593,12 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
   out$D <- Xd
   out$logL <- -out$logL
+  
+  if(method == "VA"){
+    #if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+    if(row.eff == "random") out$logL = out$logL + n*0.5
+    #if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+  }
   return(out)
 }
 
