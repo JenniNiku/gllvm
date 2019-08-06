@@ -22,6 +22,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       } else{
         row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
       }
+    } else if(family=="gaussian"){
+      rmeany=1e-3+0.99*rmeany
+      if(row.eff %in% c("fixed",TRUE)) {
+        row.params <-  rmeany - rmeany[1]
+      } else{
+        row.params <-  rmeany - mean(rmeany)
+      }
     } else {
       if(row.eff %in% c("fixed",TRUE)) {
         row.params <-  row.params <- log(rmeany)-log(rmeany[1])
@@ -37,7 +44,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family=="ZIP") family="poisson"
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian")))
     stop("inputed family not allowed...sorry =(")
 
   if(num.lv > 0) {
@@ -70,10 +77,18 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   if(family != "tweedie" && family!="ordinal") { ## Using logistic instead of prbit regession here for binomial, but whatever...
     if(starting.val=="res" && is.null(start.lvs) ){# && num.lv>0
       if(is.null(TR)){
-        if(!is.null(X)) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
-        if(is.null(X)) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
-        resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-        coef <- t(fit.mva$coef)
+        if(family!="gaussian") {
+          if(!is.null(X)) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
+          if(is.null(X)) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+          coef <- t(fit.mva$coef)
+        } else {
+          if(!is.null(X)) fit.mva <- mvabund::manylm(y ~ X)
+          if(is.null(X)) fit.mva <- mvabund::manylm(y ~ 1)
+          resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+          coef <- t(fit.mva$coef)
+          fit.mva$phi <- apply(fit.mva$residuals,2,sd)
+        }
         gamma=NULL
         if(num.lv>0){
           lastart <- FAstart(mu=NULL, family=family, y=y, num.lv = num.lv, phis=fit.mva$phi, resi=resi)
@@ -142,18 +157,35 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       if(is.null(TR)){params <- cbind(coef,gamma)
       } else { params <- cbind((fit.mva$coef$beta0),gamma)}
     } else {
-      if(is.null(TR)){
-        if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ X + index, family = family, K = trial.size)
-        if(is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
-        if(!is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
-        if(is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+      if(family!="gaussian") {
+        if(is.null(TR)){
+          if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ X + index, family = family, K = trial.size)
+          if(is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
+          if(!is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
+          if(is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+        } else {
+          if(num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
+          if(num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          env  <-  rep(0,num.X)
+          trait  <-  rep(0,num.T)
+          inter <- rep(0, num.T * num.X)
+          B <- c(env,trait,inter)
+        }
       } else {
-        if(num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
-        if(num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
-        env  <-  rep(0,num.X)
-        trait  <-  rep(0,num.T)
-        inter <- rep(0, num.T * num.X)
-        B <- c(env,trait,inter)
+        if(is.null(TR)){
+          if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manylm(y ~ X + index)
+          if(is.null(X) & num.lv > 0) fit.mva <- mvabund::manylm(y ~ index)
+          if(!is.null(X) & num.lv == 0) fit.mva <- mvabund::manylm(y ~ X)
+          if(is.null(X) & num.lv == 0) fit.mva <- mvabund::manylm(y ~ 1)
+        } else {
+          if(num.lv > 0) fit.mva <- mvabund::manylm(y ~ index)
+          if(num.lv == 0) fit.mva <- mvabund::manylm(y ~ 1)
+          env  <-  rep(0,num.X)
+          trait  <-  rep(0,num.T)
+          inter <- rep(0, num.T * num.X)
+          B <- c(env,trait,inter)
+        }
+        fit.mva$phi <- apply(fit.mva$residuals,2,sd)
       }
       params <- t(fit.mva$coef)
     }}
@@ -161,8 +193,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family == "negative.binomial") {
     phi <- fit.mva$phi  + 1e-5
+  } else if(family == "gaussian") {
+    phi <- fit.mva$phi
   } else { phi <- NULL }
-
+  
   if(family == "tweedie") {
     if(is.null(TR)){
       indeX <- cbind(index, X)
@@ -307,6 +341,12 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL,
         if (family == "binomial") {
           a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
           b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "gaussian") {
+          a <- pnorm(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j], sd = phis[j])
+          b <- pnorm(as.vector(unlist(y[i, j])), 1, mu[i, j], sd = phis[j])
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }

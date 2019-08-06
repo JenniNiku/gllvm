@@ -10,7 +10,7 @@
 #' Obtains predictions for latent variables from a fitted generalized linear latent variable model object.
 #' 
 #' @return A matrix containing requested predictor types.
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @author  David Warton, Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #'  \donttest{

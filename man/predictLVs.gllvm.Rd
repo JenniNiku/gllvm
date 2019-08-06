@@ -39,5 +39,5 @@ predLVs <- predictLVs.gllvm(fit, type = "response")
 }
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>
+David Warton, Jenni Niku <jenni.m.e.niku@jyu.fi>
 }

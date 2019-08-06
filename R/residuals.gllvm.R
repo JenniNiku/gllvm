@@ -83,7 +83,9 @@ residuals.gllvm <- function(object, ...) {
     mu <- mu + 1e-10
   if (object$family == "binomial")
     mu <- binomial(link = object$link)$linkinv(eta.mat)
-
+  if (object$family == "gaussian")
+    mu <- (eta.mat)
+  
   ds.res <- matrix(NA, n, p)
   rownames(ds.res) <- rownames(y)
   colnames(ds.res) <- colnames(y)
@@ -101,6 +103,14 @@ residuals.gllvm <- function(object, ...) {
         phis <- object$params$phi + 1e-05
         a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1 / phis[j])
         b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1 / phis[j])
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "gaussian") {
+        a <- pnorm(as.vector(unlist(y[i, j])) - 1, mu[i, j])
+        b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16

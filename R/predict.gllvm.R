@@ -13,7 +13,7 @@
 #' Instead, new sites can be specified in \code{newX}. If predictors \code{newX} (and \code{newTR}) are given, and \code{newLV} is not, latent variables are not used in the predictions.
 #' 
 #' @return A matrix containing requested predictor types.
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>,  David Warton
 #'
 #' @examples
 #'# Load a dataset from the mvabund package
@@ -166,7 +166,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     ilinkfun <- pnorm
   if(object$family == "ZIP")
     ilinkfun <- pnorm
+  if(object$family == "gaussian")
+    ilinkfun <- gaussian()$linkinv
   
+    
   out <- NULL
   preds <- NULL
   if("link" %in% type)

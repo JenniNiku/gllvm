@@ -62,13 +62,20 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
 
     if (object$num.lv > 1) {
-      testcov <- object$lvs %*% t(object$params$theta)
-      do.svd <- svd(testcov, object$num.lv, object$num.lv)
-      choose.lvs <- do.svd$u * matrix( do.svd$d[1:object$num.lv] ^ alpha,
-          nrow = n, ncol = object$num.lv, byrow = TRUE )
-      choose.lv.coefs <- do.svd$v * matrix(do.svd$d[1:object$num.lv] ^ (1 - alpha),
-          nrow = p, ncol = object$num.lv, byrow = TRUE )
+      # testcov <- object$lvs %*% t(object$params$theta)
+      # do.svd <- svd(testcov, object$num.lv, object$num.lv)
+      # choose.lvs <- do.svd$u * matrix( do.svd$d[1:object$num.lv] ^ alpha,
+      #     nrow = n, ncol = object$num.lv, byrow = TRUE )
+      # choose.lv.coefs <- do.svd$v * matrix(do.svd$d[1:object$num.lv] ^ (1 - alpha),
+      #     nrow = p, ncol = object$num.lv, byrow = TRUE )
+      sdi<-(diag(cov(object$lvs)))
+      sdt<-(diag(cov(object$params$theta)))
+      indexscale <- diag(x = (sdi)^alpha, nrow = length(sdi))
+      gammascale <- diag(x = (sdt)^(1-alpha), nrow = length(sdi))
+      choose.lvs <- scale(object$lvs, center = FALSE)%*%indexscale;
+      choose.lv.coefs <- scale(object$params$theta, center = FALSE)%*%gammascale;
 
+      
       if (!biplot) {
         plot(object$lvs[, which.lvs],
           xlab = paste("Latent variable ", which.lvs[1]),
@@ -101,13 +108,18 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           ylab = paste("Latent variable ", which.lvs[2]),
           main = main, type = "n", ... )
 
-        if (!jitter)
+        if (!jitter){
           if (symbols) {
             points(choose.lvs[, which.lvs], col = s.colors, ...)
           } else {
             text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
           }
-        if (jitter)
+          text(
+            matrix(choose.lv.coefs[largest.lnorms, which.lvs], nrow = length(largest.lnorms)),
+            label = rownames(object$params$theta)[largest.lnorms],
+            col = 4, cex = cex.spp )
+          }
+        if (jitter){
           if (symbols) {
             points(jitter(choose.lvs[, which.lvs[1]]), jitter(choose.lvs[, which.lvs[2]]), col =
                      s.colors, ...)
@@ -121,6 +133,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           jitter(matrix(choose.lv.coefs[largest.lnorms, which.lvs], nrow = length(largest.lnorms)), amount = 0.2),
           label = rownames(object$params$theta)[largest.lnorms],
           col = 4, cex = cex.spp )
+        }
       }
 
     }

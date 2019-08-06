@@ -65,5 +65,5 @@ predfit <- predict(fitt, newX = xnew, newTR = trnew, type = "response")
 }
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>
+Jenni Niku <jenni.m.e.niku@jyu.fi>,  David Warton
 }

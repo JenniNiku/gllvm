@@ -40,5 +40,5 @@ newdata <- simulate(fit)
 }
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>
+David Warton, Jenni Niku <jenni.m.e.niku@jyu.fi>
 }

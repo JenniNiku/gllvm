@@ -85,6 +85,10 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       s <- dim(M)[1]
       rnames[(cal + 1):s] <- paste("p", names(object$params$p), sep = ".")
     }
+    if(object$family == "gaussian"){
+      s <- dim(M)[1]
+      rnames[(cal + 1):s] <- paste("Standard deviations phi", names(object$params$phi), sep = ".")
+    }
     rownames(M) <- rnames
   } else {
     if ("beta0" %in% parm) {

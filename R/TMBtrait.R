@@ -120,7 +120,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   }
 
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
@@ -257,8 +257,9 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       familyn <- 2;
       if(link=="probit") extra <- 1
     }
-    if(family=="tweedie"){ familyn <- 3; extra <- Power}
-    if(family=="ZIP"){ familyn <- 4;}
+    if(family == "gaussian") {familyn=3}
+    if(family == "tweedie"){ familyn <- 4; extra <- Power}
+    if(family == "ZIP"){ familyn <- 5;}
 
 
     if(row.eff=="random"){# || !is.null(randomX)
@@ -382,7 +383,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     }
 
     param <- objr$env$last.par.best
-    if(family %in% c("negative.binomial","tweedie")) {
+    if(family %in% c("negative.binomial", "tweedie", "gaussian")) {
       phis=exp(param[names(param)=="lg_phi"])
     }
     if(family=="ZIP") {
@@ -447,9 +448,12 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(row.eff=="random"){ out$params$sigma=sigma; names(out$params$sigma)="sigma"}
         out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)
       }
-      if(family %in% c("negative.binomial","tweedie")) {
+      if(family %in% c("negative.binomial")) {
         out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
         out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
+      }
+      if(family %in% c("gaussian","tweedie")) {
+        out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
       if(family =="ZIP") {
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
@@ -567,10 +571,15 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         out$sd$B <- se.B; names(out$sd$B) <- colnames(Xd)
         if(row.eff=="fixed") {out$sd$row.params <- se.row.params}
 
-        if(family %in% c("negative.binomial","tweedie")) {
+        if(family %in% c("negative.binomial")) {
           se.lphis <- se[1:p];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
           out$sd$phi <- se.lphis*out$params$phi;
           names(out$sd$inv.phi) <- names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        }
+        if(family %in% c("gaussian","tweedie")) {
+          se.lphis <- se[1:p];
+          out$sd$phi <- se.lphis*out$params$phi;
+          names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
         }
         if(family %in% c("ZIP")) {
           se.phis <- se[1:p];

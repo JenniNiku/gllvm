@@ -12,7 +12,7 @@
 #' David Warton
 #' 
 #' @return A matrix containing generated data.
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @author David Warton, Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
 #'  \donttest{
