@@ -72,6 +72,9 @@ summary.gllvm <- function(object, ...) {
   if (object$family == "ZIP") {
     sumry$'Zero inflation p' <- object$params$phi
   }
+  if(object$family == "gaussian"){
+    sumry$'Standard deviations' <- object$params$phi
+  }
   class(sumry) <- "summary.gllvm"
   return(sumry)
 }

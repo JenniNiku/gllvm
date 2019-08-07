@@ -413,7 +413,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     }
 
 
-    if(((n.i==1 || out$logL > abs(new.loglik)) && new.loglik>0) && !inherits(optr, "try-error")){
+    if(((n.i==1 || out$logL > (new.loglik))  && is.finite(new.loglik)) && !inherits(optr, "try-error")){
       out$start <- fit
       objr1 <- objr; optr1=optr;
       out$logL <- new.loglik
@@ -595,15 +595,19 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
   
   # DW, 7/5/19: adding TMBfn to output:
-  out$TMBfn <- objr
-  out$TMBfn$par <- objr$env$last.par.best #optr$par #ensure params in this fn take final values
+  out$TMBfn <- objr1
+  out$TMBfn$par <- optr1$par #ensure params in this fn take final values
   out$logL <- -out$logL
   
   if(method == "VA"){
     #if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
     if(row.eff == "random") out$logL = out$logL + n*0.5
     #if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+    if(family=="gaussian") {
+      out$logL <- out$logL - n*p*log(pi)/2
+    }
   }
+
   return(out)
 }
 

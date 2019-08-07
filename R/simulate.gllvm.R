@@ -61,9 +61,12 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="tweedie")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
+  if(object$family=="gaussian")
+    phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
+                  "gaussian" = rnorm(nTot, mean = prs, sd = phis),
                   "tweedie" = tweedie::rtweedie(nTot, mu = prs, phi = phis, power = object$Power),
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels

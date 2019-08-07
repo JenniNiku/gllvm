@@ -37,9 +37,12 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
   objectTest=eval(object$call)
 
   # now optimise for LV parameters, keeping all else constant:
+  if(object$method == "VA"){
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
-  # objParam = objectTest$TMBfn$env$last.par.best[whichLVs]
- objParam = objectTest$TMBfn$par[whichLVs]
+  } else {
+    whichLVs = names(objectTest$TMBfn$par)=="u"
+  }
+  objParam = objectTest$TMBfn$env$last.par.best[whichLVs]
 #  objParam = objectTest$TMBfn$par
 #  optLVs=optim(objParam,logL4lvs,gr=objectTest$TMBfn$gr,objectTest,object,method="BFGS")
   optLVs = optim(objParam,logL4lvs,gr=objParamGrad,objectTest,object,method="BFGS")
@@ -51,8 +54,9 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
   rownames(lvs) <- rownames(objectTest$y);
   if(objectTest$num.lv>1) colnames(lvs) <- paste("LV", 1:objectTest$num.lv, sep="");
 
+  out <- list(lvs=lvs,logL=-optLVs$value)
   # and their sds: (assuming method="VA")
-  if(objectTest$num.lv>0)
+  if(objectTest$num.lv>0 && object$method=="VA")
   {
     Au <- optLVs$par[names(optLVs$par)=="Au"]
     A <- array(0,dim=c(n,objectTest$num.lv,objectTest$num.lv))
@@ -80,8 +84,9 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
         }
       }
     }
+    out$A <- A
   }
-  return(list(lvs=lvs,A=A,logL=-optLVs$value))
+  return(out)
 }
 
 # compute a negative logL using objectTest$TMBfn
@@ -100,7 +105,11 @@ objParamGrad = function(pars,objectTest,object)
   tpar = getPars(pars,objectTest,object)
   # compute new gradient function
   gr=objectTest$TMBfn$gr(tpar)
-  whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
+  if(object$method == "VA"){
+    whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
+  } else {
+    whichLVs = names(objectTest$TMBfn$par)=="u"
+  }
   return(gr[whichLVs])
 }
 
@@ -115,12 +124,12 @@ getPars = function(pars,objectTest,object)
   # set row effects and their variances to their mean value
   r0s=tpar[names(tpar)=="r0"]
   tpar[names(tpar)=="r0"] = mean(r0s)
-  lg_Ars=tpar[names(tpar)=="lg_Ar"]
-  tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
+  if(object$method =="VA") lg_Ars=tpar[names(tpar)=="lg_Ar"]
+  if(object$method =="VA") tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
   
   # replace LVs and their estimated se's with input values
   tpar[names(tpar)=="u"] = pars[names(pars)=="u"]
-  tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
+  if(object$method =="VA") tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
   
   # replace other params with training values
   tpar[names(tpar)=="b"] = opar[names(opar)=="b"]

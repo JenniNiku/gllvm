@@ -431,7 +431,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     new.loglik<-objr$env$value.best[1]
 
 
-    if((n.i==1 || out$logL > abs(new.loglik)) && !inherits(optr, "try-error") && new.loglik>0){
+    if((n.i==1 || out$logL > (new.loglik)) && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objr1 <- objr;optr1 <- optr;
       out$logL <- new.loglik
       if(num.lv > 0) {
@@ -601,13 +601,19 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
 
   out$D <- Xd
+  out$TMBfn <- objr1
+  out$TMBfn$par <- optr$par #ensure params in this fn take final values
   out$logL <- -out$logL
   
   if(method == "VA"){
     #if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
     if(row.eff == "random") out$logL = out$logL + n*0.5
     #if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+    if(family=="gaussian") {
+      out$logL <- out$logL - n*p*log(pi)/2
+    }
   }
+
   return(out)
 }
 
