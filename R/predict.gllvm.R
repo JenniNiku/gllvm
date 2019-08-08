@@ -144,7 +144,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       eta <- eta + object$lvs %*% t(theta)
     if(!is.null(newLV)) {
       if(ncol(newLV) != object$num.lv) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
-      if(!is.null(newdata)) #DW addition, 6/5/19: so no error here for intercept models
+      if(!is.null(newdata)) 
       {  
         if(nrow(newLV) != nrow(Xnew)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
       }
@@ -153,7 +153,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(object$row.eff %in% c("random", "fixed", "TRUE")) {
+  if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)) {
     r0 <- object$params$row.params
     eta <- eta + r0
   }

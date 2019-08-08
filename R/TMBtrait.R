@@ -602,7 +602,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
   out$D <- Xd
   out$TMBfn <- objr1
-  out$TMBfn$par <- optr$par #ensure params in this fn take final values
+  out$TMBfn$par <- optr1$par #ensure params in this fn take final values
   out$logL <- -out$logL
   
   if(method == "VA"){

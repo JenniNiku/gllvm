@@ -21,7 +21,7 @@
 A matrix containing requested predictor types.
 }
 \description{
-Obtains predictions for latent variables from a fitted generalized linear latent variable model object.
+Obtains predictions for latent variables from a fitted generalized linear latent variable model object. Currently works only for the variational approximation method.
 }
 \details{
 Obtains predictions for latent variables from a fitted generalized linear latent variable model object.

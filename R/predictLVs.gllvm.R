@@ -1,5 +1,5 @@
 #' @title Predict latent variables for gllvm Fits
-#' @description Obtains predictions for latent variables from a fitted generalized linear latent variable model object.
+#' @description Obtains predictions for latent variables from a fitted generalized linear latent variable model object. Currently works only for the variational approximation method.
 #'
 #' @param object an object of class 'gllvm'.
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
@@ -37,14 +37,8 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
   objectTest=eval(object$call)
 
   # now optimise for LV parameters, keeping all else constant:
-  if(object$method == "VA"){
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
-  } else {
-    whichLVs = names(objectTest$TMBfn$par)=="u"
-  }
-  objParam = objectTest$TMBfn$env$last.par.best[whichLVs]
-#  objParam = objectTest$TMBfn$par
-#  optLVs=optim(objParam,logL4lvs,gr=objectTest$TMBfn$gr,objectTest,object,method="BFGS")
+  objParam = objectTest$TMBfn$par[whichLVs]
   optLVs = optim(objParam,logL4lvs,gr=objParamGrad,objectTest,object,method="BFGS")
   
   # now find the LV estimates to report:
@@ -86,6 +80,14 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
     }
     out$A <- A
   }
+  if(object$method == "VA"){
+    n<-nrow(newY)
+    p<-ncol(newY)
+    if(object$row.eff == "random") out$logL = out$logL + n*0.5
+    if(object$family=="gaussian") {
+      out$logL <- out$logL - n*p*log(pi)/2
+    }
+  }
   return(out)
 }
 
@@ -105,11 +107,7 @@ objParamGrad = function(pars,objectTest,object)
   tpar = getPars(pars,objectTest,object)
   # compute new gradient function
   gr=objectTest$TMBfn$gr(tpar)
-  if(object$method == "VA"){
     whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
-  } else {
-    whichLVs = names(objectTest$TMBfn$par)=="u"
-  }
   return(gr[whichLVs])
 }
 
@@ -129,7 +127,8 @@ getPars = function(pars,objectTest,object)
   
   # replace LVs and their estimated se's with input values
   tpar[names(tpar)=="u"] = pars[names(pars)=="u"]
-  if(object$method =="VA") tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
+  # if(object$method =="VA") 
+    tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
   
   # replace other params with training values
   tpar[names(tpar)=="b"] = opar[names(opar)=="b"]
