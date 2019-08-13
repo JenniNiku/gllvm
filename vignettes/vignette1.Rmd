@@ -41,6 +41,7 @@ If $q$ trait covariates $\boldsymbol{t}_j=(t_{i1}, \dots,t_{iq})^\top$ are also 
 $$g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i \boldsymbol\beta_e + (\boldsymbol t_j \otimes \boldsymbol x_i)^\top \boldsymbol \beta_I + \boldsymbol u_i^\top\boldsymbol\theta_j,$$
 
 where $\boldsymbol\beta_e$ is a vector of main effects for environmental covariates, and $\boldsymbol\beta_I$ are the fourth corner coefficients. A main effect for traits is not included, because main effects on abundance across species are absorbed by the intercept term $\beta_{0j}$. This model assumes that all inter-specific variation in response to covariates is mediated by species, which reduces the number of parameters related to covariates.
+
 A difficulty fitting the GLLVM is that the $\boldsymbol{u}_i$'s are unobserved and we must integrate over their possible values. Specifically, the log-likelihood function we wish to maximise has the form
 $$l(\boldsymbol\Psi)=\sum_{i=1}^n \log(f(y_{ij},\boldsymbol\Psi))=\sum_{i=1}^n \log\left(\int_{{\rm I\!R}^{d}} \prod_{j=1}^m f(y_{ij}|\boldsymbol u_i;\boldsymbol\Psi) f(\boldsymbol{u}_i) d\boldsymbol{u}_i,\right),$$
 
@@ -116,17 +117,18 @@ The number of latent variables can be defined using the argument `num.lv`. The d
 List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $V(\mu_{ij})$, functions, estimation methods and link functions for various response types are in the table below.
 
 | Response    | Distribution | Method  | Link  | Description                |
-| ----------- |:------------:|:------- |:----- |:---------------------------|
-|Counts  	    | Poisson 	   | VA/LA   |log	   | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$|
-|             | NB    	     | VA/LA   |log		 | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
-|		          |		           |		     |		   | where $\phi_j>0$ is a dispersion parameter | 
-|             | ZIP       	 | LA      |log		 | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
-|		          |		           |		     |		   | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
-|Binary       | Bernoulli 	 | VA/LA   |probit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
-|             |              | LA 		 |logit  |                            |
-|Biomass    	| Tweedie 	   | LA   	 |log 	 | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
-|		          |		           |		     |		   | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
-|Ordinal 	    | Multinomial  | VA      |probit | Cumulative probit model|
+| ----------- |:------------:|:------- |:------- |:---------------------------|
+|Counts  	    | Poisson 	   | VA/LA   |log	    | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$|
+|             | NB    	     | VA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
+|		          |		           |		     |		    | where $\phi_j>0$ is a dispersion parameter | 
+|             | ZIP       	 | LA      |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
+|		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
+|Binary       | Bernoulli 	 | VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
+|             |              | LA 		 |logit   |                            |
+|Biomass    	| Tweedie 	   | LA   	 |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
+|		          |		           |		     |		    | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
+|Ordinal 	    | Multinomial  | VA      |probit  | Cumulative probit model|
+|Normal       | Gaussian     | VA/LA   |identity| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$|
 
 
 ## Model-based ordination
@@ -164,17 +166,17 @@ Once an appropriate model has been established for the data, we can construct an
 The command below creates the biplot and the ordination plot based on the GLLVM fitted to the `antTraits` data. We can see one large cluster of sites on the top with many indicator species, and few smaller clusters with only few indicator species *e.g.* sites 12--15. Notice that the rotation and also the scales of the two plots below slightly differ as in order to produce the biplot the predicted latent variables and their loadings are rotated and scaled so that the factor loadings of the species are in the same direction with the sites where they are most abundant.
 
 ```{r, fig.show='hold', out.width='70%'}
-ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-3, 3), 
+ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 1.6), 
          main = "Biplot")
-ordiplot(fit_ord, biplot = FALSE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-3, 3), 
+ordiplot(fit_ord, biplot = FALSE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 1.6), 
          main = "Ordination plot")
 ```
 
-Sometimes species names in the biplot might be hard to read, especially when species names are long or if they are close to each other. In order to make the figure easier to read we can change the sizes of the species names in the biplot using `cex.spp`. If species names are too close to each other we can use `jitter = TRUE` in order to add some random variation in the species locations. We can also shorten the species names. This can also be done after the model is fitted by directly changing the row names in the loading matrix, see the example below.
+Sometimes species names in the biplot might be hard to read, especially when species names are long or if they are close to each other. In order to make the figure easier to read we can change the sizes of the species names in the biplot using `cex.spp`. If species or site names are too close to each other we can use `jitter = TRUE` in order to add some random variation in the species and site locations. We can also shorten the species names. This can also be done after the model is fitted by directly changing the row names in the loading matrix, see the example below.
 
 ```{r, fig.show='hold', out.width='70%'}
 rownames(fit_ord$params$theta) <- paste("spp", 1:ncol(fit_ord$y), sep = "")
-ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 2), 
+ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 1.6), 
          main = "Biplot", jitter = TRUE, cex.spp = 0.8)
 ```
 
@@ -216,12 +218,15 @@ coefplot(fit_env, cex.ylab = 0.7, mar = c(4, 9, 2, 1),
 In the resulting plot above most of the 95\% confidence intervals include zero, indicating that the majority of the species do not exhibit evidence of a strong association between environment and species abundance. This may be due to a lack of information in the data, as much as being due to a lack of environmental association after accounting for potential residual species covariation. 
 
 Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix:
-```{r, eval=FALSE}
-rownames(fit_env$params$Xcoef) <- paste("spp", 1:ncol(fit_ord$y), sep = "")
-coefplot(fit_env, cex.ylab = 0.7, mar = c(4, 9, 2, 1), 
-         xlim.list = list(NULL, NULL, c(-4, 4)), mfrow=c(1,1))
+```{r, fig.show='hold', out.width='49%'}
+rownames(fit_env$params$Xcoef) <- paste("spp", 1:ncol(fit_env$y), sep = "")
+coefplot(fit_env, cex.ylab = 0.7, xlim.list = list(NULL, NULL, c(-4, 4)), 
+         mfrow=c(1,1))
 ```
 
+```{r, echo=FALSE}
+rownames(fit_env$params$Xcoef) <- colnames(fit_env$y)
+```
 
 
 ## Studying co-occurrence patterns
@@ -259,7 +264,7 @@ Residual correlations can also be visualized in a residual biplot, where highly 
 fit_env2 <- gllvm(y, X, family = "negative.binomial", num.lv = 2, 
                   formula = ~ Bare.ground + Shrub.cover + 
                     Volume.lying.CWD, seed = 1234)
-rownames(fit_env2$params$theta) <- paste("sp", 1:ncol(fit_ord$y), sep = "")
+rownames(fit_env2$params$theta) <- paste("sp", 1:ncol(fit_env2$y), sep = "")
 ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, jitter = TRUE, cex.spp = 1,
          xlim = c(-4, 3.5), ylim = c(-2.5, 2), main = "(a)")
 ordiplot(fit_env2, biplot = TRUE, ind.spp = 15, jitter = TRUE, cex.spp = 1,
