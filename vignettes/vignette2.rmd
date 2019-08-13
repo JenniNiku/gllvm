@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=
 ```
 
 
-In this example we apply generalized linear latent variable model (GLLVMs) on the bacterial species data discussed in @Nissinen2012. The sequence data is published in European Nucleotide Archive with the project number PRJEB17695. The subset of the data used in our analyses is included in the supplementary material of @Niku2019. This example follows the one provided in @Niku2017, except that here we use variational approximation method to fit GLLVMs instead of the Laplace approximation method. Altogether eight different sampling sites were selected from three locations. Three of the sites were in Kilpisjärvi, Finland, three in Ny-Alesund, Svalbard, Norway, and two in Mayrhofen, Austria. From each sampling site, several soil samples were taken and their bacterial species were recorded. The data consist of $m = 985$ bacterial species counts measured from $n = 56$ sites. The sites can be considered as independent from each other since bacterial communities are known to be very location specific.  In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample. The data set is available in object `Ysoil` and the environmental variables and information regarding the sampling sites are given in object `Xenv`. In addition to environmental variables, `Xenv` contains information from the sampling location (`Region`), sampling site at each region (`Site`) and soil sample type (`Soiltype`, top soil (T) or bottom soil (B)). Using GLLVMs we try to find out if soils physico-chemical properties or region affect the structure of bacterial communities. The package and the dataset can be loaded along the following lines:
+In this example we apply generalized linear latent variable model (GLLVMs) on the bacterial species data discussed in @Nissinen2012. The sequence data is published in European Nucleotide Archive with the project number PRJEB17695. The subset of the data used in our analyses is included in the supplementary material of @Niku2019. This example follows the one provided in @Niku2017, except that here we use variational approximation method to fit GLLVMs instead of the Laplace approximation method. Altogether eight different sampling sites were selected from three locations. Three of the sites were in Kilpisjarvi, Finland, three in Ny-Alesund, Svalbard, Norway, and two in Mayrhofen, Austria. From each sampling site, several soil samples were taken and their bacterial species were recorded. The data consist of $m = 985$ bacterial species counts measured from $n = 56$ sites. The sites can be considered as independent from each other since bacterial communities are known to be very location specific.  In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample. The data set is available in object `Ysoil` and the environmental variables and information regarding the sampling sites are given in object `Xenv`. In addition to environmental variables, `Xenv` contains information from the sampling location (`Region`), sampling site at each region (`Site`) and soil sample type (`Soiltype`, top soil (T) or bottom soil (B)). Using GLLVMs we try to find out if soils physico-chemical properties or region affect the structure of bacterial communities. The package and the dataset can be loaded along the following lines:
 
 ```{r}
 library(gllvm)
@@ -54,7 +54,7 @@ plot(ftNULL, which = 1:2, var.colors = 1, xlim = c(-9, 5), n.plot = 100)
 par(mfrow = c(1, 2))
 plot(ftNULLpois, which = 1:2, var.colors = 1, xlim = c(-9, 5), n.plot = 100)
 ```
-The ordination of sites based on the negative binomial GLLVM can be plotted using function `ordiplot`. The sites can be coloured according to their environmental variable values, `pH`, `SOM` and `phosp` using an argument `s.colors`. In addition, the ordination points are labeled according to the sampling location (Kilpisjärvi, Ny-Alesund and Innsbruck). This can be done by setting `symbols = TRUE` and defining the symbols for each site using argument `pch`, see below:
+The ordination of sites based on the negative binomial GLLVM can be plotted using function `ordiplot`. The sites can be coloured according to their environmental variable values, `pH`, `SOM` and `phosp` using an argument `s.colors`. In addition, the ordination points are labeled according to the sampling location (Kilpisjarvi, Ny-Alesund and Innsbruck). This can be done by setting `symbols = TRUE` and defining the symbols for each site using argument `pch`, see below:
 
 ```{r, out.width='70%'}
 # Define colors according to the values of pH, SOM and phosp
@@ -129,7 +129,7 @@ Ranked point estimates with 95% confidence intervals are plotted below using fun
 coefplot(ftXph, cex.ylab = 0.5, y.label = FALSE)
 ```
 
-The corresponding ordination plot given below indicates that the gradient in the pH values of the sites vanishes, but the ordination still exhibits a sampling location effect. In particular, several Kilpisjärvi sites seem to differ what comes to the bacterial species composition and all Mayrhofen sites are located at the left side of the ordination.
+The corresponding ordination plot given below indicates that the gradient in the pH values of the sites vanishes, but the ordination still exhibits a sampling location effect. In particular, several Kilpisjarvi sites seem to differ what comes to the bacterial species composition and all Mayrhofen sites are located at the left side of the ordination.
 
 ```{r, out.width='70%'}
 ordiplot(ftXph, main = "Ordination of sites", xlim = c(-2.5, 2.5), ylim = c(-2.5, 2.5), 
@@ -204,7 +204,7 @@ references:
   author: 
   - family: Nissinen
     given: R.
-  - family: Männistö
+  - family: Mannisto
     given: M.
   - family: van Elsas
     given: J
