@@ -59,7 +59,6 @@
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #'
-#' An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 #' With ordinal family response classes must start from 0 or 1.
 #'
 #' \subsection{Distributions}{
@@ -374,6 +373,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       }
 
 
+    if (row.eff == "random" && family == "ordinal" && TMB=FALSE) {
+      stop("Random row effect model is not implemented for ordinal family. \n")
+    }
     if (method == "LA" && family == "ordinal") {
       cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
       method <- "VA"
