@@ -373,7 +373,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       }
 
 
-    if (row.eff == "random" && family == "ordinal" && TMB=FALSE) {
+    if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family. \n")
     }
     if (method == "LA" && family == "ordinal") {
