@@ -1,5 +1,5 @@
 #' @title Simulate data from gllvm fit
-#' @description Generate new data Using the fitted values of the parameters
+#' @description Generate new data using the fitted values of the parameters
 #'
 #' @param object an object of class 'gllvm'.
 #' @param nsim an optional positive integer specifying the number of simulated datasets. Defaults to 1.

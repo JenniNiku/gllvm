@@ -20,7 +20,7 @@
 A matrix containing generated data.
 }
 \description{
-Generate new data Using the fitted values of the parameters
+Generate new data using the fitted values of the parameters
 }
 \details{
 simulate function for gllvm objects.  Note this simulates marginally over LVs.
