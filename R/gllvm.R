@@ -222,7 +222,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
-#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom pnbinom pnorm ppois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq formula ppoints quantile qchisq
+#'@importFrom stats AIC binomial constrOptim dbinom dnorm factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess pbinom rbinom pnbinom rnbinom pnorm ppois rpois qnorm reshape residuals rnorm runif terms BIC qqline qqnorm sd pchisq formula ppoints quantile qchisq gaussian cov
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam
@@ -400,6 +400,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if (row.eff == "random" && !TMB) {
       cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
       TMB <- TRUE
+    }
+    
+    if (family == "gaussian" && !TMB) {
+      TMB <- TRUE
+      cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
 
 
