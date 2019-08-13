@@ -272,7 +272,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         log_sigma1 <- param1[nam=="log_sigma"]
         Au1<- c(pmax(param1[nam=="Au"],rep(log(0.0001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
         lg_Ar1 <- (param1[nam=="lg_Ar"])
-        zeta <- matrix(param1[nam=="zeta"],nrow=p,ncol=K-2)
+        if(family=="ordinal"){
+          zeta <- matrix(param1[nam=="zeta"],nrow=p,ncol=K-2)  
+        }
+        
 
         if(row.eff == "random"){
           if(num.lv>0){
