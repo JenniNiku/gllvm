@@ -379,10 +379,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
       method <- "VA"
     }
-    if (family == "ordinal" && TMB) {
-      TMB <- FALSE
-      cat("TMB implementation method cannot handle", family, " data, so 'TMB = FALSE' is used instead. \n")
-    }
 
     if (method == "LA" && !TMB) {
       cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
