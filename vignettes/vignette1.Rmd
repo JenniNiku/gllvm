@@ -2,7 +2,7 @@
 title: "Analysing multivariate abundance data using gllvm"
 author: "Jenni Niku"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Analysing multivariate abundance data using gllvm}
   %\VignetteEngine{knitr::rmarkdown}
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
   warning = FALSE,
   fig.width=5, fig.height=5,
   fig.align = "center",
-  dev = "pdf",
+  dev = "png",
   fig.pos = 'H',
   code.frame=TRUE
 )
