@@ -364,13 +364,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     }
 
     if(any(colSums(y)==0))
-      stop("There are responses full of zeros, model can not be fitted. \n");
+      warning("There are responses full of zeros. \n");
 
     if(row.eff %in% c("fixed", "random", TRUE)){
       if(p<2)
         stop("There must be at least two responses in order to include row effects. \n");
       if(any(rowSums(y)==0))
-          stop("There are rows full of zeros in y, model can not be fitted. \n");
+        warning("There are rows full of zeros in y. \n");
       }
 
 
