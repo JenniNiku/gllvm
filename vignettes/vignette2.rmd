@@ -27,6 +27,7 @@ head(Xenv, 3)
 
 ```{r, echo=FALSE}
 load(file = "microbialanalysis.RData")
+ftXi$y<-ftXph$y<-ftX$y<-ftNULLpois$y<-ftNULL$y<-Ysoil
 ```
 
 
