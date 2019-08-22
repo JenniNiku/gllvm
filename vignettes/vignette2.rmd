@@ -26,7 +26,11 @@ head(Xenv, 3)
 ```
 
 ```{r, echo=FALSE}
-load(file = "microbialanalysis.RData")
+load(file = "ftXi.RData")
+load(file = "ftXph.RData")
+load(file = "ftX.RData")
+load(file = "ftNULLpois.RData")
+load(file = "ftNULL.RData")
 ftXi$y<-ftXph$y<-ftX$y<-ftNULLpois$y<-ftNULL$y<-Ysoil
 ```
 
@@ -114,9 +118,11 @@ legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch=c(1, 2, 3), bty = "n")
 
 In order to study if pH value alone is capable of explaining the variation in species composition across sites, we included it as explanatory variable in the GLLVM. When the Poisson distribution performed so poorly on the null model, we consider only NB GLLVMs in the following examples.
 
-```{r, eval = FALSE}
+```{r}
 # Scale environmental variables
 Xsoils <- scale(Xenv[, 1:3])
+```
+```{r, eval = FALSE}
 ftXph <- gllvm(Ysoil, Xsoils, formula = ~pH, family = "negative.binomial", 
                row.eff = "random", num.lv = 2)
 ```
