@@ -19,6 +19,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   formula1 <- formula
   if(method=="VA"){ link <- "probit"}
 
+  
   if(NCOL(X) < 1) stop("No covariates in the model, fit the model using gllvm(y,family=",family,"...)")
 
   # change categorical variables to dummy variables
@@ -120,7 +121,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   }
 
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
@@ -208,8 +209,26 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       phis <- 1/phis
 
       }
-    if(family == "tweedie") {phis <- res$phi; if(any(phis>10))phis[phis>10]=10; if(any(phis<0.10))phis[phis<0.10]=0.10; phis= (phis)}
-    if (family == "ZIP") {phis <- (colMeans(y==0)*0.98)+0.01; phis<-phis/(1-phis)} # ZIP probability
+    if(family == "tweedie") {
+      phis <- res$phi; 
+      if(any(phis>10)) phis[phis>10]=10; 
+      if(any(phis<0.10))phis[phis<0.10]=0.10; 
+      phis= (phis)
+      }
+    if (family == "ZIP") {
+      phis <- (colMeans(y == 0) * 0.98) + 0.01; 
+      phis <- phis / (1 - phis)
+      } # ZIP probability
+    # if (family == "gaussian") {
+    #   phis <- fit$phi
+    # }
+    if(family=="ordinal"){
+      zeta = res$zeta[,-1]
+      K = length(unique(c(y)))
+    }else{
+      zeta = matrix(0)
+      K = 1
+    }
 
     q <- num.lv
 
@@ -260,7 +279,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     if(family == "gaussian") {familyn=3}
     if(family == "tweedie"){ familyn <- 4; extra <- Power}
     if(family == "ZIP"){ familyn <- 5;}
-
+    if(family == "ordinal") {familyn=6}
+    
 
     if(row.eff=="random"){# || !is.null(randomX)
 
@@ -269,13 +289,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(method=="VA"){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=Au,lg_Ar=log(Ar)),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=Au,lg_Ar=log(Ar), zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = maxit),
             DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=1), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             random = c("r0","u"), DLL = "gllvm")
         }
@@ -283,13 +303,13 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(method=="VA"){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=TRUE,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=log(Ar)), #log(phi)
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=log(Ar), zeta=zeta), #log(phi)
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=1), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=log(sigma),Au=0,lg_Ar=0, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             random = c("r0"), DLL = "gllvm")
         }
@@ -302,20 +322,20 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(method=="VA"){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=Au,lg_Ar=log(Ar)),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=Au,lg_Ar=log(Ar), zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
             DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=0), silent=!trace,
-            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0),
+            parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = theta, u = u,lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
             random = c("u"), DLL = "gllvm")
         }
       } else {
         objr <- TMB::MakeADFun(
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=1,random=0), silent=!trace,
-          parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0),
+          parameters = list(r0=matrix(r0), b = rbind(a),B=matrix(B),lambda = 0, u = matrix(0),lg_phi=log(phi),log_sigma=0,Au=0,lg_Ar=0, zeta=zeta),
           inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
           DLL = "gllvm")
       }
@@ -345,20 +365,22 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
       Au1<- c(pmax(param1[nam=="Au"],rep(log(0.001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
       Ar1 <- c(param1[nam=="lg_Ar"])
-
+      if(family=="ordinal"){
+        zeta <- matrix(param1[nam=="zeta"],nrow=p,ncol=K-2)  
+      }
 
       if(row.eff=="random"){
 
         if(num.lv>0){
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=!trace,
-            parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=Au1,lg_Ar=Ar1),
+            parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=Au1,lg_Ar=Ar1, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = 1000),
             DLL = "gllvm")
         } else {
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=1), silent=TRUE,
-            parameters = list(r0=r1, b = b1,B=B1,lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=0,lg_Ar=Ar1),
+            parameters = list(r0=r1, b = b1,B=B1,lambda = 0, u = matrix(0),lg_phi=lg_phi1,log_sigma=lg_sigma1,Au=0,lg_Ar=Ar1, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
             DLL = "gllvm")
 
@@ -367,7 +389,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       } else {
         objr <- TMB::MakeADFun(
           data = list(y = y, x = Xd,xr=xr,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=0,model=1,random=0), silent=!trace,
-          parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=Ar1),
+          parameters = list(r0=r1, b = b1,B=B1,lambda = lambda1, u = u1,lg_phi=lg_phi1,log_sigma=0,Au=Au1,lg_Ar=Ar1, zeta=zeta),
           inner.control=list(mgcmax = 1e+200,maxit = 1000),
           DLL = "gllvm")
       }
@@ -389,6 +411,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     if(family=="ZIP") {
       lp0 <- param[names(param)=="lg_phi"]; out$lp0=lp0
       phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
+    }
+    if(family == "ordinal"){
+      zetas <- matrix(param[names(param)=="zeta"], nrow=p, ncol=K-2)
+      zetas <- cbind(0,zetas)
+      row.names(zetas) <- colnames(y); colnames(zetas) <- paste(min(y):(max(y)-1),"|",(min(y)+1):max(y),sep="")
     }
     bi<-names(param)=="b"
     Bi<-names(param)=="B"
@@ -458,6 +485,9 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       if(family =="ZIP") {
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
+      if(family=="ordinal"){
+        out$params$zeta <- zetas
+      }
       if(!is.null(randomX)){
         out$params$Br <- Br
         out$params$sigmaB <- sigmaB
@@ -512,7 +542,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
         incl[names(objr$par)=="lg_Ar"] <- FALSE;
         if(row.eff!="random") {incl[names(objr$par)=="log_sigma"] <- FALSE}
-
+        if(familyn!=6) incl[names(objr$par)=="zeta"] <- FALSE
+        
         incl[names(objr$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objr$par)=="Au"] <- TRUE
 
         if(row.eff=="random") {
@@ -522,12 +553,14 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(row.eff==FALSE) incl[names(objr$par)=="r0"] <- FALSE
         if(row.eff=="fixed") incl[1] <- FALSE
         incl[names(objr$par)=="u"] <- FALSE; incld[names(objr$par)=="u"] <- TRUE
-        if(familyn==0 || familyn==2) incl[names(objr$par)=="lg_phi"] <- FALSE
+        if(familyn==0 || familyn==2 || familyn==6) incl[names(objr$par)=="lg_phi"] <- FALSE
+        if(familyn==6) incl[names(objr$par)=="zeta"] <- TRUE
         if(num.lv==0){
           incl[names(objr$par)=="u"] <- FALSE;
           incl[names(objr$par)=="lambda"] <- FALSE;
           incl[names(objr$par)=="Au"] <- FALSE;
         }
+
         if(method=="LA" || (num.lv==0 && row.eff!="random")){
           incl[names(objr$par)=="Au"] <- FALSE;
 
@@ -590,6 +623,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         if(!is.null(randomX)){
           nr <- ncol(xb)
           out$sd$sigmaB <- se*c(diag(out$params$sigmaB), rep(1,nr*(nr-1)/2 ) )
+        }
+        if(family %in% c("ordinal")){
+          se.zetas <- se[1:(p*(K-2))];
+          out$sd$zeta <- cbind(0,matrix(se.zetas,ncol=K-2,nrow=p));
+          row.names(out$sd$zeta) <- colnames(y); colnames(out$sd$zeta) <- paste(min(y):(max(y)-1),"|",(min(y)+1):max(y),sep="")
         }
 
       }})

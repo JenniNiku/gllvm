@@ -124,7 +124,6 @@ However, sometimes this is computationally too demanding, and default option
 
 Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 
-An exception is ordinal family which is not implemented with TMB and therefore also \code{row.eff = "random"} does not work.
 With ordinal family response classes must start from 0 or 1.
 
 \subsection{Distributions}{
