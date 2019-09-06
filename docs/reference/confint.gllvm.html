@@ -16,15 +16,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -49,7 +47,6 @@
 <![endif]-->
 
 
-
   </head>
 
   <body>
@@ -66,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
       </span>
     </div>
 
@@ -74,7 +71,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fa fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -101,7 +98,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fa fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -112,7 +109,6 @@
 </div><!--/.navbar -->
 
       
-
       </header>
 
 <div class="row">
@@ -130,7 +126,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'><a href='https://rdrr.io/r/stats/confint.html'>confint</a></span>(<span class='no'>object</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>object</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -156,95 +152,95 @@
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
-<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>[,<span class='fl'>1</span>:<span class='fl'>2</span>])
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
+<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
+<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>[,<span class='fl'>1</span>:<span class='fl'>2</span>])
 <span class='co'># Fit gllvm model</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='co'># 95 % confidence intervals for coefficients of X variables</span>
-<span class='fu'><a href='https://rdrr.io/r/stats/confint.html'>confint</a></span>(<span class='no'>fit</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='st'>"Xcoef"</span>)</div><div class='output co'>#&gt;                 cilow          ciup
-#&gt; Xcoef1   -0.064027128   0.091575808
-#&gt; Xcoef2   -0.729137209   0.405393479
-#&gt; Xcoef3    0.231438451   0.383227726
-#&gt; Xcoef4    0.044090277   0.161133959
-#&gt; Xcoef5    0.015192732   0.087802979
-#&gt; Xcoef6   -0.074522247   0.122377459
-#&gt; Xcoef7    0.092990750   0.332407658
-#&gt; Xcoef8   -0.189654442   0.433527639
-#&gt; Xcoef9   -0.015212228   0.892731076
-#&gt; Xcoef10  -0.043419906   0.044154699
-#&gt; Xcoef11   0.004519166   0.074129566
-#&gt; Xcoef12   0.007372440   0.165125139
-#&gt; Xcoef13  -0.080635900  -0.005371622
-#&gt; Xcoef14   0.053280816   0.636743972
-#&gt; Xcoef15  -0.011831803   0.021349143
-#&gt; Xcoef16  -0.037534534   0.069186919
-#&gt; Xcoef17  -0.047087861   0.060783777
-#&gt; Xcoef18   0.016427403   0.202496452
-#&gt; Xcoef19  -0.074620363   0.026627034
-#&gt; Xcoef20  -0.158985461   0.070116941
-#&gt; Xcoef21  -0.076400602   0.122580251
-#&gt; Xcoef22  -0.011045473   0.085330177
-#&gt; Xcoef23  -0.110131623   0.008168708
-#&gt; Xcoef24  -0.109538174   0.088687647
-#&gt; Xcoef25  -0.055417090   0.095008423
-#&gt; Xcoef26  -0.229867195   0.159263983
-#&gt; Xcoef27  -0.064192281   0.048521663
-#&gt; Xcoef28  -0.039450335   0.075044621
-#&gt; Xcoef29  -0.069948506   0.119649461
-#&gt; Xcoef30  -0.722933033   0.490176744
-#&gt; Xcoef31  -0.015309114   0.042109203
-#&gt; Xcoef32  -0.099803258   0.199441854
-#&gt; Xcoef33  -0.051506359   0.020699330
-#&gt; Xcoef34  -0.171155859   0.127572039
-#&gt; Xcoef35  -0.083245091   0.192430228
-#&gt; Xcoef36  -0.046619226  -0.004833017
-#&gt; Xcoef37  -0.112406158  -0.003658434
-#&gt; Xcoef38  -0.227686119   0.127696221
-#&gt; Xcoef39  -0.046675461   0.132587689
-#&gt; Xcoef40  -0.080431880   0.024289191
-#&gt; Xcoef41  -0.098876402   0.016865777
-#&gt; Xcoef42  -0.120184484   0.114246497
-#&gt; Xcoef43   0.255924535   2.112406299
-#&gt; Xcoef44   0.291034032   0.653307040
-#&gt; Xcoef45   0.069815971   0.207509370
-#&gt; Xcoef46  -0.189307210  -0.028362918
-#&gt; Xcoef47   0.068373461   0.272458607
-#&gt; Xcoef48   0.052993366   0.329798730
-#&gt; Xcoef49 -10.994162199 -10.992482958
-#&gt; Xcoef50   0.040251998   1.424407818
-#&gt; Xcoef51  -0.145377029   0.003288923
-#&gt; Xcoef52  -0.472110561  -0.135708147
-#&gt; Xcoef53  -0.045887773   0.180251751
-#&gt; Xcoef54  -0.054531905   0.046386560
-#&gt; Xcoef55   0.139390690   0.929440998
-#&gt; Xcoef56  -0.273495587  -0.140132383
-#&gt; Xcoef57  -0.338834135  -0.025106700
-#&gt; Xcoef58  -0.662141420   0.113833381
-#&gt; Xcoef59  -0.147593387   0.161262122
-#&gt; Xcoef60  -0.182010106   0.007655040
-#&gt; Xcoef61  -0.190612292   0.135989064
-#&gt; Xcoef62  -0.448923043   0.044983931
-#&gt; Xcoef63   0.057406990   0.180564136
-#&gt; Xcoef64  -2.059119237   0.171678462
-#&gt; Xcoef65  -0.321936180   0.062673885
-#&gt; Xcoef66 -31.966709357 -31.966613034
-#&gt; Xcoef67  -0.010361240   0.456524396
-#&gt; Xcoef68  -0.117145780   0.051477316
-#&gt; Xcoef69  -0.387284885  -0.050656181
-#&gt; Xcoef70 -28.967156478 -28.966975962
-#&gt; Xcoef71  -0.070691257   1.060483613
-#&gt; Xcoef72  -0.075449300   0.012097897
-#&gt; Xcoef73   0.041740578   0.348043325
-#&gt; Xcoef74  -0.060729762   0.040637043
-#&gt; Xcoef75  -0.173222417   0.244235608
-#&gt; Xcoef76  -0.069775824   0.257408597
-#&gt; Xcoef77  -0.128725740  -0.044733208
-#&gt; Xcoef78  -0.254396241  -0.018900015
-#&gt; Xcoef79  -0.102389753   0.238830181
-#&gt; Xcoef80   0.017144402   0.226933693
-#&gt; Xcoef81  -0.092634505   0.054295890
-#&gt; Xcoef82  -0.404083307  -0.018237564</div><div class='input'>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fit</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='st'>"Xcoef"</span>)</div><div class='output co'>#&gt;                 cilow          ciup
+#&gt; Xcoef1   -0.063975620   0.091749142
+#&gt; Xcoef2   -0.745200795   0.421958083
+#&gt; Xcoef3    0.174387288   0.441004782
+#&gt; Xcoef4    0.044072277   0.161201072
+#&gt; Xcoef5    0.015237564   0.087898157
+#&gt; Xcoef6   -0.074688396   0.122495727
+#&gt; Xcoef7    0.092808583   0.332820238
+#&gt; Xcoef8   -0.190536365   0.434677455
+#&gt; Xcoef9   -0.022224953   0.905182858
+#&gt; Xcoef10  -0.043422570   0.044184697
+#&gt; Xcoef11   0.004495302   0.074132243
+#&gt; Xcoef12   0.007425512   0.165258718
+#&gt; Xcoef13  -0.080707960  -0.005414363
+#&gt; Xcoef14   0.047365181   0.645105468
+#&gt; Xcoef15  -0.011843572   0.021336338
+#&gt; Xcoef16  -0.037505464   0.069256123
+#&gt; Xcoef17  -0.047129137   0.060731723
+#&gt; Xcoef18   0.016396707   0.202514315
+#&gt; Xcoef19  -0.074692977   0.026553538
+#&gt; Xcoef20  -0.159206082   0.069991593
+#&gt; Xcoef21  -0.076556593   0.122417233
+#&gt; Xcoef22  -0.011013361   0.085402162
+#&gt; Xcoef23  -0.110225405   0.008091575
+#&gt; Xcoef24  -0.109713561   0.088524495
+#&gt; Xcoef25  -0.055386514   0.095062749
+#&gt; Xcoef26  -0.230324956   0.160468400
+#&gt; Xcoef27  -0.064303861   0.048439856
+#&gt; Xcoef28  -0.039570180   0.074979844
+#&gt; Xcoef29  -0.070052740   0.119560981
+#&gt; Xcoef30  -0.733236187   0.497600613
+#&gt; Xcoef31  -0.015371729   0.042069079
+#&gt; Xcoef32  -0.099992679   0.199477569
+#&gt; Xcoef33  -0.051456178   0.020762037
+#&gt; Xcoef34  -0.171197764   0.127488075
+#&gt; Xcoef35  -0.083277603   0.192588155
+#&gt; Xcoef36  -0.046642802  -0.004857005
+#&gt; Xcoef37  -0.112479311  -0.003737233
+#&gt; Xcoef38  -0.227850829   0.127575563
+#&gt; Xcoef39  -0.046680226   0.132710129
+#&gt; Xcoef40  -0.080419154   0.024332971
+#&gt; Xcoef41  -0.098976291   0.016781567
+#&gt; Xcoef42  -0.120062570   0.114515672
+#&gt; Xcoef43   0.247808409   2.122110503
+#&gt; Xcoef44   0.333573030   0.612426662
+#&gt; Xcoef45   0.069716223   0.207603028
+#&gt; Xcoef46  -0.189174429  -0.028186288
+#&gt; Xcoef47   0.067979617   0.272695476
+#&gt; Xcoef48   0.052609420   0.330441707
+#&gt; Xcoef49 -11.001460977 -10.999799388
+#&gt; Xcoef50   0.028130044   1.445650044
+#&gt; Xcoef51  -0.145409787   0.003318737
+#&gt; Xcoef52  -0.472162974  -0.135746609
+#&gt; Xcoef53  -0.045766700   0.180497744
+#&gt; Xcoef54  -0.054675261   0.046279979
+#&gt; Xcoef55   0.128959457   0.943680921
+#&gt; Xcoef56  -0.273528294  -0.140167006
+#&gt; Xcoef57  -0.338786325  -0.025014000
+#&gt; Xcoef58  -0.662142384   0.113681125
+#&gt; Xcoef59  -0.147715108   0.161283605
+#&gt; Xcoef60  -0.182201096   0.007487707
+#&gt; Xcoef61  -0.191305335   0.135823513
+#&gt; Xcoef62  -0.449465643   0.044662132
+#&gt; Xcoef63   0.057443076   0.180649309
+#&gt; Xcoef64  -2.060133398   0.171817000
+#&gt; Xcoef65  -0.322501221   0.062404268
+#&gt; Xcoef66 -32.380251547 -32.380202784
+#&gt; Xcoef67  -0.011189800   0.458266100
+#&gt; Xcoef68  -0.117415887   0.051279683
+#&gt; Xcoef69  -0.387588733  -0.050903260
+#&gt; Xcoef70 -29.360416941 -29.360253372
+#&gt; Xcoef71  -0.074751480   1.065182618
+#&gt; Xcoef72  -0.075586577   0.011994071
+#&gt; Xcoef73   0.041402189   0.348094612
+#&gt; Xcoef74  -0.060648928   0.040734873
+#&gt; Xcoef75  -0.173229128   0.244332662
+#&gt; Xcoef76  -0.069840613   0.257647134
+#&gt; Xcoef77  -0.128779391  -0.044788247
+#&gt; Xcoef78  -0.254573465  -0.019081387
+#&gt; Xcoef79  -0.102661689   0.238538978
+#&gt; Xcoef80   0.017092448   0.227093397
+#&gt; Xcoef81  -0.092635188   0.054344299
+#&gt; Xcoef82  -0.404329802  -0.018451154</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -260,23 +256,19 @@
   </div>
 </div>
 
-
       <footer>
       <div class="copyright">
   <p>Developed by Jenni Niku.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
    </div>
 
   
 
-
   </body>
 </html>
-
 

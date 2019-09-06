@@ -16,15 +16,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -49,7 +47,6 @@
 <![endif]-->
 
 
-
   </head>
 
   <body>
@@ -66,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
       </span>
     </div>
 
@@ -74,7 +71,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fa fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -101,7 +98,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fa fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -112,7 +109,6 @@
 </div><!--/.navbar -->
 
       
-
       </header>
 
 <div class="row">
@@ -130,7 +126,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -148,11 +144,11 @@
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
+<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
 <span class='co'># Fit gllvm model</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $`log-likelihood`
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $`log-likelihood`
 #&gt; [1] -2128.631
 #&gt; 
 #&gt; $df
@@ -162,7 +158,7 @@
 #&gt; [1] 4501.262
 #&gt; 
 #&gt; $AICc
-#&gt; [1] 4178.552
+#&gt; [1] 4178.553
 #&gt; 
 #&gt; $BIC
 #&gt; [1] 4672.208
@@ -175,47 +171,47 @@
 #&gt; 
 #&gt; $Coefficients
 #&gt;                                Intercept   theta.LV1    theta.LV2
-#&gt; Amblyopone.australis          -0.8168648  0.65663867  0.000000000
-#&gt; Aphaenogaster.longiceps       -3.4570057  0.31368018  2.838369764
-#&gt; Camponotus.cinereus.amperei   -2.1388615  0.70967041  0.503585071
-#&gt; Camponotus.claripes            0.4273647  0.40338667  0.519808481
-#&gt; Camponotus.consobrinus         1.4112268  0.50364599 -0.533767176
-#&gt; Camponotus.nigriceps          -0.7085859 -0.03334359  0.964304417
-#&gt; Camponotus.nigroaeneus        -0.6287267  0.51009730  0.441052025
-#&gt; Cardiocondyla.nuda.atalanta   -3.3844851 -2.47737674  0.451151223
-#&gt; Crematogaster.sp..A           -9.7064944  8.04493809  3.160249777
-#&gt; Heteroponera.sp..A             1.1021084  0.33205717 -0.758390671
-#&gt; Iridomyrmex.bicknelli          1.3167333  0.07873338 -0.961774545
-#&gt; Iridomyrmex.dromus            -0.6931852  0.64564374  0.008877337
-#&gt; Iridomyrmex.mjobergi           1.3546279 -0.44300356 -0.009573187
-#&gt; Iridomyrmex.purpureus         -2.4753144  3.61632312  1.279036045
-#&gt; Iridomyrmex.rufoniger          2.4125790 -0.11930655 -0.650065335
-#&gt; Iridomyrmex.suchieri           0.4577107  0.51057840 -0.615592275
-#&gt; Iridomyrmex.suchieroides      -0.4344925 -0.49526799 -0.751023021
-#&gt; Melophorus.sp..E              -1.1584888  0.24301089 -0.249374154
-#&gt; Melophorus.sp..F               0.5359747 -0.50352238 -0.471168559
-#&gt; Melophorus.sp..H              -0.7606416 -0.68330023 -1.167922212
-#&gt; Meranoplus.sp..A              -0.7530899 -0.61730000 -1.768279099
-#&gt; Monomorium.leae                1.1563006  0.92669734  0.363125756
-#&gt; Monomorium.rothsteini          0.3062218 -0.58620094 -1.639775252
-#&gt; Monomorium.sydneyense         -1.1475835 -0.85302374 -1.945226933
-#&gt; Myrmecia.pilosula.complex     -1.0887733  0.21182301 -0.582589989
-#&gt; Notoncus.capitatus            -1.3787961  1.62881536  0.370603980
-#&gt; Notoncus.ectatommoides         0.7750573 -0.72223105 -0.120198433
-#&gt; Nylanderia.sp..A               0.7411627 -0.78790662 -0.881908310
-#&gt; Ochetellus.glaber             -1.6794984 -0.63768236 -1.494903937
-#&gt; Paraparatrechina.sp..B        -1.6016933  0.38580417  1.362797746
-#&gt; Pheidole.sp..A                 2.3149885 -0.37940361 -0.186638049
-#&gt; Pheidole.sp..B                -1.3359070  0.41863594  1.042750720
-#&gt; Pheidole.sp..E                 1.5343256  0.53657618 -0.239226245
-#&gt; Pheidole.sp..J                -1.9163245 -0.63858084  0.493303662
-#&gt; Polyrhachis.sp..A             -1.5290007  0.83702890 -0.196144841
-#&gt; Rhytidoponera.metallica.sp..A  2.0361935 -0.29541873 -0.281903691
-#&gt; Rhytidoponera.sp..B            0.5267731 -0.51963866 -0.766898818
-#&gt; Solenopsis.sp..A              -2.2526782 -0.61129588  0.338261115
-#&gt; Stigmacros.sp..A              -0.5096645  1.10173633  0.015506731
-#&gt; Tapinoma.sp..A                 0.6466415  0.48003952 -0.611006048
-#&gt; Tetramorium.sp..A              0.1039403 -0.68934766 -0.982296578
+#&gt; Amblyopone.australis          -0.8166707  0.65703375  0.000000000
+#&gt; Aphaenogaster.longiceps       -3.4565934  0.31682928  2.837940172
+#&gt; Camponotus.cinereus.amperei   -2.1385571  0.71090381  0.502059040
+#&gt; Camponotus.claripes            0.4269977  0.40463486  0.519342075
+#&gt; Camponotus.consobrinus         1.4109468  0.50302244 -0.534084705
+#&gt; Camponotus.nigriceps          -0.7072009 -0.03165523  0.963575383
+#&gt; Camponotus.nigroaeneus        -0.6285070  0.51101724  0.440526927
+#&gt; Cardiocondyla.nuda.atalanta   -3.3857327 -2.47880855  0.454733673
+#&gt; Crematogaster.sp..A           -9.7395591  8.07488535  3.159418522
+#&gt; Heteroponera.sp..A             1.1015890  0.33123982 -0.758696438
+#&gt; Iridomyrmex.bicknelli          1.3165478  0.07757442 -0.961365184
+#&gt; Iridomyrmex.dromus            -0.6936481  0.64514594  0.007912804
+#&gt; Iridomyrmex.mjobergi           1.3547976 -0.44317857 -0.009065768
+#&gt; Iridomyrmex.purpureus         -2.4779176  3.62084234  1.274744474
+#&gt; Iridomyrmex.rufoniger          2.4124340 -0.12018295 -0.649735679
+#&gt; Iridomyrmex.suchieri           0.4568201  0.51020956 -0.616325972
+#&gt; Iridomyrmex.suchieroides      -0.4337244 -0.49597030 -0.749331655
+#&gt; Melophorus.sp..E              -1.1572083  0.24129785 -0.248948312
+#&gt; Melophorus.sp..F               0.5361849 -0.50413163 -0.470464276
+#&gt; Melophorus.sp..H              -0.7609757 -0.68516211 -1.167010447
+#&gt; Meranoplus.sp..A              -0.7533807 -0.61971064 -1.767045769
+#&gt; Monomorium.leae                1.1557912  0.92788001  0.361915130
+#&gt; Monomorium.rothsteini          0.3056147 -0.58861870 -1.638992765
+#&gt; Monomorium.sydneyense         -1.1483308 -0.85599340 -1.944139313
+#&gt; Myrmecia.pilosula.complex     -1.0882911  0.21123805 -0.581996945
+#&gt; Notoncus.capitatus            -1.3796925  1.63061728  0.368973837
+#&gt; Notoncus.ectatommoides         0.7753495 -0.72254838 -0.119522405
+#&gt; Nylanderia.sp..A               0.7412566 -0.78930766 -0.880669754
+#&gt; Ochetellus.glaber             -1.6800302 -0.63965278 -1.493893533
+#&gt; Paraparatrechina.sp..B        -1.6018003  0.38815497  1.362340937
+#&gt; Pheidole.sp..A                 2.3150958 -0.37974607 -0.186173114
+#&gt; Pheidole.sp..B                -1.3363618  0.42205876  1.041887425
+#&gt; Pheidole.sp..E                 1.5340018  0.53642456 -0.239860098
+#&gt; Pheidole.sp..J                -1.9163216 -0.63824472  0.493433625
+#&gt; Polyrhachis.sp..A             -1.5288746  0.83589394 -0.197726743
+#&gt; Rhytidoponera.metallica.sp..A  2.0362100 -0.29590190 -0.281531592
+#&gt; Rhytidoponera.sp..B            0.5267429 -0.52071814 -0.766251967
+#&gt; Solenopsis.sp..A              -2.2513583 -0.61158845  0.338280222
+#&gt; Stigmacros.sp..A              -0.5116109  1.10351715  0.014003510
+#&gt; Tapinoma.sp..A                 0.6462391  0.47938682 -0.611400341
+#&gt; Tetramorium.sp..A              0.1037449 -0.69088733 -0.981539195
 #&gt; 
 #&gt; attr(,"class")
 #&gt; [1] "summary.gllvm"</div><div class='input'>
@@ -234,23 +230,19 @@
   </div>
 </div>
 
-
       <footer>
       <div class="copyright">
   <p>Developed by Jenni Niku.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
    </div>
 
   
 
-
   </body>
 </html>
-
 

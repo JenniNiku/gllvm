@@ -16,15 +16,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -49,7 +47,6 @@
 <![endif]-->
 
 
-
   </head>
 
   <body>
@@ -66,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
       </span>
     </div>
 
@@ -74,7 +71,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fa fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -101,7 +98,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fa fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -112,7 +109,6 @@
 </div><!--/.navbar -->
 
       
-
       </header>
 
 <div class="row">
@@ -157,43 +153,43 @@ the uncertainty in the estimation of (fixed) parameters.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'># Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
+<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
 <span class='co'># Fit gllvm model</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='co'># prediction errors for latent variables:</span>
 <span class='fu'>getPredictErr</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $lvs
 #&gt;             [,1]       [,2]
-#&gt;  [1,] 0.18902969 0.21883117
-#&gt;  [2,] 0.14040910 0.13580004
-#&gt;  [3,] 0.12979857 0.15546270
-#&gt;  [4,] 0.09419036 0.18066494
-#&gt;  [5,] 0.10631538 0.11596344
-#&gt;  [6,] 0.21378905 0.18698401
-#&gt;  [7,] 0.20493812 0.11978218
-#&gt;  [8,] 0.18569313 0.15079055
-#&gt;  [9,] 0.14097716 0.13738787
-#&gt; [10,] 0.07700203 0.18406046
-#&gt; [11,] 0.23184714 0.18443867
-#&gt; [12,] 0.17711807 0.16904268
-#&gt; [13,] 0.17772336 0.14543935
-#&gt; [14,] 0.16350597 0.17799189
-#&gt; [15,] 0.16671100 0.11119486
-#&gt; [16,] 0.07083297 0.07641747
-#&gt; [17,] 0.10374371 0.08249192
-#&gt; [18,] 0.09151549 0.20766809
-#&gt; [19,] 0.16553888 0.16364496
-#&gt; [20,] 0.09274937 0.08123680
-#&gt; [21,] 0.18078374 0.09487176
-#&gt; [22,] 0.21309417 0.13577604
-#&gt; [23,] 0.22838030 0.22588273
-#&gt; [24,] 0.21820672 0.14963000
-#&gt; [25,] 0.20924291 0.12142378
-#&gt; [26,] 0.20518195 0.16635690
-#&gt; [27,] 0.21095782 0.15012897
-#&gt; [28,] 0.23250026 0.17458598
-#&gt; [29,] 0.22621178 0.20282255
-#&gt; [30,] 0.15071429 0.14308959
+#&gt;  [1,] 0.18902213 0.21881857
+#&gt;  [2,] 0.14041419 0.13579487
+#&gt;  [3,] 0.12980079 0.15546122
+#&gt;  [4,] 0.09418834 0.18064581
+#&gt;  [5,] 0.10631619 0.11595846
+#&gt;  [6,] 0.21379156 0.18698008
+#&gt;  [7,] 0.20494781 0.11977917
+#&gt;  [8,] 0.18569600 0.15079221
+#&gt;  [9,] 0.14097806 0.13738227
+#&gt; [10,] 0.07701505 0.18406121
+#&gt; [11,] 0.23184401 0.18442207
+#&gt; [12,] 0.17711863 0.16904089
+#&gt; [13,] 0.17772056 0.14543152
+#&gt; [14,] 0.16350786 0.17799478
+#&gt; [15,] 0.16671215 0.11118541
+#&gt; [16,] 0.07082765 0.07640289
+#&gt; [17,] 0.10374505 0.08248379
+#&gt; [18,] 0.09153674 0.20768303
+#&gt; [19,] 0.16555000 0.16364243
+#&gt; [20,] 0.09275430 0.08123421
+#&gt; [21,] 0.18079123 0.09486746
+#&gt; [22,] 0.21309416 0.13576443
+#&gt; [23,] 0.22839165 0.22588112
+#&gt; [24,] 0.21821117 0.14962950
+#&gt; [25,] 0.20923181 0.12140629
+#&gt; [26,] 0.20517907 0.16635475
+#&gt; [27,] 0.21095491 0.15012341
+#&gt; [28,] 0.23250938 0.17458716
+#&gt; [29,] 0.22621481 0.20281760
+#&gt; [30,] 0.15071257 0.14308851
 #&gt; </div><div class='input'>
 
 </div></pre>
@@ -215,23 +211,19 @@ the uncertainty in the estimation of (fixed) parameters.</p>
   </div>
 </div>
 
-
       <footer>
       <div class="copyright">
   <p>Developed by Jenni Niku.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
    </div>
 
   
 
-
   </body>
 </html>
-
 
