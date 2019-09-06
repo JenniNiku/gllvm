@@ -26,9 +26,11 @@ Type objective_function<Type>::operator() ()
 
   DATA_INTEGER(num_lv);
   DATA_INTEGER(family);
-
+  
   PARAMETER_VECTOR(Au);
   PARAMETER_VECTOR(lg_Ar);
+  PARAMETER_MATRIX(zeta);
+  
   DATA_SCALAR(extra);
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
@@ -134,21 +136,21 @@ Type objective_function<Type>::operator() ()
       }
     }
     //likelihood
-    if(family<1){
+    if(family==0){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family<2){
+    } else if(family==1){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family<3) {
+    } else if(family==2) {
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
@@ -156,7 +158,61 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else {
+    } else if(family==6){
+      int ymax = 1;
+      int ymin = 999;
+    
+      //find maximum and minimum integer values in the data
+      for (int i=0; i<n; i++) {
+        for(int j=0; j<p; j++){
+          if(ymax<y(i,j)){
+            ymax += 1;
+          }
+          if(ymax<ymin){
+            ymin = ymax;
+          }else if(ymin>y(i,j) && ymin != 0){
+            ymin -= 1;
+          }
+        }
+      }
+      
+      //add a column of zeros
+      matrix <Type> zetanew(p,zeta.cols()+1);
+      zetanew.fill(0.0);
+      int K = zeta.cols();
+        for (int j=0; j<p; j++){
+          for(int k=0; k<K; k++){
+            zetanew(j,k+1) = zeta(j,k);
+          }
+
+        }
+
+      for (int i=0; i<n; i++) {
+        for(int j=0; j<p; j++){
+          //minimum category
+          if(y(i,j)==ymin){
+            nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
+          }
+          //maxmimum category
+          if(y(i,j)==ymax){
+            int idx = ymax-(1+ymin);
+            nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
+          }
+              //everything else
+              for (int l=ymin; l<ymax; l++) {
+                if(y(i,j)==l && y(i,j) != ymin && y(i,j) != ymax){
+                  int idx = (l-ymin);
+                  int idx2 = l-(1+ymin);
+                  nll -= log(pnorm(zetanew(j,idx)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,idx2)-eta(i,j), Type(0), Type(1))); 
+                }
+              }
+        
+          nll += cQ(i,j);
+          //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
+        }
+        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }
+     }else {
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
