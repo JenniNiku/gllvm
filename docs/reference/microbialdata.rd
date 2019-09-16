@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • gllvm</title>
+<title>Microbial community data — microbialdata • gllvm</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,7 +30,10 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Microbial community data — microbialdata" />
+
+<meta property="og:description" content="Microbial community data consist of abundances of 985 bacteria species measured at 56 soil sample sites from three regions, Kilpisjarvi (Finland), Ny-Alesund (Norway), and Mayrhofen (Austria). In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample." />
+<meta name="twitter:card" content="summary" />
 
 
 
@@ -47,7 +50,7 @@
   </head>
 
   <body>
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -109,144 +112,43 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Microbial community data</h1>
+    
+    <div class="hidden name"><code>microbialdata.rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    
+    <p>Microbial community data consist of abundances of 985 bacteria species measured at 56 soil sample sites from three regions, Kilpisjarvi (Finland), Ny-Alesund (Norway), and Mayrhofen (Austria). In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample.</p>
+    
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>microbialdata</span>)</pre>
+        
+    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      <tr>
-        
-        <td>
-          <p><code><a href="anova.gllvm.html">anova(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Analysis Of Deviance for gllvm</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="coefplot.gllvm.html">coefplot(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Plot covariate coefficients and confidence intervals</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="confint.gllvm.html">confint(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Confidence intervals for model parameters</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="getLV.gllvm.html">getLV(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract latent variables</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="getPredictErr.gllvm.html">getPredictErr(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract prediction errors for latent variables from gllvm object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="getResidualCor.gllvm.html">getResidualCor(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract residual correlations from gllvm object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="getResidualCov.gllvm.html">getResidualCov(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract residual covariance matrix from gllvm object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="gllvm.html">gllvm()</a></code> </p>
-        </td>
-        <td><p>Generalized Linear Latent Variable Models</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="logLik.gllvm.html">logLik(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Log-likelihood of gllvm</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="microbialdata.rd">microbialdata</a></code> </p>
-        </td>
-        <td><p>Microbial community data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ordiplot.gllvm.html">ordiplot(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Plot latent variables from gllvm model</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="plot.gllvm.html">plot(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Plot Diagnostics for an gllvm Object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="predict.gllvm.html">predict(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Predict Method for gllvm Fits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="predictLVs.gllvm.html">predictLVs(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Predict latent variables for gllvm Fits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="residuals.gllvm.html">residuals(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Dunn-Smyth residuals for gllvm model</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="simulate.gllvm.html">simulate(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Simulate data from gllvm fit</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="sim_bacteria.html">sim_bacteria</a></code> </p>
-        </td>
-        <td><p>Simulated bacteria data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="summary.gllvm.html">summary(<i>&lt;gllvm&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Summarizing gllvm model fits</p></td>
-      </tr>
-    </tbody>
-    </table>
+    <dl class='dl-horizontal'>
+<dt>Y</dt><dd><p>A data frame with abundances of 985 bacteria species measured at 56 soil sample sites</p></dd>
+<dt>X</dt><dd><p>Environmental variables SOM: soil organic matter, pH: soil pH value and Phosp: available phosphorus and information from the samples, including Region: sampling region (Kilpisjarvi (Finland), Ny-Alesund (Norway), and Mayrhofen (Austria).), Site: sampling site and Soiltype: soil sample type (top soil (T) or bottom soil (B))</p></dd>
+</dl>
+    
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>Kumar, M., Brader, G., Sessitsch, A., Mäki, A., van Elsas, J.D., and Nissinen, R. (2017). Plants Assemble Species Specific Bacterial Communities from Common Core Taxa in Three Arcto-Alpine Climate Zones. Frontiers in Microbiology, 8:12.</p>
+    
+
   </div>
-
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-      <li><a href="#section-all-functions">All functions</a></li>
-    </ul>
+      
+      <li><a href="#format">Format</a></li>
+
+      <li><a href="#references">References</a></li>
+          </ul>
+
   </div>
 </div>
 
