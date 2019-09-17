@@ -83,7 +83,7 @@
       <h1>Analysing multivariate abundance data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2019-09-16</h4>
+            <h4 class="date">2019-09-17</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -286,9 +286,9 @@ fitp
 <span class="co">#&gt; </span>
 <span class="co">#&gt; log-likelihood:  -2128.631 </span>
 <span class="co">#&gt; Degrees of freedom:  122 </span>
-<span class="co">#&gt; AIC:  4501.262 </span>
-<span class="co">#&gt; AICc:  4178.553 </span>
-<span class="co">#&gt; BIC:  4672.209</span></code></pre></div>
+<span class="co">#&gt; AIC:  4501.261 </span>
+<span class="co">#&gt; AICc:  4178.552 </span>
+<span class="co">#&gt; BIC:  4672.208</span></code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_ord &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)
 fit_ord
 <span class="co">#&gt; Call: </span>
@@ -298,10 +298,10 @@ fit_ord
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -1895.086 </span>
+<span class="co">#&gt; log-likelihood:  -1895.085 </span>
 <span class="co">#&gt; Degrees of freedom:  163 </span>
 <span class="co">#&gt; AIC:  4116.171 </span>
-<span class="co">#&gt; AICc:  3717.186 </span>
+<span class="co">#&gt; AICc:  3717.185 </span>
 <span class="co">#&gt; BIC:  4344.566</span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.</p>
 <p>In addition to information criterias, we can use residual plots for diagnosing model fit. As a default, <code>plot</code> function utilizes <code>residual</code> fuction to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument <code>which</code> one can define which plots will be produced.</p>
