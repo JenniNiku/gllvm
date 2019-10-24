@@ -2,12 +2,6 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-X = NULL; formula = NULL; num.lv = 2; family = "ordinal";
-method="VA";Lambda.struc="unstructured"; row.eff = FALSE; reltol = 1e-6;
-seed = 1;maxit = 1000; start.lvs = NULL; offset=NULL; sd.errors = TRUE;
-trace=TRUE;link="logit";n.init=1;restrict=30;start.params=NULL;
-optimizer="optim";starting.val="res";Power=1.5;diag.iter=1;
-Lambda.start=c(0.1,0.5); jitter.var=0
 
 gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6,
