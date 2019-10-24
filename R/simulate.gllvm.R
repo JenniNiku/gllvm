@@ -63,11 +63,25 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
   if(object$family=="gaussian")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
+     if(object$family == "ordinal"){
+      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+        for(j in 1:nCols){
+        k <- unique(object$y[,j])
+        for(i in 1:(nsim * nRows)){
+            sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+          }
+        }
+      dimnames(prs)[[3]] <- colnames(object$y)
+      dimnames(prs)[[2]] <- 1:(nsim * nRows)
+      prs <- prs[1,,]
+      
+    }
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
                   "gaussian" = rnorm(nTot, mean = prs, sd = phis),
                   "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
+                  "ordinal" = sims,
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))
