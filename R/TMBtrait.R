@@ -421,7 +421,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     }
     if(family == "ordinal"){
       zetas <- param[names(param)=="zeta"]
-      zetanew <- matrix(0,nrow=p,ncol=K)
+      zetanew <- matrix(NA,nrow=p,ncol=K)
       idx<-0
       for(j in 1:ncol(y)){
         k<-max(y[,j])-2
@@ -505,7 +505,6 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
       if (family == "ordinal") {
-        zetas[,-1][zetas[,-1]==0]<-NA
         out$params$zeta <- zetas
       }
       if(!is.null(randomX)){
@@ -645,8 +644,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           out$sd$sigmaB <- se*c(diag(out$params$sigmaB), rep(1,nr*(nr-1)/2 ) )
         }
         if(family %in% c("ordinal")){
-          se.zetas <- se[1:(p*(K-2))];
-          se.zetanew <- matrix(0,nrow=p,ncol=K)
+          se.zetas <- se;
+          se.zetanew <- matrix(NA,nrow=p,ncol=K)
           idx<-0
           for(j in 1:ncol(y)){
             k<-max(y[,j])-2

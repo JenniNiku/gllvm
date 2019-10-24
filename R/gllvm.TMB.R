@@ -2,7 +2,12 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-
+X = NULL; formula = NULL; num.lv = 2; family = "ordinal";
+method="VA";Lambda.struc="unstructured"; row.eff = FALSE; reltol = 1e-6;
+seed = 1;maxit = 1000; start.lvs = NULL; offset=NULL; sd.errors = TRUE;
+trace=TRUE;link="logit";n.init=1;restrict=30;start.params=NULL;
+optimizer="optim";starting.val="res";Power=1.5;diag.iter=1;
+Lambda.start=c(0.1,0.5); jitter.var=0
 
 gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6,
@@ -325,7 +330,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
-        zetanew <- matrix(0,nrow=p,ncol=K)
+        zetanew <- matrix(NA,nrow=p,ncol=K)
         idx<-0
         for(j in 1:ncol(y)){
           k<-max(y[,j])-2
@@ -451,10 +456,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           phis <- exp(lp0)/(1+exp(lp0));
         }
       }
-      if(family=="ordinal"){
-        zetas[,-1][zetas[,-1]==0]<-NA
-      }
-
     }
 
 
@@ -640,8 +641,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       if(row.eff=="random") { out$sd$sigma <- se*out$params$sigma; names(out$sd$sigma) <- "sigma"; se <- se[-1] }
       if(family %in% c("ordinal")){
-        se.zetas <- se[1:(p*(K-2))];
-        se.zetanew <- matrix(0,nrow=p,ncol=K)
+        se.zetas <- se;
+        se.zetanew <- matrix(NA,nrow=p,ncol=K)
         idx<-0
         for(j in 1:ncol(y)){
           k<-max(y[,j])-2
