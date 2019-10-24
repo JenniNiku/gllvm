@@ -5,7 +5,7 @@
 #' 
 #'@aliases getLV getLV.gllvm
 #'@method getLV gllvm
-#'
+#'@export
 #'@export getLV.gllvm
 
 getLV.gllvm <- function(object)
@@ -14,7 +14,6 @@ getLV.gllvm <- function(object)
 }
 
 #'@export getLV
-
 getLV <- function(object)
 {
   UseMethod(generic = "getLV")

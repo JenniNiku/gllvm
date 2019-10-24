@@ -423,6 +423,13 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL,
     index <- index%*%indexscale
     gammascale <- diag(x = 1/sdt, nrow = length(sdi))
     gamma <- gamma%*%gammascale
+  } else {
+    sdi <- sqrt(diag(cov(index)))
+    sdt <- sqrt(diag(cov(gamma)))
+    indexscale <- diag(x = 1/sdi, nrow = length(sdi))
+    index <- index%*%indexscale
+    gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
+    gamma <- gamma%*%gammascale
   }
   index <- index + mvtnorm::rmvnorm(n, rep(0, num.lv),diag(num.lv)*jitter.var);
   return(list(index = index, gamma = gamma))

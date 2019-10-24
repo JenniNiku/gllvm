@@ -8,7 +8,7 @@ data(sim_bacteria)
 \format{
 \describe{
 \item{y}{A data frame with abundances of 985 species measured at 56 sites}
-\item{X}{Environmental variables Temperature and pH}
+\item{X}{Environmental variables soil organic matter, pH and phosphorus and region variables}
 }}
 \description{
 Simulated dataset of size 56 x 985 that can be used to illustrate the methods in Section 5.1 of Niku et al., (2017). 

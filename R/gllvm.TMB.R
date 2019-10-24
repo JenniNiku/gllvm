@@ -472,9 +472,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       names(beta0) <- colnames(out$y); out$params$beta0 <- beta0;
       if(!is.null(X)){betas <- matrix(betas,ncol=ncol(X)); out$params$Xcoef <- betas;
       rownames(out$params$Xcoef) <- colnames(out$y); colnames(out$params$Xcoef) <- colnames(X); }
-      if(family=="ordinal"){
-      out$params$zeta <- zetas
-      }
+
       
       if(family =="negative.binomial") {
         out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
@@ -492,7 +490,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       if(family == "binomial") out$link <- link;
       if(family == "tweedie") out$Power <- Power;
-
+      if(family=="ordinal"){
+        out$params$zeta <- zetas
+      }
       out$row.eff <- row.eff
       out$time <- timeo
       pars <- optr$par
@@ -543,6 +543,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       sdr <- optimHess(pars, objr$fn, objr$gr, control = list(reltol=reltol,maxit=maxit))#maxit=maxit
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
       incl[names(objr$par)=="B"] <- FALSE
+      if(familyn!=6) incl[names(objr$par)=="zeta"] <- FALSE
+      
       if(method=="LA" || (num.lv==0 && method=="VA" && row.eff!="random")){
         incl[names(objr$par)=="lg_Ar"] <- FALSE;
         incl[names(objr$par)=="Au"] <- FALSE;
@@ -636,6 +638,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
         names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
       }
+      if(row.eff=="random") { out$sd$sigma <- se*out$params$sigma; names(out$sd$sigma) <- "sigma"; se <- se[-1] }
       if(family %in% c("ordinal")){
         se.zetas <- se[1:(p*(K-2))];
         se.zetanew <- matrix(0,nrow=p,ncol=K)
@@ -653,7 +656,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         out$sd$zeta <- se.zetanew
         row.names(out$sd$zeta) <- colnames(y00); colnames(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
       }
-      if(row.eff=="random") { out$sd$sigma <- se*out$params$sigma; names(out$sd$sigma) <- "sigma" }
 
     }})
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }

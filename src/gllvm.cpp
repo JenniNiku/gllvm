@@ -158,6 +158,13 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
+    } else if(family==3) {
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
+        }
+        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }
     } else if(family==6){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -205,14 +212,7 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-     }else {
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
-        }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
-    }
+     }
     nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
 
   } else {
@@ -250,18 +250,18 @@ Type objective_function<Type>::operator() ()
     }
 
     //likelihood model with the log link function
-    if(family<1){
+    if(family==0){
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           nll -= dpois(y(i,j), exp(eta(i,j)), true);
         }
       }
-    } else if(family<2){
+    } else if(family==1){
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
-      }} else if(family<3) {
+      }} else if(family==2) {
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             if(extra<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
@@ -269,19 +269,19 @@ Type objective_function<Type>::operator() ()
             nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
           }
         }
-      } else if(family<4){
+      } else if(family==3){
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); //gamma family
           }
         }
-      } else if(family<5){
+      } else if(family==4){
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra, true); //tweedie family
           }
         }
-      } else {
+      } else if(family==5) {
         iphi=iphi/(1+iphi);
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {

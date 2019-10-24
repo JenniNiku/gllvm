@@ -67,7 +67,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
                   "gaussian" = rnorm(nTot, mean = prs, sd = phis),
-                  "tweedie" = tweedie::rtweedie(nTot, mu = prs, phi = phis, power = object$Power),
+                  "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))
