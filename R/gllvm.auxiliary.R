@@ -234,8 +234,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           if(is.null(X) || !is.null(TR)) cw.fit <- MASS::polr(y.fac ~ index, method = "probit")
           if(!is.null(X) & is.null(TR) & num.lv > 0) cw.fit <- MASS::polr(y.fac ~ X+index, method = "probit")
         }
-        params[j,1:ncol(cbind(1,X))] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
-        zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+        if(starting.val=="random"){
+          params[j,] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
+          zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+        }else{
+          params[j,1:ncol(cbind(1,X))] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
+          zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+        }
       }
       if(length(levels(y.fac)) == 2) {
         if(starting.val%in%c("zero","res") || num.lv==0){
