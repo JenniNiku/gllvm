@@ -82,6 +82,8 @@ getResidualCov.gllvm = function(object, adjust = 1)
       } 
     }
   }
+  ResCov.q <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q[[q]])))
+  names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
   out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)
