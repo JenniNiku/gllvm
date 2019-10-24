@@ -58,14 +58,28 @@
 getResidualCov.gllvm = function(object, adjust = 1)
 {
   ResCov <- object$params$theta %*% t(object$params$theta)
+  ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
   if(adjust > 0 && object$family %in% c("negative.binomial", "binomial")){
   if(object$family == "negative.binomial"){ 
-    if(adjust == 1) ResCov <- ResCov + diag(log(object$params$phi + 1))
-    if(adjust == 2) ResCov <- ResCov + diag(trigamma(1/object$params$phi))
+    if(adjust == 1) {
+      ResCov <- ResCov + diag(log(object$params$phi + 1))
+      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(1)/object$num.lv, simplify = F)
+      }
+    if(adjust == 2){
+     ResCov <- ResCov + diag(trigamma(1/object$params$phi))
+     ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/object$num.lv, simplify = F)
+     }
+    
   }
     if(object$family == "binomial"){ 
-      if(object$link == "probit") ResCov <- ResCov + diag(ncol(object$y))
-      if(object$link == "logit") ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
+      if(object$link == "probit"){
+        ResCov <- ResCov + diag(ncol(object$y))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)
+      } 
+      if(object$link == "logit"){
+        ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + (diag(ncol(object$y))*pi^2/3)/object$num.lv, simplify = F)
+      } 
     }
   }
   colnames(ResCov) <- colnames(object$y)
