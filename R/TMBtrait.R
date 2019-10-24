@@ -431,7 +431,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
         }
         idx<-idx+k
       }
-      zetas[,1] <- 0
+      zetanew[,1] <- 0
       row.names(zetanew) <- colnames(y00); colnames(zetanew) <- paste(min(y):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
       zetas<-zetanew
       out$y<-y00
