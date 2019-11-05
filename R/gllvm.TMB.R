@@ -173,7 +173,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       zeta <- c(fit$zeta[,-1])
       zeta <- zeta[!is.na(zeta)]
     }else{
-      zeta = matrix(0)
+      zeta = 0
     }
 
     if (is.null(offset))
@@ -277,9 +277,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         log_sigma1 <- param1[nam=="log_sigma"]
         Au1<- c(pmax(param1[nam=="Au"],rep(log(0.0001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
         lg_Ar1 <- (param1[nam=="lg_Ar"])
-        if(family=="ordinal"){
-          zeta <- param1[nam=="zeta"]
-        }
+        zeta <- param1[nam=="zeta"]
         
 
         if(row.eff == "random"){
