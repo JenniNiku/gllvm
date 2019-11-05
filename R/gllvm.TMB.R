@@ -33,6 +33,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     max.levels <- apply(y,2,function(x) length(min(x):max(x)))
     if(any(max.levels == 1) || all(max.levels == 2))
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
+
+    if(any(!apply(y,2,function(x)all(abs(diff(unique(x))) == 1))))
+      stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species.")
   }
 
   num.X <- 0;
