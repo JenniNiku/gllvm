@@ -233,7 +233,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       zeta <- c(fit$zeta[,-1])
       zeta <- zeta[!is.na(zeta)]
     }else{
-      zeta = matrix(0)
+      zeta = 0
     }
 
     q <- num.lv
@@ -371,9 +371,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
       Au1<- c(pmax(param1[nam=="Au"],rep(log(0.001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
       Ar1 <- c(param1[nam=="lg_Ar"])
-      if (family == "ordinal") {
-        zeta <- param1[nam == "zeta"]
-      }
+      zeta <- param1[nam == "zeta"]
 
       if(row.eff=="random"){
 
