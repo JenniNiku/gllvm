@@ -169,9 +169,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       phis <- fit$phi
     }
     if(family=="ordinal"){
-      zeta = fit$zeta[,-1]
       K = max(y00)-min(y00)
-      zeta <- t(fit$zeta)[-1,][!is.na(t(fit$zeta)[-1,])]
+      zeta <- c(fit$zeta[,-1])
+      zeta <- zeta[!is.na(zeta)]
     }else{
       zeta = matrix(0)
     }
