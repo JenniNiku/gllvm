@@ -168,6 +168,9 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
     max.levels <- apply(y,2,function(x) length(min(x):max(x)))
     if(any(max.levels == 1) || all(max.levels == 2))
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
+                        
+    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1))))
+      stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species.")                    
   }
 
   out.list <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logLik = -Inf, family = family, offset=offset,X.design=Xd, terms=term)
