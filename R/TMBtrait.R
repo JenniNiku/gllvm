@@ -233,7 +233,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     # }
     if(family=="ordinal"){
       K = max(y00)-min(y00)
-      zeta <- c(fit$zeta[,-1])
+      zeta <- c(t(fit$zeta[,-1]))
       zeta <- zeta[!is.na(zeta)]
     }else{
       zeta = 0
