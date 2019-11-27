@@ -179,7 +179,7 @@ Type objective_function<Type>::operator() ()
         if(Kj>1){
           for(int k=0; k<(Kj-1); k++){
             if(k==1){
-              zetanew(j,k+1) = abs(zeta(idx+k));//second cutoffs must be positive
+              zetanew(j,k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
             }else{
               zetanew(j,k+1) = zeta(idx+k);
             }
