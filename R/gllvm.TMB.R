@@ -3,7 +3,6 @@
 ## Original author: Jenni Niku
 ##########################################################################################
 
-
 gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6,
       seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,
@@ -28,7 +27,16 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     rownames(y) <- paste("Row", 1:n, sep = "")
   if (is.null(colnames(y)))
     colnames(y) <- paste("Col", 1:p, sep = "")
+  if(family == "ordinal") {
+    y00<-y
+    if(min(y)==0){ y=y+1}
+    max.levels <- apply(y,2,function(x) length(min(x):max(x)))
+    if(any(max.levels == 1) || all(max.levels == 2))
+      stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
 
+    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1))))
+      stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species.")
+  }
 
   num.X <- 0;
   if(!is.null(X)){
@@ -164,11 +172,11 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       phis <- fit$phi
     }
     if(family=="ordinal"){
-      zeta = fit$zeta[,-1]
-      K = length(unique(c(y)))
+      K = max(y00)-min(y00)
+      zeta <- c(t(fit$zeta[,-1]))
+      zeta <- zeta[!is.na(zeta)]
     }else{
-      zeta = matrix(0)
-      K = 1
+      zeta = 0
     }
 
     if (is.null(offset))
@@ -272,9 +280,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         log_sigma1 <- param1[nam=="log_sigma"]
         Au1<- c(pmax(param1[nam=="Au"],rep(log(0.0001), num.lv*n)), rep(0,num.lv*(num.lv-1)/2*n))
         lg_Ar1 <- (param1[nam=="lg_Ar"])
-        if(family=="ordinal"){
-          zeta <- matrix(param1[nam=="zeta"],nrow=p,ncol=K-2)  
-        }
+        zeta <- param1[nam=="zeta"]
         
 
         if(row.eff == "random"){
@@ -304,7 +310,11 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(optimizer=="optim") {
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
-        if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+        if(optimizer=="nlminb"){
+          if(inherits(optr, "try-error") || is.nan(optr$objective) || is.na(optr$objective)|| is.infinite(optr$objective)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+        }else if(optimizer=="optim"){
+          if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+        }
 
       }
 
@@ -313,9 +323,22 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         phis <- exp(param[names(param)=="lg_phi"])
       }
       if(family == "ordinal"){
-        zetas <- matrix(param[names(param)=="zeta"], nrow=p, ncol=K-2)
-        zetas <- cbind(0,zetas)
-        row.names(zetas) <- colnames(y); colnames(zetas) <- paste(min(y):(max(y)-1),"|",(min(y)+1):max(y),sep="")
+        zetas <- param[names(param)=="zeta"]
+        zetanew <- matrix(NA,nrow=p,ncol=K)
+        idx<-0
+        for(j in 1:ncol(y)){
+          k<-max(y[,j])-2
+          if(k>0){
+            for(l in 1:k){
+              zetanew[j,l+1]<-zetas[idx+l]
+            } 
+          }
+          idx<-idx+k
+        }
+        zetanew[,1] <- 0 
+        row.names(zetanew) <- colnames(y00); colnames(zetanew) <- paste(min(y):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+        zetas<-zetanew
+        out$y<-y00
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
@@ -428,10 +451,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           phis <- exp(lp0)/(1+exp(lp0));
         }
       }
-      if(family == "ordinal"){
-        zetas<-matrix(param[names(param)=="zeta"],nrow=p, ncol=K-2)
-      }
-
     }
 
 
@@ -617,9 +636,21 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       if(row.eff=="random") { out$sd$sigma <- se*out$params$sigma; names(out$sd$sigma) <- "sigma"; se <- se[-1] }
       if(family %in% c("ordinal")){
-        se.zetas <- se[1:(p*(K-2))];
-        out$sd$zeta <- cbind(0,matrix(se.zetas,ncol=K-2,nrow=p));
-        row.names(out$sd$zeta) <- colnames(y); colnames(out$sd$zeta) <- paste(min(y):(max(y)-1),"|",(min(y)+1):max(y),sep="")
+        se.zetas <- se;
+        se.zetanew <- matrix(NA,nrow=p,ncol=K)
+        idx<-0
+        for(j in 1:ncol(y)){
+          k<-max(y[,j])-2
+          if(k>0){
+            for(l in 1:k){
+              se.zetanew[j,l+1]<-se.zetas[idx+l]
+            } 
+          }
+          idx<-idx+k
+        }
+        se.zetanew[,1] <- 0
+        out$sd$zeta <- se.zetanew
+        row.names(out$sd$zeta) <- colnames(y00); colnames(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
       }
 
     }})

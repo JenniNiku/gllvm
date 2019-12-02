@@ -24,12 +24,15 @@ logLik.gllvm <- function(object, ...)
     object$params$inv.phi <- NULL
 
   }
+  if(!is.null(object$params$zeta)){
+    object$params$zeta<-object$params$zeta[,-1]
+  }
   if (object$row.eff %in% c("fixed", TRUE))
     object$params$row.params <- object$params$row.params[-1]
   if (object$row.eff == "random")
     object$params$row.params <- NULL
 
-  attributes(logL)$df <- length(unlist(object$params)) - object$num.lv * (object$num.lv - 1) / 2
+  attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))]) - object$num.lv * (object$num.lv - 1) / 2
   attributes(logL)$nobs <- dim(object$y)[1]
   class(logL) <- "logLik"
   return(logL)

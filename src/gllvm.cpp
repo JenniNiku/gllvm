@@ -29,7 +29,7 @@ Type objective_function<Type>::operator() ()
   
   PARAMETER_VECTOR(Au);
   PARAMETER_VECTOR(lg_Ar);
-  PARAMETER_MATRIX(zeta);
+  PARAMETER_VECTOR(zeta);
   
   DATA_SCALAR(extra);
   DATA_INTEGER(method);// 0=VA, 1=LA
@@ -166,53 +166,46 @@ Type objective_function<Type>::operator() ()
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==6){
-      int ymax = 1;
-      int ymin = 999;
-    
-      //find maximum and minimum integer values in the data
-      for (int i=0; i<n; i++) {
-        for(int j=0; j<p; j++){
-          if(ymax<y(i,j)){
-            ymax += 1;
-          }
-          if(ymax<ymin){
-            ymin = ymax;
-          }else if(ymin>y(i,j) && ymin != 0){
-            ymin -= 1;
-          }
-        }
-      }
+      int ymax =  CppAD::Integer(y.maxCoeff());
+      int K = ymax - 1;
       
-      //add a column of zeros
-      matrix <Type> zetanew(p,zeta.cols()+1);
+      matrix <Type> zetanew(p,K);
       zetanew.fill(0.0);
-      int K = zeta.cols();
-        for (int j=0; j<p; j++){
-          for(int k=0; k<K; k++){
-            zetanew(j,k+1) = zeta(j,k);
+      
+      int idx = 0;
+      for(int j=0; j<p; j++){
+        int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+        int Kj = ymaxj - 1;
+        if(Kj>1){
+          for(int k=0; k<(Kj-1); k++){
+            if(k==1){
+              zetanew(j,k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
+            }else{
+              zetanew(j,k+1) = zeta(idx+k);
+            }
+            
           }
-
         }
+        idx += Kj-1;
+      }
 
       for (int i=0; i<n; i++) {
         for(int j=0; j<p; j++){
+          int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
           //minimum category
-          if(y(i,j)==ymin){
+          if(y(i,j)==1){
             nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
-          }
-          //maxmimum category
-          if(y(i,j)==ymax){
-            int idx = ymax-(1+ymin);
+          }else if(y(i,j)==ymaxj){
+            //maximum category
+            int idx = ymaxj-2;
             nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
-          }
-              //everything else
-              for (int l=ymin; l<ymax; l++) {
-                if(y(i,j)==l && y(i,j) != ymin && y(i,j) != ymax){
-                  int idx = (l-ymin);
-                  int idx2 = l-(1+ymin);
-                  nll -= log(pnorm(zetanew(j,idx)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,idx2)-eta(i,j), Type(0), Type(1))); 
-                }
+          }else if(ymaxj>2){
+            for (int l=2; l<ymaxj; l++) {
+              if(y(i,j)==l && l != ymaxj){
+                nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1))); 
               }
+            }
+          }
         
           nll += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
