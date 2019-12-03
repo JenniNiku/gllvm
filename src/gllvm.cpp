@@ -166,7 +166,7 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==6&&zeta.struc==1){
+    } else if(family==6 && zetastruc==1){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -213,7 +213,7 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-     }else if(family==6 && zeta.struc==0){
+     }else if(family==6 && zetastruc==0){
        int ymax =  CppAD::Integer(y.maxCoeff());
        int K = ymax - 1;
        
