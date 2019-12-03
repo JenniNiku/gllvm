@@ -7,18 +7,19 @@
 
 trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
       Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
-      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=TRUE,
+      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
 
-  term <- NULL
+  objrFinal <- optrFinal <- NULL
+
+    term <- NULL
   n <- dim(y)[1]; p <- dim(y)[2];
   y <- as.data.frame(y)
   formula1 <- formula
   if(method=="VA"){ link <- "probit"}
-
   
   if(NCOL(X) < 1) stop("No covariates in the model, fit the model using gllvm(y,family=",family,"...)")
 
@@ -233,7 +234,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
     # }
     if(family=="ordinal"){
       K = max(y00)-min(y00)
-      zeta <- c(t(fit$zeta[,-1]))
+      zeta <- c(t(res$zeta[,-1]))
       zeta <- zeta[!is.na(zeta)]
     }else{
       zeta = 0
@@ -479,7 +480,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
 
 
     if((n.i==1 || out$logL > (new.loglik)) && is.finite(new.loglik) && !inherits(optr, "try-error")){
-      objr1 <- objr;optr1 <- optr;
+      objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;
       out$logL <- new.loglik
       if(num.lv > 0) {
         out$lvs <- lvs
@@ -557,37 +558,37 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       if(sd.errors && !is.infinite(out$logL)) {
         if(trace) cat("Calculating standard errors for parameters...\n")
 
-        sdr <- optimHess(pars, objr$fn, objr$gr,control = list(reltol=reltol,maxit=maxit))
+        sdr <- optimHess(optrFinal$par, objrFinal$fn, objrFinal$gr,control = list(reltol=reltol,maxit=maxit))
 
         m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
-        incl[names(objr$par)=="lg_Ar"] <- FALSE;
-        if(row.eff!="random") {incl[names(objr$par)=="log_sigma"] <- FALSE}
-        if(familyn!=6) incl[names(objr$par)=="zeta"] <- FALSE
+        incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
+        if(row.eff!="random") {incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
+        if(familyn!=6) incl[names(objrFinal$par)=="zeta"] <- FALSE
         
-        incl[names(objr$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objr$par)=="Au"] <- TRUE
+        incl[names(objrFinal$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objrFinal$par)=="Au"] <- TRUE
 
         if(row.eff=="random") {
-          incl[names(objr$par)=="lg_Ar"] <- FALSE; incld[names(objr$par)=="lg_Ar"] <- TRUE
-          incl[names(objr$par)=="r0"] <- FALSE; incld[names(objr$par)=="r0"] <- TRUE
+          incl[names(objrFinal$par)=="lg_Ar"] <- FALSE; incld[names(objrFinal$par)=="lg_Ar"] <- TRUE
+          incl[names(objrFinal$par)=="r0"] <- FALSE; incld[names(objrFinal$par)=="r0"] <- TRUE
         }
-        if(row.eff==FALSE) incl[names(objr$par)=="r0"] <- FALSE
+        if(row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
         if(row.eff=="fixed") incl[1] <- FALSE
-        incl[names(objr$par)=="u"] <- FALSE; incld[names(objr$par)=="u"] <- TRUE
-        if(familyn==0 || familyn==2 || familyn==6) incl[names(objr$par)=="lg_phi"] <- FALSE
-        if(familyn==6) incl[names(objr$par)=="zeta"] <- TRUE
+        incl[names(objrFinal$par)=="u"] <- FALSE; incld[names(objrFinal$par)=="u"] <- TRUE
+        if(familyn==0 || familyn==2 || familyn==6) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+        if(familyn==6) incl[names(objrFinal$par)=="zeta"] <- TRUE
         if(num.lv==0){
-          incl[names(objr$par)=="u"] <- FALSE;
-          incl[names(objr$par)=="lambda"] <- FALSE;
-          incl[names(objr$par)=="Au"] <- FALSE;
+          incl[names(objrFinal$par)=="u"] <- FALSE;
+          incl[names(objrFinal$par)=="lambda"] <- FALSE;
+          incl[names(objrFinal$par)=="Au"] <- FALSE;
         }
 
         if(method=="LA" || (num.lv==0 && row.eff!="random")){
-          incl[names(objr$par)=="Au"] <- FALSE;
+          incl[names(objrFinal$par)=="Au"] <- FALSE;
 
           covM <- try(MASS::ginv(sdr[incl,incl]))
           se <- try(sqrt(diag(abs(covM))))
           if(num.lv>0 || row.eff=="random" || !is.null(randomX)) {
-            sd.random <- sdrandom(objr, covM, incl)
+            sd.random <- sdrandom(objrFinal, covM, incl)
             prediction.errors <- list()
             if(row.eff=="random"){
               prediction.errors$row.params <- diag(as.matrix(sd.random))[1:n];
@@ -608,6 +609,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           B.mat <- -sdr[incl,incld] # a x d
           cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)))
           se <- sqrt(diag(abs(cov.mat.mod)))
+          
+          incla<-rep(FALSE, length(incl))
+          incla[names(objrFinal$par)=="u"] <- TRUE
+          out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
+          
         }
 
         if(row.eff=="fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params)  = rownames(out$y); se <- se[-(1:(n-1))] }
@@ -671,8 +677,8 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
 
   out$D <- Xd
-  out$TMBfn <- objr1
-  out$TMBfn$par <- optr1$par #ensure params in this fn take final values
+  out$TMBfn <- objrFinal
+  out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
   out$logL <- -out$logL
   
   if(method == "VA"){

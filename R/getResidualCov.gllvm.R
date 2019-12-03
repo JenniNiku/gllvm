@@ -63,7 +63,7 @@ getResidualCov.gllvm = function(object, adjust = 1)
   if(object$family == "negative.binomial"){ 
     if(adjust == 1) {
       ResCov <- ResCov + diag(log(object$params$phi + 1))
-      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(1)/object$num.lv, simplify = F)
+      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)
       }
     if(adjust == 2){
      ResCov <- ResCov + diag(trigamma(1/object$params$phi))
