@@ -590,7 +590,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {
       out$fourth.corner <- try(getFourthCorner(out),silent = TRUE)
     }
-    if (is.finite(out$logL) && row.eff == "random"){
+    if (is.finite(out$logL) && row.eff == "random" && FALSE){
       if(method == "LA"){
         if(abs(out$params$sigma)<0.02)
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")

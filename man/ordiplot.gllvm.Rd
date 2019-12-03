@@ -6,7 +6,8 @@
 \title{Plot latent variables from gllvm model}
 \usage{
 \method{ordiplot}{gllvm}(object, biplot = FALSE, ind.spp = NULL,
-  alpha = 0.5, main = NULL, which.lvs = c(1, 2), jitter = FALSE,
+  alpha = 0.5, main = NULL, which.lvs = c(1, 2),
+  predict.region = FALSE, level = 0.95, jitter = FALSE,
   jitter.amount = 0.2, s.colors = 1, symbols = FALSE,
   cex.spp = 0.7, ...)
 }
@@ -23,6 +24,8 @@
 
 \item{which.lvs}{indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}.}
 
+\item{predict.region}{logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.}
+
 \item{jitter}{if \code{TRUE}, jittering is applied on points.}
 
 \item{jitter.amount}{numeric, positive value indicating an amount of jittering for each point, defaults to 0.2 (jitter range).}
@@ -34,6 +37,8 @@
 \item{cex.spp}{size of species labels in biplot}
 
 \item{...}{additional graphical arguments.}
+
+\item{leve}{level for prediction regions.}
 }
 \description{
 Plots latent variables and their corresponding coefficients (biplot).
