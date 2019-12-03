@@ -69,6 +69,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   if(family == "ordinal" && zeta.struc == "species") {
     max.levels <- apply(y,2,function(x) length(min(x):max(x)));
     if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If al columns only have two levels, please use family == binomial instead. Thanks")
+  }else{
+    max.levels=length(min(y):max(y))
   }
 
   if(is.null(rownames(y))) rownames(y) <- paste("row",1:N,sep="")
@@ -249,8 +251,6 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       cw.fit <- MASS::polr(factor(y) ~ 1, method = "probit")
       zeta <- cw.fit$zeta
       zeta[1] <- 0
-      
-      #relevel y to get coefs for covariates, and intercept
     }
     
     for(j in 1:p) {
@@ -362,6 +362,7 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
     ds.res <- matrix(NA, n, p)
     rownames(ds.res) <- rownames(y)
     colnames(ds.res) <- colnames(y)
+    if (family != "ordinal") {
     for (i in 1:n) {
       for (j in 1:p) {
         if (family == "poisson") {
@@ -389,47 +390,49 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }
-        if (family == "ordinal") {
-        if(zeta.struc == "species"){
-          probK <- NULL
-          probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
-          probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
-          if(max(y[,j]) > 2) {
-            j.levels <- 2:(max(y[,j])-1)
-            for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
-          }
-          probK <- c(0,probK)
-          cumsum.b <- sum(probK[1:(y[i,j]+1)])
-          cumsum.a <- sum(probK[1:(y[i,j])])
-          u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
-          if (abs(u - 1) < 1e-05)
-            u <- 1
-          if (abs(u - 0) < 1e-05)
-            u <- 0
-          ds.res[i, j] <- qnorm(u)
-        }else{
-          probK <- NULL
-          if(mu[i,j]==min(y)){
-            probK[1] <- pnorm(zeta[1]-mu[i,j],log.p = FALSE) 
-          }else if(mu[i,j]==max(y)){
-            probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j]) #dont know why the muij is here
-          }else{
-            j.levels <- unique(y[,j])
-            for(k in j.levels) { probK[k] <- pnorm(zeta[k] - mu[i,j]) - pnorm(zeta[k - 1] - mu[i,j]) }
-          }
-          probK <- c(0,probK)
-          cumsum.b <- sum(probK[1:(y[i,j]+1)])
-          cumsum.a <- sum(probK[1:(y[i,j])])
-          u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
-          if (abs(u - 1) < 1e-05)
-            u <- 1
-          if (abs(u - 0) < 1e-05)
-            u <- 0
-          ds.res[i, j] <- qnorm(u)
+      }#this is where the loop ended
+    }
+    }else{
+      for(j in 1:p){
+      for(i in order(y[,j])){
+      if(zeta.struc == "species"){
+        probK <- NULL
+        probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+        probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+        if(max(y[,j]) > 2) {
+          j.levels <- 2:(max(y[,j])-1)
+          for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
         }
-        }
+        probK <- c(0,probK)
+        cumsum.b <- sum(probK[1:(y[i,j]+1)])
+        cumsum.a <- sum(probK[1:(y[i,j])])
+        u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+        if (abs(u - 1) < 1e-05)
+          u <- 1
+        if (abs(u - 0) < 1e-05)
+          u <- 0
+        ds.res[i, j] <- qnorm(u)
+      }else{
+        probK <- NULL
+        probK[1] <- pnorm(zeta[1]-mu[i,j],log.p = FALSE)
+        probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+        levels <-(min(y)+1):(max(y)-1)
+        for(k in levels) { probK[k] <- pnorm(zeta[k] - mu[i,j]) - pnorm(zeta[k - 1] - mu[i,j]) }
+        
+        probK <- c(0,probK)
+        cumsum.b <- sum(probK[1:(y[i,j]+1)])
+        cumsum.a <- sum(probK[1:(y[i,j])])
+        u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+        if (abs(u - 1) < 1e-05)
+          u <- 1
+        if (abs(u - 0) < 1e-05)
+          u <- 0
+        ds.res[i, j] <- qnorm(u)
+      }
+      }
       }
     }
+    
   } else {
     ds.res <- resi
   }
