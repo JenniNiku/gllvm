@@ -7,7 +7,7 @@
 
 trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
       Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
-      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=TRUE,
+      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL) {

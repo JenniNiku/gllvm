@@ -1,8 +1,8 @@
 start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, 
-                                     offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
-                                     seed = NULL,power=NULL,starting.val="res",formula=NULL, 
-                                     jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-                                     link = "probit", randomX = NULL) {
+        offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
+        seed = NULL,power=NULL,starting.val="res",formula=NULL, 
+        jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
+        link = "probit", randomX = NULL) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -11,6 +11,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   mu<-NULL
   out <- list()
 
+  sigma=1
   
   row.params <- rep(0, n);
   if(starting.val %in% c("res","random") || row.eff == "random"){
@@ -37,8 +38,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       }
     }
     if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] <- 1.5 * sign(row.params[abs(row.params)>1.5])
+    sigma=sd(row.params)
   }
-  sigma=1
+
   if(!is.numeric(y))
     stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
 
@@ -78,20 +80,29 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     if(starting.val=="res" && is.null(start.lvs) ){# && num.lv>0
       if(is.null(TR)){
         if(family!="gaussian") {
-          if(!is.null(X)) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
-          if(is.null(X)) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
-          resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-          coef <- t(fit.mva$coef)
+          if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+          if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
+          fit.mva$phi <- fit.mva$params$phi
+          resi <- NULL
+          mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
+          if(family %in% c("poisson", "negative.binomial")) {
+            mu <- exp(mu)
+          }
+          if(family == "binomial") {
+            mu <-  binomial(link = link)$linkinv(mu)
+          }
         } else {
           if(!is.null(X)) fit.mva <- mvabund::manylm(y ~ X)
           if(is.null(X)) fit.mva <- mvabund::manylm(y ~ 1)
+          mu <- NULL
           resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
         }
         gamma=NULL
         if(num.lv>0){
-          lastart <- FAstart(mu=NULL, family=family, y=y, num.lv = num.lv, phis=fit.mva$phi, resi=resi)
+          lastart <- FAstart(mu=mu, family=family, y=y, num.lv = num.lv, phis=fit.mva$phi, resi=resi)
           gamma<-lastart$gamma
           index<-lastart$index
         }
@@ -156,21 +167,26 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       
       if(is.null(TR)){params <- cbind(coef,gamma)
       } else { params <- cbind((fit.mva$coef$beta0),gamma)}
-    } else {
+    } else  if(starting.val != "zero") {
       if(family!="gaussian") {
         if(is.null(TR)){
-          if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ X + index, family = family, K = trial.size)
-          if(is.null(X) & num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
-          if(!is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ X, family = family, K = trial.size)
-          if(is.null(X) & num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          
+          if(!is.null(X) & num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
+          if(is.null(X) & num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
+          if(!is.null(X) & num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
+          if(is.null(X) & num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
+
         } else {
-          if(num.lv > 0) fit.mva <- mvabund::manyglm(y ~ index, family = family, K = trial.size)
-          if(num.lv == 0) fit.mva <- mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          if(num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
+          if(num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb")
           env  <-  rep(0,num.X)
           trait  <-  rep(0,num.T)
           inter <- rep(0, num.T * num.X)
           B <- c(env,trait,inter)
         }
+        params <- cbind(fit.mva$params$beta0, fit.mva$params$Xcoef, fit.mva$params$theta)
+        fit.mva$phi <- fit.mva$params$phi
+        
       } else {
         if(is.null(TR)){
           if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manylm(y ~ X + index)
@@ -188,7 +204,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         fit.mva$phi <- apply(fit.mva$residuals,2,sd)
       }
       params <- t(fit.mva$coef)
-    }}
+    } else {
+      fit.mva<-list()
+      fit.mva$phi <- rep(1, p)
+    }
+    }
 
 
   if(family == "negative.binomial") {
@@ -269,7 +289,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     B=c(env,trait,inter)
   }
 
-  if(family!="ordinal" || (family=="ordinal" & starting.val=="res")){
+  if((family!="ordinal" || (family=="ordinal" & starting.val=="res")) & starting.val!="zero"){
     if(num.lv>1 && p>2){
       gamma<-as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)])
       qr.gamma <- qr(t(gamma))
@@ -321,8 +341,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
 
 FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL, 
-                    jitter.var = 0, resi = NULL){
+                    jitter.var = 0, resi = NULL, row.eff = FALSE){
   n<-NROW(y); p <- NCOL(y)
+  row.params <- NULL # !!!!
   
   if(is.null(resi)){
     ds.res <- matrix(NA, n, p)
@@ -409,6 +430,14 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL,
     index <- matrix(0,n,num.lv)
   }
   
+  if(row.eff == "random") { # !!!!
+    row.params <- index[,num.lv]* (sd(matrix(index[,num.lv])%*%matrix(gamma[, num.lv], nrow=1)))/sd(index[,num.lv])
+    
+    index <- as.matrix(index[,-num.lv])
+    gamma <- as.matrix(gamma[,-num.lv])
+    num.lv <- num.lv-1
+  }
+  
   if(num.lv>1 && p>2){
     qr.gamma <- qr(t(gamma))
     gamma.new<-t(qr.R(qr.gamma))
@@ -437,7 +466,7 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL,
     gamma <- gamma%*%gammascale
   }
   index <- index + mvtnorm::rmvnorm(n, rep(0, num.lv),diag(num.lv)*jitter.var);
-  return(list(index = index, gamma = gamma))
+  return(list(index = index, gamma = gamma, row.params =row.params))
 }
 
 
@@ -1183,6 +1212,23 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   diag.cov.random <- diag.term1 + diag.term2
   return(diag.cov.random)
 }
+
+# Calculates adjusted prediction errors for random effects
+sdA<-function(fit){
+  n<-nrow(fit$y)
+  A<- -fit$Hess$cov.mat.mod  #
+  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+  se <- (diag(abs(covb)))
+  CovAerr<-array(0, dim(fit$A))
+  for (i in 1:ncol(fit$A)) {
+    CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+  }
+  CovAerr
+}
+
 
 
 # draw an ellipse
