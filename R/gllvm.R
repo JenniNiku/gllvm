@@ -30,6 +30,7 @@
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param optimizer if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.
 #' @param jitter.var jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.
+#' @param zeta.struc Structure for thresholds in the ordinal model. Either "common", for the same thresholds for all species, or "species" for species-specific thresholds. For the latter, each category per species needs to have at least one observations. Defaults to "common".
 #'
 #' @details
 #' Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
@@ -234,7 +235,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   n.init = 1, Power = 1.5, reltol = 1e-8, seed = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim",
-                  Lambda.start = c(0.1,0.5), jitter.var = 0) {
+                  Lambda.start = c(0.1,0.5), jitter.var = 0, zeta.struc="common") {
     constrOpt <- FALSE
     restrict <- 30
     randomX <- NULL
@@ -474,7 +475,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Power = Power,
             diag.iter = diag.iter,
             Lambda.start = Lambda.start,
-            jitter.var = jitter.var
+            jitter.var = jitter.var,
+            zeta.struc = zeta.struc
           )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -505,13 +507,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Power = Power,
             diag.iter = diag.iter,
             Lambda.start = Lambda.start,
-            jitter.var = jitter.var
+            jitter.var = jitter.var,
+            zeta.struc = zeta.struc
           )
       }
 
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
+      
       if (num.lv > 0)
         out$lvs <- fitg$lvs
       out$X <- fitg$X
@@ -522,6 +526,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       }
       if (family == "tweedie") {
         out$Power <- fitg$Power
+      }
+      if(family == "ordinal"){
+        out$zeta.struc = zeta.struc
       }
       if (method == "VA") {
         out$A <- fitg$A

@@ -35,6 +35,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
   DATA_VECTOR(random);//random row
+  DATA_INTEGER(zeta.struc);
 
   int n = y.rows();
   int p = y.cols();
@@ -165,7 +166,7 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==6){
+    } else if(family==6&&zeta.struc==1){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -212,6 +213,44 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
+     }else if(family==6&&zeta.struc==0){
+       int ymax =  CppAD::Integer(y.maxCoeff());
+       int K = ymax - 1;
+       
+       vector <Type> zetanew(K);
+       zetanew.fill(0.0);
+       
+
+           for(int k=0; k<K; k++){
+             if(k==1){
+               zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
+             }else{//I might be missing the last cut-off value now, not sure..
+               zetanew(k+1) = zeta(k);
+             }
+           }
+           
+       for (int i=0; i<n; i++) {
+         for(int j=0; j<p; j++){
+           //minimum category
+           if(y(i,j)==1){
+             nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+           }else if(y(i,j)==ymax){
+             //maximum category
+             int idx = ymax-2;
+             nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+           }else{
+             for (int l=2; l<ymax; l++) {
+               if(y(i,j)==l && l != ymax){
+                 nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1))); 
+               }
+             }
+           }
+           
+           nll += cQ(i,j);
+           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
+         }
+         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+       }
      }
     nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
 
