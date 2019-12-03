@@ -36,7 +36,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
     if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species")
       stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species.")
-    if(any(diff(unique(c(y))!=1))&zeta.struc=="common")
+    if(any(diff(sort(unique(c(y)))!=1))&zeta.struc=="common")
       stop("Can't fit ordinal model if there are missing classes. Please reclassify.")
   }
 
