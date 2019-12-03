@@ -1,15 +1,8 @@
 start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, 
-<<<<<<< HEAD
-                                     offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
-                                     seed = NULL,power=NULL,starting.val="res",formula=NULL, 
-                                     jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-                                     link = "probit", randomX = NULL, zeta.struc = zeta.struc) {
-=======
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
         link = "probit", randomX = NULL) {
->>>>>>> master
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -360,13 +353,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 }
 
 
-<<<<<<< HEAD
 FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis = NULL, 
-                    jitter.var = 0, resi = NULL){
-=======
-FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL, 
                     jitter.var = 0, resi = NULL, row.eff = FALSE){
->>>>>>> master
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
   
