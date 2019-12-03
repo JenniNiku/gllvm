@@ -35,7 +35,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
   DATA_VECTOR(random);//random row
-  DATA_INTEGER(zeta.struc);
+  DATA_INTEGER(zetastruc);
 
   int n = y.rows();
   int p = y.cols();
@@ -213,7 +213,7 @@ Type objective_function<Type>::operator() ()
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-     }else if(family==6&&zeta.struc==0){
+     }else if(family==6 && zeta.struc==0){
        int ymax =  CppAD::Integer(y.maxCoeff());
        int K = ymax - 1;
        
