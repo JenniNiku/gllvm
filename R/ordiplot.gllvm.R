@@ -140,6 +140,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
 
       if (predict.region) {
+        if(is.null(object$sd)){
+          cat("Cannot plot prediction regions if no standard errors were calculated.")
+        }else{
         if (object$method == "LA") {
           #serr <- object$prediction.errors$lvs
           for (i in 1:n) {
@@ -147,6 +150,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
           }
+        }
         } else {
           sdb<-sdA(object)
           object$A<-sdb+object$A
@@ -166,7 +170,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
       
     }
-  }
+}
 
 
 #'@export ordiplot
