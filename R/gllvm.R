@@ -30,7 +30,7 @@
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param optimizer if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.
 #' @param jitter.var jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.
-#' @param zeta.struc Structure for thresholds in the ordinal model. Either "common", for the same thresholds for all species, or "species" for species-specific thresholds. For the latter, each category per species needs to have at least one observations. Defaults to "common".
+#' @param zeta.struc Structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
 #'
 #' @details
 #' Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
@@ -235,7 +235,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   n.init = 1, Power = 1.5, reltol = 1e-8, seed = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim",
-                  Lambda.start = c(0.1,0.5), jitter.var = 0, zeta.struc="common") {
+                  Lambda.start = c(0.1,0.5), jitter.var = 0, zeta.struc="species") {
     constrOpt <- FALSE
     restrict <- 30
     randomX <- NULL

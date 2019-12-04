@@ -180,6 +180,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     out <- object$logL
     
   if (object$family == "ordinal" && type == "response") {
+  if (object$zeta.struc == "species"){
     k.max <- apply(object$params$zeta,1,function(x)length(x[!is.na(x)])) + 1
     preds <- array(NA, dim = c(max(k.max), nrow(eta), p), dimnames = list(paste("level", 1:max(k.max), sep = ""), NULL, NULL))
     
@@ -195,6 +196,21 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         preds[, i, j] <- c(probK, rep(NA, max(k.max) -k.max[j] ))
       }}
     out <- preds
+  }else{
+    k.max <- length(object$params$zeta) + 1
+    preds <- array(NA, dim = c(k.max, nrow(eta), p), dimnames = list(paste("level", 1:max(k.max), sep = ""), NULL, NULL))
+    
+    for (i in 1:n) {
+      for (j in 1:p) {
+        probK <- NULL
+        probK[1] <- pnorm(object$params$zeta[1] - eta[i, j], log.p = FALSE)
+        probK[k.max] <- 1 - pnorm(object$params$zeta[k.max - 1] - eta[i, j])
+          levels <- 2:(k.max - 1)
+          for(k in levels) { probK[k] <- pnorm(object$params$zeta[k] - eta[i, j]) - pnorm(object$params$zeta[k - 1] - eta[i, j]) }
+        preds[, i, j] <- c(probK)
+      }}
+    out <- preds
+  }
   }
    try(rownames(out)<-1:NROW(out), silent = TRUE)
   

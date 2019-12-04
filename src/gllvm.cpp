@@ -203,13 +203,13 @@ Type objective_function<Type>::operator() ()
           }else if(ymaxj>2){
             for (int l=2; l<ymaxj; l++) {
               if(y(i,j)==l && l != ymaxj){
-                nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1))); 
+                nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1)));
               }
             }
           }
-        
+
           nll += cQ(i,j);
-          //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
+          //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
         }
         nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -219,16 +219,13 @@ Type objective_function<Type>::operator() ()
        
        vector <Type> zetanew(K);
        zetanew.fill(0.0);
-       
-
-           for(int k=0; k<K; k++){
+           for(int k=0; k<(K-1); k++){
              if(k==1){
                zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
-             }else{//I might be missing the last cut-off value now, not sure..
+             }else{
                zetanew(k+1) = zeta(k);
              }
-           }
-           
+       }
        for (int i=0; i<n; i++) {
          for(int j=0; j<p; j++){
            //minimum category
@@ -238,22 +235,21 @@ Type objective_function<Type>::operator() ()
              //maximum category
              int idx = ymax-2;
              nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
-           }else{
+           }else if(ymax>2){
              for (int l=2; l<ymax; l++) {
                if(y(i,j)==l && l != ymax){
-                 nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1))); 
+                 nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
                }
              }
            }
-           
+
            nll += cQ(i,j);
-           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
+           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
          }
          nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
        }
      }
-    nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
-
+     nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   } else {
     eta += r0*xr + offset;
 
