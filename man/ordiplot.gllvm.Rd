@@ -9,7 +9,8 @@
   alpha = 0.5, main = NULL, which.lvs = c(1, 2),
   predict.region = FALSE, level = 0.95, jitter = FALSE,
   jitter.amount = 0.2, s.colors = 1, symbols = FALSE,
-  cex.spp = 0.7, ...)
+  cex.spp = 0.7, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,
+  ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
@@ -26,6 +27,8 @@
 
 \item{predict.region}{logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.}
 
+\item{level}{level for prediction regions.}
+
 \item{jitter}{if \code{TRUE}, jittering is applied on points.}
 
 \item{jitter.amount}{numeric, positive value indicating an amount of jittering for each point, defaults to 0.2 (jitter range).}
@@ -36,9 +39,13 @@
 
 \item{cex.spp}{size of species labels in biplot}
 
-\item{...}{additional graphical arguments.}
+\item{lwd.ellips}{line width for prediction ellipses. See graphical parameter lwd.}
 
-\item{leve}{level for prediction regions.}
+\item{col.ellips}{colors for prediction ellipses.}
+
+\item{lty.ellips}{line type for prediction ellipses. See graphical parameter lty.}
+
+\item{...}{additional graphical arguments.}
 }
 \description{
 Plots latent variables and their corresponding coefficients (biplot).

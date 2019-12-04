@@ -13,7 +13,10 @@
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param cex.spp size of species labels in biplot
 #' @param predict.region logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.
-#' @param leve level for prediction regions.
+#' @param level level for prediction regions.
+#' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
+#' @param lwd.ellips line width for prediction ellipses. See graphical parameter lwd.
+#' @param col.ellips colors for prediction ellipses.
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -47,7 +50,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
     if (any(class(object) != "gllvm"))
       stop("Class of the object isn't 'gllvm'.")
     a <- jitter.amount
@@ -84,6 +87,35 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           xlab = paste("Latent variable ", which.lvs[1]),
           ylab = paste("Latent variable ", which.lvs[2]),
           main = main , type = "n", ... )
+        
+        if (predict.region) {
+          if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
+          
+          if (object$method == "LA") {
+            #serr <- object$prediction.errors$lvs
+            for (i in 1:n) {
+              #covm <- diag(diag(object$prediction.errors$lvs[i,which.lvs,which.lvs]));
+              covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }
+          } else {
+            sdb<-sdA(object)
+            object$A<-sdb+object$A
+            r=0
+            #if(object$row.eff=="random") r=1
+            
+            for (i in 1:n) {
+              if(!object$TMB && object$Lambda.struc == "diagonal"){
+                covm <- diag(object$A[i,which.lvs+r]);
+              } else {
+                #covm <- diag(diag(object$A[i,which.lvs,which.lvs]));
+                covm <- object$A[i,which.lvs+r,which.lvs+r];
+              }
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }
+          }
+        }
+        
         if (!jitter)
           if (symbols) {
             points(choose.lvs[, which.lvs], col = s.colors, ...)
@@ -111,6 +143,34 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           ylab = paste("Latent variable ", which.lvs[2]),
           main = main, type = "n", ... )
 
+        if (predict.region) {
+          if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
+          
+          if (object$method == "LA") {
+            #serr <- object$prediction.errors$lvs
+            for (i in 1:n) {
+              #covm <- diag(diag(object$prediction.errors$lvs[i,which.lvs,which.lvs]));
+              covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }
+          } else {
+            sdb<-sdA(object)
+            object$A<-sdb+object$A
+            r=0
+            #if(object$row.eff=="random") r=1
+            
+            for (i in 1:n) {
+              if(!object$TMB && object$Lambda.struc == "diagonal"){
+                covm <- diag(object$A[i,which.lvs+r]);
+              } else {
+                #covm <- diag(diag(object$A[i,which.lvs,which.lvs]));
+                covm <- object$A[i,which.lvs+r,which.lvs+r];
+              }
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }
+          }
+        }
+        
         if (!jitter){
           if (symbols) {
             points(choose.lvs[, which.lvs], col = s.colors, ...)
@@ -139,31 +199,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         }
       }
 
-      if (predict.region) {
-        if (object$method == "LA") {
-          #serr <- object$prediction.errors$lvs
-          for (i in 1:n) {
-            #covm <- diag(diag(object$prediction.errors$lvs[i,which.lvs,which.lvs]));
-            covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
-          }
-        } else {
-          sdb<-sdA(object)
-          object$A<-sdb+object$A
-          r=0
-          #if(object$row.eff=="random") r=1
-          
-          for (i in 1:n) {
-            if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- diag(object$A[i,which.lvs+r]);
-            } else {
-              #covm <- diag(diag(object$A[i,which.lvs,which.lvs]));
-              covm <- object$A[i,which.lvs+r,which.lvs+r];
-            }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)))
-          }
-        }
-      }
+
       
     }
   }
