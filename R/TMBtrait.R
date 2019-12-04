@@ -622,7 +622,6 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           D.mat <- -sdr[incld,incld] # d x d
           B.mat <- -sdr[incl,incld] # a x d
           cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T)
-          if(inherits(cov.mat.mod,"try-error"))cat("Failed to calculate standard errors due to singular fit.")
           se <- sqrt(diag(abs(cov.mat.mod)))
           
           incla<-rep(FALSE, length(incl))
@@ -691,11 +690,11 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           }
         }
         
-      }})
+      }}, silent=T)
 
     n.i <- n.i+1;
   }
-  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
+  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated, due to singular fit.\n") }
 
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
 

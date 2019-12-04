@@ -615,7 +615,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         D.mat <- -sdr[incld, incld] # d x d
         B.mat <- -sdr[incl, incld] # a x d
         cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T)
-        if(inherits(cov.mat.mod,"try-error"))cat("Failed to calculate standard errors due to singular fit.")
         se <- sqrt(diag(abs(cov.mat.mod)))
 
         incla<-rep(FALSE, length(incl))
@@ -682,8 +681,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         }
          }
 
-    }})
-  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
+    }}, silent=T)
+  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated, due to singular fit.\n") }
 
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
 
