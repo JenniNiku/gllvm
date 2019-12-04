@@ -64,16 +64,30 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, ...)
   if(object$family=="gaussian")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
      if(object$family == "ordinal"){
-      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-        for(j in 1:nCols){
-        k <- unique(object$y[,j])
-        for(i in 1:(nsim * nRows)){
-            sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
-          }
-        }
-      dimnames(prs)[[3]] <- colnames(object$y)
-      dimnames(prs)[[2]] <- 1:(nsim * nRows)
-      prs <- prs[1,,]
+       if(object$zeta.struc=="species"){
+         sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+         k <- length(unique(c(object$y)))
+         for(j in 1:nCols){
+           for(i in 1:(nsim * nRows)){
+             sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+           }
+         }
+         dimnames(prs)[[3]] <- colnames(object$y)
+         dimnames(prs)[[2]] <- 1:(nsim * nRows)
+         prs <- prs[1,,]
+       }else{
+         sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+         for(j in 1:nCols){
+           k <- unique(object$y[,j])
+           for(i in 1:(nsim * nRows)){
+             sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+           }
+         }
+         dimnames(prs)[[3]] <- dimnames(object$y)[[1]]
+         dimnames(prs)[[2]] <- 1:(nsim * nRows)
+         prs <- prs[1,,]
+       }
+     
       
     }
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
