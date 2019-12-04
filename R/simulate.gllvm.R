@@ -70,8 +70,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
      if(object$family == "ordinal"){
        if(object$zeta.struc=="species"){
          sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-         k <- length(unique(c(object$y)))
          for(j in 1:nCols){
+           k <- sort(unique(object$y[,j]))
            for(i in 1:(nsim * nRows)){
              sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
            }
@@ -81,8 +81,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
          prs <- prs[1,,]
        }else{
          sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+         k <- sort(unique(c(object$y)))
          for(j in 1:nCols){
-           k <- unique(object$y[,j])
            for(i in 1:(nsim * nRows)){
              sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
            }
