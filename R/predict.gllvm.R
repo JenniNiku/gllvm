@@ -211,6 +211,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }}
     out <- preds
   }
+    dimnames(preds)[[3]] <- colnames(object$y)
   }
    try(rownames(out)<-1:NROW(out), silent = TRUE)
   
