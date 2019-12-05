@@ -24,11 +24,10 @@ logLik.gllvm <- function(object, ...)
     object$params$inv.phi <- NULL
 
   }
-  if(!is.null(object$params$zeta)){
-    if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]
-    if(object$zeta.struc=="common")object$params$zeta<-object$params$zeta[-1]
-
-  }
+    if(object$family=="ordinal"){
+      if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]
+      if(object$zeta.struc=="common")object$params$zeta<-object$params$zeta[-1]
+    }
   if (object$row.eff %in% c("fixed", TRUE))
     object$params$row.params <- object$params$row.params[-1]
   if (object$row.eff == "random")
