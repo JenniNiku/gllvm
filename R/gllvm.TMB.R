@@ -8,7 +8,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL,
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1,
-      Lambda.start=c(0.1,0.5), jitter.var=0, zeta.struc = zeta.struc) {
+      Lambda.start=c(0.1,0.5), jitter.var=0, zeta.struc = "species") {
   ignore.u=FALSE
   n <- dim(y)[1]
   p <- dim(y)[2]
