@@ -137,9 +137,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         row.params <- NULL
         if (start.params$row.eff != FALSE) {
           row.params <- start.params$params$row.params
-          if(row.params=="fixed")
+          if(row.eff=="fixed")
             row.params[1] <- 0
-          if(row.params=="random")
+          if(row.eff=="random")
             sigma <- start.params$params$sigma
         }## row parameters
         lvs <- NULL
