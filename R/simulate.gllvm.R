@@ -87,7 +87,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
              sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
            }
          }
-         dimnames(prs)[[3]] <- dimnames(object$y)[[1]]
+         dimnames(prs)[[3]] <- dimnames(object$y)[[2]]
          dimnames(prs)[[2]] <- 1:(nsim * nRows)
          prs <- prs[1,,]
        }
