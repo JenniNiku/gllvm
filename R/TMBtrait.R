@@ -621,7 +621,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
           A.mat <- -sdr[incl,incl] # a x a
           D.mat <- -sdr[incld,incld] # d x d
           B.mat <- -sdr[incl,incld] # a x d
-          cov.mat.mod <- invisible(try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))))
+          cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
           se <- sqrt(diag(abs(cov.mat.mod)))
           
           incla<-rep(FALSE, length(incl))
