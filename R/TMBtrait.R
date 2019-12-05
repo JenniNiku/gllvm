@@ -10,7 +10,7 @@ trait.TMB <- function(y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "po
       maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1,
-      Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, zeta.struc = zeta.struc) {
+      Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, zeta.struc = "species") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
 
   objrFinal <- optrFinal <- NULL
