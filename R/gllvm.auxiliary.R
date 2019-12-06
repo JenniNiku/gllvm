@@ -390,7 +390,6 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           ds.res[i, j] <- qnorm(u)
         }
       if (family == "ordinal") {
-    
       if(zeta.struc == "species"){
         probK <- NULL
         probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
