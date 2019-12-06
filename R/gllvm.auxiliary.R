@@ -362,7 +362,6 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
     ds.res <- matrix(NA, n, p)
     rownames(ds.res) <- rownames(y)
     colnames(ds.res) <- colnames(y)
-    if (family != "ordinal") {
     for (i in 1:n) {
       for (j in 1:p) {
         if (family == "poisson") {
@@ -390,11 +389,8 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }
-      }#this is where the loop ended
-    }
-    }else{
-      for(j in 1:p){
-      for(i in order(y[,j])){
+        if (family != "ordinal") {
+    
       if(zeta.struc == "species"){
         probK <- NULL
         probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
@@ -430,9 +426,9 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           u <- 0
         ds.res[i, j] <- qnorm(u)
       }
-      }
-      }
-    }
+  }
+}
+  }
     
   } else {
     ds.res <- resi
