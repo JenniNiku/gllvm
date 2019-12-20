@@ -20,8 +20,10 @@
 #' @param la.link.bin link function for binomial family if \code{method = "LA"}. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.5.
 #' @param Lambda.struc  covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".
-#' @param diag.iter  non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5.
-#' @param Lambda.start starting values for variances in VA distributions for latent variables in variational approximation method. Defaults to 0.1.
+#' @param Ab.struct covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".
+#' @param diag.iter  non-negative integer which is number of iterations using diagonal structure for the variational covariance of the latent variables, used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 1.
+#' @param Ab.diag.iter  As above, but for variational covariance of random slopes.
+#' @param Lambda.start starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.1.
 #' @param trace  logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param reltol  convergence criteria for log-likelihood, defaults to 1e-6.
@@ -30,6 +32,10 @@
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param optimizer if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.
 #' @param jitter.var jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.
+#' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
+#' @param randomX.start Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.
+#' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
+#' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #'
 #' @details
 #' Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
@@ -45,10 +51,11 @@
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 #' are included. The expectation of response \eqn{Y_{ij}} is
 #'
-#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_x + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
+#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
 #'
 #' where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are the main effects
-#' or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms.
+#' or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms. Vectors \eqn{b_j} are 
+#' optional species-specific random slopes for environmental covariates.
 #' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 #'
 #'
@@ -66,7 +73,7 @@
 #'   Mean and variance for distributions are defined as follows.
 #'\itemize{
 #'   \item{For count data \code{family = poisson()}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
-#'   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\phi_j*\mu_{ij}^2}, or}
+#'   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2/\phi_j}, or}
 #'   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)}.}
 #'
 #'   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
@@ -198,6 +205,14 @@
 #'ordiplot(fitF2)
 #'coefplot(fitF2)
 #'
+#'## Include species specific random slopes to the fourth corner model
+#'fitF3 <- gllvm(y = y, X = X, TR = TR,
+#'  formula = ~ Bare.ground + Canopy.cover * (Pilosity + Webers.length),
+#'  family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, n.init = 3)
+#'ordiplot(fitF3)
+#'coefplot(fitF3)
+#'
+#'
 #'## Example 5: Fit Tweedie model
 #'# Load coral data
 #'data(tikus)
@@ -229,15 +244,16 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   num.lv = 2, family, method = "VA", row.eff = FALSE,
-                  offset = NULL, sd.errors = TRUE, Lambda.struc = "unstructured",
-                  diag.iter = 5, trace = FALSE, plot = FALSE, la.link.bin = "probit",
+                  offset = NULL, sd.errors = TRUE, Lambda.struc = "unstructured", Ab.struct = "unstructured",
+                  diag.iter = 5, Ab.diag.iter=0, trace = FALSE, plot = FALSE, la.link.bin = "probit",
                   n.init = 1, Power = 1.5, reltol = 1e-8, seed = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL,
-                  starting.val = "res", TMB = TRUE, optimizer = "optim",
-                  Lambda.start = c(0.1,0.5), jitter.var = 0) {
+                  starting.val = "res", TMB = TRUE, optimizer = "optim", scale.X = TRUE,
+                  Lambda.start = c(0.1, 0.1, 0.1), jitter.var = 0,
+                  randomX = NULL, randomX.start = "res", beta0com = FALSE) {
+  
     constrOpt <- FALSE
     restrict <- 30
-    randomX <- NULL
     term <- NULL
     datayx <- NULL
 
@@ -431,7 +447,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     n.i <- 1
 
     out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
-        method = method, family = family, row.eff = row.eff, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, terms = term)
 
     if (family == "binomial") {
@@ -470,12 +486,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             optimizer = optimizer,
             starting.val = starting.val,
             method = method,
-            randomX = randomX,
             Power = Power,
             diag.iter = diag.iter,
+            Ab.diag.iter = Ab.diag.iter,
             Lambda.start = Lambda.start,
-            jitter.var = jitter.var
-          )
+            jitter.var = jitter.var,
+            randomX = randomX,
+            randomX.start = randomX.start,
+            beta0com = beta0com, 
+            scale.X = scale.X
+        )
         out$X <- fitg$X
         out$TR <- fitg$TR
 
@@ -515,6 +535,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if (num.lv > 0)
         out$lvs <- fitg$lvs
       out$X <- fitg$X
+      
+      
 
       out$params <- fitg$params
       if (sd.errors) {
@@ -530,6 +552,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if (!is.null(randomX)) {
         out$corr <- fitg$corr
         out$Xrandom <- fitg$Xrandom
+        out$Ab <- fitg$Ab
       }
       out$start <- fitg$start
 

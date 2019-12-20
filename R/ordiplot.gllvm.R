@@ -102,7 +102,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             sdb<-sdA(object)
             object$A<-sdb+object$A
             r=0
-            #if(object$row.eff=="random") r=1
+            if(object$row.eff=="random") r=1
             
             for (i in 1:n) {
               if(!object$TMB && object$Lambda.struc == "diagonal"){
@@ -157,7 +157,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             sdb<-sdA(object)
             object$A<-sdb+object$A
             r=0
-            #if(object$row.eff=="random") r=1
+            if(object$row.eff=="random") r=1
             
             for (i in 1:n) {
               if(!object$TMB && object$Lambda.struc == "diagonal"){
