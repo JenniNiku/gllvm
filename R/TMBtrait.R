@@ -304,7 +304,7 @@ trait.TMB <- function(
     
     a <- c(beta0)
     if(num.lv > 0) {
-      diag(theta) <- log(diag(theta))
+      # diag(theta) <- log(diag(theta)) # !!!
       theta <- theta[lower.tri(theta, diag = TRUE)]
       u <- vameans
     }
@@ -541,7 +541,7 @@ trait.TMB <- function(
       if(p>1) {
         theta[lower.tri(theta,diag=TRUE)] <- param[li];
       } else {theta <- param[li]}
-      diag(theta) <- exp(diag(theta))#!!!
+      # diag(theta) <- exp(diag(theta))#!!!
     }
     if(row.eff!=FALSE) {
       ri <- names(param)=="r0"

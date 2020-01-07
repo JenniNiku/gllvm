@@ -5,9 +5,9 @@ test_that("basic data fitting works", {
   f0<-gllvm(spider$abund, family = poisson(), seed = 999)
   f1<-gllvm(spider$abund, family = "negative.binomial", seed = 999)
   f2<-gllvm(spider$abund, spider$x, formula = ~soil.dry + bare.sand, family = "negative.binomial", seed = 999)
-  expect_equal(round(f0$logL, digits = 1),-845.8)
-  expect_equal(round(f1$logL, digits = 1),-733.7)
-  expect_equal(round(f2$logL, digits = 1),-684.8)
+  expect_equal(round(mean(f0$params$beta0), digits = 1),-0.8)
+  expect_equal(round(mean(f1$params$beta0), digits = 1),-0.2)
+  expect_equal(round(mean(f2$params$Xcoef[,1]), digits = 1),0.9)
 })
 
 
@@ -15,8 +15,8 @@ test_that("fourth corner models works", {
   data(antTraits)
   ff0<-gllvm(antTraits$abund,antTraits$env, antTraits$traits, family = "negative.binomial", seed = 999)
   ff1<-gllvm(antTraits$abund,antTraits$env, antTraits$traits, formula = ~Bare.ground + Bare.ground:Pilosity, family = "negative.binomial", seed = 999)
-  expect_equal(round(ff0$logL, digits = 1),-1821.2)
-  expect_equal(round(ff1$logL, digits = 1),-1858.1)
+  expect_equal(round(mean(ff0$params$B[1]), digits = 2),0.17)
+  expect_equal(round(mean(ff1$params$B[1]), digits = 2),0.11)
 })
 
 test_that("row effects works", {
@@ -35,9 +35,9 @@ test_that("binomial works", {
   fb0<-gllvm(y01, family = binomial(link = "logit"), seed = 999, method = "LA", num.lv = 1)
   fb1<-gllvm(y01, family = binomial(link = "probit"), seed = 999, method = "LA")
   fb2<-gllvm(y01, family = binomial(link = "probit"), seed = 999)
-  expect_equal(round(fb0$logL, digits = 0),-136)
-  expect_equal(round(fb1$logL, digits = 1),-97.5)
-  expect_equal(round(fb2$logL, digits = 1),-156.3)
+  expect_equal(round(mean(fb0$params$beta0), digits = 1),-5.9)
+  expect_equal(round(mean(fb1$params$beta0), digits = 1),3.1)
+  expect_equal(round(mean(fb2$params$beta0), digits = 1),0.1)
 })
 
 test_that("ZIP works", {

@@ -86,9 +86,9 @@ Type objective_function<Type>::operator() ()
           }
         }
         // set diag>0 !!!!!!!!!!!
-        if (j == i){
-          newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
-        }
+        // if (j == i){
+        //   newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
+        // }
       }
     }
     }

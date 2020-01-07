@@ -196,7 +196,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     a <- c(beta0)
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
     if(num.lv > 0) {
-      diag(lambdas) <- log(diag(lambdas)) 
+      # diag(lambdas) <- log(diag(lambdas)) #!!!
       lambda <- lambdas[lower.tri(lambdas,diag = TRUE)]
       u <- lvs
     }
@@ -372,7 +372,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(p>1) {
           theta[lower.tri(theta,diag=TRUE)] <- param[li];
         } else {theta <- param[li]}
-        diag(theta) <- exp(diag(theta)) # !!!!
+        #diag(theta) <- exp(diag(theta)) # !!!
       }
       
       if(row.eff!=FALSE) {
@@ -464,7 +464,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(p>1) {
           theta[lower.tri(theta,diag=TRUE)] <- param[li];
         } else { theta <- param[li] }
-        diag(theta) <- exp(diag(theta)) # !!!!!!
+        # diag(theta) <- exp(diag(theta)) # !!!
       }
       if(row.eff!=FALSE) {
         ri <- names(param)=="r0"
@@ -714,7 +714,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   out$logL <- -out$logL
   
   if(method == "VA"){
-    if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
     if(row.eff == "random") out$logL = out$logL + n*0.5
     if(family=="gaussian") {
       out$logL <- out$logL - n*p*log(pi)/2

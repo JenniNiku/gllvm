@@ -327,6 +327,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)*sig)
       index <- t(t(index)*sig)}, silent = TRUE)
   }
+  
+  if(num.lv == 0){
+    qqs <- quantile(params)
+    uppout <- qqs[4] + (qqs[4]- qqs[2])*2
+    lowout <- qqs[2] - (qqs[4]- qqs[2])*2
+    params[params < lowout] <- lowout
+    params[params > uppout] <- uppout
+  }
 
   out$params <- params
   out$phi <- phi
