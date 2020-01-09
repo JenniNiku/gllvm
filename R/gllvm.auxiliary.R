@@ -209,9 +209,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           inter <- rep(0, num.T * num.X)
           B <- c(env,trait,inter)
         }
+        params <- cbind(fit.mva$params$beta0, fit.mva$params$Xcoef, fit.mva$params$theta)
         fit.mva$phi <- apply(fit.mva$residuals,2,sd)
       }
-      params <- t(fit.mva$coef)
+      #params <- t(fit.mva$coef) #!!
     } else {
       fit.mva<-list()
       fit.mva$phi <- rep(1, p)
