@@ -12,7 +12,7 @@ trait.TMB <- function(
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
-      , zeta.struc = "species") {
+      ,zeta.struc = "species") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
   
@@ -866,10 +866,7 @@ trait.TMB <- function(
           }
         }
         
-      }}, silent=T)
-
-    n.i <- n.i+1;
-  }
+      }})
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
 
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
