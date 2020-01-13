@@ -12,26 +12,31 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(y);
   DATA_MATRIX(x);
   DATA_MATRIX(xr);
+  DATA_MATRIX(xb);
   DATA_MATRIX(offset);
 
   PARAMETER_MATRIX(r0);
   PARAMETER_MATRIX(b);
   PARAMETER_MATRIX(B);
+  PARAMETER_MATRIX(Br);
   PARAMETER_VECTOR(lambda);
 
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi);
-  PARAMETER(log_sigma);// log(SD for row effect)
+  PARAMETER_VECTOR(sigmaB);
+  PARAMETER_VECTOR(sigmaij);
+  PARAMETER_VECTOR(log_sigma);// log(SD for row effect)
 
   DATA_INTEGER(num_lv);
   DATA_INTEGER(family);
   
   PARAMETER_VECTOR(Au);
-  PARAMETER_VECTOR(lg_Ar);
+//  PARAMETER_VECTOR(lg_Ar);
+  PARAMETER_VECTOR(Abb);
   PARAMETER_VECTOR(zeta);
   
-  DATA_SCALAR(extra);
+  DATA_VECTOR(extra);
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
   DATA_VECTOR(random);//random row
@@ -39,35 +44,54 @@ Type objective_function<Type>::operator() ()
 
   int n = y.rows();
   int p = y.cols();
+  int l = xb.cols();
   vector<Type> iphi = exp(lg_phi);
-  vector<Type> Ar = exp(lg_Ar);
-  Type sigma = exp(log_sigma);
-
+  //vector<Type> Ar = exp(lg_Ar);
+  vector<Type> sigma = log_sigma;
+  sigma(0) = exp(log_sigma(0));
+  
   if(random(0)<1){  r0(0,0) = 0;}
-
+  int nlvr = num_lv;
+  if(random(0)>0) nlvr++;
+  
   matrix<Type> eta(n,p);
   eta.fill(0.0);
   matrix<Type> lam(n,p);
   lam.fill(0.0);
+  matrix<Type> Cu(nlvr,nlvr); 
   
-  matrix<Type> newlam(num_lv,p);
-  if(num_lv>0){
+  matrix<Type> newlam(nlvr,p);
+  if(nlvr>0){
+    newlam.row(0).fill(1.0);
+    Cu.diagonal().fill(1.0);
+    if(random(0)>0){
+      Cu(0,0) = sigma(0)*sigma(0);
+      if(sigma.size()>1){
+        for (int d=1; d<(nlvr); d++){
+          Cu(d,0) = sigma(d);
+          Cu(0,d) = Cu(d,0);
+        }
+      }
+    }
 
+    if (num_lv>0){
+      
     for (int j=0; j<p; j++){
       for (int i=0; i<num_lv; i++){
         if (j < i){
-          newlam(i,j) = 0;
+          newlam(i+nlvr-num_lv,j) = 0;
         } else{
-          newlam(i,j) = lambda(j);
+          newlam(i+nlvr-num_lv,j) = lambda(j);
           if (i > 0){
-            newlam(i,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
+            newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
           }
         }
         // set diag>0 !!!!!!!!!!!
-        /*if (j == i){
-          newlam(i,j) = exp(newlam(i,j));
-        }*/
+        // if (j == i){
+        //   newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
+        // }
       }
+    }
     }
 
     //To create lambda as matrix upper triangle
@@ -77,7 +101,9 @@ Type objective_function<Type>::operator() ()
   }
 
   matrix<Type> mu(n,p);
-
+  
+  using namespace density;
+  
   Type nll = 0.0; // initial value of log-likelihood
 
 
@@ -87,27 +113,27 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
     
-    if(random(0)>0){
-      for (int i=0; i<n; i++) {
-        Ar(i)=pow(Ar(i),2);
-        for (int j=0; j<p;j++){
-          cQ(i,j) = 0.5* Ar(i);//
-        }
-      }}
+    // if(random(0)>0){
+    //   for (int i=0; i<n; i++) {
+    //     Ar(i)=pow(Ar(i),2);
+    //     for (int j=0; j<p;j++){
+    //       cQ(i,j) = 0.5* Ar(i);//
+    //     }
+    //   }}
 
-    if(num_lv>0){
-      array<Type> A(num_lv,num_lv,n);
-      for (int d=0; d<(num_lv); d++){
+    if(nlvr>0){
+      array<Type> A(nlvr,nlvr,n);
+      for (int d=0; d<(nlvr); d++){
         for(int i=0; i<n; i++){
           A(d,d,i)=exp(Au(d*n+i));
         }
       }
-      if(Au.size()>num_lv*n){
+      if(Au.size()>nlvr*n){
         int k=0;
-        for (int c=0; c<(num_lv); c++){
-          for (int r=c+1; r<(num_lv); r++){
+        for (int c=0; c<(nlvr); c++){
+          for (int r=c+1; r<(nlvr); r++){
             for(int i=0; i<n; i++){
-              A(r,c,i)=Au(num_lv*n+k*n+i);
+              A(r,c,i)=Au(nlvr*n+k*n+i);
               A(c,r,i)=A(r,c,i);
             }
             k++;
@@ -119,19 +145,61 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
         }
-        nll -= 0.5*(log(A.col(i).matrix().determinant()) - A.col(i).matrix().diagonal().sum());// log(det(A_i))-sum(trace(A_i))*0.5 sum.diag(A)
+        if(nlvr == num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (A.col(i).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
+        if(nlvr>num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
+        // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
-
+      nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
+      
     }
+    
+    // Include random slopes if random(1)>0
+    if(random(1)>0){
+      matrix<Type> sds(l,l); 
+      sds.diagonal() = exp(sigmaB);
+      matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+      
+      array<Type> Ab(l,l,p);
+      for (int dl=0; dl<(l); dl++){
+        for(int j=0; j<p; j++){
+          Ab(dl,dl,j)=exp(Abb(dl*p+j));
+        }
+      }
+      if(Abb.size()>l*p){
+        int k=0;
+        for (int c=0; c<(l); c++){
+          for (int r=c+1; r<(l); r++){
+            for(int j=0; j<p; j++){
+              Ab(r,c,j)=Abb(l*p+k*p+j);
+              Ab(c,r,j)=Ab(r,c,j);
+            }
+            k++;
+          }}
+      }
+      
+      /*Calculates the commonly used (1/2) x'_i A_bj x_i
+      A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          cQ(i,j) += 0.5*((xb.row(i))*(Ab.col(j).matrix()*xb.row(i).transpose())).sum();
+        }
+        nll -= 0.5*(log(Ab.col(j).matrix().determinant()) - (S.inverse()*Ab.col(j).matrix()).diagonal().sum()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      }
+      eta += xb*Br;
+      nll -= -0.5*p*log(S.determinant());//n*
+    }
+    
+    
 
     if(model<1){
       eta += x*b;
     } else {
+      // Fourth corner model
       matrix<Type> eta1=x*B;
       int m=0;
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          eta(i,j)+=b(0,j)+eta1(m,0);
+          eta(i,j)+=b(0,j)*extra(1)+eta1(m,0); //extra(1)=0 if beta0comm=TRUE
           m++;
         }
       }
@@ -142,14 +210,14 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==1){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==2) {
       for (int i=0; i<n; i++) {
@@ -157,14 +225,14 @@ Type objective_function<Type>::operator() ()
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
           nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
         }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==3) {
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
         }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==6 && zetastruc==1){
       int ymax =  CppAD::Integer(y.maxCoeff());
@@ -211,7 +279,7 @@ Type objective_function<Type>::operator() ()
           nll += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
         }
-        nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
      }else if(family==6 && zetastruc==0){
        int ymax =  CppAD::Integer(y.maxCoeff());
@@ -242,7 +310,8 @@ Type objective_function<Type>::operator() ()
                }
              }
            }
-
+     }
+    // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
            nll += cQ(i,j);
            //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
          }
@@ -252,6 +321,18 @@ Type objective_function<Type>::operator() ()
      nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   } else {
     eta += r0*xr + offset;
+    
+    // Include random slopes if random(1)>0
+    if(random(1)>0){
+      vector<Type> sds = exp(sigmaB);
+      density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
+      
+      for (int j=0; j<p;j++){
+        nll += VECSCALE(neg_log_MVN,sds)(vector<Type>(Br.col(j)));
+      }
+      eta += xb*Br;
+    }
+    
 
     if(model<1){
 
@@ -261,28 +342,28 @@ Type objective_function<Type>::operator() ()
           mu(i,j) = exp(eta(i,j));
         }
       }
+      
     } else {
-
+      // Fourth corner model
       matrix<Type> eta1=x*B;
       int m=0;
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          eta(i,j)+=b(0,j)+eta1(m,0);
+          eta(i,j)+=b(0,j)*extra(1)+eta1(m,0);
           m++;
           mu(i,j) = exp(eta(i,j));
         }
       }
     }
-    //latent variable is assumed to be from N(0,1)
-    if(num_lv>0){
-      for (int j=0; j<u.cols();j++){
-        for (int i=0; i<n; i++) {
-          nll -= dnorm(u(i,j),Type(0),Type(1),true);
-        }
-      }}
-    for(int i = 0; i < n; i++){
-      nll -= dnorm(r0(i,0), Type(0), sigma, true)*random(0);
+    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
+    if(nlvr>0){
+      
+      MVNORM_t<Type> mvnorm(Cu);
+      for (int i=0; i<n; i++) {
+        nll += mvnorm(u.row(i));
+      }
     }
+
 
     //likelihood model with the log link function
     if(family==0){
@@ -299,7 +380,7 @@ Type objective_function<Type>::operator() ()
       }} else if(family==2) {
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            if(extra<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+            if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
             nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
           }
@@ -313,7 +394,7 @@ Type objective_function<Type>::operator() ()
       } else if(family==4){
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra, true); //tweedie family
+            nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); //tweedie family
           }
         }
       } else if(family==5) {

@@ -78,6 +78,9 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0)
     eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta)
+  if (!is.null(object$randomX))
+    eta.mat <- eta.mat + (object$Xrandom %*% object$params$Br)
+  
   mu <- exp(eta.mat)
   if (any(mu == 0))
     mu <- mu + 1e-10
