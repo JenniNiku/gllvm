@@ -31,6 +31,9 @@
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 #' For details for constructing a biplot, see Gabriel (1971).
 #' 
+#' @note 
+#' - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
+#' 
 #' @references 
 #' Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58, 453-467.
 #' 

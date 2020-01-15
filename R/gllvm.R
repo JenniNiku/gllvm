@@ -35,6 +35,7 @@
 #' @param jitter.var jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
 #' @param randomX.start Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.
+#' @param dependent.row logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{TRUE} when correlation terms are included.
 #' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #'
@@ -251,12 +252,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL, start.lvs = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim", scale.X = TRUE,
                   Lambda.start = c(0.1, 0.1, 0.1), jitter.var = 0,
-                  randomX = NULL, randomX.start = "res", beta0com = FALSE) {
+                  randomX = NULL, randomX.start = "res", dependent.row = TRUE, beta0com = FALSE) {
   
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
     datayx <- NULL
+    
+    if(!is.null(X)){
+      if(!is.matrix(X) && !is.data.frame(X) ) 
+        stop("X must be a matrix or data.frame.")
+    }
 
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -489,6 +495,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Power = Power,
             diag.iter = diag.iter,
             Ab.diag.iter = Ab.diag.iter,
+            dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
             randomX = randomX,
@@ -524,6 +531,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             starting.val = starting.val,
             Power = Power,
             diag.iter = diag.iter,
+            dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var
           )

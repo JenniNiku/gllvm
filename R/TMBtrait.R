@@ -10,7 +10,7 @@ trait.TMB <- function(
       Lambda.struc = "unstructured", Ab.struct = "unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
-      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,
+      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = TRUE,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
       ) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
@@ -372,7 +372,7 @@ trait.TMB <- function(
       }
       if(row.eff=="random"){
         randoml[1] <- 1
-        sigma<-c(sigma[1], rep(0, num.lv))
+        if(dependent.row) sigma<-c(sigma[1], rep(0, num.lv))
         if(num.lv>0){
           u<-cbind(r0,u)
         }else {
@@ -549,7 +549,7 @@ trait.TMB <- function(
       if(row.eff=="random") {
         row.params <- lvs[,1]; lvs<- as.matrix(lvs[,-1])
         sigma<-exp(param["log_sigma"])[1]
-        if(nlvr>1) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
+        if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
       }
     }
     if(!is.null(randomX)){
@@ -808,8 +808,9 @@ trait.TMB <- function(
           names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
         }
         if(row.eff=="random") { 
-          out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,num.lv)); 
-          names(out$sd$sigma) <- "sigma"; se=se[-(1:(1+num.lv))] 
+          out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
+          names(out$sd$sigma) <- "sigma"; 
+          se=se[-(1:(1+num.lv))] 
           }
         if(!is.null(randomX)){
           nr <- ncol(xb)
