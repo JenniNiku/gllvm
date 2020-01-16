@@ -407,7 +407,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "ordinal"){ familyn=6}
 
       if(row.eff=="random"){
-        if(corR == "unstructured") sigma<-c(log(sigma), rep(0, num.lv))
+        if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
         if(num.lv>0){
           u<-cbind(r0,u)
           objr <- TMB::MakeADFun(
