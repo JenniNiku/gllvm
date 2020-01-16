@@ -61,12 +61,12 @@ trait.TMB <- function(
     xb <- as.matrix(model.matrix(randomX, data = data.frame(X)))
     rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
     xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
+    if(NCOL(xb) == 1) colnames(xb) <- rnam
     bstart <- start.values.randomX(y, xb, family, starting.val = starting.val, power = Power)
     Br <- bstart$Br
     sigmaB <- bstart$sigmaB
     sigmaij <- rep(0,(ncol(xb)-1)*ncol(xb)/2)
 
-    
     # method <- "LA"
     # xb <- as.matrix(model.matrix(randomX,data = X.new))
     # xb <- as.matrix(xb[,!(colnames(xb) %in% c("(Intercept)"))])

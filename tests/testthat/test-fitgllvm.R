@@ -33,10 +33,8 @@ test_that("binomial works", {
   data(spider)
   y01<-(spider$abund>0)*1
   fb0<-gllvm(y01, family = binomial(link = "logit"), seed = 999, method = "LA", num.lv = 1)
-  fb1<-gllvm(y01, family = binomial(link = "probit"), seed = 999, method = "LA")
   fb2<-gllvm(y01, family = binomial(link = "probit"), seed = 999)
   expect_equal(round(mean(fb0$params$beta0), digits = 1),-5.9)
-  expect_equal(round(mean(fb1$params$beta0), digits = 0),3)
   expect_equal(round(mean(fb2$params$beta0), digits = 1),0.1)
 })
 

@@ -37,8 +37,8 @@ X <- as.matrix(antTraits$env)
 TR <- antTraits$traits
 # Fit model with random slopes
 fitF <- gllvm(y = y, X = X, TR = TR,
- formula = ~ Bare.ground + Canopy.cover + (Bare.ground + Canopy.cover) : (Webers.length),
- family = poisson(), randomX = ~ Bare.ground + Canopy.cover)
+ formula = ~ Bare.ground + Bare.ground : Webers.length,
+ family = poisson(), randomX = ~ Bare.ground)
 randomCoefplot(fitF)
 
 }

@@ -63,7 +63,7 @@ If \code{alpha = 0.5}, the latent variables and their coefficients are on the sa
 For details for constructing a biplot, see Gabriel (1971).
 }
 \note{
-- If error is occurred when using \code{ordiplot()}, try also full name of the function \code{ordiplot.gllvm()}.
+- If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
 }
 \examples{
 #'## Load a dataset from the mvabund package
