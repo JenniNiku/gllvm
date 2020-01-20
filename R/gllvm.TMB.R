@@ -7,9 +7,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-6,
       seed = NULL,maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL,
-      optimizer="optim",starting.val="res",Power=1.5,diag.iter=1,
+      optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = TRUE,
       Lambda.start=c(0.1,0.5), jitter.var=0, zeta.struc = "species") {
-  
   if(!is.null(start.params)) starting.val <- "zero"
   ignore.u=FALSE
   n <- dim(y)[1]
@@ -160,10 +159,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     phis <- NULL
     if (family == "negative.binomial") {
       phis <- fit$phi
-      if (any(phis > 20))
-        phis[phis > 20] <- 20
-      if (any(phis < 0.20))
-        phis[phis < 0.05] <- 0.05
+      if (any(phis > 25))
+        phis[phis > 25] <- 25
+      if (any(phis < 0.04))
+        phis[phis < 0.04] <- 0.04
       fit$phi <- phis
       phis <- 1/phis
     }
@@ -263,7 +262,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       
       
       if(row.eff=="random"){
-        sigma<-c(log(sigma), rep(0, num.lv))
+        if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
         
         if(num.lv>0){
           u<-cbind(r0,u)
@@ -342,9 +341,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
         if(optimizer=="nlminb"){
-          if(inherits(optr, "try-error") || is.nan(optr$objective) || is.na(optr$objective)|| is.infinite(optr$objective)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+          if(inherits(optr, "try-error") || is.nan(optr$objective) || is.na(optr$objective)|| is.infinite(optr$objective) || optr$objective < 0){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
         }else if(optimizer=="optim"){
-          if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value)){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
+          if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value) || optr$value < 0){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
         }
 
       }
@@ -395,7 +394,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(row.eff=="random"){
           row.params <- lvs[,1]; lvs<- as.matrix(lvs[,-1])
           sigma<-exp(param["log_sigma"])[1]
-          if(nlvr>1) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
+          if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
         }
       }
       betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
@@ -421,7 +420,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "ordinal"){ familyn=6}
 
       if(row.eff=="random"){
-        sigma<-c(log(sigma), rep(0, num.lv))
+        if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
         if(num.lv>0){
           u<-cbind(r0,u)
           objr <- TMB::MakeADFun(
@@ -486,7 +485,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(row.eff=="random") {
           row.params <- lvs[,1]; lvs<- as.matrix(lvs[,-1])
           sigma<-exp(param["log_sigma"])[1]
-          if(nlvr>1) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
+          if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
         }
       }
       betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
@@ -534,7 +533,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(row.eff=="random"){ 
           out$params$sigma=sigma; 
           names(out$params$sigma)="sigma"
-          if(num.lv>1) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
+          if(nlvr>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
         }
         out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)
       }
@@ -694,7 +693,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
       }
       if(row.eff=="random") { 
-        out$sd$sigma <- se[1:length(out$sd$sigma)]*c(out$params$sigma[1],rep(1,num.lv)); 
+        out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
         se=se[-(1:length(out$sd$sigma))] 
         names(out$sd$sigma) <- "sigma" 
         }

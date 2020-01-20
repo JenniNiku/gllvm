@@ -59,6 +59,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> lam(n,p);
   lam.fill(0.0);
   matrix<Type> Cu(nlvr,nlvr); 
+  Cu.fill(0.0);
   
   matrix<Type> newlam(nlvr,p);
   if(nlvr>0){
@@ -156,6 +157,7 @@ Type objective_function<Type>::operator() ()
     // Include random slopes if random(1)>0
     if(random(1)>0){
       matrix<Type> sds(l,l); 
+      sds.fill(0.0);
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
       

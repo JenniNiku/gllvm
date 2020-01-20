@@ -36,11 +36,11 @@ $$g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol
 
 where $\boldsymbol{\beta}_j$ and $\boldsymbol{\theta}_j$ are vectors of species specific coefficients related to the covariates and latent variables, respectively. The latent variables $\boldsymbol{u}_i$ can be thought of as unmeasured environmental variables, or as ordination scores, capturing the main axes of covariation of abundance (after controlling for observed predictors $\boldsymbol{x}_i$). We assume these latent variables are independent across sites and standard normally distributed. The parameters $\beta_{0j}$ are species specific intercepts, while $\alpha_i$ are optional site effects which can be chosen as either fixed or random effects ($\alpha_i \sim N(0; \sigma^2))$. If row effects $\alpha_i$ are included, all other terms in the model can be subsequently interpreted as modelling relative abundance or compositional effects (Hui et al., 2015).
 
-If $q$ trait covariates $\boldsymbol{t}_j=(t_{i1}, \dots,t_{iq})^\top$ are also recorded, we can use them to help explain inter-specific variation in environmental response. This leads to an extension of the so-called "fourth corner model" where multivariate abundance is regressed against a function of traits and environment, and the environment-trait interactions represents the fourth corner association between traits and environment. The associated fourth corner GLLVM then has mean model:
+If $q$ trait covariates $\boldsymbol{t}_j=(t_{i1}, \dots,t_{iq})^\top$ are also recorded, we can use them to help explain inter-specific variation in environmental response. This leads to an extension of the so-called "fourth corner model" where multivariate abundance is regressed against a function of traits and environment, and the environment-trait interactions represents the fourth corner association between traits and environment. We also include species-specific random slopes for environmental covariates in order to take into account the inters-pecific variation in responses that is not explained by the covariates. The associated fourth corner GLLVM then has mean model:
 
-$$g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i \boldsymbol\beta_e + (\boldsymbol t_j \otimes \boldsymbol x_i)^\top \boldsymbol \beta_I + \boldsymbol u_i^\top\boldsymbol\theta_j,$$
+$$g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i (\boldsymbol\beta_e + \boldsymbol b_j) + (\boldsymbol t_j \otimes \boldsymbol x_i)^\top \boldsymbol \beta_I + \boldsymbol u_i^\top\boldsymbol\theta_j,$$
 
-where $\boldsymbol\beta_e$ is a vector of main effects for environmental covariates, and $\boldsymbol\beta_I$ are the fourth corner coefficients. A main effect for traits is not included, because main effects on abundance across species are absorbed by the intercept term $\beta_{0j}$. This model assumes that all inter-specific variation in response to covariates is mediated by species, which reduces the number of parameters related to covariates.
+where $\boldsymbol\beta_e$ is a vector of main effects for environmental covariates, and $\boldsymbol\beta_I$ are the fourth corner coefficients. A main effect for traits is not included, because main effects on abundance across species are absorbed by the intercept term $\beta_{0j}$. This model assumes that inter-specific variation in response to covariates is mediated by species and random slopes, which reduces the number of parameters related to covariates.
 
 A difficulty fitting the GLLVM is that the $\boldsymbol{u}_i$'s are unobserved and we must integrate over their possible values. Specifically, the log-likelihood function we wish to maximise has the form
 $$l(\boldsymbol\Psi)=\sum_{i=1}^n \log(f(y_{ij},\boldsymbol\Psi))=\sum_{i=1}^n \log\left(\int_{{\rm I\!R}^{d}} \prod_{j=1}^m f(y_{ij}|\boldsymbol u_i;\boldsymbol\Psi) f(\boldsymbol{u}_i) d\boldsymbol{u}_i,\right),$$
@@ -286,36 +286,18 @@ rcov0$trace; rcov$trace
 
 ## Incorporating functional traits into fourth corner models
 
-In the previous section, environmental associations were studied by fitting separate terms for each species, without attempting to explain why different species respond differently to the environment. Adding functional traits to the model offers the potential to explain why species differ in environmental response. Again,we choose the number of latent variables using AICc criterion:
-
-```{r, eval=FALSE}
-criterias4th <- NULL
-for(i in 0:5){
-  fiti <- gllvm(y, X, TR, family = "negative.binomial", num.lv = i,
-                formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD) +
-                  (Bare.ground + Shrub.cover + Volume.lying.CWD) :
-                  (Pilosity + Polymorphism + Webers.length),
-                seed = 1234)
-  criterias4th[i+1] <- summary(fiti)$AICc
-  names(criterias4th)[i+1]= i
-}
-```
-
-```{r, eval=FALSE}
-# Compare AICc values
-criterias4th
-#>        0        1        2        3        4        5 
-#> 3817.289 3710.570 3679.402 3662.244 3666.919 3683.995
-```
+In the previous section, environmental associations were studied by fitting separate terms for each species, without attempting to explain why different species respond differently to the environment. Adding functional traits to the model offers the potential to explain why species differ in environmental response. 
 
 
-The fourth corner model can be fitted using the argument `TR` to include traits. The argument `formula` is used to specify the model.
+The fourth corner model can be fitted using the argument `TR` to include traits. The argument `formula` is used to specify the model. Random row effects are included using `row.eff = "random"` and the argument `randomX` is used to incorporate random slopes in the model. As the defined model is very complex, we use three starting points for the initial values of the latent variables via argument `n.init` in order to ensure that the maximum point is reached.
 
 ```{r, warning=FALSE}
-fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 3, 
+fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
                  formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD) +
                 (Bare.ground + Shrub.cover + Volume.lying.CWD) : (Pilosity + 
-                Polymorphism + Webers.length))
+                Polymorphism + Webers.length), seed = 123,
+                row.eff = "random", n.init = 3, jitter.var = 0.01,
+                randomX = ~ Bare.ground + Shrub.cover + Volume.lying.CWD)
 ```
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Webers.length` with `Volume.lying.CWD` have the strongest effects on ant abundances.
@@ -337,14 +319,16 @@ A key point of departure in the `gllvm` package, as compared to alternative ways
 
 In the previous example, trait-environment interactions seem to be relatively small and most of the confidence intervals include zero values. Using a likelihood ratio test we can test if the traits vary with environment. Below, the model without traits is fitted and the likelihood ratio test comparing this model to the previous one is performed. Based on the output when applying the `anova` function, the $p$ value suggests that the simpler model without interactions is more appropriate. Notice that in order to separate the model with only main effects for environmental variables from the one which has species specific coefficients for environmental variables, we include `TR` matrix to the function call.
 ```{r, warning=FALSE, eval=FALSE}
-fit_4th2 <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 3, 
-        formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD), seed = 1234)
+fit_4th2 <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
+        formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD), seed = 123,
+                 row.eff = "random", n.init = 3, jitter.var = 0.01,
+                 randomX = ~ Bare.ground + Shrub.cover + Volume.lying.CWD)
 # Test interactions using likelihood ratio test:
 anova(fit_4th, fit_4th2)
 #> Model  1 :  y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD) 
 #> Model  2 :  y ~ (Bare.ground + Shrub.cover +  Volume.lying.CWD) + (Bare.ground + 
 #> Shrub.cover + Volume.lying.CWD):(Pilosity + Polymorphism + Webers.length) 
 #>   Resid.Df        D Df.diff  P.value
-#> 1     1025  0.00000       0         
-#> 2     1007 18.90272      18 0.397837
+#> 1     1055  0.00000       0        
+#> 2     1037 21.10357      18 0.27422
 ```

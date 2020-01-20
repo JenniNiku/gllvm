@@ -20,8 +20,8 @@
 #'TR <- antTraits$traits
 #'# Fit model with random slopes
 #'fitF <- gllvm(y = y, X = X, TR = TR,
-#'  formula = ~ Bare.ground + Canopy.cover + (Bare.ground + Canopy.cover) : (Webers.length),
-#'  family = poisson(), randomX = ~ Bare.ground + Canopy.cover)
+#'  formula = ~ Bare.ground + Bare.ground : Webers.length,
+#'  family = poisson(), randomX = ~ Bare.ground)
 #'randomCoefplot(fitF)
 #'
 #'@aliases randomCoefplot randomCoefplot.gllvm
@@ -37,7 +37,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, cex.ylab = 0.5, mfrow =
     stop("No random covariates in the model.")
   
     which.Xcoef <- c(1:NROW(object$params$Br))
-    Xcoef <- as.matrix(t(object$params$Br[which.Xcoef,]))
+    Xcoef <- as.matrix(t(object$params$Br)[,which.Xcoef])
     cnames <- colnames(object$Xr)[which.Xcoef]
     k <- length(cnames)
     if(is.null(colnames(object$y))) 
