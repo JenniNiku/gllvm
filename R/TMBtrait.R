@@ -601,7 +601,7 @@ trait.TMB <- function(
         if(row.eff=="random"){  
           out$params$sigma <- sigma; 
           names(out$params$sigma) <- "sigma"
-          if(num.lv>0) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
+          if(num.lv>0 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
           }
         out$params$row.params <- row.params; 
         names(out$params$row.params) <- rownames(out$y)
