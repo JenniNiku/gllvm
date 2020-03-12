@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Extract residual correlations from gllvm object — getResidualCor.gllvm • gllvm</title>
+<title>Plot random slope coefficients — randomCoefplot.gllvm • gllvm</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Extract residual correlations from gllvm object — getResidualCor.gllvm" />
+<meta property="og:title" content="Plot random slope coefficients — randomCoefplot.gllvm" />
 
-<meta property="og:description" content="Calculates the residual correlation matrix for gllvm model." />
+<meta property="og:description" content="Plots random slopes and their prediction intervals." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -114,19 +114,21 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Extract residual correlations from gllvm object</h1>
-    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm.git/blob/master/R/getResidualCor.gllvm.R'><code>R/getResidualCor.gllvm.R</code></a></small>
-    <div class="hidden name"><code>getResidualCor.gllvm.Rd</code></div>
+    <h1>Plot random slope coefficients</h1>
+    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm.git/blob/master/R/randomCoefplot.R'><code>R/randomCoefplot.R</code></a></small>
+    <div class="hidden name"><code>randomCoefplot.gllvm.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Calculates the residual correlation matrix for gllvm model.</p>
+    <p>Plots random slopes and their prediction intervals.</p>
     
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>getResidualCor</span>(<span class='no'>object</span>, <span class='kw'>adjust</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
+<span class='fu'>randomCoefplot</span>(<span class='no'>object</span>, <span class='kw'>y.label</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>cex.ylab</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>mar</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>4</span>, <span class='fl'>6</span>, <span class='fl'>2</span>, <span class='fl'>1</span>), <span class='kw'>xlim.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>order</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -136,46 +138,59 @@
       <td><p>an object of class 'gllvm'.</p></td>
     </tr>
     <tr>
-      <th>adjust</th>
-      <td><p>The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.</p></td>
+      <th>y.label</th>
+      <td><p>logical, if <code>TRUE</code> (default) colnames of y with respect to coefficients are added to plot.</p></td>
+    </tr>
+    <tr>
+      <th>cex.ylab</th>
+      <td><p>the magnification to be used for axis annotation relative to the current setting of cex.</p></td>
+    </tr>
+    <tr>
+      <th>mfrow</th>
+      <td><p>same as <code>mfrow</code> in <code>par</code>. If <code>NULL</code> (default) it is determined automatically.</p></td>
+    </tr>
+    <tr>
+      <th>mar</th>
+      <td><p>vector of length 4, which defines the margin sizes: <code><a href='https://www.rdocumentation.org/packages/base/topics/c'>c(bottom, left, top, right)</a></code>. Defaults to <code><a href='https://www.rdocumentation.org/packages/base/topics/c'>c(4,5,2,1)</a></code>.</p></td>
+    </tr>
+    <tr>
+      <th>xlim.list</th>
+      <td><p>list of vectors with length of two to define the intervals for x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals</p></td>
+    </tr>
+    <tr>
+      <th>order</th>
+      <td><p>logical, if <code>TRUE</code> (default), coefficients are sorted according to the point estimates</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>additional graphical arguments.</p></td>
     </tr>
     </table>
     
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Residual correlation matrix is calculated based on the residual covariance matrix, see details from <code><a href='getResidualCov.gllvm.html'>getResidualCov.gllvm</a></code>.</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># Load a dataset from the mvabund package</span>
+    <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
 <span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
-<span class='co'># Fit gllvm model</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
-<span class='co'># residual correlations:</span>
-<span class='no'>cr</span> <span class='kw'>&lt;-</span> <span class='fu'>getResidualCor</span>(<span class='no'>fit</span>)</div><span class='co'># NOT RUN {</span>
-<span class='co'># Plot residual correlations:</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/install.packages'>install.packages</a></span>(<span class='st'>"corrplot"</span>, <span class='st'>"gclus"</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/library'>library</a></span>(<span class='no'>corrplot</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/library'>library</a></span>(<span class='no'>gclus</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/corrplot/topics/corrplot'>corrplot</a></span>(<span class='no'>cr</span>[<span class='fu'><a href='https://www.rdocumentation.org/packages/gclus/topics/order'>order.single</a></span>(<span class='no'>cr</span>), <span class='fu'><a href='https://www.rdocumentation.org/packages/gclus/topics/order'>order.single</a></span>(<span class='no'>cr</span>)], <span class='kw'>diag</span> <span class='kw'>=</span> <span class='no'>F</span>,
-  <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"lower"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"square"</span>, <span class='kw'>tl.cex</span> <span class='kw'>=</span> <span class='fl'>0.8</span>, <span class='kw'>tl.srt</span> <span class='kw'>=</span> <span class='fl'>45</span>, <span class='kw'>tl.col</span> <span class='kw'>=</span> <span class='st'>"red"</span>)
-
-<span class='co'># }</span><div class='input'>
+<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>)
+<span class='no'>TR</span> <span class='kw'>&lt;-</span> <span class='no'>antTraits</span>$<span class='no'>traits</span>
+<span class='co'># Fit model with random slopes</span>
+<span class='no'>fitF</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>,
+ <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Bare.ground</span> : <span class='no'>Webers.length</span>,
+ <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>(), <span class='kw'>randomX</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span>)
+<span class='fu'>randomCoefplot</span>(<span class='no'>fitF</span>)</div><div class='img'><img src='randomCoefplot.gllvm-1.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#details">Details</a></li>
-      
+            
       <li><a href="#examples">Examples</a></li>
     </ul>
 
     <h2>Author</h2>
-    <p>Francis K.C. Hui, Jenni Niku, David I. Warton</p>
+    <p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;, Francis K.C. Hui, Sara Taskinen</p>
   </div>
 </div>
 

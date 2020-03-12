@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
       </span>
     </div>
 
@@ -127,9 +127,11 @@
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
 <span class='fu'>ordiplot</span>(<span class='no'>object</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>ind.spp</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>main</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>which.lvs</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>), <span class='kw'>jitter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>main</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>which.lvs</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>),
+  <span class='kw'>predict.region</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>jitter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>jitter.amount</span> <span class='kw'>=</span> <span class='fl'>0.2</span>, <span class='kw'>s.colors</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>symbols</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>cex.spp</span> <span class='kw'>=</span> <span class='fl'>0.7</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>cex.spp</span> <span class='kw'>=</span> <span class='fl'>0.7</span>, <span class='kw'>lwd.ellips</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>col.ellips</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>lty.ellips</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -159,6 +161,14 @@
       <td><p>indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to <code><a href='https://www.rdocumentation.org/packages/base/topics/c'>c(1,2)</a></code>.</p></td>
     </tr>
     <tr>
+      <th>predict.region</th>
+      <td><p>logical, if <code>TRUE</code> prediction regions for the predicted latent variables are plotted, defaults to <code>FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>level</th>
+      <td><p>level for prediction regions.</p></td>
+    </tr>
+    <tr>
       <th>jitter</th>
       <td><p>if <code>TRUE</code>, jittering is applied on points.</p></td>
     </tr>
@@ -179,6 +189,18 @@
       <td><p>size of species labels in biplot</p></td>
     </tr>
     <tr>
+      <th>lwd.ellips</th>
+      <td><p>line width for prediction ellipses. See graphical parameter lwd.</p></td>
+    </tr>
+    <tr>
+      <th>col.ellips</th>
+      <td><p>colors for prediction ellipses.</p></td>
+    </tr>
+    <tr>
+      <th>lty.ellips</th>
+      <td><p>line type for prediction ellipses. See graphical parameter lty.</p></td>
+    </tr>
+    <tr>
       <th>...</th>
       <td><p>additional graphical arguments.</p></td>
     </tr>
@@ -195,6 +217,10 @@ of latent variable coefficients to be plotted can be controlled by ind.spp. An a
 is used to control the relative scaling of the latent variables and their coefficients.
 If <code>alpha = 0.5</code>, the latent variables and their coefficients are on the same scale.
 For details for constructing a biplot, see Gabriel (1971).</p>
+    
+    <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
+
+    <p>- If error is occurred when using <code>ordiplot()</code>, try full name of the function <code>ordiplot.gllvm()</code> as functions named 'ordiplot' might be found in other packages as well.</p>
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -217,6 +243,8 @@ For details for constructing a biplot, see Gabriel (1971).</p>
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#details">Details</a></li>
+
+      <li><a href="#note">Note</a></li>
 
       <li><a href="#references">References</a></li>
       

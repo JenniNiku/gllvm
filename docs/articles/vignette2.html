@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
       </span>
     </div>
 
@@ -83,7 +83,7 @@
       <h1>Analysing high-dimensional microbial community data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2019-09-18</h4>
+            <h4 class="date">2020-03-12</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette2.rmd"><code>vignettes/vignette2.rmd</code></a></small>
       <div class="hidden name"><code>vignette2.rmd</code></div>
@@ -124,7 +124,7 @@ ftNULLpois &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 ## [1] "VA"
 ## 
 ## log-likelihood:  -59551.79 
-## Degrees of freedom:  3940 
+## Residual degrees of freedom:  51220 
 ## AIC:  126983.6 
 ## AICc:  118990 
 ## BIC:  134963.5</code></pre>
@@ -137,7 +137,7 @@ ftNULLpois &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 ## [1] "VA"
 ## 
 ## log-likelihood:  -79542.62 
-## Degrees of freedom:  2955 
+## Residual degrees of freedom:  52205 
 ## AIC:  164995.2 
 ## AICc:  158971.1 
 ## BIC:  170980.2</code></pre>
@@ -208,7 +208,7 @@ Xsoils &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocu
 ## [1] "VA"
 ## 
 ## log-likelihood:  -58724.18 
-## Degrees of freedom:  4925 
+## Residual degrees of freedom:  50235 
 ## AIC:  127298.4 
 ## AICc:  117335.1 
 ## BIC:  137273.2</code></pre>
@@ -232,7 +232,7 @@ Xsoils &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocu
 ## [1] "VA"
 ## 
 ## log-likelihood:  -56897.15 
-## Degrees of freedom:  6895 
+## Residual degrees of freedom:  48265 
 ## AIC:  127584.3 
 ## AICc:  113681.4 
 ## BIC:  141549.1</code></pre>
@@ -259,7 +259,7 @@ ftXi &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.
 ## [1] "VA"
 ## 
 ## log-likelihood:  -54645.47 
-## Degrees of freedom:  8865 
+## Residual degrees of freedom:  46295 
 ## AIC:  127020.9 
 ## AICc:  109178.2 
 ## BIC:  144975.7</code></pre>
@@ -278,7 +278,7 @@ ftXi &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.
 <pre><code>## [1] 0.1517944</code></pre>
 <p>Notice that changes in log-likelihood are not the only approach to quantifying variance explained, and other methods like extensions of pseudo R2 are possible. For example, below we compare the total covariation in the <code>ftNULL</code> and <code>ftX</code> based on the traces of the residual covariance matrices. This suggests that environmental variables explain 38% of the total covariation.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="kw"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span>(ftX)<span class="op">$</span>tr<span class="op">/</span><span class="kw"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span>(ftNULL)<span class="op">$</span>tr</code></pre></div>
-<pre><code>## [1] 0.379193</code></pre>
+<pre><code>## numeric(0)</code></pre>
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
