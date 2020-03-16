@@ -291,15 +291,15 @@ trait.TMB <- function(
       phis <- phis / (1 - phis)
       } # ZIP probability
     # if (family == "gaussian") {
-    #   phis <- fit$phi
+    #   phis <- res$phi
     # }
     if(family=="ordinal"){
       K = max(y00)-min(y00)
       if(zeta.struc=="species"){
-        zeta <- c(t(fit$zeta[,-1]))
+        zeta <- c(t(res$zeta[,-1]))
         zeta <- zeta[!is.na(zeta)]
       }else{
-        zeta <- fit$zeta[-1]
+        zeta <- res$zeta[-1]
       }
       
     }else{
