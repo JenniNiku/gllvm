@@ -223,7 +223,7 @@
 #'# Let's consider only years 1981 and 1983
 #'ycoral <- ycoral[((tikus$x$time == 81) + (tikus$x$time == 83)) > 0, ]
 #'# Exclude species which have observed at less than 4 sites
-#'ycoral <- ycoral[-17, (colSums(ycoral > 0) > 3)]
+#'ycoral <- ycoral[-17, (colSums(ycoral > 0) > 4)]
 #'# Fit Tweedie model for coral data (this line may take few minutes to run)
 #'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
 #'ordiplot(fit.twe)
