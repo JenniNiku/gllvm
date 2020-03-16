@@ -308,8 +308,6 @@ Type objective_function<Type>::operator() ()
       }
     }
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
-    
-  }
   // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   
 } else {
