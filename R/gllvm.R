@@ -250,11 +250,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   offset = NULL, sd.errors = TRUE, Lambda.struc = "unstructured", Ab.struct = "unstructured",
                   diag.iter = 5, Ab.diag.iter=0, trace = FALSE, plot = FALSE, la.link.bin = "probit",
                   n.init = 1, Power = 1.5, reltol = 1e-8, seed = NULL,
-
                   max.iter = 200, maxit = 1000, start.fit = NULL, start.lvs = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim", scale.X = TRUE,
                   Lambda.start = c(0.1, 0.1, 0.1), jitter.var = 0,
-                  randomX = NULL, randomX.start = "res", dependent.row = TRUE, beta0com = FALS, zeta.struc="species") {
+                  randomX = NULL, randomX.start = "res", dependent.row = TRUE, beta0com = FALSE, zeta.struc="species") {
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
