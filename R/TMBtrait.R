@@ -612,7 +612,8 @@ trait.TMB <- function(
         rownames(out$params$theta) <- colnames(out$y)
       }
       if(!beta0com) names(beta0) <- colnames(out$y); 
-      names(beta0) <- colnames(out$y); out$params$beta0 <- beta0;
+      if(beta0com) names(beta0) <- "Community intercept";
+      out$params$beta0 <- beta0;
       out$params$B <- B; names(out$params$B)=colnames(Xd)
 
       if(row.eff!=FALSE) {
