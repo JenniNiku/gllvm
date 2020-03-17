@@ -35,7 +35,8 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$params$phi <- NULL
       object$sd$phi <- NULL
     }
-    parm_all <- c("theta", "beta0", "Xcoef", "B", "row.params", "sigma", "inv.phi", "phi", "p")
+    
+    parm_all <- c("theta", "beta0", "Xcoef", "B", "row.params", "sigma", "inv.phi", "phi", "p","zeta")
     parmincl <- parm_all[parm_all %in% names(object$params)]
     cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
     ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
@@ -43,6 +44,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
 
     colnames(M) <- c(paste(alfa * 100, "%"), paste((1 - alfa) * 100, "%"))
     rnames <- names(unlist(object$params))
+    
     cal <- 0
     if (num.lv > 0) {
       nr <- rep(1:num.lv, each = p)
@@ -77,6 +79,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       s <- dim(M)[1]
       rnames[(cal + 1):s] <- paste("inv.phi", names(object$params$beta0), sep = ".")
     }
+    
     if(object$family == "tweedie"){
       s <- dim(M)[1]
       rnames[(cal + 1):s] <- paste("Dispersion phi", names(object$params$phi), sep = ".")

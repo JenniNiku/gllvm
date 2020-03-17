@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -66,9 +66,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   y <- as.matrix(y)
 
-  if(family == "ordinal") {
+  if(family == "ordinal" && zeta.struc == "species") {
     max.levels <- apply(y,2,function(x) length(min(x):max(x)));
     if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If al columns only have two levels, please use family == binomial instead. Thanks")
+  }else{
+    max.levels=length(min(y):max(y))
   }
 
   if(is.null(rownames(y))) rownames(y) <- paste("row",1:N,sep="")
@@ -251,8 +253,15 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   if(family == "ordinal") {
     max.levels <- length(unique(c(y)))
     params <- matrix(NA,p,ncol(cbind(1,X))+num.lv)
-    zeta <- matrix(NA,p,max.levels - 1)
-    zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
+    if(zeta.struc == "species"){
+      zeta <- matrix(NA,p,max.levels - 1)
+      zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
+    }else{
+      cw.fit <- MASS::polr(factor(y) ~ 1, method = "probit")
+      zeta <- cw.fit$zeta
+      zeta[1] <- 0
+    }
+    
     for(j in 1:p) {
       y.fac <- factor(y[,j])
       if(length(levels(y.fac)) > 2) {
@@ -265,10 +274,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         }
         if(starting.val=="random"){
           params[j,] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
-          zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+          if(zeta.struc == "species"){
+            zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+          }
         }else{
           params[j,1:ncol(cbind(1,X))] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
-          zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+          if(zeta.struc == "species"){
+            zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
+          }
         }
       }
       if(length(levels(y.fac)) == 2) {
@@ -287,7 +300,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       
-      lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, zeta = zeta)
+      lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, zeta = zeta, zeta.struc = zeta.struc)
       gamma<-lastart$gamma
       index<-lastart$index
       params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
@@ -358,7 +371,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 }
 
 
-FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL, 
+FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis = NULL, 
                     jitter.var = 0, resi = NULL, row.eff = FALSE){
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
@@ -394,26 +407,46 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, phis = NULL,
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }
-        if (family == "ordinal") {
-          probK <- NULL
-          probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
-          probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
-          if(max(y[,j]) > 2) {
-            j.levels <- 2:(max(y[,j])-1)
-            for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
-          }
-          probK <- c(0,probK)
-          cumsum.b <- sum(probK[1:(y[i,j]+1)])
-          cumsum.a <- sum(probK[1:(y[i,j])])
-          u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
-          if (abs(u - 1) < 1e-05)
-            u <- 1
-          if (abs(u - 0) < 1e-05)
-            u <- 0
-          ds.res[i, j] <- qnorm(u)
+      if (family == "ordinal") {
+      if(zeta.struc == "species"){
+        probK <- NULL
+        probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+        probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+        if(max(y[,j]) > 2) {
+          j.levels <- 2:(max(y[,j])-1)
+          for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
         }
+        probK <- c(0,probK)
+        cumsum.b <- sum(probK[1:(y[i,j]+1)])
+        cumsum.a <- sum(probK[1:(y[i,j])])
+        u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+        if (abs(u - 1) < 1e-05)
+          u <- 1
+        if (abs(u - 0) < 1e-05)
+          u <- 0
+        ds.res[i, j] <- qnorm(u)
+      }else{
+        probK <- NULL
+        probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
+        probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+          levels <- 2:(max(y) - min(y))#
+          for (k in levels) {
+            probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
+          }
+        probK <- c(0, probK)
+        cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
+        cumsum.a <- sum(probK[1:(y[i, j])])
+        u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+        if (abs(u - 1) < 1e-05)
+          u <- 1
+        if (abs(u - 0) < 1e-05)
+          u <- 0
+        ds.res[i, j] <- qnorm(u)
       }
-    }
+  }
+}
+  }
+    
   } else {
     ds.res <- resi
   }

@@ -14,25 +14,25 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xr);
   DATA_MATRIX(xb);
   DATA_MATRIX(offset);
-
+  
   PARAMETER_MATRIX(r0);
   PARAMETER_MATRIX(b);
   PARAMETER_MATRIX(B);
   PARAMETER_MATRIX(Br);
   PARAMETER_VECTOR(lambda);
-
+  
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi);
   PARAMETER_VECTOR(sigmaB);
   PARAMETER_VECTOR(sigmaij);
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect)
-
+  
   DATA_INTEGER(num_lv);
   DATA_INTEGER(family);
   
   PARAMETER_VECTOR(Au);
-//  PARAMETER_VECTOR(lg_Ar);
+  //  PARAMETER_VECTOR(lg_Ar);
   PARAMETER_VECTOR(Abb);
   PARAMETER_VECTOR(zeta);
   
@@ -40,7 +40,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(method);// 0=VA, 1=LA
   DATA_INTEGER(model);
   DATA_VECTOR(random);//random row
-
+  DATA_INTEGER(zetastruc);
+  
   int n = y.rows();
   int p = y.cols();
   int l = xb.cols();
@@ -72,45 +73,45 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-
+    
     //To create lambda as matrix upper triangle
     if (num_lv>0){
       
-    for (int j=0; j<p; j++){
-      for (int i=0; i<num_lv; i++){
-        if (j < i){
-          newlam(i+nlvr-num_lv,j) = 0;
-        } else{
-          newlam(i+nlvr-num_lv,j) = lambda(j);
-          if (i > 0){
-            newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
+      for (int j=0; j<p; j++){
+        for (int i=0; i<num_lv; i++){
+          if (j < i){
+            newlam(i+nlvr-num_lv,j) = 0;
+          } else{
+            newlam(i+nlvr-num_lv,j) = lambda(j);
+            if (i > 0){
+              newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
+            }
           }
+          // set diag>0 !!!!!!!!!!!
+          // if (j == i){
+          //   newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
+          // }
         }
-        // set diag>0 !!!!!!!!!!!
-        // if (j == i){
-        //   newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
-        // }
       }
     }
-    }
-
+    
     lam += u*newlam;
     eta = lam;
   }
-
+  
   matrix<Type> mu(n,p);
   
   using namespace density;
   
   Type nll = 0.0; // initial value of log-likelihood
-
-
+  
+  
   if(method<1){
     eta += r0*xr + offset;
-
+    
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
-
+    
     if(nlvr>0){
       array<Type> A(nlvr,nlvr,n);
       for (int d=0; d<(nlvr); d++){
@@ -130,7 +131,7 @@ Type objective_function<Type>::operator() ()
           }}
       }
       /*Calculates the commonly used (1/2) theta'_j A_i theta_j
-      A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
+       A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
@@ -169,7 +170,7 @@ Type objective_function<Type>::operator() ()
       }
       
       /*Calculates the commonly used (1/2) x'_i A_bj x_i
-      A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
+       A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           cQ(i,j) += 0.5*((xb.row(i))*(Ab.col(j).matrix()*xb.row(i).transpose())).sum();
@@ -181,7 +182,7 @@ Type objective_function<Type>::operator() ()
     }
     
     
-
+    
     if(model<1){
       eta += x*b;
     } else {
@@ -225,7 +226,7 @@ Type objective_function<Type>::operator() ()
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==6){
+    } else if(family==6 && zetastruc == 1){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -248,7 +249,7 @@ Type objective_function<Type>::operator() ()
         }
         idx += Kj-1;
       }
-
+      
       for (int i=0; i<n; i++) {
         for(int j=0; j<p; j++){
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
@@ -266,100 +267,134 @@ Type objective_function<Type>::operator() ()
               }
             }
           }
-        
+          
           nll += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-     }
-    // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
-
-  } else {
-    eta += r0*xr + offset;
-    
-    // Include random slopes if random(1)>0
-    if(random(1)>0){
-      vector<Type> sdsv = exp(sigmaB);
-      density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
+    }else if(family==6&&zetastruc==0){
+      int ymax =  CppAD::Integer(y.maxCoeff());
+      int K = ymax - 1;
       
-      for (int j=0; j<p;j++){
-        nll += VECSCALE(neg_log_MVN,sdsv)(vector<Type>(Br.col(j)));
-      }
-      eta += xb*Br;
-    }
-    
-
-    if(model<1){
-
-      eta += x*b;
-      for (int j=0; j<p; j++){
-        for(int i=0; i<n; i++){
-          mu(i,j) = exp(eta(i,j));
+      vector <Type> zetanew(K);
+      zetanew.fill(0.0);
+      for(int k=0; k<(K-1); k++){
+        if(k==1){
+          zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
+        }else{
+          zetanew(k+1) = zeta(k);
         }
       }
-      
-    } else {
-      // Fourth corner model
-      matrix<Type> eta1=x*B;
-      int m=0;
-      for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
-          eta(i,j)+=b(0,j)*extra(1)+eta1(m,0);
-          m++;
-          mu(i,j) = exp(eta(i,j));
-        }
-      }
-    }
-    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
-    if(nlvr>0){
-      
-      MVNORM_t<Type> mvnorm(Cu);
       for (int i=0; i<n; i++) {
-        nll += mvnorm(u.row(i));
+        for(int j=0; j<p; j++){
+          //minimum category
+          if(y(i,j)==1){
+            nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+          }else if(y(i,j)==ymax){
+            //maximum category
+            int idx = ymax-2;
+            nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+          }else if(ymax>2){
+            for (int l=2; l<ymax; l++) {
+              if(y(i,j)==l && l != ymax){
+                nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+              }
+            }
+          }
+          nll += cQ(i,j);
+        }
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     }
-
-
-    //likelihood model with the log link function
-    if(family==0){
+    // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
+  // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
+  
+} else {
+  eta += r0*xr + offset;
+  
+  // Include random slopes if random(1)>0
+  if(random(1)>0){
+    vector<Type> sdsv = exp(sigmaB);
+    density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
+    
+    for (int j=0; j<p;j++){
+      nll += VECSCALE(neg_log_MVN,sdsv)(vector<Type>(Br.col(j)));
+    }
+    eta += xb*Br;
+  }
+  
+  
+  if(model<1){
+    
+    eta += x*b;
+    for (int j=0; j<p; j++){
+      for(int i=0; i<n; i++){
+        mu(i,j) = exp(eta(i,j));
+      }
+    }
+    
+  } else {
+    // Fourth corner model
+    matrix<Type> eta1=x*B;
+    int m=0;
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        eta(i,j)+=b(0,j)*extra(1)+eta1(m,0);
+        m++;
+        mu(i,j) = exp(eta(i,j));
+      }
+    }
+  }
+  //latent variables and random site effects (r_i,u_i) from N(0,Cu)
+  if(nlvr>0){
+    
+    MVNORM_t<Type> mvnorm(Cu);
+    for (int i=0; i<n; i++) {
+      nll += mvnorm(u.row(i));
+    }
+  }
+  
+  
+  //likelihood model with the log link function
+  if(family==0){
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dpois(y(i,j), exp(eta(i,j)), true);
+      }
+    }
+  } else if(family==1){
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+      }
+    }} else if(family==2) {
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dpois(y(i,j), exp(eta(i,j)), true);
+          if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+          } else {mu(i,j) = pnorm(eta(i,j));}
+          nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
         }
       }
-    } else if(family==1){
+    } else if(family==3){
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); //gamma family
         }
-      }} else if(family==2) {
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {mu(i,j) = pnorm(eta(i,j));}
-            nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
-          }
+      }
+    } else if(family==4){
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); //tweedie family
         }
-      } else if(family==3){
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); //gamma family
-          }
+      }
+    } else if(family==5) {
+      iphi=iphi/(1+iphi);
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); //zero-infl-poisson
         }
-      } else if(family==4){
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); //tweedie family
-          }
-        }
-      } else if(family==5) {
-        iphi=iphi/(1+iphi);
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); //zero-infl-poisson
-          }
-        }}
-  }
-  return nll;
+      }}
+}
+return nll;
 }
