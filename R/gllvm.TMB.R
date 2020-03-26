@@ -178,7 +178,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       phis <- (colMeans(y == 0) * 0.98) + 0.01
       phis <- phis / (1 - phis)
     } # ZIP probability
-    if (family == "gaussian") {
+    if (family %in% c("gaussian", "gamma")) {
       phis <- fit$phi
     }
     if(family=="ordinal"){
@@ -258,7 +258,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "negative.binomial") { familyn <- 1}
       if(family == "binomial") { familyn <- 2}
       if(family == "gaussian") {familyn=3}
-      if(family == "ordinal") {familyn=6}
+      if(family == "gamma") {familyn=4}
+      if(family == "ordinal") {familyn=7}
       
       
       if(row.eff=="random"){
@@ -349,7 +350,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
 
       param<-objr$env$last.par.best
-      if(family =="negative.binomial" || family == "gaussian") {
+      if(family %in% c("negative.binomial", "gaussian", "gamma")) {
         phis <- exp(param[names(param)=="lg_phi"])
       }
       if(family == "ordinal"){
@@ -415,9 +416,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(link=="probit") extra=1
       }
       if(family == "gaussian") {familyn=3}
-      if(family == "tweedie"){ familyn=4; extra=Power}
-      if(family == "ZIP"){ familyn=5;}
-      if(family == "ordinal"){ familyn=6}
+      if(family == "gamma") {familyn=4}
+      if(family == "tweedie"){ familyn=5; extra=Power}
+      if(family == "ZIP"){ familyn=6;}
+      if(family == "ordinal"){ familyn=7}
 
       if(row.eff=="random"){
         if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -493,7 +495,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(!is.null(X)) betas=betaM[,-1]
       new.loglik <- objr$env$value.best[1]
       
-      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian")) {
+      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma")) {
         phis <- exp(param[names(param)=="lg_phi"])
         if(family=="ZIP") {
           lp0 <- param[names(param)=="lg_phi"]; out$lp0 <- lp0
@@ -523,7 +525,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
         out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
       }
-      if(family %in% c("gaussian","tweedie")) {
+      if(family %in% c("gaussian", "tweedie", "gamma")) {
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
       if(family =="ZIP") {
@@ -593,7 +595,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
       incl[names(objrFinal$par)=="Abb"]=FALSE;
       
-      if(familyn!=6) incl[names(objrFinal$par)=="zeta"] <- FALSE
+      if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
       
       if(method=="LA" || (num.lv==0 && method=="VA" && row.eff!="random")){
         incl[names(objrFinal$par)=="Au"] <- FALSE;
@@ -602,8 +604,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         } 
         if(row.eff=="fixed"){ incl[1] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
         if(row.eff==FALSE) {incl[names(objrFinal$par)=="r0"] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
-        if(familyn==0 || familyn==2 || familyn==6) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-        if(familyn==6) incl[names(objrFinal$par)=="zeta"] <- TRUE
+        if(familyn==0 || familyn==2 || familyn==7) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+        if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
         if(nlvr==0){
           incl[names(objrFinal$par)=="u"] <- FALSE;
           incl[names(objrFinal$par)=="lambda"] <- FALSE;
@@ -647,7 +649,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           incl[names(objrFinal$par)=="u"] <- FALSE;
           incl[names(objrFinal$par)=="lambda"] <- FALSE;
         }
-        if(familyn==0 || familyn==2 || familyn==6) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+        if(familyn==0 || familyn==2 || familyn==7) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
         
         A.mat <- -sdr[incl, incl] # a x a
         D.mat <- -sdr[incld, incld] # d x d
@@ -682,7 +684,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         out$sd$phi <- se.lphis*out$params$phi;
         names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
       }
-      if(family %in% c("tweedie", "gaussian")) {
+      if(family %in% c("tweedie", "gaussian", "gamma")) {
         se.lphis <- se[1:p];
         out$sd$phi <- se.lphis*out$params$phi;
         names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]

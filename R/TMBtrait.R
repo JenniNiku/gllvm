@@ -148,7 +148,7 @@ trait.TMB <- function(
   }
 
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal", "gamma")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
@@ -290,7 +290,7 @@ trait.TMB <- function(
       phis <- (colMeans(y == 0) * 0.98) + 0.01; 
       phis <- phis / (1 - phis)
       } # ZIP probability
-    # if (family == "gaussian") {
+    # if (family %in% c("gaussian", "gamma")) {
     #   phis <- res$phi
     # }
     if(family=="ordinal"){
@@ -363,9 +363,10 @@ trait.TMB <- function(
       if(link=="probit") extra[1] <- 1
     }
     if(family == "gaussian") {familyn=3}
-    if(family == "tweedie"){ familyn <- 4; extra[1] <- Power}
-    if(family == "ZIP"){ familyn <- 5;}
-    if(family == "ordinal") {familyn=6}
+    if(family == "gamma") {familyn=4}
+    if(family == "tweedie"){ familyn <- 5; extra[1] <- Power}
+    if(family == "ZIP"){ familyn <- 6;}
+    if(family == "ordinal") {familyn=7}
     if(beta0com){
       extra[2] <- 0
       Xd<-cbind(1,Xd)
@@ -518,7 +519,7 @@ trait.TMB <- function(
     }
 
     param <- objr$env$last.par.best
-    if(family %in% c("negative.binomial", "tweedie", "gaussian")) {
+    if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma")) {
       phis=exp(param[names(param)=="lg_phi"])
     }
     if(family=="ZIP") {
@@ -629,7 +630,7 @@ trait.TMB <- function(
         out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
         out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
       }
-      if(family %in% c("gaussian","tweedie")) {
+      if(family %in% c("gaussian","tweedie","gamma")) {
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
       if(family =="ZIP") {
@@ -740,9 +741,9 @@ trait.TMB <- function(
         incl[names(objrFinal$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objrFinal$par)=="Au"] <- TRUE
         incl[names(objrFinal$par)=="u"] <- FALSE; incld[names(objrFinal$par)=="u"] <- TRUE
         
-        if(familyn==0 || familyn==2 || familyn==6) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-        if(familyn!=6) incl[names(objrFinal$par)=="zeta"] <- FALSE
-        if(familyn==6) incl[names(objrFinal$par)=="zeta"] <- TRUE
+        if(familyn==0 || familyn==2 || familyn==7) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+        if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+        if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
         
         if(nlvr==0){
           incl[names(objrFinal$par)=="u"] <- FALSE;
@@ -816,7 +817,7 @@ trait.TMB <- function(
           out$sd$phi <- se.lphis*out$params$phi;
           names(out$sd$inv.phi) <- names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
         }
-        if(family %in% c("gaussian","tweedie")) {
+        if(family %in% c("gaussian","tweedie","gamma")) {
           se.lphis <- se[1:p];
           out$sd$phi <- se.lphis*out$params$phi;
           names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]

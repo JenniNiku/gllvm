@@ -226,7 +226,14 @@ Type objective_function<Type>::operator() ()
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==6 && zetastruc == 1){
+    } else if(family==4) {//gamma
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )/iphi(j) + log(y(i,j)/iphi(j))/iphi(j) - log(y(i,j)) -lgamma(1/iphi(j));
+        }
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }
+    } else if(family==7 && zetastruc == 1){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -273,7 +280,7 @@ Type objective_function<Type>::operator() ()
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    }else if(family==6&&zetastruc==0){
+    }else if(family==7 && zetastruc==0){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -382,13 +389,19 @@ Type objective_function<Type>::operator() ()
           nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); //gamma family
         }
       }
-    } else if(family==4){
+    } else if(family==4){//gamma
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          nll -= dgamma(y(i,j), 1/iphi(j), iphi(j)*exp(eta(i,j)), true); //tweedie family
+        }
+      }
+    } else if(family==5){
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); //tweedie family
         }
       }
-    } else if(family==5) {
+    } else if(family==6) {
       iphi=iphi/(1+iphi);
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {

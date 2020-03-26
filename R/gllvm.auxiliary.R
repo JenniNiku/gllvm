@@ -46,13 +46,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family=="ZIP") family="poisson"
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma")))
     stop("inputed family not allowed...sorry =(")
 
   if(num.lv > 0) {
     unique.ind <- which(!duplicated(y))
     if(is.null(start.lvs)) {
       index <- mvtnorm::rmvnorm(N, rep(0, num.lv));
+      colnames(index) <- paste("LV",1:num.lv, sep = "")
       unique.index <- as.matrix(index[unique.ind,])
     }
 
@@ -88,7 +89,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           fit.mva$phi <- fit.mva$params$phi
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
-          if(family %in% c("poisson", "negative.binomial")) {
+          if(family %in% c("poisson", "negative.binomial", "gamma")) {
             mu <- exp(mu)
           }
           if(family == "binomial") {
@@ -160,7 +161,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           if(ncol(fit.mva$Xrandom)>1) sigmaij <- fit.mva$TMBfn$par[names(fit.mva$TMBfn$par)=="sigmaij"]#fit.mva$params$sigmaB[lower.tri(fit.mva$params$sigmaB)]
           mu <- mu + fit.mva$Xrandom%*%Br
         }
-        if(family %in% c("poisson", "negative.binomial")) {
+        if(family %in% c("poisson", "negative.binomial", "gamma")) {
           mu <- exp(mu)
         }
         if(family == "binomial") {
@@ -224,7 +225,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family == "negative.binomial") {
     phi <- fit.mva$phi  + 1e-5
-  } else if(family == "gaussian") {
+  } else if(family %in% c("gaussian", "gamma")) {
     phi <- fit.mva$phi
   } else { phi <- NULL }
   
@@ -402,8 +403,14 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           ds.res[i, j] <- qnorm(u)
         }
         if (family == "gaussian") {
-          a <- pnorm(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j], sd = phis[j])
-          b <- pnorm(as.vector(unlist(y[i, j])), 1, mu[i, j], sd = phis[j])
+          a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+          b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "gamma") {
+          a <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
+          b <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }

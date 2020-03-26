@@ -112,8 +112,18 @@ residuals.gllvm <- function(object, ...) {
         ds.res[i, j] <- qnorm(u)
       }
       if (object$family == "gaussian") {
-        a <- pnorm(as.vector(unlist(y[i, j])) - 1, mu[i, j])
-        b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j])
+        phis <- object$params$phi
+        a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+        b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "gamma") {
+        phis <- object$params$phi # - 1
+        a <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
+        b <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -167,7 +177,7 @@ residuals.gllvm <- function(object, ...) {
             if (abs(u - 0) < 1e-05)
               u <- 0
             ds.res[i, j] <- qnorm(u)
-          }else{
+          } else {
             probK <- NULL
             probK[1] <- pnorm(object$params$zeta[1] - eta.mat[i, j], log.p = FALSE)
             probK[max(y) + 1 - min(y)] <- 1 - pnorm(object$params$zeta[max(y) - min(y)] - eta.mat[i, j])

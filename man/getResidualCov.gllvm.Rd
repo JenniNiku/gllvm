@@ -16,6 +16,7 @@
 Function returns following components:
  \item{cov }{residual covariance matrix}
  \item{trace }{trace of the residual covariance matrix}
+ \item{trace.q }{trace of the residual covariance matrix per latent variable}
 }
 \description{
 Calculates the residual covariance matrix for gllvm model.
@@ -60,6 +61,8 @@ rescov <- getResidualCov(fit)
 rescov$cov
 # Trace of the covariance matrix
 rescov$tr
+# Trace per latent variable
+rescov$trace.q
 
 }
 \author{
