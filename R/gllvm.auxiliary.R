@@ -70,7 +70,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   if(family == "ordinal" && zeta.struc == "species") {
     max.levels <- apply(y,2,function(x) length(min(x):max(x)));
     if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If al columns only have two levels, please use family == binomial instead. Thanks")
-  }else{
+  }else if(family=="ordinal" && zeta.struc == "common"){
     max.levels=length(min(y):max(y))
   }
 
