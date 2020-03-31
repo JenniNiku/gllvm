@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -126,7 +126,8 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>simulate</span>(<span class='no'>object</span>, <span class='kw'>nsim</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>simulate</span>(<span class='no'>object</span>, <span class='kw'>nsim</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>conditional</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -144,6 +145,10 @@
       <td><p>an optional integer to set seed number, passed to set.seed. Defaults to a random seed number.</p></td>
     </tr>
     <tr>
+      <th>conditional</th>
+      <td><p>if <code>conditional = FALSE</code> simulates marginally over the latent variables.</p></td>
+    </tr>
+    <tr>
       <th>...</th>
       <td><p>not used.</p></td>
     </tr>
@@ -155,8 +160,7 @@
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>simulate function for gllvm objects.  Note this simulates marginally over LVs.
-an option is to add a conditional argument, which would fix the LVs.
+    <p>simulate function for gllvm objects. 
 David Warton</p>
     
 

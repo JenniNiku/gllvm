@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This document illustrates the main features and functionality of the **gllvm** package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data. 
+This document illustrates the main features and functionality of the **gllvm** package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data. The functionality of the package is desrcibed in detail in  @Niku2019.
 
 Multivariate abundance data, consisting of observations of multiple interacting species from a set of samples, are often collected in ecological studies to characterise a community or assemblage of organisms. The term "abundance" is taken here to mean counts, presence-absence records, biomass data or any other measure of the extent to which a species may be present at a site.
 
@@ -332,3 +332,29 @@ anova(fit_4th, fit_4th2)
 #> 1     1055  0.00000       0        
 #> 2     1037 21.10357      18 0.27422
 ```
+
+
+
+# References
+
+---
+references:
+- id: Niku2019
+  title: gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R.
+  author: 
+  - family: Niku
+    given: J.
+  - family: Hui
+    given: F.K.C.
+  - family: Taskinen
+    given: S.    
+  - family: Warton
+    given: D.I.
+  publisher: Methods in Ecology and Evolution
+  volume: 10
+  page: 2173-2182
+  type: article-journal
+  issued:
+    year: 2019
+
+---

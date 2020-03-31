@@ -215,8 +215,8 @@ references:
     given: M.
   - family: van Elsas
     given: J
-  volume: 82
   publisher: FEMS Microbiology Ecology
+  volume: 82
   page: 510-522
   type: article-journal
   issued:
@@ -233,8 +233,8 @@ references:
     given: F.K.C.
   - family: Taskinen
     given: S.    
-  volume: 22
   publisher: Journal of Agricultural, Biological, and Environmental Statistics
+  volume: 22
   page: 498-522
   type: article-journal
   issued:
@@ -251,7 +251,7 @@ references:
     given: S.    
   - family: Warton
     given: D.I.
-  publisher: Submitted
+  publisher: Methods in Ecology and Evolution
   type: article-journal
   issued:
     year: 2019

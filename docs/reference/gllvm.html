@@ -64,7 +64,7 @@ approximation method." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -137,7 +137,7 @@ approximation method.</p>
   <span class='kw'>starting.val</span> <span class='kw'>=</span> <span class='st'>"res"</span>, <span class='kw'>TMB</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='st'>"optim"</span>,
   <span class='kw'>scale.X</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>Lambda.start</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.1</span>, <span class='fl'>0.1</span>), <span class='kw'>jitter.var</span> <span class='kw'>=</span> <span class='fl'>0</span>,
   <span class='kw'>randomX</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>randomX.start</span> <span class='kw'>=</span> <span class='st'>"res"</span>, <span class='kw'>dependent.row</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>beta0com</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+  <span class='kw'>beta0com</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>zeta.struc</span> <span class='kw'>=</span> <span class='st'>"species"</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -168,7 +168,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>family</th>
-      <td><p>distribution function for responses. Options are <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "probit")</a></code> (and also <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>gaussian(link = "identity")</a></code>, Tweedie (<code>"tweedie"</code>) (with log link, only with <code>"LA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
+      <td><p>distribution function for responses. Options are <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "probit")</a></code> (and also <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>gaussian(link = "identity")</a></code>, <code>"gamma"</code> (with log link), Tweedie (<code>"tweedie"</code>) (with log link, only with <code>"LA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
     </tr>
     <tr>
       <th>method</th>
@@ -176,7 +176,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>row.eff</th>
-      <td><p><code>FALSE</code>, <code>TRUE</code> or <code>"random"</code>, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to <code>FALSE</code> when row effects are not included.</p></td>
+      <td><p><code>FALSE</code>, <code>fixed</code> or <code>"random"</code>, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to <code>FALSE</code> when row effects are not included.</p></td>
     </tr>
     <tr>
       <th>offset</th>
@@ -196,7 +196,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>diag.iter</th>
-      <td><p>non-negative integer which is number of iterations using diagonal structure for the variational covariance of the latent variables, used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 1.</p></td>
+      <td><p>non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5 if <code>TMB = FALSE</code>. If <code>TMB = TRUE</code> either 0 or 1.</p></td>
     </tr>
     <tr>
       <th>Ab.diag.iter</th>
@@ -248,7 +248,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>starting.val</th>
-      <td><p>starting values can be generated by fitting model without latent variables, and applying factorial analysis to residuals to get starting values for latent variables and their coefficients (<code>starting.val = "res"</code>). Another options are to use zeros as a starting values (<code>starting.val = "zero"</code>) or randomly chosen starting values for latent variables (<code>starting.val = "random"</code>). Defaults to <code>"res"</code>, which is recommended.</p></td>
+      <td><p>starting values can be generated by fitting model without latent variables, and applying factorial analysis to residuals to get starting values for latent variables and their coefficients (<code>starting.val = "res"</code>). Another options are to use zeros as a starting values (<code>starting.val = "zero"</code>) or initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>"res"</code>, which is recommended.</p></td>
     </tr>
     <tr>
       <th>TMB</th>
@@ -286,6 +286,10 @@ approximation method.</p>
       <th>beta0com</th>
       <td><p>logical, if <code>FALSE</code> column-specific intercepts are assumed. If <code>TRUE</code>, a common intercept is used which is allowed only for fourth corner models.</p></td>
     </tr>
+    <tr>
+      <th>zeta.struc</th>
+      <td><p>Structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -303,7 +307,7 @@ approximation method.</p>
 <li><p>Xcoef  coefficients related to environmental covariates X</p></li>
 <li><p>B  coefficients in fourth corner model</p></li>
 <li><p>row.params  row-specific intercepts</p></li>
-<li><p>phi  dispersion parameters \(\phi\) for negative binomial or Tweedie family, probability of zero inflation for ZIP family or standard deviation for gaussian family</p></li>
+<li><p>phi  dispersion parameters \(\phi\) for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma family</p></li>
 <li><p>inv.phi  dispersion parameters \(1/\phi\) for negative binomial</p></li>
 </ul></p></dd>
  <dt>Power </dt><dd><p>power parameter \(\nu\) for Tweedie family</p></dd>
@@ -338,10 +342,11 @@ However, sometimes this is computationally too demanding, and default option
     Mean and variance for distributions are defined as follows.
 <ul>
 <li><p>For count data <code>family = poisson()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}\), or</p></li>
-<li><p><code>family = "negative.binomial"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2/\phi_j\), or</p></li>
+<li><p><code>family = "negative.binomial"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j\), or</p></li>
 <li><p><code>family = "ZIP"</code>: Expectation \(E[Y_{ij}] = (1-p)\mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)\).</p></li>
 <li><p>For binary data <code>family = binomial()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})\).</p></li>
-<li><p>For biomass data <code>family = "tweedie"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu\), where \(\nu\) is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).</p></li>
+<li><p>For positive continuous data <code>family = "gamma"</code>:Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}^2\phi_j\), where \(\phi_j\) is species specific shape parameter.</p></li>
+<li><p>For non-negative continuous or biomass data<code>family = "tweedie"</code> Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu\), where \(\nu\) is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).</p></li>
 <li><p>For ordinal data <code>family = "ordinal"</code>: Cumulative probit model, see Hui et.al. (2016).</p></li>
 <li><p>For normal distributed data <code>family = gaussian()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(y_{ij}) = \phi_j^2.\)</p></li>
 </ul>

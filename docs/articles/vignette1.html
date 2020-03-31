@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -83,7 +83,7 @@
       <h1>Analysing multivariate abundance data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2020-03-12</h4>
+            <h4 class="date">2020-03-31</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -92,7 +92,7 @@
 
     
     
-<p>This document illustrates the main features and functionality of the <strong>gllvm</strong> package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data.</p>
+<p>This document illustrates the main features and functionality of the <strong>gllvm</strong> package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data. The functionality of the package is desrcibed in detail in <span class="citation">Niku et al. (2019)</span>.</p>
 <p>Multivariate abundance data, consisting of observations of multiple interacting species from a set of samples, are often collected in ecological studies to characterise a community or assemblage of organisms. The term “abundance” is taken here to mean counts, presence-absence records, biomass data or any other measure of the extent to which a species may be present at a site.</p>
 <p>GLLVM extends the basic generalized linear model to multivariate data using a factor analytic approach, <em>i.e.</em> incorporating a small number of latent variables for each site accompanied by species specific factor loadings to model correlations between responses. These latent variables have a natural interpretation as ordination axes, but with additional capacity, <em>e.g.</em> predicting new values, controlling for known environmental variables, using standard model selection tools to choose number of ordination axes.</p>
 <div id="generalized-linear-latent-variable-models" class="section level2">
@@ -284,11 +284,11 @@ fitp
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -2128.632 </span>
+<span class="co">#&gt; log-likelihood:  -2128.631 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1108 </span>
-<span class="co">#&gt; AIC:  4501.264 </span>
-<span class="co">#&gt; AICc:  4178.554 </span>
-<span class="co">#&gt; BIC:  4672.21</span></code></pre></div>
+<span class="co">#&gt; AIC:  4501.261 </span>
+<span class="co">#&gt; AICc:  4178.552 </span>
+<span class="co">#&gt; BIC:  4672.207</span></code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_ord &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)
 fit_ord
 <span class="co">#&gt; Call: </span>
@@ -298,11 +298,11 @@ fit_ord
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -1895.087 </span>
+<span class="co">#&gt; log-likelihood:  -1895.086 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1067 </span>
-<span class="co">#&gt; AIC:  4116.173 </span>
-<span class="co">#&gt; AICc:  3717.188 </span>
-<span class="co">#&gt; BIC:  4344.568</span></code></pre></div>
+<span class="co">#&gt; AIC:  4116.171 </span>
+<span class="co">#&gt; AICc:  3717.186 </span>
+<span class="co">#&gt; BIC:  4344.566</span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.</p>
 <p>In addition to information criterias, we can use residual plots for diagnosing model fit. As a default, <code>plot</code> function utilizes <code>residual</code> fuction to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument <code>which</code> one can define which plots will be produced.</p>
 <p>The residual diagnostics below for the Poisson model shows some overdispersion in residuals, in particular, a telltale fan-shape in the plot of residuals against fitted values. These issues are largely resolved in the NB model. Note that the latent variables in the model provide some capacity to account for overdispersion, so overdispersed counts do not always require us to move beyond the Poisson distribution, although there is clear evidence of such a need in this example.</p>
@@ -438,6 +438,15 @@ plot.4th</code></pre></div>
 <span class="co">#&gt; 1     1055  0.00000       0        </span>
 <span class="co">#&gt; 2     1037 21.10357      18 0.27422</span></code></pre></div>
 </div>
+<div id="references" class="section level1 unnumbered">
+<h1 class="hasAnchor">
+<a href="#references" class="anchor"></a>References</h1>
+<div id="refs" class="references">
+<div id="ref-Niku2019">
+<p>Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. “Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R.” 10. Methods in Ecology and Evolution: 2173–82.</p>
+</div>
+</div>
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -452,6 +461,7 @@ plot.4th</code></pre></div>
       <li><a href="#studying-co-occurrence-patterns">Studying co-occurrence patterns</a></li>
       <li><a href="#incorporating-functional-traits-into-fourth-corner-models">Incorporating functional traits into fourth corner models</a></li>
       <li><a href="#example-model-based-inference">Example: Model-based inference</a></li>
+      <li><a href="#references">References</a></li>
       </ul>
 </div>
       </div>

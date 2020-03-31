@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -146,6 +146,7 @@
     <p>Function returns following components:</p>
 <dt>cov </dt><dd><p>residual covariance matrix</p></dd>
  <dt>trace </dt><dd><p>trace of the residual covariance matrix</p></dd>
+ <dt>trace.q </dt><dd><p>trace of the residual covariance matrix per latent variable</p></dd>
 
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
@@ -1023,7 +1024,9 @@ For the probit model, the residual covariance matrix is then \(\Theta\Theta' + I
 #&gt; Stigmacros.sp..A                    -0.72665153
 #&gt; Tapinoma.sp..A                       0.10219822
 #&gt; Tetramorium.sp..A                    1.43779985</div><div class='input'><span class='co'># Trace of the covariance matrix</span>
-<span class='no'>rescov</span>$<span class='no'>tr</span></div><div class='output co'>#&gt; NULL</div><div class='input'>
+<span class='no'>rescov</span>$<span class='no'>tr</span></div><div class='output co'>#&gt; NULL</div><div class='input'><span class='co'># Trace per latent variable</span>
+<span class='no'>rescov</span>$<span class='no'>trace.q</span></div><div class='output co'>#&gt;      LV1      LV2 
+#&gt; 55.29308 41.73994 </div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
