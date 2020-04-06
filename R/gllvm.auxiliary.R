@@ -1230,14 +1230,19 @@ getFourthCorner<- function(object){
   nams2=nams[fourth.index]
   fourth.corner=object$params$B[fourth.index]
 
+  splitsnam <- sapply(nams2,strsplit, split = ":")
+  isinvec <- function(vec, ob =""){
+    ob %in% vec
+  }
   i=1; j=1;
   fourth<-matrix(0,length(n1),length(n2))
   for (i in 1:length(n1)) {
     for (j in 1:length(n2)) {
-      fur=(grepl(n1[i], nams2)+grepl(n2[j], nams2))>1
+      fur=(unlist(lapply(splitsnam, isinvec, ob = n1[i])) + unlist(lapply(splitsnam, isinvec, ob = n2[j]))) >1
       if(any(fur)){ fourth[i,j]=fourth.corner[fur]}
     }
   }
+  
   colnames(fourth)=n2
   rownames(fourth)=n1
   return(fourth)

@@ -265,6 +265,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(!is.matrix(X) && !is.data.frame(X) ) 
         stop("X must be a matrix or data.frame.")
     }
+    if(!is.null(TR)){
+      if(!is.matrix(TR) && !is.data.frame(TR) ) 
+        stop("TR must be a matrix or data.frame.")
+    }
 
     if (!is.null(y)) {
       y <- as.matrix(y)
