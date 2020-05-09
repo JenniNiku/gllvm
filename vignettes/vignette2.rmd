@@ -81,16 +81,16 @@ pchr[Xenv$Region == "NyA"] = 2
 pchr[Xenv$Region == "Aus"] = 3
 
 # Ordination plots. Dark color indicates high environmental covariate value.
-ordiplot(ftNULL, main = "Ordination of sites, color: pH", xlim = c(-2.5, 2.5), 
-         ylim = c(-2.5, 2.5), symbols = TRUE, pch = pchr, s.colors = Colorsph)
+ordiplot(ftNULL, main = "Ordination of sites, color: pH",
+         symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 
-ordiplot(ftNULL, main = "Ordination of sites, color: SOM", xlim = c(-2.5, 2.5), 
-         ylim = c(-2.5, 2.5), symbols = TRUE, pch = pchr, s.colors = Colorssom)
+ordiplot(ftNULL, main = "Ordination of sites, color: SOM", 
+         symbols = TRUE, pch = pchr, s.colors = Colorssom)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 
-ordiplot(ftNULL, main = "Ordination of sites, color: phosphorous", xlim = c(-2.5, 2.5), 
-         ylim = c(-2.5, 2.5), symbols = TRUE, pch = pchr, s.colors = Colorsphosp)
+ordiplot(ftNULL, main = "Ordination of sites, color: phosphorous",
+         symbols = TRUE, pch = pchr, s.colors = Colorsphosp)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 
 ```
@@ -109,7 +109,7 @@ Next we produce a biplot based on GLLVM. Below, column indices of the 15 species
 ```{r fig.height=8, fig.width=8}
 # Plot the species using column indices of the species:
 rownames(ftNULL$params$theta) <- 1:ncol(Ysoil)
-ordiplot(ftNULL, main = "Ordination of sites and species", xlim = c(-7, 5), 
+ordiplot(ftNULL, main = "Ordination of sites and species", xlim = c(-6, 5), 
          ylim = c(-4, 4), symbols = TRUE, pch = pchr, s.colors = Colorsph, 
          biplot = TRUE, ind.spp = 15, cex.spp = 0.9)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch=c(1, 2, 3), bty = "n")
@@ -139,7 +139,7 @@ coefplot(ftXph, cex.ylab = 0.5, y.label = FALSE)
 The corresponding ordination plot given below indicates that the gradient in the pH values of the sites vanishes, but the ordination still exhibits a sampling location effect. In particular, several Kilpisjarvi sites seem to differ what comes to the bacterial species composition and all Mayrhofen sites are located at the left side of the ordination.
 
 ```{r, out.width='70%'}
-ordiplot(ftXph, main = "Ordination of sites", xlim = c(-2.5, 2.5), ylim = c(-2.5, 2.5), 
+ordiplot(ftXph, main = "Ordination of sites", 
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
@@ -162,7 +162,7 @@ coefplot(ftX, cex.ylab = 0.5, y.label = FALSE, mar = c(4, 2, 2, 1))
 The corresponding ordination plot given below is very similar to the ordination plot of the model which includes only pH value as a covariate, and the ordination still exhibits a sampling location effect.
 
 ```{r, out.width='70%'}
-ordiplot(ftX, main = "Ordination of sites", xlim = c(-2.5, 2.5), ylim = c(-2.5, 2.5), 
+ordiplot(ftX, main = "Ordination of sites", 
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
@@ -182,7 +182,7 @@ ftXi
 The resulting ordination plot shows that there is no more visible pattern in sampling location.
 
 ```{r, warning=FALSE, out.width='70%'}
-ordiplot(ftXi, main = "Ordination of sites", xlim = c(-2.5, 2.5), ylim = c(-2.5, 2.5), 
+ordiplot(ftXi, main = "Ordination of sites",  
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
@@ -199,7 +199,7 @@ When comparing nested models, in particular, the model with environmental covari
 Notice that changes in log-likelihood are not the only approach to quantifying variance explained, and other methods like extensions of pseudo R2 are possible. For example, below we compare the total covariation in the `ftNULL` and `ftX` based on the traces of the residual covariance matrices. This suggests that environmental variables explain 38% of the total covariation.
 
 ```{r}
-1 - getResidualCov(ftX)$tr/getResidualCov(ftNULL)$tr
+1 - getResidualCov(ftX)$trace/getResidualCov(ftNULL)$trace
 ```
 
 # References

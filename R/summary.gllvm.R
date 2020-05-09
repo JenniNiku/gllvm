@@ -58,13 +58,16 @@ summary.gllvm <- function(object, ...) {
   }
 
   if (object$row.eff == "random") {
-    object$params$sigma2 = object$params$sigma ^ 2
+    object$params$sigma2 = object$params$sigma[1] ^ 2
     names(object$params$sigma2) = "sigma^2"
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
 
   if (object$family == "negative.binomial") {
     sumry$'Dispersion parameters' <- object$params$phi
+  }
+  if (object$family == "gamma") {
+    sumry$'Shape parameters' <- object$params$phi
   }
   if (object$family == "tweedie") {
     sumry$'Dispersion parameters' <- object$params$phi

@@ -149,19 +149,19 @@
 <span class='co'># Fit gllvm model</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $`log-likelihood`
-#&gt; [1] -2128.637
+#&gt; [1] -2128.634
 #&gt; 
 #&gt; $df
 #&gt; [1] 122
 #&gt; 
 #&gt; $AIC
-#&gt; [1] 4501.273
+#&gt; [1] 4501.268
 #&gt; 
 #&gt; $AICc
-#&gt; [1] 4178.563
+#&gt; [1] 4178.558
 #&gt; 
 #&gt; $BIC
-#&gt; [1] 4672.219
+#&gt; [1] 4672.214
 #&gt; 
 #&gt; $Call
 #&gt; gllvm(y = y, family = poisson())
@@ -170,48 +170,48 @@
 #&gt; [1] "poisson"
 #&gt; 
 #&gt; $Coefficients
-#&gt;                                Intercept    theta.LV1    theta.LV2
-#&gt; Amblyopone.australis          -0.8171350  0.660851417  0.000000000
-#&gt; Aphaenogaster.longiceps       -3.4726034  0.429258689 -2.841913434
-#&gt; Camponotus.cinereus.amperei   -2.1387027  0.727852729 -0.485326654
-#&gt; Camponotus.claripes            0.4266746  0.421395850 -0.510853716
-#&gt; Camponotus.consobrinus         1.4116554  0.487737001  0.548405096
-#&gt; Camponotus.nigriceps          -0.7082521 -0.001107028 -0.967244930
-#&gt; Camponotus.nigroaeneus        -0.6302927  0.525398217 -0.429832538
-#&gt; Cardiocondyla.nuda.atalanta   -3.3957550 -2.474497898 -0.520296221
-#&gt; Crematogaster.sp..A           -9.8420685  8.269631597 -2.996373857
-#&gt; Heteroponera.sp..A             1.1024760  0.308577088  0.769350995
-#&gt; Iridomyrmex.bicknelli          1.3162780  0.047847881  0.967893652
-#&gt; Iridomyrmex.dromus            -0.6928653  0.645719586  0.009490922
-#&gt; Iridomyrmex.mjobergi           1.3547771 -0.444171241 -0.001964626
-#&gt; Iridomyrmex.purpureus         -2.4911529  3.680308382 -1.191324654
-#&gt; Iridomyrmex.rufoniger          2.4129052 -0.140282124  0.649103720
-#&gt; Iridomyrmex.suchieri           0.4583957  0.492954712  0.629928730
-#&gt; Iridomyrmex.suchieroides      -0.4339617 -0.519657388  0.741054858
-#&gt; Melophorus.sp..E              -1.1606073  0.237376412  0.257034227
-#&gt; Melophorus.sp..F               0.5363075 -0.519776818  0.457569942
-#&gt; Melophorus.sp..H              -0.7578893 -0.722046240  1.153997749
-#&gt; Meranoplus.sp..A              -0.7528977 -0.675480626  1.758156721
-#&gt; Monomorium.leae                1.1546154  0.942266086 -0.339862624
-#&gt; Monomorium.rothsteini          0.3062827 -0.640055282  1.630292579
-#&gt; Monomorium.sydneyense         -1.1460605 -0.917021859  1.927797494
-#&gt; Myrmecia.pilosula.complex     -1.0877034  0.191606896  0.588564295
-#&gt; Notoncus.capitatus            -1.3851600  1.651100130 -0.331037667
-#&gt; Notoncus.ectatommoides         0.7755616 -0.727260717  0.101629551
-#&gt; Nylanderia.sp..A               0.7418508 -0.817953351  0.863127912
-#&gt; Ochetellus.glaber             -1.6779781 -0.685831922  1.481678525
-#&gt; Paraparatrechina.sp..B        -1.6040020  0.430609226 -1.357933186
-#&gt; Pheidole.sp..A                 2.3151950 -0.386140708  0.177248864
-#&gt; Pheidole.sp..B                -1.3348191  0.453613010 -1.034088692
-#&gt; Pheidole.sp..E                 1.5345215  0.529999716  0.253910524
-#&gt; Pheidole.sp..J                -1.9144259 -0.623472992 -0.510638978
-#&gt; Polyrhachis.sp..A             -1.5259873  0.832323335  0.218814661
-#&gt; Rhytidoponera.metallica.sp..A  2.0364618 -0.305043943  0.274925500
-#&gt; Rhytidoponera.sp..B            0.5269316 -0.544944407  0.756724244
-#&gt; Solenopsis.sp..A              -2.2519262 -0.603705089 -0.353971724
-#&gt; Stigmacros.sp..A              -0.5106314  1.105793388  0.013390716
-#&gt; Tapinoma.sp..A                 0.6471485  0.461017818  0.625581658
-#&gt; Tetramorium.sp..A              0.1053432 -0.721721809  0.966351950
+#&gt;                                Intercept   theta.LV1     theta.LV2
+#&gt; Amblyopone.australis          -0.8168425  0.65816437  0.0000000000
+#&gt; Aphaenogaster.longiceps       -3.4421322  0.36626045  2.8325881027
+#&gt; Camponotus.cinereus.amperei   -2.1352916  0.71999941  0.4925283377
+#&gt; Camponotus.claripes            0.4282323  0.41315211  0.5149757706
+#&gt; Camponotus.consobrinus         1.4099149  0.49574799 -0.5406644767
+#&gt; Camponotus.nigriceps          -0.7043908 -0.01718625  0.9647611491
+#&gt; Camponotus.nigroaeneus        -0.6282810  0.51786932  0.4352912638
+#&gt; Cardiocondyla.nuda.atalanta   -3.4015667 -2.48714600  0.4872440766
+#&gt; Crematogaster.sp..A           -9.8390038  8.22973253  3.0952136769
+#&gt; Heteroponera.sp..A             1.0988773  0.32115477 -0.7640762670
+#&gt; Iridomyrmex.bicknelli          1.3135662  0.06351585 -0.9633189065
+#&gt; Iridomyrmex.dromus            -0.6902266  0.64360163 -0.0005374171
+#&gt; Iridomyrmex.mjobergi           1.3545495 -0.44414291 -0.0037003416
+#&gt; Iridomyrmex.purpureus         -2.4988909  3.67186684  1.2382117588
+#&gt; Iridomyrmex.rufoniger          2.4103672 -0.12966679 -0.6488032164
+#&gt; Iridomyrmex.suchieri           0.4554968  0.50148256 -0.6233236252
+#&gt; Iridomyrmex.suchieroides      -0.4359428 -0.50770354 -0.7442216611
+#&gt; Melophorus.sp..E              -1.1597889  0.24197328 -0.2540881067
+#&gt; Melophorus.sp..F               0.5343783 -0.51171969 -0.4647740146
+#&gt; Melophorus.sp..H              -0.7640686 -0.70249514 -1.1586263743
+#&gt; Meranoplus.sp..A              -0.7580461 -0.64537823 -1.7599563709
+#&gt; Monomorium.leae                1.1576087  0.93475032  0.3506995090
+#&gt; Monomorium.rothsteini          0.3002856 -0.61287797 -1.6333467353
+#&gt; Monomorium.sydneyense         -1.1562501 -0.88477400 -1.9379967298
+#&gt; Myrmecia.pilosula.complex     -1.0890727  0.20481827 -0.5829657196
+#&gt; Notoncus.capitatus            -1.3858670  1.64820526  0.3505366002
+#&gt; Notoncus.ectatommoides         0.7745180 -0.72557689 -0.1106497595
+#&gt; Nylanderia.sp..A               0.7379933 -0.80363470 -0.8713824646
+#&gt; Ochetellus.glaber             -1.6851022 -0.66216229 -1.4855406432
+#&gt; Paraparatrechina.sp..B        -1.5943451  0.41072269  1.3559000142
+#&gt; Pheidole.sp..A                 2.3143064 -0.38322671 -0.1814974484
+#&gt; Pheidole.sp..B                -1.3318643  0.43719825  1.0369382426
+#&gt; Pheidole.sp..E                 1.5335906  0.53375282 -0.2468001624
+#&gt; Pheidole.sp..J                -1.9139978 -0.63304142  0.5002242259
+#&gt; Polyrhachis.sp..A             -1.5298620  0.83614199 -0.2075337713
+#&gt; Rhytidoponera.metallica.sp..A  2.0352021 -0.30037647 -0.2781392985
+#&gt; Rhytidoponera.sp..B            0.5247903 -0.53127938 -0.7607042509
+#&gt; Solenopsis.sp..A              -2.2499300 -0.60804391  0.3445248697
+#&gt; Stigmacros.sp..A              -0.5104366  1.10587003  0.0009070952
+#&gt; Tapinoma.sp..A                 0.6457288  0.47056574 -0.6171965819
+#&gt; Tetramorium.sp..A              0.1010832 -0.70534415 -0.9738949293
 #&gt; 
 #&gt; attr(,"class")
 #&gt; [1] "summary.gllvm"</div><div class='input'>

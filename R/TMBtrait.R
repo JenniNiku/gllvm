@@ -10,7 +10,7 @@ trait.TMB <- function(
       Lambda.struc = "unstructured", Ab.struct = "unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
-      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = TRUE,
+      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
       ,zeta.struc = "species") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
@@ -143,12 +143,12 @@ trait.TMB <- function(
     colnames(X1) <- colnames(X.new)[fx]; colnames(TR1)<-colnames(T.new)[ft];
     nxd <- colnames(Xd)
     formulab <- paste("~",nxd[1],sep = "");
-    for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
+    if(length(nxd)>1) for(i in 2:length(nxd)) formulab <- paste(formulab,nxd[i],sep = "+")
     formula1 <- formulab
   }
 
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal", "gamma")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal", "gamma", "exponential")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
     stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
@@ -210,7 +210,7 @@ trait.TMB <- function(
       vameans <- theta <- lambda <- NULL
 
       if(num.lv > 0) {
-        if(!is.null(randomXb)){
+        if(!is.null(randomXb) && family != "ordinal"){
           Br <- res$Br
           sigmaB <- (res$sigmaB)
           if(length(sigmaB)>1) sigmaij <- rep(0,length(res$sigmaij))
@@ -367,6 +367,7 @@ trait.TMB <- function(
     if(family == "tweedie"){ familyn <- 5; extra[1] <- Power}
     if(family == "ZIP"){ familyn <- 6;}
     if(family == "ordinal") {familyn=7}
+    if(family == "exponential") {familyn=8}
     if(beta0com){
       extra[2] <- 0
       Xd<-cbind(1,Xd)
@@ -477,7 +478,7 @@ trait.TMB <- function(
       sigmaij1 <- param1[nam=="sigmaij"]
       lg_sigma1 <- param1[nam=="log_sigma"]
       
-      Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-4), nlvr*n)), rep(0,nlvr*(nlvr-1)/2*n))
+      Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), nlvr*n)), rep(0,nlvr*(nlvr-1)/2*n))
       Abb1 <- param1[nam=="Abb"]
       if(Ab.diag.iter>0 && Ab.struct == "unstructured")
         Abb1 <- c(Abb1 + 0.1, rep(0,ncol(xb)*(ncol(xb)-1)/2*p))
@@ -741,7 +742,7 @@ trait.TMB <- function(
         incl[names(objrFinal$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objrFinal$par)=="Au"] <- TRUE
         incl[names(objrFinal$par)=="u"] <- FALSE; incld[names(objrFinal$par)=="u"] <- TRUE
         
-        if(familyn==0 || familyn==2 || familyn==7) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+        if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
         if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
         if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
         
@@ -778,9 +779,9 @@ trait.TMB <- function(
             out$prediction.errors <- prediction.errors
           }
         } else {
-          A.mat <- -sdr[incl,incl] # a x a
-          D.mat <- -sdr[incld,incld] # d x d
-          B.mat <- -sdr[incl,incld] # a x d
+          A.mat <- sdr[incl,incl] # a x a
+          D.mat <- sdr[incld,incld] # d x d
+          B.mat <- sdr[incl,incld] # a x d
           cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
           se <- sqrt(diag(abs(cov.mat.mod)))
           
@@ -827,22 +828,21 @@ trait.TMB <- function(
           out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
           names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
         }
+        if(!is.null(randomX)){
+          nr <- ncol(xb)
+          out$sd$sigmaB <- se[1:ncol(xb)]*c(sqrt(diag(out$params$sigmaB))); 
+          names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
+          se <- se[-(1:ncol(xb))]
+          if(nr>1){
+            out$sd$corrpar <- se[1:(nr*(nr-1)/2)]
+            se <- se[-(1:(nr*(nr-1)/2))]
+          }
+        }
         if(row.eff=="random") { 
           out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
           names(out$sd$sigma) <- "sigma"; 
-          se=se[-(1:(1+num.lv))] 
+          se=se[-(1:(length(out$params$sigma)))] 
           }
-        if(!is.null(randomX)){
-          nr <- ncol(xb)
-          #out$sd$sigmaB <- se[1:ncol(xb)]*c(diag(out$params$sigmaB), rep(1,nr*(nr-1)/2 ) )
-          out$sd$sigmaB <- se[1:ncol(xb)]*c(sqrt(diag(out$params$sigmaB))); 
-          names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
-          if(length(se)>1){
-            se <- se[-(1:ncol(xb))]
-            out$sd$corrpar <- se
-          }
-          
-        }
         if(family %in% c("ordinal")){
           se.zetanew <- se.zetas <- se;
           if(zeta.struc == "species"){

@@ -21,7 +21,7 @@
 #' # Fit gllvm model
 #' fit <- gllvm(y = y, X, family = poisson())
 #' # fitted values
-#' predLVs <- predictLVs.gllvm(fit, type = "response")
+#' predLVs <- predictLVs.gllvm(fit)
 #' }
 #'@aliases predictLVs predictLVs.gllvm
 #'@method predictLVs gllvm
@@ -35,6 +35,7 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
   if(is.null(newX)==FALSE)
     assign(as.character(object$call[3]),newX)
   objectTest=eval(object$call)
+  nlvr <- (objectTest$num.lv + (objectTest$row.eff=="random")*1)
 
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
@@ -44,34 +45,38 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
   # now find the LV estimates to report:
   ui <- names(optLVs$par)=="u"
   n <- dim(objectTest$y)[1]
-  lvs <- (matrix(optLVs$par[ui],n,objectTest$num.lv))
+  lvs <- (matrix(optLVs$par[ui],n,nlvr))
   rownames(lvs) <- rownames(objectTest$y);
-  if(objectTest$num.lv>1) colnames(lvs) <- paste("LV", 1:objectTest$num.lv, sep="");
+  if(objectTest$num.lv>1 && nlvr==objectTest$num.lv){ 
+    colnames(lvs) <- paste("LV", 1:objectTest$num.lv, sep="");
+  } else if(objectTest$num.lv > 1 && nlvr > objectTest$num.lv) {
+    colnames(lvs) <- c("row", paste("LV", 1:objectTest$num.lv, sep=""));
+    }
 
   out <- list(lvs=lvs,logL=-optLVs$value)
   # and their sds: (assuming method="VA")
-  if(objectTest$num.lv>0 && object$method=="VA")
+  if(nlvr>0 && object$method=="VA")
   {
     Au <- optLVs$par[names(optLVs$par)=="Au"]
-    A <- array(0,dim=c(n,objectTest$num.lv,objectTest$num.lv))
-    for (d in 1:objectTest$num.lv)
+    A <- array(0,dim=c(n,nlvr,nlvr))
+    for (d in 1:nlvr)
     {
       for(i in 1:n)
       {
         A[i,d,d] <- exp(Au[(d-1)*n+i]);
       }
     }
-    if(length(Au)>objectTest$num.lv*n)
+    if(length(Au)>nlvr*n)
     {
       k <- 0;
-      for (c1 in 1:objectTest$num.lv)
+      for (c1 in 1:nlvr)
       {
         r <- c1+1;
-        while (r <=objectTest$num.lv)
+        while (r <=nlvr)
         {
           for(i in 1:n)
           {
-            A[i,r,c1] <- Au[objectTest$num.lv*n+k*n+i];
+            A[i,r,c1] <- Au[nlvr*n+k*n+i];
             A[i,c1,r] <- A[i,r,c1];
           }
           k <- k+1; r <- r+1;
@@ -120,10 +125,10 @@ getPars = function(pars,objectTest,object)
   tpar = objectTest$TMBfn$par
   
   # set row effects and their variances to their mean value
-  r0s=tpar[names(tpar)=="r0"]
-  tpar[names(tpar)=="r0"] = mean(r0s)
-  if(object$method =="VA") lg_Ars=tpar[names(tpar)=="lg_Ar"]
-  if(object$method =="VA") tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
+  # r0s=tpar[names(tpar)=="r0"]
+  # tpar[names(tpar)=="r0"] = mean(r0s)
+  # if(object$method =="VA") lg_Ars=tpar[names(tpar)=="lg_Ar"]
+  # if(object$method =="VA") tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
   
   # replace LVs and their estimated se's with input values
   tpar[names(tpar)=="u"] = pars[names(pars)=="u"]

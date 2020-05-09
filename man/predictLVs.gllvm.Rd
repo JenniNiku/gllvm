@@ -35,7 +35,7 @@ X <- scale(antTraits$env[, 1:3])
 # Fit gllvm model
 fit <- gllvm(y = y, X, family = poisson())
 # fitted values
-predLVs <- predictLVs.gllvm(fit, type = "response")
+predLVs <- predictLVs.gllvm(fit)
 }
 }
 \author{

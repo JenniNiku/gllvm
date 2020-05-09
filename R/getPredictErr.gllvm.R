@@ -2,9 +2,12 @@
 #' @description  Calculates the prediction errors for latent variables for gllvm model.
 #'
 #' @param object   an object of class 'gllvm'.
+#' @param CMSEP logical, if \code{TRUE} conditional mean squared errors for predictions are calculated. If \code{FALSE}, prediction errors are based on covariances of the variational distributions for \code{method ="VA"}.
+#' @param ...	 not used
 #'
 #' @details 
-#' If variational approximation is used, prediction errors are based on covariances 
+#' Calculates conditional mean squared errors for predictions.
+#' If variational approximation is used, prediction errors can be based on covariances 
 #' of the variational distributions, and therefore they do not take into account 
 #' the uncertainty in the estimation of (fixed) parameters. 
 #'
@@ -28,8 +31,9 @@
 #'@method getPredictErr gllvm
 #'@export
 #'@export getPredictErr.gllvm
-getPredictErr.gllvm = function(object)
+getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
 {
+  num.lv <- object$num.lv
   out <- list()
   if(object$method == "LA"){
     if(object$num.lv>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
@@ -37,15 +41,35 @@ getPredictErr.gllvm = function(object)
   }
   
   if(object$method == "VA"){
-    if(object$num.lv>0) out$lvs <- sqrt(apply(object$A,1,diag))
-    if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$Ar))
+    if(CMSEP) {
+      sdb<-sdA(object)
+      object$A<-sdb+object$A
+    }
+      r=0
+      if(object$row.eff=="random"){ 
+        r=1
+        if(length(dim(object$A))==2){
+          out$row.effects <- sqrt(object$A[,1])
+        } else {
+          out$row.effects <- sqrt(object$A[,1,1])
+        }
+        }
+      if(length(dim(object$A))==2){
+        out$lvs <- sqrt(object$A[,1:num.lv+r])
+      } else {
+        if(num.lv ==1) {
+          out$lvs <- sqrt(as.matrix(object$A[,1:num.lv+r,1:num.lv+r]))
+        } else {
+          out$lvs <- sqrt(apply((object$A[,1:num.lv+r,1:num.lv+r]),1,diag))
+        }
+      }
   }
   if(object$num.lv > 1) out$lvs <- t(out$lvs)
   return(out)
 }
 
 #'@export getPredictErr
-getPredictErr <- function(object)
+getPredictErr <- function(object, ...)
 {
   UseMethod(generic = "getPredictErr")
 }

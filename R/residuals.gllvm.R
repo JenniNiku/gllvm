@@ -122,8 +122,16 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
-        a <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
-        b <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
+        a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+        b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "exponential") {
+        a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+        b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16

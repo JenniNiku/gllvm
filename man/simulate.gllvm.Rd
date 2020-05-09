@@ -26,8 +26,7 @@ A matrix containing generated data.
 Generate new data using the fitted values of the parameters
 }
 \details{
-simulate function for gllvm objects. 
-David Warton
+simulate function for gllvm objects.
 }
 \examples{
  \donttest{

@@ -126,7 +126,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>getPredictErr</span>(<span class='no'>object</span>)</pre>
+<span class='fu'>getPredictErr</span>(<span class='no'>object</span>, <span class='kw'>CMSEP</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -134,6 +134,14 @@
     <tr>
       <th>object</th>
       <td><p>an object of class 'gllvm'.</p></td>
+    </tr>
+    <tr>
+      <th>CMSEP</th>
+      <td><p>logical, if <code>TRUE</code> conditional mean squared errors for predictions are calculated. If <code>FALSE</code>, prediction errors are based on covariances of the variational distributions for <code>method ="VA"</code>.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>not used</p></td>
     </tr>
     </table>
     
@@ -146,7 +154,8 @@
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>If variational approximation is used, prediction errors are based on covariances 
+    <p>Calculates conditional mean squared errors for predictions.
+If variational approximation is used, prediction errors can be based on covariances 
 of the variational distributions, and therefore they do not take into account 
 the uncertainty in the estimation of (fixed) parameters.</p>
     
@@ -159,37 +168,37 @@ the uncertainty in the estimation of (fixed) parameters.</p>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='co'># prediction errors for latent variables:</span>
 <span class='fu'>getPredictErr</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $lvs
-#&gt;             [,1]       [,2]
-#&gt;  [1,] 0.18702205 0.21946540
-#&gt;  [2,] 0.13928962 0.13602800
-#&gt;  [3,] 0.12849452 0.15584849
-#&gt;  [4,] 0.09180711 0.18129593
-#&gt;  [5,] 0.10523773 0.11611715
-#&gt;  [6,] 0.21217638 0.18758243
-#&gt;  [7,] 0.20412683 0.12167506
-#&gt;  [8,] 0.18423781 0.15116945
-#&gt;  [9,] 0.13985973 0.13758879
-#&gt; [10,] 0.07451303 0.18600247
-#&gt; [11,] 0.22982672 0.18580116
-#&gt; [12,] 0.17533979 0.16953854
-#&gt; [13,] 0.17598721 0.14648613
-#&gt; [14,] 0.16175175 0.17824444
-#&gt; [15,] 0.16525272 0.11279928
-#&gt; [16,] 0.06960098 0.07652178
-#&gt; [17,] 0.10251662 0.08260162
-#&gt; [18,] 0.08763264 0.20702240
-#&gt; [19,] 0.16377095 0.16374574
-#&gt; [20,] 0.09129561 0.08138168
-#&gt; [21,] 0.18023101 0.09681107
-#&gt; [22,] 0.21194002 0.13808992
-#&gt; [23,] 0.22645882 0.22668217
-#&gt; [24,] 0.21677238 0.15076598
-#&gt; [25,] 0.20803126 0.12370922
-#&gt; [26,] 0.20366230 0.16692841
-#&gt; [27,] 0.20940708 0.15092781
-#&gt; [28,] 0.23093595 0.17572873
-#&gt; [29,] 0.22448195 0.20347816
-#&gt; [30,] 0.14892966 0.14353089
+#&gt;            [,1]      [,2]
+#&gt;  [1,] 0.3501496 0.3622358
+#&gt;  [2,] 0.3922441 0.4619312
+#&gt;  [3,] 0.3218267 0.4581107
+#&gt;  [4,] 0.2725344 0.4892279
+#&gt;  [5,] 0.4713083 0.5709354
+#&gt;  [6,] 0.3164951 0.3013266
+#&gt;  [7,] 0.4416126 0.2709827
+#&gt;  [8,] 0.3331167 0.3326845
+#&gt;  [9,] 0.3763989 0.4510572
+#&gt; [10,] 0.2847130 0.5756190
+#&gt; [11,] 0.3388970 0.4552391
+#&gt; [12,] 0.3845772 0.6291608
+#&gt; [13,] 0.3545604 0.6174635
+#&gt; [14,] 0.3790508 0.6531207
+#&gt; [15,] 0.4107720 0.6531228
+#&gt; [16,] 0.6858192 0.3955609
+#&gt; [17,] 0.6770736 0.3698541
+#&gt; [18,] 0.3558440 0.4718302
+#&gt; [19,] 0.5136869 0.3377290
+#&gt; [20,] 0.6865302 0.3824494
+#&gt; [21,] 0.5487557 0.3020236
+#&gt; [22,] 0.3842903 0.4511705
+#&gt; [23,] 0.3936855 0.3194336
+#&gt; [24,] 0.3415436 0.2523098
+#&gt; [25,] 0.4369986 0.3919597
+#&gt; [26,] 0.3085903 0.2912632
+#&gt; [27,] 0.3381935 0.2659188
+#&gt; [28,] 0.3283445 0.2722046
+#&gt; [29,] 0.3012108 0.2840353
+#&gt; [30,] 0.3480485 0.6971825
 #&gt; </div><div class='input'>
 
 </div></pre>

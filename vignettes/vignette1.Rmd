@@ -129,7 +129,9 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |		          |		           |		     |		    | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
 |Ordinal 	    | Multinomial  | VA      |probit  | Cumulative probit model|
 |Normal       | Gaussian     | VA/LA   |identity| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$|
-
+|Positive continuous| Gamma     | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$|
+|		          |		           |		     |		    | where $\phi_j$ is a shape parameter |
+|non-negative continuous| Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
 
 ## Model-based ordination
 

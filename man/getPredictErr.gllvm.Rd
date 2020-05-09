@@ -5,10 +5,14 @@
 \alias{getPredictErr}
 \title{Extract prediction errors for latent variables from gllvm object}
 \usage{
-\method{getPredictErr}{gllvm}(object)
+\method{getPredictErr}{gllvm}(object, CMSEP = TRUE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
+
+\item{CMSEP}{logical, if \code{TRUE} conditional mean squared errors for predictions are calculated. If \code{FALSE}, prediction errors are based on covariances of the variational distributions for \code{method ="VA"}.}
+
+\item{...}{not used}
 }
 \value{
 Function returns following components:
@@ -19,7 +23,8 @@ Function returns following components:
 Calculates the prediction errors for latent variables for gllvm model.
 }
 \details{
-If variational approximation is used, prediction errors are based on covariances 
+Calculates conditional mean squared errors for predictions.
+If variational approximation is used, prediction errors can be based on covariances 
 of the variational distributions, and therefore they do not take into account 
 the uncertainty in the estimation of (fixed) parameters.
 }

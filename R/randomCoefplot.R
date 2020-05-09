@@ -46,7 +46,11 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, cex.ylab = 0.5, mfrow =
     m <- length(labely)
     Xc <- Xcoef
     
-    sdXcoef <- t(sqrt(apply(object$Ab,1,diag)))
+    if(object$method == "VA"){
+      sdXcoef <- t(sqrt(apply(object$Ab,1,diag)))
+    } else {
+      sdXcoef <- t(sqrt(object$predict$Br))
+    }
     
     if (is.null(mfrow) && k > 1)
       mfrow <- c(1, k)

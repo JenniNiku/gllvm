@@ -9,7 +9,6 @@
 #'
 #' @details
 #' simulate function for gllvm objects. 
-#' David Warton
 #' 
 #' @return A matrix containing generated data.
 #' @author David Warton, Jenni Niku <jenni.m.e.niku@@jyu.fi>
@@ -56,16 +55,20 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   {
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
   }
-  else
-    prs = predict.gllvm(object,newX=object$X[rep(1:nRows,nsim),], newLV = lvsNew,type="response")
-    
+  else if(is.null(object$TR)){ 
+    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
+  } else {
+    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
+  }
   # generate new data
   nTot = nsim*nRows*nCols # total number of values to generate
   if(object$family=="negative.binomial")
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="tweedie")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family=="gaussian")
+  if(object$family %in% c("gaussian", "gamma"))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
      if(object$family == "ordinal"){
        if(object$zeta.struc=="species"){
@@ -98,12 +101,16 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
                   "gaussian" = rnorm(nTot, mean = prs, sd = phis),
+                  "gamma" = rgamma(nTot, shape = phis, scale = prs/phis),
+                  "exponential" = rexp(nTot, rate = 1/prs),
                   "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
                   "ordinal" = sims,
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))
-  dimnames(newDat)=dimnames(prs)
+  try(colnames(newDat) <- colnames(prs), silent = TRUE)
+  try(rownames(newDat) <- rownames(prs), silent = TRUE)
+  try(dimnames(newDat) <- dimnames(prs), silent = TRUE)
   return(newDat)
 }
 

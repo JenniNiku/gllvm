@@ -229,7 +229,7 @@ Type objective_function<Type>::operator() ()
     } else if(family==4) {//gamma
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )/iphi(j) + log(y(i,j)/iphi(j))/iphi(j) - log(y(i,j)) -lgamma(1/iphi(j));
+          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -313,8 +313,13 @@ Type objective_function<Type>::operator() ()
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
+    } else if(family==8) {// exp dist
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+        }
+      }
     }
-    // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   
 } else {
@@ -364,18 +369,18 @@ Type objective_function<Type>::operator() ()
   
   
   //likelihood model with the log link function
-  if(family==0){
+  if(family==0){//poisson family
     for (int j=0; j<p;j++){
       for (int i=0; i<n; i++) {
         nll -= dpois(y(i,j), exp(eta(i,j)), true);
       }
     }
-  } else if(family==1){
+  } else if(family==1){//negative.binomial family
     for (int j=0; j<p;j++){
       for (int i=0; i<n; i++) {
         nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
       }
-    }} else if(family==2) {
+    }} else if(family==2) {//binomial family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
@@ -383,31 +388,38 @@ Type objective_function<Type>::operator() ()
           nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
         }
       }
-    } else if(family==3){
+    } else if(family==3){//gaussian family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); //gamma family
+          nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
         }
       }
-    } else if(family==4){//gamma
+    } else if(family==4){//gamma family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dgamma(y(i,j), 1/iphi(j), iphi(j)*exp(eta(i,j)), true); //tweedie family
+          nll -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
         }
       }
-    } else if(family==5){
+    } else if(family==5){//tweedie family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); //tweedie family
+          nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
         }
       }
-    } else if(family==6) {
+    } else if(family==6) {//zero-infl-poisson
       iphi=iphi/(1+iphi);
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); //zero-infl-poisson
+          nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
         }
-      }}
+      }
+    } else if(family==8) {// exponential family
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
+          }
+        }
+    }
 }
 return nll;
 }

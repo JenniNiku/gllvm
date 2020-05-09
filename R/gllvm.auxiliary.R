@@ -46,7 +46,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family=="ZIP") family="poisson"
 
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential")))
     stop("inputed family not allowed...sorry =(")
 
   if(num.lv > 0) {
@@ -89,7 +89,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           fit.mva$phi <- fit.mva$params$phi
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
-          if(family %in% c("poisson", "negative.binomial", "gamma")) {
+          if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
             mu <- exp(mu)
           }
           if(family == "binomial") {
@@ -161,7 +161,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           if(ncol(fit.mva$Xrandom)>1) sigmaij <- fit.mva$TMBfn$par[names(fit.mva$TMBfn$par)=="sigmaij"]#fit.mva$params$sigmaB[lower.tri(fit.mva$params$sigmaB)]
           mu <- mu + fit.mva$Xrandom%*%Br
         }
-        if(family %in% c("poisson", "negative.binomial", "gamma")) {
+        if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
           mu <- exp(mu)
         }
         if(family == "binomial") {
@@ -212,7 +212,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           inter <- rep(0, num.T * num.X)
           B <- c(env,trait,inter)
         }
-        params <- cbind(fit.mva$params$beta0, fit.mva$params$Xcoef, fit.mva$params$theta)
+        params <- t(fit.mva$coefficients)
         fit.mva$phi <- apply(fit.mva$residuals,2,sd)
       }
       #params <- t(fit.mva$coef) #!!
@@ -409,8 +409,14 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
           ds.res[i, j] <- qnorm(u)
         }
         if (family == "gamma") {
-          a <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
-          b <- pgamma(as.vector(unlist(y[i, j])), shape = 1/phis[j], scale = phis[j]*mu[i, j])
+          a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+          b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "exponential") {
+          a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+          b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
           u <- runif(n = 1, min = a, max = b)
           ds.res[i, j] <- qnorm(u)
         }
@@ -1327,7 +1333,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, power = NULL) {
 # Calculates adjusted prediction errors for random effects
 sdA<-function(fit){
   n<-nrow(fit$y)
-  A<- -fit$Hess$cov.mat.mod  #
+  A<- fit$Hess$cov.mat.mod  #
   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
   D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
