@@ -18,6 +18,7 @@
 #' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'
 #' @examples
+#'\dontrun{
 #'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -25,7 +26,7 @@
 #'fit <- gllvm(y = y, family = poisson())
 #'# prediction errors for latent variables:
 #'getPredictErr(fit)
-#'
+#'}
 #'
 #'@aliases getPredictErr getPredictErr.gllvm
 #'@method getPredictErr gllvm

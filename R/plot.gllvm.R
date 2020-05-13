@@ -26,6 +26,7 @@
 #'
 #'@seealso \code{\link{gllvm}}, \code{\link{residuals.gllvm}}
 #' @examples
+#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -41,6 +42,7 @@
 #'plot(fitnb, mfrow = c(3,2))
 #'# Plot only two first plots
 #'plot(fitnb, which = 1:2, mfrow = c(1,2))
+#'}
 #'}
 #'@export
 

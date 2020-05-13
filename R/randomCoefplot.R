@@ -13,6 +13,7 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
 #'
 #' @examples
+#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -23,6 +24,7 @@
 #'  formula = ~ Bare.ground + Bare.ground : Webers.length,
 #'  family = poisson(), randomX = ~ Bare.ground)
 #'randomCoefplot(fitF)
+#'}
 #'
 #'@aliases randomCoefplot randomCoefplot.gllvm
 #'@export

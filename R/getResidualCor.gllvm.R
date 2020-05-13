@@ -10,6 +10,7 @@
 #' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'
 #' @examples
+#'\dontrun{
 #'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -17,7 +18,6 @@
 #'fit <- gllvm(y = y, family = poisson())
 #'# residual correlations:
 #'cr <- getResidualCor(fit)
-#'\dontrun{
 #'# Plot residual correlations:
 #'install.packages("corrplot", "gclus")
 #'library(corrplot)

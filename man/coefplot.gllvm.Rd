@@ -30,6 +30,7 @@
 Plots covariate coefficients and their confidence intervals.
 }
 \examples{
+\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -39,7 +40,6 @@ fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
             family = poisson())
 coefplot.gllvm(fit)
 
-\donttest{
 # Fit model with all environmental covariates
 fitx <- gllvm(y, X, family = "negative.binomial")
 coefplot(fitx, mfrow = c(3,2))

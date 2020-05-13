@@ -195,18 +195,25 @@ linear predictors of fitted values, a Normal Q-Q plot of residuals with a simula
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
-<span class='co'># Fit gllvm model with Poisson family</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
-<span class='co'># Plot residuals</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>3</span>,<span class='fl'>2</span>))</div><div class='img'><img src='plot.gllvm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Fit gllvm model with negative binomial family</span>
-<span class='no'>fitnb</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-<span class='co'># Plot residuals</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fitnb</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>3</span>,<span class='fl'>2</span>))
-<span class='co'># Plot only two first plots</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fitnb</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>2</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>))</div><div class='img'><img src='plot.gllvm-2.png' alt='' width='700' height='433' /></div><div class='img'><img src='plot.gllvm-3.png' alt='' width='700' height='433' /></div></pre>
+    <pre class="examples"># NOT RUN {
+## Load a dataset from the mvabund package
+data(antTraits)
+y <- as.matrix(antTraits$abund)
+# Fit gllvm model with Poisson family
+fit <- gllvm(y, family = poisson())
+# Plot residuals
+plot(fit, mfrow = c(3,2))
+
+\donttest{
+# Fit gllvm model with negative binomial family
+fitnb <- gllvm(y = y, family = "negative.binomial")
+# Plot residuals
+plot(fitnb, mfrow = c(3,2))
+# Plot only two first plots
+plot(fitnb, which = 1:2, mfrow = c(1,2))
+}
+# }
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

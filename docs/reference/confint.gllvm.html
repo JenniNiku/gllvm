@@ -151,97 +151,16 @@
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='co'>## Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
 <span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
 <span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>[,<span class='fl'>1</span>:<span class='fl'>2</span>])
 <span class='co'># Fit gllvm model</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='co'># 95 % confidence intervals for coefficients of X variables</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fit</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='st'>"Xcoef"</span>)</div><div class='output co'>#&gt;                 cilow          ciup
-#&gt; Xcoef1   -0.063821480   0.105996181
-#&gt; Xcoef2   -0.569303324   0.475607368
-#&gt; Xcoef3   -0.016637745   0.473207083
-#&gt; Xcoef4    0.041736286   0.115784929
-#&gt; Xcoef5    0.013925743   0.080693898
-#&gt; Xcoef6   -0.046927276   0.112013688
-#&gt; Xcoef7    0.087306565   0.212025624
-#&gt; Xcoef8   -0.245457970   0.368350452
-#&gt; Xcoef9   -0.097730680   0.611761048
-#&gt; Xcoef10  -0.046865448   0.051529060
-#&gt; Xcoef11   0.001421645   0.069175063
-#&gt; Xcoef12   0.005155421   0.151333374
-#&gt; Xcoef13  -0.081742318  -0.010551501
-#&gt; Xcoef14  -0.001763957   0.171408656
-#&gt; Xcoef15  -0.012762632   0.021449797
-#&gt; Xcoef16  -0.037600716   0.053977978
-#&gt; Xcoef17  -0.048950996   0.060843312
-#&gt; Xcoef18   0.013060723   0.191527135
-#&gt; Xcoef19  -0.073662324   0.020451146
-#&gt; Xcoef20  -0.153308682   0.045042021
-#&gt; Xcoef21  -0.081052017   0.109757628
-#&gt; Xcoef22  -0.015139382   0.073261854
-#&gt; Xcoef23  -0.115063574   0.005522525
-#&gt; Xcoef24  -0.113906133   0.072547729
-#&gt; Xcoef25  -0.054213590   0.095728879
-#&gt; Xcoef26  -0.163586865   0.061242369
-#&gt; Xcoef27  -0.071084007   0.036832165
-#&gt; Xcoef28  -0.045774270   0.063026603
-#&gt; Xcoef29  -0.073107003   0.106172006
-#&gt; Xcoef30  -0.076376920   0.187296073
-#&gt; Xcoef31  -0.016932789   0.037423396
-#&gt; Xcoef32  -0.043487686   0.152364349
-#&gt; Xcoef33  -0.051886342   0.025111960
-#&gt; Xcoef34  -0.222970236   0.087283270
-#&gt; Xcoef35  -0.080996219   0.191990946
-#&gt; Xcoef36  -0.047159957  -0.004979604
-#&gt; Xcoef37  -0.107236037  -0.004613889
-#&gt; Xcoef38  -0.235091383   0.111972889
-#&gt; Xcoef39  -0.055291263   0.163744712
-#&gt; Xcoef40  -0.081322081   0.037246975
-#&gt; Xcoef41  -0.098673938   0.011895837
-#&gt; Xcoef42  -0.119137842   0.126597236
-#&gt; Xcoef43   0.120145443   1.216068826
-#&gt; Xcoef44  -0.007065100   0.670223002
-#&gt; Xcoef45   0.076959934   0.163544385
-#&gt; Xcoef46  -0.184115219  -0.033358726
-#&gt; Xcoef47   0.071624398   0.252519829
-#&gt; Xcoef48   0.059792814   0.226548775
-#&gt; Xcoef49  -3.975879518  -3.970177658
-#&gt; Xcoef50  -0.106477302   0.993879450
-#&gt; Xcoef51  -0.129264777   0.022859667
-#&gt; Xcoef52  -0.353629369  -0.084776839
-#&gt; Xcoef53  -0.048421263   0.169601342
-#&gt; Xcoef54  -0.055331391   0.040225287
-#&gt; Xcoef55   0.028511021   0.272212965
-#&gt; Xcoef56  -0.248281779  -0.123750206
-#&gt; Xcoef57  -0.274237458  -0.017993173
-#&gt; Xcoef58  -0.704558134   0.118528744
-#&gt; Xcoef59  -0.145770032   0.144715342
-#&gt; Xcoef60  -0.173634372   0.006102906
-#&gt; Xcoef61  -0.178584709   0.105287108
-#&gt; Xcoef62  -0.366393407   0.040228602
-#&gt; Xcoef63   0.040652067   0.154122736
-#&gt; Xcoef64  -1.964852373   0.458130818
-#&gt; Xcoef65  -0.287261977   0.055375145
-#&gt; Xcoef66 -29.664122051 -29.664001851
-#&gt; Xcoef67  -0.015825182   0.210545335
-#&gt; Xcoef68  -0.120644249   0.044007779
-#&gt; Xcoef69  -0.417342012  -0.047278272
-#&gt; Xcoef70 -27.815264773 -27.814882460
-#&gt; Xcoef71   0.078342770   0.384834054
-#&gt; Xcoef72  -0.076890174   0.007367301
-#&gt; Xcoef73   0.067101276   0.291804648
-#&gt; Xcoef74  -0.063537524   0.043826163
-#&gt; Xcoef75  -0.222024075   0.165299055
-#&gt; Xcoef76  -0.072356809   0.234537045
-#&gt; Xcoef77  -0.130517517  -0.045144445
-#&gt; Xcoef78  -0.224814286  -0.013104062
-#&gt; Xcoef79  -0.109457921   0.223498042
-#&gt; Xcoef80  -0.011571350   0.249053821
-#&gt; Xcoef81  -0.091227898   0.069541635
-#&gt; Xcoef82  -0.358661265  -0.011441966</div><div class='input'>
-</div></pre>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fit</span>, <span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>parm</span> <span class='kw'>=</span> <span class='st'>"Xcoef"</span>)
+<span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

@@ -7,13 +7,14 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
+#' \dontrun{
 #'## Load a dataset from the mvabund package
 #' data(antTraits)
 #' y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
 #' fit <- gllvm(y = y, family = poisson())
 #' summary(fit)
-#'
+#'}
 #'@export
 
 summary.gllvm <- function(object, ...) {

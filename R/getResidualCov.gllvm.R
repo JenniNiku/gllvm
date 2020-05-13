@@ -41,6 +41,7 @@
 #' @author Francis K.C. Hui, Jenni Niku, David I. Warton
 #'
 #' @examples
+#' \dontrun{
 #'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -53,7 +54,7 @@
 #'rescov$tr
 #'# Trace per latent variable
 #'rescov$trace.q
-#'
+#'}
 #'@aliases getResidualCov getResidualCov.gllvm
 #'@method getResidualCov gllvm
 #'@export

@@ -7,6 +7,7 @@
 #' @author David I. Warton, Jenni Niku
 #'
 #' @examples
+#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -14,7 +15,7 @@
 #'fit <- gllvm(y = y, family = poisson())
 #'# log-Likelihood:
 #'logLik(fit)
-#'
+#'}
 #'@export
 
 logLik.gllvm <- function(object, ...)

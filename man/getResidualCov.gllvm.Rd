@@ -51,6 +51,7 @@ On linear predictor scale we then have that
 For the probit model, the residual covariance matrix is then \eqn{\Theta\Theta' + I_m}, and for the logit model \eqn{\Theta\Theta' + \pi^2/3 I_m}.
 }
 \examples{
+\dontrun{
 # Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -63,7 +64,7 @@ rescov$cov
 rescov$tr
 # Trace per latent variable
 rescov$trace.q
-
+}
 }
 \author{
 Francis K.C. Hui, Jenni Niku, David I. Warton

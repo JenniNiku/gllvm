@@ -174,6 +174,16 @@ With ordinal family response classes must start from 0 or 1.
 If function gives warning: 'In f(x, order = 0) : value out of range in 'lgamma'', optimizer have visited an area where gradients become too big. It is automatically fixed by trying another step in the optimization process, and can be ignored if errors do not occur.
 }
 \examples{
+# Extract subset of the microbial data to be used as an example
+data(microbialdata)
+X <- microbialdata$Xenv
+y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+                     decreasing = TRUE)[21:40]]
+fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
+ordiplot(fit)
+coefplot(fit)
+
+\donttest{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -185,7 +195,6 @@ fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 ordiplot(fit)
 coefplot(fit)
 
-\donttest{
 ## Example 1: Fit model with two latent variables
 # Using variational approximation:
 fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")

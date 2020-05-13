@@ -373,32 +373,35 @@ However, sometimes this is computationally too demanding, and default option
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
-<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>)
-<span class='no'>TR</span> <span class='kw'>&lt;-</span> <span class='no'>antTraits</span>$<span class='no'>traits</span>
-<span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
-            <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
+    <pre class="examples"><div class='input'><span class='co'># Extract subset of the microbial data to be used as an example</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>microbialdata</span>)
+<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='no'>microbialdata</span>$<span class='no'>Xenv</span>
+<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>microbialdata</span>$<span class='no'>Y</span>[, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/order'>order</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colSums'>colMeans</a></span>(<span class='no'>microbialdata</span>$<span class='no'>Y</span> <span class='kw'>&gt;</span> <span class='fl'>0</span>),
+                     <span class='kw'>decreasing</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)[<span class='fl'>21</span>:<span class='fl'>40</span>]]
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>pH</span> + <span class='no'>Phosp</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div><div class='input'><span class='co'>## Example 1: Fit model with two latent variables</span>
+</div><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: data set 'antTraits' not found</span></div><div class='input'><span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(antTraits$abund): object 'antTraits' not found</span></div><div class='input'><span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(antTraits$env): object 'antTraits' not found</span></div><div class='input'><span class='no'>TR</span> <span class='kw'>&lt;-</span> <span class='no'>antTraits</span>$<span class='no'>traits</span></div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'antTraits' not found</span></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
+            <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-4.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'>## Example 1: Fit model with two latent variables</span>
 <span class='co'># Using variational approximation:</span>
 <span class='no'>fitv0</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"VA"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitv0</span>)</div><div class='img'><img src='gllvm-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fitv0</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>2</span>,<span class='fl'>2</span>))</div><div class='img'><img src='gllvm-4.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt; $`log-likelihood`
-#&gt; [1] -1895.09
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitv0</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fitv0</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>2</span>,<span class='fl'>2</span>))</div><div class='img'><img src='gllvm-5.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt; $`log-likelihood`
+#&gt; [1] -3462.325
 #&gt; 
 #&gt; $df
-#&gt; [1] 163
+#&gt; [1] 79
 #&gt; 
 #&gt; $AIC
-#&gt; [1] 4116.179
+#&gt; [1] 7082.65
 #&gt; 
 #&gt; $AICc
-#&gt; [1] 3717.194
+#&gt; [1] 6555.984
 #&gt; 
 #&gt; $BIC
-#&gt; [1] 4344.574
+#&gt; [1] 7242.653
 #&gt; 
 #&gt; $Call
 #&gt; gllvm(y = y, family = "negative.binomial", method = "VA")
@@ -407,259 +410,118 @@ However, sometimes this is computationally too demanding, and default option
 #&gt; [1] "negative.binomial"
 #&gt; 
 #&gt; $Coefficients
-#&gt;                                 Intercept   theta.LV1   theta.LV2
-#&gt; Amblyopone.australis          -0.94551512  0.87789264  0.00000000
-#&gt; Aphaenogaster.longiceps       -3.29235325  0.05816005  2.78497682
-#&gt; Camponotus.cinereus.amperei   -2.26625127  0.82688634  0.52025089
-#&gt; Camponotus.claripes            0.51043791  0.37282729  0.42824985
-#&gt; Camponotus.consobrinus         1.21595069  0.75389839 -0.84082348
-#&gt; Camponotus.nigriceps          -0.59999252 -0.52076741  0.78234531
-#&gt; Camponotus.nigroaeneus        -0.54195756  0.49198826  0.38952791
-#&gt; Cardiocondyla.nuda.atalanta   -2.65766440 -2.20247717 -0.94464319
-#&gt; Crematogaster.sp..A           -2.30785462  1.81275378  1.54454770
-#&gt; Heteroponera.sp..A             1.23848686  0.18577661 -0.55968288
-#&gt; Iridomyrmex.bicknelli          1.28832808  0.18542115 -1.02027083
-#&gt; Iridomyrmex.dromus            -0.79710439  0.88635568 -0.08375589
-#&gt; Iridomyrmex.mjobergi           1.33384205 -0.45345139  0.05323668
-#&gt; Iridomyrmex.purpureus         -0.08467130  1.25072227  0.93733261
-#&gt; Iridomyrmex.rufoniger          2.36193548 -0.15080029 -0.79389928
-#&gt; Iridomyrmex.suchieri           0.45593687  0.37923111 -0.74365558
-#&gt; Iridomyrmex.suchieroides      -0.44288675 -0.45129239 -0.82315440
-#&gt; Melophorus.sp..E              -1.19059829  0.12491319 -0.42520122
-#&gt; Melophorus.sp..F               0.53152513 -0.54714605 -0.36530715
-#&gt; Melophorus.sp..H              -0.55644902 -0.81315979 -0.45491850
-#&gt; Meranoplus.sp..A              -0.40808209 -0.90955694 -1.02003708
-#&gt; Monomorium.leae                1.34345899  0.62134149  0.37458515
-#&gt; Monomorium.rothsteini          0.23938591 -0.90130879 -1.62741524
-#&gt; Monomorium.sydneyense         -0.45686700 -0.76618048 -0.78982571
-#&gt; Myrmecia.pilosula.complex     -1.12855041  0.14416220 -0.75186747
-#&gt; Notoncus.capitatus            -0.96660026  1.32022290  0.42097826
-#&gt; Notoncus.ectatommoides         0.73194193 -0.79541807 -0.22297643
-#&gt; Nylanderia.sp..A               0.74982195 -0.76880416 -0.99882397
-#&gt; Ochetellus.glaber             -2.04402112 -0.55527262 -2.01095262
-#&gt; Paraparatrechina.sp..B        -1.51737835 -1.42142191  0.84382164
-#&gt; Pheidole.sp..A                 2.31820632 -0.37239956 -0.20130337
-#&gt; Pheidole.sp..B                -1.09156813 -0.27590269  0.77840406
-#&gt; Pheidole.sp..E                 1.60243627  0.39321827 -0.19857542
-#&gt; Pheidole.sp..J                -1.76966714 -0.29579202  0.55002367
-#&gt; Polyrhachis.sp..A             -1.25687399  0.32553777 -0.07152928
-#&gt; Rhytidoponera.metallica.sp..A  2.02310923 -0.34189684 -0.28766705
-#&gt; Rhytidoponera.sp..B            0.34729022 -0.98463621 -0.64191574
-#&gt; Solenopsis.sp..A              -2.20017699 -0.52968386  0.21560070
-#&gt; Stigmacros.sp..A              -0.28851008  0.82103346  0.09505829
-#&gt; Tapinoma.sp..A                 0.75831440  0.36450725 -0.42981190
-#&gt; Tetramorium.sp..A              0.07340481 -0.79973204 -0.91382169
+#&gt;          Intercept    theta.LV1   theta.LV2
+#&gt; OTU_79    1.888428  0.789337516  0.00000000
+#&gt; OTU_164   3.193654  0.494036483  1.00809211
+#&gt; OTU_462   2.216715  0.421613731  0.87282303
+#&gt; OTU_95    2.066990 -0.523046736 -0.01212220
+#&gt; OTU_833   2.879673  0.460526123  0.07964776
+#&gt; OTU_82    1.984971 -0.283906457  0.15565507
+#&gt; OTU_1358  2.124668  0.310734570  0.12695892
+#&gt; OTU_379   1.772559  0.385977107  0.19476349
+#&gt; OTU_153   1.744265 -0.317413575  0.17939130
+#&gt; OTU_59    1.652552  0.029138734  0.39028254
+#&gt; OTU_28    2.291228 -1.214511024  0.22921624
+#&gt; OTU_93    1.935786 -0.069907903  0.61949179
+#&gt; OTU_147   2.652368  0.923002819  0.30962408
+#&gt; OTU_142   1.499394  0.856130315  0.22223036
+#&gt; OTU_25    2.107618  0.758436948  0.17150226
+#&gt; OTU_27    2.193526 -0.352022999  0.77597121
+#&gt; OTU_312   1.462272 -0.869841623  0.05248865
+#&gt; OTU_98    1.510127  0.275596887  0.20370804
+#&gt; OTU_205   1.224261  0.007979795  0.21933894
+#&gt; OTU_830   1.518504  0.028606949  0.04617195
 #&gt; 
 #&gt; $`Dispersion parameters`
-#&gt;          Amblyopone.australis       Aphaenogaster.longiceps 
-#&gt;                     1.8597400                     2.5064437 
-#&gt;   Camponotus.cinereus.amperei           Camponotus.claripes 
-#&gt;                     1.3301652                     1.2682273 
-#&gt;        Camponotus.consobrinus          Camponotus.nigriceps 
-#&gt;                     0.5152194                     4.3761486 
-#&gt;        Camponotus.nigroaeneus   Cardiocondyla.nuda.atalanta 
-#&gt;                     2.0740979                     5.6624512 
-#&gt;           Crematogaster.sp..A            Heteroponera.sp..A 
-#&gt;                     4.4559426                     0.7432849 
-#&gt;         Iridomyrmex.bicknelli            Iridomyrmex.dromus 
-#&gt;                     0.4072818                     4.0072833 
-#&gt;          Iridomyrmex.mjobergi         Iridomyrmex.purpureus 
-#&gt;                     0.4291840                     4.6331110 
-#&gt;         Iridomyrmex.rufoniger          Iridomyrmex.suchieri 
-#&gt;                     0.1053710                     0.9088670 
-#&gt;      Iridomyrmex.suchieroides              Melophorus.sp..E 
-#&gt;                     0.5190997                     1.3441593 
-#&gt;              Melophorus.sp..F              Melophorus.sp..H 
-#&gt;                     0.4162241                     0.6375670 
-#&gt;              Meranoplus.sp..A               Monomorium.leae 
-#&gt;                     3.2251005                     1.0307115 
-#&gt;         Monomorium.rothsteini         Monomorium.sydneyense 
-#&gt;                     0.7219164                     1.6942757 
-#&gt;     Myrmecia.pilosula.complex            Notoncus.capitatus 
-#&gt;                     1.9711425                     5.8093850 
-#&gt;        Notoncus.ectatommoides              Nylanderia.sp..A 
-#&gt;                     0.5056663                     1.3171262 
-#&gt;             Ochetellus.glaber        Paraparatrechina.sp..B 
-#&gt;                     2.2925158                     8.4162679 
-#&gt;                Pheidole.sp..A                Pheidole.sp..B 
-#&gt;                     0.1046241                     2.0217443 
-#&gt;                Pheidole.sp..E                Pheidole.sp..J 
-#&gt;                     0.6656569                     3.8363908 
-#&gt;             Polyrhachis.sp..A Rhytidoponera.metallica.sp..A 
-#&gt;                     0.2707420                     0.1406981 
-#&gt;           Rhytidoponera.sp..B              Solenopsis.sp..A 
-#&gt;                     1.4741167                     0.8900719 
-#&gt;              Stigmacros.sp..A                Tapinoma.sp..A 
-#&gt;                     1.9612926                     0.8381836 
-#&gt;             Tetramorium.sp..A 
-#&gt;                     0.6000390 
+#&gt;    OTU_79   OTU_164   OTU_462    OTU_95   OTU_833    OTU_82  OTU_1358   OTU_379 
+#&gt; 0.1832115 0.2581916 0.3625953 0.6468468 0.5298655 0.1778368 0.4513558 0.2872816 
+#&gt;   OTU_153    OTU_59    OTU_28    OTU_93   OTU_147   OTU_142    OTU_25    OTU_27 
+#&gt; 0.3067341 0.2160174 0.2439218 0.3862093 0.4561603 0.2091138 0.2811742 1.2802814 
+#&gt;   OTU_312    OTU_98   OTU_205   OTU_830 
+#&gt; 0.1678309 0.2821152 0.1581622 0.3763647 
 #&gt; 
 #&gt; attr(,"class")
-#&gt; [1] "summary.gllvm"</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt;                                                2.5 %       97.5 %
-#&gt; theta.LV1.1                              0.020481378  1.735303901
-#&gt; theta.LV1.2                             -2.882098387  2.998418496
-#&gt; theta.LV1.3                             -0.640300760  2.294073440
-#&gt; theta.LV1.4                             -0.488834605  1.234489195
-#&gt; theta.LV1.5                             -0.150404152  1.658200942
-#&gt; theta.LV1.6                             -2.254905899  1.213371076
-#&gt; theta.LV1.7                             -0.664351284  1.648327797
-#&gt; theta.LV1.8                             -4.419747845  0.014793512
-#&gt; theta.LV1.9                             -0.562764183  4.188271746
-#&gt; theta.LV1.10                            -0.449474524  0.821027740
-#&gt; theta.LV1.11                            -0.817148828  1.187991136
-#&gt; theta.LV1.12                            -0.384681959  2.157393310
-#&gt; theta.LV1.13                            -0.785733219 -0.121169561
-#&gt; theta.LV1.14                            -0.349408685  2.850853217
-#&gt; theta.LV1.15                            -0.886335323  0.584734742
-#&gt; theta.LV1.16                            -0.470955155  1.229417382
-#&gt; theta.LV1.17                            -1.351850283  0.449265493
-#&gt; theta.LV1.18                            -0.787219018  1.037045401
-#&gt; theta.LV1.19                            -1.031919620 -0.062372472
-#&gt; theta.LV1.20                            -1.515555672 -0.110763914
-#&gt; theta.LV1.21                            -2.392114635  0.573000751
-#&gt; theta.LV1.22                            -0.007489543  1.250172531
-#&gt; theta.LV1.23                            -2.451290977  0.648673397
-#&gt; theta.LV1.24                            -1.723260869  0.190899919
-#&gt; theta.LV1.25                            -0.931690143  1.220014536
-#&gt; theta.LV1.26                            -0.648223816  3.288669622
-#&gt; theta.LV1.27                            -1.267174349 -0.323661783
-#&gt; theta.LV1.28                            -1.826140673  0.288532358
-#&gt; theta.LV1.29                            -2.644021460  1.533476212
-#&gt; theta.LV1.30                            -3.812996589  0.970152769
-#&gt; theta.LV1.31                            -0.643021903 -0.101777216
-#&gt; theta.LV1.32                            -1.463513096  0.911707712
-#&gt; theta.LV1.33                            -0.020601352  0.807037893
-#&gt; theta.LV1.34                            -1.425824108  0.834240070
-#&gt; theta.LV1.35                            -0.464242054  1.115317591
-#&gt; theta.LV1.36                            -0.672644642 -0.011149035
-#&gt; theta.LV1.37                            -1.927854213 -0.041418214
-#&gt; theta.LV1.38                            -1.519231958  0.459864230
-#&gt; theta.LV1.39                            -0.122426280  1.764493210
-#&gt; theta.LV1.40                            -0.226790562  0.955805066
-#&gt; theta.LV1.41                            -1.754030386  0.154566306
-#&gt; theta.LV2.1                              0.000000000  0.000000000
-#&gt; theta.LV2.2                             -1.963106210  7.533059844
-#&gt; theta.LV2.3                             -0.628204980  1.668706766
-#&gt; theta.LV2.4                             -0.111451123  0.967950823
-#&gt; theta.LV2.5                             -1.665102682 -0.016544282
-#&gt; theta.LV2.6                             -0.218730749  1.783421378
-#&gt; theta.LV2.7                             -0.384428233  1.163484055
-#&gt; theta.LV2.8                             -3.892797533  2.003511152
-#&gt; theta.LV2.9                             -0.726335609  3.815431012
-#&gt; theta.LV2.10                            -1.011461337 -0.107904426
-#&gt; theta.LV2.11                            -1.554059134 -0.486482534
-#&gt; theta.LV2.12                            -1.361034818  1.193523028
-#&gt; theta.LV2.13                            -0.440043896  0.546517250
-#&gt; theta.LV2.14                            -0.503094404  2.377759626
-#&gt; theta.LV2.15                            -1.137500847 -0.450297703
-#&gt; theta.LV2.16                            -1.439367476 -0.047943680
-#&gt; theta.LV2.17                            -1.673145745  0.026836939
-#&gt; theta.LV2.18                            -1.325501493  0.475099059
-#&gt; theta.LV2.19                            -0.984844876  0.254230574
-#&gt; theta.LV2.20                            -1.396709612  0.486872604
-#&gt; theta.LV2.21                            -2.513581629  0.473507465
-#&gt; theta.LV2.22                            -0.270344055  1.019514356
-#&gt; theta.LV2.23                            -2.880954895 -0.373875588
-#&gt; theta.LV2.24                            -1.881122318  0.301470890
-#&gt; theta.LV2.25                            -1.958427155  0.454692219
-#&gt; theta.LV2.26                            -1.111613123  1.953569640
-#&gt; theta.LV2.27                            -1.024123214  0.578170354
-#&gt; theta.LV2.28                            -1.993528286 -0.004119649
-#&gt; theta.LV2.29                            -4.125175633  0.103270401
-#&gt; theta.LV2.30                            -0.757339603  2.444982874
-#&gt; theta.LV2.31                            -0.570325557  0.167718813
-#&gt; theta.LV2.32                             0.057333392  1.499474726
-#&gt; theta.LV2.33                            -0.677204627  0.280053784
-#&gt; theta.LV2.34                            -0.785645658  1.885693004
-#&gt; theta.LV2.35                            -0.725232181  0.582173625
-#&gt; theta.LV2.36                            -0.647506916  0.072172816
-#&gt; theta.LV2.37                            -1.684158276  0.400326798
-#&gt; theta.LV2.38                            -0.832607865  1.263809264
-#&gt; theta.LV2.39                            -0.793082560  0.983199133
-#&gt; theta.LV2.40                            -0.950913247  0.091289447
-#&gt; theta.LV2.41                            -1.881692591  0.054049210
-#&gt; Intercept.Amblyopone.australis          -1.858804657 -0.032225584
-#&gt; Intercept.Aphaenogaster.longiceps       -6.270417277 -0.314289222
-#&gt; Intercept.Camponotus.cinereus.amperei   -3.696657431 -0.835845107
-#&gt; Intercept.Camponotus.claripes           -0.037429298  1.058305127
-#&gt; Intercept.Camponotus.consobrinus         0.639808554  1.792092824
-#&gt; Intercept.Camponotus.nigriceps          -1.679172297  0.479187257
-#&gt; Intercept.Camponotus.nigroaeneus        -1.317368897  0.233453780
-#&gt; Intercept.Cardiocondyla.nuda.atalanta   -5.297137099 -0.018191709
-#&gt; Intercept.Crematogaster.sp..A           -4.717414285  0.101705039
-#&gt; Intercept.Heteroponera.sp..A             0.800873734  1.676099976
-#&gt; Intercept.Iridomyrmex.bicknelli          0.772471450  1.804184718
-#&gt; Intercept.Iridomyrmex.dromus            -1.857731967  0.263523189
-#&gt; Intercept.Iridomyrmex.mjobergi           0.983145903  1.684538202
-#&gt; Intercept.Iridomyrmex.purpureus         -1.285105706  1.115763107
-#&gt; Intercept.Iridomyrmex.rufoniger          2.021158874  2.702712090
-#&gt; Intercept.Iridomyrmex.suchieri          -0.132333625  1.044207360
-#&gt; Intercept.Iridomyrmex.suchieroides      -1.133932580  0.248159085
-#&gt; Intercept.Melophorus.sp..E              -2.007453780 -0.373742800
-#&gt; Intercept.Melophorus.sp..F               0.082128111  0.980922159
-#&gt; Intercept.Melophorus.sp..H              -1.272323449  0.159425414
-#&gt; Intercept.Meranoplus.sp..A              -1.459380168  0.643215983
-#&gt; Intercept.Monomorium.leae                0.840675827  1.846242145
-#&gt; Intercept.Monomorium.rothsteini         -0.730057241  1.208829058
-#&gt; Intercept.Monomorium.sydneyense         -1.320932273  0.407198272
-#&gt; Intercept.Myrmecia.pilosula.complex     -2.055703326 -0.201397485
-#&gt; Intercept.Notoncus.capitatus            -2.466233675  0.533033155
-#&gt; Intercept.Notoncus.ectatommoides         0.240139423  1.223744444
-#&gt; Intercept.Nylanderia.sp..A               0.030092030  1.469551871
-#&gt; Intercept.Ochetellus.glaber             -3.871718509 -0.216323731
-#&gt; Intercept.Paraparatrechina.sp..B        -3.309530243  0.274773546
-#&gt; Intercept.Pheidole.sp..A                 2.092709771  2.543702871
-#&gt; Intercept.Pheidole.sp..B                -2.028637980 -0.154498285
-#&gt; Intercept.Pheidole.sp..E                 1.225483088  1.979389452
-#&gt; Intercept.Pheidole.sp..J                -2.974453038 -0.564881240
-#&gt; Intercept.Polyrhachis.sp..A             -1.985485191 -0.528262791
-#&gt; Intercept.Rhytidoponera.metallica.sp..A  1.772845355  2.273373112
-#&gt; Intercept.Rhytidoponera.sp..B           -0.397567074  1.092147514
-#&gt; Intercept.Solenopsis.sp..A              -3.424780464 -0.975573525
-#&gt; Intercept.Stigmacros.sp..A              -1.090346055  0.513325898
-#&gt; Intercept.Tapinoma.sp..A                 0.281131479  1.235497327
-#&gt; Intercept.Tetramorium.sp..A             -0.631815403  0.778625026
-#&gt; inv.phi.Amblyopone.australis            -0.268236145  1.343655310
-#&gt; inv.phi.Aphaenogaster.longiceps         -0.211248485  1.009191801
-#&gt; inv.phi.Camponotus.cinereus.amperei     -1.083517137  2.587089805
-#&gt; inv.phi.Camponotus.claripes              0.057542173  1.519462251
-#&gt; inv.phi.Camponotus.consobrinus           0.056456604  3.825384844
-#&gt; inv.phi.Camponotus.nigriceps            -0.061229271  0.518252147
-#&gt; inv.phi.Camponotus.nigroaeneus          -0.106725849  1.071000474
-#&gt; inv.phi.Cardiocondyla.nuda.atalanta     -0.069983142  0.423187067
-#&gt; inv.phi.Crematogaster.sp..A             -0.079496419  0.528335236
-#&gt; inv.phi.Heteroponera.sp..A               0.225240514  2.465517692
-#&gt; inv.phi.Iridomyrmex.bicknelli           -0.115739734  5.026344670
-#&gt; inv.phi.Iridomyrmex.dromus              -0.066573433  0.565664678
-#&gt; inv.phi.Iridomyrmex.mjobergi            -0.165816649  4.825822265
-#&gt; inv.phi.Iridomyrmex.purpureus            0.009015377  0.422660015
-#&gt; inv.phi.Iridomyrmex.rufoniger           -0.084354351 19.064915710
-#&gt; inv.phi.Iridomyrmex.suchieri            -0.154205215  2.354747264
-#&gt; inv.phi.Iridomyrmex.suchieroides        -0.880656781  4.733481168
-#&gt; inv.phi.Melophorus.sp..E                -0.832801126  2.320720007
-#&gt; inv.phi.Melophorus.sp..F                -0.516365770  5.321469728
-#&gt; inv.phi.Melophorus.sp..H                -0.425400499  3.562325639
-#&gt; inv.phi.Meranoplus.sp..A                -0.018581883  0.638717594
-#&gt; inv.phi.Monomorium.leae                  0.248308279  1.692098927
-#&gt; inv.phi.Monomorium.rothsteini            0.014508466  2.755895521
-#&gt; inv.phi.Monomorium.sydneyense           -0.100029545  1.280474938
-#&gt; inv.phi.Myrmecia.pilosula.complex       -0.366388720  1.381028697
-#&gt; inv.phi.Notoncus.capitatus              -0.041769952  0.386040474
-#&gt; inv.phi.Notoncus.ectatommoides          -0.079206035  4.034383445
-#&gt; inv.phi.Nylanderia.sp..A                 0.107319120  1.411138285
-#&gt; inv.phi.Ochetellus.glaber               -0.188680763  1.061084785
-#&gt; inv.phi.Paraparatrechina.sp..B          -0.063825084  0.301460104
-#&gt; inv.phi.Pheidole.sp..A                  -1.390805557 20.506859941
-#&gt; inv.phi.Pheidole.sp..B                  -0.348890027  1.338134807
-#&gt; inv.phi.Pheidole.sp..E                   0.320547844  2.684003052
-#&gt; inv.phi.Pheidole.sp..J                  -0.276098543  0.797421862
-#&gt; inv.phi.Polyrhachis.sp..A               -7.696702990 15.083809641
-#&gt; inv.phi.Rhytidoponera.metallica.sp..A   -0.849865647 15.064702703
-#&gt; inv.phi.Rhytidoponera.sp..B              0.004034543  1.352710117
-#&gt; inv.phi.Solenopsis.sp..A                -1.913903127  4.160912666
-#&gt; inv.phi.Stigmacros.sp..A                -0.028299272  1.048034941
-#&gt; inv.phi.Tapinoma.sp..A                   0.106581043  2.279531095
-#&gt; inv.phi.Tetramorium.sp..A               -0.299156211  3.632272982</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
+#&gt; [1] "summary.gllvm"</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt;                            2.5 %      97.5 %
+#&gt; theta.LV1.1         0.6181782415  0.96049679
+#&gt; theta.LV1.2         0.1091634262  0.87890954
+#&gt; theta.LV1.3         0.0647697802  0.77845768
+#&gt; theta.LV1.4        -0.7851592437 -0.26093423
+#&gt; theta.LV1.5         0.2381551893  0.68289706
+#&gt; theta.LV1.6        -0.4568409410 -0.11097197
+#&gt; theta.LV1.7         0.0796303998  0.54183874
+#&gt; theta.LV1.8         0.1804443203  0.59150989
+#&gt; theta.LV1.9        -0.5284249055 -0.10640224
+#&gt; theta.LV1.10       -0.1913529415  0.24963041
+#&gt; theta.LV1.11       -1.5330824786 -0.89593957
+#&gt; theta.LV1.12       -0.3636872395  0.22387143
+#&gt; theta.LV1.13        0.6232507076  1.22275493
+#&gt; theta.LV1.14        0.5998568521  1.11240378
+#&gt; theta.LV1.15        0.5162584853  1.00061541
+#&gt; theta.LV1.16       -0.7959033026  0.09185731
+#&gt; theta.LV1.17       -1.1222554067 -0.61742784
+#&gt; theta.LV1.18        0.0656516742  0.48554210
+#&gt; theta.LV1.19       -0.1853673026  0.20132689
+#&gt; theta.LV1.20       -0.1938772613  0.25109116
+#&gt; theta.LV2.1         0.0000000000  0.00000000
+#&gt; theta.LV2.2         0.7163746983  1.29980953
+#&gt; theta.LV2.3         0.5905906241  1.15505544
+#&gt; theta.LV2.4        -0.2938991635  0.26965476
+#&gt; theta.LV2.5        -0.1799848025  0.33928032
+#&gt; theta.LV2.6        -0.0174459241  0.32875606
+#&gt; theta.LV2.7        -0.1010437471  0.35496159
+#&gt; theta.LV2.8        -0.0074090009  0.39693598
+#&gt; theta.LV2.9        -0.0451636383  0.40394625
+#&gt; theta.LV2.10        0.1942716595  0.58629342
+#&gt; theta.LV2.11       -0.0762940682  0.53472656
+#&gt; theta.LV2.12        0.3717016408  0.86728194
+#&gt; theta.LV2.13        0.0210035064  0.59824466
+#&gt; theta.LV2.14       -0.0216870354  0.46614776
+#&gt; theta.LV2.15       -0.0593315436  0.40233607
+#&gt; theta.LV2.16        0.4179550114  1.13398742
+#&gt; theta.LV2.17       -0.1957826443  0.30075994
+#&gt; theta.LV2.18       -0.0006689199  0.40808499
+#&gt; theta.LV2.19        0.0344769145  0.40420096
+#&gt; theta.LV2.20       -0.1699715070  0.26231541
+#&gt; Intercept.OTU_79    1.6251232946  2.15173300
+#&gt; Intercept.OTU_164   2.8570000923  3.53030726
+#&gt; Intercept.OTU_462   1.8932599857  2.54016969
+#&gt; Intercept.OTU_95    1.7936744753  2.34030580
+#&gt; Intercept.OTU_833   2.6422043353  3.11714237
+#&gt; Intercept.OTU_82    1.8131889038  2.15675292
+#&gt; Intercept.OTU_1358  1.9064423506  2.34289392
+#&gt; Intercept.OTU_379   1.5589370732  1.98618097
+#&gt; Intercept.OTU_153   1.5354454911  1.95308534
+#&gt; Intercept.OTU_59    1.4533751875  1.85172872
+#&gt; Intercept.OTU_28    1.9195092455  2.66294762
+#&gt; Intercept.OTU_93    1.6772585926  2.19431283
+#&gt; Intercept.OTU_147   2.3263318317  2.97840494
+#&gt; Intercept.OTU_142   1.1992653226  1.79952182
+#&gt; Intercept.OTU_25    1.8382744601  2.37696230
+#&gt; Intercept.OTU_27    1.7870024631  2.60004933
+#&gt; Intercept.OTU_312   1.1683931211  1.75614996
+#&gt; Intercept.OTU_98    1.3010147857  1.71923972
+#&gt; Intercept.OTU_205   1.0377443259  1.41077687
+#&gt; Intercept.OTU_830   1.3158290409  1.72117818
+#&gt; inv.phi.OTU_79      1.8475888939  9.06875483
+#&gt; inv.phi.OTU_164     1.2235364436  6.52264970
+#&gt; inv.phi.OTU_462     1.2465418413  4.26924970
+#&gt; inv.phi.OTU_95      0.8461156035  2.24580660
+#&gt; inv.phi.OTU_833     1.0661493921  2.70839374
+#&gt; inv.phi.OTU_82      1.7858205154  9.46044477
+#&gt; inv.phi.OTU_1358    1.1138705787  3.31722321
+#&gt; inv.phi.OTU_379     1.3875499944  5.57426018
+#&gt; inv.phi.OTU_153     1.2479336887  5.27237108
+#&gt; inv.phi.OTU_59      1.4663506154  7.79216235
+#&gt; inv.phi.OTU_28      1.4594344773  6.73991517
+#&gt; inv.phi.OTU_93      1.0978169500  4.08072250
+#&gt; inv.phi.OTU_147     1.0628861269  3.32153797
+#&gt; inv.phi.OTU_142     1.6354683760  7.92870237
+#&gt; inv.phi.OTU_25      1.4105933717  5.70243575
+#&gt; inv.phi.OTU_27      0.4516829651  1.11047366
+#&gt; inv.phi.OTU_312     1.8536670535 10.06308931
+#&gt; inv.phi.OTU_98      1.0971373695  5.99216634
+#&gt; inv.phi.OTU_205     0.0576437924 12.58760084
+#&gt; inv.phi.OTU_830     0.9588263430  4.35516856</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
 <span class='no'>fitl0</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)
 <span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitl0</span>)
 
@@ -668,45 +530,30 @@ However, sometimes this is computationally too demanding, and default option
 <span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.p</span>)
 <span class='co'># Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run</span>
 <span class='no'>fit.z</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"ZIP"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>, <span class='kw'>start.fit</span> <span class='kw'>=</span> <span class='no'>fit.p</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.z</span>)</div><div class='img'><img src='gllvm-5.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.z</span>)</div><div class='img'><img src='gllvm-7.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='co'>## Example 2: gllvm with environmental variables</span>
 <span class='co'># Fit model with two latent variables and all environmental covariates,</span>
-<span class='no'>fitvX</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX</span>)</div><div class='img'><img src='gllvm-6.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-7.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
+<span class='no'>fitvX</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in model.frame.default(formula = y ~ X, drop.unused.levels = TRUE): invalid type (list) for variable 'X'</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX, biplot = TRUE): object 'fitvX' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX): object 'fitvX' not found</span></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
 <span class='no'>fitvX2</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX2</span>)
-<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX2</span>)</div><div class='img'><img src='gllvm-8.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-9.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Use 5 initial runs and pick the best one</span>
+ <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX2): object 'fitvX2' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX2): object 'fitvX2' not found</span></div><div class='input'><span class='co'># Use 5 initial runs and pick the best one</span>
 <span class='no'>fitvX_5</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>jitter.var</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX_5</span>)
-<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX_5</span>)</div><div class='img'><img src='gllvm-10.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-11.png' alt='' width='700' height='433' /></div><div class='input'>
+ <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>jitter.var</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX_5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX_5): object 'fitvX_5' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX_5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX_5): object 'fitvX_5' not found</span></div><div class='input'>
 <span class='co'>## Example 3: Data in long format</span>
 <span class='co'># Reshape data to long format:</span>
 <span class='no'>datalong</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/reshape'>reshape</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/data.frame'>data.frame</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='no'>y</span>,<span class='no'>X</span>)), <span class='kw'>direction</span> <span class='kw'>=</span> <span class='st'>"long"</span>,
                    <span class='kw'>varying</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colnames'>colnames</a></span>(<span class='no'>y</span>), <span class='kw'>v.names</span> <span class='kw'>=</span> <span class='st'>"y"</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>datalong</span>)</div><div class='output co'>#&gt;     Bare.ground Canopy.cover Shrub.cover Volume.lying.CWD Feral.mammal.dung
-#&gt; 1.1        9.00          3.5        0.50       0.03253833              0.20
-#&gt; 2.1        6.00          0.0        0.00       0.01202944              0.65
-#&gt; 3.1        9.25          0.0        8.10       0.00804195              0.00
-#&gt; 4.1       23.25          0.0        0.25       0.00000000              0.20
-#&gt; 5.1        8.75          0.0        3.35       0.00993944              0.35
-#&gt; 6.1       32.25          0.0        0.00       0.03142221              1.00
-#&gt;     time y id
-#&gt; 1.1    1 0  1
-#&gt; 2.1    1 0  2
-#&gt; 3.1    1 0  3
-#&gt; 4.1    1 4  4
-#&gt; 5.1    1 2  5
-#&gt; 6.1    1 0  6</div><div class='input'><span class='no'>fitvLong</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>datalong</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
-               <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>datalong</span>)</div><div class='output co'>#&gt;      SOM   pH Phosp Region Site Soiltype time  y id
+#&gt; 1.1 0.01 6.70  2.63    Aus    A        B    1  1  1
+#&gt; 2.1 0.01 6.67  2.16    Aus    A        B    1  6  2
+#&gt; 3.1 0.00 8.19  0.62    Aus    A        B    1 18  3
+#&gt; 4.1 0.00 7.34  1.15    Aus    A        B    1  6  4
+#&gt; 5.1 0.01 6.17  2.44    Aus    A        T    1  3  5
+#&gt; 6.1 0.01 6.08  3.94    Aus    A        T    1  8  6</div><div class='input'><span class='no'>fitvLong</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>datalong</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
+               <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'>
 <span class='co'>## Example 4: Fourth corner model</span>
 <span class='co'># Fit fourth corner model with two latent variables</span>
-<span class='no'>fitF1</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF1</span>)</div><div class='img'><img src='gllvm-12.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Fourth corner can be plotted also with next lines</span>
+<span class='no'>fitF1</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, family = "negative.binomial"): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF1</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF1): object 'fitF1' not found</span></div><div class='input'><span class='co'># Fourth corner can be plotted also with next lines</span>
 <span class='co'>#fourth = fitF1$fourth.corner</span>
 <span class='co'>#library(lattice)</span>
 <span class='co'>#a = max( abs(fourth) )</span>
@@ -719,27 +566,21 @@ However, sometimes this is computationally too demanding, and default option
 <span class='co'># Specify model using formula</span>
 <span class='no'>fitF2</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>,
  <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span> * (<span class='no'>Pilosity</span> + <span class='no'>Webers.length</span>),
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF2</span>)</div><div class='img'><img src='gllvm-13.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF2</span>)</div><div class='img'><img src='gllvm-14.png' alt='' width='700' height='433' /></div><div class='input'>
+ <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, formula = ~Bare.ground + Canopy.cover *     (Pilosity + Webers.length), family = "negative.binomial"): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitF2): object 'fitF2' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF2): object 'fitF2' not found</span></div><div class='input'>
 <span class='co'>## Include species specific random slopes to the fourth corner model</span>
 <span class='no'>fitF3</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>,
  <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span> * (<span class='no'>Pilosity</span> + <span class='no'>Webers.length</span>),
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>randomX</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='output co'>#&gt; <span class='warning'>Warning: NA/NaN function evaluation</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF3</span>)</div><div class='img'><img src='gllvm-15.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF3</span>)</div><div class='img'><img src='gllvm-16.png' alt='' width='700' height='433' /></div><div class='input'>
+ <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>randomX</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, formula = ~Bare.ground + Canopy.cover *     (Pilosity + Webers.length), family = "negative.binomial",     randomX = ~Bare.ground + Canopy.cover, n.init = 3): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitF3): object 'fitF3' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF3): object 'fitF3' not found</span></div><div class='input'>
 
 <span class='co'>## Example 5: Fit Tweedie model</span>
 <span class='co'># Load coral data</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>tikus</span>)
-<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>tikus</span>$<span class='no'>abund</span>
-<span class='co'># Let's consider only years 1981 and 1983</span>
-<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[((<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>81</span>) + (<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>83</span>)) <span class='kw'>&gt;</span> <span class='fl'>0</span>, ]
-<span class='co'># Exclude species which have observed at less than 4 sites</span>
-<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[-<span class='fl'>17</span>, (<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colSums'>colSums</a></span>(<span class='no'>ycoral</span> <span class='kw'>&gt;</span> <span class='fl'>0</span>) <span class='kw'>&gt;</span> <span class='fl'>4</span>)]
-<span class='co'># Fit Tweedie model for coral data (this line may take few minutes to run)</span>
-<span class='no'>fit.twe</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>ycoral</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"tweedie"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.twe</span>)</div><div class='img'><img src='gllvm-17.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>tikus</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: data set 'tikus' not found</span></div><div class='input'><span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>tikus</span>$<span class='no'>abund</span></div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'tikus' not found</span></div><div class='input'><span class='co'># Let's consider only years 1981 and 1983</span>
+<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[((<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>81</span>) + (<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>83</span>)) <span class='kw'>&gt;</span> <span class='fl'>0</span>, ]</div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'ycoral' not found</span></div><div class='input'><span class='co'># Exclude species which have observed at less than 4 sites</span>
+<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[-<span class='fl'>17</span>, (<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colSums'>colSums</a></span>(<span class='no'>ycoral</span> <span class='kw'>&gt;</span> <span class='fl'>0</span>) <span class='kw'>&gt;</span> <span class='fl'>4</span>)]</div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'ycoral' not found</span></div><div class='input'><span class='co'># Fit Tweedie model for coral data (this line may take few minutes to run)</span>
+<span class='no'>fit.twe</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>ycoral</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"tweedie"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = ycoral, family = "tweedie", method = "LA"): object 'ycoral' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.twe</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fit.twe): object 'fit.twe' not found</span></div><div class='input'>
 <span class='co'>## Example 6: Random row effects</span>
 <span class='no'>fitRand</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>row.eff</span> <span class='kw'>=</span> <span class='st'>"random"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitRand</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='img'><img src='gllvm-18.png' alt='' width='700' height='433' /></div></pre>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitRand</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='img'><img src='gllvm-8.png' alt='' width='700' height='433' /></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

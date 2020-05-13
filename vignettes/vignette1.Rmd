@@ -58,6 +58,7 @@ The **gllvm** package overcomes these computational problems using three key inn
 In the next examples we illustrate the usage of the gllvm package using `antTraits` data from the `mvabund` package. The data consists of counts of 41 ant species measured at 30 sites across south-east Australia, along with records of five environmental variables and five trait variables for each species. The package and the data can be loaded as follows.
 ```{r}
 library(gllvm)
+library(mvabund)
 data(antTraits)
 y <- as.matrix(antTraits$abund)
 X <- scale(as.matrix(antTraits$env))

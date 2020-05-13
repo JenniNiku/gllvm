@@ -14,6 +14,7 @@
 #' @author Jenni Niku
 #'
 #' @examples
+#' \donttest{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- antTraits$abund
@@ -26,7 +27,7 @@
 #'# Test if the model with fourth corner interaction terms is significantly
 #'# better using likelihood-ratio test:
 #'anova(fit1, fit2)
-#'
+#'}
 #'@export
 
 anova.gllvm <- function(object, ...) {

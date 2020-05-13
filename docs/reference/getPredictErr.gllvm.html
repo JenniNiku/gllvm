@@ -161,46 +161,15 @@ the uncertainty in the estimation of (fixed) parameters.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># Load a dataset from the mvabund package</span>
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='co'># Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
 <span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
 <span class='co'># Fit gllvm model</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
 <span class='co'># prediction errors for latent variables:</span>
-<span class='fu'>getPredictErr</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $lvs
-#&gt;            [,1]      [,2]
-#&gt;  [1,] 0.3501496 0.3622358
-#&gt;  [2,] 0.3922441 0.4619312
-#&gt;  [3,] 0.3218267 0.4581107
-#&gt;  [4,] 0.2725344 0.4892279
-#&gt;  [5,] 0.4713083 0.5709354
-#&gt;  [6,] 0.3164951 0.3013266
-#&gt;  [7,] 0.4416126 0.2709827
-#&gt;  [8,] 0.3331167 0.3326845
-#&gt;  [9,] 0.3763989 0.4510572
-#&gt; [10,] 0.2847130 0.5756190
-#&gt; [11,] 0.3388970 0.4552391
-#&gt; [12,] 0.3845772 0.6291608
-#&gt; [13,] 0.3545604 0.6174635
-#&gt; [14,] 0.3790508 0.6531207
-#&gt; [15,] 0.4107720 0.6531228
-#&gt; [16,] 0.6858192 0.3955609
-#&gt; [17,] 0.6770736 0.3698541
-#&gt; [18,] 0.3558440 0.4718302
-#&gt; [19,] 0.5136869 0.3377290
-#&gt; [20,] 0.6865302 0.3824494
-#&gt; [21,] 0.5487557 0.3020236
-#&gt; [22,] 0.3842903 0.4511705
-#&gt; [23,] 0.3936855 0.3194336
-#&gt; [24,] 0.3415436 0.2523098
-#&gt; [25,] 0.4369986 0.3919597
-#&gt; [26,] 0.3085903 0.2912632
-#&gt; [27,] 0.3381935 0.2659188
-#&gt; [28,] 0.3283445 0.2722046
-#&gt; [29,] 0.3012108 0.2840353
-#&gt; [30,] 0.3480485 0.6971825
-#&gt; </div><div class='input'>
-
+<span class='fu'>getPredictErr</span>(<span class='no'>fit</span>)
+<span class='co'># }</span><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

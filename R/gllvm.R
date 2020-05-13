@@ -136,6 +136,16 @@
 #'
 #'@seealso  \code{\link{coefplot.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{ordiplot.gllvm}}, \code{\link{plot.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{summary.gllvm}}.
 #' @examples
+#'# Extract subset of the microbial data to be used as an example
+#'data(microbialdata)
+#'X <- microbialdata$Xenv
+#'y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+#'                      decreasing = TRUE)[21:40]]
+#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
+#'ordiplot(fit)
+#'coefplot(fit)
+#'
+#' \donttest{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -147,7 +157,6 @@
 #'ordiplot(fit)
 #'coefplot(fit)
 #'
-#' \donttest{
 #'## Example 1: Fit model with two latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
@@ -240,10 +249,9 @@
 #'
 #'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
-#'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam

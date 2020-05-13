@@ -66,6 +66,7 @@ For details for constructing a biplot, see Gabriel (1971).
 - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
 }
 \examples{
+\dontrun{
 #'## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -74,7 +75,7 @@ fit <- gllvm(y, family = poisson())
 ordiplot(fit)
 # Biplot with 10 species
 ordiplot(fit, biplot = TRUE, ind.spp = 10)
-
+}
 }
 \references{
 Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58, 453-467.

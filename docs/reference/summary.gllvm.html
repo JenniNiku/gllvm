@@ -143,79 +143,14 @@
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='co'>## Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
 <span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
 <span class='co'># Fit gllvm model</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; $`log-likelihood`
-#&gt; [1] -2128.634
-#&gt; 
-#&gt; $df
-#&gt; [1] 122
-#&gt; 
-#&gt; $AIC
-#&gt; [1] 4501.268
-#&gt; 
-#&gt; $AICc
-#&gt; [1] 4178.558
-#&gt; 
-#&gt; $BIC
-#&gt; [1] 4672.214
-#&gt; 
-#&gt; $Call
-#&gt; gllvm(y = y, family = poisson())
-#&gt; 
-#&gt; $family
-#&gt; [1] "poisson"
-#&gt; 
-#&gt; $Coefficients
-#&gt;                                Intercept   theta.LV1     theta.LV2
-#&gt; Amblyopone.australis          -0.8168425  0.65816437  0.0000000000
-#&gt; Aphaenogaster.longiceps       -3.4421322  0.36626045  2.8325881027
-#&gt; Camponotus.cinereus.amperei   -2.1352916  0.71999941  0.4925283377
-#&gt; Camponotus.claripes            0.4282323  0.41315211  0.5149757706
-#&gt; Camponotus.consobrinus         1.4099149  0.49574799 -0.5406644767
-#&gt; Camponotus.nigriceps          -0.7043908 -0.01718625  0.9647611491
-#&gt; Camponotus.nigroaeneus        -0.6282810  0.51786932  0.4352912638
-#&gt; Cardiocondyla.nuda.atalanta   -3.4015667 -2.48714600  0.4872440766
-#&gt; Crematogaster.sp..A           -9.8390038  8.22973253  3.0952136769
-#&gt; Heteroponera.sp..A             1.0988773  0.32115477 -0.7640762670
-#&gt; Iridomyrmex.bicknelli          1.3135662  0.06351585 -0.9633189065
-#&gt; Iridomyrmex.dromus            -0.6902266  0.64360163 -0.0005374171
-#&gt; Iridomyrmex.mjobergi           1.3545495 -0.44414291 -0.0037003416
-#&gt; Iridomyrmex.purpureus         -2.4988909  3.67186684  1.2382117588
-#&gt; Iridomyrmex.rufoniger          2.4103672 -0.12966679 -0.6488032164
-#&gt; Iridomyrmex.suchieri           0.4554968  0.50148256 -0.6233236252
-#&gt; Iridomyrmex.suchieroides      -0.4359428 -0.50770354 -0.7442216611
-#&gt; Melophorus.sp..E              -1.1597889  0.24197328 -0.2540881067
-#&gt; Melophorus.sp..F               0.5343783 -0.51171969 -0.4647740146
-#&gt; Melophorus.sp..H              -0.7640686 -0.70249514 -1.1586263743
-#&gt; Meranoplus.sp..A              -0.7580461 -0.64537823 -1.7599563709
-#&gt; Monomorium.leae                1.1576087  0.93475032  0.3506995090
-#&gt; Monomorium.rothsteini          0.3002856 -0.61287797 -1.6333467353
-#&gt; Monomorium.sydneyense         -1.1562501 -0.88477400 -1.9379967298
-#&gt; Myrmecia.pilosula.complex     -1.0890727  0.20481827 -0.5829657196
-#&gt; Notoncus.capitatus            -1.3858670  1.64820526  0.3505366002
-#&gt; Notoncus.ectatommoides         0.7745180 -0.72557689 -0.1106497595
-#&gt; Nylanderia.sp..A               0.7379933 -0.80363470 -0.8713824646
-#&gt; Ochetellus.glaber             -1.6851022 -0.66216229 -1.4855406432
-#&gt; Paraparatrechina.sp..B        -1.5943451  0.41072269  1.3559000142
-#&gt; Pheidole.sp..A                 2.3143064 -0.38322671 -0.1814974484
-#&gt; Pheidole.sp..B                -1.3318643  0.43719825  1.0369382426
-#&gt; Pheidole.sp..E                 1.5335906  0.53375282 -0.2468001624
-#&gt; Pheidole.sp..J                -1.9139978 -0.63304142  0.5002242259
-#&gt; Polyrhachis.sp..A             -1.5298620  0.83614199 -0.2075337713
-#&gt; Rhytidoponera.metallica.sp..A  2.0352021 -0.30037647 -0.2781392985
-#&gt; Rhytidoponera.sp..B            0.5247903 -0.53127938 -0.7607042509
-#&gt; Solenopsis.sp..A              -2.2499300 -0.60804391  0.3445248697
-#&gt; Stigmacros.sp..A              -0.5104366  1.10587003  0.0009070952
-#&gt; Tapinoma.sp..A                 0.6457288  0.47056574 -0.6171965819
-#&gt; Tetramorium.sp..A              0.1010832 -0.70534415 -0.9738949293
-#&gt; 
-#&gt; attr(,"class")
-#&gt; [1] "summary.gllvm"</div><div class='input'>
-</div></pre>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fit</span>)
+<span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

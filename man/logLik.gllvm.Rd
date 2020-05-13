@@ -15,6 +15,7 @@
 Extracts Log-likelihood from 'gllvm' objects.
 }
 \examples{
+\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -22,7 +23,7 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 # log-Likelihood:
 logLik(fit)
-
+}
 }
 \author{
 David I. Warton, Jenni Niku

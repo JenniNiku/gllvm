@@ -30,6 +30,7 @@
 Plots random slopes and their prediction intervals.
 }
 \examples{
+\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -40,6 +41,7 @@ fitF <- gllvm(y = y, X = X, TR = TR,
  formula = ~ Bare.ground + Bare.ground : Webers.length,
  family = poisson(), randomX = ~ Bare.ground)
 randomCoefplot(fitF)
+}
 
 }
 \author{

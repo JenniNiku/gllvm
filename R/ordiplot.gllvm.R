@@ -40,6 +40,7 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
 #'
 #' @examples
+#' \dontrun{
 #' #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -48,7 +49,7 @@
 #'ordiplot(fit)
 #'# Biplot with 10 species
 #'ordiplot(fit, biplot = TRUE, ind.spp = 10)
-#'
+#'}
 #'@aliases ordiplot ordiplot.gllvm
 #'@export
 #'@export ordiplot.gllvm

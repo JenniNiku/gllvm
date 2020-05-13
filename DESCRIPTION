@@ -10,7 +10,7 @@ Description: Analysis of multivariate data using generalized linear latent varia
       For details see Niku et al. (2019a) <doi:10.1371/journal.pone.0216129> and Niku et al. (2019b) <doi:10.1111/2041-210X.13303>.
 License: GPL-2
 Imports: MASS, Matrix, mvtnorm, statmod, fishMod, mgcv
-Depends: TMB, mvabund
+Depends: TMB
 Encoding: UTF-8
 LazyData: true
 LinkingTo: TMB, RcppEigen
@@ -18,6 +18,7 @@ RoxygenNote: 6.1.1
 NeedsCompilation: yes
 URL: https://github.com/JenniNiku/gllvm.git
 Suggests: 
+    mvabund,
     knitr,
     rmarkdown,
     testthat, gclus, corrplot, lattice

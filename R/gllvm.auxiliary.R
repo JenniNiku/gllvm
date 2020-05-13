@@ -96,10 +96,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
             mu <-  binomial(link = link)$linkinv(mu)
           }
         } else {
-          if(!is.null(X)) fit.mva <- mvabund::manylm(y ~ X)
-          if(is.null(X)) fit.mva <- mvabund::manylm(y ~ 1)
+          if(!is.null(X)) fit.mva <- mlm(y, X = X)
+          if(is.null(X)) fit.mva <- mlm(y)
           mu <- NULL
-          resi <- residuals(fit.mva); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+          resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
         }
@@ -200,13 +200,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         
       } else {
         if(is.null(TR)){
-          if(!is.null(X) & num.lv > 0) fit.mva <- mvabund::manylm(y ~ X + index)
-          if(is.null(X) & num.lv > 0) fit.mva <- mvabund::manylm(y ~ index)
-          if(!is.null(X) & num.lv == 0) fit.mva <- mvabund::manylm(y ~ X)
-          if(is.null(X) & num.lv == 0) fit.mva <- mvabund::manylm(y ~ 1)
+          if(!is.null(X) & num.lv > 0) fit.mva <- mlm(y, X = X, index = index)
+          if(is.null(X) & num.lv > 0) fit.mva <- mlm(y, index = index)
+          if(!is.null(X) & num.lv == 0) fit.mva <- mlm(y, X = X)
+          if(is.null(X) & num.lv == 0) fit.mva <- mlm(y)
         } else {
-          if(num.lv > 0) fit.mva <- mvabund::manylm(y ~ index)
-          if(num.lv == 0) fit.mva <- mvabund::manylm(y ~ 1)
+          if(num.lv > 0) fit.mva <- mlm(y, index = index)
+          if(num.lv == 0) fit.mva <- mlm(y)
           env  <-  rep(0,num.X)
           trait  <-  rep(0,num.T)
           inter <- rep(0, num.T * num.X)
@@ -1372,3 +1372,24 @@ gamEnvelope <- function(x, y,line.col = "red", envelope.col = c("blue","lightblu
   points(x, y, col = col, ...)
 }
 
+mlm <- function(y, X = NULL, index = NULL){
+  out <- list(coefficients=NULL, residuals = NULL)
+  coefficients <- residuals <- NULL
+  if(!is.null(X) || !is.null(index)){ 
+    Xx<- cbind(X, index)
+    for (j in 1:ncol(y)) {
+      f0 <- lm(y[,j]~Xx)
+      coefficients <- rbind(coefficients, f0$coef)
+      residuals <- cbind(residuals, f0$residuals)
+    }
+  } else {
+    for (j in 1:ncol(y)) {
+      f0 <- lm(y[,j]~1)
+      coefficients <- rbind(coefficients, f0$coef)
+      residuals <- cbind(residuals, f0$residuals)
+    }
+  }
+  out$coefficients <- t(coefficients)
+  out$residuals <- residuals
+  out
+}

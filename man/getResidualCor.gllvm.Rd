@@ -19,6 +19,7 @@ Calculates the residual correlation matrix for gllvm model.
 Residual correlation matrix is calculated based on the residual covariance matrix, see details from \code{\link{getResidualCov.gllvm}}.
 }
 \examples{
+\dontrun{
 # Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -26,7 +27,6 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 # residual correlations:
 cr <- getResidualCor(fit)
-\dontrun{
 # Plot residual correlations:
 install.packages("corrplot", "gclus")
 library(corrplot)

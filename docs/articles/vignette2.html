@@ -83,7 +83,7 @@
       <h1>Analysing high-dimensional microbial community data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2020-05-09</h4>
+            <h4 class="date">2020-05-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette2.rmd"><code>vignettes/vignette2.rmd</code></a></small>
       <div class="hidden name"><code>vignette2.rmd</code></div>
@@ -95,7 +95,6 @@
 <p>In this example we apply generalized linear latent variable model (GLLVMs) on the bacterial species data discussed in <span class="citation">Nissinen, Mannisto, and van Elsas (2012)</span>. The sequence data is published in European Nucleotide Archive with the project number PRJEB17695. The subset of the data used in our analyses is included in the gllvm package. This example follows the one provided in <span class="citation">Niku et al. (2017)</span>, except that here we use variational approximation method to fit GLLVMs instead of the Laplace approximation method. Altogether eight different sampling sites were selected from three locations. Three of the sites were in Kilpisjarvi, Finland, three in Ny-Alesund, Svalbard, Norway, and two in Mayrhofen, Austria. From each sampling site, several soil samples were taken and their bacterial species were recorded. The data consist of <span class="math inline">\(m = 985\)</span> bacterial species counts measured from <span class="math inline">\(n = 56\)</span> sites. The sites can be considered as independent from each other since bacterial communities are known to be very location specific. In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample. The data set is available in object <code>Ysoil</code> and the environmental variables and information regarding the sampling sites are given in object <code>Xenv</code>. In addition to environmental variables, <code>Xenv</code> contains information from the sampling location (<code>Region</code>), sampling site at each region (<code>Site</code>) and soil sample type (<code>Soiltype</code>, top soil (T) or bottom soil (B)). Using GLLVMs we try to find out if soils physico-chemical properties or region affect the structure of bacterial communities. The package and the dataset can be loaded along the following lines:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(gllvm)</code></pre></div>
 <pre><code>## Loading required package: TMB</code></pre>
-<pre><code>## Loading required package: mvabund</code></pre>
 <pre><code>## 
 ## Attaching package: 'gllvm'</code></pre>
 <pre><code>## The following objects are masked from 'package:stats':

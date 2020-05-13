@@ -40,6 +40,7 @@ linear predictors of fitted values, a Normal Q-Q plot of residuals with a simula
 plot.gllvm is used for model diagnostics. Dunn-Smyth residuals (randomized quantile residuals) (Dunn and Smyth, 1996) are used in plots. Colors indicate different species.
 }
 \examples{
+\dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -55,6 +56,7 @@ fitnb <- gllvm(y = y, family = "negative.binomial")
 plot(fitnb, mfrow = c(3,2))
 # Plot only two first plots
 plot(fitnb, which = 1:2, mfrow = c(1,2))
+}
 }
 }
 \references{

@@ -13,6 +13,7 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
 #'
 #' @examples
+#'\dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -22,7 +23,6 @@
 #'             family = poisson())
 #'coefplot.gllvm(fit)
 #'
-#'\donttest{
 #'# Fit model with all environmental covariates
 #'fitx <- gllvm(y, X, family = "negative.binomial")
 #'coefplot(fitx, mfrow = c(3,2))

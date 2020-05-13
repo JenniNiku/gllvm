@@ -29,6 +29,7 @@ of the variational distributions, and therefore they do not take into account
 the uncertainty in the estimation of (fixed) parameters.
 }
 \examples{
+\dontrun{
 # Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -36,7 +37,7 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 # prediction errors for latent variables:
 getPredictErr(fit)
-
+}
 
 }
 \author{

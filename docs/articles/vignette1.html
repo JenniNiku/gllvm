@@ -83,7 +83,7 @@
       <h1>Analysing multivariate abundance data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2020-05-09</h4>
+            <h4 class="date">2020-05-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -115,12 +115,12 @@
 <p>In the next examples we illustrate the usage of the gllvm package using <code>antTraits</code> data from the <code>mvabund</code> package. The data consists of counts of 41 ant species measured at 30 sites across south-east Australia, along with records of five environmental variables and five trait variables for each species. The package and the data can be loaded as follows.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(gllvm)
 <span class="co">#&gt; Loading required package: TMB</span>
-<span class="co">#&gt; Loading required package: mvabund</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Attaching package: 'gllvm'</span>
 <span class="co">#&gt; The following objects are masked from 'package:stats':</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     predict, simulate</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(mvabund)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(antTraits)
 y &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(antTraits<span class="op">$</span>abund)
 X &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/scale">scale</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(antTraits<span class="op">$</span>env))
@@ -309,11 +309,11 @@ fitp
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -2128.634 </span>
+<span class="co">#&gt; log-likelihood:  -2128.633 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1108 </span>
-<span class="co">#&gt; AIC:  4501.269 </span>
-<span class="co">#&gt; AICc:  4178.559 </span>
-<span class="co">#&gt; BIC:  4672.215</span></code></pre></div>
+<span class="co">#&gt; AIC:  4501.266 </span>
+<span class="co">#&gt; AICc:  4178.556 </span>
+<span class="co">#&gt; BIC:  4672.212</span></code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_ord &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)
 fit_ord
 <span class="co">#&gt; Call: </span>
@@ -325,7 +325,7 @@ fit_ord
 <span class="co">#&gt; </span>
 <span class="co">#&gt; log-likelihood:  -1895.085 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1067 </span>
-<span class="co">#&gt; AIC:  4116.171 </span>
+<span class="co">#&gt; AIC:  4116.17 </span>
 <span class="co">#&gt; AICc:  3717.185 </span>
 <span class="co">#&gt; BIC:  4344.566</span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.</p>

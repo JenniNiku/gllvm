@@ -22,6 +22,7 @@ degrees of freedom difference larger than 20. For such models
 the P-value should be treated as very approximate.
 }
 \examples{
+\donttest{
 ## Load a dataset from the mvabund package
 data(antTraits)
 y <- antTraits$abund
@@ -34,7 +35,7 @@ fit2 <- gllvm(y, X, TR, formula = ~ Bare.ground + Shrub.cover +
 # Test if the model with fourth corner interaction terms is significantly
 # better using likelihood-ratio test:
 anova(fit1, fit2)
-
+}
 }
 \author{
 Jenni Niku

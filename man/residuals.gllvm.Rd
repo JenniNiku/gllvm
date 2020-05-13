@@ -29,6 +29,7 @@ distribution, \eqn{F_{ij}^-(y))} is the limit as \eqn{F_{ij}(y)} is approached f
 generated at random from the standard uniform distribution.
 }
 \examples{
+\dontrun{
 # Load a dataset from the mvabund package
 data(antTraits)
 y <- as.matrix(antTraits$abund)
@@ -36,7 +37,7 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 # residuals
 res <- residuals(fit)
-
+}
 }
 \references{
 Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.

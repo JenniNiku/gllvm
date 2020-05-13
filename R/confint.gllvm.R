@@ -9,6 +9,7 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
 #'
 #' @examples
+#' \dontrun{
 #'## Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -17,7 +18,7 @@
 #'fit <- gllvm(y = y, X = X, family = poisson())
 #'# 95 % confidence intervals for coefficients of X variables
 #'confint(fit, level = 0.95, parm = "Xcoef")
-#'
+#'}
 #'@export
 
 confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {

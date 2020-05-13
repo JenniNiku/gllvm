@@ -16,6 +16,7 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>,  David Warton
 #'
 #' @examples
+#' \donttest{
 #'# Load a dataset from the mvabund package
 #'data(antTraits)
 #'y <- as.matrix(antTraits$abund)
@@ -25,7 +26,6 @@
 #'# fitted values
 #'predfit <- predict(fit, type = "response")
 #'
-#' \donttest{
 #'# linear predictors
 #'predlin <- predict(fit)
 #'# Predict new sites:
