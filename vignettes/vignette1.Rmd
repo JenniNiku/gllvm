@@ -231,6 +231,21 @@ coefplot(fit_env, cex.ylab = 0.7, xlim.list = list(NULL, NULL, c(-4, 4)),
 rownames(fit_env$params$Xcoef) <- colnames(fit_env$y)
 ```
 
+Alternatively, model-selection on covariates, latent variables or both can be performed by dredging, using the MuMIn package. Though especially for large datasets with many covariates and latent variables, this can take a while to run.
+```{r, eval = FALSE, warning = FALSE}
+library(MuMIn)
+fit_table <- dredge(fiti,varying=list(num.lv=1:5), rank="AIC")
+subset(fit_table, delta<2)
+# Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Shrub.cover + Volume.lying.CWD, 
+#     num.lv = i, family = "negative.binomial", sd.errors = FALSE, 
+#     seed = 1234)
+# ---
+# Model selection table 
+#    (Int) Bar.grn Shr.cvr Vlm.lyn.CWD num.lv  df    logLik   AICc delta weight
+# 39     +       +       +           +      4 363 -1793.923 3522.6  0.00   0.52
+# 38     +       +       +           +      3 325 -1794.337 3522.8  0.16   0.48
+# Models ranked by AICc(x) 
+```
 
 ## Studying co-occurrence patterns
 
