@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc, row.struc = row.struc) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -15,7 +15,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   
   row.params <- rep(0, n);
   if(starting.val %in% c("res","random") || row.eff == "random"){
-    rmeany <- rowMeans(y)
+    if(row.struc[1]!=0){
+      rmeany <- rowSums(rowsum(y,group=row.struc))/table(row.struc)/p
+    }else{
+      rmeany <- rowMeans(y)
+    }
+    
     if(family=="binomial"){
       rmeany=1e-3+0.99*rmeany
       if(row.eff %in% c("fixed",TRUE)) {
@@ -25,13 +30,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       }
     } else if(family=="gaussian"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE)) {
+      if(row.eff %in% c("fixed",TRUE) & row.struc[1] == 0 | row.eff %in% c("fixed",TRUE) & all(row.struc==1:n)) {
         row.params <-  rmeany - rmeany[1]
       } else{
         row.params <-  rmeany - mean(rmeany)
       }
     } else {
-      if(row.eff %in% c("fixed",TRUE)) {
+      if(row.eff %in% c("fixed",TRUE) & row.struc[1] == 0| row.eff %in% c("fixed",TRUE) & all(row.struc==1:n)) {
         row.params <-  row.params <- log(rmeany)-log(rmeany[1])
       } else{
         row.params <-  row.params <- log(rmeany)-log(mean(y))

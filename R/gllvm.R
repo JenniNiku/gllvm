@@ -37,6 +37,7 @@
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
 #' @param randomX.start Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.
 #' @param dependent.row logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.
+#' @param row.struc potential vector of integers that can be used to specify structured row-effects.
 #' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #'
@@ -265,7 +266,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL, start.lvs = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim", scale.X = TRUE,
                   Lambda.start = c(0.1, 0.1, 0.1), jitter.var = 0,
-                  randomX = NULL, randomX.start = "res", dependent.row = FALSE, beta0com = FALSE, zeta.struc="species") {
+                  randomX = NULL, randomX.start = "res", dependent.row = FALSE, beta0com = FALSE, zeta.struc="species", row.struc = NULL) {
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
@@ -518,7 +519,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             randomX.start = randomX.start,
             beta0com = beta0com, 
             scale.X = scale.X,
-            zeta.struc = zeta.struc
+            zeta.struc = zeta.struc,
+            row.struc = row.struc
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -551,7 +553,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
-            zeta.struc = zeta.struc
+            zeta.struc = zeta.struc,
+            row.struc = row.struc
           )
       }
 

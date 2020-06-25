@@ -14,6 +14,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xr);
   DATA_MATRIX(xb);
   DATA_MATRIX(offset);
+  DATA_IVECTOR(rowstruc);
   
   PARAMETER_MATRIX(r0);
   PARAMETER_MATRIX(b);
@@ -49,9 +50,22 @@ Type objective_function<Type>::operator() ()
   //vector<Type> Ar = exp(lg_Ar);
   Type sigma = exp(log_sigma(0));
   
-  if(random(0)<1){  r0(0,0) = 0;}
   int nlvr = num_lv;
-  if(random(0)>0){  nlvr++;}
+  matrix <Type> unew(n,num_lv+1);
+  if(random(0)>0){
+    nlvr++;
+    
+    for (int i=0; i<n; i++){
+      unew(i,0) = r0(rowstruc(i)-1,0);
+      for (int q=0; q<num_lv; q++){
+        unew(i,q+1) = u(i,q);
+      }
+    }
+  }else{
+    unew = u;
+  }
+  REPORT(unew);
+  if(random(0)<1){  r0(0,0) = 0;}
   
   matrix<Type> eta(n,p);
   eta.fill(0.0);
@@ -95,7 +109,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    lam += u*newlam;
+    lam += unew*newlam;
     eta = lam;
   }
   
@@ -107,10 +121,20 @@ Type objective_function<Type>::operator() ()
   
   
   if(method<1){
-    eta += r0*xr + offset;
-    
+
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
+    
+    if(rowstruc.size()>1){
+      for (int j=0; j<p;j++){
+        for(int i=0; i<n; i++){
+          eta(i,j) += r0(rowstruc(i)-1,0);
+        }
+      }
+      eta +=  offset;
+    }else{
+      eta += r0*xr + offset;
+    }
     
     if(nlvr>0){
       array<Type> A(nlvr,nlvr,n);
@@ -136,8 +160,8 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
         }
-        if(nlvr == num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (A.col(i).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
-        if(nlvr>num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
+        if(nlvr == num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (A.col(i).matrix()).diagonal().sum()-(unew.row(i)*unew.row(i).transpose()).sum());
+        if(nlvr>num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((unew.row(i)*Cu.inverse())*unew.row(i).transpose()).sum());
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
       nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
@@ -323,7 +347,17 @@ Type objective_function<Type>::operator() ()
   // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   
 } else {
-  eta += r0*xr + offset;
+  
+  if(rowstruc.size()>1){
+    for (int j=0; j<p;j++){
+      for(int i=0; i<n; i++){
+        eta(i,j) += r0(rowstruc(i)-1,0);
+      }
+    }
+    eta +=  offset;
+  }else{
+    eta += r0*xr + offset;
+  }
   
   // Include random slopes if random(1)>0
   if(random(1)>0){
@@ -363,7 +397,7 @@ Type objective_function<Type>::operator() ()
     
     MVNORM_t<Type> mvnorm(Cu);
     for (int i=0; i<n; i++) {
-      nll += mvnorm(u.row(i));
+      nll += mvnorm(unew.row(i));
     }
   }
   
