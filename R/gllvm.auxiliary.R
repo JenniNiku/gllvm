@@ -1393,3 +1393,11 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
+                                 
+nobs.gllvm <- function(object){
+n <- dim(object$y)[1]
+return(n)
+}
+##' @importFrom stats nobs
+##' @export
+
