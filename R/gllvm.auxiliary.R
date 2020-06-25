@@ -15,12 +15,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   
   row.params <- rep(0, n);
   if(starting.val %in% c("res","random") || row.eff == "random"){
-    if(row.struc[1]!=0){
       rmeany <- rowSums(rowsum(y,group=row.struc))/table(row.struc)/p
-    }else{
-      rmeany <- rowMeans(y)
-    }
-    
+
     if(family=="binomial"){
       rmeany=1e-3+0.99*rmeany
       if(row.eff %in% c("fixed",TRUE)) {
@@ -30,13 +26,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       }
     } else if(family=="gaussian"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE) & row.struc[1] == 0 | row.eff %in% c("fixed",TRUE) & all(row.struc==1:n)) {
+      if(row.eff %in% c("fixed",TRUE)) {
         row.params <-  rmeany - rmeany[1]
       } else{
         row.params <-  rmeany - mean(rmeany)
       }
     } else {
-      if(row.eff %in% c("fixed",TRUE) & row.struc[1] == 0| row.eff %in% c("fixed",TRUE) & all(row.struc==1:n)) {
+      if(row.eff %in% c("fixed",TRUE)) {
         row.params <-  row.params <- log(rmeany)-log(rmeany[1])
       } else{
         row.params <-  row.params <- log(rmeany)-log(mean(y))
