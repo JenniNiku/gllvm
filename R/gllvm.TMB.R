@@ -442,19 +442,19 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(row.eff=="random"){
         if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
         if(num.lv>0){
-          if(dependent.row)u<-cbind(r0,u)
+         # if(dependent.row)u<-cbind(r0,u)
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,xb=xb,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rowstruc=row.struc), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a,b),B=matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0,Abb=0, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
-            random = "u", DLL = "gllvm")
+            random = c("u","r0"), DLL = "gllvm")
         }else{
-          if(dependent.row)u<-cbind(r0)
+          #if(dependent.row)u<-cbind(r0)
           objr <- TMB::MakeADFun(
             data = list(y = y, x = Xd,xr=xr,xb=xb,offset=offset, num_lv = num.lv,family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rowstruc=row.struc), silent=!trace,
             parameters = list(r0=matrix(r0), b = rbind(a,b),B=matrix(0), Br=Br,lambda = 0, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma),Au=0,Abb=0, zeta=zeta),
             inner.control=list(mgcmax = 1e+200,maxit = 1000,tol10=0.01),
-            random = "u", DLL = "gllvm")
+            random = "r0", DLL = "gllvm")
         }
       } else {
         if(num.lv>0){
