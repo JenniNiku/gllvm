@@ -618,7 +618,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         if(row.eff=="random") {
           incl[names(objrFinal$par)=="r0"] <- FALSE; incld[names(objrFinal$par)=="r0"] <- FALSE
         } 
-        if(row.eff=="fixed"){ incl[1] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
+        if(row.eff=="fixed"){ if(all(row.struc==(1:n))){incl[1] <- FALSE}; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
         if(row.eff==FALSE) {incl[names(objrFinal$par)=="r0"] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
         if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
         if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
@@ -660,7 +660,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           incl[names(objrFinal$par) == "r0"] <- FALSE; incld[names(objrFinal$par) == "r0"] <- FALSE
           incld[names(objrFinal$par)=="Au"] <- TRUE
         }
-        if(row.eff=="fixed") {incl[1] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
+        if(row.eff=="fixed") {if(all(row.struc==(1:n))){incl[1] <- FALSE}; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
         if(row.eff==FALSE) {incl[names(objrFinal$par)=="r0"] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
 
         if(nlvr>0){
@@ -686,7 +686,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         
       }
       
-        if(row.eff == "fixed") { se.row.params <- if(all(row.struc==(1:n))){c(0,se[c(1:(n-1))])}else{se[c(1:length(unique(row.struc)))][row.struc]}; names(se.row.params) <- row.names(y); se <- if(all(row.struc==(1:n))){se[-c(1:(n-1))]}else{se[-c(1:length(unique(row.struc)))][row.struc]}}
+        if(row.eff == "fixed") { se.row.params <- if(all(row.struc==(1:n))){c(0,se[c(1:(n-1))])}else{se[c(1:length(unique(row.struc)))][row.struc]}; names(se.row.params) <- row.names(y); se <- if(all(row.struc==(1:n))){se[-c(1:(n-1))]}else{se[-c(1:length(unique(row.struc)))]}}
       sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
       if(num.lv > 0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag = TRUE)] <- se[1:(p * num.lv - sum(0:(num.lv-1)))];
