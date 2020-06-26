@@ -341,7 +341,7 @@ trait.TMB <- function(
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0, n)}
     if(row.eff == "random"){ nlvr<-num.lv+1 } else {nlvr=num.lv}
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
-    if(row.eff=="fixed" & all(row.struc==(1:n)))xr[1,]<-0
+    if(row.eff=="fixed" & all(row.struc==(1:n)))xr[1,1]<-0
 
     # set starting values for variational distribution covariances
     if(nlvr > 0){
