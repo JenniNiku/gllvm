@@ -162,7 +162,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         row.params <- NULL
         if (start.params$row.eff != FALSE) {
           row.params <- start.params$params$row.params
-          if(row.eff=="fixed")
+          if(row.eff=="fixed" & all(row.struc==1:n))
             row.params[1] <- 0
           if(row.eff=="random")
             sigma <- start.params$params$sigma
@@ -239,6 +239,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; Abb=0
     randoml=c(0,0)
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
+    if(row.eff=="fixed"&all(row.struc==(1:n)))xr[1,]<-0
     if(row.eff=="random") randoml[1]=1
     if(row.eff == "random"){ nlvr<-num.lv+1 } else {nlvr=num.lv}
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
@@ -406,7 +407,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       
       if(row.eff!=FALSE) {
         ri <- names(param)=="r0"
-        if(row.eff=="fixed") row.params <- c(0,param[ri][row.struc])
+        if(row.eff=="fixed") row.params <- param[ri][row.struc]
         if(row.eff=="random"){
           row.params <- param[ri][row.struc]
           sigma<-exp(param["log_sigma"])[1]
@@ -686,7 +687,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         
       }
       
-        if(row.eff == "fixed") { se.row.params <- c(0,se[-c(1:(n-1))]); names(se.row.params) <- row.names(y); se <- se[-c(1:(n-1))] }
+        if(row.eff == "fixed") { se.row.params <- if(all(row.struc==(1:n))){c(0,se[c(1:(n-1))])}else{se[c(1:length(unique(row.struc)))][row.struc]}; names(se.row.params) <- row.names(y); se <- if(all(row.struc==(1:n))){se[-c(1:(n-1))]}else{se[-c(1:length(unique(row.struc)))][row.struc]}}
       sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
       if(num.lv > 0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag = TRUE)] <- se[1:(p * num.lv - sum(0:(num.lv-1)))];

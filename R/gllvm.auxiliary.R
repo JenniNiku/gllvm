@@ -19,7 +19,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
     if(family=="binomial"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE)) {
+      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
         row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
       } else{
         row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
@@ -32,7 +32,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         row.params <-  rmeany - mean(rmeany)
       }
     } else {
-      if(row.eff %in% c("fixed",TRUE)) {
+      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
         row.params <-  row.params <- log(rmeany)-log(rmeany[1])
       } else{
         row.params <-  row.params <- log(rmeany)-log(mean(y))

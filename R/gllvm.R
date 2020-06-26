@@ -655,7 +655,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")
       }
     }
-
+    out$row.struc <- row.struc
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
     out$call <- match.call()

@@ -64,8 +64,6 @@ Type objective_function<Type>::operator() ()
   }else{
     unew = u;
   }
-  REPORT(unew);
-  if(random(0)<1){  r0(0,0) = 0;}
   
   matrix<Type> eta(n,p);
   eta.fill(0.0);
