@@ -49,7 +49,12 @@ Type objective_function<Type>::operator() ()
   vector<Type> iphi = exp(lg_phi);
   //vector<Type> Ar = exp(lg_Ar);
   Type sigma = exp(log_sigma(0));
-  
+
+
+  if(random(0)<1 && rowstruc(n-1)==n){
+   r0(0,0) = 0;
+  }
+
   int nlvr = num_lv;
   matrix <Type> unew(n,num_lv+1);
   if(random(0)>0){

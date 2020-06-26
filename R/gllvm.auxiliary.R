@@ -26,7 +26,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       }
     } else if(family=="gaussian"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE)) {
+      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
         row.params <-  rmeany - rmeany[1]
       } else{
         row.params <-  rmeany - mean(rmeany)
