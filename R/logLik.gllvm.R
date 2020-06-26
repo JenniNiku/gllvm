@@ -30,7 +30,7 @@ logLik.gllvm <- function(object, ...)
     if(object$zeta.struc=="common")object$params$zeta<-object$params$zeta[-1]
   }
   if (object$row.eff %in% c("fixed", TRUE)){
-    object$params$row.params <- if(all(object$row.struc==(1:n)))object$params$row.params[-1]
+    object$params$row.params <- if(all(object$row.struc==(1:nrow(object$y))))object$params$row.params[-1]
   }else{
     object$params$row.params <- unique(object$params$row.params)
   }
