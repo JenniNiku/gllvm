@@ -404,11 +404,11 @@ trait.TMB <- function(
       if(row.eff=="random"){
         randoml[1] <- 1
         if(dependent.row) sigma<-c(sigma[1], rep(0, num.lv))
-        if(num.lv>0){
-          u<-cbind(r0,u)
-        }else {
-          u<-cbind(r0)
-        }
+        # if(num.lv>0){
+        #   u<-cbind(r0,u)
+        # }else {
+        #   u<-cbind(r0)
+        # }
       }
       if(row.eff!="random" && num.lv==0){
         u=matrix(0)
