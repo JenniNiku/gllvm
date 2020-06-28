@@ -14,7 +14,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xr);
   DATA_MATRIX(xb);
   DATA_MATRIX(offset);
-  DATA_IVECTOR(rowstruc);
+  //DATA_IVECTOR(rowstruc);
   
   PARAMETER_MATRIX(r0);
   PARAMETER_MATRIX(b);
@@ -29,8 +29,11 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sigmaij);
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect)
   
+  PARAMETER_MATRIX(lg_Ar);
+
   DATA_INTEGER(num_lv);
   DATA_INTEGER(family);
+  DATA_INTEGER(deprow);
   
   PARAMETER_VECTOR(Au);
   //  PARAMETER_VECTOR(lg_Ar);
@@ -46,28 +49,38 @@ Type objective_function<Type>::operator() ()
   int n = y.rows();
   int p = y.cols();
   int l = xb.cols();
+  int nrr = r0.cols();
+  
   vector<Type> iphi = exp(lg_phi);
   //vector<Type> Ar = exp(lg_Ar);
-  Type sigma = exp(log_sigma(0));
+  matrix <Type> Ar(n,nrr);
+  for (int i=0; i<n; i++){
+    for (int r=0; r<nrr; r++){
+      Ar(i,r) = exp(lg_Ar(i,r));
+    }
+  }
+  vector <Type> sigma = exp(log_sigma);
 
 
-  if(random(0)<1 && rowstruc(n-1)==n){
+  if(random(0)<1){//still need to fix
    r0(0,0) = 0;
   }
 
   int nlvr = num_lv;
-  matrix <Type> unew(n,num_lv+1);
-  if(random(0)>0){
+  if(random(0)>0 && deprow<1){
     nlvr++;
     
+    u.conservativeResize(u.rows(), u.cols()+1); // adds a column to u at the end, can easily be extended to multiple rn
+    
     for (int i=0; i<n; i++){
-      unew(i,0) = r0(rowstruc(i)-1,0);
       for (int q=0; q<num_lv; q++){
-        unew(i,q+1) = u(i,q);
+        u(i,q+1) = u(i,q);
       }
     }
-  }else{
-    unew = u;
+    
+    for (int i=0; i<n; i++){
+      u(i,0) = r0(i,0); //can easily be extended to multiple rn
+    }
   }
   
   matrix<Type> eta(n,p);
@@ -81,8 +94,8 @@ Type objective_function<Type>::operator() ()
   if(nlvr>0){
     newlam.row(0).fill(1.0);
     Cu.diagonal().fill(1.0);
-    if(random(0)>0){
-      Cu(0,0) = sigma*sigma;
+    if(random(0)>0 && deprow < 1){
+      Cu(0,0) = sigma(0)*sigma(0);
       if(log_sigma.size()>1){
         for (int d=1; d<(nlvr); d++){
           Cu(d,0) = log_sigma(d);
@@ -112,7 +125,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    lam += unew*newlam;
+    lam += u*newlam;
     eta = lam;
   }
   
@@ -128,16 +141,14 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
     
-    if(rowstruc.size()>1){
       for (int j=0; j<p;j++){
         for(int i=0; i<n; i++){
-          eta(i,j) += r0(rowstruc(i)-1,0);
+          for(int r=0; r<nrr; r++){
+          eta(i,j) += r0(i,r)*xr(0,j) + offset(i,j);
+        }
         }
       }
-      eta +=  offset;
-    }else{
-      eta += r0*xr + offset;
-    }
+
     
     if(nlvr>0){
       array<Type> A(nlvr,nlvr,n);
@@ -163,8 +174,8 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
         }
-        if(nlvr == num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (A.col(i).matrix()).diagonal().sum()-(unew.row(i)*unew.row(i).transpose()).sum());
-        if(nlvr>num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((unew.row(i)*Cu.inverse())*unew.row(i).transpose()).sum());
+        if(nlvr == num_lv) nll -= 0.5*(atomic::logdet(A.col(i).matrix()) - (A.col(i).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
+        if(nlvr>num_lv) nll -= 0.5*(atomic::logdet(A.col(i).matrix()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
       nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
@@ -229,37 +240,47 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+          for (int r=0; r<nrr; r++) {
+            nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+          }
       }
     } else if(family==1){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }      
+        }
     } else if(family==2) {
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
           nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }      
+        }
     } else if(family==3) {
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }
+        }
     } else if(family==4) {//gamma
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }
+        }
     } else if(family==7 && zetastruc == 1){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -305,8 +326,10 @@ Type objective_function<Type>::operator() ()
           nll += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }
+        }
     }else if(family==7 && zetastruc==0){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -338,28 +361,32 @@ Type objective_function<Type>::operator() ()
           }
           nll += cQ(i,j);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }
+        }
     } else if(family==8) {// exp dist
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
         }
+        for (int r=0; r<nrr; r++) {
+          nll -= 0.5*(log(Ar(i,r)) - Ar(i,r)/pow(sigma(r),2) - pow(r0(i,r)/sigma(r),2))*random(0)*deprow;
+        }
       }
     }
-  // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
+      for (int r=0; r<nrr; r++) {
+        nll -= - n*log(sigma(r))*random(0)*deprow;// -0.5*t(u_i)*u_i
+      }
   
 } else {
   
-  if(rowstruc.size()>1){
-    for (int j=0; j<p;j++){
-      for(int i=0; i<n; i++){
-        eta(i,j) += r0(rowstruc(i)-1,0);
+  for (int j=0; j<p;j++){
+    for(int i=0; i<n; i++){
+      for(int r=0; r<nrr; r++){
+        eta(i,j) += r0(i,r)*xr(0,j) + offset(i,j);
       }
     }
-    eta +=  offset;
-  }else{
-    eta += r0*xr + offset;
   }
   
   // Include random slopes if random(1)>0
@@ -397,12 +424,17 @@ Type objective_function<Type>::operator() ()
   }
   //latent variables and random site effects (r_i,u_i) from N(0,Cu)
   if(nlvr>0){
-    
     MVNORM_t<Type> mvnorm(Cu);
     for (int i=0; i<n; i++) {
-      nll += mvnorm(unew.row(i));
+      nll += mvnorm(u.row(i));
     }
   }
+    for (int i=0; i<n; i++) {
+      for (int r=0; r<nrr; r++) {
+        nll -= dnorm(r0(i,r), Type(0), sigma(r), true)*random(0)*deprow;
+      }
+    }
+
   
   
   //likelihood model with the log link function

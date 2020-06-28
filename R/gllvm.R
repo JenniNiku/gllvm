@@ -37,7 +37,7 @@
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
 #' @param randomX.start Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.
 #' @param dependent.row logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.
-#' @param row.struc potential vector of integers that can be used to specify structured row-effects.
+#' @param row.formula formula for specifying row-effects. Specified covariates need  to be present as integer, factor or character in Xrow.
 #' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #'
@@ -266,7 +266,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   max.iter = 200, maxit = 1000, start.fit = NULL, start.lvs = NULL,
                   starting.val = "res", TMB = TRUE, optimizer = "optim", scale.X = TRUE,
                   Lambda.start = c(0.1, 0.1, 0.1), jitter.var = 0,
-                  randomX = NULL, randomX.start = "res", dependent.row = FALSE, beta0com = FALSE, zeta.struc="species", row.struc = NULL) {
+                  randomX = NULL, randomX.start = "res", dependent.row = FALSE, beta0com = FALSE, zeta.struc="species", Xrow = NULL) {
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
@@ -280,7 +280,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
-
+    if(!is.null(row.formula)){
+      Xrow <- model.frame(row.formula,data=data.frame(Xrow))
+      if(!all(apply(Xrow,2,function(x)any(is.integer(x)|is.factor(x)|is.character(x))))){
+        stop("Covariates in X for row-effects must be integers, factors or characters.")
+      }
+      Xrow <-  apply(Xrow,2,function(x)if(is.character(x)){as.integer(as.factor(x))}else{x})
+    }else if(is.null(row.formula)&row.eff!=FALSE){
+      Xrow <- data.frame(sites = 1:nrow(y))
+    }
+    
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
@@ -554,7 +563,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
-            row.struc = row.struc
+            Xrow = Xrow
           )
       }
 

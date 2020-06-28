@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc, row.struc = NULL) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL, Xrow = NULL) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -11,35 +11,41 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   mu<-NULL
   out <- list()
 
-  sigma=1
   
-  row.params <- rep(0, n);
+  rn <- ifelse(!is.null(Xrow),ncol(Xrow),1)
+  row.params <- matrix(rep(0, n*rn),ncol=rn);
   if(starting.val %in% c("res","random") || row.eff == "random"){
-      rmeany <- rowSums(rowsum(y,group=row.struc))/table(row.struc)/p
+    rmeany <- row.params
+    for(r in 1:rn){
+      rmeany[,r] <- (rowSums(rowsum(y,group=Xrow[,r]))/table(Xrow[,r])/p)[as.factor(Xrow[,r])]
 
     if(family=="binomial"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
-        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
+      if(row.eff %in% c("fixed",TRUE) & all(Xrow[,r]==(1:n))) {
+        row.params[,r] <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
       } else{
-        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
+        row.params[,r] <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
       }
     } else if(family=="gaussian"){
       rmeany=1e-3+0.99*rmeany
-      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
-        row.params <-  rmeany - rmeany[1]
+      if(row.eff %in% c("fixed",TRUE) & all(Xrow[,r]==(1:n))) {
+        row.params[,r] <-  rmeany[,r] - rmeany[1,r]
       } else{
-        row.params <-  rmeany - mean(rmeany)
+        row.params[,r] <-  rmeany[,r] - mean(rmeany[,r])
       }
     } else {
-      if(row.eff %in% c("fixed",TRUE) & all(row.struc==(1:n))) {
-        row.params <-  row.params <- log(rmeany)-log(rmeany[1])
+      if(row.eff %in% c("fixed",TRUE) & all(Xrow[,r]==(1:n))) {
+        row.params[,r] <-  row.params[,r] <- log(rmeany[,r])-log(rmeany[1,r])
       } else{
-        row.params <-  row.params <- log(rmeany)-log(mean(y))
+        row.params[,r] <-  row.params[,r] <- log(rmeany[,r])-log(mean(y))
       }
     }
+    
+    
+    }
     if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] <- 1.5 * sign(row.params[abs(row.params)>1.5])
-    sigma=sd(row.params)
+    
+    sigma=apply(row.params,2,sd)
   }
 
   if(!is.numeric(y))
