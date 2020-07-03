@@ -6,7 +6,7 @@
 \title{Plot covariate coefficients and confidence intervals}
 \usage{
 \method{coefplot}{gllvm}(object, y.label = TRUE, which.Xcoef = NULL,
-  cex.ylab = 0.5, mfrow = NULL, mar = c(4, 6, 2, 1),
+  order = TRUE, cex.ylab = 0.5, mfrow = NULL, mar = c(4, 6, 2, 1),
   xlim.list = NULL, ...)
 }
 \arguments{
@@ -15,6 +15,8 @@
 \item{y.label}{logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.}
 
 \item{which.Xcoef}{vector indicating which covariate coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.}
+
+\item{order}{logical, whether or not coefficients are ordered, defaults to \code{TRUE}.}
 
 \item{cex.ylab}{the magnification to be used for axis annotation relative to the current setting of cex.}
 
