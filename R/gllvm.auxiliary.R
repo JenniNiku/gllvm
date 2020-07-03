@@ -1240,6 +1240,8 @@ getFourthCorner<- function(object){
   isinvec <- function(vec, ob =""){
     ob %in% vec
   }
+  n1 <- n1[(n1 %in% unlist(splitsnam))]
+  n2 <- n2[(n2 %in% unlist(splitsnam))]
   i=1; j=1;
   fourth<-matrix(0,length(n1),length(n2))
   for (i in 1:length(n1)) {
