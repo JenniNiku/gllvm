@@ -314,7 +314,7 @@ fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2,
                  formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD) +
                 (Bare.ground + Shrub.cover + Volume.lying.CWD) : (Pilosity + 
                 Polymorphism + Webers.length), seed = 123,
-                row.eff = "random", n.init = 3, jitter.var = 0.01,
+                row.eff = "random", control.start =list(n.init = 3, jitter.var = 0.01),
                 randomX = ~ Bare.ground + Shrub.cover + Volume.lying.CWD)
 ```
 
@@ -339,7 +339,7 @@ In the previous example, trait-environment interactions seem to be relatively sm
 ```{r, warning=FALSE, eval=FALSE}
 fit_4th2 <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
         formula = y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD), seed = 123,
-                 row.eff = "random", n.init = 3, jitter.var = 0.01,
+                 row.eff = "random", control.start =list(n.init = 3, jitter.var = 0.01),
                  randomX = ~ Bare.ground + Shrub.cover + Volume.lying.CWD)
 # Test interactions using likelihood ratio test:
 anova(fit_4th, fit_4th2)
