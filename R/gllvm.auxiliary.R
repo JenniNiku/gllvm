@@ -11,8 +11,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   mu<-NULL
   out <- list()
 
-  
-  rn <- ifelse(!is.null(Xrow),ncol(Xrow),1)
+  if(is.null(Xrow)){
+    Xrow <- matrix(1:n,ncol=1)
+  }
+  rn <- ncol(Xrow)
   row.params <- matrix(rep(0, n*rn),ncol=rn);
   if(starting.val %in% c("res","random") || row.eff == "random"){
     rmeany <- row.params

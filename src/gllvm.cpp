@@ -56,7 +56,7 @@ Type objective_function<Type>::operator() ()
   matrix <Type> Ar(n,nrr);
   for (int i=0; i<n; i++){
     for (int r=0; r<nrr; r++){
-      Ar(i,r) = exp(lg_Ar(i,r));
+      Ar(i,r) = pow(exp(lg_Ar(i,r)),2);
     }
   }
   vector <Type> sigma = exp(log_sigma);
@@ -70,7 +70,7 @@ Type objective_function<Type>::operator() ()
   if(random(0)>0 && deprow<1){
     nlvr++;
     
-    u.conservativeResize(u.rows(), u.cols()+1); // adds a column to u at the end, can easily be extended to multiple rn
+    u.conservativeResize(u.rows(), u.cols()+1); // adds a column to u at the end, can be extended to multiple rn
     
     for (int i=0; i<n; i++){
       for (int q=0; q<num_lv; q++){
@@ -141,6 +141,15 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
     
+    if(random(0)>0 && deprow>0){
+      for (int i=0; i<n; i++) {
+        for (int r=0; r<nrr; r++){
+        for (int j=0; j<p;j++){
+          cQ(i,j) = 0.5*Ar(i,r);//
+        }
+        }
+      }}
+    
       for (int j=0; j<p;j++){
         for(int i=0; i<n; i++){
           for(int r=0; r<nrr; r++){
@@ -178,8 +187,7 @@ Type objective_function<Type>::operator() ()
         if(nlvr>num_lv) nll -= 0.5*(atomic::logdet(A.col(i).matrix()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
-      nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
-      
+      if(deprow<1)nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
     }
     
     // Include random slopes if random(1)>0
