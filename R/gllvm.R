@@ -345,10 +345,10 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
     if(!is.null(row.formula)){
       Xrow <- model.frame(row.formula,data=data.frame(Xrow))
       if(!all(apply(Xrow,2,function(x)any(is.integer(x)|is.factor(x)|is.character(x))))){
-        stop("Covariates in X for row-effects must be integers, factors or characters.")
+        stop("Covariates in Xrow must be integers, factors or characters.")
       }
       Xrow <-  apply(Xrow,2,function(x)if(is.character(x)){as.integer(as.factor(x))}else{x})
-    }else if(is.null(row.formula)&row.eff!=FALSE){
+    }else if(is.null(row.formula)&row.eff!=FALSE&!is.null(Xrow)){
       Xrow <- data.frame(sites = 1:nrow(y))
     }
     
@@ -540,7 +540,7 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
     }
     n.i <- 1
 
-    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
+    out <- list( y = y, X = X, Xrow = Xrow, TR = TR, data = datayx, num.lv = num.lv,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, terms = term, beta0com = beta0com)
 
@@ -561,6 +561,7 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
         fitg <- trait.TMB(
             y,
             X = X,
+            Xrow = Xrow,
             TR = TR,
             formula = formula,
             num.lv = num.lv,
@@ -591,7 +592,6 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
             beta0com = beta0com, 
             scale.X = scale.X,
             zeta.struc = zeta.struc,
-            row.struc = row.struc
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -600,6 +600,7 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
         fitg <- gllvm.TMB(
             y,
             X = X,
+            Xrow = Xrow,
             formula = formula,
             num.lv = num.lv,
             family = family,
@@ -624,8 +625,7 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
-            zeta.struc = zeta.struc,
-            Xrow = Xrow
+            zeta.struc = zeta.struc
           )
       }
 
@@ -726,7 +726,6 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")
       }
     }
-    out$row.struc <- row.struc
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
     out$call <- match.call()
