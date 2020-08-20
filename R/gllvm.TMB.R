@@ -265,33 +265,26 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "exponential") {familyn=8}
 
       if(!is.null(Xrow)){
-        if(length(Lambda.start)<2){ Ar <- matrix(1,n,ncol(Xrow))} else {Ar <- matrix(Lambda.start[2],n,ncol(Xrow))}
+        if(length(Lambda.start)<2){ Ar <- matrix(1,n,ncol(Xrow))}else{Ar <- matrix(Lambda.start[2],n,ncol(Xrow))}
       }else{
-        if(length(Lambda.start)<2){ Ar <- matrix(1,n,1)} else {Ar <- matrix(Lambda.start[2],n,1)}
+        if(length(Lambda.start)<2){ Ar <- matrix(1,n,1)}else{Ar <- matrix(Lambda.start[2],n,1)}
       }
       
       
       if(!is.null(Xrow)){
-        #Make sure Xrow[,1] starts at 1
-        if(min(Xrow[,1])!=1){
-          Xrow[,1] <- Xrow[,1] + 1
+        nr<-ncol(Xrow)
+        Xrow<-c(Xrow)
+        #create unique sequence, but take a value not present in the dataset yet
+        idx<-(max(Xrow)+1):((max(Xrow)+1)+length(unique(Xrow)))
+        for(i in 1:length(unique(Xrow))){
+          Xrow[Xrow==unique(Xrow)[i]]<-idx[i]
         }
-        #make sure Xrow[,1] is sequential
-        if(!all(diff(sort(unique(Xrow[,1])))==1)){
-          Xrow.lev <- sort(unique(Xrow[,1]))
-          for(i in 1:length(Xrow.lev)){
-            Xrow[Xrow[,1]==Xrow.lev[i],1] <- i
-          }
+        #Now make sure it starts at 1
+        for(i in 1:length(unique(Xrow))){
+          Xrow[Xrow==unique(Xrow)[i]]<-i
         }
-        #Make sure Xrow[,>1] all have unique levels
-        if(ncol(Xrow)>1){
-          for(j in 2:ncol(Xrow)){
-            Xrow.lev <- sort(unique(Xrow[,j]))
-            for(i in 1:length(Xrow.lev)){
-                Xrow[Xrow[,j]==Xrow.lev[i],j]<-max(Xrow[,j-1])+i
-            }
-          }
-        }
+        #and back to a matrix
+        Xrow <- matrix(Xrow,ncol=nr)
         #collect row effects based on structure in Xrow
         map = list(lg_Ar = as.factor(c(as.matrix(Xrow))), r0  = as.factor(c(as.matrix(Xrow))))#this works with 1 row effect, not with multiple, then we need to make sure there are unique levels.
         
@@ -339,16 +332,15 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         nam <- names(param1)
         if(!is.null(Xrow)){
           r1 <- matrix(0,n ,ncol(Xrow))  
-          if(row.eff=="random")lg_Ar1 <- matrix(0,n ,ncol(Xrow))
+          lg_Ar1 <- matrix(0,n ,ncol(Xrow))
           for(r in 1:ncol(Xrow)){
             r1[,r] <- param1[nam=="r0"][1:length(unique(Xrow[,r]))][Xrow[,r]]
-            if(row.eff=="random")lg_Ar1[,r] <- param1[nam=="lg_Ar"][1:length(unique(Xrow[,r]))][Xrow[,r]]
+            if(row.eff=="random")lg_Ar1[,r] <- param1[nam=="lg_Ar"][1:length(unique(Xrow))][Xrow[,r]]
           }
         }else{
           r1 <- matrix(0,n ,1)
-          if(row.eff=="random") lg_Ar1 <- matrix(0,n ,1)
+          lg_Ar1 <- matrix(0,n ,1)
           r1[,1] <- param1[nam=="r0"]
-          if(row.eff=="random") lg_Ar1[,1] <- param1[nam=="lg_Ar"]
         }
  
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
@@ -446,7 +438,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           if(!is.null(Xrow)){
             row.params <- matrix(0,n ,ncol(Xrow))
             for(r in 1:ncol(Xrow)){
-              row.params[,r] <- param[ri][1:length(unique(Xrow[,r]))][Xrow[,r]]
+              row.params[,r] <- param[ri][1:length(unique(Xrow))][Xrow[,r]]
             }
           }else{
             row.params <- matrix(0,n ,1)
@@ -647,13 +639,11 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ 
           out$params$sigma=sigma; 
-          names(out$params$sigma)="sigma"
+          names(out$params$sigma)=paste("sigma",1:length(out$params$sigma))
           if(nlvr>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
         }
-        out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)
-        if(!is.null(Xrow)){
-          colnames(row.params) <- colnames(Xrow)
-        }
+        if(is.null(Xrow)){out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)}
+        if(!is.null(Xrow)){out$params$row.params <- row.params; row.names(out$params$row.params) <- rownames(out$y); colnames(row.params) <- colnames(Xrow)}
       }
       if(family == "binomial") out$link <- link;
       if(family == "tweedie") out$Power <- Power;
@@ -839,10 +829,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
         names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
       }
-      if(row.eff=="random") {
+      if(row.eff=="random" && dependent.row == TRUE) {
         out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
         se=se[-(1:length(out$sd$sigma))] 
-        names(out$sd$sigma) <- "sigma" 
+        names(out$sd$sigma) <- paste("sigma",1:length(out$sd$sigma),sep="") 
+      }else if(row.eff=="random"){
+          out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
+          se=se[-(1:length(out$sd$sigma))] 
+          names(out$sd$sigma) <- paste("sigma",1:length(out$sd$sigma)) 
         }
       if(family %in% c("ordinal")){
         se.zetanew <- se.zetas <- se;
