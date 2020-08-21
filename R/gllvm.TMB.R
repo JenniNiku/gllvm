@@ -223,6 +223,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; Abb=0
     randoml=c(0,0)
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
+    if(row.eff=="random"&dependent.row==FALSE)xr <- matrix(1,1,p)
     if(row.eff=="random") randoml[1]=1
     if(row.eff == "random" & dependent.row==TRUE){ nlvr<-num.lv+1 } else {nlvr=num.lv}
     if(!is.null(X)){Xd <- cbind(1,X)} else {Xd <- matrix(1,n)}
@@ -572,7 +573,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       ui <- names(param)=="u"
       
       if(nlvr > 0){
-        lvs<-(matrix(param[ui],n,num_lv))
+        lvs<-(matrix(param[ui],n,num.lv))
         theta <- matrix(0,p,num.lv)
         if(p>1) {
           theta[lower.tri(theta,diag=TRUE)] <- param[li];
