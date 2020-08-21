@@ -448,19 +448,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
         if(!is.null(Xrow)){
           if(row.eff=="random"){
-            sigma<-exp(param["log_sigma"])[1:ncol(Xrow)]
-            if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1:ncol(Xrow)],(param[names(param)=="log_sigma"])[-c(1:ncol(Xrow))])
-          }else if(row.eff=="random"){
-            sigma <- exp(param["log_sigma"])[1:ncol(Xrow)]
-          }
-        }else{
-          if(row.eff=="random"){
-            sigma<-exp(param["log_sigma"])
-            if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
-          }else if(row.eff=="random"){
-            sigma <- exp(param["log_sigma"])[1]
+            sigma<-exp(param[names(param)=="log_sigma"])[1:ncol(Xrow)]
           }
         }
+          if(row.eff=="random" && dependent.row == TRUE) {
+            row.params <- lvs[,1]; lvs<- as.matrix(lvs[,-1])
+            sigma<-exp(param[names(param)=="log_sigma"])[1]
+            if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
+          }
         }
         
       betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
@@ -588,12 +583,12 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           row.params[,r] <- param[ri][Xrow[,r]]
         }
         if(row.eff=="random"){
-          sigma<-exp(param["log_sigma"])[1:ncol(Xrow)]
+          sigma<-exp(param[names(param)=="log_sigma"])[1:ncol(Xrow)]
           if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1:ncol(Xrow)],(param[names(param)=="log_sigma"])[-c(1:ncol(Xrow))])
         }
       }else{
         row.params <- lvs[,1]; lvs<- as.matrix(lvs[,-1])
-        sigma<-exp(param["log_sigma"])[1]
+        sigma<-exp(param[names(param)=="log_sigma"])[1]
         if(nlvr>1 && dependent.row) sigma <- c(exp(param[names(param)=="log_sigma"])[1],(param[names(param)=="log_sigma"])[-1])
       }
       }
@@ -640,7 +635,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ 
           out$params$sigma=sigma; 
-          names(out$params$sigma)=paste("sigma",1:length(out$params$sigma))
+          names(out$params$sigma)=paste("sigma",1:length(out$params$sigma),sep="")
           if(nlvr>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
         }
         if(is.null(Xrow)){out$params$row.params <- row.params; names(out$params$row.params) <- rownames(out$y)}

@@ -348,8 +348,10 @@ gllvm <- function(y = NULL, X = NULL, Xrow = NULL, TR = NULL, data = NULL, formu
         stop("Covariates in Xrow must be integers, factors or characters.")
       }
       Xrow <-  apply(Xrow,2,function(x)if(is.character(x)){as.integer(as.factor(x))}else{x})
-    }else if(is.null(row.formula)&row.eff!=FALSE&!is.null(Xrow)){
-      Xrow <- data.frame(sites = 1:nrow(y))
+    }else if(is.null(row.formula)&row.eff!=FALSE&is.null(Xrow)){
+      Xrow <- matrix(1:nrow(y),ncol=1)
+    }else if(!is.matrix(Xrow)){
+      Xrow <- as.matrix(Xrow)
     }
     
     if (!is.null(y)) {
