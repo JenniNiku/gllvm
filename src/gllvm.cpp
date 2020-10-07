@@ -146,10 +146,11 @@ Type objective_function<Type>::operator() ()
     
     // Include random slopes if random(1)>0
     if(random(1)>0){
-      matrix<Type> sds(l,l); 
+      matrix<Type> sds(l,l);
       sds.fill(0.0);
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+       
       
       array<Type> Ab(l,l,p);
       for (int dl=0; dl<(l); dl++){

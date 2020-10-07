@@ -259,7 +259,8 @@ coefplot(fitF2)
 ## Include species specific random slopes to the fourth corner model
 fitF3 <- gllvm(y = y, X = X, TR = TR,
  formula = ~ Bare.ground + Canopy.cover * (Pilosity + Webers.length),
- family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, control.start = list(n.init = 3))
+ family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, 
+ control.start = list(n.init = 3))
 ordiplot(fitF3)
 coefplot(fitF3)
 

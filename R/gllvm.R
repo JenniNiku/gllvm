@@ -234,7 +234,8 @@
 #'## Include species specific random slopes to the fourth corner model
 #'fitF3 <- gllvm(y = y, X = X, TR = TR,
 #'  formula = ~ Bare.ground + Canopy.cover * (Pilosity + Webers.length),
-#'  family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, control.start = list(n.init = 3))
+#'  family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, 
+#'  control.start = list(n.init = 3))
 #'ordiplot(fitF3)
 #'coefplot(fitF3)
 #'
@@ -325,7 +326,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$randomX.start = "res"
       x
     }
-    control <- fill_control(control.va)
+    control <- fill_control(control)
     control.va <- fill_control.va(control.va)
     control.start <- fill_control.start(control.start)
     
@@ -573,6 +574,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Power = Power,
             diag.iter = diag.iter,
             Ab.diag.iter = Ab.diag.iter,
+            Ab.struct = Ab.struct,
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
