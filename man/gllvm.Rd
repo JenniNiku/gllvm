@@ -9,13 +9,13 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
   sd.errors = TRUE, method = "VA", randomX = NULL,
   dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
   plot = FALSE, la.link.bin = "probit", Power = 1.1, seed = NULL,
-  scale.X = TRUE, control = list(reltol = 1e-08, TMB = TRUE, optimizer
-  = "optim", max.iter = 200, maxit = 1000, trace = FALSE),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct =
+  scale.X = TRUE, return.terms = TRUE, control = list(reltol = 1e-08,
+  TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace =
+  FALSE), control.va = list(Lambda.struc = "unstructured", Ab.struct =
   "unstructured", diag.iter = 5, Ab.diag.iter = 0, Lambda.start = c(0.1,
   0.1, 0.1)), control.start = list(starting.val = "res", n.init = 1,
   jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start =
-  "res"))
+  "res"), ...)
 }
 \arguments{
 \item{y}{(n x m) matrix of responses.}

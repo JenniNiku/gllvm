@@ -135,8 +135,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
             sigma=c(max(fit.mva$params$sigma[1],sigma),fit.mva$params$sigma[-1])
             fit.mva$params$row.params <- fit.mva$params$row.params/sd(fit.mva$params$row.params)*sigma[1]
           }
+          out$fitstart <- list(A=fit.mva$A, Ab=fit.mva$Ab, TMBfnpar=fit.mva$TMBfn$par) #params = fit.mva$params, 
         }
-        out$fitstart <- fit.mva
         if(!is.null(form1)){
           if(!is.null(fit.mva$coef$row.params)) row.params=fit.mva$coef$row.params
           env <- (fit.mva$coef$B)[n1]

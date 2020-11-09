@@ -273,16 +273,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   offset = NULL, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, la.link.bin = "probit",
-                  Power = 1.1, seed = NULL, scale.X = TRUE, 
-                  control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 1000, trace = FALSE), 
+                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE,
+                  control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace = FALSE), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.1, 0.1, 0.1)),
-                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res")
+                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res"), ...
                   ) {
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
     datayx <- NULL
     
+    pp.pars <- list(...)
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
         x$reltol = 1e-8
@@ -326,9 +327,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$randomX.start = "res"
       x
     }
-    control <- fill_control(control)
-    control.va <- fill_control.va(control.va)
-    control.start <- fill_control.start(control.start)
+    control <- fill_control(c(pp.pars, control))
+    control.va <- fill_control.va(c(pp.pars, control.va))
+    control.start <- fill_control.start(c(pp.pars, control.start))
     
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace;
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
@@ -533,7 +534,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
     out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, terms = term, beta0com = beta0com)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com)
+    if(return.terms) {out$terms = term} #else {terms <- }
 
     if (family == "binomial") {
       if (method == "LA")
@@ -702,7 +704,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       cat("Algorithm converged to infinity, try other starting values or different method. \n")
       }
     out$formula <- fitg$formula
-    if (is.null(out$terms))
+    if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {
       out$fourth.corner <- try(getFourthCorner(out),silent = TRUE)

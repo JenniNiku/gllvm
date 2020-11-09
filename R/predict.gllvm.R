@@ -172,7 +172,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if(object$family == "ordinal")
     ilinkfun <- pnorm
   if(object$family == "ZIP")
-    ilinkfun <- pnorm
+    ilinkfun <- function(eta) exp(eta)*(1-matrix(object$params$phi, n, p, byrow = TRUE))
   if(object$family == "gaussian")
     ilinkfun <- gaussian()$linkinv
   

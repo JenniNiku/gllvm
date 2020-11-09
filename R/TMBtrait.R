@@ -8,7 +8,7 @@
 trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
       Lambda.struc = "unstructured", Ab.struct = "unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
-      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = TRUE,trace=FALSE,
+      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
@@ -220,7 +220,7 @@ trait.TMB <- function(
           sigmaB <- (res$sigmaB)
           if(length(sigmaB)>1) sigmaij <- rep(0,length(res$sigmaij))
           if(randomX.start == "res" && !is.null(res$fitstart)) { ##!!!
-            res$sigmaij <- sigmaij <- res$fitstart$TMBfn$par[names(res$fitstart$TMBfn$par) == "sigmaij"] 
+            res$sigmaij <- sigmaij <- res$fitstart$TMBfnpar[names(res$fitstart$TMBfnpar) == "sigmaij"] 
           }
         }
         
