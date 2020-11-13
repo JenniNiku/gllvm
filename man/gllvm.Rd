@@ -58,6 +58,8 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
 \item{scale.X}{if \code{TRUE}, covariates are scaled when fourth corner model is fitted.}
 
+\item{return.terms}{logical, if \code{TRUE} 'terms' object is returned.}
+
 \item{control}{A list with the following arguments controlling the optimization:
 \itemize{
  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -86,6 +88,8 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
 }}
+
+\item{...}{Not used.}
 }
 \value{
 An object of class "gllvm" includes the following components:

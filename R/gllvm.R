@@ -22,6 +22,7 @@
 #' @param dependent.row logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.
 #' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
+#' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -48,6 +49,7 @@
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
 #'   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
 #' }
+#' @param ... Not used.
 #'
 #' @details
 #' Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
