@@ -44,7 +44,7 @@ trait.TMB <- function(
         X.new <- cbind(X.new,Xi); if(!is.null(colnames(X)[i])) colnames(X.new)[dim(X.new)[2]] <- colnames(X)[i]
       } else {
         dum <- model.matrix( ~ X[,i])
-        dum <- dum[, !(colnames(dum) %in% c("(Intercept)"))]
+        dum <- as.matrix(dum[, !(colnames(dum) %in% c("(Intercept)"))])
         colnames(dum) <- paste(colnames(X)[i], levels(X[,i])[ - 1], sep = "")
         X.new <- cbind(X.new, dum)
       }
