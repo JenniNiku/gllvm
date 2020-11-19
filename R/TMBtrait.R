@@ -11,7 +11,7 @@ trait.TMB <- function(
       maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
-      Lambda.start=c(0.1, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
+      Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
       ,zeta.struc = "species") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
@@ -685,6 +685,9 @@ trait.TMB <- function(
             }
           }
         }
+        for(i in 1:n){
+          A[i,,] <- A[i,,]%*%t(A[i,,])
+        }
         out$A <- A
       }
 
@@ -709,6 +712,9 @@ trait.TMB <- function(
               k <- k+1; r <- r+1;
             }
           }
+        }
+        for(j in 1:p){
+          Ab[j,,] <- Ab[j,,]%*%t(Ab[j,,])
         }
         out$Ab <- Ab
       }

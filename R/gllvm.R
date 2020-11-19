@@ -277,7 +277,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   plot = FALSE, la.link.bin = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE,
                   control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace = FALSE), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.2, 0.2, 0.2)),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res"), ...
                   ) {
     constrOpt <- FALSE

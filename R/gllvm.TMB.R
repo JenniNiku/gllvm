@@ -161,10 +161,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     phis <- NULL
     if (family == "negative.binomial") {
       phis <- fit$phi
-      # if (any(phis > 50))
-      #   phis[phis > 50] <- 50
-      # if (any(phis < 0.02))
-      #   phis[phis < 0.02] <- 0.02
+      if (any(phis > 50))
+        phis[phis > 50] <- 50
+      if (any(phis < 0.02))
+        phis[phis < 0.02] <- 0.02
       fit$phi <- phis
       phis <- 1/phis
     }
@@ -565,6 +565,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
                 k <- k+1; r <- r+1;
               }
             }
+          }
+          for(i in 1:n){
+            A[i,,] <- A[i,,]%*%t(A[i,,])
           }
           out$A <- A
         }

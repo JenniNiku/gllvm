@@ -112,7 +112,7 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
     
-    if(nlvr>0){
+    if(nlvr>0){// log-Cholesky parametrization for A_i:s
       array<Type> A(nlvr,nlvr,n);
       for (int d=0; d<(nlvr); d++){
         for(int i=0; i<n; i++){
@@ -125,7 +125,7 @@ Type objective_function<Type>::operator() ()
           for (int r=c+1; r<(nlvr); r++){
             for(int i=0; i<n; i++){
               A(r,c,i)=Au(nlvr*n+k*n+i);
-              A(c,r,i)=A(r,c,i);
+              // A(c,r,i)=A(r,c,i);
             }
             k++;
           }}
@@ -134,10 +134,10 @@ Type objective_function<Type>::operator() ()
        A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          cQ(i,j) += 0.5*((newlam.col(j)).transpose()*(A.col(i).matrix()*newlam.col(j))).sum();
+          cQ(i,j) += 0.5*((newlam.col(j)).transpose()*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()*newlam.col(j))).sum();
         }
-        if(nlvr == num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (A.col(i).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
-        if(nlvr>num_lv) nll -= 0.5*(log(A.col(i).matrix().determinant()) - (Cu.inverse()*A.col(i).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
+        if(nlvr == num_lv) nll -= 0.5*(log((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
+        if(nlvr>num_lv) nll -= 0.5*(log((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
       nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
@@ -151,7 +151,7 @@ Type objective_function<Type>::operator() ()
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
        
-      
+      // log-Cholesky parametrization for A_bj:s
       array<Type> Ab(l,l,p);
       for (int dl=0; dl<(l); dl++){
         for(int j=0; j<p; j++){
@@ -164,7 +164,7 @@ Type objective_function<Type>::operator() ()
           for (int r=c+1; r<(l); r++){
             for(int j=0; j<p; j++){
               Ab(r,c,j)=Abb(l*p+k*p+j);
-              Ab(c,r,j)=Ab(r,c,j);
+              // Ab(c,r,j)=Ab(r,c,j);
             }
             k++;
           }}
@@ -174,9 +174,9 @@ Type objective_function<Type>::operator() ()
        A is a num.lv x nmu.lv x n array, theta is p x num.lv matrix*/
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          cQ(i,j) += 0.5*((xb.row(i))*(Ab.col(j).matrix()*xb.row(i).transpose())).sum();
+          cQ(i,j) += 0.5*((xb.row(i))*((Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()*xb.row(i).transpose())).sum();
         }
-        nll -= 0.5*(log(Ab.col(j).matrix().determinant()) - (S.inverse()*Ab.col(j).matrix()).diagonal().sum()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        nll -= 0.5*(log((Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix().determinant()) - (S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).diagonal().sum()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
       nll -= -0.5*p*log(S.determinant());//n*
