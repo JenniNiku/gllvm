@@ -723,6 +723,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
+    out$convergence = fitg$convergence
     out$call <- match.call()
     class(out) <- "gllvm"
     return(out)

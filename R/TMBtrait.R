@@ -899,6 +899,7 @@ trait.TMB <- function(
   out$D <- Xd
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
+  out$convergence <- optrFinal$convergence == 0
   out$logL <- -out$logL
   
   if(method == "VA"){
