@@ -154,7 +154,7 @@ trait.TMB <- function(
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
 
-  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term)
+  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term, method = method)
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   
   n.i <- 1;
@@ -281,9 +281,9 @@ trait.TMB <- function(
     if(family == "negative.binomial") {
       phis <- res$phi
       if (any(phis > 10))
-        phis[phis > 100] <- 100
-      if (any(phis < 0.01))
-        phis[phis < 0.01] <- 0.01
+        phis[phis > 50] <- 50
+      if (any(phis < 0.02))
+        phis[phis < 0.02] <- 0.02
       res$phi <- phis
       phis <- 1/phis
 
@@ -723,26 +723,50 @@ trait.TMB <- function(
     n.i <- n.i+1;
   }
 
+  
+  
+  if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
+  
+  out$Xrandom <- xb
+  out$D <- Xd
+  out$TMBfn <- objrFinal
+  out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
+  out$convergence <- optrFinal$convergence == 0
+  out$logL <- -out$logL
+  out$zeta.struc <- zeta.struc
+  out$beta0com <- beta0com
+  
+  if(method == "VA"){
+    if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+    if(row.eff == "random") out$logL = out$logL + n*0.5
+    if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+    if(family=="gaussian") {
+      out$logL <- out$logL - n*p*log(pi)/2
+    }
+  }
+  
     tr<-try({
       if(sd.errors && is.finite(out$logL)) {
         if(trace) cat("Calculating standard errors for parameters...\n")
+        out$TMB <- TRUE
+        # out <- c(out, se.gllvm(out))
 
         if(method == "VA"){
           sdr <- objrFinal$he(optrFinal$par)
         }
         if(method == "LA"){
           sdr <- optimHess(optrFinal$par, objrFinal$fn, objrFinal$gr,control = list(reltol=reltol,maxit=maxit))
-        }        
+        }
 
         m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
         incl[names(objrFinal$par)=="Abb"] <- FALSE;
-        incl[names(objrFinal$par)=="Au"] <- FALSE; 
+        incl[names(objrFinal$par)=="Au"] <- FALSE;
         if(nlvr > 0) incld[names(objrFinal$par)=="Au"] <- TRUE
-        
-        if(beta0com){ 
+
+        if(beta0com){
           incl[names(objrFinal$par)=="b"] <- FALSE
         }
-        
+
         if(row.eff=="random") {
           incl[names(objrFinal$par)=="r0"] <- FALSE; incld[names(objrFinal$par)=="r0"] <- FALSE
         } else {
@@ -750,8 +774,8 @@ trait.TMB <- function(
         }
         if(row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
         if(row.eff=="fixed") incl[1] <- FALSE
-        
-        
+
+
         if(is.null(randomX)) {
           incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
         } else {
@@ -759,14 +783,14 @@ trait.TMB <- function(
           incl[names(objrFinal$par)=="Br"] <- FALSE; incld[names(objrFinal$par)=="Br"] <- TRUE
           if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
         }
-        
+
         incl[names(objrFinal$par)=="Au"] <- FALSE; if(num.lv>0) incld[names(objrFinal$par)=="Au"] <- TRUE
         incl[names(objrFinal$par)=="u"] <- FALSE; incld[names(objrFinal$par)=="u"] <- TRUE
-        
+
         if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
         if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
         if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
-        
+
         if(nlvr==0){
           incl[names(objrFinal$par)=="u"] <- FALSE;
           incld[names(objrFinal$par)=="u"] <- FALSE;
@@ -803,18 +827,18 @@ trait.TMB <- function(
           A.mat <- sdr[incl,incl] # a x a
           D.mat <- sdr[incld,incld] # d x d
           B.mat <- sdr[incl,incld] # a x d
-          cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
+          cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T)
           se <- sqrt(diag(abs(cov.mat.mod)))
-          
+
           incla<-rep(FALSE, length(incl))
           incla[names(objrFinal$par)=="u"] <- TRUE
           out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
-          
+
         }
 
         if(row.eff=="fixed") {
-          se.row.params <- c(0,se[1:(n-1)]); 
-          names(se.row.params)  = rownames(out$y); se <- se[-(1:(n-1))] 
+          se.row.params <- c(0,se[1:(n-1)]);
+          names(se.row.params)  = rownames(out$y); se <- se[-(1:(n-1))]
         }
         if(beta0com){
           se.beta0 <- se[1]; se <- se[-1];
@@ -829,7 +853,7 @@ trait.TMB <- function(
           out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
           # diag(out$sd$theta) <- diag(out$sd$theta)*diag(out$params$theta) !!!
         }
-        out$sd$beta0 <- se.beta0; 
+        out$sd$beta0 <- se.beta0;
         if(!beta0com){ names(out$sd$beta0)  <-  colnames(out$y);}
         out$sd$B <- se.B; names(out$sd$B) <- colnames(Xd)
         if(row.eff=="fixed") {out$sd$row.params <- se.row.params}
@@ -851,7 +875,7 @@ trait.TMB <- function(
         }
         if(!is.null(randomX)){
           nr <- ncol(xb)
-          out$sd$sigmaB <- se[1:ncol(xb)]*c(sqrt(diag(out$params$sigmaB))); 
+          out$sd$sigmaB <- se[1:ncol(xb)]*c(sqrt(diag(out$params$sigmaB)));
           names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
           se <- se[-(1:ncol(xb))]
           if(nr>1){
@@ -859,10 +883,10 @@ trait.TMB <- function(
             se <- se[-(1:(nr*(nr-1)/2))]
           }
         }
-        if(row.eff=="random") { 
-          out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1)); 
-          names(out$sd$sigma) <- "sigma"; 
-          se=se[-(1:(length(out$params$sigma)))] 
+        if(row.eff=="random") {
+          out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1));
+          names(out$sd$sigma) <- "sigma";
+          se=se[-(1:(length(out$params$sigma)))]
           }
         if(family %in% c("ordinal")){
           se.zetanew <- se.zetas <- se;
@@ -874,42 +898,27 @@ trait.TMB <- function(
               if(k>0){
                 for(l in 1:k){
                   se.zetanew[j,l+1]<-se.zetas[idx+l]
-                } 
+                }
               }
               idx<-idx+k
             }
             se.zetanew[,1] <- 0
             out$sd$zeta <- se.zetanew
             row.names(out$sd$zeta) <- colnames(y00); colnames(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
-            
+
           }else{
             se.zetanew <- c(0, se.zetanew)
             out$sd$zeta <- se.zetanew
             names(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
-            
+
           }
         }
-        
-      }})
+
+      }
+      
+      })
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
 
-  if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
-
-  out$Xrandom <- xb
-  out$D <- Xd
-  out$TMBfn <- objrFinal
-  out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
-  out$convergence <- optrFinal$convergence == 0
-  out$logL <- -out$logL
-  
-  if(method == "VA"){
-    if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
-    if(row.eff == "random") out$logL = out$logL + n*0.5
-    if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
-    if(family=="gaussian") {
-      out$logL <- out$logL - n*p*log(pi)/2
-    }
-  }
 
   return(out)
 }
