@@ -23,6 +23,7 @@
 #' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
+#' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -36,7 +37,7 @@
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{diag.iter}: }{ non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5 if \code{TMB = FALSE}. If \code{TMB = TRUE} either 0 or 1.}
+#'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.}
 #' }
@@ -152,9 +153,11 @@
 #'X <- microbialdata$Xenv
 #'y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
 #'                      decreasing = TRUE)[21:40]]
-#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
+#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(), sd.errors = TRUE)#, diag.iter=1)
+#'fit$logL
+#'#sd1<-se(fit)
 #'ordiplot(fit)
-#'coefplot(fit)
+#'#coefplot(fit)
 #'
 #' \donttest{
 #'## Load a dataset from the mvabund package
@@ -275,9 +278,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   offset = NULL, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, la.link.bin = "probit",
-                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE,
-                  control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace = FALSE), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
+                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
+                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE), 
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res"), ...
                   ) {
     constrOpt <- FALSE
@@ -720,10 +723,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")
       }
     }
-
+    
+    out$convergence = fitg$convergence
+    if(is.finite(out$logL)){
+    if(!out$convergence) {
+      warning("The maximum number of iterations was reached, algorithm did not converge.")
+      } else if(gradient.check && TMB){
+        if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help.")
+      }
+    }
+    
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
-    out$convergence = fitg$convergence
     out$call <- match.call()
     class(out) <- "gllvm"
     return(out)
