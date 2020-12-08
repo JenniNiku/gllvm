@@ -4,18 +4,36 @@
 \alias{gllvm}
 \title{Generalized Linear Latent Variable Models}
 \usage{
-gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
-  num.lv = 2, family, row.eff = FALSE, offset = NULL,
-  sd.errors = TRUE, method = "VA", randomX = NULL,
-  dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
-  plot = FALSE, la.link.bin = "probit", Power = 1.1, seed = NULL,
-  scale.X = TRUE, return.terms = TRUE, control = list(reltol = 1e-08,
-  TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace =
-  FALSE), control.va = list(Lambda.struc = "unstructured", Ab.struct =
-  "unstructured", diag.iter = 5, Ab.diag.iter = 0, Lambda.start = c(0.1,
-  0.1, 0.1)), control.start = list(starting.val = "res", n.init = 1,
-  jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start =
-  "res"), ...)
+gllvm(
+  y = NULL,
+  X = NULL,
+  TR = NULL,
+  data = NULL,
+  formula = NULL,
+  num.lv = 2,
+  family,
+  row.eff = FALSE,
+  offset = NULL,
+  sd.errors = TRUE,
+  method = "VA",
+  randomX = NULL,
+  dependent.row = FALSE,
+  beta0com = FALSE,
+  zeta.struc = "species",
+  plot = FALSE,
+  la.link.bin = "probit",
+  Power = 1.1,
+  seed = NULL,
+  scale.X = TRUE,
+  return.terms = TRUE,
+  control = list(reltol = 1e-08, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit
+    = 2000, trace = FALSE),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured",
+    diag.iter = 5, Ab.diag.iter = 0, Lambda.start = c(0.2, 0.2, 0.2)),
+  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
+    NULL, start.lvs = NULL, randomX.start = "res"),
+  ...
+)
 }
 \arguments{
 \item{y}{(n x m) matrix of responses.}
@@ -76,7 +94,7 @@ gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5 if \code{TMB = FALSE}. If \code{TMB = TRUE} either 0 or 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
- \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.1.}
+ \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.}
 }}
 
 \item{control.start}{A list with the following arguments controlling the starting values:

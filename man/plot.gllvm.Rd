@@ -4,12 +4,19 @@
 \alias{plot.gllvm}
 \title{Plot Diagnostics for an gllvm Object}
 \usage{
-\method{plot}{gllvm}(x, which = 1:5,
-  caption = c("Residuals vs linear predictors", "Normal Q-Q",
-  "Residuals vs row index", "Residuals vs column index", "Scale-Location"),
-  var.colors = NULL, add.smooth = TRUE, envelopes = TRUE,
-  reps = 150, envelope.col = c("blue", "lightblue"), n.plot = NULL,
-  ...)
+\method{plot}{gllvm}(
+  x,
+  which = 1:5,
+  caption = c("Residuals vs linear predictors", "Normal Q-Q", "Residuals vs row index",
+    "Residuals vs column index", "Scale-Location"),
+  var.colors = NULL,
+  add.smooth = TRUE,
+  envelopes = TRUE,
+  reps = 150,
+  envelope.col = c("blue", "lightblue"),
+  n.plot = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class 'gllvm'.}

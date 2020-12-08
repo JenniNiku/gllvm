@@ -38,7 +38,7 @@
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5 if \code{TMB = FALSE}. If \code{TMB = TRUE} either 0 or 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
-#'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.1.}
+#'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.}
 #' }
 #' @param control.start A list with the following arguments controlling the starting values:
 #' \itemize{
@@ -277,7 +277,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   plot = FALSE, la.link.bin = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE,
                   control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 2000, trace = FALSE), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.1, 0.1, 0.1)),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 5, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res"), ...
                   ) {
     constrOpt <- FALSE

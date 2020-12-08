@@ -5,8 +5,7 @@
 \alias{predict}
 \title{Predict Method for gllvm Fits}
 \usage{
-\method{predict}{gllvm}(object, newX = NULL, newTR = NULL,
-  newLV = NULL, type = "link", ...)
+\method{predict}{gllvm}(object, newX = NULL, newTR = NULL, newLV = NULL, type = "link", ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}

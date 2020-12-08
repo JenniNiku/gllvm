@@ -5,8 +5,7 @@
 \alias{simulate}
 \title{Simulate data from gllvm fit}
 \usage{
-\method{simulate}{gllvm}(object, nsim = 1, seed = NULL,
-  conditional = FALSE, ...)
+\method{simulate}{gllvm}(object, nsim = 1, seed = NULL, conditional = FALSE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}

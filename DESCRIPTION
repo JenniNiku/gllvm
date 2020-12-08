@@ -14,7 +14,7 @@ Depends: TMB
 Encoding: UTF-8
 LazyData: true
 LinkingTo: TMB, RcppEigen
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 NeedsCompilation: yes
 URL: https://github.com/JenniNiku/gllvm.git
 Suggests: 

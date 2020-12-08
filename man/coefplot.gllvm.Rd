@@ -5,9 +5,17 @@
 \alias{coefplot}
 \title{Plot covariate coefficients and confidence intervals}
 \usage{
-\method{coefplot}{gllvm}(object, y.label = TRUE, which.Xcoef = NULL,
-  order = TRUE, cex.ylab = 0.5, mfrow = NULL, mar = c(4, 6, 2, 1),
-  xlim.list = NULL, ...)
+\method{coefplot}{gllvm}(
+  object,
+  y.label = TRUE,
+  which.Xcoef = NULL,
+  order = TRUE,
+  cex.ylab = 0.5,
+  mfrow = NULL,
+  mar = c(4, 6, 2, 1),
+  xlim.list = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
