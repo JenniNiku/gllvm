@@ -153,6 +153,7 @@ Type objective_function<Type>::operator() ()
        
        // log-Cholesky parametrization for A_bj:s
       array<Type> Ab(l,l,p);
+      Ab.fill(0.0);
       for (int dl=0; dl<(l); dl++){
         for(int j=0; j<p; j++){
           Ab(dl,dl,j)=exp(Abb(dl*p+j));
