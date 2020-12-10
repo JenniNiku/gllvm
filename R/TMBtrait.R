@@ -347,7 +347,7 @@ trait.TMB <- function(
       if(length(Lambda.start)>2) { 
         a.var <- Lambda.start[3];
       } else {a.var <- 0.5;}
-      if(randomX.start == "res" && !is.null(res$fitstart$Ab)){ # !!!!
+      if(randomX.start == "res"){ # !!!! && !is.null(res$fitstart$Ab)
         if(Ab.struct == "diagonal" || Ab.diag.iter>0){
           Abb <- c(log(c(apply(res$fitstart$Ab,1, diag))))
         } else {

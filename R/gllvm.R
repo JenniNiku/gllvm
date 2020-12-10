@@ -265,6 +265,7 @@
 #'
 #'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
+#'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov

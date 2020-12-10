@@ -161,10 +161,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     phis <- NULL
     if (family == "negative.binomial") {
       phis <- fit$phi
-      if (any(phis > 50))
-        phis[phis > 50] <- 50
-      if (any(phis < 0.02))
-        phis[phis < 0.02] <- 0.02
+      if (any(phis > 100))
+        phis[phis > 100] <- 100
+      if (any(phis < 0.01))
+        phis[phis < 0.01] <- 0.01
       fit$phi <- phis
       phis <- 1/phis
     }
@@ -293,7 +293,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = maxit),
+        inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
       
       if(optimizer=="nlminb") {
@@ -313,7 +313,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
         lambda1 <- param1[nam=="lambda"]
         u1 <- matrix(param1[nam=="u"],n,nlvr)
-        if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"]}
+        if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
         if(row.eff == "random"){log_sigma1 <- param1[nam=="log_sigma"]} else {log_sigma1 = 0}
@@ -327,7 +327,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list,
-          inner.control=list(mgcmax = 1e+200,maxit = maxit),
+          inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")
         
         if(optimizer=="nlminb") {

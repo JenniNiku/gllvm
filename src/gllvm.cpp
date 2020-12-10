@@ -151,8 +151,9 @@ Type objective_function<Type>::operator() ()
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
        
-      // log-Cholesky parametrization for A_bj:s
+       // log-Cholesky parametrization for A_bj:s
       array<Type> Ab(l,l,p);
+      Ab.fill(0.0);
       for (int dl=0; dl<(l); dl++){
         for(int j=0; j<p; j++){
           Ab(dl,dl,j)=exp(Abb(dl*p+j));
