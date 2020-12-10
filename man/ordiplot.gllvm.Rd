@@ -19,6 +19,7 @@
   s.colors = 1,
   symbols = FALSE,
   cex.spp = 0.7,
+  spp.colors = "blue",
   lwd.ellips = 0.5,
   col.ellips = 4,
   lty.ellips = 1,
@@ -51,6 +52,8 @@
 \item{symbols}{logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used}
 
 \item{cex.spp}{size of species labels in biplot}
+
+\item{spp.colors}{colors for sites, defaults to \code{"blue"}}
 
 \item{lwd.ellips}{line width for prediction ellipses. See graphical parameter lwd.}
 
