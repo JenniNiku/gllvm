@@ -4,21 +4,6 @@
 \alias{gllvm}
 \title{Generalized Linear Latent Variable Models}
 \usage{
-<<<<<<< HEAD
-gllvm(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
-  num.lv = 2, family, row.eff = FALSE, offset = NULL,
-  sd.errors = TRUE, method = "VA", randomX = NULL,
-  dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
-  plot = FALSE, la.link.bin = "probit", Power = 1.1, seed = NULL,
-  scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
-  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim",
-  max.iter = 200, maxit = 4000, trace = FALSE),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct =
-  "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3,
-  0.3, 0.3)), control.start = list(starting.val = "res", n.init = 1,
-  jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start =
-  "res"), ...)
-=======
 gllvm(
   y = NULL,
   X = NULL,
@@ -50,7 +35,6 @@ gllvm(
     NULL, start.lvs = NULL, randomX.start = "res"),
   ...
 )
->>>>>>> d5d79301d056a6b2140f299b6050cece351a9d96
 }
 \arguments{
 \item{y}{(n x m) matrix of responses.}
@@ -216,11 +200,10 @@ data(microbialdata)
 X <- microbialdata$Xenv
 y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
                      decreasing = TRUE)[21:40]]
-fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(), sd.errors = TRUE)#, diag.iter=1)
+fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
 fit$logL
-#sd1<-se(fit)
 ordiplot(fit)
-#coefplot(fit)
+coefplot(fit)
 
 \donttest{
 ## Load a dataset from the mvabund package

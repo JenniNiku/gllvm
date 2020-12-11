@@ -40,6 +40,13 @@
 Plots covariate coefficients and their confidence intervals.
 }
 \examples{
+# Extract subset of the microbial data to be used as an example
+data(microbialdata)
+X <- microbialdata$Xenv
+y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+                     decreasing = TRUE)[21:40]]
+fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
+coefplot(fit)
 \dontrun{
 ## Load a dataset from the mvabund package
 data(antTraits)

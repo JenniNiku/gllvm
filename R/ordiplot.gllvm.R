@@ -41,6 +41,13 @@
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
 #'
 #' @examples
+#' #'# Extract subset of the microbial data to be used as an example
+#'data(microbialdata)
+#'y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+#'                      decreasing = TRUE)[21:40]]
+#'fit <- gllvm(y, family = poisson())
+#'fit$logL
+#'ordiplot(fit, predict.region = TRUE)
 #' \dontrun{
 #' #'## Load a dataset from the mvabund package
 #'data(antTraits)

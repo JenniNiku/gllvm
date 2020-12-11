@@ -153,11 +153,10 @@
 #'X <- microbialdata$Xenv
 #'y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
 #'                      decreasing = TRUE)[21:40]]
-#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(), sd.errors = TRUE)#, diag.iter=1)
+#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
 #'fit$logL
-#'#sd1<-se(fit)
 #'ordiplot(fit)
-#'#coefplot(fit)
+#'coefplot(fit)
 #'
 #' \donttest{
 #'## Load a dataset from the mvabund package
