@@ -1403,3 +1403,21 @@ return(n)
 ##' @importFrom stats nobs
 ##' @export
 
+AICc.gllvm <- function(object, ...){
+  objectlist <- list(object, ...)
+  IC<-lapply(objectlist,function(x){
+    abund=x$y
+    n <- dim(abund)[1]
+    k<-attributes(logLik.gllvm(x))$df
+    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n-k-1)
+    return(AICc)
+  })
+  return(unlist(IC))
+}
+
+
+#'@export AICc
+AICc <- function(object, ...)
+{
+  UseMethod(generic = "AICc")
+}
