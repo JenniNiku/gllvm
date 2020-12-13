@@ -146,7 +146,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   
   if(object$num.lv > 0) {
-    theta <- object$params$theta
+    theta <- object$params$theta[,1:object$num.lv]
     if(is.null(newLV) && is.null(newdata) && is.null(newTR))
       eta <- eta + object$lvs %*% t(theta)
     if(!is.null(newLV)) {
@@ -157,6 +157,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
       lvs <- newLV
       eta <- eta + lvs %*% t(theta)
+      if(object$quadratic != FALSE)
+        eta <- eta + object$lvs^2 %*% t(object$params$theta[,-c(1:object$num.lv),drop=F])
     }
   }
   

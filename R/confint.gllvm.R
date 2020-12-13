@@ -28,6 +28,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   nX <- 0; if(!is.null(object$X)) nX <- dim(object$X)[2]
   nTR <- 0; if(!is.null(object$TR)) nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
+  quadratic <- object$quadratic
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
 
@@ -53,10 +54,17 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     cal <- 0
     if (num.lv > 0) {
-      nr <- rep(1:num.lv, each = p)
+      if(quadratic==FALSE)nr <- rep(1:num.lv, each = p)
+      if(quadratic!=FALSE)if(quadratic==FALSE)nr <- rep(1:(num.lv*2), each = p)
       nc <- rep(1:p, num.lv)
-      rnames[1:(num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
-      cal <- cal + num.lv * p
+      if(quadratic == FALSE)
+        rnames[1:(num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
+      if(quadratic != FALSE)
+        rnames[1:(num.lv * p *2)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
+                                                                                                          sep = ""
+        ), nc, sep = "."))
+      if(quadratic==FALSE)cal <- cal + num.lv * p
+      if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
     }
     if(!object$beta0com){
       rnames[(cal + 1):(cal + p)] <- paste("Intercept",names(object$params$beta0), sep = ".")

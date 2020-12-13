@@ -61,24 +61,52 @@
 #'@export getResidualCov.gllvm
 getResidualCov.gllvm = function(object, adjust = 1)
 {
-  ResCov <- object$params$theta %*% t(object$params$theta)
-  ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+  
+  if(any(class(object)=="gllvm.quadratic")){
+    ResCov <- object$params$theta[,1:object$num.lv,drop=F] %*% t(object$params$theta[,1:object$num.lv,drop=F]) + 2*object$params$theta[,-c(1:object$num.lv),drop=F]%*%t(object$params$theta[,-c(1:object$num.lv),drop=F])
+    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov.q2 <- sapply(1:object$num.lv, function(q) object$params$theta[, q+object$num.lv] %*% t(object$params$theta[, q+object$num.lv]), simplify = F)
+  }else{
+    ResCov <- object$params$theta %*% t(object$params$theta)
+    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+  }
+  
+  
   if(adjust > 0 && object$family %in% c("negative.binomial", "binomial")){
   if(object$family == "negative.binomial"){ 
     if(adjust == 1) {
-      ResCov <- ResCov + diag(log(object$params$phi + 1))
-      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)
+      if(any(class(object)=="gllvm.quadratic")){
+        ResCov <- ResCov + diag(log(object$params$phi + 1))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
+        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
+      }else{
+        ResCov <- ResCov + diag(log(object$params$phi + 1))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)  
+      }
       }
     if(adjust == 2){
+      if(any(class(object)=="gllvm.quadratic")){
+        ResCov <- ResCov + diag(trigamma(1/object$params$phi))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
+        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
+      }else{
      ResCov <- ResCov + diag(trigamma(1/object$params$phi))
      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/object$num.lv, simplify = F)
+    }
      }
     
   }
     if(object$family == "binomial"){ 
       if(object$link == "probit"){
-        ResCov <- ResCov + diag(ncol(object$y))
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)
+        if(any(class(object)=="gllvm.quadratic")){
+          ResCov <- ResCov + diag(ncol(object$y))
+          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+        }else{
+          ResCov <- ResCov + diag(ncol(object$y))
+          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)  
+        }  
+        
       } 
       if(object$link == "logit"){
         ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
@@ -88,9 +116,19 @@ getResidualCov.gllvm = function(object, adjust = 1)
   }
   ResCov.q <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q[[q]])))
   names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
+  if(any(class(object)=="gllvm.quadratic")){
+    ResCov.q2 <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q2[[q]])))
+    names(ResCov.q2) <- paste("LV", 1:object$num.lv, "^2",sep = "")
+  }
+  
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
-  out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)
+  if(any(class(object)=="gllvm.quadratic")){
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q, trace.q2 = ResCov.q2)
+  }else{
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)  
+  }
+  
   return(out)
 }
 
