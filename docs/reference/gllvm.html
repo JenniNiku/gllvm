@@ -8,21 +8,29 @@
 
 <title>Generalized Linear Latent Variable Models — gllvm • gllvm</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,11 +38,11 @@
 
 
 
-<meta property="og:title" content="Generalized Linear Latent Variable Models — gllvm" />
 
+<meta property="og:title" content="Generalized Linear Latent Variable Models — gllvm" />
 <meta property="og:description" content="Fits generalized linear latent variable model for multivariate data. The model can be fitted using Laplace approximation method or variational
 approximation method." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -48,9 +56,10 @@ approximation method." />
 <![endif]-->
 
 
+
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -64,7 +73,7 @@ approximation method." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -72,7 +81,7 @@ approximation method." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -92,14 +101,19 @@ approximation method." />
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
     </li>
+    <li>
+      <a href="../articles/vignette3.html">Introduction to gllvm Part 1: Ordination</a>
+    </li>
+    <li>
+      <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fa fa-github fa-lg"></span>
+  <a href="https://github.com/JenniNiku/gllvm/">
+    <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -110,35 +124,54 @@ approximation method." />
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Generalized Linear Latent Variable Models</h1>
-    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm.git/blob/master/R/gllvm.R'><code>R/gllvm.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm/blob/master/R/gllvm.R'><code>R/gllvm.R</code></a></small>
     <div class="hidden name"><code>gllvm.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    
     <p>Fits generalized linear latent variable model for multivariate data. The model can be fitted using Laplace approximation method or variational
 approximation method.</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>num.lv</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='no'>family</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"VA"</span>, <span class='kw'>row.eff</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>sd.errors</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>Lambda.struc</span> <span class='kw'>=</span> <span class='st'>"unstructured"</span>,
-  <span class='kw'>Ab.struct</span> <span class='kw'>=</span> <span class='st'>"unstructured"</span>, <span class='kw'>diag.iter</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>Ab.diag.iter</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>la.link.bin</span> <span class='kw'>=</span> <span class='st'>"probit"</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>Power</span> <span class='kw'>=</span> <span class='fl'>1.5</span>, <span class='kw'>reltol</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>max.iter</span> <span class='kw'>=</span> <span class='fl'>200</span>,
-  <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>start.fit</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start.lvs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>starting.val</span> <span class='kw'>=</span> <span class='st'>"res"</span>, <span class='kw'>TMB</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='st'>"optim"</span>,
-  <span class='kw'>scale.X</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>Lambda.start</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.1</span>, <span class='fl'>0.1</span>), <span class='kw'>jitter.var</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>randomX</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>randomX.start</span> <span class='kw'>=</span> <span class='st'>"res"</span>, <span class='kw'>dependent.row</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>beta0com</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>zeta.struc</span> <span class='kw'>=</span> <span class='st'>"species"</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>gllvm</span><span class='op'>(</span>
+  y <span class='op'>=</span> <span class='cn'>NULL</span>,
+  X <span class='op'>=</span> <span class='cn'>NULL</span>,
+  TR <span class='op'>=</span> <span class='cn'>NULL</span>,
+  data <span class='op'>=</span> <span class='cn'>NULL</span>,
+  formula <span class='op'>=</span> <span class='cn'>NULL</span>,
+  num.lv <span class='op'>=</span> <span class='fl'>2</span>,
+  <span class='va'>family</span>,
+  row.eff <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  offset <span class='op'>=</span> <span class='cn'>NULL</span>,
+  sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  method <span class='op'>=</span> <span class='st'>"VA"</span>,
+  randomX <span class='op'>=</span> <span class='cn'>NULL</span>,
+  dependent.row <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  beta0com <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  zeta.struc <span class='op'>=</span> <span class='st'>"species"</span>,
+  plot <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  la.link.bin <span class='op'>=</span> <span class='st'>"probit"</span>,
+  Power <span class='op'>=</span> <span class='fl'>1.1</span>,
+  seed <span class='op'>=</span> <span class='cn'>NULL</span>,
+  scale.X <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  return.terms <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  gradient.check <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  control <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>reltol <span class='op'>=</span> <span class='fl'>1e-10</span>, TMB <span class='op'>=</span> <span class='cn'>TRUE</span>, optimizer <span class='op'>=</span> <span class='st'>"optim"</span>, max.iter <span class='op'>=</span> <span class='fl'>200</span>, maxit
+    <span class='op'>=</span> <span class='fl'>4000</span>, trace <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>,
+  control.va <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>Lambda.struc <span class='op'>=</span> <span class='st'>"unstructured"</span>, Ab.struct <span class='op'>=</span> <span class='st'>"unstructured"</span>,
+    diag.iter <span class='op'>=</span> <span class='fl'>1</span>, Ab.diag.iter <span class='op'>=</span> <span class='fl'>0</span>, Lambda.start <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.3</span>, <span class='fl'>0.3</span>, <span class='fl'>0.3</span><span class='op'>)</span><span class='op'>)</span>,
+  control.start <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>starting.val <span class='op'>=</span> <span class='st'>"res"</span>, n.init <span class='op'>=</span> <span class='fl'>1</span>, jitter.var <span class='op'>=</span> <span class='fl'>0</span>, start.fit <span class='op'>=</span>
+    <span class='cn'>NULL</span>, start.lvs <span class='op'>=</span> <span class='cn'>NULL</span>, randomX.start <span class='op'>=</span> <span class='st'>"res"</span><span class='op'>)</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -168,11 +201,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>family</th>
-      <td><p>distribution function for responses. Options are <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "probit")</a></code> (and also <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://www.rdocumentation.org/packages/stats/topics/family'>gaussian(link = "identity")</a></code>, <code>"gamma"</code> (with log link), <code>"exponential"</code> (with log link), Tweedie (<code>"tweedie"</code>) (with log link, only with <code>"LA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
-    </tr>
-    <tr>
-      <th>method</th>
-      <td><p>model can be fitted using Laplace approximation method (<code>method = "LA"</code>) or variational approximation method (<code>method = "VA"</code>). Defaults to <code>"VA"</code>.</p></td>
+      <td><p>distribution function for responses. Options are <code><a href='https://rdrr.io/r/stats/family.html'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "probit")</a></code> (and also <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://rdrr.io/r/stats/family.html'>gaussian(link = "identity")</a></code>, <code>"gamma"</code> (with log link), <code>"exponential"</code> (with log link), Tweedie (<code>"tweedie"</code>) (with log link, only with <code>"LA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
     </tr>
     <tr>
       <th>row.eff</th>
@@ -187,96 +216,12 @@ approximation method.</p>
       <td><p>logical. If <code>TRUE</code> (default) standard errors for parameter estimates are calculated.</p></td>
     </tr>
     <tr>
-      <th>Lambda.struc</th>
-      <td><p>covariance structure of VA distributions for latent variables when <code>method = "VA"</code>, "unstructured" or "diagonal".</p></td>
-    </tr>
-    <tr>
-      <th>Ab.struct</th>
-      <td><p>covariance structure of VA distributions for random slopes when <code>method = "VA"</code>, "unstructured" or "diagonal".</p></td>
-    </tr>
-    <tr>
-      <th>diag.iter</th>
-      <td><p>non-negative integer which is used to speed up the updating of variational (covariance) parameters in VA method. Defaults to 5 if <code>TMB = FALSE</code>. If <code>TMB = TRUE</code> either 0 or 1.</p></td>
-    </tr>
-    <tr>
-      <th>Ab.diag.iter</th>
-      <td><p>As above, but for variational covariance of random slopes.</p></td>
-    </tr>
-    <tr>
-      <th>trace</th>
-      <td><p>logical, if <code>TRUE</code> in each iteration step information on current step will be printed. Defaults to <code>FALSE</code>. Only with <code>TMB = FALSE</code>.</p></td>
-    </tr>
-    <tr>
-      <th>plot</th>
-      <td><p>logical, if <code>TRUE</code> ordination plots will be printed in each iteration step when <code>TMB = FALSE</code>. Defaults to <code>FALSE</code>.</p></td>
-    </tr>
-    <tr>
-      <th>la.link.bin</th>
-      <td><p>link function for binomial family if <code>method = "LA"</code>. Options are "logit" and "probit.</p></td>
-    </tr>
-    <tr>
-      <th>n.init</th>
-      <td><p>number of initial runs. Uses multiple runs and picks up the one giving highest log-likelihood value. Defaults to 1.</p></td>
-    </tr>
-    <tr>
-      <th>Power</th>
-      <td><p>fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.5.</p></td>
-    </tr>
-    <tr>
-      <th>reltol</th>
-      <td><p>convergence criteria for log-likelihood, defaults to 1e-6.</p></td>
-    </tr>
-    <tr>
-      <th>seed</th>
-      <td><p>a single seed value, defaults to <code>NULL</code>.</p></td>
-    </tr>
-    <tr>
-      <th>max.iter</th>
-      <td><p>maximum number of iterations when <code>TMB = FALSE</code>, defaults to 200.</p></td>
-    </tr>
-    <tr>
-      <th>maxit</th>
-      <td><p>maximum number of iterations within <code>optim</code> function, defaults to 1000.</p></td>
-    </tr>
-    <tr>
-      <th>start.fit</th>
-      <td><p>object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).</p></td>
-    </tr>
-    <tr>
-      <th>start.lvs</th>
-      <td><p>initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>NULL</code>.</p></td>
-    </tr>
-    <tr>
-      <th>starting.val</th>
-      <td><p>starting values can be generated by fitting model without latent variables, and applying factorial analysis to residuals to get starting values for latent variables and their coefficients (<code>starting.val = "res"</code>). Another options are to use zeros as a starting values (<code>starting.val = "zero"</code>) or initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>"res"</code>, which is recommended.</p></td>
-    </tr>
-    <tr>
-      <th>TMB</th>
-      <td><p>logical, if <code>TRUE</code> model will be fitted using Template Model Builder (TMB). TMB is always used if <code>method = "LA"</code>.  Defaults to <code>TRUE</code>.</p></td>
-    </tr>
-    <tr>
-      <th>optimizer</th>
-      <td><p>if <code>TMB=TRUE</code>, log-likelihood can be optimized using <code>"<a href='https://www.rdocumentation.org/packages/stats/topics/optim'>optim</a>"</code> (default) or <code>"<a href='https://www.rdocumentation.org/packages/stats/topics/nlminb'>nlminb</a>"</code>.</p></td>
-    </tr>
-    <tr>
-      <th>scale.X</th>
-      <td><p>if <code>TRUE</code>, covariates are scaled when fourth corner model is fitted.</p></td>
-    </tr>
-    <tr>
-      <th>Lambda.start</th>
-      <td><p>starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.1.</p></td>
-    </tr>
-    <tr>
-      <th>jitter.var</th>
-      <td><p>jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.</p></td>
+      <th>method</th>
+      <td><p>model can be fitted using Laplace approximation method (<code>method = "LA"</code>) or variational approximation method (<code>method = "VA"</code>). Defaults to <code>"VA"</code>.</p></td>
     </tr>
     <tr>
       <th>randomX</th>
       <td><p>formula for species specific random effects of environmental variables in fourth corner model. Defaults to <code>NULL</code>, when random slopes are not included.</p></td>
-    </tr>
-    <tr>
-      <th>randomX.start</th>
-      <td><p>Starting value method for the random slopes. Options are <code>"zero"</code> and <code>"res"</code>. Defaults to <code>"res"</code>.</p></td>
     </tr>
     <tr>
       <th>dependent.row</th>
@@ -290,8 +235,72 @@ approximation method.</p>
       <th>zeta.struc</th>
       <td><p>Structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".</p></td>
     </tr>
+    <tr>
+      <th>plot</th>
+      <td><p>logical, if <code>TRUE</code> ordination plots will be printed in each iteration step when <code>TMB = FALSE</code>. Defaults to <code>FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>la.link.bin</th>
+      <td><p>link function for binomial family if <code>method = "LA"</code>. Options are "logit" and "probit.</p></td>
+    </tr>
+    <tr>
+      <th>Power</th>
+      <td><p>fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.</p></td>
+    </tr>
+    <tr>
+      <th>seed</th>
+      <td><p>a single seed value, defaults to <code>NULL</code>.</p></td>
+    </tr>
+    <tr>
+      <th>scale.X</th>
+      <td><p>if <code>TRUE</code>, covariates are scaled when fourth corner model is fitted.</p></td>
+    </tr>
+    <tr>
+      <th>return.terms</th>
+      <td><p>logical, if <code>TRUE</code> 'terms' object is returned.</p></td>
+    </tr>
+    <tr>
+      <th>gradient.check</th>
+      <td><p>logical, if <code>TRUE</code> gradients are checked for large values (&gt;0.01) even if the optimization algorithm did converge.</p></td>
+    </tr>
+    <tr>
+      <th>control</th>
+      <td><p>A list with the following arguments controlling the optimization:</p><ul>
+<li><p><em>reltol</em>:  convergence criteria for log-likelihood, defaults to 1e-8.</p></li>
+<li><p><em>TMB</em>:  logical, if <code>TRUE</code> model will be fitted using Template Model Builder (TMB). TMB is always used if <code>method = "LA"</code>.  Defaults to <code>TRUE</code>.</p></li>
+<li><p><em>optimizer</em>:  if <code>TMB=TRUE</code>, log-likelihood can be optimized using <code>"<a href='https://rdrr.io/r/stats/optim.html'>optim</a>"</code> (default) or <code>"<a href='https://rdrr.io/r/stats/nlminb.html'>nlminb</a>"</code>.</p></li>
+<li><p><em>max.iter</em>:  maximum number of iterations when <code>TMB = FALSE</code>, defaults to 200.</p></li>
+<li><p><em>maxit</em>:  maximum number of iterations within <code>optim</code> function, defaults to 1000.</p></li>
+<li><p><em>trace</em>:  logical, if <code>TRUE</code> in each iteration step information on current step will be printed. Defaults to <code>FALSE</code>. Only with <code>TMB = FALSE</code>.</p></li>
+</ul></td>
+    </tr>
+    <tr>
+      <th>control.va</th>
+      <td><p>A list with the following arguments controlling the variational approximation method:</p><ul>
+<li><p><em>Lambda.struc</em>:  covariance structure of VA distributions for latent variables when <code>method = "VA"</code>, "unstructured" or "diagonal".</p></li>
+<li><p><em>Ab.struct</em>:  covariance structure of VA distributions for random slopes when <code>method = "VA"</code>, "unstructured" or "diagonal".</p></li>
+<li><p><em>diag.iter</em>:  non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If <code>TMB = TRUE</code> either 0 or 1. Defaults to 1.</p></li>
+<li><p><em>Ab.diag.iter</em>:  As above, but for variational covariance of random slopes.</p></li>
+<li><p><em>Lambda.start</em>:  starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.</p></li>
+</ul></td>
+    </tr>
+    <tr>
+      <th>control.start</th>
+      <td><p>A list with the following arguments controlling the starting values:</p><ul>
+<li><p><em>starting.val</em>:  starting values can be generated by fitting model without latent variables, and applying factorial analysis to residuals to get starting values for latent variables and their coefficients (<code>starting.val = "res"</code>). Another options are to use zeros as a starting values (<code>starting.val = "zero"</code>) or initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>"res"</code>, which is recommended.</p></li>
+<li><p><em>n.init</em>:  number of initial runs. Uses multiple runs and picks up the one giving highest log-likelihood value. Defaults to 1.</p></li>
+<li><p><em>start.fit</em>:  object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).</p></li>
+<li><p><em>start.lvs</em>:  initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>NULL</code>.</p></li>
+<li><p><em>jitter.var</em>:  jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.</p></li>
+<li><p><em>randomX.start</em>:  Starting value method for the random slopes. Options are <code>"zero"</code> and <code>"res"</code>. Defaults to <code>"res"</code>.</p></li>
+</ul></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>Not used.</p></td>
+    </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>An object of class "gllvm" includes the following components:</p>
@@ -315,7 +324,6 @@ approximation method.</p>
  <dt>prediction.errors </dt><dd><p>list of prediction covariances for latent variables and variances for random row effects when method <code>"LA"</code> is used</p></dd>
  <dt>A, Ar </dt><dd><p>covariance matrices for variational densities of latent variables and variances for random row effects</p></dd>
 
-    
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Fits generalized linear latent variable models as in Hui et al. (2015 and 2017) and Niku et al. (2017).
@@ -332,15 +340,17 @@ are included. The expectation of response \(Y_{ij}\) is</p>
 or coefficients related to environmental and trait covariates, respectively, matrix \(B\) includes interaction terms. Vectors \(b_j\) are 
 optional species-specific random slopes for environmental covariates.
 The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.</p>
-    <p>The method is sensitive for the choices of initial values of the latent variables. Therefore it is
+
+<p>The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 However, sometimes this is computationally too demanding, and default option
 <code>starting.val = "res"</code> is recommended. For more details on different starting value methods, see Niku et al., (2018).</p>
 <p>Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).</p>
 <p>With ordinal family response classes must start from 0 or 1.</p>
-<h3>Distributions</h3>
-    Mean and variance for distributions are defined as follows.
-<ul>
+<h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Distributions</h3>
+
+
+<p>Mean and variance for distributions are defined as follows.</p><ul>
 <li><p>For count data <code>family = poisson()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}\), or</p></li>
 <li><p><code>family = "negative.binomial"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j\), or</p></li>
 <li><p><code>family = "ZIP"</code>: Expectation \(E[Y_{ij}] = (1-p)\mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)\).</p></li>
@@ -351,11 +361,11 @@ However, sometimes this is computationally too demanding, and default option
 <li><p>For ordinal data <code>family = "ordinal"</code>: Cumulative probit model, see Hui et.al. (2016).</p></li>
 <li><p>For normal distributed data <code>family = gaussian()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(y_{ij}) = \phi_j^2.\)</p></li>
 </ul>
-    
+
+
     <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
 
     <p>If function gives warning: 'In f(x, order = 0) : value out of range in 'lgamma'', optimizer have visited an area where gradients become too big. It is automatically fixed by trying another step in the optimization process, and can be ignored if errors do not occur.</p>
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Brown, A. M., Warton, D. I., Andrew, N. R., Binns, M., Cassis, G., and Gibb, H. (2014). The fourth-corner solution - using predictive models to understand how species traits interact with the environment. Methods in Ecology and Evolution, 5:344-352.</p>
@@ -366,42 +376,57 @@ However, sometimes this is computationally too demanding, and default option
 <p>Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.</p>
 <p>Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. PLoS One, 14(5):1-20.</p>
 <p>Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology &amp; Evolution, 30:766-779.</p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='coefplot.gllvm.html'>coefplot.gllvm</a></code>, <code><a href='confint.gllvm.html'>confint.gllvm</a></code>, <code><a href='ordiplot.gllvm.html'>ordiplot.gllvm</a></code>, <code><a href='plot.gllvm.html'>plot.gllvm</a></code>, <code><a href='residuals.gllvm.html'>residuals.gllvm</a></code>, <code><a href='summary.gllvm.html'>summary.gllvm</a></code>.</p></div>
-    
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'># Extract subset of the microbial data to be used as an example</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>microbialdata</span>)
-<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='no'>microbialdata</span>$<span class='no'>Xenv</span>
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>microbialdata</span>$<span class='no'>Y</span>[, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/order'>order</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colSums'>colMeans</a></span>(<span class='no'>microbialdata</span>$<span class='no'>Y</span> <span class='kw'>&gt;</span> <span class='fl'>0</span>),
-                     <span class='kw'>decreasing</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)[<span class='fl'>21</span>:<span class='fl'>40</span>]]
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>pH</span> + <span class='no'>Phosp</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div><div class='input'><span class='co'>## Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: data set 'antTraits' not found</span></div><div class='input'><span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(antTraits$abund): object 'antTraits' not found</span></div><div class='input'><span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>env</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(antTraits$env): object 'antTraits' not found</span></div><div class='input'><span class='no'>TR</span> <span class='kw'>&lt;-</span> <span class='no'>antTraits</span>$<span class='no'>traits</span></div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'antTraits' not found</span></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
-            <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fit</span>)</div><div class='img'><img src='gllvm-4.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>microbialdata</span><span class='op'>)</span>
+<span class='va'>X</span> <span class='op'>&lt;-</span> <span class='va'>microbialdata</span><span class='op'>$</span><span class='va'>Xenv</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='va'>microbialdata</span><span class='op'>$</span><span class='va'>Y</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span><span class='op'>(</span><span class='va'>microbialdata</span><span class='op'>$</span><span class='va'>Y</span> <span class='op'>&gt;</span> <span class='fl'>0</span><span class='op'>)</span>, 
+                     decreasing <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>21</span><span class='op'>:</span><span class='fl'>40</span><span class='op'>]</span><span class='op'>]</span>
+<span class='va'>fit</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, <span class='va'>X</span>, formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>pH</span> <span class='op'>+</span> <span class='va'>Phosp</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>fit</span><span class='op'>$</span><span class='va'>logL</span>
+</div><div class='output co'>#&gt; [1] -4004.332</div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-2.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># \donttest{</span>
+<span class='co'>## Load a dataset from the mvabund package</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'>mvabund</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>)</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>$</span><span class='va'>abund</span><span class='op'>)</span>
+<span class='va'>X</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>$</span><span class='va'>env</span><span class='op'>)</span>
+<span class='va'>TR</span> <span class='op'>&lt;-</span> <span class='va'>antTraits</span><span class='op'>$</span><span class='va'>traits</span>
+<span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
+<span class='va'>fit</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, <span class='va'>X</span>, formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Shrub.cover</span>,
+            family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
+<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-3.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-4.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## Example 1: Fit model with two latent variables</span>
 <span class='co'># Using variational approximation:</span>
-<span class='no'>fitv0</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"VA"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitv0</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>fitv0</span>, <span class='kw'>mfrow</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>2</span>,<span class='fl'>2</span>))</div><div class='img'><img src='gllvm-5.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt; $`log-likelihood`
-#&gt; [1] -3462.325
+<span class='va'>fitv0</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, method <span class='op'>=</span> <span class='st'>"VA"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitv0</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/mvabund/man/mvabund-internal.html'>plot</a></span><span class='op'>(</span><span class='va'>fitv0</span>, mfrow <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>,<span class='fl'>2</span><span class='op'>)</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-5.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>fitv0</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; $`log-likelihood`
+#&gt; [1] -1865.815
 #&gt; 
 #&gt; $df
-#&gt; [1] 79
+#&gt; [1] 163
 #&gt; 
 #&gt; $AIC
-#&gt; [1] 7082.65
+#&gt; [1] 4057.63
 #&gt; 
 #&gt; $AICc
-#&gt; [1] 6555.984
+#&gt; [1] 3658.644
 #&gt; 
 #&gt; $BIC
-#&gt; [1] 7242.653
+#&gt; [1] 4286.025
 #&gt; 
 #&gt; $Call
 #&gt; gllvm(y = y, family = "negative.binomial", method = "VA")
@@ -410,150 +435,313 @@ However, sometimes this is computationally too demanding, and default option
 #&gt; [1] "negative.binomial"
 #&gt; 
 #&gt; $Coefficients
-#&gt;          Intercept    theta.LV1   theta.LV2
-#&gt; OTU_79    1.888428  0.789337516  0.00000000
-#&gt; OTU_164   3.193654  0.494036483  1.00809211
-#&gt; OTU_462   2.216715  0.421613731  0.87282303
-#&gt; OTU_95    2.066990 -0.523046736 -0.01212220
-#&gt; OTU_833   2.879673  0.460526123  0.07964776
-#&gt; OTU_82    1.984971 -0.283906457  0.15565507
-#&gt; OTU_1358  2.124668  0.310734570  0.12695892
-#&gt; OTU_379   1.772559  0.385977107  0.19476349
-#&gt; OTU_153   1.744265 -0.317413575  0.17939130
-#&gt; OTU_59    1.652552  0.029138734  0.39028254
-#&gt; OTU_28    2.291228 -1.214511024  0.22921624
-#&gt; OTU_93    1.935786 -0.069907903  0.61949179
-#&gt; OTU_147   2.652368  0.923002819  0.30962408
-#&gt; OTU_142   1.499394  0.856130315  0.22223036
-#&gt; OTU_25    2.107618  0.758436948  0.17150226
-#&gt; OTU_27    2.193526 -0.352022999  0.77597121
-#&gt; OTU_312   1.462272 -0.869841623  0.05248865
-#&gt; OTU_98    1.510127  0.275596887  0.20370804
-#&gt; OTU_205   1.224261  0.007979795  0.21933894
-#&gt; OTU_830   1.518504  0.028606949  0.04617195
+#&gt;                                 Intercept     theta.LV1     theta.LV2
+#&gt; Amblyopone.australis          -0.93487604  8.615485e-01  0.000000e+00
+#&gt; Aphaenogaster.longiceps       -3.26535016  1.714602e-01  2.776101e+00
+#&gt; Camponotus.cinereus.amperei   -2.25921605  8.281921e-01  5.041441e-01
+#&gt; Camponotus.claripes            0.50780578  4.080778e-01  4.199238e-01
+#&gt; Camponotus.consobrinus         1.22630591  7.201167e-01 -8.489552e-01
+#&gt; Camponotus.nigriceps          -0.61590758 -5.206479e-01  8.160903e-01
+#&gt; Camponotus.nigroaeneus        -0.54808265  5.286213e-01  3.750750e-01
+#&gt; Cardiocondyla.nuda.atalanta   -2.67477540 -2.226903e+00 -8.636439e-01
+#&gt; Crematogaster.sp..A           -2.33325006  1.877125e+00  1.481226e+00
+#&gt; Heteroponera.sp..A             1.23592304  1.762079e-01 -5.690508e-01
+#&gt; Iridomyrmex.bicknelli          1.29631996  1.461682e-01 -1.012175e+00
+#&gt; Iridomyrmex.dromus            -0.79593329  8.755191e-01 -9.427780e-02
+#&gt; Iridomyrmex.mjobergi           1.33548198 -4.484132e-01  6.395597e-02
+#&gt; Iridomyrmex.purpureus         -0.08051729  1.269129e+00  8.992716e-01
+#&gt; Iridomyrmex.rufoniger          2.36322262 -1.791221e-01 -7.847789e-01
+#&gt; Iridomyrmex.suchieri           0.46298601  3.410289e-01 -7.454024e-01
+#&gt; Iridomyrmex.suchieroides      -0.44273081 -4.848252e-01 -8.008634e-01
+#&gt; Melophorus.sp..E              -1.19343081  1.211399e-01 -4.299584e-01
+#&gt; Melophorus.sp..F               0.53232205 -5.560241e-01 -3.541583e-01
+#&gt; Melophorus.sp..H              -0.55098793 -8.216253e-01 -4.331531e-01
+#&gt; Meranoplus.sp..A              -0.40109904 -9.636525e-01 -9.716680e-01
+#&gt; Monomorium.leae                1.33936847  6.444380e-01  3.508593e-01
+#&gt; Monomorium.rothsteini          0.23248265 -9.416829e-01 -1.616386e+00
+#&gt; Monomorium.sydneyense         -0.45356252 -7.813245e-01 -7.733047e-01
+#&gt; Myrmecia.pilosula.complex     -1.12328104  1.201785e-01 -7.417177e-01
+#&gt; Notoncus.capitatus            -0.95916928  1.317719e+00  3.812668e-01
+#&gt; Notoncus.ectatommoides         0.73769343 -7.934476e-01 -1.906508e-01
+#&gt; Nylanderia.sp..A               0.75528112 -7.927724e-01 -9.708544e-01
+#&gt; Ochetellus.glaber             -2.02101952 -6.270713e-01 -1.962975e+00
+#&gt; Paraparatrechina.sp..B        -1.48138568 -1.362632e+00  8.950157e-01
+#&gt; Pheidole.sp..A                 2.31907981 -3.756805e-01 -1.893311e-01
+#&gt; Pheidole.sp..B                -1.08740590 -2.379831e-01  7.934508e-01
+#&gt; Pheidole.sp..E                 1.60124336  3.892588e-01 -2.116852e-01
+#&gt; Pheidole.sp..J                -1.77059748 -2.686217e-01  5.507202e-01
+#&gt; Polyrhachis.sp..A             -1.26110047  3.366833e-01 -8.184573e-02
+#&gt; Rhytidoponera.metallica.sp..A  2.02315581 -3.491588e-01 -2.790859e-01
+#&gt; Rhytidoponera.sp..B            0.34755057 -1.008213e+00 -6.104732e-01
+#&gt; Solenopsis.sp..A              -2.01490391 -3.144517e-07  7.034328e-08
+#&gt; Stigmacros.sp..A              -0.30613154  8.535899e-01  6.203070e-02
+#&gt; Tapinoma.sp..A                 0.75351717  3.607007e-01 -4.449917e-01
+#&gt; Tetramorium.sp..A              0.07245915 -8.303926e-01 -8.853097e-01
 #&gt; 
 #&gt; $`Dispersion parameters`
-#&gt;    OTU_79   OTU_164   OTU_462    OTU_95   OTU_833    OTU_82  OTU_1358   OTU_379 
-#&gt; 0.1832115 0.2581916 0.3625953 0.6468468 0.5298655 0.1778368 0.4513558 0.2872816 
-#&gt;   OTU_153    OTU_59    OTU_28    OTU_93   OTU_147   OTU_142    OTU_25    OTU_27 
-#&gt; 0.3067341 0.2160174 0.2439218 0.3862093 0.4561603 0.2091138 0.2811742 1.2802814 
-#&gt;   OTU_312    OTU_98   OTU_205   OTU_830 
-#&gt; 0.1678309 0.2821152 0.1581622 0.3763647 
+#&gt;          Amblyopone.australis       Aphaenogaster.longiceps 
+#&gt;                  1.874863e+00                  2.591358e+00 
+#&gt;   Camponotus.cinereus.amperei           Camponotus.claripes 
+#&gt;                  1.324717e+00                  1.261768e+00 
+#&gt;        Camponotus.consobrinus          Camponotus.nigriceps 
+#&gt;                  5.240584e-01                  4.325960e+00 
+#&gt;        Camponotus.nigroaeneus   Cardiocondyla.nuda.atalanta 
+#&gt;                  2.065007e+00                  5.592449e+00 
+#&gt;           Crematogaster.sp..A            Heteroponera.sp..A 
+#&gt;                  4.407116e+00                  7.359263e-01 
+#&gt;         Iridomyrmex.bicknelli            Iridomyrmex.dromus 
+#&gt;                  4.188874e-01                  3.999454e+00 
+#&gt;          Iridomyrmex.mjobergi         Iridomyrmex.purpureus 
+#&gt;                  4.393825e-01                  4.644658e+00 
+#&gt;         Iridomyrmex.rufoniger          Iridomyrmex.suchieri 
+#&gt;                  1.065428e-01                  9.290044e-01 
+#&gt;      Iridomyrmex.suchieroides              Melophorus.sp..E 
+#&gt;                  5.188247e-01                  1.348801e+00 
+#&gt;              Melophorus.sp..F              Melophorus.sp..H 
+#&gt;                  4.190694e-01                  6.469172e-01 
+#&gt;              Meranoplus.sp..A               Monomorium.leae 
+#&gt;                  3.239066e+00                  1.018074e+00 
+#&gt;         Monomorium.rothsteini         Monomorium.sydneyense 
+#&gt;                  7.234829e-01                  1.708943e+00 
+#&gt;     Myrmecia.pilosula.complex            Notoncus.capitatus 
+#&gt;                  1.987254e+00                  5.818282e+00 
+#&gt;        Notoncus.ectatommoides              Nylanderia.sp..A 
+#&gt;                  5.146587e-01                  1.327909e+00 
+#&gt;             Ochetellus.glaber        Paraparatrechina.sp..B 
+#&gt;                  2.316428e+00                  8.639082e+00 
+#&gt;                Pheidole.sp..A                Pheidole.sp..B 
+#&gt;                  1.068043e-01                  2.058733e+00 
+#&gt;                Pheidole.sp..E                Pheidole.sp..J 
+#&gt;                  6.578595e-01                  3.799056e+00 
+#&gt;             Polyrhachis.sp..A Rhytidoponera.metallica.sp..A 
+#&gt;                  2.880357e-01                  1.413681e-01 
+#&gt;           Rhytidoponera.sp..B              Solenopsis.sp..A 
+#&gt;                  1.474439e+00                  1.976487e-07 
+#&gt;              Stigmacros.sp..A                Tapinoma.sp..A 
+#&gt;                  1.922781e+00                  8.229701e-01 
+#&gt;             Tetramorium.sp..A 
+#&gt;                  5.995425e-01 
 #&gt; 
 #&gt; attr(,"class")
-#&gt; [1] "summary.gllvm"</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>fitv0</span>)</div><div class='output co'>#&gt;                            2.5 %      97.5 %
-#&gt; theta.LV1.1         0.6181782415  0.96049679
-#&gt; theta.LV1.2         0.1091634262  0.87890954
-#&gt; theta.LV1.3         0.0647697802  0.77845768
-#&gt; theta.LV1.4        -0.7851592437 -0.26093423
-#&gt; theta.LV1.5         0.2381551893  0.68289706
-#&gt; theta.LV1.6        -0.4568409410 -0.11097197
-#&gt; theta.LV1.7         0.0796303998  0.54183874
-#&gt; theta.LV1.8         0.1804443203  0.59150989
-#&gt; theta.LV1.9        -0.5284249055 -0.10640224
-#&gt; theta.LV1.10       -0.1913529415  0.24963041
-#&gt; theta.LV1.11       -1.5330824786 -0.89593957
-#&gt; theta.LV1.12       -0.3636872395  0.22387143
-#&gt; theta.LV1.13        0.6232507076  1.22275493
-#&gt; theta.LV1.14        0.5998568521  1.11240378
-#&gt; theta.LV1.15        0.5162584853  1.00061541
-#&gt; theta.LV1.16       -0.7959033026  0.09185731
-#&gt; theta.LV1.17       -1.1222554067 -0.61742784
-#&gt; theta.LV1.18        0.0656516742  0.48554210
-#&gt; theta.LV1.19       -0.1853673026  0.20132689
-#&gt; theta.LV1.20       -0.1938772613  0.25109116
-#&gt; theta.LV2.1         0.0000000000  0.00000000
-#&gt; theta.LV2.2         0.7163746983  1.29980953
-#&gt; theta.LV2.3         0.5905906241  1.15505544
-#&gt; theta.LV2.4        -0.2938991635  0.26965476
-#&gt; theta.LV2.5        -0.1799848025  0.33928032
-#&gt; theta.LV2.6        -0.0174459241  0.32875606
-#&gt; theta.LV2.7        -0.1010437471  0.35496159
-#&gt; theta.LV2.8        -0.0074090009  0.39693598
-#&gt; theta.LV2.9        -0.0451636383  0.40394625
-#&gt; theta.LV2.10        0.1942716595  0.58629342
-#&gt; theta.LV2.11       -0.0762940682  0.53472656
-#&gt; theta.LV2.12        0.3717016408  0.86728194
-#&gt; theta.LV2.13        0.0210035064  0.59824466
-#&gt; theta.LV2.14       -0.0216870354  0.46614776
-#&gt; theta.LV2.15       -0.0593315436  0.40233607
-#&gt; theta.LV2.16        0.4179550114  1.13398742
-#&gt; theta.LV2.17       -0.1957826443  0.30075994
-#&gt; theta.LV2.18       -0.0006689199  0.40808499
-#&gt; theta.LV2.19        0.0344769145  0.40420096
-#&gt; theta.LV2.20       -0.1699715070  0.26231541
-#&gt; Intercept.OTU_79    1.6251232946  2.15173300
-#&gt; Intercept.OTU_164   2.8570000923  3.53030726
-#&gt; Intercept.OTU_462   1.8932599857  2.54016969
-#&gt; Intercept.OTU_95    1.7936744753  2.34030580
-#&gt; Intercept.OTU_833   2.6422043353  3.11714237
-#&gt; Intercept.OTU_82    1.8131889038  2.15675292
-#&gt; Intercept.OTU_1358  1.9064423506  2.34289392
-#&gt; Intercept.OTU_379   1.5589370732  1.98618097
-#&gt; Intercept.OTU_153   1.5354454911  1.95308534
-#&gt; Intercept.OTU_59    1.4533751875  1.85172872
-#&gt; Intercept.OTU_28    1.9195092455  2.66294762
-#&gt; Intercept.OTU_93    1.6772585926  2.19431283
-#&gt; Intercept.OTU_147   2.3263318317  2.97840494
-#&gt; Intercept.OTU_142   1.1992653226  1.79952182
-#&gt; Intercept.OTU_25    1.8382744601  2.37696230
-#&gt; Intercept.OTU_27    1.7870024631  2.60004933
-#&gt; Intercept.OTU_312   1.1683931211  1.75614996
-#&gt; Intercept.OTU_98    1.3010147857  1.71923972
-#&gt; Intercept.OTU_205   1.0377443259  1.41077687
-#&gt; Intercept.OTU_830   1.3158290409  1.72117818
-#&gt; inv.phi.OTU_79      1.8475888939  9.06875483
-#&gt; inv.phi.OTU_164     1.2235364436  6.52264970
-#&gt; inv.phi.OTU_462     1.2465418413  4.26924970
-#&gt; inv.phi.OTU_95      0.8461156035  2.24580660
-#&gt; inv.phi.OTU_833     1.0661493921  2.70839374
-#&gt; inv.phi.OTU_82      1.7858205154  9.46044477
-#&gt; inv.phi.OTU_1358    1.1138705787  3.31722321
-#&gt; inv.phi.OTU_379     1.3875499944  5.57426018
-#&gt; inv.phi.OTU_153     1.2479336887  5.27237108
-#&gt; inv.phi.OTU_59      1.4663506154  7.79216235
-#&gt; inv.phi.OTU_28      1.4594344773  6.73991517
-#&gt; inv.phi.OTU_93      1.0978169500  4.08072250
-#&gt; inv.phi.OTU_147     1.0628861269  3.32153797
-#&gt; inv.phi.OTU_142     1.6354683760  7.92870237
-#&gt; inv.phi.OTU_25      1.4105933717  5.70243575
-#&gt; inv.phi.OTU_27      0.4516829651  1.11047366
-#&gt; inv.phi.OTU_312     1.8536670535 10.06308931
-#&gt; inv.phi.OTU_98      1.0971373695  5.99216634
-#&gt; inv.phi.OTU_205     0.0576437924 12.58760084
-#&gt; inv.phi.OTU_830     0.9588263430  4.35516856</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
-<span class='no'>fitl0</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitl0</span>)
+#&gt; [1] "summary.gllvm"</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/confint.html'>confint</a></span><span class='op'>(</span><span class='va'>fitv0</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;                                                 2.5 %        97.5 %
+#&gt; theta.LV1.1                              3.222219e-02  1.690875e+00
+#&gt; theta.LV1.2                             -1.229300e+00  1.572221e+00
+#&gt; theta.LV1.3                             -5.374030e-01  2.193787e+00
+#&gt; theta.LV1.4                             -3.335894e-01  1.149745e+00
+#&gt; theta.LV1.5                              2.051243e-01  1.235109e+00
+#&gt; theta.LV1.6                             -2.058136e+00  1.016840e+00
+#&gt; theta.LV1.7                             -5.573122e-01  1.614555e+00
+#&gt; theta.LV1.8                             -4.288731e+00 -1.650756e-01
+#&gt; theta.LV1.9                             -2.742016e-03  3.756992e+00
+#&gt; theta.LV1.10                            -2.419541e-01  5.943700e-01
+#&gt; theta.LV1.11                            -2.910482e-01  5.833847e-01
+#&gt; theta.LV1.12                            -3.724920e-01  2.123530e+00
+#&gt; theta.LV1.13                            -7.806571e-01 -1.161693e-01
+#&gt; theta.LV1.14                            -5.822546e-02  2.596483e+00
+#&gt; theta.LV1.15                            -4.343163e-01  7.607217e-02
+#&gt; theta.LV1.16                            -2.283949e-01  9.104526e-01
+#&gt; theta.LV1.17                            -1.019765e+00  5.011485e-02
+#&gt; theta.LV1.18                            -7.221768e-01  9.644566e-01
+#&gt; theta.LV1.19                            -9.268266e-01 -1.852217e-01
+#&gt; theta.LV1.20                            -1.410081e+00 -2.331695e-01
+#&gt; theta.LV1.21                            -2.129834e+00  2.025289e-01
+#&gt; theta.LV1.22                             1.299923e-01  1.158884e+00
+#&gt; theta.LV1.23                            -1.590629e+00 -2.927372e-01
+#&gt; theta.LV1.24                            -1.459144e+00 -1.035052e-01
+#&gt; theta.LV1.25                            -7.341632e-01  9.745202e-01
+#&gt; theta.LV1.26                            -6.101719e-01  3.245609e+00
+#&gt; theta.LV1.27                            -1.229075e+00 -3.578203e-01
+#&gt; theta.LV1.28                            -1.395675e+00 -1.898702e-01
+#&gt; theta.LV1.29                            -1.721248e+00  4.671059e-01
+#&gt; theta.LV1.30                            -3.627135e+00  9.018701e-01
+#&gt; theta.LV1.31                            -5.825460e-01 -1.688150e-01
+#&gt; theta.LV1.32                            -1.182044e+00  7.060782e-01
+#&gt; theta.LV1.33                             8.922598e-03  7.695950e-01
+#&gt; theta.LV1.34                            -1.285658e+00  7.484143e-01
+#&gt; theta.LV1.35                            -4.524390e-01  1.125806e+00
+#&gt; theta.LV1.36                            -5.676617e-01 -1.306558e-01
+#&gt; theta.LV1.37                            -1.792299e+00 -2.241276e-01
+#&gt; theta.LV1.38                            -6.767276e-04  6.760987e-04
+#&gt; theta.LV1.39                            -8.326224e-02  1.790442e+00
+#&gt; theta.LV1.40                            -9.912453e-02  8.205259e-01
+#&gt; theta.LV1.41                            -1.373750e+00 -2.870348e-01
+#&gt; theta.LV2.1                              0.000000e+00  0.000000e+00
+#&gt; theta.LV2.2                             -1.940918e+00  7.493121e+00
+#&gt; theta.LV2.3                             -4.187786e-01  1.427067e+00
+#&gt; theta.LV2.4                             -2.523296e-02  8.650805e-01
+#&gt; theta.LV2.5                             -1.429500e+00 -2.684109e-01
+#&gt; theta.LV2.6                             -1.239983e-01  1.756179e+00
+#&gt; theta.LV2.7                             -2.760137e-01  1.026164e+00
+#&gt; theta.LV2.8                             -3.043919e+00  1.316631e+00
+#&gt; theta.LV2.9                             -1.544722e-01  3.116925e+00
+#&gt; theta.LV2.10                            -1.003281e+00 -1.348206e-01
+#&gt; theta.LV2.11                            -1.537936e+00 -4.864153e-01
+#&gt; theta.LV2.12                            -1.179517e+00  9.909616e-01
+#&gt; theta.LV2.13                            -2.694244e-01  3.973364e-01
+#&gt; theta.LV2.14                            -7.152399e-02  1.870067e+00
+#&gt; theta.LV2.15                            -1.100039e+00 -4.695191e-01
+#&gt; theta.LV2.16                            -1.380911e+00 -1.098934e-01
+#&gt; theta.LV2.17                            -1.561003e+00 -4.072433e-02
+#&gt; theta.LV2.18                            -1.321837e+00  4.619200e-01
+#&gt; theta.LV2.19                            -7.907365e-01  8.241996e-02
+#&gt; theta.LV2.20                            -1.085704e+00  2.193982e-01
+#&gt; theta.LV2.21                            -2.223945e+00  2.806091e-01
+#&gt; theta.LV2.22                            -4.748061e-02  7.491993e-01
+#&gt; theta.LV2.23                            -2.637449e+00 -5.953221e-01
+#&gt; theta.LV2.24                            -1.662425e+00  1.158152e-01
+#&gt; theta.LV2.25                            -1.931558e+00  4.481231e-01
+#&gt; theta.LV2.26                            -6.894793e-01  1.452013e+00
+#&gt; theta.LV2.27                            -6.376132e-01  2.563115e-01
+#&gt; theta.LV2.28                            -1.712638e+00 -2.290707e-01
+#&gt; theta.LV2.29                            -3.985368e+00  5.941814e-02
+#&gt; theta.LV2.30                            -1.976567e-01  1.987688e+00
+#&gt; theta.LV2.31                            -3.959580e-01  1.729581e-02
+#&gt; theta.LV2.32                             1.093994e-01  1.477502e+00
+#&gt; theta.LV2.33                            -5.772708e-01  1.539004e-01
+#&gt; theta.LV2.34                            -7.507362e-01  1.852176e+00
+#&gt; theta.LV2.35                            -6.922735e-01  5.285820e-01
+#&gt; theta.LV2.36                            -5.108959e-01 -4.727592e-02
+#&gt; theta.LV2.37                            -1.275759e+00  5.481250e-02
+#&gt; theta.LV2.38                            -8.405272e-04  8.406679e-04
+#&gt; theta.LV2.39                            -5.361047e-01  6.601661e-01
+#&gt; theta.LV2.40                            -8.822386e-01 -7.744740e-03
+#&gt; theta.LV2.41                            -1.608404e+00 -1.622156e-01
+#&gt; Intercept.Amblyopone.australis          -1.839750e+00 -3.000187e-02
+#&gt; Intercept.Aphaenogaster.longiceps       -6.226465e+00 -3.042356e-01
+#&gt; Intercept.Camponotus.cinereus.amperei   -3.678661e+00 -8.397709e-01
+#&gt; Intercept.Camponotus.claripes           -4.319264e-02  1.058804e+00
+#&gt; Intercept.Camponotus.consobrinus         6.555587e-01  1.797053e+00
+#&gt; Intercept.Camponotus.nigriceps          -1.708836e+00  4.770208e-01
+#&gt; Intercept.Camponotus.nigroaeneus        -1.329251e+00  2.330854e-01
+#&gt; Intercept.Cardiocondyla.nuda.atalanta   -5.321626e+00 -2.792497e-02
+#&gt; Intercept.Crematogaster.sp..A           -4.756745e+00  9.024485e-02
+#&gt; Intercept.Heteroponera.sp..A             7.980010e-01  1.673845e+00
+#&gt; Intercept.Iridomyrmex.bicknelli          7.851157e-01  1.807524e+00
+#&gt; Intercept.Iridomyrmex.dromus            -1.851464e+00  2.595972e-01
+#&gt; Intercept.Iridomyrmex.mjobergi           9.836568e-01  1.687307e+00
+#&gt; Intercept.Iridomyrmex.purpureus         -1.273580e+00  1.112545e+00
+#&gt; Intercept.Iridomyrmex.rufoniger          2.023230e+00  2.703215e+00
+#&gt; Intercept.Iridomyrmex.suchieri          -1.218107e-01  1.047783e+00
+#&gt; Intercept.Iridomyrmex.suchieroides      -1.132991e+00  2.475297e-01
+#&gt; Intercept.Melophorus.sp..E              -2.011672e+00 -3.751898e-01
+#&gt; Intercept.Melophorus.sp..F               8.237785e-02  9.822663e-01
+#&gt; Intercept.Melophorus.sp..H              -1.265508e+00  1.635326e-01
+#&gt; Intercept.Meranoplus.sp..A              -1.450442e+00  6.482435e-01
+#&gt; Intercept.Monomorium.leae                8.365308e-01  1.842206e+00
+#&gt; Intercept.Monomorium.rothsteini         -7.429468e-01  1.207912e+00
+#&gt; Intercept.Monomorium.sydneyense         -1.318798e+00  4.116730e-01
+#&gt; Intercept.Myrmecia.pilosula.complex     -2.045614e+00 -2.009480e-01
+#&gt; Intercept.Notoncus.capitatus            -2.449463e+00  5.311247e-01
+#&gt; Intercept.Notoncus.ectatommoides         2.479065e-01  1.227480e+00
+#&gt; Intercept.Nylanderia.sp..A               3.761442e-02  1.472948e+00
+#&gt; Intercept.Ochetellus.glaber             -3.831561e+00 -2.104785e-01
+#&gt; Intercept.Paraparatrechina.sp..B        -3.283364e+00  3.205924e-01
+#&gt; Intercept.Pheidole.sp..A                 2.093678e+00  2.544482e+00
+#&gt; Intercept.Pheidole.sp..B                -2.027452e+00 -1.473596e-01
+#&gt; Intercept.Pheidole.sp..E                 1.224913e+00  1.977574e+00
+#&gt; Intercept.Pheidole.sp..J                -2.971909e+00 -5.692863e-01
+#&gt; Intercept.Polyrhachis.sp..A             -1.994575e+00 -5.276256e-01
+#&gt; Intercept.Rhytidoponera.metallica.sp..A  1.772693e+00  2.273618e+00
+#&gt; Intercept.Rhytidoponera.sp..B           -3.977332e-01  1.092834e+00
+#&gt; Intercept.Solenopsis.sp..A              -2.994886e+00 -1.034921e+00
+#&gt; Intercept.Stigmacros.sp..A              -1.115144e+00  5.028807e-01
+#&gt; Intercept.Tapinoma.sp..A                 2.759993e-01  1.231035e+00
+#&gt; Intercept.Tetramorium.sp..A             -6.326824e-01  7.776007e-01
+#&gt; inv.phi.Amblyopone.australis            -2.626800e-01  1.329424e+00
+#&gt; inv.phi.Aphaenogaster.longiceps         -2.024048e-01  9.742009e-01
+#&gt; inv.phi.Camponotus.cinereus.amperei     -1.089683e+00  2.599439e+00
+#&gt; inv.phi.Camponotus.claripes              5.741264e-02  1.527665e+00
+#&gt; inv.phi.Camponotus.consobrinus           6.892526e-02  3.747444e+00
+#&gt; inv.phi.Camponotus.nigriceps            -6.311092e-02  5.254361e-01
+#&gt; inv.phi.Camponotus.nigroaeneus          -1.067826e-01  1.075302e+00
+#&gt; inv.phi.Cardiocondyla.nuda.atalanta     -7.181728e-02  4.294424e-01
+#&gt; inv.phi.Crematogaster.sp..A             -8.079349e-02  5.346050e-01
+#&gt; inv.phi.Heteroponera.sp..A               2.233008e-01  2.494363e+00
+#&gt; inv.phi.Iridomyrmex.bicknelli           -8.740118e-02  4.861954e+00
+#&gt; inv.phi.Iridomyrmex.dromus              -6.698430e-02  5.670525e-01
+#&gt; inv.phi.Iridomyrmex.mjobergi            -1.281205e-01  4.679963e+00
+#&gt; inv.phi.Iridomyrmex.purpureus            9.338082e-03  4.212641e-01
+#&gt; inv.phi.Iridomyrmex.rufoniger           -7.520929e-02  1.884701e+01
+#&gt; inv.phi.Iridomyrmex.suchieri            -1.383350e-01  2.291177e+00
+#&gt; inv.phi.Iridomyrmex.suchieroides        -8.793506e-01  4.734218e+00
+#&gt; inv.phi.Melophorus.sp..E                -8.182001e-01  2.300999e+00
+#&gt; inv.phi.Melophorus.sp..F                -5.031020e-01  5.275581e+00
+#&gt; inv.phi.Melophorus.sp..H                -4.154827e-01  3.507068e+00
+#&gt; inv.phi.Meranoplus.sp..A                -1.757434e-02  6.350364e-01
+#&gt; inv.phi.Monomorium.leae                  2.482830e-01  1.716210e+00
+#&gt; inv.phi.Monomorium.rothsteini            1.673167e-02  2.747674e+00
+#&gt; inv.phi.Monomorium.sydneyense           -9.773271e-02  1.268047e+00
+#&gt; inv.phi.Myrmecia.pilosula.complex       -3.593455e-01  1.365759e+00
+#&gt; inv.phi.Notoncus.capitatus              -4.145771e-02  3.852018e-01
+#&gt; inv.phi.Notoncus.ectatommoides          -7.446529e-02  3.960536e+00
+#&gt; inv.phi.Nylanderia.sp..A                 1.082686e-01  1.397858e+00
+#&gt; inv.phi.Ochetellus.glaber               -1.868582e-01  1.050256e+00
+#&gt; inv.phi.Paraparatrechina.sp..B          -6.217200e-02  2.936781e-01
+#&gt; inv.phi.Pheidole.sp..A                  -1.314141e+00  2.003997e+01
+#&gt; inv.phi.Pheidole.sp..B                  -3.344611e-01  1.305933e+00
+#&gt; inv.phi.Pheidole.sp..E                   3.158509e-01  2.724312e+00
+#&gt; inv.phi.Pheidole.sp..J                  -2.809300e-01  8.073765e-01
+#&gt; inv.phi.Polyrhachis.sp..A               -6.801645e+00  1.374523e+01
+#&gt; inv.phi.Rhytidoponera.metallica.sp..A   -8.222697e-01  1.496973e+01
+#&gt; inv.phi.Rhytidoponera.sp..B              5.000631e-03  1.351447e+00
+#&gt; inv.phi.Solenopsis.sp..A                 5.059481e+06  5.059484e+06
+#&gt; inv.phi.Stigmacros.sp..A                -3.084027e-02  1.071001e+00
+#&gt; inv.phi.Tapinoma.sp..A                   9.856830e-02  2.331654e+00
+#&gt; inv.phi.Tetramorium.sp..A               -2.942493e-01  3.630126e+00</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
+<span class='va'>fitl0</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, method <span class='op'>=</span> <span class='st'>"LA"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitl0</span><span class='op'>)</span>
 
 <span class='co'># Poisson family:</span>
-<span class='no'>fit.p</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>(), <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.p</span>)
+<span class='va'>fit.p</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, method <span class='op'>=</span> <span class='st'>"LA"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fit.p</span><span class='op'>)</span>
 <span class='co'># Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run</span>
-<span class='no'>fit.z</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"ZIP"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>, <span class='kw'>start.fit</span> <span class='kw'>=</span> <span class='no'>fit.p</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.z</span>)</div><div class='img'><img src='gllvm-7.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='va'>fit.z</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='st'>"ZIP"</span>, method <span class='op'>=</span> <span class='st'>"LA"</span>, control.start <span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>start.fit <span class='op'>=</span> <span class='va'>fit.p</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fit.z</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-7.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='co'>## Example 2: gllvm with environmental variables</span>
 <span class='co'># Fit model with two latent variables and all environmental covariates,</span>
-<span class='no'>fitvX</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>X</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in model.frame.default(formula = y ~ X, drop.unused.levels = TRUE): invalid type (list) for variable 'X'</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX, biplot = TRUE): object 'fitvX' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX): object 'fitvX' not found</span></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
-<span class='no'>fitvX2</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX2): object 'fitvX2' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX2): object 'fitvX2' not found</span></div><div class='input'><span class='co'># Use 5 initial runs and pick the best one</span>
-<span class='no'>fitvX_5</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='no'>X</span>, <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>jitter.var</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitvX_5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitvX_5): object 'fitvX_5' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitvX_5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitvX_5): object 'fitvX_5' not found</span></div><div class='input'>
+<span class='va'>fitvX</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>formula <span class='op'>=</span> <span class='va'>y</span> <span class='op'>~</span> <span class='va'>X</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitvX</span>, biplot <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitvX</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-8.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-9.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Fit model with environmental covariates Bare.ground and Shrub.cover</span>
+<span class='va'>fitvX2</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, <span class='va'>X</span>, formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Shrub.cover</span>,
+ family <span class='op'>=</span> <span class='st'>"negative.binomial"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitvX2</span><span class='op'>)</span>
+<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitvX2</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-10.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-11.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Use 5 initial runs and pick the best one</span>
+<span class='va'>fitvX_5</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, <span class='va'>X</span>, formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Shrub.cover</span>,
+ family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, control.start<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>n.init <span class='op'>=</span> <span class='fl'>5</span>, jitter.var <span class='op'>=</span> <span class='fl'>0.1</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitvX_5</span><span class='op'>)</span>
+<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitvX_5</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-12.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-13.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## Example 3: Data in long format</span>
 <span class='co'># Reshape data to long format:</span>
-<span class='no'>datalong</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/reshape'>reshape</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/data.frame'>data.frame</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='no'>y</span>,<span class='no'>X</span>)), <span class='kw'>direction</span> <span class='kw'>=</span> <span class='st'>"long"</span>,
-                   <span class='kw'>varying</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colnames'>colnames</a></span>(<span class='no'>y</span>), <span class='kw'>v.names</span> <span class='kw'>=</span> <span class='st'>"y"</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>datalong</span>)</div><div class='output co'>#&gt;      SOM   pH Phosp Region Site Soiltype time  y id
-#&gt; 1.1 0.01 6.70  2.63    Aus    A        B    1  1  1
-#&gt; 2.1 0.01 6.67  2.16    Aus    A        B    1  6  2
-#&gt; 3.1 0.00 8.19  0.62    Aus    A        B    1 18  3
-#&gt; 4.1 0.00 7.34  1.15    Aus    A        B    1  6  4
-#&gt; 5.1 0.01 6.17  2.44    Aus    A        T    1  3  5
-#&gt; 6.1 0.01 6.08  3.94    Aus    A        T    1  8  6</div><div class='input'><span class='no'>fitvLong</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>datalong</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Shrub.cover</span>,
-               <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in eval(predvars, data, env): object 'Bare.ground' not found</span></div><div class='input'>
+<span class='va'>datalong</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/reshape.html'>reshape</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/cbind.html'>cbind</a></span><span class='op'>(</span><span class='va'>y</span>,<span class='va'>X</span><span class='op'>)</span><span class='op'>)</span>, direction <span class='op'>=</span> <span class='st'>"long"</span>,
+                   varying <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>y</span><span class='op'>)</span>, v.names <span class='op'>=</span> <span class='st'>"y"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='va'>datalong</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;     Bare.ground Canopy.cover Shrub.cover Volume.lying.CWD Feral.mammal.dung
+#&gt; 1.1        9.00          3.5        0.50       0.03253833              0.20
+#&gt; 2.1        6.00          0.0        0.00       0.01202944              0.65
+#&gt; 3.1        9.25          0.0        8.10       0.00804195              0.00
+#&gt; 4.1       23.25          0.0        0.25       0.00000000              0.20
+#&gt; 5.1        8.75          0.0        3.35       0.00993944              0.35
+#&gt; 6.1       32.25          0.0        0.00       0.03142221              1.00
+#&gt;     time y id
+#&gt; 1.1    1 0  1
+#&gt; 2.1    1 0  2
+#&gt; 3.1    1 0  3
+#&gt; 4.1    1 4  4
+#&gt; 5.1    1 2  5
+#&gt; 6.1    1 0  6</div><div class='input'><span class='va'>fitvLong</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>datalong</span>, formula <span class='op'>=</span> <span class='va'>y</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Shrub.cover</span>,
+               family <span class='op'>=</span> <span class='st'>"negative.binomial"</span><span class='op'>)</span>
+
 <span class='co'>## Example 4: Fourth corner model</span>
 <span class='co'># Fit fourth corner model with two latent variables</span>
-<span class='no'>fitF1</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, family = "negative.binomial"): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF1</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF1): object 'fitF1' not found</span></div><div class='input'><span class='co'># Fourth corner can be plotted also with next lines</span>
+<span class='va'>fitF1</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>y</span>, X <span class='op'>=</span> <span class='va'>X</span>, TR <span class='op'>=</span> <span class='va'>TR</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span><span class='op'>)</span>
+<span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitF1</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-14.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># Fourth corner can be plotted also with next lines</span>
 <span class='co'>#fourth = fitF1$fourth.corner</span>
 <span class='co'>#library(lattice)</span>
 <span class='co'>#a = max( abs(fourth) )</span>
@@ -564,46 +752,46 @@ However, sometimes this is computationally too demanding, and default option
 <span class='co'>#print(plot.4th)</span>
 
 <span class='co'># Specify model using formula</span>
-<span class='no'>fitF2</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>,
- <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span> * (<span class='no'>Pilosity</span> + <span class='no'>Webers.length</span>),
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, formula = ~Bare.ground + Canopy.cover *     (Pilosity + Webers.length), family = "negative.binomial"): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitF2): object 'fitF2' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF2</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF2): object 'fitF2' not found</span></div><div class='input'>
+<span class='va'>fitF2</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>y</span>, X <span class='op'>=</span> <span class='va'>X</span>, TR <span class='op'>=</span> <span class='va'>TR</span>,
+ formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Canopy.cover</span> <span class='op'>*</span> <span class='op'>(</span><span class='va'>Pilosity</span> <span class='op'>+</span> <span class='va'>Webers.length</span><span class='op'>)</span>,
+ family <span class='op'>=</span> <span class='st'>"negative.binomial"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitF2</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-15.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitF2</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-16.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## Include species specific random slopes to the fourth corner model</span>
-<span class='no'>fitF3</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>X</span> <span class='kw'>=</span> <span class='no'>X</span>, <span class='kw'>TR</span> <span class='kw'>=</span> <span class='no'>TR</span>,
- <span class='kw'>formula</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span> * (<span class='no'>Pilosity</span> + <span class='no'>Webers.length</span>),
- <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>randomX</span> <span class='kw'>=</span> ~ <span class='no'>Bare.ground</span> + <span class='no'>Canopy.cover</span>, <span class='kw'>n.init</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, TR = TR, formula = ~Bare.ground + Canopy.cover *     (Pilosity + Webers.length), family = "negative.binomial",     randomX = ~Bare.ground + Canopy.cover, n.init = 3): object 'TR' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitF3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fitF3): object 'fitF3' not found</span></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span>(<span class='no'>fitF3</span>)</div><div class='output co'>#&gt; <span class='error'>Error in coefplot(fitF3): object 'fitF3' not found</span></div><div class='input'>
+<span class='va'>fitF3</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>y</span>, X <span class='op'>=</span> <span class='va'>X</span>, TR <span class='op'>=</span> <span class='va'>TR</span>,
+ formula <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Canopy.cover</span> <span class='op'>*</span> <span class='op'>(</span><span class='va'>Pilosity</span> <span class='op'>+</span> <span class='va'>Webers.length</span><span class='op'>)</span>,
+ family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, randomX <span class='op'>=</span> <span class='op'>~</span> <span class='va'>Bare.ground</span> <span class='op'>+</span> <span class='va'>Canopy.cover</span>, 
+ control.start <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>n.init <span class='op'>=</span> <span class='fl'>3</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitF3</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-17.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='coefplot.gllvm.html'>coefplot</a></span><span class='op'>(</span><span class='va'>fitF3</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-18.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='co'>## Example 5: Fit Tweedie model</span>
 <span class='co'># Load coral data</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>tikus</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: data set 'tikus' not found</span></div><div class='input'><span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>tikus</span>$<span class='no'>abund</span></div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'tikus' not found</span></div><div class='input'><span class='co'># Let's consider only years 1981 and 1983</span>
-<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[((<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>81</span>) + (<span class='no'>tikus</span>$<span class='no'>x</span>$<span class='no'>time</span> <span class='kw'>==</span> <span class='fl'>83</span>)) <span class='kw'>&gt;</span> <span class='fl'>0</span>, ]</div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'ycoral' not found</span></div><div class='input'><span class='co'># Exclude species which have observed at less than 4 sites</span>
-<span class='no'>ycoral</span> <span class='kw'>&lt;-</span> <span class='no'>ycoral</span>[-<span class='fl'>17</span>, (<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/colSums'>colSums</a></span>(<span class='no'>ycoral</span> <span class='kw'>&gt;</span> <span class='fl'>0</span>) <span class='kw'>&gt;</span> <span class='fl'>4</span>)]</div><div class='output co'>#&gt; <span class='error'>Error in eval(expr, envir, enclos): object 'ycoral' not found</span></div><div class='input'><span class='co'># Fit Tweedie model for coral data (this line may take few minutes to run)</span>
-<span class='no'>fit.twe</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>ycoral</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"tweedie"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"LA"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = ycoral, family = "tweedie", method = "LA"): object 'ycoral' not found</span></div><div class='input'><span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fit.twe</span>)</div><div class='output co'>#&gt; <span class='error'>Error in ordiplot(fit.twe): object 'fit.twe' not found</span></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>tikus</span><span class='op'>)</span>
+<span class='va'>ycoral</span> <span class='op'>&lt;-</span> <span class='va'>tikus</span><span class='op'>$</span><span class='va'>abund</span>
+<span class='co'># Let's consider only years 1981 and 1983</span>
+<span class='va'>ycoral</span> <span class='op'>&lt;-</span> <span class='va'>ycoral</span><span class='op'>[</span><span class='op'>(</span><span class='op'>(</span><span class='va'>tikus</span><span class='op'>$</span><span class='va'>x</span><span class='op'>$</span><span class='va'>time</span> <span class='op'>==</span> <span class='fl'>81</span><span class='op'>)</span> <span class='op'>+</span> <span class='op'>(</span><span class='va'>tikus</span><span class='op'>$</span><span class='va'>x</span><span class='op'>$</span><span class='va'>time</span> <span class='op'>==</span> <span class='fl'>83</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>&gt;</span> <span class='fl'>0</span>, <span class='op'>]</span>
+<span class='co'># Exclude species which have observed at less than 4 sites</span>
+<span class='va'>ycoral</span> <span class='op'>&lt;-</span> <span class='va'>ycoral</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>17</span>, <span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>ycoral</span> <span class='op'>&gt;</span> <span class='fl'>0</span><span class='op'>)</span> <span class='op'>&gt;</span> <span class='fl'>4</span><span class='op'>)</span><span class='op'>]</span>
+<span class='co'># Fit Tweedie model for coral data (this line may take few minutes to run)</span>
+<span class='va'>fit.twe</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>ycoral</span>, family <span class='op'>=</span> <span class='st'>"tweedie"</span>, method <span class='op'>=</span> <span class='st'>"LA"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fit.twe</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-19.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## Example 6: Random row effects</span>
-<span class='no'>fitRand</span> <span class='kw'>&lt;-</span> <span class='fu'>gllvm</span>(<span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"negative.binomial"</span>, <span class='kw'>row.eff</span> <span class='kw'>=</span> <span class='st'>"random"</span>)
-<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span>(<span class='no'>fitRand</span>, <span class='kw'>biplot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='img'><img src='gllvm-8.png' alt='' width='700' height='433' /></div></pre>
+<span class='va'>fitRand</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, row.eff <span class='op'>=</span> <span class='st'>"random"</span><span class='op'>)</span>
+<span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitRand</span>, biplot <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+</div><div class='img'><img src='gllvm-20.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># }</span>
+</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
-
-      <li><a href="#note">Note</a></li>
-
-      <li><a href="#references">References</a></li>
-
-      <li><a href="#see-also">See also</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
-    <h2>Author</h2>
-    <p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen</p>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
+
 
       <footer>
       <div class="copyright">
@@ -611,13 +799,16 @@ However, sometimes this is computationally too demanding, and default option
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 
