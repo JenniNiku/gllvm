@@ -317,7 +317,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if (!("Ab.diag.iter" %in% names(x))) 
         x$Ab.diag.iter = 0
       if (!("Lambda.start" %in% names(x))) 
-        x$Lambda.start = c(0.1, 0.1, 0.1)
+        x$Lambda.start = c(0.3, 0.3, 0.3)
       x
     }
     fill_control.start = function(x){
@@ -347,6 +347,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start
+    
+    
     
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
