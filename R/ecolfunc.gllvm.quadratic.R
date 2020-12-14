@@ -58,8 +58,12 @@ optima.gllvm.quadratic <- function(object,sd.errors = T) {
       }
       }
     
-      colnames(opt) <- colnames(opt.sd) <- paste("LV",1:num.lv,sep="")
-      row.names(opt) <- row.names(opt.sd) <- colnames(object$y)
+      if(num.lv>1)colnames(opt) <- colnames(opt.sd) <- paste("LV",1:num.lv,sep="")
+      if(num.lv>1){
+        row.names(opt) <- row.names(opt.sd) <- colnames(object$y)
+      }else{
+        names(opt) <- names(opt.sd) <- colnames(object$y)
+      }
       
  return(list(optima=opt,sd=opt.sd)) 
 }
@@ -108,11 +112,15 @@ tolerances.gllvm.quadratic <- function(object,sd.errors = T) {
     V.theta2 <- V.theta[idx, idx]
     for (i in 1:num.lv) {
       dt <- 1 / (2 * object$params$theta[, -c(1:num.lv),drop=F][j, i] * (sqrt(-2 * object$params$theta[, -c(1:num.lv),drop=F][j, i]))) # need to be calculated with covariance of gamma3 if gamma2>0..that also requires subtracting theta3 from theta2
-      tol.sd[j, i] <- sqrt(abs(V.theta2[-c(1:num.lv), -c(1:num.lv)][i, i] * dt^2))
+      tol.sd[j, i] <- sqrt(abs(V.theta2[-c(1:num.lv), -c(1:num.lv),drop=F][i, i] * dt^2))
     }
   }
-  colnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
-  row.names(tol) <- row.names(tol.sd) <- colnames(object$y)
+  if(num.lv>1)ccolnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
+  if(num.lv>1){
+    row.names(tol) <- row.names(tol.sd) <- colnames(object$y)
+  }else{
+    names(tol) <- names(tol.sd) <- colnames(object$y)
+  }
   return(list(tolerances=tol,sd=tol.sd)) 
 }
 
@@ -123,7 +131,7 @@ gradient.length.gllvm.quadratic <- function(object,sd.errors = T) {
   num.lv <- object$num.lv
   p <- ncol(object$y)
   quadratic <- object$quadratic
-  tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv)])
+  tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv),drop=F])
   
 if(is.null(object$sd)){
     cat("Standard errors not present in model, calculating...")

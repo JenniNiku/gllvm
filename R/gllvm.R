@@ -503,7 +503,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       method <- "VA"
     }
     if (method == "LA" && quadratic != FALSE){
-      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so VA is used instead. \n")
+      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA is instead. \n")
       method <- "VA"
     }
     if (method == "VA" && quadratic != FALSE && TMB == FALSE){
@@ -756,7 +756,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if(!out$convergence) {
       warning("The maximum number of iterations was reached, algorithm did not converge.")
       } else if(gradient.check && TMB){
-        if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help.")
+        if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
     }
     
