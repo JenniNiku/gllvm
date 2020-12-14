@@ -1,0 +1,355 @@
+---
+title: "Introduction to gllvm Part 2: Species correlations"
+author: "Jenni Niku"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to gllvm Part 2: Species correlations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  warning = FALSE,
+  fig.width=5, fig.height=5,
+  fig.align = "center",
+  dev = "png",
+  fig.pos = 'H'
+  )
+```
+
+# Introduction to gllvm
+
+## R package gllvm
+
+- **R** package **gllvm** fits Generalized linear latent variable models (GLLVM) for multivariate data^[Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R. 10. Methods in Ecology and Evolution: 2173–82].
+
+- Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.
+
+
+- Version 1.2.3 now available in
+   - GitHub: <https://github.com/JenniNiku/gllvm> 
+   - CRAN: <https://cran.r-project.org/web/packages/gllvm/index.html>
+
+- Package installation:
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+# From CRAN
+install.packages(gllvm)
+# OR
+# From GitHub using devtools package's function install_github
+devtools::install_github("JenniNiku/gllvm")
+```
+<details><summary><span style="color:red"> Problems? </span></summary>
+
+<span style="color:red"> **gllvm** package depends on R packages **TMB** and **mvabund**, try to install these first.</span>
+
+
+</details>
+
+
+- GLLVMs are computationally intensive to fit due the integral in log-likelihood.
+
+- Often such models have been fitted using MCMC approach, which is very time consuming.
+
+- **gllvm** package overcomes computational problems by applying closed form approximations to log-likelihood and using automatic differentiation in C++ to accelerate computation times (**TMB**^[Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21]).
+
+- Estimation is performed using either variational approximation (VA^[Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43]) or Laplace approximation (LA^[Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.]) method implemented via **R** package **TMB**.
+
+- VA method is faster and more accurate than LA, but not applicable for all distributions and link functions.
+
+- Using **gllvm** we can fit
+  - GLLVM without covariates gives model-based ordination and biplots
+  - GLLVM with environmental and/or trait covariates for studying factors explaining species abundance
+  - Fourth corner models with latent variables for studying environmental-trait interactions
+  - GLLVM without latent variables fits basic multivariate GLMs
+
+- Additional tools: residuals, information criterias, confidence intervals, visualization.
+
+
+## Distributions
+
+| Response    | Distribution | Method  | Link  |
+| ----------- |:------------:|:------- |:------- |
+|Counts  	    | Poisson 	   | VA/LA   |log	    |
+|             | NB    	     | VA/LA   |log		  |
+|             | ZIP       	 | LA      |log		  |
+|Binary       | Bernoulli 	 | VA/LA   |probit  |
+|             |              | LA 		 |logit   | 
+|Ordinal 	    | Ordinal  | VA      |probit  |
+|Normal       | Gaussian     | VA/LA   |identity|
+|Positive continuous| Gamma     | VA/LA   |log|
+|non-negative continuous| Exponential | VA/LA   |log|
+|Biomass    	| Tweedie 	   | LA   	 |log 	  |
+
+## Data input
+
+Main function of the **gllvm** package is `gllvm()`, which can be used to fit GLLVMs for multivariate data with the most important arguments listed in the following:
+```{r, eval = FALSE, echo=TRUE}
+gllvm(y = NULL, X = NULL, TR = NULL, family, num.lv = 2, 
+ formula = NULL, method = "VA", row.eff = FALSE, n.init=1, starting.val ="res", ...)
+```
+
+- y: matrix of abundances
+- X: matrix or data.frame of environmental variables
+- TR: matrix or data.frame of trait variables
+- family: distribution for responses
+- num.lv: number of latent variables
+- method: approximation used "VA" or "LA"
+- row.eff: type of row effects
+- n.init: number of random starting points for latent variables
+- starting.val: starting value method
+
+
+```{r, eval = TRUE, echo=TRUE}
+library(gllvm)
+```
+
+
+## Example: Spiders
+
+- Abundances of 12 hunting spider species measured as a count at 28 sites.
+- Six environmental variables measured at each site:
+   * `soil.dry`: Soil dry mass
+   * `bare.sand`: cover of bare sand
+   * `fallen.leaves`: cover of fallen leaves/twigs
+   * `moss`: cover of moss
+   * `herb.layer`: cover of herb layer
+   * `reflection`: reflection of the soil surface with a cloudless sky
+
+## Data fitting
+
+Fit GLLVM with environmental variables $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ using **gllvm**: 
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+library(gllvm)
+data("spider")
+fitx <- gllvm(y = spider$abund, X=spider$x, family = "negative.binomial")
+fitx
+```
+
+## Model selection
+
+- Number of latent variables is not necessarily clear beforehand when goal is not primarily in ordination, so information criterias can be used for model selection. For example, using Akaike information criterion:
+
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+X=spider$x
+fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
+fitx2 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 2)
+fitx3 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 3)
+AIC(fitx1)
+AIC(fitx2)
+AIC(fitx3)
+```
+
+## Residual analysis
+
+- Residual analysis can be used to  assess the appropriateness of the fitted model (eg. in terms of mean-variance relationship). Can be performed using `plot()`: 
+```{r, eval = TRUE, echo=TRUE, fig.width=7, fig.height=3.5}
+par(mfrow = c(1,2))
+plot(fitx1, which = 1:2)
+```
+
+# Exercises
+
+<span style="color:blue"> E1. Load spider data from **mvabund** package and take a look at the dataset. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+library(gllvm)
+#Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.
+data("spider")
+# more info: 
+# ?spider
+```
+
+<details><summary><span style="color:red"> show me the answers. </span></summary>
+
+<span style="color:red"> Package **mvabund** is loaded with **gllvm** so just load with a function `data()`. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# response matrix:
+spider$abund
+# Environmental variables
+spider$x
+# Plot data using boxplot:
+boxplot(spider$abund)
+```
+
+</details>
+
+<span style="color:blue"> E2. Fit GLLVM with two latent variables to spider data with a suitable distribution. Data consists of counts of spider species.</span>
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+# Take a look at the function documentation for help: 
+?gllvm
+```
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
+<span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may</span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
+# Fit a GLLVM to data
+fitp <- gllvm(y=spider$abund, family = poisson())
+fitp
+fitnb <- gllvm(y=spider$abund, family = "negative.binomial")
+fitnb
+```
+Based on AIC, NB distribution suits better. How about residual analysis:
+<span style="color:red"> **NOTE THAT** The package uses randomized quantile residuals so each time you plot the residuals, they look a little different.</span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8}
+# Fit a GLLVM to data
+par(mfrow = c(1,2))
+plot(fitp, which = 1:2)
+plot(fitnb, which = 1:2)
+```
+
+You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA")
+fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA")
+fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA")
+AIC(fitLAp)
+AIC(fitLAnb)
+AIC(fitLAzip)
+```
+GLLVM with two latent variables can be used as a model-based approach to unconstrained ordination, as considered at the first day of the workshop.
+</details>
+
+
+<span style="color:blue"> E3. Fit GLLVM with environmental variables `soil.dry` and `reflection` to the data with suitable number of latent variables. </span>
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> We can extract the two columns from the environmental variable matrix or define the model using formula. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# `soil.dry` and `reflection` are in columns 1 and 6
+X <- spider$x[,c(1,6)]
+fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
+fitx2 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 2)
+fitx3 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 3)
+AIC(fitx1)
+AIC(fitx2)
+AIC(fitx3)
+# Or alternatively using formula:
+fitx1 <- gllvm(spider$abund, spider$x, formula = ~soil.dry + reflection, family = "negative.binomial", num.lv = 1)
+fitx1
+```
+Model with one latent variable gave the lowest AIC value.
+</details>
+
+
+
+<span style="color:blue"> E4. Explore the model fit. Find the coefficients for environmental covariates. </span>
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> Estimated parameters can be obtained with `coef()` function. Confidence intervals for parameters are obtained with `confint()`. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+coef(fitx1)
+# Coefficients for covariates are named as `Xcoef`
+# Confidence intervals for these coefficients:
+confint(fitx1, parm = "Xcoef")
+# The first 12 intervals are for soil.dry and next 12 for reflection
+```
+</details>
+
+<details><summary><span style="color:red"> Problems? See hints:</span></summary>
+
+<span style="color:red"> I have problems in model fitting. My model converges to infinity or local maxima: </span> 
+GLLVMs are complex models where starting values have a big role. Choosing a different starting value method (see argument `starting.val`) or use multiple runs and pick up the one giving highest log-likelihood value using argument `n.init`. More variation to the starting points can be added with `jitter.var`.
+
+<span style="color:red"> My results does not look the same as in answers:</span> 
+The results may not be exactly the same as in the answers, as the initial values for each model fit are slightly different, so the results may also differ slightly.
+
+
+</details>
+
+# Studying species correlations
+
+## Species correlations
+
+- Latent variables induce correlation across response variables, and so provide means of estimating correlation patterns across species, and the extent to which they can be explained by environmental variables.
+- Information on correlation is stored in the LV loadings $\boldsymbol\theta_j$, so the residual covariance matrix, storing information on species co-occurrence that is not explained by environmental variables, can be calculated as $\boldsymbol\Sigma=\boldsymbol\Gamma \boldsymbol\Gamma^\top$, where $\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'$. 
+- `getResidualCor` function can be used to estimate the correlation matrix of the linear predictor across species. 
+
+- Let's consider first the correlation matrix based on a model without predictors:
+$g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$
+```{r, eval = TRUE, echo=TRUE, fig.width=4.5}
+fitnb <- gllvm(spider$abund, family = "negative.binomial")
+```
+- The correlation matrix based on such model does not take into account the environmental conditions driving species abundances at sites, and reflects only what has been observed.
+
+## Visualizing species correlations
+
+- The residual correlations can be visualized either using biplot, which shows the species ordination, or visualizing the actual correlation matrix using, eg., a `corrplot` package.
+
+- The biplot can be produced using a function `ordiplot()` with an argument `biplot = TRUE`:
+```{r, eval = FALSE, echo=TRUE, fig.width=4.5}
+fitnb <- gllvm(spider$abund, family = "negative.binomial")
+ordiplot(fitnb, biplot = TRUE)
+abline(h = 0, v = 0, lty=2)
+```
+```{r, eval = TRUE, echo=FALSE, fig.width=4.5, fig.height=3.8}
+par(mfrow=c(1,1), mar=c(4,4,0.1,0.1))
+ordiplot(fitnb, biplot = TRUE)
+abline(h = 0, v = 0, lty=2)
+```
+
+- Correlations can be visualized more precisely using `corrplot()` function:
+```{r, eval = TRUE, echo=TRUE, fig.height=5}
+fitnb <- gllvm(spider$abund, family = "negative.binomial")
+cr <- getResidualCor(fitnb)
+library(corrplot);
+corrplot(cr, diag = FALSE, type = "lower", method = "square", tl.srt = 25)
+```
+
+- The same correlations can also be visualized with species ordination in biplot:
+```{r, eval = FALSE, echo=TRUE, fig.width=5}
+ordiplot(fitnb, biplot = TRUE)
+abline(h = 0, v = 0, lty=2)
+```
+
+# Studying effects of covariates
+
+## Studying effects of environmental variables
+
+- The effects of environmental variables on species can be studied by including environmental variables $\boldsymbol{x}_i$ to GLLVM: $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$.
+- $\boldsymbol{\beta}_{j}$ is a vector of species specific coefficients for environmental variables.
+- Next consider for example two environmental variables, `soil.dry` (soil dry mass) and `reflection` (reflection of the soil surface with a cloudless sky), which shows different environmental gradients in ordination: 
+
+```{r, eval = TRUE, echo=TRUE, fig.width=8, fig.height=4}
+rbPal <- c("#00FA9A", "#00EC9F", "#00DFA4", "#00D2A9", "#00C5AF", "#00B8B4", "#00ABB9", "#009DBF", "#0090C4", "#0083C9", "#0076CF", "#0069D4", "#005CD9", "#004EDF", "#0041E4", "#0034E9", "#0027EF", "#001AF4", "#000DF9", "#0000FF")
+X <- spider$x[,c(1,6)]
+par(mfrow = c(1,2), mar=c(4,4,2,2))
+for(i in 1:ncol(X)){
+Col <- rbPal[as.numeric(cut(X[,i], breaks = 20))]
+ordiplot(fitnb, symbols = T, s.colors = Col, main = colnames(X)[i], biplot = TRUE)
+abline(h=0,v=0, lty=2)
+
+}
+```
+
+## Coefficient plot
+
+- `coefplot()` plots point estimates of the species specific environmental coefficients $\boldsymbol{\beta}_{j}$ with confidence intervals.
+- As biplots with environmental gradients indicated that, for example, species named Arctperi prefers sites with low amount of dry soil mass and high amount of reflection with sky, the similar effects can be seen in the coefficients plotted with their confidence intervals.
+```{r, eval = TRUE, echo=TRUE, fig.width=8, fig.height=3.5}
+fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
+coefplot(fitx1, mfrow = c(1,2), cex.ylab = 0.8)
+```
+
+
+## Correlation matrix
+- Correlation matrix for model with predictors shows correlation patterns between species when the effect of the predictors are taken into account. 
+- When the effects of covariates `dry.soil` and `reflection` were accounted, negative correlation between species do not seem to exist anymore, indicating that negative correlations were explained by different environmental conditions at sites and how species respond to them, rather than direct species interactions.
+```{r, eval = TRUE, echo=TRUE, fig.height=5}
+crx <- getResidualCor(fitx1)
+corrplot(crx, diag = FALSE, type = "lower", method = "square", tl.srt = 25)
+```
+
+## Fourth corner models
+- If species trait variables $\boldsymbol{t}_j$, measuring eg. species behaviour or physical appearance, would be available, fourth corner models should be considered: $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{x}_i'\boldsymbol{B}_{I}\boldsymbol{t}_j  + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ 
+
+- Such models can also be fitted with `gllvm()` function by including a matrix of traits with argument `TR`.
+
+- Examples can be found in the **gllvm** package's vignettes.

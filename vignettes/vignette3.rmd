@@ -1,0 +1,345 @@
+---
+title: "Introduction to gllvm Part 1: Ordination"
+author: "Jenni Niku"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to gllvm Part 1: Ordination}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  warning = FALSE,
+  fig.width=5, fig.height=5,
+  fig.align = "center",
+  dev = "png",
+  fig.pos = 'H'
+  )
+```
+
+# Introduction to gllvm
+
+## R package gllvm
+
+- **R** package **gllvm** fits Generalized linear latent variable models (GLLVM) for multivariate data^[Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R. 10. Methods in Ecology and Evolution: 2173–82].
+
+- Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.
+
+
+- Version 1.2.3 now available in
+   - GitHub: <https://github.com/JenniNiku/gllvm> 
+   - CRAN: <https://cran.r-project.org/web/packages/gllvm/index.html>
+
+- Package installation:
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+# From CRAN
+install.packages(gllvm)
+# OR
+# From GitHub using devtools package's function install_github
+devtools::install_github("JenniNiku/gllvm")
+```
+<details><summary><span style="color:red"> Problems? </span></summary>
+
+<span style="color:red"> **gllvm** package depends on R packages **TMB** and **mvabund**, try to install these first.</span>
+
+
+</details>
+
+
+- GLLVMs are computationally intensive to fit due the integral in log-likelihood.
+
+- Often such models have been fitted using MCMC approach, which is very time consuming.
+
+- **gllvm** package overcomes computational problems by applying closed form approximations to log-likelihood and using automatic differentiation in C++ to accelerate computation times (**TMB**^[Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21]).
+
+- Estimation is performed using either variational approximation (VA^[Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43]) or Laplace approximation (LA^[Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.]) method implemented via **R** package **TMB**.
+
+- VA method is faster and more accurate than LA, but not applicable for all distributions and link functions.
+
+- Using **gllvm** we can fit
+  - GLLVM without covariates gives model-based ordination and biplots
+  - GLLVM with environmental covariates for studying factors explaining species abundance
+  - Fourth corner models with latent variables for studying environmental-trait interactions
+  - GLLVM without latent variables fits basic multivariate GLMs
+
+- Additional tools: model checking, model selection, inference, visualization.
+
+
+## Distributions
+
+| Response    | Distribution | Method  | Link  |
+| ----------- |:------------:|:------- |:------- |
+|Counts  	    | Poisson 	   | VA/LA   |log	    |
+|             | NB    	     | VA/LA   |log		  |
+|             | ZIP       	 | LA      |log		  |
+|Binary       | Bernoulli 	 | VA/LA   |probit  |
+|             |              | LA 		 |logit   | 
+|Ordinal 	    | Ordinal  | VA      |probit  |
+|Normal       | Gaussian     | VA/LA   |identity|
+|Positive continuous| Gamma     | VA/LA   |log|
+|non-negative continuous| Exponential | VA/LA   |log|
+|Biomass    	| Tweedie 	   | LA   	 |log 	  |
+
+## Data input
+
+Main function of the **gllvm** package is `gllvm()`, which can be used to fit GLLVMs for multivariate data with the most important arguments listed in the following:
+```{r, eval = FALSE, echo=TRUE}
+gllvm(y = NULL, X = NULL, TR = NULL, family, num.lv = 2, 
+ formula = NULL, method = "VA", row.eff = FALSE, n.init=1, starting.val ="res", ...)
+```
+
+- y: matrix of abundances
+- X: matrix or data.frame of environmental variables
+- TR: matrix or data.frame of trait variables
+- family: distribution for responses
+- num.lv: number of latent variables
+- method: approximation used "VA" or "LA"
+- row.eff: type of row effects
+- n.init: number of random starting points for latent variables
+- starting.val: starting value method
+
+
+```{r, eval = TRUE, echo=TRUE}
+library(gllvm)
+```
+
+## Example: Spiders
+
+- Abundances of 12 hunting spider species measured as a count at 28 sites^[van der Aart, P. J. M., and Smeenk-Enserink, N. (1975) Correlations between distributions of hunting spiders (Lycosidae, Ctenidae) and environmental characteristics in a dune area. Netherlands Journal of Zoology 25, 1-45.].
+- Six environmental variables measured at each site.
+   * `soil.dry`: Soil dry mass
+   * `bare.sand`: cover of bare sand
+   * `fallen.leaves`: cover of fallen leaves/twigs
+   * `moss`: cover of moss
+   * `herb.layer`: cover of herb layer
+   * `reflection`: reflection of the soil surface with a cloudless sky
+
+## Data fitting
+
+Fitting basic GLLVM $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ with **gllvm**: 
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+library(mvabund)
+data("spider")
+library(gllvm)
+fitnb <- gllvm(y = spider$abund, family = "negative.binomial")
+fitnb
+```
+
+## Residual analysis
+
+- Residual analysis can be used to  assess the appropriateness of the fitted model (eg. in terms of mean-variance relationship). 
+
+- Randomized quantile/Dunn-Smyth residuals^[Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.] are used in the package, as they provide standard normal distributed residuals, even for discrete responses, in the case of a proper model.
+
+```{r, eval = TRUE, echo=TRUE, fig.width=8}
+par(mfrow = c(1,2))
+plot(fitnb, which = 1:2)
+```
+
+## Model selection
+
+- Information criterias can be used for model selection.
+- For example, compare distributions or choose suitable number of latent variables.
+
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+fitp <- gllvm(y = spider$abund, family = poisson())
+fitnb <- gllvm(y = spider$abund, family = "negative.binomial")
+AIC(fitp)
+AIC(fitnb)
+```
+
+
+
+# Exercises
+
+Try to do these exercises for the next 10 minutes, as many as time is enough for.
+
+<span style="color:blue"> E1. Load spider data from **mvabund** package and take a look at the dataset. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+library(gllvm)
+#Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.
+data("spider")
+# more info: 
+# ?spider
+```
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 1. Print the data and covariates and draw a boxplot of the data. </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# response matrix:
+spider$abund
+# Environmental variables
+spider$x
+# Plot data using boxplot:
+boxplot(spider$abund)
+```
+
+</details>
+
+
+<span style="color:blue"> E2. Fit GLLVM to spider data with a suitable distribution. Data consists of counts of spider species.</span>
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+# Take a look at the function documentation for help: 
+?gllvm
+```
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
+<span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may also differ slightly.</span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
+# Fit a GLLVM to data
+fitp <- gllvm(y=spider$abund, family = poisson())
+fitp
+fitnb <- gllvm(y=spider$abund, family = "negative.binomial")
+fitnb
+```
+Based on AIC, NB distribution suits better. How about residual analysis:
+<span style="color:red"> **NOTE THAT** The package uses randomized quantile residuals so each time you plot the residuals, they look a little different.</span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# Fit a GLLVM to data
+plot(fitp)
+plot(fitnb)
+```
+
+You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
+fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA")
+fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA")
+fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA")
+AIC(fitLAp)
+AIC(fitLAnb)
+AIC(fitLAzip)
+```
+
+
+
+</details>
+
+
+<span style="color:blue"> E3. Explore the fitted model. Where are the estimates for parameters? What about predicted latent variables? Standard errors?</span>
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 3. Lets explore the fitted model: </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# Parameters:
+coef(fitnb)
+# Where are the predicted latent variable values? just fitp$lvs or
+getLV(fitnb)
+# Standard errors for parameters:
+fitnb$sd
+```
+
+</details>
+
+
+<span style="color:blue"> E4. Fit model with different numbers of latent variables.</span>
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 4. Default number of latent variables is 2. Let's try 1 and 3 latent variables as well: </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+# In exercise 2, we fitted GLLVM with two latent variables 
+fitnb
+# How about 1 or 3 LVs
+fitnb1 <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 1)
+fitnb1
+getLV(fitnb1)
+fitnb3 <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 3)
+fitnb3
+getLV(fitnb3)
+```
+
+</details>
+
+
+<span style="color:blue"> E5. Include environmental variables to the GLLVM and explore the model fit. </span>
+
+<details><summary><span style="color:red"> Show me the answers. </span></summary>
+
+<span style="color:red"> 5. Environmental variables can be included with an argument `X`: </span>
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
+fitnbx <- gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", seed = 123)
+fitnbx
+coef(fitnbx)
+# confidence intervals for parameters:
+confint(fitnbx)
+```
+
+</details>
+
+<details><summary><span style="color:red"> Problems? See hints:</span></summary>
+
+<span style="color:red"> I have problems in model fitting. My model converges to infinity or local maxima: </span> 
+GLLVMs are complex models where starting values have a big role. Choosing a different starting value method (see argument `starting.val`) or use multiple runs and pick up the one giving highest log-likelihood value using argument `n.init`. More variation to the starting points can be added with `jitter.var`.
+
+<span style="color:red"> My results does not look the same as in answers:</span> 
+The results may not be exactly the same as in the answers, as the initial values for each model fit are slightly different, so the results may also differ slightly.
+
+</details>
+
+# Ordination
+
+## GLLVM as a model based ordination method
+
+-  GLLVMs can be used as a model-based approach to unconstrained ordination by including two latent variables in the model: $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$
+
+- The latent variable term try to capture the underlying factors driving species abundances at sites.
+
+- Predictions for the two latent variables, $\boldsymbol{\hat u}_i=(\hat u_{i1}, \hat u_{i2})$, then provide coordinates for sites in the ordination plot and then provides a graphical representation of which sites are similar in terms of their species composition.
+
+
+
+## Ordination plot
+
+- `ordiplot()` produces ordination plots based on fitted GLLVMs.
+- Uncertainty of the ordination points in model based ordination can be assessed with prediction regions based on the prediction errors of latent variables.
+- Prediction regions may also help interpreting which differences between ordination points are really a sign of the difference between species composition at those sites.
+
+```{r, eval = TRUE, echo=FALSE, fig.width=5, fig.height=5}
+par(mfrow=c(1,1))
+ordiplot(fitnb, predict.region = TRUE, ylim=c(-2.5,2.5), xlim=c(-2,3))
+```
+
+## Biplot
+
+- Between species correlations can be visualized with biplot^[Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58, 453-467] by adding latent variable loadings $\boldsymbol{\theta}_j$ to the ordination of sites, by producing a biplot, (argument `biplot = TRUE` in `ordiplot()`).
+- In a biplot latent variables and their loadings are rotated so that the LV loadings of the species are in the same direction with the sites where they are most abundant.
+- Biplot can be used for finding groups of correlated species or finding indicator species common at specific sites.
+- For example, species named Pardlugu is common in the group of sites located on the bottom (eg sites 8, 19, 20 and 21). 
+- x and y axes may help the interpretation.
+
+```{r, eval = TRUE, echo=TRUE}
+ordiplot(fitnb, biplot = TRUE)
+abline(h = 0, v = 0, lty=2)
+```
+
+
+## Environmental gradients
+
+- The potential impact of environmental variables on species communities can be viewed by coloring ordination points according to the variables.
+- For example, species named Pardlugu seems to prefer sites with lot of dry soil mass and low reflection of the soil surface with a cloudless sky.
+```{r, eval = TRUE, echo=TRUE, fig.width=6, fig.height=9}
+# Arbitrary color palette, a vector length of 20. Can use, for example, colorRampPalette from package grDevices
+rbPal <- c("#00FA9A", "#00EC9F", "#00DFA4", "#00D2A9", "#00C5AF", "#00B8B4", "#00ABB9", "#009DBF", "#0090C4", "#0083C9", "#0076CF", "#0069D4", "#005CD9", "#004EDF", "#0041E4", "#0034E9", "#0027EF", "#001AF4", "#000DF9", "#0000FF")
+X <- spider$x
+par(mfrow = c(3,2), mar=c(4,4,2,2))
+for(i in 1:ncol(X)){
+Col <- rbPal[as.numeric(cut(X[,i], breaks = 20))]
+ordiplot(fitnb, symbols = T, s.colors = Col, main = colnames(X)[i], 
+         biplot = TRUE)
+}
+```
+
+- Here environmental gradients stand out quite clearly, indicating that, at least, some of the differences in species compositions at sites can be explained by the differences in environmental conditions.
+
+- The next step would be to include covariates to the model to study more precisely the effects of environmental variables:
+$g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$
+
