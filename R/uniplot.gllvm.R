@@ -43,12 +43,14 @@ uniplot.gllvm <- function(object, main = NULL, xlim = NULL, s.labels = "rug", s.
     rownames(object$params$theta) = paste("V", 1:p)
   
   if(quadratic==FALSE){
-    func <- function(x,u){
-      return(x*u)
+    func <- function(beta,x,u){
+      return(beta+x*u)
     }
     }else{
-      func<-function(x,u,d){
-        return(x*u+x^2*d)
+      func<-function(x,c,u,d){
+        optimum <- -u/(2*d)
+        tolerance <- 1/sqrt(-2*d)
+        return(c-optimum^2/(2*tolerance^2)+x*u+x^2*d)
       }
     }
   
@@ -61,13 +63,12 @@ uniplot.gllvm <- function(object, main = NULL, xlim = NULL, s.labels = "rug", s.
   }else{
     pred <- object$lvs[,which.lv,drop=F]%*%t(object$params$theta[,which.lv,drop=F])
   }
-  
+  maxima<-(object$params$beta0+rowSums(-0.5*object$params$theta[,which.lv]/(2*object$params$theta[,-c(1:num.lv)])*object$params$theta[,1:num.lv]))[which.spp]
   if(is.null(ylim)|length(ylim)!=2){
-    maximum<--0.5*object$params$theta[which.spp,which.lv]/(2*object$params$theta[which.spp,which.lv+num.lv])*object$params$theta[which.spp,which.lv]
-    if(max(maximum)>1000){
+    if(max(maxima)>1000){
       maximum<-max(pred+cex.spp)
     }else{
-      maximum<-max(maximum)
+      maximum<-max(maxima)
     }
     ylim <- c(min(pred[,which.spp]),maximum+cex.spp)
   }
@@ -84,7 +85,7 @@ uniplot.gllvm <- function(object, main = NULL, xlim = NULL, s.labels = "rug", s.
 
   for(j in which.spp){
     if(quadratic!=FALSE){
-      curve(func(x,u=object$params$theta[j,which.lv],d=object$params$theta[j,which.lv+object$num.lv]),from=xlim[1],to=xlim[2],add=TRUE,col=spp.colors[which.spp==j])
+      curve(func(x,c=maxima[which.spp==j], u=object$params$theta[j,which.lv],d=object$params$theta[j,which.lv+object$num.lv]),from=xlim[1],to=xlim[2],add=TRUE,col=spp.colors[which.spp==j])
       opt <- -object$params$theta[j,which.lv]/(2*object$params$theta[j,which.lv+num.lv])
       maximum <- 0.5*opt*object$params$theta[j,which.lv]
       if (opt < max(object$lvs[, which.lv]) & opt > min(object$lvs[, which.lv])) {
@@ -100,7 +101,7 @@ uniplot.gllvm <- function(object, main = NULL, xlim = NULL, s.labels = "rug", s.
     if(quadratic==FALSE){
       opt <- max(pred[,j])
       if(opt!=0){
-        curve(func(x,u=object$params$theta[j,which.lv]),from=min(object$lvs[,which.lv]),to=max(object$lvs[,which.lv]),add=TRUE,col=spp.colors[j])
+        curve(func(x,beta=object$params$beta[j],u=object$params$theta[j,which.lv]),from=min(object$lvs[,which.lv]),to=max(object$lvs[,which.lv]),add=TRUE,col=spp.colors[j])
         x<- object$lvs[which(pred[,j]==opt), which.lv]
         text(x =x, y = opt, labels = colnames(object$y)[j], col = spp.colors[j], cex = cex.spp, pos = ifelse(x<0,4,2), offset = 1)  
       }
