@@ -11,7 +11,7 @@
 #' 
 #'@aliases vcov vcov.gllvm
 #'@export
-#'@export vcov
+#'@export vcov.gllvm
 
 vcov.gllvm <- function(object){
   if(is.null(object$sd)){
@@ -22,3 +22,10 @@ vcov.gllvm <- function(object){
   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])
   return(V)
 }
+
+#'@export vcov
+vcov <- function(object, ...)
+{
+  UseMethod(generic = "vcov")
+}
+

@@ -1,5 +1,7 @@
 #' @title Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables.
-#' @description Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the delta method).
+#' @description Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the Delta method).
+#'
+#'@name optima
 #'
 #' @param object   an object of class 'gllvm'.
 #' @param sd.errors logical. If \code{TRUE}, also returns standard errors.
@@ -9,10 +11,11 @@
 #'
 #'@aliases optima optima.gllvm tolerances tolerances.gllvm gradient.length gradient.length.gllvm
 #'@export
-#'@export optima 
-#'@export tolerances 
-#'@export gradient.length
-optima.gllvm <- function(object,sd.errors = T) {
+#'@export optima.gllvm 
+#'@export tolerances.gllvm 
+#'@export gradient.length.gllvm
+#'
+optima.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
@@ -70,7 +73,8 @@ optima.gllvm <- function(object,sd.errors = T) {
  return(list(optima=opt,sd=opt.sd)) 
 }
 
-tolerances.gllvm <- function(object,sd.errors = T) {
+#'@rdname optima
+tolerances.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Tolerances can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
@@ -126,7 +130,8 @@ tolerances.gllvm <- function(object,sd.errors = T) {
   return(list(tolerances=tol,sd=tol.sd)) 
 }
 
-gradient.length.gllvm <- function(object,sd.errors = T) {
+#'@rdname optima
+gradient.length.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
@@ -207,6 +212,4 @@ gradient.length <- function(object, ...)
 {
   UseMethod(generic = "gradient.length")
 }
-
-
 
