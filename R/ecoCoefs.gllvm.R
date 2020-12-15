@@ -10,8 +10,8 @@
 #'@aliases optima optima.gllvm.quadratic tolerances tolerances.gllvm.quadratic gradient.length gradient.length.gllvm.quadratic
 #'@export
 #'@export optima tolerances gradient.length
-optima.gllvm.quadratic <- function(object,sd.errors = T) {
-  if(!inherits(mod,"gllvm.quadratic")){
+optima.gllvm <- function(object,sd.errors = T) {
+  if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
     num.lv <- object$num.lv
@@ -68,8 +68,8 @@ optima.gllvm.quadratic <- function(object,sd.errors = T) {
  return(list(optima=opt,sd=opt.sd)) 
 }
 
-tolerances.gllvm.quadratic <- function(object,sd.errors = T) {
-  if(!inherits(mod,"gllvm.quadratic")){
+tolerances.gllvm <- function(object,sd.errors = T) {
+  if(!inherits(object,"gllvm.quadratic")){
     stop("Tolerances can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
   num.lv <- object$num.lv
@@ -115,7 +115,7 @@ tolerances.gllvm.quadratic <- function(object,sd.errors = T) {
       tol.sd[j, i] <- sqrt(abs(V.theta2[-c(1:num.lv), -c(1:num.lv),drop=F][i, i] * dt^2))
     }
   }
-  if(num.lv>1)ccolnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
+  if(num.lv>1)colnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
   if(num.lv>1){
     row.names(tol) <- row.names(tol.sd) <- colnames(object$y)
   }else{
@@ -124,8 +124,8 @@ tolerances.gllvm.quadratic <- function(object,sd.errors = T) {
   return(list(tolerances=tol,sd=tol.sd)) 
 }
 
-gradient.length.gllvm.quadratic <- function(object,sd.errors = T) {
-  if(!inherits(mod,"gllvm.quadratic")){
+gradient.length.gllvm <- function(object,sd.errors = T) {
+  if(!inherits(object,"gllvm.quadratic")){
     stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
   num.lv <- object$num.lv
