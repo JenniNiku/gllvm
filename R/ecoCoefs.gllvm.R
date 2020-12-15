@@ -177,9 +177,9 @@ if(is.null(object$sd)){
   }
   grad.length.sd <- sqrt(gradSD)
   
-  if(quadratic=="LV"){
+  if(quadratic==TRUE){
     grad.length <- 4*sqrt(0.5)*1/apply(tol,2,median)
-  }else{
+  }else if(quadratic=="LV"){
     grad.length <- 4*sqrt(0.5)*1/tol[1,]
   }
   
