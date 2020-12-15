@@ -19,6 +19,14 @@ Calculates the residual correlation matrix for gllvm model.
 Residual correlation matrix is calculated based on the residual covariance matrix, see details from \code{\link{getResidualCov.gllvm}}.
 }
 \examples{
+#'# Extract subset of the microbial data to be used as an example
+data(microbialdata)
+y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+                     decreasing = TRUE)[21:40]]
+fit <- gllvm(y, family = poisson())
+fit$logL
+cr <- getResidualCor(fit)
+cr[1:5,1:5]
 \dontrun{
 # Load a dataset from the mvabund package
 data(antTraits)

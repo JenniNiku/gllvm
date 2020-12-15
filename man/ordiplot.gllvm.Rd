@@ -82,6 +82,13 @@ For details for constructing a biplot, see Gabriel (1971).
 - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
 }
 \examples{
+#'# Extract subset of the microbial data to be used as an example
+data(microbialdata)
+y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
+                     decreasing = TRUE)[21:40]]
+fit <- gllvm(y, family = poisson())
+fit$logL
+ordiplot(fit, predict.region = TRUE)
 \dontrun{
 #'## Load a dataset from the mvabund package
 data(antTraits)

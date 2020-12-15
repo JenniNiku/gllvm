@@ -8,21 +8,29 @@
 
 <title>Extract residual correlations from gllvm object — getResidualCor.gllvm • gllvm</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,10 +38,10 @@
 
 
 
-<meta property="og:title" content="Extract residual correlations from gllvm object — getResidualCor.gllvm" />
 
+<meta property="og:title" content="Extract residual correlations from gllvm object — getResidualCor.gllvm" />
 <meta property="og:description" content="Calculates the residual correlation matrix for gllvm model." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -47,9 +55,10 @@
 <![endif]-->
 
 
+
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -63,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -71,7 +80,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -91,14 +100,19 @@
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
     </li>
+    <li>
+      <a href="../articles/vignette3.html">Introduction to gllvm Part 1: Ordination</a>
+    </li>
+    <li>
+      <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fa fa-github fa-lg"></span>
+  <a href="https://github.com/JenniNiku/gllvm/">
+    <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -109,25 +123,24 @@
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Extract residual correlations from gllvm object</h1>
-    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm.git/blob/master/R/getResidualCor.gllvm.R'><code>R/getResidualCor.gllvm.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm/blob/master/R/getResidualCor.gllvm.R'><code>R/getResidualCor.gllvm.R</code></a></small>
     <div class="hidden name"><code>getResidualCor.gllvm.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    
     <p>Calculates the residual correlation matrix for gllvm model.</p>
-    
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>getResidualCor</span>(<span class='no'>object</span>, <span class='kw'>adjust</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
-    
+<span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>object</span>, adjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span></pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -140,45 +153,53 @@
       <td><p>The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Residual correlation matrix is calculated based on the residual covariance matrix, see details from <code><a href='getResidualCov.gllvm.html'>getResidualCov.gllvm</a></code>.</p>
-    
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Francis K.C. Hui, Jenni Niku, David I. Warton</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><span class='co'># NOT RUN {</span>
+    <pre class="examples"><div class='input'><span class='co'>#'# Extract subset of the microbial data to be used as an example</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>microbialdata</span><span class='op'>)</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='va'>microbialdata</span><span class='op'>$</span><span class='va'>Y</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span><span class='op'>(</span><span class='va'>microbialdata</span><span class='op'>$</span><span class='va'>Y</span> <span class='op'>&gt;</span> <span class='fl'>0</span><span class='op'>)</span>, 
+                     decreasing <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>21</span><span class='op'>:</span><span class='fl'>40</span><span class='op'>]</span><span class='op'>]</span>
+<span class='va'>fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>fit</span><span class='op'>$</span><span class='va'>logL</span>
+</div><div class='output co'>#&gt; [1] -4242.667</div><div class='input'><span class='va'>cr</span> <span class='op'>&lt;-</span> <span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
+<span class='va'>cr</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span>,<span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span><span class='op'>]</span>
+</div><div class='output co'>#&gt;             OTU_79    OTU_164    OTU_462     OTU_95    OTU_833
+#&gt; OTU_79   1.0000000  0.3893722  0.3428440 -0.7496175  0.9956254
+#&gt; OTU_164  0.3893722  1.0000000  0.9987499 -0.9015170  0.4737298
+#&gt; OTU_462  0.3428440  0.9987499  1.0000000 -0.8787587  0.4291161
+#&gt; OTU_95  -0.7496175 -0.9015170 -0.8787587  1.0000000 -0.8081800
+#&gt; OTU_833  0.9956254  0.4737298  0.4291161 -0.8081800  1.0000000</div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Load a dataset from the mvabund package</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>antTraits</span>)
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>as.matrix</a></span>(<span class='no'>antTraits</span>$<span class='no'>abund</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>)</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>$</span><span class='va'>abund</span><span class='op'>)</span>
 <span class='co'># Fit gllvm model</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>y</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/family'>poisson</a></span>())
+<span class='va'>fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>y</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
 <span class='co'># residual correlations:</span>
-<span class='no'>cr</span> <span class='kw'>&lt;-</span> <span class='fu'>getResidualCor</span>(<span class='no'>fit</span>)
+<span class='va'>cr</span> <span class='op'>&lt;-</span> <span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
 <span class='co'># Plot residual correlations:</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/install.packages'>install.packages</a></span>(<span class='st'>"corrplot"</span>, <span class='st'>"gclus"</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/library'>library</a></span>(<span class='no'>corrplot</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/library'>library</a></span>(<span class='no'>gclus</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/corrplot/topics/corrplot'>corrplot</a></span>(<span class='no'>cr</span>[<span class='fu'><a href='https://www.rdocumentation.org/packages/gclus/topics/order'>order.single</a></span>(<span class='no'>cr</span>), <span class='fu'><a href='https://www.rdocumentation.org/packages/gclus/topics/order'>order.single</a></span>(<span class='no'>cr</span>)], <span class='kw'>diag</span> <span class='kw'>=</span> <span class='no'>F</span>,
-  <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"lower"</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"square"</span>, <span class='kw'>tl.cex</span> <span class='kw'>=</span> <span class='fl'>0.8</span>, <span class='kw'>tl.srt</span> <span class='kw'>=</span> <span class='fl'>45</span>, <span class='kw'>tl.col</span> <span class='kw'>=</span> <span class='st'>"red"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/install.packages.html'>install.packages</a></span><span class='op'>(</span><span class='st'>"corrplot"</span>, <span class='st'>"gclus"</span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/taiyun/corrplot'>corrplot</a></span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'>gclus</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/corrplot/man/corrplot.html'>corrplot</a></span><span class='op'>(</span><span class='va'>cr</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/pkg/gclus/man/order.html'>order.single</a></span><span class='op'>(</span><span class='va'>cr</span><span class='op'>)</span>, <span class='fu'><a href='https://rdrr.io/pkg/gclus/man/order.html'>order.single</a></span><span class='op'>(</span><span class='va'>cr</span><span class='op'>)</span><span class='op'>]</span>, diag <span class='op'>=</span> <span class='cn'>F</span>,
+  type <span class='op'>=</span> <span class='st'>"lower"</span>, method <span class='op'>=</span> <span class='st'>"square"</span>, tl.cex <span class='op'>=</span> <span class='fl'>0.8</span>, tl.srt <span class='op'>=</span> <span class='fl'>45</span>, tl.col <span class='op'>=</span> <span class='st'>"red"</span><span class='op'>)</span>
+  <span class='op'>}</span>
 
-<span class='co'># }</span><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#details">Details</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
-    <h2>Author</h2>
-    <p>Francis K.C. Hui, Jenni Niku, David I. Warton</p>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
+
 
       <footer>
       <div class="copyright">
@@ -186,13 +207,16 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

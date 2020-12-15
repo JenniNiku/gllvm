@@ -141,6 +141,7 @@ Type objective_function<Type>::operator() ()
 
   
   matrix<Type> mu(n,p);
+  mu.fill(0.0);
   
   using namespace density;
   
@@ -153,6 +154,7 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
     array<Type> A(nlvr,nlvr,n);
+    A.fill(0.0);
     
     if(nlvr>0){// log-Cholesky parametrization for A_i:s
       for (int d=0; d<(nlvr); d++){

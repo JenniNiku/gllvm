@@ -6,18 +6,19 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analysing multivariate abundance data using gllvm • gllvm</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Analysing multivariate abundance data using gllvm">
-<meta property="og:description" content="">
-<meta name="twitter:card" content="summary">
+<meta property="og:description" content="gllvm">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
-<body>
+<body data-spy="scroll" data-target="#toc">
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -30,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -38,7 +39,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -58,13 +59,19 @@
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
     </li>
+    <li>
+      <a href="../articles/vignette3.html">Introduction to gllvm Part 1: Ordination</a>
+    </li>
+    <li>
+      <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
   </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/JenniNiku/gllvm.git">
-    <span class="fa fa-github fa-lg"></span>
+  <a href="https://github.com/JenniNiku/gllvm/">
+    <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -77,15 +84,17 @@
 <!--/.navbar -->
 
       
-      </header><div class="row">
+
+      </header><script src="vignette1_files/accessible-code-block-0.0.1/empty-anchor.js"></script><link href="vignette1_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
+<script src="vignette1_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1>Analysing multivariate abundance data using gllvm</h1>
+      <h1 data-toc-skip>Analysing multivariate abundance data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2020-05-13</h4>
+            <h4 class="date">2020-12-14</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm.git/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
 
     </div>
@@ -113,66 +122,73 @@
 <li><p>Careful choice of starting values. In particular, we use a factor analysis on Dunn-Smyth residuals to obtain starting values close to the anticipated solution, optionally, with jittering to check the sensitivity of the approach.</p></li>
 </ul>
 <p>In the next examples we illustrate the usage of the gllvm package using <code>antTraits</code> data from the <code>mvabund</code> package. The data consists of counts of 41 ant species measured at 30 sites across south-east Australia, along with records of five environmental variables and five trait variables for each species. The package and the data can be loaded as follows.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(gllvm)
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">mvabund</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm">gllvm</a></span><span class="op">)</span>
 <span class="co">#&gt; Loading required package: TMB</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Attaching package: 'gllvm'</span>
+<span class="co">#&gt; The following object is masked from 'package:mvabund':</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt;     coefplot</span>
 <span class="co">#&gt; The following objects are masked from 'package:stats':</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     predict, simulate</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(mvabund)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(antTraits)
-y &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(antTraits<span class="op">$</span>abund)
-X &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/scale">scale</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(antTraits<span class="op">$</span>env))
-TR &lt;-<span class="st"> </span>antTraits<span class="op">$</span>traits</code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span>
+<span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html">scale</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">$</span><span class="va">env</span><span class="op">)</span><span class="op">)</span>
+<span class="va">TR</span> <span class="op">&lt;-</span> <span class="va">antTraits</span><span class="op">$</span><span class="va">traits</span></code></pre></div>
 </div>
 <div id="data-input" class="section level2">
 <h2 class="hasAnchor">
 <a href="#data-input" class="anchor"></a>Data input</h2>
 <p>Main function of the <strong>gllvm</strong> package is <code><a href="../reference/gllvm.html">gllvm()</a></code>, which can be used to fit GLLVMs for multivariate data with the most important arguments listed in the following:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(<span class="dt">y =</span> <span class="ot">NULL</span>, <span class="dt">X =</span> <span class="ot">NULL</span>, <span class="dt">TR =</span> <span class="ot">NULL</span>, <span class="dt">data =</span> <span class="ot">NULL</span>, <span class="dt">formula =</span> <span class="ot">NULL</span>, <span class="dt">num.lv =</span> <span class="dv">2</span>, family, 
-      <span class="dt">method =</span> <span class="st">"VA"</span>, <span class="dt">row.eff =</span> <span class="ot">FALSE</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, <span class="dt">Power =</span> <span class="fl">1.5</span>, <span class="dt">starting.val =</span> <span class="st">"res"</span>, ...)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="cn">NULL</span>, X <span class="op">=</span> <span class="cn">NULL</span>, TR <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, formula <span class="op">=</span> <span class="cn">NULL</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, <span class="va">family</span>, 
+      method <span class="op">=</span> <span class="st">"VA"</span>, row.eff <span class="op">=</span> <span class="cn">FALSE</span>, offset <span class="op">=</span> <span class="cn">NULL</span>, Power <span class="op">=</span> <span class="fl">1.5</span>, starting.val <span class="op">=</span> <span class="st">"res"</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
 <p>Data input can be specified using the “wide format” matrices via <code>y</code>, <code>X</code> and <code>TR</code> arguments.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Model without predictors:</span>
-<span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Model where environmental variables, that is, all variables in X are included:</span>
-<span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Fourth corner model, where all main effects for environmental variables in X and</span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Model without predictors:</span>
+<span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Model where environmental variables, that is, all variables in X are included:</span>
+<span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Fourth corner model, where all main effects for environmental variables in X and</span>
 <span class="co"># all interactions between variables in X and variables in TR are included:</span>
-<span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, TR, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)</code></pre></div>
+<span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, <span class="va">TR</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></code></pre></div>
 <p>An alternative way is to use the long format via <code>data</code> argument along with <code>formula</code>. Notice that <code>formula</code> can also be used for model specification when data is given in wide format. In the following lines the ant data is reorganised to a long format.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yX &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/reshape">reshape</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">cbind</a></span>(y, X)), <span class="dt">direction =</span> <span class="st">"long"</span>, <span class="dt">varying =</span>
-                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(y), <span class="dt">v.names =</span> <span class="st">"y"</span>, <span class="dt">timevar =</span> <span class="st">"sp"</span>)
-TR2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="dt">sp =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">41</span>, TR)
-datalong &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(yX, TR2, <span class="dt">by =</span> <span class="st">"sp"</span>)
-datalong[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, ]
-<span class="co">#&gt;   sp Bare.ground Canopy.cover Shrub.cover Volume.lying.CWD</span>
-<span class="co">#&gt; 1  1  -0.3926017    0.2290869  -0.5748133        0.4373291</span>
-<span class="co">#&gt; 2  1  -0.8007744   -0.4475411  -0.8053533       -0.2309758</span>
-<span class="co">#&gt; 3  1  -0.3585873   -0.4475411   2.9293959       -0.3609125</span>
-<span class="co">#&gt;   Feral.mammal.dung y id Femur.length No.spines Pilosity Polymorphism</span>
-<span class="co">#&gt; 1        -0.1755352 0  1   -0.3827814         0        2            1</span>
-<span class="co">#&gt; 2         1.5171255 0  2   -0.3827814         0        2            1</span>
-<span class="co">#&gt; 3        -0.9278288 0  3   -0.3827814         0        2            1</span>
-<span class="co">#&gt;   Webers.length</span>
-<span class="co">#&gt; 1      1.094225</span>
-<span class="co">#&gt; 2      1.094225</span>
-<span class="co">#&gt; 3      1.094225</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">yX</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/reshape.html">reshape</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span><span class="op">)</span><span class="op">)</span>, direction <span class="op">=</span> <span class="st">"long"</span>, varying <span class="op">=</span>
+                <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>, v.names <span class="op">=</span> <span class="st">"y"</span>, timevar <span class="op">=</span> <span class="st">"sp"</span><span class="op">)</span>
+<span class="va">TR2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>sp <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">41</span>, <span class="va">TR</span><span class="op">)</span>
+<span class="va">datalong</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html">merge</a></span><span class="op">(</span><span class="va">yX</span>, <span class="va">TR2</span>, by <span class="op">=</span> <span class="st">"sp"</span><span class="op">)</span>
+<span class="va">datalong</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span>
+<span class="co">#&gt;   sp Bare.ground Canopy.cover Shrub.cover Volume.lying.CWD Feral.mammal.dung y</span>
+<span class="co">#&gt; 1  1  -0.3926017    0.2290869  -0.5748133        0.4373291        -0.1755352 0</span>
+<span class="co">#&gt; 2  1  -0.8007744   -0.4475411  -0.8053533       -0.2309758         1.5171255 0</span>
+<span class="co">#&gt; 3  1  -0.3585873   -0.4475411   2.9293959       -0.3609125        -0.9278288 0</span>
+<span class="co">#&gt;   id Femur.length No.spines Pilosity Polymorphism Webers.length</span>
+<span class="co">#&gt; 1  1   -0.3827814         0        2            1      1.094225</span>
+<span class="co">#&gt; 2  2   -0.3827814         0        2            1      1.094225</span>
+<span class="co">#&gt; 3  3   -0.3827814         0        2            1      1.094225</span></code></pre></div>
 <p>The model can then be fitted as</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Model without predictors:</span>
-<span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(<span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> datalong, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Model with environmental variables Bare.ground and Shrub.cover as predictors</span>
-<span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(<span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>(Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover), <span class="dt">data =</span> datalong,  
-      <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Model without predictors:</span>
+<span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">y</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">datalong</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Model with environmental variables Bare.ground and Shrub.cover as predictors</span>
+<span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">y</span> <span class="op">~</span> <span class="op">(</span><span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Shrub.cover</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">datalong</span>,  
+      family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></code></pre></div>
 <p>The number of latent variables can be defined using the argument <code>num.lv</code>. The default number of latent variables is two. Other important arguments in the <code>gllvm</code> call are <code>row.eff</code> for defining the type of row effects (none, fixed or random), <code>offset</code> for potential inclusion of offsets, <code>Power</code> for defining the power parameter of the Tweedie distribution and <code>starting.val</code> for judicious choice of starting values for the latent variables.</p>
 <p>List of available distributions with the mean, <span class="math inline">\(E(y_{ij})\)</span>, and mean-variance, <span class="math inline">\(V(\mu_{ij})\)</span>, functions, estimation methods and link functions for various response types are in the table below.</p>
 <table class="table">
 <colgroup>
-<col width="16%">
+<col width="15%">
 <col width="20%">
-<col width="12%">
-<col width="12%">
-<col width="39%">
+<col width="11%">
+<col width="11%">
+<col width="40%">
 </colgroup>
 <thead><tr class="header">
 <th>Response</th>
@@ -300,8 +316,9 @@ datalong[<span class="dv">1</span><span class="op">:</span><span class="dv">3</s
 <h2 class="hasAnchor">
 <a href="#model-based-ordination" class="anchor"></a>Model-based ordination</h2>
 <p>GLLVMs can be used as a model-based approach to unconstrained ordination by including (<em>e.g.</em>) two latent variables in the model but no predictors. The corresponding ordination plot then provides a graphical representation of which sites are similar in terms of their species composition. Such a model can be fitted to the ant data using the function <code>gllvm</code> as below. We will consider two count distributions for the data – the Poisson and negative binomial (NB).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fitp &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/family">poisson</a></span>())
-fitp
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fitp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>
+<span class="va">fitp</span>
 <span class="co">#&gt; Call: </span>
 <span class="co">#&gt; gllvm(y = y, family = poisson())</span>
 <span class="co">#&gt; family: </span>
@@ -309,13 +326,14 @@ fitp
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -2128.633 </span>
+<span class="co">#&gt; log-likelihood:  -2098.631 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1108 </span>
-<span class="co">#&gt; AIC:  4501.266 </span>
-<span class="co">#&gt; AICc:  4178.556 </span>
-<span class="co">#&gt; BIC:  4672.212</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_ord &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>)
-fit_ord
+<span class="co">#&gt; AIC:  4441.261 </span>
+<span class="co">#&gt; AICc:  4118.552 </span>
+<span class="co">#&gt; BIC:  4612.207</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span>
+<span class="va">fit_ord</span>
 <span class="co">#&gt; Call: </span>
 <span class="co">#&gt; gllvm(y = y, family = "negative.binomial")</span>
 <span class="co">#&gt; family: </span>
@@ -323,175 +341,197 @@ fit_ord
 <span class="co">#&gt; method: </span>
 <span class="co">#&gt; [1] "VA"</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt; log-likelihood:  -1895.085 </span>
+<span class="co">#&gt; log-likelihood:  -1865.085 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1067 </span>
-<span class="co">#&gt; AIC:  4116.17 </span>
-<span class="co">#&gt; AICc:  3717.185 </span>
-<span class="co">#&gt; BIC:  4344.566</span></code></pre></div>
+<span class="co">#&gt; AIC:  4056.17 </span>
+<span class="co">#&gt; AICc:  3657.185 </span>
+<span class="co">#&gt; BIC:  4284.566</span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.</p>
 <p>In addition to information criterias, we can use residual plots for diagnosing model fit. As a default, <code>plot</code> function utilizes <code>residual</code> fuction to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument <code>which</code> one can define which plots will be produced.</p>
 <p>The residual diagnostics below for the Poisson model shows some overdispersion in residuals, in particular, a telltale fan-shape in the plot of residuals against fitted values. These issues are largely resolved in the NB model. Note that the latent variables in the model provide some capacity to account for overdispersion, so overdispersed counts do not always require us to move beyond the Poisson distribution, although there is clear evidence of such a need in this example.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot residuals for the Poisson model</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">3</span>, <span class="dv">2</span>), <span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">1</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(fitp, <span class="dt">var.colors =</span> <span class="dv">1</span>)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Plot residuals for the Poisson model</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/par.html">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/pkg/mvabund/man/mvabund-internal.html">plot</a></span><span class="op">(</span><span class="va">fitp</span>, var.colors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-11-1.png" width="480" style="display: block; margin: auto;"></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot residuals for the NB model</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">3</span>, <span class="dv">2</span>), <span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">1</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(fit_ord, <span class="dt">var.colors =</span> <span class="dv">1</span>)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Plot residuals for the NB model</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/par.html">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/pkg/mvabund/man/mvabund-internal.html">plot</a></span><span class="op">(</span><span class="va">fit_ord</span>, var.colors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-12-1.png" width="480" style="display: block; margin: auto;"></p>
 <p>Once an appropriate model has been established for the data, we can construct an ordination as a scatter plot of the predicted latent variables via the <code>ordiplot</code> function. The species with the largest factor loadings (largest norms, <span class="math inline">\(||\boldsymbol\theta_j||\)</span>), and hence most strongly associated with ordination scores, can be added using the logical argument <code>biplot</code>, leading to a biplot for finding indicator species corresponding to specific sites. The <code>ind.spp</code> argument defines the number of species to be plotted.</p>
-<p>The command below creates the biplot and the ordination plot based on the GLLVM fitted to the <code>antTraits</code> data. We can see one large cluster of sites on the top with many indicator species, and few smaller clusters with only few indicator species <em>e.g.</em> sites 12–15. Notice that the rotation and also the scales of the two plots below slightly differ as in order to produce the biplot the predicted latent variables and their loadings are rotated and scaled so that the factor loadings of the species are in the same direction with the sites where they are most abundant.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span>(fit_ord, <span class="dt">biplot =</span> <span class="ot">TRUE</span>, <span class="dt">ind.spp =</span> <span class="dv">15</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">2</span>, <span class="fl">1.6</span>), 
-         <span class="dt">main =</span> <span class="st">"Biplot"</span>)
-<span class="kw"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span>(fit_ord, <span class="dt">biplot =</span> <span class="ot">FALSE</span>, <span class="dt">ind.spp =</span> <span class="dv">15</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">2</span>, <span class="fl">1.6</span>), 
-         <span class="dt">main =</span> <span class="st">"Ordination plot"</span>)</code></pre></div>
+<p>The command below creates the biplot and the ordination plot based on the GLLVM fitted to the <code>antTraits</code> data. We can see one large cluster of sites on the top with many indicator species, and few smaller clusters with only few indicator species <em>e.g.</em> sites 12–15. 95% prediction regions in the ordiplot give some clue of the uncertainty of the estimates. The rotation and scale of the latent variables and loadings below differ from the actual values as in order to produce the biplot the predicted latent variables and their loadings are rotated and scaled so that the factor loadings of the species are in the same direction with the sites where they are most abundant.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_ord</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>, 
+         main <span class="op">=</span> <span class="st">"Biplot"</span><span class="op">)</span>
+<span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_ord</span>, biplot <span class="op">=</span> <span class="cn">FALSE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>, 
+         main <span class="op">=</span> <span class="st">"Ordination plot"</span>, predict.region <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-13-1.png" width="70%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-13-2.png" width="70%" style="display: block; margin: auto;"></p>
 <p>Sometimes species names in the biplot might be hard to read, especially when species names are long or if they are close to each other. In order to make the figure easier to read we can change the sizes of the species names in the biplot using <code>cex.spp</code>. If species or site names are too close to each other we can use <code>jitter = TRUE</code> in order to add some random variation in the species and site locations. We can also shorten the species names. This can also be done after the model is fitted by directly changing the row names in the loading matrix, see the example below.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(fit_ord<span class="op">$</span>params<span class="op">$</span>theta) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste</a></span>(<span class="st">"spp"</span>, <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(fit_ord<span class="op">$</span>y), <span class="dt">sep =</span> <span class="st">""</span>)
-<span class="kw"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span>(fit_ord, <span class="dt">biplot =</span> <span class="ot">TRUE</span>, <span class="dt">ind.spp =</span> <span class="dv">15</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">2</span>, <span class="fl">1.6</span>), 
-         <span class="dt">main =</span> <span class="st">"Biplot"</span>, <span class="dt">jitter =</span> <span class="ot">TRUE</span>, <span class="dt">cex.spp =</span> <span class="fl">0.8</span>)</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">fit_ord</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">theta</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"spp"</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">fit_ord</span><span class="op">$</span><span class="va">y</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>
+<span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_ord</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">1.6</span><span class="op">)</span>, 
+         main <span class="op">=</span> <span class="st">"Biplot"</span>, jitter <span class="op">=</span> <span class="cn">TRUE</span>, cex.spp <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-14-1.png" width="70%" style="display: block; margin: auto;"></p>
 </div>
 <div id="model-with-environmental-variables" class="section level2">
 <h2 class="hasAnchor">
 <a href="#model-with-environmental-variables" class="anchor"></a>Model with environmental variables</h2>
-<p>Environmental variables can be included in the model, whether to study their effects on assemblages, or to study patterns of species co-occurrence after controlling for environmental variables. We illustrate here this model by including three environmental variables <code>Bare.ground</code>, <code>Shrub.cover</code> and <code>Volume.lying.CWD</code> to the model. Similarly to previous example, we can use residual analysis and information criterias to study which distribution offers the most suitable mean-variance relationship for the responses, and how many latent variables are needed.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">criterias &lt;-<span class="st"> </span><span class="ot">NULL</span>
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">0</span><span class="op">:</span><span class="dv">5</span>){
-  fiti &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> i, <span class="dt">sd.errors =</span> <span class="ot">FALSE</span>, 
-                <span class="dt">formula =</span> <span class="op">~</span><span class="st"> </span>Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD, <span class="dt">seed =</span> <span class="dv">1234</span>)
-  criterias[i <span class="op">+</span><span class="st"> </span><span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(fiti)<span class="op">$</span>AICc
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(criterias)[i <span class="op">+</span><span class="st"> </span><span class="dv">1</span>] =<span class="st"> </span>i
-}</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Compare AICc values</span>
-criterias
-<span class="co">#&gt;        0        1        2        3        4        5 </span>
-<span class="co">#&gt; 3644.572 3570.070 3538.663 3522.019 3522.582 3553.064</span></code></pre></div>
-<p>Based on these tools a model with NB distributed responses and three latent variables was chosen.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_env &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> <span class="dv">3</span>,
-                 <span class="dt">formula =</span> <span class="op">~</span><span class="st"> </span>Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span>
-<span class="st">                   </span>Volume.lying.CWD, <span class="dt">seed =</span> <span class="dv">1234</span>)</code></pre></div>
+<p>Environmental variables can be included in the model, whether to study their effects on assemblages, or to study patterns of species co-occurrence after controlling for environmental variables. We illustrate here this model by including three environmental variables <code>Bare.ground</code>, <code>Canopy.cover</code> and <code>Volume.lying.CWD</code> to the model. Similarly to previous example, we can use residual analysis and information criterias to study which distribution offers the most suitable mean-variance relationship for the responses, and how many latent variables are needed.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">criterias</span> <span class="op">&lt;-</span> <span class="cn">NULL</span>
+<span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span><span class="op">{</span>
+  <span class="va">fiti</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="va">i</span>, sd.errors <span class="op">=</span> <span class="cn">FALSE</span>,
+                formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span>
+  <span class="va">criterias</span><span class="op">[</span><span class="va">i</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">fiti</span><span class="op">)</span><span class="op">$</span><span class="va">AICc</span>
+  <span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">criterias</span><span class="op">)</span><span class="op">[</span><span class="va">i</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span> <span class="op">=</span> <span class="va">i</span>
+<span class="op">}</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Compare AICc values</span>
+<span class="va">criterias</span>
+<span class="co">#&gt;        1        2        3        4        5 </span>
+<span class="co">#&gt; 3399.419 3398.121 3357.129 3353.483 3354.003</span></code></pre></div>
+<p>Based on these tools a model with NB distributed responses and 4 latent variables was chosen.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">4</span>,
+                 formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span>
+                   <span class="va">Volume.lying.CWD</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span></code></pre></div>
 <p>The estimated coefficients for predictors and their confidence intervals can be plotted using the <code>coefplot</code> function, in order to study the nature of effects of environmental variables on species. Function <code>coefplot</code> plots the point estimates (ticks) for coefficients of the environmental variables and their 95% confidence intervals (lines) for the <code>fit_env</code> model, with those colored in grey (black) denoting intervals (not) containing zero. The x-axis of the coefficient plot of the third variable is truncated due to very wide confidence interval for one of the coefficients using an argument <code>xlim.list</code> below.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/coefplot.gllvm.html">coefplot</a></span>(fit_env, <span class="dt">cex.ylab =</span> <span class="fl">0.7</span>, <span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">4</span>, <span class="dv">9</span>, <span class="dv">2</span>, <span class="dv">1</span>), 
-         <span class="dt">xlim.list =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="ot">NULL</span>, <span class="ot">NULL</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">4</span>, <span class="dv">4</span>)), <span class="dt">mfrow=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">1</span>))</code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fit_env</span>, cex.ylab <span class="op">=</span> <span class="fl">0.7</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">9</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, 
+         xlim.list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-18-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-18-2.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-18-3.png" width="49%" style="display: block; margin: auto;"></p>
 <p>In the resulting plot above most of the 95% confidence intervals include zero, indicating that the majority of the species do not exhibit evidence of a strong association between environment and species abundance. This may be due to a lack of information in the data, as much as being due to a lack of environmental association after accounting for potential residual species covariation.</p>
 <p>Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(fit_env<span class="op">$</span>params<span class="op">$</span>Xcoef) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste</a></span>(<span class="st">"spp"</span>, <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(fit_env<span class="op">$</span>y), <span class="dt">sep =</span> <span class="st">""</span>)
-<span class="kw"><a href="../reference/coefplot.gllvm.html">coefplot</a></span>(fit_env, <span class="dt">cex.ylab =</span> <span class="fl">0.7</span>, <span class="dt">xlim.list =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="ot">NULL</span>, <span class="ot">NULL</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">4</span>, <span class="dv">4</span>)), 
-         <span class="dt">mfrow=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">1</span>))</code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">fit_env</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">Xcoef</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"spp"</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">fit_env</span><span class="op">$</span><span class="va">y</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>
+<span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fit_env</span>, cex.ylab <span class="op">=</span> <span class="fl">0.7</span>, xlim.list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, 
+         mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p><img src="vignette1_files/figure-html/unnamed-chunk-19-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-19-2.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-19-3.png" width="49%" style="display: block; margin: auto;"></p>
+<p>Alternatively, model-selection on covariates, latent variables or both can be performed by dredging, using the MuMIn package. Though especially for large datasets with many covariates and latent variables, this can take a while to run.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">MuMIn</span><span class="op">)</span>
+<span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu">dredge</span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AIC"</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">fit_table</span>, <span class="va">delta</span><span class="op">&lt;</span><span class="fl">2</span><span class="op">)</span>
+<span class="co"># Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Shrub.cover + Volume.lying.CWD, </span>
+<span class="co">#     num.lv = i, family = "negative.binomial", sd.errors = FALSE, </span>
+<span class="co">#     seed = 1234)</span>
+<span class="co"># ---</span>
+<span class="co"># Model selection table </span>
+<span class="co">#    (Int) Bar.grn Shr.cvr Vlm.lyn.CWD num.lv  df    logLik   AICc delta weight</span>
+<span class="co"># 39     +       +       +           +      4 363 -1793.923 3522.6  0.00   0.52</span>
+<span class="co"># 38     +       +       +           +      3 325 -1794.337 3522.8  0.16   0.48</span>
+<span class="co"># Models ranked by AICc(x) </span></code></pre></div>
 </div>
 <div id="studying-co-occurrence-patterns" class="section level2">
 <h2 class="hasAnchor">
 <a href="#studying-co-occurrence-patterns" class="anchor"></a>Studying co-occurrence patterns</h2>
 <p>Latent variables induce correlation across response variables, and so provide a means of estimating correlation patterns across species, and the extent to which they can be explained by environmental variables. Information on correlation is stored in the factor loadings <span class="math inline">\(\boldsymbol\theta_j\)</span>, so the residual covariance matrix, storing information on species co-occurrence that is not explained by environmental variables, can be calculated as <span class="math inline">\(\boldsymbol\Sigma=\boldsymbol\Gamma \boldsymbol\Gamma^\top\)</span>, where <span class="math inline">\(\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'\)</span>. The <code>getResidualCor</code> function can be used to estimate the correlation matrix of the linear predictor across species. This can be visualised using the <code>corrplot</code> package:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Residual correlation matrix:</span>
-cr &lt;-<span class="st"> </span><span class="kw"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span>(fit_env)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(corrplot); <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(gclus)
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Residual correlation matrix:</span>
+<span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span><span class="op">(</span><span class="va">fit_env</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/taiyun/corrplot">corrplot</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">gclus</span><span class="op">)</span>
 <span class="co">#&gt; corrplot 0.84 loaded</span>
 <span class="co">#&gt; Loading required package: cluster</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">corrplot</span>(cr[<span class="kw">order.single</span>(cr), <span class="kw">order.single</span>(cr)], <span class="dt">diag =</span> <span class="ot">FALSE</span>, <span class="dt">type =</span> <span class="st">"lower"</span>, 
-         <span class="dt">method =</span> <span class="st">"square"</span>, <span class="dt">tl.cex =</span> <span class="fl">0.5</span>, <span class="dt">tl.srt =</span> <span class="dv">45</span>, <span class="dt">tl.col =</span> <span class="st">"red"</span>)</code></pre></div>
-<p><img src="vignette1_files/figure-html/unnamed-chunk-22-1.png" width="480" style="display: block; margin: auto;"></p>
-<p>Regions coloured in dark blue in correlation plot indicate clusters of species that are positively correlated with each other, after controlling for (co)variation in species explained by environmental terms in <code>fit_env</code> (which had linear terms for <code>Bare.ground</code>, <code>Shrub.cover</code> and <code>Volumn.lying.CWD</code>). There are also two regions coloured in red, indicating negative correlation between pairs of species. The effect of the environmental variables on the between species correlations can be seen by comparing the residual correlation matrix (above) to the correlation matrix given by the model without environmental variables (below).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Fit GLLVM without environmental variables and 3 latent variables:</span>
-fit3lv &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> <span class="dv">3</span>, <span class="dt">seed =</span> <span class="dv">1234</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Correlation matrix</span>
-cr0 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span>(fit3lv)
-<span class="kw">corrplot</span>(cr0[<span class="kw">order.single</span>(cr0), <span class="kw">order.single</span>(cr0)], <span class="dt">diag =</span> <span class="ot">FALSE</span>, <span class="dt">type =</span> <span class="st">"lower"</span>, 
-         <span class="dt">method =</span> <span class="st">"square"</span>, <span class="dt">tl.cex =</span> <span class="fl">0.5</span>, <span class="dt">tl.srt =</span> <span class="dv">45</span>, <span class="dt">tl.col =</span> <span class="st">"red"</span>)</code></pre></div>
-<p><img src="vignette1_files/figure-html/unnamed-chunk-24-1.png" width="480" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html">corrplot</a></span><span class="op">(</span><span class="va">cr</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html">order.single</a></span><span class="op">(</span><span class="va">cr</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html">order.single</a></span><span class="op">(</span><span class="va">cr</span><span class="op">)</span><span class="op">]</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, 
+         method <span class="op">=</span> <span class="st">"square"</span>, tl.cex <span class="op">=</span> <span class="fl">0.5</span>, tl.srt <span class="op">=</span> <span class="fl">45</span>, tl.col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></code></pre></div>
+<p><img src="vignette1_files/figure-html/unnamed-chunk-23-1.png" width="480" style="display: block; margin: auto;"></p>
+<p>Group of squares coloured in dark blue in correlation plot indicate clusters of species that are positively correlated with each other, after controlling for (co)variation in species explained by environmental terms in <code>fit_env</code> (which had linear terms for <code>Bare.ground</code>, <code>Shrub.cover</code> and <code>Volumn.lying.CWD</code>). There are also two group of squares coloured in red, indicating negative correlation between pairs of species. The effect of the environmental variables on the between species correlations can be seen by comparing the residual correlation matrix (above) to the correlation matrix given by the model without environmental variables (below).</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Fit GLLVM without environmental variables and 3 latent variables:</span>
+<span class="va">fit4lv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">4</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Correlation matrix</span>
+<span class="va">cr0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span><span class="op">(</span><span class="va">fit4lv</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html">corrplot</a></span><span class="op">(</span><span class="va">cr0</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html">order.single</a></span><span class="op">(</span><span class="va">cr0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html">order.single</a></span><span class="op">(</span><span class="va">cr0</span><span class="op">)</span><span class="op">]</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, 
+         method <span class="op">=</span> <span class="st">"square"</span>, tl.cex <span class="op">=</span> <span class="fl">0.5</span>, tl.srt <span class="op">=</span> <span class="fl">45</span>, tl.col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></code></pre></div>
+<p><img src="vignette1_files/figure-html/unnamed-chunk-25-1.png" width="480" style="display: block; margin: auto;"></p>
 <p>Residual correlations can also be visualized in a residual biplot, where highly correlated species tend to lie in the same direction and negatively correlated species at the opposite side of the biplot, see figure (b) below. In order to do that we fit the <code>fit_env</code> model with two latent variables and compare it to the model without predictors <code>fit_ord</code> (a).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_env2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> <span class="dv">2</span>, 
-                  <span class="dt">formula =</span> <span class="op">~</span><span class="st"> </span>Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>
-<span class="st">                    </span>Volume.lying.CWD, <span class="dt">seed =</span> <span class="dv">1234</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(fit_env2<span class="op">$</span>params<span class="op">$</span>theta) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste</a></span>(<span class="st">"sp"</span>, <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(fit_env2<span class="op">$</span>y), <span class="dt">sep =</span> <span class="st">""</span>)
-<span class="kw"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span>(fit_ord, <span class="dt">biplot =</span> <span class="ot">TRUE</span>, <span class="dt">ind.spp =</span> <span class="dv">15</span>, <span class="dt">jitter =</span> <span class="ot">TRUE</span>, <span class="dt">cex.spp =</span> <span class="dv">1</span>,
-         <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">4</span>, <span class="fl">3.5</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="fl">2.5</span>, <span class="dv">2</span>), <span class="dt">main =</span> <span class="st">"(a)"</span>)
-<span class="kw"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span>(fit_env2, <span class="dt">biplot =</span> <span class="ot">TRUE</span>, <span class="dt">ind.spp =</span> <span class="dv">15</span>, <span class="dt">jitter =</span> <span class="ot">TRUE</span>, <span class="dt">cex.spp =</span> <span class="dv">1</span>,
-         <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">4</span>, <span class="fl">3.5</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="fl">2.5</span>, <span class="dv">2</span>), <span class="dt">main =</span> <span class="st">"(b)"</span>)</code></pre></div>
-<p><img src="vignette1_files/figure-html/unnamed-chunk-25-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-25-2.png" width="49%" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit_env2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, 
+                  formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> 
+                    <span class="va">Volume.lying.CWD</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">fit_env2</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">theta</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"sp"</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">fit_env2</span><span class="op">$</span><span class="va">y</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span>
+<span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_ord</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, jitter <span class="op">=</span> <span class="cn">TRUE</span>, cex.spp <span class="op">=</span> <span class="fl">1</span>,
+         xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>, <span class="fl">3.5</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2.5</span>, <span class="fl">2</span><span class="op">)</span>, main <span class="op">=</span> <span class="st">"(a)"</span><span class="op">)</span>
+<span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_env2</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, jitter <span class="op">=</span> <span class="cn">TRUE</span>, cex.spp <span class="op">=</span> <span class="fl">1</span>,
+         xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>, <span class="fl">3.5</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2.5</span>, <span class="fl">2</span><span class="op">)</span>, main <span class="op">=</span> <span class="st">"(b)"</span><span class="op">)</span></code></pre></div>
+<p><img src="vignette1_files/figure-html/unnamed-chunk-26-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-26-2.png" width="49%" style="display: block; margin: auto;"></p>
 <p>In both biplots we can see that species 23 (Monomorium.rothsteini), 24 (Monomorium.sydneyense), 28 (Nylanderia.sp..A) and 41 (Tetramorium.sp..A) are close to each other. This can also be seen in the correlation plots as their between species correlations are highly positive.</p>
-<p>The <code>getResidualCov</code> function can be used to quantify the amount of variation in the data that can be explained by environmental variables. Specifically, if we use the trace of the residual covariance matrix <span class="math inline">\(\boldsymbol\Sigma\)</span> as a measure of unexplained variation, then we can compare this quantity before and after environmental variables are included in the model. The ratio of traces suggests that environmental variables explain approximately 25% of the (co)variation in ant species abundances.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rcov &lt;-<span class="st"> </span><span class="kw"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span>(fit_env, <span class="dt">adjust =</span> <span class="dv">0</span>)
-rcov0 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span>(fit3lv, <span class="dt">adjust =</span> <span class="dv">0</span>)
-rcov0<span class="op">$</span>trace; rcov<span class="op">$</span>trace
-<span class="co">#&gt; [1] 71.63626</span>
-<span class="co">#&gt; [1] 53.42926</span>
-<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>rcov<span class="op">$</span>trace <span class="op">/</span><span class="st"> </span>rcov0<span class="op">$</span>trace
-<span class="co">#&gt; [1] 0.254159</span></code></pre></div>
+<p>The <code>getResidualCov</code> function can be used to quantify the amount of variation in the data that can be explained by environmental variables. Specifically, if we use the trace of the residual covariance matrix <span class="math inline">\(\boldsymbol\Sigma\)</span> as a measure of unexplained variation, then we can compare this quantity before and after environmental variables are included in the model. The ratio of traces suggests that environmental variables explain approximately 19% of the (co)variation in ant species abundances.</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">rcov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit_env</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
+<span class="va">rcov0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit4lv</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
+<span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>; <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span>
+<span class="co">#&gt; [1] 79.62605</span>
+<span class="co">#&gt; [1] 64.57779</span>
+<span class="fl">1</span> <span class="op">-</span> <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span> <span class="op">/</span> <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>
+<span class="co">#&gt; [1] 0.1889866</span></code></pre></div>
 </div>
 <div id="incorporating-functional-traits-into-fourth-corner-models" class="section level2">
 <h2 class="hasAnchor">
 <a href="#incorporating-functional-traits-into-fourth-corner-models" class="anchor"></a>Incorporating functional traits into fourth corner models</h2>
 <p>In the previous section, environmental associations were studied by fitting separate terms for each species, without attempting to explain why different species respond differently to the environment. Adding functional traits to the model offers the potential to explain why species differ in environmental response.</p>
 <p>The fourth corner model can be fitted using the argument <code>TR</code> to include traits. The argument <code>formula</code> is used to specify the model. Random row effects are included using <code>row.eff = "random"</code> and the argument <code>randomX</code> is used to incorporate random slopes in the model. As the defined model is very complex, we use three starting points for the initial values of the latent variables via argument <code>n.init</code> in order to ensure that the maximum point is reached.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_4th &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, TR, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> <span class="dv">2</span>, 
-                 <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>(Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD) <span class="op">+</span>
-<span class="st">                </span>(Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD) <span class="op">:</span><span class="st"> </span>(Pilosity <span class="op">+</span><span class="st"> </span>
-<span class="st">                </span>Polymorphism <span class="op">+</span><span class="st"> </span>Webers.length), <span class="dt">seed =</span> <span class="dv">123</span>,
-                <span class="dt">row.eff =</span> <span class="st">"random"</span>, <span class="dt">n.init =</span> <span class="dv">3</span>, <span class="dt">jitter.var =</span> <span class="fl">0.01</span>,
-                <span class="dt">randomX =</span> <span class="op">~</span><span class="st"> </span>Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD)</code></pre></div>
-<p>As previously, coefficients can be plotted using the function <code>coefplot</code>. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function <code>levelplot</code> from the package <code>lattice</code>, see below. The resulting plots indicate that interactions of the trait variable <code>Polymorphism</code> with <code>Bare.ground</code> and <code>Webers.length</code> with <code>Volume.lying.CWD</code> have the strongest effects on ant abundances.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(lattice)
-<span class="kw"><a href="../reference/coefplot.gllvm.html">coefplot</a></span>(fit_4th, <span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">4</span>, <span class="dv">11</span>, <span class="dv">1</span>, <span class="dv">1</span>), <span class="dt">cex.ylab =</span> <span class="fl">0.8</span>)
-fourth &lt;-<span class="st"> </span>fit_4th<span class="op">$</span>fourth.corner
-a &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>( <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">abs</a></span>(fourth) )
-colort &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/colorRamp">colorRampPalette</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"blue"</span>, <span class="st">"white"</span>, <span class="st">"red"</span>))
-plot.4th &lt;-<span class="st"> </span><span class="kw">levelplot</span>((<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(fourth)), <span class="dt">xlab =</span> <span class="st">"Environmental Variables"</span>, 
-                      <span class="dt">ylab =</span> <span class="st">"Species traits"</span>, <span class="dt">col.regions =</span> <span class="kw">colort</span>(<span class="dv">100</span>), <span class="dt">cex.lab =</span> <span class="fl">1.3</span>, 
-                      <span class="dt">at =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="op">-</span>a, a, <span class="dt">length =</span> <span class="dv">100</span>), <span class="dt">scales =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">x =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">rot =</span> <span class="dv">45</span>)))
-plot.4th</code></pre></div>
-<p><img src="vignette1_files/figure-html/unnamed-chunk-28-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-28-2.png" width="49%" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit_4th</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, <span class="va">TR</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, 
+                 formula <span class="op">=</span> <span class="va">y</span> <span class="op">~</span> <span class="op">(</span><span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span> <span class="op">+</span>
+                <span class="op">(</span><span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span> <span class="op">:</span> <span class="op">(</span><span class="va">Pilosity</span> <span class="op">+</span> 
+                <span class="va">Polymorphism</span> <span class="op">+</span> <span class="va">Webers.length</span><span class="op">)</span>, seed <span class="op">=</span> <span class="fl">123</span>,
+                row.eff <span class="op">=</span> <span class="st">"random"</span>, control.start <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>n.init <span class="op">=</span> <span class="fl">3</span>, jitter.var <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span>,
+                randomX <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span></code></pre></div>
+<p>As previously, coefficients can be plotted using the function <code>coefplot</code>. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function <code>levelplot</code> from the package <code>lattice</code>, see below. The resulting plots indicate that interactions of the trait variable <code>Polymorphism</code> with <code>Bare.ground</code> and <code>Canopy.cover</code>, <code>Pilosity3</code> with <code>Canopy.cover</code> have the strongest effects on ant abundances.</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://lattice.r-forge.r-project.org/">lattice</a></span><span class="op">)</span>
+<span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fit_4th</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">11</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex.ylab <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span>
+<span class="va">fourth</span> <span class="op">&lt;-</span> <span class="va">fit_4th</span><span class="op">$</span><span class="va">fourth.corner</span>
+<span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">fourth</span><span class="op">)</span> <span class="op">)</span>
+<span class="va">colort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/colorRamp.html">colorRampPalette</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"blue"</span>, <span class="st">"white"</span>, <span class="st">"red"</span><span class="op">)</span><span class="op">)</span>
+<span class="va">plot.4th</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/lattice/man/levelplot.html">levelplot</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">fourth</span><span class="op">)</span><span class="op">)</span>, xlab <span class="op">=</span> <span class="st">"Environmental Variables"</span>, 
+                      ylab <span class="op">=</span> <span class="st">"Species traits"</span>, col.regions <span class="op">=</span> <span class="fu">colort</span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, cex.lab <span class="op">=</span> <span class="fl">1.3</span>, 
+                      at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="op">-</span><span class="va">a</span>, <span class="va">a</span>, length <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>, scales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>rot <span class="op">=</span> <span class="fl">45</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
+<span class="va">plot.4th</span></code></pre></div>
+<p><img src="vignette1_files/figure-html/unnamed-chunk-29-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-29-2.png" width="49%" style="display: block; margin: auto;"></p>
 </div>
 <div id="example-model-based-inference" class="section level2">
 <h2 class="hasAnchor">
 <a href="#example-model-based-inference" class="anchor"></a>Example: Model-based inference</h2>
 <p>A key point of departure in the <code>gllvm</code> package, as compared to alternative ways to fit GLLVMs, is that by using a maximum likelihood framework, likelihood-based machinery becomes available for inference. A particular example is likelihood ratio testing, available via the <code>anova</code> function when comparing nested models. It should be noted however that such tests can only be expected to maintain (close to) valid Type I error rates when the number of parameters involved in the model is small (they rely on large-<span class="math inline">\(N\)</span>-small-<span class="math inline">\(m\)</span> asymptotics).</p>
 <p>In the previous example, trait-environment interactions seem to be relatively small and most of the confidence intervals include zero values. Using a likelihood ratio test we can test if the traits vary with environment. Below, the model without traits is fitted and the likelihood ratio test comparing this model to the previous one is performed. Based on the output when applying the <code>anova</code> function, the <span class="math inline">\(p\)</span> value suggests that the simpler model without interactions is more appropriate. Notice that in order to separate the model with only main effects for environmental variables from the one which has species specific coefficients for environmental variables, we include <code>TR</code> matrix to the function call.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_4th2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/gllvm.html">gllvm</a></span>(y, X, TR, <span class="dt">family =</span> <span class="st">"negative.binomial"</span>, <span class="dt">num.lv =</span> <span class="dv">2</span>, 
-        <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>(Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD), <span class="dt">seed =</span> <span class="dv">123</span>,
-                 <span class="dt">row.eff =</span> <span class="st">"random"</span>, <span class="dt">n.init =</span> <span class="dv">3</span>, <span class="dt">jitter.var =</span> <span class="fl">0.01</span>,
-                 <span class="dt">randomX =</span> <span class="op">~</span><span class="st"> </span>Bare.ground <span class="op">+</span><span class="st"> </span>Shrub.cover <span class="op">+</span><span class="st"> </span>Volume.lying.CWD)
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit_4th2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, <span class="va">TR</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, 
+        formula <span class="op">=</span> <span class="va">y</span> <span class="op">~</span> <span class="op">(</span><span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span>, seed <span class="op">=</span> <span class="fl">123</span>,
+                 row.eff <span class="op">=</span> <span class="st">"random"</span>, control.start <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>n.init <span class="op">=</span> <span class="fl">3</span>, jitter.var <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span>,
+                 randomX <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span>
 <span class="co"># Test interactions using likelihood ratio test:</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/anova">anova</a></span>(fit_4th, fit_4th2)
-<span class="co">#&gt; Model  1 :  y ~ (Bare.ground + Shrub.cover + Volume.lying.CWD) </span>
-<span class="co">#&gt; Model  2 :  y ~ (Bare.ground + Shrub.cover +  Volume.lying.CWD) + (Bare.ground + </span>
-<span class="co">#&gt; Shrub.cover + Volume.lying.CWD):(Pilosity + Polymorphism + Webers.length) </span>
-<span class="co">#&gt;   Resid.Df        D Df.diff  P.value</span>
-<span class="co">#&gt; 1     1055  0.00000       0        </span>
-<span class="co">#&gt; 2     1037 21.10357      18 0.27422</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/stats/anova.html">anova</a></span><span class="op">(</span><span class="va">fit_4th</span>, <span class="va">fit_4th2</span><span class="op">)</span>
+<span class="co"># Model  1 :  y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) </span>
+<span class="co"># Model  2 :  y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) + (Bare.ground + </span>
+<span class="co"># Canopy.cover + Volume.lying.CWD):(Pilosity + Polymorphism + Webers.length) </span>
+<span class="co"># Resid.Df        D Df.diff     P.value</span>
+<span class="co"># 1     1057  0.00000       0            </span>
+<span class="co"># 2     1039 60.34953      18 1.79632e-06</span></code></pre></div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
 <div id="refs" class="references">
 <div id="ref-Niku2019">
-<p>Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. “Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R.” 10. Methods in Ecology and Evolution: 2173–82.</p>
+<p>Niku, J., F. K. C. Hui, S. Taskinen, and D. I. Warton. 2019. “Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R.” 10: 2173–82.</p>
 </div>
 </div>
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-        <div id="tocnav">
-      <h2 class="hasAnchor">
-<a href="#tocnav" class="anchor"></a>Contents</h2>
-      <ul class="nav nav-pills nav-stacked">
-<li><a href="#generalized-linear-latent-variable-models">Generalized linear latent variable models</a></li>
-      <li><a href="#data-input">Data input</a></li>
-      <li><a href="#model-based-ordination">Model-based ordination</a></li>
-      <li><a href="#model-with-environmental-variables">Model with environmental variables</a></li>
-      <li><a href="#studying-co-occurrence-patterns">Studying co-occurrence patterns</a></li>
-      <li><a href="#incorporating-functional-traits-into-fourth-corner-models">Incorporating functional traits into fourth corner models</a></li>
-      <li><a href="#example-model-based-inference">Example: Model-based inference</a></li>
-      <li><a href="#references">References</a></li>
-      </ul>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
 </div>
-      </div>
 
 </div>
+
 
 
       <footer><div class="copyright">
@@ -499,12 +539,14 @@ plot.4th</code></pre></div>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
+
       </footer>
 </div>
 
   
+
 
   </body>
 </html>
