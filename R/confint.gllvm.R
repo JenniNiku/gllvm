@@ -54,8 +54,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     cal <- 0
     if (num.lv > 0) {
-      if(quadratic==FALSE)nr <- rep(1:num.lv, each = p)
-      if(quadratic!=FALSE)if(quadratic==FALSE)nr <- rep(1:(num.lv*2), each = p)
+      nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
       if(quadratic == FALSE)
         rnames[1:(num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
