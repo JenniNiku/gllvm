@@ -1,4 +1,4 @@
-#' @title Functions to extract ecological quantities from GLLVM where species are a quadratic function of the latnt variables.
+#' @title Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables.
 #' @description Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the delta method).
 #'
 #' @param object   an object of class 'gllvm'.
@@ -7,9 +7,11 @@
 #' 
 #' @author Bert van der Veen
 #'
-#'@aliases optima optima.gllvm.quadratic tolerances tolerances.gllvm.quadratic gradient.length gradient.length.gllvm.quadratic
+#'@aliases optima optima.gllvm tolerances tolerances.gllvm gradient.length gradient.length.gllvm
 #'@export
-#'@export optima tolerances gradient.length
+#'@export optima 
+#'@export tolerances 
+#'@export gradient.length
 optima.gllvm <- function(object,sd.errors = T) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
