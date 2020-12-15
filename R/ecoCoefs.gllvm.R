@@ -10,6 +10,7 @@
 #' @author Bert van der Veen
 #'
 #'@aliases optima optima.gllvm tolerances tolerances.gllvm gradient.length gradient.length.gllvm
+#'
 #'@export
 #'@export optima.gllvm 
 #'@export tolerances.gllvm 
@@ -74,6 +75,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
 }
 
 #'@rdname optima
+#'@export
 tolerances.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Tolerances can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
@@ -131,6 +133,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
 }
 
 #'@rdname optima
+#'@export
 gradient.length.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
@@ -195,21 +198,22 @@ if(is.null(object$sd)){
   return(list(gradient.length=grad.length,sd=grad.length.sd)) 
 }
 
-
 #'@export optima
 optima <- function(object, ...)
 {
   UseMethod(generic = "optima")
 }
-
+#'@method tolerances gllvm
 #'@export tolerances
 tolerances <- function(object, ...)
 {
   UseMethod(generic = "tolerances")
 }
+
+
+#'@method gradient.length gllvm
 #'@export gradient.length
 gradient.length <- function(object, ...)
 {
   UseMethod(generic = "gradient.length")
 }
-
