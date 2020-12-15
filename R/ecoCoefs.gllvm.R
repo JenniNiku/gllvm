@@ -143,7 +143,7 @@ if(is.null(object$sd)){
   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
   
   gradSD <- NULL
-  for(i in 1:num.lv){
+  for(q in 1:num.lv){
     #covariance matrix for all quadratic coefficients
     if(quadratic==TRUE){
       covmat <- V[colnames(V)=="lambda2",colnames(V)=="lambda2"][(p*(q-1)+1):(p*q),(p*(q-1)+1):(p*q)] 
@@ -153,24 +153,24 @@ if(is.null(object$sd)){
     #selec the parameters that represent the median, middle 2 if even otherwise middle 1
     if(p%%2==0){
       #even
-      idx<-order(1/sqrt(2*-object$params$theta[,num.lv+i]),decreasing=T)[(p/2):((p/2)+1)]
+      idx<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[(p/2):((p/2)+1)]
     }else{
       #odd
-      idx<-order(1/sqrt(2*-object$params$theta[,num.lv+i]),decreasing=T)[p-round(p/2)]
+      idx<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[p-round(p/2)]
     }
     if(quadratic=="LV"|length(idx)==1){
       if(quadratic=="LV"){
         #only a function of one parameter, so this is derivative of gradient length (since there is no median)
-        grad<-2*abs(object$params$theta[1,num.lv+i])^-0.5
+        grad<-2*abs(object$params$theta[1,num.lv+q])^-0.5
         gradSD <- c(gradSD,grad^2*covmat)
       }else{
-        grad<-2*abs(object$params$theta[idx,num.lv+i])^-0.5#Only needs the right idx, no transformations
+        grad<-2*abs(object$params$theta[idx,num.lv+q])^-0.5#Only needs the right idx, no transformations
         gradSD <- c(gradSD,grad^2*covmat[idx,idx])
       }
       
     }else{
       #this one is a little more, due to the presence of the median on the tolerance scale.
-      grad<-4*sum(abs(object$params$theta[idx,num.lv+i])^-0.5)^-2*abs(object$params$theta[idx,num.lv+i])^-1.5#4*sqrt(0.5)abs(out$params$theta[idx,num.lv+i])^3 
+      grad<-4*sum(abs(object$params$theta[idx,num.lv+q])^-0.5)^-2*abs(object$params$theta[idx,num.lv+q])^-1.5#4*sqrt(0.5)abs(out$params$theta[idx,num.lv+i])^3 
       gradSD <- c(gradSD,grad%*%covmat[idx,idx]%*%grad)
     }
     
