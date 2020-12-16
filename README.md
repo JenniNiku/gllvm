@@ -5,7 +5,7 @@
 
 # Installation
 
-From CRAN you can install the package:
+From CRAN you can install the package using:
 ```
 install.packages("gllvm")
 ```
