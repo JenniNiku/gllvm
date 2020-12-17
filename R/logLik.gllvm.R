@@ -38,7 +38,7 @@ logLik.gllvm <- function(object, ...)
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
   }
   if(object$quadratic=="LV"){
-    object$params$theta[-1,-c(1:object$num.lv),drop=FALSE]<-NA
+    object$params$theta[-1,-c(1:object$num.lv)]<-NA
   }
   attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))]) - object$num.lv * (object$num.lv - 1) / 2
   attributes(logL)$nobs <- dim(object$y)[1]
