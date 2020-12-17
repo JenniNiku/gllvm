@@ -759,7 +759,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       }
     }
     
-    out$quadratic <- quadratic
+    out$quadratic <- fitg$quadratic
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
     out$call <- match.call()
