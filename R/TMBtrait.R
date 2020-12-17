@@ -617,7 +617,7 @@ trait.TMB <- function(
         lambda1 <- param1[nam=="lambda"]; 
         u1 <- matrix(param1[nam=="u"],n,nlvr) 
         Au<- param1[nam=="Au"]
-        lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = p)
+        lambda2 <- abs(matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = p))
 
       if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"]}
       if(row.eff == "random"){lg_sigma1 <- param1[nam=="log_sigma"]} else {lg_sigma1 = 0}
@@ -654,7 +654,14 @@ trait.TMB <- function(
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
-      if(inherits(optr, "try-error")){optr <- optr1; objr <- objr1; quadratic <- "LV";}
+      
+      #quick check to see if something actually happened
+      flag <- 1
+      if(all(round(lambda2,0)==round(matrix(abs(optr$par[names(optr$par)=="lambda2"]),byrow=T,ncol=num.lv,nrow=p),0))){
+        flag <- 0
+        warning("Full quadratic model did not properly converge or all quadratic coefficients are close to zero. Try changing 'start.struc' in 'control.start'. /n")
+      }
+      if(inherits(optr, "try-error") || flag == 0){optr <- optr1; objr <- objr1; quadratic <- "LV";}
       
     }
     
@@ -869,6 +876,7 @@ trait.TMB <- function(
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
   out$convergence <- optrFinal$convergence == 0
+  out$quadratic <- quadratic
   out$logL <- -out$logL
   out$zeta.struc <- zeta.struc
   out$beta0com <- beta0com
