@@ -149,6 +149,7 @@ Type objective_function<Type>::operator() ()
   
   
   if(method<1){
+    Type pi =  2 * acos(0.0); 
     eta += r0*xr + offset;
     
     matrix<Type> cQ(n,p);
@@ -175,8 +176,8 @@ Type objective_function<Type>::operator() ()
       }
 
       for (int i=0; i<n; i++) {
-        if(nlvr == num_lv) nll -= 0.5*(log((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
-        if(nlvr>num_lv) nll -= 0.5*(log((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
+        if(nlvr == num_lv) nll -= 0.5*(log(2*exp(1)*pi*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
+        if(nlvr>num_lv) nll -= 0.5*(log(2*exp(1)*pi*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
       nll -= -0.5*n*log(Cu.determinant())*random(0);//n*
