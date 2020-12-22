@@ -1395,14 +1395,20 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
-                                 
-nobs.gllvm <- function(object){
-n <- dim(object$y)[1]
-return(n)
-}
-##' @importFrom stats nobs
-##' @export
 
+#'@export 
+#'@export nobs.gllvm
+#'@importFrom stats nobs                               
+nobs.gllvm <- function(object){
+  n <- dim(object$y)[1]
+  return(n)
+}
+
+#'@export nobs
+nobs <- function(object, ...)
+{
+  UseMethod(generic = "nobs")
+}
 AICc.gllvm <- function(object, ...){
   objectlist <- list(object, ...)
   IC<-lapply(objectlist,function(x){
