@@ -22,7 +22,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
   }
     num.lv <- object$num.lv
     p <- ncol(object$y)
-    opt<-object$params$theta[,1:num.lv]/(2*object$params$theta[,-c(1:num.lv)])
+    opt<--object$params$theta[,1:num.lv]/(2*object$params$theta[,-c(1:num.lv)])
     if(is.null(object$sd)){
       cat("Standard errors not present in model, calculating...")
       object$Hess<-se.gllvm(object)$Hess
