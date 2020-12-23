@@ -505,10 +505,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(any(rowSums(y)==0))
         warning("There are rows full of zeros in y. \n");
       }
-    if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
-      stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
-      #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
-    }
+    # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
+    #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
+    #   #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
+    # }
 
     if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")

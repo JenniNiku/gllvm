@@ -174,6 +174,16 @@ Type objective_function<Type>::operator() ()
             k++;
           }}
       }
+      //set VA covariances for random rows to zero for quadratic model
+      if(quadratic>0&nlvr>num_lv){
+        for(int i=0; i<n; i++){
+          for (int d=0; d<(nlvr); d++){
+              if(d!=0){
+          A(d,0,i) = 0.0;
+        }
+      }
+      }
+      }
 
       for (int i=0; i<n; i++) {
         if(nlvr == num_lv) nll -= 0.5*(log((2*exp(1)*pi*A.col(i).matrix()*A.col(i).matrix().transpose()).matrix().determinant()) - ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
