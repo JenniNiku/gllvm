@@ -66,10 +66,18 @@
 #' at site \eqn{i}, and it can be fixed or random effect, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 #' specific coefficients related to covariates and the latent variables, respectively.
 #'
+#'Alternatively, a more complex version of the model can be fitted with \code{quadratic = TRUE}, where species are modeled as a quadratic function of the latent variables:
+#'#' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
+#'Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
+#'the ecological theoretical model where species are generally recognized to exhibit non-lineawr response curves.
+#'If \code {quadratic == "LV"}, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
+#'per species and can be expected to be more applicable to most datsets. The quadratic coefficients D can be used to calculate the length of 
+#'ecological gradients.
+#'
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 #' are included. The expectation of response \eqn{Y_{ij}} is
 #'
-#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
+#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j - u_i'D_ju_i}
 #'
 #' where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are the main effects
 #' or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms. Vectors \eqn{b_j} are 
@@ -77,10 +85,18 @@
 #' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 #'
 #'
+#'
 #' The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 #' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 #' However, sometimes this is computationally too demanding, and default option
 #' \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
+#'  
+#' When \code{quadratic == TRUE} or \code{quadratic == "LV"}, a GLLVM with linear responses can externally be used to generate starting values for the latent variables.
+#' The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
+#' For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
+#' This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
+#' As a result, it should rarely be required to fit a GLLVM with quadratic responses and negative binomial distribution (or row-effects).
+#' 
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #'
