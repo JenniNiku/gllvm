@@ -494,7 +494,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       la.link.bin <- family$link
       family <- family$family
     }
-
+    if(num.lv==0)quadratic <- FALSE
+    
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
 
@@ -585,7 +586,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         out$link <- "probit"
     }
     out$offset <- offset
-    if(num.lv==0)quadratic <- FALSE
     if(quadratic=="LV")start.struc <- "LV"
     if (TMB) {
       trace = FALSE
