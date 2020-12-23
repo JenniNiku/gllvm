@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -1396,9 +1396,8 @@ mlm <- function(y, X = NULL, index = NULL){
   out
 }
 
-#'@export 
+#'@export
 #'@export nobs.gllvm
-#'@importFrom stats nobs                               
 nobs.gllvm <- function(object){
   n <- dim(object$y)[1]
   return(n)
@@ -1409,6 +1408,7 @@ nobs <- function(object, ...)
 {
   UseMethod(generic = "nobs")
 }
+
 AICc.gllvm <- function(object, ...){
   objectlist <- list(object, ...)
   IC<-lapply(objectlist,function(x){
