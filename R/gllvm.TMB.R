@@ -336,6 +336,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       lambda2 <- matrix(optr$par, byrow = T, ncol = num.lv, nrow = p)
       
+      if(row.eff=="random"){
+        u <- u[,-1]
+      }
+      
       if(inherits(optr,"try-error")) warning(optr[1]);
       }
     
