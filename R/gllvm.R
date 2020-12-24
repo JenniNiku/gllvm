@@ -348,7 +348,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$start.lvs = NULL
       if (!("randomX.start" %in% names(x))) 
         x$randomX.start = "res"
-      if (!("quad,start" %in% names(x))) 
+      if (!("quad.start" %in% names(x))) 
         x$quad.start = 0.01
       if (!("start.struc" %in% names(x))) 
         x$start.struc = "LV"
