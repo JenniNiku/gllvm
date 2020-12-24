@@ -129,7 +129,7 @@ trait.TMB <- function(
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal", "gamma", "exponential")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal")))
-    stop("Lambda matrix (covariance of vartiational distribution for latent variable) not permitted...sorry!")
+    stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
   if(num.lv == 1) Lambda.struc <- "diagonal" ## Prevents it going to "unstructured" loops and causing chaos
   trial.size <- 1
 
