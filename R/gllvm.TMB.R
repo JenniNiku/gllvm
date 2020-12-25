@@ -150,7 +150,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         }else if(class(start.params)[1]=="gllvm" && quadratic != FALSE){
           if(start.struc=="LV"|quadratic=="LV"){
             lambda2 <- matrix(quad.start, ncol = num.lv, nrow = 1)  
-          }else if(start.struc=="all"&quadratic=="all"){
+          }else if(start.struc=="all"&quadratic==TRUE){
             lambda2 <- matrix(quad.start, ncol = num.lv, nrow = p)
           }
         }
@@ -311,7 +311,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
         map.list2$B = factor(rep(NA, 1))
         map.list2$Br = factor(rep(NA,length(Br)))
-        map.list2$lambda = factor(rep(NA, length(lambda)))
+        #map.list2$lambda = factor(rep(NA, length(lambda)))
         map.list2$u = factor(rep(NA, length(u)))
         map.list2$lg_phi = factor(rep(NA, length(phi)))
         map.list2$log_sigma = factor(rep(NA, length(sigma)))
@@ -334,7 +334,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
-      lambda2 <- matrix(optr$par, byrow = T, ncol = num.lv, nrow = p)
+      lambda <- optr$par[names(optr$par)=="lambda"]
+      lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = p)
       
       if(row.eff=="random"){
         u <- u[,-1]
@@ -466,10 +467,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         
         #quick check to see if something actually happened
         flag <- 1
-        
-        if(all(round(lambda2,0)==round(matrix(abs(optr$par[names(optr$par)=="lambda2"]),byrow=T,ncol=num.lv,nrow=p),0))){
+        if(!inherits(optr,"try-error")){
+          if(all(round(lambda2,0)==round(matrix(abs(optr$par[names(optr$par)=="lambda2"]),byrow=T,ncol=num.lv,nrow=p),0))){
+            flag <- 0
+            warning("Full quadratic model did not properly converge or all quadratic coefficients are close to zero. Try changing 'start.struc' in 'control.start'. \n")
+          }  
+        }else{
           flag <- 0
-          warning("Full quadratic model did not properly converge or all quadratic coefficients are close to zero. Try changing 'start.struc' in 'control.start'. \n")
+          warning("Full quadratic model did not properly converge. Try changing 'seed' in 'control', or 'starting.val' or start.struc' in 'control.start'. \n")
         }
         
         if(optimizer=="nlminb"){
