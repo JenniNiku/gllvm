@@ -1213,13 +1213,14 @@ inf.criteria <- function(fit)
   abund=fit$y
   num.lv=fit$num.lv
   n <- dim(abund)[1]
+  p <- dim(abund)[2]
   k<-attributes(logLik.gllvm(fit))$df
 
   BIC <- -2*fit$logL + (k) * log(n)
   # AIC
   AIC <- -2*fit$logL + (k) * 2
   # AICc
-  AICc <- AIC + 2*k*(k+1)/(n-k-1)
+  AICc <- AIC + 2*k*(k+1)/(n*p-k-1)
   list(BIC = BIC, AIC = AIC, AICc = AICc, k = k)
 }
 
@@ -1414,8 +1415,9 @@ AICc.gllvm <- function(object, ...){
   IC<-lapply(objectlist,function(x){
     abund=x$y
     n <- dim(abund)[1]
+    p <- dim(abund)[2]
     k<-attributes(logLik.gllvm(x))$df
-    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n-k-1)
+    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n*p-k-1)
     return(AICc)
   })
   return(unlist(IC))
