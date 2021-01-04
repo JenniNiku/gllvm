@@ -1400,7 +1400,7 @@ mlm <- function(y, X = NULL, index = NULL){
 #'@export
 #'@export nobs.gllvm
 nobs.gllvm <- function(object){
-  n <- dim(object$y)[1]
+  n <- prod(dim(object$y))
   return(n)
 }
 
