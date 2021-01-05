@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -1213,13 +1213,14 @@ inf.criteria <- function(fit)
   abund=fit$y
   num.lv=fit$num.lv
   n <- dim(abund)[1]
+  p <- dim(abund)[2]
   k<-attributes(logLik.gllvm(fit))$df
 
   BIC <- -2*fit$logL + (k) * log(n)
   # AIC
   AIC <- -2*fit$logL + (k) * 2
   # AICc
-  AICc <- AIC + 2*k*(k+1)/(n-k-1)
+  AICc <- AIC + 2*k*(k+1)/(n*p-k-1)
   list(BIC = BIC, AIC = AIC, AICc = AICc, k = k)
 }
 
@@ -1395,11 +1396,36 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
-                                 
-nobs.gllvm <- function(object){
-n <- dim(object$y)[1]
-return(n)
-}
-##' @importFrom stats nobs
-##' @export
 
+#'@export
+#'@export nobs.gllvm
+nobs.gllvm <- function(object){
+  n <- prod(dim(object$y))
+  return(n)
+}
+
+#'@export nobs
+nobs <- function(object, ...)
+{
+  UseMethod(generic = "nobs")
+}
+
+AICc.gllvm <- function(object, ...){
+  objectlist <- list(object, ...)
+  IC<-lapply(objectlist,function(x){
+    abund=x$y
+    n <- dim(abund)[1]
+    p <- dim(abund)[2]
+    k<-attributes(logLik.gllvm(x))$df
+    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n*p-k-1)
+    return(AICc)
+  })
+  return(unlist(IC))
+}
+
+
+#'@export AICc
+AICc <- function(object, ...)
+{
+  UseMethod(generic = "AICc")
+}

@@ -31,6 +31,7 @@ se.gllvm <- function(object, ...){
   p <- ncol(object$y)
   method <- object$method
   num.lv <- object$num.lv
+  quadratic <- object$quadratic
   nlvr <- num.lv + (object$row.eff=="random")*1
   family = object$family
   familyn <- objrFinal$env$data$family
@@ -53,6 +54,8 @@ se.gllvm <- function(object, ...){
 
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
       incl[names(objrFinal$par)=="Abb"] <- FALSE;
+      if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
+      
       incl[names(objrFinal$par)=="Au"] <- FALSE; 
       if(nlvr > 0) incld[names(objrFinal$par)=="Au"] <- TRUE
       
@@ -89,6 +92,7 @@ se.gllvm <- function(object, ...){
         incl[names(objrFinal$par)=="u"] <- FALSE;
         incld[names(objrFinal$par)=="u"] <- FALSE;
         incl[names(objrFinal$par)=="lambda"] <- FALSE;
+        incl[names(objrFinal$par)=="lambda2"] <- FALSE;
         incl[names(objrFinal$par)=="Au"] <- FALSE;
       }
       
@@ -146,6 +150,17 @@ se.gllvm <- function(object, ...){
         colnames(se.theta) <- paste("LV", 1:num.lv, sep="");
         rownames(se.theta) <- colnames(object$y)
         out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
+        if(quadratic==TRUE){
+          se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
+          colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
+          se <- se[-(1:(num.lv*p))]
+          out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
+        }else if(quadratic=="LV"){
+          se.lambdas2 <- matrix(se[1:num.lv], p, num.lv, byrow = T)
+          colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
+          se <- se[-(1:num.lv)]
+          out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
+        }
         # diag(out$sd$theta) <- diag(out$sd$theta)*diag(object$params$theta) !!!
       }
       out$sd$beta0 <- se.beta0; 
@@ -233,6 +248,7 @@ se.gllvm <- function(object, ...){
     incl[names(objrFinal$par)=="B"] <- FALSE
     incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
     incl[names(objrFinal$par)=="Abb"]=FALSE;
+    if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     
     if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
     
@@ -319,8 +335,20 @@ se.gllvm <- function(object, ...){
       colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
       rownames(se.lambdas) <- colnames(object$y)
       out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
-      diag(out$sd$theta) <- diag(out$sd$theta)*diag(object$params$theta) 
+      diag(out$sd$theta) <- diag(out$sd$theta)*diag(object$params$theta[,1:object$num.lv,drop=F]) 
+      if(quadratic==TRUE){
+        se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
+        colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
+        se <- se[-(1:(num.lv*p))]
+        out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
+      }else if(quadratic=="LV"){
+        se.lambdas2 <- matrix(se[1:num.lv], p, num.lv, byrow = T)
+        colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
+        se <- se[-(1:num.lv)]
+        out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
+      }
     }
+    
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
     if(!is.null(object$X)){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));

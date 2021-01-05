@@ -34,6 +34,11 @@ Therefore, on linear predictor scale, we have the variance
 \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j) + \sigma^2 = \theta_j'\theta_j + log(\phi_j + 1).}
 which leads to the residual covariance matrix \eqn{\Theta \Theta' + diag(\Phi)}, where \eqn{\Psi} is the diagonal matrix with \eqn{log(\phi_j + 1)} as diagonal elements (\code{adjust = 1}).
 
+Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
+\deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).}
+which leads to the residual covariance matrix \eqn{\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)}, where \eqn{\Gamma_j} holds the quadratic coefficients.
+Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.
+
 The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametrization
 \deqn{Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),}
 where \eqn{\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)} and \eqn{\mu_{ij}} is as above. The mean and the variance are of similar form as above and we have that
@@ -49,6 +54,7 @@ Now we have that \eqn{\mu_{ij} = P(Y_{ij} = 1) = P(Y^*_{ij} > 0) = P(\eta_{ij} >
 On linear predictor scale we then have that
 \deqn{V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).}
 For the probit model, the residual covariance matrix is then \eqn{\Theta\Theta' + I_m}, and for the logit model \eqn{\Theta\Theta' + \pi^2/3 I_m}.
+Similarly as above, for a GLLVM where species are a quadratic function of the latent variables, the term \eqn{2\Gamma_j\Gamma_j'} is added to the residual covariance matrix.
 }
 \examples{
 \dontrun{
@@ -67,5 +73,5 @@ rescov$trace.q
 }
 }
 \author{
-Francis K.C. Hui, Jenni Niku, David I. Warton
+Francis K.C. Hui, Jenni Niku, David I. Warton, Bert van der Veen
 }

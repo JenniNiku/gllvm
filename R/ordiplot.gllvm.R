@@ -63,12 +63,13 @@
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
                            jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
-  if (any(class(object) != "gllvm"))
+  if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   a <- jitter.amount
   n <- NROW(object$y)
   p <- NCOL(object$y)
   num.lv <- object$num.lv
+  quadratic <- object$quadratic
   if (!is.null(ind.spp)) {
     ind.spp <- min(c(p, ind.spp))
   } else {
@@ -95,7 +96,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     svd_rotmat_species <- do_svd$v
     
     choose.lvs <- object$lvs
-    choose.lv.coefs <- object$params$theta
+    if(quadratic == FALSE)choose.lv.coefs <- object$params$theta
+    if(quadratic != FALSE){
+      testcov <- object$lvs %*% t(object$params$theta[, 1:object$num.lv]) + 
+        object$lvs^2 %*% t(object$params$theta[, -c(1:object$num.lv)])
+      do_svd <- svd(testcov, object$num.lv, object$num.lv)
+      choose.lvs <- do_svd$u
+      choose.lv.coefs <- do_svd$v
+    }
+    
     bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2)) 
     ## Standardize both to unit norm then scale using bothnorms. Note alpha = 0.5 so both have same norm. Otherwise "significance" becomes scale dependent
     scaled_cw_sites <- t(t(choose.lvs) / sqrt(colSums(choose.lvs^2)) * (bothnorms^alpha)) 
@@ -105,9 +114,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
-    Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
+    if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, object$num.lv, object$num.lv)

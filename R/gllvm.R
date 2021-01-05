@@ -11,6 +11,7 @@
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
+#' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param la.link.bin link function for binomial family if \code{method = "LA"}. Options are "logit" and "probit.
@@ -49,6 +50,8 @@
 #'   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
 #'   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
+#'   \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"}(default) and \code{"all"}
+#'   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.
 #' }
 #' @param ... Not used.
 #'
@@ -63,10 +66,18 @@
 #' at site \eqn{i}, and it can be fixed or random effect, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 #' specific coefficients related to covariates and the latent variables, respectively.
 #'
+#'Alternatively, a more complex version of the model can be fitted with \code{quadratic = TRUE}, where species are modeled as a quadratic function of the latent variables:
+#'#' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
+#'Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
+#'the ecological theoretical model where species are generally recognized to exhibit non-lineawr response curves.
+#'If \code {quadratic == "LV"}, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
+#'per species and can be expected to be more applicable to most datsets. The quadratic coefficients D can be used to calculate the length of 
+#'ecological gradients.
+#'
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 #' are included. The expectation of response \eqn{Y_{ij}} is
 #'
-#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j}
+#' \deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j - u_i'D_ju_i}
 #'
 #' where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above. Vectors \eqn{\beta_x} and \eqn{\beta_t} are the main effects
 #' or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms. Vectors \eqn{b_j} are 
@@ -74,10 +85,18 @@
 #' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 #'
 #'
+#'
 #' The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 #' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 #' However, sometimes this is computationally too demanding, and default option
 #' \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
+#'  
+#' When \code{quadratic == TRUE} or \code{quadratic == "LV"}, a GLLVM with linear responses can externally be used to generate starting values for the latent variables.
+#' The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
+#' For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
+#' This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
+#' As a result, it should rarely be required to fit a GLLVM with quadratic responses and negative binomial distribution (or row-effects).
+#' 
 #'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #'
@@ -275,19 +294,18 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   num.lv = 2, family, row.eff = FALSE,
-                  offset = NULL, sd.errors = TRUE, method = "VA",
+                  offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, la.link.bin = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
-                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res"), ...
+                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV"), ...
                   ) {
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
     datayx <- NULL
-    
     pp.pars <- list(...)
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
@@ -314,7 +332,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if (!("Ab.diag.iter" %in% names(x))) 
         x$Ab.diag.iter = 0
       if (!("Lambda.start" %in% names(x))) 
-        x$Lambda.start = c(0.1, 0.1, 0.1)
+        x$Lambda.start = c(0.3, 0.3, 0.3)
       x
     }
     fill_control.start = function(x){
@@ -330,6 +348,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$start.lvs = NULL
       if (!("randomX.start" %in% names(x))) 
         x$randomX.start = "res"
+      if (!("quad.start" %in% names(x))) 
+        x$quad.start = 0.01
+      if (!("start.struc" %in% names(x))) 
+        x$start.struc = "LV"
       x
     }
     control <- fill_control(c(pp.pars, control))
@@ -339,6 +361,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace;
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start
+    
+    
     
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -469,7 +494,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       la.link.bin <- family$link
       family <- family$family
     }
-
+    if(num.lv==0)quadratic <- FALSE
+    
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
 
@@ -479,16 +505,27 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(any(rowSums(y)==0))
         warning("There are rows full of zeros in y. \n");
       }
-
+    # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
+    #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
+    #   #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
+    # }
 
     if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
-      stop("Random row effect model is not implemented for ordinal family. \n")
+      stop("Random row effect model is not implemented for ordinal family without TMB. \n")
     }
+    
     if (method == "LA" && family == "ordinal") {
       cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
       method <- "VA"
     }
-
+    if (method == "LA" && quadratic != FALSE){
+      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA is instead. \n")
+      method <- "VA"
+    }
+    if (method == "VA" && quadratic != FALSE && TMB == FALSE){
+      cat("The quadratic model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
+      TMB <- TRUE
+    }
     if (method == "LA" && !TMB) {
       cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
       TMB = TRUE
@@ -549,8 +586,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         out$link <- "probit"
     }
     out$offset <- offset
-
-
+    if(quadratic=="LV")start.struc <- "LV"
     if (TMB) {
       trace = FALSE
       if (row.eff == TRUE)
@@ -568,6 +604,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             reltol = reltol,
             seed = seed,
             maxit = maxit,
+            start.struc = start.struc,
+            quad.start = quad.start,
             start.lvs = start.lvs,
             offset = O,
             sd.errors = sd.errors,
@@ -589,7 +627,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             randomX.start = randomX.start,
             beta0com = beta0com, 
             scale.X = scale.X,
-            zeta.struc = zeta.struc
+            zeta.struc = zeta.struc,
+            quadratic = quadratic
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -607,6 +646,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             reltol = reltol,
             seed = seed,
             maxit = maxit,
+            start.struc = start.struc,
+            quad.start = quad.start,
             start.lvs = start.lvs,
             offset = O,
             sd.errors = sd.errors,
@@ -622,7 +663,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
-            zeta.struc = zeta.struc
+            zeta.struc = zeta.struc,
+            quadratic = quadratic
           )
       }
 
@@ -729,13 +771,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if(!out$convergence) {
       warning("The maximum number of iterations was reached, algorithm did not converge.")
       } else if(gradient.check && TMB){
-        if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help.")
+        if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
     }
     
+    out$quadratic <- fitg$quadratic
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
     out$call <- match.call()
-    class(out) <- "gllvm"
+    if(quadratic == FALSE){
+      class(out) <- "gllvm"  
+    }else{
+      class(out) <- c("gllvm","gllvm.quadratic")
+    }
+    
     return(out)
   }

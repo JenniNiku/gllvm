@@ -30,6 +30,7 @@
 
 predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
 {
+  if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
   if(is.null(newX)==FALSE)

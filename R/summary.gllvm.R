@@ -23,6 +23,7 @@ summary.gllvm <- function(object, ...) {
   nX <- dim(object$X)[2]
   nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
+  quadratic <- object$quadratic
   family <- object$family
 
   M <- cbind(object$params$beta0, object$params$theta)
@@ -37,8 +38,13 @@ summary.gllvm <- function(object, ...) {
   crit <-
     newnams <- c("Intercept")
 
-  if (num.lv > 0)
-    newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
+  if (num.lv > 0){
+    if(quadratic != FALSE)
+      newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""), paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
+    if(quadratic == FALSE)
+      newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
+  }
+    
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
   sumry$Call <- object$call

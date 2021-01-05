@@ -22,6 +22,11 @@
 #' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j) + \sigma^2 = \theta_j'\theta_j + log(\phi_j + 1).}
 #' which leads to the residual covariance matrix \eqn{\Theta \Theta' + diag(\Phi)}, where \eqn{\Psi} is the diagonal matrix with \eqn{log(\phi_j + 1)} as diagonal elements (\code{adjust = 1}).
 #' 
+#' Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
+#' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).}
+#' which leads to the residual covariance matrix \eqn{\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)}, where \eqn{\Gamma_j} holds the quadratic coefficients.
+#' Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.
+#' 
 #' The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametrization
 #' \deqn{Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),}
 #' where \eqn{\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)} and \eqn{\mu_{ij}} is as above. The mean and the variance are of similar form as above and we have that
@@ -37,8 +42,10 @@
 #' On linear predictor scale we then have that
 #' \deqn{V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).}
 #' For the probit model, the residual covariance matrix is then \eqn{\Theta\Theta' + I_m}, and for the logit model \eqn{\Theta\Theta' + \pi^2/3 I_m}.
-#'
-#' @author Francis K.C. Hui, Jenni Niku, David I. Warton
+#' Similarly as above, for a GLLVM where species are a quadratic function of the latent variables, the term \eqn{2\Gamma_j\Gamma_j'} is added to the residual covariance matrix.
+#' 
+#' 
+#' @author Francis K.C. Hui, Jenni Niku, David I. Warton, Bert van der Veen
 #'
 #' @examples
 #' \dontrun{
@@ -61,24 +68,52 @@
 #'@export getResidualCov.gllvm
 getResidualCov.gllvm = function(object, adjust = 1)
 {
-  ResCov <- object$params$theta %*% t(object$params$theta)
-  ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+  
+  if(any(class(object)=="gllvm.quadratic")){
+    ResCov <- object$params$theta[,1:object$num.lv,drop=F] %*% t(object$params$theta[,1:object$num.lv,drop=F]) + 2*object$params$theta[,-c(1:object$num.lv),drop=F]%*%t(object$params$theta[,-c(1:object$num.lv),drop=F])
+    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov.q2 <- sapply(1:object$num.lv, function(q) object$params$theta[, q+object$num.lv] %*% t(object$params$theta[, q+object$num.lv]), simplify = F)
+  }else{
+    ResCov <- object$params$theta %*% t(object$params$theta)
+    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+  }
+  
+  
   if(adjust > 0 && object$family %in% c("negative.binomial", "binomial")){
   if(object$family == "negative.binomial"){ 
     if(adjust == 1) {
-      ResCov <- ResCov + diag(log(object$params$phi + 1))
-      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)
+      if(any(class(object)=="gllvm.quadratic")){
+        ResCov <- ResCov + diag(log(object$params$phi + 1))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
+        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
+      }else{
+        ResCov <- ResCov + diag(log(object$params$phi + 1))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)  
+      }
       }
     if(adjust == 2){
+      if(any(class(object)=="gllvm.quadratic")){
+        ResCov <- ResCov + diag(trigamma(1/object$params$phi))
+        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
+        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
+      }else{
      ResCov <- ResCov + diag(trigamma(1/object$params$phi))
      ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/object$num.lv, simplify = F)
+    }
      }
     
   }
     if(object$family == "binomial"){ 
       if(object$link == "probit"){
-        ResCov <- ResCov + diag(ncol(object$y))
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)
+        if(any(class(object)=="gllvm.quadratic")){
+          ResCov <- ResCov + diag(ncol(object$y))
+          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+        }else{
+          ResCov <- ResCov + diag(ncol(object$y))
+          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)  
+        }  
+        
       } 
       if(object$link == "logit"){
         ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
@@ -88,9 +123,19 @@ getResidualCov.gllvm = function(object, adjust = 1)
   }
   ResCov.q <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q[[q]])))
   names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
+  if(any(class(object)=="gllvm.quadratic")){
+    ResCov.q2 <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q2[[q]])))
+    names(ResCov.q2) <- paste("LV", 1:object$num.lv, "^2",sep = "")
+  }
+  
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
-  out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)
+  if(any(class(object)=="gllvm.quadratic")){
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q, trace.q2 = ResCov.q2)
+  }else{
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)  
+  }
+  
   return(out)
 }
 
