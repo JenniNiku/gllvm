@@ -33,16 +33,12 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
     colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
     
     
-      for (q in 1:num.lv) {
-        for (j in 1:p) {
-          if (q > 1 & j < q) {
-            # add zeros where necessary
-            V <- cbind(cbind(V[, 1:c(p * q - 1)], 0), V[, (p * q ):ncol(V)])
-            V <- rbind(rbind(V[1:c(p * q - 1), ], 0), V[(p * q):nrow(V), ])
-          }
-        }
-      }
-    
+    idx<-which(c(upper.tri(object$params$theta[,1:num.lv])))
+    #add zeros where necessary
+    for(q in 1:length(idx)){
+      V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
+      V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
+    }
     colnames(V)[colnames(V)==""]<-"lambda"
       
       opt.sd<-matrix(0,nrow=p,ncol=num.lv)
