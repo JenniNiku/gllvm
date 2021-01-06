@@ -22,9 +22,9 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
   }
     num.lv <- object$num.lv
     p <- ncol(object$y)
-    opt<-object$params$theta[,1:num.lv]/(2*object$params$theta[,-c(1:num.lv)])
-    if(is.null(object$sd)|any(object$sd)==FALSE){
-      cat("Standard errors not present in model, calculating...")
+    opt<-object$params$theta[,1:num.lv]/(2*abs(object$params$theta[,-c(1:num.lv)]))
+    if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
+      cat("Standard errors not present in model, calculating...\n")
       object$Hess<-se.gllvm(object)$Hess
     }
     V <- object$Hess$cov.mat.mod
@@ -83,8 +83,8 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
   num.lv <- object$num.lv
   p <- ncol(object$y)
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv)])
-  if(is.null(object$sd)|any(object$sd)==FALSE){
-    cat("Standard errors not present in model, calculating...")
+  if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
+    cat("Standard errors not present in model, calculating...\n")
     object$Hess<-se.gllvm(object)$Hess
   }
   V <- object$Hess$cov.mat.mod
@@ -136,14 +136,14 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
 #'@export
 gradient.length.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
-    stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
+    stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.\n")
   }
   num.lv <- object$num.lv
   p <- ncol(object$y)
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv),drop=F])
   
-if(is.null(object$sd)|any(object$sd)==FALSE){
+if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
     cat("Standard errors not present in model, calculating...")
     object$Hess<-se.gllvm(object)$Hess
   }
