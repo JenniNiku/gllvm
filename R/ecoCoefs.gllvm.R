@@ -23,7 +23,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
     num.lv <- object$num.lv
     p <- ncol(object$y)
     opt<-object$params$theta[,1:num.lv]/(2*abs(object$params$theta[,-c(1:num.lv)]))
-    if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
+    if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       cat("Standard errors not present in model, calculating...\n")
       object$Hess<-se.gllvm(object)$Hess
     }
@@ -83,7 +83,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
   num.lv <- object$num.lv
   p <- ncol(object$y)
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv)])
-  if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
+  if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     cat("Standard errors not present in model, calculating...\n")
     object$Hess<-se.gllvm(object)$Hess
   }
@@ -143,7 +143,7 @@ gradient.length.gllvm <- function(object,sd.errors = TRUE) {
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv),drop=F])
   
-if(is.null(object$sd)|all(unlist(object$sd))==FALSE){
+if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     cat("Standard errors not present in model, calculating...")
     object$Hess<-se.gllvm(object)$Hess
   }
