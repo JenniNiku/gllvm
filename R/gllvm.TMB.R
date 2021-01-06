@@ -336,7 +336,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         DLL = "gllvm")##GLLVM
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -390,7 +390,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         DLL = "gllvm")##GLLVM
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -430,7 +430,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           DLL = "gllvm")
         
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
         }
         if(optimizer=="optim") {
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -531,7 +531,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       
       data.list = list(y = y, x = Xd,xr=xr,xb=xb,offset=offset, num_lv = num.lv,quadratic = FALSE, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       randomp <- "u"
-      map.list$Au <- map.list$Abb <- factor(NA)
+      map.list$Au <- map.list$Abb <-  map.list$lambda2 <- factor(NA)
       
       if(row.eff=="random"){
         if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -561,10 +561,10 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         m <- length(objr$par)
         low <- rep(-restrict,m); upp=rep(restrict,m);
         low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol),lower = low,upper = upp),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
       }
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,maxit=maxit)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
