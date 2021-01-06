@@ -31,7 +31,7 @@
 #'  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
 #'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.}
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE}, defaults to 200.}
-#'  \item{\emph{maxit}: }{ maximum number of iterations within \code{optim} function, defaults to 1000.}
+#'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
@@ -317,7 +317,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
       if (!("maxit" %in% names(x))) 
-        x$maxit = 1000
+        x$maxit = 4000
       if (!("trace" %in% names(x))) 
         x$trace = FALSE
       x
