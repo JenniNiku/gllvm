@@ -110,7 +110,7 @@ Type objective_function<Type>::operator() ()
       if(lambda2.cols()==1){
         for (int j=0; j<p; j++){
           for (int q=1; q<nlvr; q++){
-            D(q,q,j) = fabs(lambda2(q-1,0)); //equal tolerances model
+            D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
           }
         } 
       }else{
@@ -125,7 +125,7 @@ Type objective_function<Type>::operator() ()
       if(lambda2.cols()==1){
         for (int j=0; j<p; j++){
           for (int q=0; q<num_lv; q++){
-            D(q,q,j) = fabs(lambda2(q,0)); //equal tolerances model
+            D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
           }
         } 
       }else{
@@ -442,6 +442,9 @@ Type objective_function<Type>::operator() ()
   
 } else {
   eta += r0*xr + offset;
+  if(nlvr>0){
+  eta += lam;
+  }
   
   // Include random slopes if random(1)>0
   if(random(1)>0){
