@@ -82,45 +82,24 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
   }
   num.lv <- object$num.lv
   p <- ncol(object$y)
+  quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv)])
   if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     cat("Standard errors not present in model, calculating...\n")
     object$Hess<-se.gllvm(object)$Hess
   }
   V <- object$Hess$cov.mat.mod
-  idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda","lambda2")
+  idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
   V <- V[idx,idx,drop=F]
   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
   
-  
-  for (q in 1:num.lv) {
-    for (j in 1:p) {
-      if (q > 1 & j < q) {
-        # add zeros where necessary
-        V <- cbind(cbind(V[, 1:c(p * q - 1)], 0), V[, (p * q ):ncol(V)])
-        V <- rbind(rbind(V[1:c(p * q - 1), ], 0), V[(p * q):nrow(V), ])
-      }
-    }
-  }
-  
-  colnames(V)[colnames(V)==""]<-"lambda"
-  
+
   tol.sd<-matrix(0,nrow=p,ncol=num.lv)
-  
+  lambda2.var<-matrix(diag(V),ncol=num.lv,nrow=p,byrow=T)
   for (j in 1:p) {
-    idx <- colnames(V) == "lambda" | colnames(V) == "lambda2"
-    V.theta <- V[idx, idx]
-    if (object$quadratic == "LV") {
-      idx <- c((c(1:num.lv) - 1) * p + j, p * num.lv + 1:num.lv)
-    } else {
-      idx <- c((c(1:num.lv) - 1) * p + j, ((1 + p * num.lv + (num.lv * (j - 1))):(p * num.lv + (num.lv * (j - 1)) + num.lv)))
-    }
-    
-    
-    V.theta2 <- V.theta[idx, idx]
     for (i in 1:num.lv) {
       dt <- 1 / (2 * object$params$theta[, -c(1:num.lv),drop=F][j, i] * (sqrt(-2 * object$params$theta[, -c(1:num.lv),drop=F][j, i]))) # need to be calculated with covariance of gamma3 if gamma2>0..that also requires subtracting theta3 from theta2
-      tol.sd[j, i] <- sqrt(abs(V.theta2[-c(1:num.lv), -c(1:num.lv),drop=F][i, i] * dt^2))
+      tol.sd[j, i] <- sqrt(abs(lambda2.var[j,i] * dt^2))
     }
   }
   if(num.lv>1)colnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
