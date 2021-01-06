@@ -482,7 +482,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -514,7 +514,7 @@ trait.TMB <- function(
     }
 
     if(optimizer=="nlminb") {
-      timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,maxit=maxit)),silent = TRUE))
+      timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
     }
     if(optimizer=="optim") {
       timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -585,7 +585,7 @@ trait.TMB <- function(
         DLL = "gllvm")
 
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
@@ -649,7 +649,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
