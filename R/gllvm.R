@@ -5,7 +5,7 @@
 #' @param y (n x m) matrix of responses.
 #' @param X matrix or data.frame of environmental covariates.
 #' @param TR matrix or data.frame of trait covariates.
-#' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as ’id’. When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
+#' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
@@ -70,7 +70,7 @@
 #'#' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
 #'Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
 #'the ecological theoretical model where species are generally recognized to exhibit non-lineawr response curves.
-#'If \code {quadratic == "LV"}, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
+#'For a model with quadratic responses, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
 #'per species and can be expected to be more applicable to most datsets. The quadratic coefficients D can be used to calculate the length of 
 #'ecological gradients.
 #'
@@ -91,7 +91,7 @@
 #' However, sometimes this is computationally too demanding, and default option
 #' \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
 #'  
-#' When \code{quadratic == TRUE} or \code{quadratic == "LV"}, a GLLVM with linear responses can externally be used to generate starting values for the latent variables.
+#' For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analaysis.
 #' The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
 #' For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
 #' This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
