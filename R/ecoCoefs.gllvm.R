@@ -51,7 +51,6 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
     }
     
       V<-V[idx,idx]
-      opt.sd<-matrix(0,nrow=p,ncol=num.lv)
       du1 <- NULL #linear coefficients
       du2 <- NULL #quadratic coefficients
       #du1 needs to be species then LV, to accommmodate the order in V
