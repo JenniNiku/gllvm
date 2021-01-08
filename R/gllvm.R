@@ -774,6 +774,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
     }
+    if(is.null(out$sd)){
+      out$sd <- FALSE
+    }
     
     out$quadratic <- fitg$quadratic
     out$Hess = fitg$Hess
