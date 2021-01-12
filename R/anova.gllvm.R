@@ -96,8 +96,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
       if(length(x$params$beta0)==1){
         df <- df-1
       }
-
-
+ 
     if(x$row.eff=="fixed"){
       df <- df-n-1
     }else if(x$row.eff=="random"){
@@ -119,7 +118,6 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
       
       
     df <- df/p
-    
     
     if(x$row.eff=="fixed"){
       df <- df+n-1
@@ -184,7 +182,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
   
   data<-rbind(Resid.Df = n - df.list, D = cbind(0,D), Df.diff = cbind(0,df.chisq), P.value =cbind(NA,Pval))
   colnames(data) <- paste("Model.",1:length(objects))
-  result2<-cbind(rep(c("Resid.Df","D","Df.diff","P.val"),each=p*(length(objects)-1)),Species=rep(colnames(object$y),4*(length(objects)-1)), data)
+  result2<-cbind(rep(c("Resid.Df","D","Df.diff","P.val"),each=p),Species=rep(colnames(object$y),times=4), data)
   result2[,4]<-as.numeric(result2[,4])
   print(result)
   return(invisible(list(table=result,data=result2)))
