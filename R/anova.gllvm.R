@@ -93,22 +93,35 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
       if(length(x$params$beta0)==1){
         df <- df-1
       }
+
+
     if(x$row.eff=="fixed"){
       df <- df-n-1
     }else if(x$row.eff=="random"){
-      df<-df-1
+      df<-df-length(x$params$sigma)
     }
       if(x$family=="ordinal"){
     if(x$zeta.struc=="common"){
       df<-(df-length(unlist(x$params$zeta)[-1]))
     }
       }
+      
+      if (!is.null(x$randomX)){
+        x$params$Br <- NULL
+        x$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
+        df <- df - length(x$params$sigmaB)
+      }else if(!is.null(x$params$B)){
+        df <- df-length(x$params$B)
+      }
+      
+      
     df <- df/p
+    
     
     if(x$row.eff=="fixed"){
       df <- df+n-1
     }else if(x$row.eff=="random"){
-      df<-df+1
+      df<-df+length(x$params$sigma)
     }
     if(x$family=="ordinal"){
     if(x$zeta.struc=="common"){
@@ -118,6 +131,13 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
     if(length(x$params$beta0)==1){
       df <- df+1
     }
+    if (!is.null(x$randomX)){
+      df <- df + length(x$params$sigmaB)
+    }else if(!is.null(x$params$B)){
+      df <- df+length(x$params$B)
+    }
+
+    
     df <- df + sapply(1:p,function(j)sum(!x$params$theta[j,1:x$num.lv]==0))
     #still add terms for traits..
     return(df)
@@ -144,7 +164,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
   
   result <- NULL
   for(j in 1:p){
-    result <- rbind(result,Species=c(colnames(object$y)[j],rep("",length(objects)-1)),Resid.Df = n - df.list[j,], D = c(0, signif(D[j,])), Df.diff = c(0, df.chisq[j,]), P.value = c("", signif(Pval[j,]*p)) )
+    result <- rbind(result,Species=c(colnames(object$y)[j],rep("",length(objects)-1)),Resid.Df = n - df.list[j,], D = c(0, signif(D[j,])), Df.diff = c(0, df.chisq[j,]), P.value = c("", signif(Pval[j,])) )
   }
     result <- as.data.frame(t(result))
     row.names(result) <- paste("Model", 1:length(objects_order))
