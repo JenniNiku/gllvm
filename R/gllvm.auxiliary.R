@@ -1349,6 +1349,29 @@ sdA<-function(fit){
   CovAerr
 }
 
+sdB<-function(fit){
+  n<-nrow(fit$y)
+  p<-ncol(fit$y)
+  incla<-rep(FALSE, length(fit$Hess$incl))
+  incla[names(fit$TMBfn$par)%in%c("u", "Br")] <- TRUE
+  fit$Hess$incla <- incla
+  
+  A<- fit$Hess$cov.mat.mod  #
+  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+  se <- (diag(abs(covb)))
+  CovAerr<-array(0, dim(fit$A))
+  for (i in 1:ncol(fit$A)) {
+    CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+  }
+  CovABerr<-array(0, dim(fit$Ab))
+  for (i in 1:ncol(fit$Ab)) {
+    CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
+  }
+  CovABerr
+}
 
 
 # draw an ellipse
@@ -1396,7 +1419,7 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
-
+                                 
 #'@export
 #'@export nobs.gllvm
 nobs.gllvm <- function(object){
@@ -1410,6 +1433,9 @@ nobs <- function(object, ...)
   UseMethod(generic = "nobs")
 }
 
+
+#'@export
+#'@export AICc.gllvm
 AICc.gllvm <- function(object, ...){
   objectlist <- list(object, ...)
   IC<-lapply(objectlist,function(x){
@@ -1422,7 +1448,6 @@ AICc.gllvm <- function(object, ...){
   })
   return(unlist(IC))
 }
-
 
 #'@export AICc
 AICc <- function(object, ...)
