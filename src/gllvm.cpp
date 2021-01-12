@@ -101,45 +101,6 @@ Type objective_function<Type>::operator() ()
     lam += u*newlam;
   }
   
-  //quadratic coefficients
-  //if random rows, add quadratic coefficients to q>0
-  array<Type> D(nlvr,nlvr,p);
-  D.fill(0.0);
-  if(quadratic>0){
-    if(nlvr>num_lv){
-      if(lambda2.cols()==1){
-        for (int j=0; j<p; j++){
-          for (int q=1; q<nlvr; q++){
-            D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
-          }
-        } 
-      }else{
-        for (int j=0; j<p; j++){
-          for (int q=1; q<nlvr; q++){
-            D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
-          }
-        } 
-      }
-      
-    }else{
-      if(lambda2.cols()==1){
-        for (int j=0; j<p; j++){
-          for (int q=0; q<num_lv; q++){
-            D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
-          }
-        } 
-      }else{
-        for (int j=0; j<p; j++){
-          for (int q=0; q<num_lv; q++){
-            D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
-          }
-        } 
-      }
-    }
-  }
-  
-  
-  
   matrix<Type> mu(n,p);
   mu.fill(0.0);
   
@@ -149,6 +110,43 @@ Type objective_function<Type>::operator() ()
   nll.fill(0.0);
   
   if(method<1){
+    //quadratic coefficients
+    //if random rows, add quadratic coefficients to q>0
+    array<Type> D(nlvr,nlvr,p);
+    D.fill(0.0);
+    if(quadratic>0){
+      if(nlvr>num_lv){
+        if(lambda2.cols()==1){
+          for (int j=0; j<p; j++){
+            for (int q=1; q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
+            }
+          } 
+        }else{
+          for (int j=0; j<p; j++){
+            for (int q=1; q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
+            }
+          } 
+        }
+        
+      }else{
+        if(lambda2.cols()==1){
+          for (int j=0; j<p; j++){
+            for (int q=0; q<num_lv; q++){
+              D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+            }
+          } 
+        }else{
+          for (int j=0; j<p; j++){
+            for (int q=0; q<num_lv; q++){
+              D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+            }
+          } 
+        }
+      }
+    }
+    
     eta += r0*xr + offset;
     
     matrix<Type> cQ(n,p);
@@ -286,10 +284,11 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             B = (-2*D.col(j).matrix()+Q);
             v = (-newlam.col(j)+Q*u.row(i).transpose());
-            Type detB = log(B.determinant());//required like this due to potential negative semi-definiteness
+            Type detB = log((B.llt().matrixL()).determinant());//required like this due to potential negative semi-definiteness
             Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum();
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-            cQ(i,j) += exp((u.row(i)*newlam.col(j)).value()-(u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value()-(D.col(j).matrix()*A.col(i).matrix()).trace()+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value()-detB)-detA);
+            e_eta(i,j) += exp(-eta(i,j) - cQ(i,j)+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value())-detA-detB);
+            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace() + cQ(i,j);
+            
           }
         }
       }
@@ -320,7 +319,9 @@ Type objective_function<Type>::operator() ()
     } else if(family==1){//NB
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          if(quadratic<1)nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          if(quadratic>0)nll(i,j) -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
+          //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -342,7 +343,8 @@ Type objective_function<Type>::operator() ()
     } else if(family==4) {//gamma
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+          if(quadratic<1)nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+          if(quadratic>0)nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -429,7 +431,8 @@ Type objective_function<Type>::operator() ()
     } else if(family==8) {// exp dist
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+          if(quadratic<1)nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+          if(quadratic>1)nll(i,j) -= ( -eta(i,j) - e_eta(i,j)*y(i,j) );
         }
       }
     }
@@ -536,6 +539,7 @@ Type objective_function<Type>::operator() ()
         }
       }
   }
-  REPORT(nll);
+  
+  REPORT(nll);//only works for VA!!
   return nll.sum();
 }
