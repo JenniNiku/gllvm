@@ -50,8 +50,8 @@
 #'   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
 #'   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
-#'   \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"}(default) and \code{"all"}
-#'   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.
+#'   \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"}(default) and \code{"all"}.}
+#'   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.}
 #' }
 #' @param ... Not used.
 #'
@@ -67,11 +67,11 @@
 #' specific coefficients related to covariates and the latent variables, respectively.
 #'
 #'Alternatively, a more complex version of the model can be fitted with \code{quadratic = TRUE}, where species are modeled as a quadratic function of the latent variables:
-#'#' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
+#' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
 #'Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
-#'the ecological theoretical model where species are generally recognized to exhibit non-lineawr response curves.
+#'the ecological theoretical model where species are generally recognized to exhibit non-linear response curves.
 #'For a model with quadratic responses, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
-#'per species and can be expected to be more applicable to most datsets. The quadratic coefficients D can be used to calculate the length of 
+#'per species and can be expected to be more applicable to most datasets. The quadratic coefficients D can be used to calculate the length of 
 #'ecological gradients.
 #'
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates

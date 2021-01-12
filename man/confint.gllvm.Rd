@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{parm}{a specification of which parameters are to be given confidence intervals, a vector of names. If missing, all parameters are considered.}
+\item{parm}{a specification of which parameters are to be given confidence intervals, a vector of names. Examples of options are "beta0", "Xcoef",theta", "phi". If missing, all parameters are considered.}
 
 \item{level}{the confidence level. Scalar between 0 and 1.}
 

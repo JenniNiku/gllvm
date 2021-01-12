@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, 
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=zeta.struc) {
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -1213,7 +1213,6 @@ inf.criteria <- function(fit)
   abund=fit$y
   num.lv=fit$num.lv
   n <- dim(abund)[1]
-  p <- dim(abund)[2]
   k<-attributes(logLik.gllvm(fit))$df
 
   BIC <- -2*fit$logL + (k) * log(n)
@@ -1349,6 +1348,29 @@ sdA<-function(fit){
   CovAerr
 }
 
+sdB<-function(fit){
+  n<-nrow(fit$y)
+  p<-ncol(fit$y)
+  incla<-rep(FALSE, length(fit$Hess$incl))
+  incla[names(fit$TMBfn$par)%in%c("u", "Br")] <- TRUE
+  fit$Hess$incla <- incla
+  
+  A<- fit$Hess$cov.mat.mod  #
+  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+  se <- (diag(abs(covb)))
+  CovAerr<-array(0, dim(fit$A))
+  for (i in 1:ncol(fit$A)) {
+    CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+  }
+  CovABerr<-array(0, dim(fit$Ab))
+  for (i in 1:ncol(fit$Ab)) {
+    CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
+  }
+  CovABerr
+}
 
 
 # draw an ellipse
@@ -1396,36 +1418,11 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
-
-#'@export
-#'@export nobs.gllvm
+                                 
 nobs.gllvm <- function(object){
-  n <- prod(dim(object$y))
-  return(n)
+n <- dim(object$y)[1]
+return(n)
 }
+##' @importFrom stats nobs
+##' @export
 
-#'@export nobs
-nobs <- function(object, ...)
-{
-  UseMethod(generic = "nobs")
-}
-
-AICc.gllvm <- function(object, ...){
-  objectlist <- list(object, ...)
-  IC<-lapply(objectlist,function(x){
-    abund=x$y
-    n <- dim(abund)[1]
-    p <- dim(abund)[2]
-    k<-attributes(logLik.gllvm(x))$df
-    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n*p-k-1)
-    return(AICc)
-  })
-  return(unlist(IC))
-}
-
-
-#'@export AICc
-AICc <- function(object, ...)
-{
-  UseMethod(generic = "AICc")
-}
