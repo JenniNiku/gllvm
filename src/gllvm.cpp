@@ -306,25 +306,39 @@ Type objective_function<Type>::operator() ()
     
     
     if(family==0){//poisson
+    if(quadratic<1){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          if(quadratic<1){
             nll(i,j) -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
-          }else{
-            nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
-          }
-        }
+           }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==1){//NB
+    }else{
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          if(quadratic<1)nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
-          if(quadratic>0)nll(i,j) -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
-          //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
+            nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
+    }
+    } else if(family==1){//NB
+      if(quadratic<1){
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+           nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        }  
+      }else{
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
+            //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
+          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        }
+      }
+      
     } else if(family==2) {//binomial probit
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
@@ -341,13 +355,21 @@ Type objective_function<Type>::operator() ()
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==4) {//gamma
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          if(quadratic<1)nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
-          if(quadratic>0)nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+      if(quadratic<1){
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }else{
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        }
       }
+
     } else if(family==7 && zetastruc == 1){//ordinal
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -429,12 +451,20 @@ Type objective_function<Type>::operator() ()
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==8) {// exp dist
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          if(quadratic<1)nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
-          if(quadratic>1)nll(i,j) -= ( -eta(i,j) - e_eta(i,j)*y(i,j) );
+      if(quadratic<1){
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+          }
+        }  
+      }else{
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -= ( -eta(i,j) - e_eta(i,j)*y(i,j) );
+          }
         }
       }
+      
     }
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
