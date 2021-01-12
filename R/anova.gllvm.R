@@ -78,6 +78,9 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
     }
     return(result)
   }else if(which=="uni"){
+    if(object$method=="LA"){
+      stop("Species-specific anova has not yet been implemented for the Laplace approximation.")
+    }
     df.list <- sapply(objects, function(x)
       attr(logLik.gllvm(x), "df"))
     objects_order <- objects[order(df.list)]
