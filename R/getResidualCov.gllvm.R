@@ -72,7 +72,7 @@ getResidualCov.gllvm = function(object, adjust = 1)
   if(any(class(object)=="gllvm.quadratic")){
     ResCov <- object$params$theta[,1:object$num.lv,drop=F] %*% t(object$params$theta[,1:object$num.lv,drop=F]) + 2*object$params$theta[,-c(1:object$num.lv),drop=F]%*%t(object$params$theta[,-c(1:object$num.lv),drop=F])
     ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
-    ResCov.q2 <- sapply(1:object$num.lv, function(q) object$params$theta[, q+object$num.lv] %*% t(object$params$theta[, q+object$num.lv]), simplify = F)
+    ResCov.q2 <- sapply(1:object$num.lv, function(q) 2*object$params$theta[, q+object$num.lv] %*% t(object$params$theta[, q+object$num.lv]), simplify = F)
   }else{
     ResCov <- object$params$theta %*% t(object$params$theta)
     ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
