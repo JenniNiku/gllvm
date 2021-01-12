@@ -145,10 +145,10 @@ Type objective_function<Type>::operator() ()
   
   using namespace density;
   
-  Type nll = 0.0; // initial value of log-likelihood
+  matrix <Type> nll(n,p); // initial value of log-likelihood
+  nll.fill(0.0);
   
   if(method<1){
-    Type pi =  2 * acos(0.0); 
     eta += r0*xr + offset;
     
     matrix<Type> cQ(n,p);
@@ -184,11 +184,11 @@ Type objective_function<Type>::operator() ()
         }
       }
       for(int i=0; i<n; i++){
-        if(nlvr == num_lv) nll -=((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum());
-        if(nlvr>num_lv) nll -= ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
+        if(nlvr == num_lv) nll.row(i).array() -=(((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum()))/p;
+        if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum()))/p;
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
-      nll -= -0.5*n*atomic::logdet(Cu)*random(0);
+      nll.array() -= -0.5*atomic::logdet(Cu)*random(0)/p;
     }
     
     
@@ -225,10 +225,10 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           cQ(i,j) += 0.5*((xb.row(i))*((Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()*xb.row(i).transpose())).sum();
         }
-        nll -= (((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() + 0.5*(-(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()));// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        nll.col(j).array() -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() + 0.5*(-(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum())))/n;// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
-      nll -= -0.5*p*atomic::logdet(S);//n*
+      nll.array() -= -0.5*atomic::logdet(S)/n;//n*
     }
     
     
@@ -260,7 +260,6 @@ Type objective_function<Type>::operator() ()
       matrix <Type> Acov(nlvr,nlvr);
       //quadratic model approximation
       //Poisson
-      
       if(family==0){
         matrix <Type> B(nlvr,nlvr);
         matrix <Type> v(nlvr,1);
@@ -311,9 +310,9 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           if(quadratic<1){
-            nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
+            nll(i,j) -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
           }else{
-            nll -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
+            nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
           }
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
@@ -321,7 +320,7 @@ Type objective_function<Type>::operator() ()
     } else if(family==1){//NB
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -329,21 +328,21 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-          nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
+          nll(i,j) -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==3) {//gaussian
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
+          nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==4) {//gamma
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+          nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -376,20 +375,20 @@ Type objective_function<Type>::operator() ()
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
           //minimum category
           if(y(i,j)==1){
-            nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
+            nll(i,j) -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
           }else if(y(i,j)==ymaxj){
             //maximum category
             int idx = ymaxj-2;
-            nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
+            nll(i,j) -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
           }else if(ymaxj>2){
             for (int l=2; l<ymaxj; l++) {
               if(y(i,j)==l && l != ymaxj){
-                nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1))); 
+                nll(i,j) -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1))); 
               }
             }
           }
           
-          nll += cQ(i,j);
+          nll(i,j) += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
@@ -411,26 +410,26 @@ Type objective_function<Type>::operator() ()
         for(int j=0; j<p; j++){
           //minimum category
           if(y(i,j)==1){
-            nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+            nll(i,j) -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
           }else if(y(i,j)==ymax){
             //maximum category
             int idx = ymax-2;
-            nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+            nll(i,j) -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
           }else if(ymax>2){
             for (int l=2; l<ymax; l++) {
               if(y(i,j)==l && l != ymax){
-                nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+                nll(i,j) -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
               }
             }
           }
-          nll += cQ(i,j);
+          nll(i,j) += cQ(i,j);
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==8) {// exp dist
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+          nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
         }
       }
     }
@@ -447,7 +446,7 @@ Type objective_function<Type>::operator() ()
       vector<Type> sdsv = exp(sigmaB);
       density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
       for (int j=0; j<p;j++){
-        nll += VECSCALE(neg_log_MVN,sdsv)(vector<Type>(Br.col(j)));
+        nll.col(j).array() += VECSCALE(neg_log_MVN,sdsv)(vector<Type>(Br.col(j)))/n;
       }
       eta += xb*Br;
     }
@@ -479,7 +478,7 @@ Type objective_function<Type>::operator() ()
       
       MVNORM_t<Type> mvnorm(Cu);
       for (int i=0; i<n; i++) {
-        nll += mvnorm(u.row(i));
+        nll.row(i).array() += mvnorm(u.row(i))/p;
       }
     }
     
@@ -488,54 +487,55 @@ Type objective_function<Type>::operator() ()
     if(family==0){//poisson family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dpois(y(i,j), exp(eta(i,j)), true);
+          nll(i,j) -= dpois(y(i,j), exp(eta(i,j)), true);
         }
       }
     } else if(family==1){//negative.binomial family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          nll(i,j) -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
       }} else if(family==2) {//binomial family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
-            nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
+            nll(i,j) -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
           }
         }
       } else if(family==3){//gaussian family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
+            nll(i,j) -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
           }
         }
       } else if(family==4){//gamma family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
+            nll(i,j) -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
           }
         }
       } else if(family==5){//tweedie family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
+            nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
           }
         }
       } else if(family==6) {//zero-infl-poisson
         iphi=iphi/(1+iphi);
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
+            nll(i,j) -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
           }
         }
       } else if(family==8) {// exponential family
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
+            nll(i,j) -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
           }
         }
       }
   }
-  return nll;
+  REPORT(nll);
+  return nll.sum();
 }
