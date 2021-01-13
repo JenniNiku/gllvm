@@ -24,43 +24,44 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
     num.lv <- object$num.lv
     p <- ncol(object$y)
     opt<-object$params$theta[,1:num.lv]/(2*abs(object$params$theta[,-c(1:num.lv)]))
-    if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
-      cat("Standard errors not present in model, calculating...\n")
-      object$Hess<-se.gllvm(object)$Hess
-    }
-    V <- object$Hess$cov.mat.mod
-    idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda","lambda2")
-    V <- V[idx,idx,drop=F]
-    colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
-    
-    
-    idx<-which(c(upper.tri(object$params$theta[,1:num.lv])))
-    #add zeros where necessary
-    for(q in 1:length(idx)){
-      V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
-      V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
-    }
-    colnames(V)[colnames(V)==""]<-"lambda"
-    
-    #re-arrange quadratic coefficients to similar order as linear: per species per latent variable (now per latent variable and then species)
-    #this makes thing easier further on
-    if(quadratic==TRUE){
-      idx <- c(1:(p*num.lv),(p*num.lv+c(matrix(1:(p*num.lv),ncol=num.lv,nrow=p,byrow=T))))  
-    }else{
-      idx <- c(1:(p*num.lv),(p*num.lv)+rep(1:num.lv,each=p))
-    }
-    
+    if(sd.errors==TRUE){
+      if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
+        cat("Standard errors not present in model, calculating...\n")
+        object$Hess<-se.gllvm(object)$Hess 
+      }
+      V <- object$Hess$cov.mat.mod
+      idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda","lambda2")
+      V <- V[idx,idx,drop=F]
+      colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
+      
+      
+      idx<-which(c(upper.tri(object$params$theta[,1:num.lv])))
+      #add zeros where necessary
+      for(q in 1:length(idx)){
+        V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
+        V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
+      }
+      colnames(V)[colnames(V)==""]<-"lambda"
+      
+      #re-arrange quadratic coefficients to similar order as linear: per species per latent variable (now per latent variable and then species)
+      #this makes thing easier further on
+      if(quadratic==TRUE){
+        idx <- c(1:(p*num.lv),(p*num.lv+c(matrix(1:(p*num.lv),ncol=num.lv,nrow=p,byrow=T))))  
+      }else{
+        idx <- c(1:(p*num.lv),(p*num.lv)+rep(1:num.lv,each=p))
+      }
+      
       V<-V[idx,idx]
       du1 <- NULL #linear coefficients
       du2 <- NULL #quadratic coefficients
       #du1 needs to be species then LV, to accommmodate the order in V
       for(i in 1:num.lv){
-      for (j in 1:p) {
-        du1 <- c(du1,(2 * object$params$theta[j, num.lv + i, drop = F])^-1)
-        du2 <- c(du2,object$params$theta[j, i, drop = F] / (2 * object$params$theta[j, num.lv + i, drop = F]^2))
+        for (j in 1:p) {
+          du1 <- c(du1,(2 * object$params$theta[j, num.lv + i, drop = F])^-1)
+          du2 <- c(du2,object$params$theta[j, i, drop = F] / (2 * object$params$theta[j, num.lv + i, drop = F]^2))
+        }
       }
-      }
-
+      
       #sum over parameters and their covariances
       #linear coefficients covariances
       cov.mat.lincoef<-(c(du1,du2)%*%t(c(du1,du2))*V)[1:(p*num.lv),1:(p*num.lv)]
@@ -73,15 +74,23 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
       #1/2 scalar here because, optima is a function of two parameters
       cov.mat.optima <- cov.mat.lincoef+cov.mat.quadcoef+2*diag.cov.mat.coef
       opt.sd <- matrix(sqrt(1/2*abs(diag(cov.mat.optima))),ncol=num.lv,nrow=p)
-    
-      if(num.lv>1)colnames(opt) <- colnames(opt.sd) <- paste("LV",1:num.lv,sep="")
+    }
+   
+      if(num.lv>1)colnames(opt) <- paste("LV",1:num.lv,sep="") 
+      if(num.lv>1&sd.errors==TRUE)colnames(opt.sd) <- paste("LV",1:num.lv,sep="")
       if(num.lv>1){
-        row.names(opt) <- row.names(opt.sd) <- colnames(object$y)
+        row.names(opt) <- colnames(object$y)
+        if(sd.errors==TRUE)row.names(opt.sd) <- colnames(object$y)
       }else{
-        names(opt) <- names(opt.sd) <- colnames(object$y)
+        names(opt) <- colnames(object$y)
+        if(sd.errors==TRUE)names(opt.sd) <- colnames(object$y)
       }
-      
- return(list(optima=opt,sd=opt.sd)) 
+      if(sd.errors==TRUE){
+        return(list(optima=opt,sd=opt.sd)) 
+      }else{
+        return(optima=opt) 
+      }
+ 
 }
 
 #'@rdname optima
@@ -94,37 +103,48 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
   p <- ncol(object$y)
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv)])
-  if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
-    cat("Standard errors not present in model, calculating...\n")
-    object$Hess<-se.gllvm(object)$Hess
-  }
-  V <- object$Hess$cov.mat.mod
-  idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
-  V <- V[idx,idx,drop=F]
-  colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
-  if(quadratic=="LV"){
-    idx <- rep(1:num.lv,times=p)
-  }else{
-    idx <- 1:ncol(V)
-  }
-  V <- V[idx,idx]
-  tol.sd<-matrix(0,nrow=p,ncol=num.lv)
-  dt<-NULL
-  for (j in 1:p) {
-    for (i in 1:num.lv) {
-      dt <- c(dt,1 / (2 * object$params$theta[, -c(1:num.lv),drop=F][j, i] * (sqrt(-2 * object$params$theta[, -c(1:num.lv),drop=F][j, i])))) # need to be calculated with covariance of gamma3 if gamma2>0..that also requires subtracting theta3 from theta2
+  if(sd.errors==TRUE){
+    if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
+      cat("Standard errors not present in model, calculating...\n")
+      object$Hess<-se.gllvm(object)$Hess 
     }
+    V <- object$Hess$cov.mat.mod
+    idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
+    V <- V[idx,idx,drop=F]
+    colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
+    if(quadratic=="LV"){
+      idx <- rep(1:num.lv,times=p)
+    }else{
+      idx <- 1:ncol(V)
+    }
+    V <- V[idx,idx]
+    tol.sd<-matrix(0,nrow=p,ncol=num.lv)
+    dt<-NULL
+    for (j in 1:p) {
+      for (i in 1:num.lv) {
+        dt <- c(dt,1 / (2 * object$params$theta[, -c(1:num.lv),drop=F][j, i] * (sqrt(-2 * object$params$theta[, -c(1:num.lv),drop=F][j, i])))) # need to be calculated with covariance of gamma3 if gamma2>0..that also requires subtracting theta3 from theta2
+      }
+    }
+    #no scalar here as in optima, tolerance is only a function of one parameter
+    tol.sd <- matrix(sqrt(abs(diag(dt%*%t(dt)*V))),ncol=num.lv,nrow=p,byrow=T)
   }
-  #no scalar here as in optima, tolerance is only a function of one parameter
-  tol.sd <- matrix(sqrt(abs(diag(dt%*%t(dt)*V))),ncol=num.lv,nrow=p,byrow=T)
+ 
   
-  if(num.lv>1)colnames(tol) <- colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
+  if(num.lv>1)colnames(tol) <- paste("LV",1:num.lv,sep="")
+  if(num.lv>1&sd.errors==TRUE)colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
   if(num.lv>1){
-    row.names(tol) <- row.names(tol.sd) <- colnames(object$y)
+    row.names(tol) <- colnames(object$y)
+  if(sd.errors==TRUE)row.names(tol.sd) <- colnames(object$y)
   }else{
-    names(tol) <- names(tol.sd) <- colnames(object$y)
+    names(tol) <-colnames(object$y)
+    if(sd.errors==TRUE)names(tol.sd) <- colnames(object$y)
   }
-  return(list(tolerances=tol,sd=tol.sd)) 
+  if(sd.errors==TRUE){
+    return(list(tolerances=tol,sd=tol.sd))   
+  }else{
+    return(tolerances=tol) 
+  }
+  
 }
 
 #'@rdname optima
@@ -137,7 +157,7 @@ gradient.length.gllvm <- function(object,sd.errors = TRUE) {
   p <- ncol(object$y)
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:num.lv),drop=F])
-  
+  if(sd.errors==TRUE){
 if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     cat("Standard errors not present in model, calculating...")
     object$Hess<-se.gllvm(object)$Hess
@@ -183,16 +203,22 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       }
     }
   grad.length.sd <- sqrt(abs(gradSD))
-  
+  }
   if(quadratic==TRUE){
     grad.length <- 4*sqrt(0.5)*1/apply(tol,2,median)
   }else if(quadratic=="LV"){
     grad.length <- 4*sqrt(0.5)*1/tol[1,]
   }
   
-  names(grad.length) <- names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
+  names(grad.length) <- paste("LV",1:num.lv,sep="")
+  if(sd.errors==TRUE)names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
   
-  return(list(gradient.length=grad.length,sd=grad.length.sd)) 
+  if(sd.errors==TRUE){
+    return(list(gradient.length=grad.length,sd=grad.length.sd))   
+  }else{
+    return(gradient.length=grad.length)
+  }
+  
 }
 
 #'@export optima
