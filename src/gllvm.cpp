@@ -182,7 +182,7 @@ Type objective_function<Type>::operator() ()
         }
       }
       for(int i=0; i<n; i++){
-        if(nlvr == num_lv) nll.row(i).array() -=(((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum()))/p;
+        if(nlvr == num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum()))/p;
         if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum()))/p;
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
@@ -229,8 +229,6 @@ Type objective_function<Type>::operator() ()
       nll.array() -= -0.5*atomic::logdet(S)/n;//n*
     }
     
-    
-    
     if(model<1){
       eta += x*b;
     } else {
@@ -270,7 +268,7 @@ Type objective_function<Type>::operator() ()
             Type detB = atomic::logdet(B);
             Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
             e_eta(i,j) += exp(cQ(i,j) + eta(i,j) + 0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value()-detB)-detA); //add all the other stuff to the quadratic approximation
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace() + cQ(i,j);
+            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
           }
         }
       }
@@ -287,7 +285,7 @@ Type objective_function<Type>::operator() ()
             Type detB = log((B.llt().matrixL()).determinant());//required like this due to potential negative semi-definiteness
             Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum();
             e_eta(i,j) += exp(-eta(i,j) - cQ(i,j)+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value())-detA-detB);
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace() + cQ(i,j);
+            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
             
           }
         }
@@ -304,28 +302,27 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    
     if(family==0){//poisson
-    if(quadratic<1){
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
+      if(quadratic<1){
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
             nll(i,j) -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
-           }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-      }
-    }else{
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-            nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
+          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }else{
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
+          }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        }
       }
-    }
     } else if(family==1){//NB
       if(quadratic<1){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-           nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+            nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
           }
           // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }  
@@ -358,7 +355,8 @@ Type objective_function<Type>::operator() ()
       if(quadratic<1){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));          }
+            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));          
+          }
           // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }else{
@@ -369,7 +367,7 @@ Type objective_function<Type>::operator() ()
           // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }
-
+      
     } else if(family==7 && zetastruc == 1){//ordinal
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -484,7 +482,6 @@ Type objective_function<Type>::operator() ()
       eta += xb*Br;
     }
     
-    
     if(model<1){
       
       eta += x*b;
@@ -514,7 +511,6 @@ Type objective_function<Type>::operator() ()
         nll.row(i).array() += mvnorm(u.row(i))/p;
       }
     }
-    
     
     //likelihood model with the log link function
     if(family==0){//poisson family
@@ -571,5 +567,6 @@ Type objective_function<Type>::operator() ()
   }
   
   REPORT(nll);//only works for VA!!
+  
   return nll.sum();
 }
