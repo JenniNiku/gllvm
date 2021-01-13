@@ -101,6 +101,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       cat("Initial run ", n.i, "\n")
 
     fit <- start.values.gllvm.TMB(y = y, X = X, TR = NULL, family = family, offset= offset, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    
     sigma <- 1
     if (is.null(start.params)) {
       beta0 <- fit$params[, 1]
@@ -111,7 +112,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
       if (num.lv > 0) {
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv + 1):ncol(fit$params)])
-        if(start.struc=="LV"&quadratic!=FALSE){
+        if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
           lambda2 <- matrix(quad.start, ncol = num.lv, nrow = 1)  
         }else if(start.struc=="all"&quadratic!=FALSE){
           lambda2 <- matrix(quad.start, ncol = num.lv, nrow = p)
@@ -127,7 +128,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           fit$params <- fit$params
         }
         
-        covM.lvs <- array(NA, dim = c(n, num.lv, num.lv))
       }
       row.params <- NULL
 
@@ -174,7 +174,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         lvs <- NULL
         if (num.lv > 0) {
           lvs <- matrix(start.params$lvs, ncol = num.lv)
-          covM.lvs <- array(NA, dim = c(n, num.lv, num.lv))
         }## LVs
       } else {
         stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other.")
@@ -284,9 +283,14 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
       
       if(quadratic == TRUE && start.struc == "LV"){
-        start.fit <- gllvm.TMB(y=y, X=X, num.lv=num.lv, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer)
-        u <- start.fit$lvs
-        fit$index <- u
+        start.fit <- try(gllvm.TMB(y=y, X=X, num.lv=num.lv, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
+        if(inherits(start.fit,"try-error")&starting.val!="zero"){
+          start.fit <- try(gllvm.TMB(y=y, X=X, num.lv=num.lv, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
+        }
+        if(!inherits(start.fit,"try-error")){
+          u <- start.fit$lvs
+          fit$index <- u          
+        }
         start.struc="all"
       }
       
@@ -341,20 +345,21 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(optimizer=="optim") {
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
-      lambda <- optr$par[names(optr$par)=="lambda"]
-      
-      if(start.struc=="LV"|quadratic=="LV"){
-        lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = 1)
-      }else if(quadratic==TRUE){
-        lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = p)
+      if(!inherits(optr,"try-error")){
+        lambda <- optr$par[names(optr$par)=="lambda"]
         
-      }   
-      
-      if(row.eff=="random"){
-        u <- u[,-1]
+        if(start.struc=="LV"|quadratic=="LV"){
+          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = 1)
+        }else if(quadratic==TRUE){
+          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = p)
+          
+        }   
+        
+        if(row.eff=="random"){
+          u <- u[,-1]
+        }    
       }
-      
-      if(inherits(optr,"try-error")) warning(optr[1]);
+    
       }
     
       
