@@ -488,7 +488,7 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
         warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
         pr <- princomp(resi)
         gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
-        index<-matrix(pr$scores[,1:num.lv],p,num.lv)
+        index<-matrix(pr$scores[,1:num.lv],n,num.lv)
       }else{
         gamma<-matrix(fa$loadings,p,num.lv)
         index <- fa$scores[1:n,]
