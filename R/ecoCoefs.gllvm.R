@@ -196,7 +196,12 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     if(quadratic=="LV"){
       gradSD <- c(gradSD, sqrt(abs(diag((grad%*%t(grad)*V))))) #no scalar, only function of one parameter
     }else{
-      idx2 <- split(1:(num.lv*2),factor(rep(1:num.lv,each=2)))
+      if(p%%2==0){
+        idx2 <- split(1:(num.lv*2),factor(rep(1:num.lv,each=2)))
+      }else{
+        idx2 <- 1:num.lv
+      }
+      
       
       for(q in 1:num.lv){
       gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad%*%t(grad)*V[unlist(idx),unlist(idx)])[idx2[[q]],idx2[[q]]])))) #scalar because function of 2 parameters, which we sum over
