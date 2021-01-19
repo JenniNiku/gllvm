@@ -303,7 +303,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "ordinal") {familyn=7}
       if(family == "exponential") {familyn=8}
       
-      if(starting.val!="zero" && quadratic == TRUE && num.lv>0){
+      if(starting.val!="zero" && quadratic != FALSE && num.lv>0){
       #generate starting values quadratic coefficients in some cases
       data.list = list(y = y, x = Xd,xr=xr,xb=xb,offset=offset, num_lv = num.lv,quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       
@@ -348,8 +348,13 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(!inherits(optr,"try-error")){
         lambda <- optr$par[names(optr$par)=="lambda"]
         
-        lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = p)
-
+        if(start.struc=="LV"|quadratic=="LV"){
+          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = 1)
+        }else if(quadratic==TRUE){
+          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv, nrow = p)
+          
+        }   
+        
         if(row.eff=="random"){
           u <- u[,-1]
         }    
