@@ -20,7 +20,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
-  quadratic <- mod$quadratic
+  quadratic <- object$quadratic
     num.lv <- object$num.lv
     p <- ncol(object$y)
     opt<-object$params$theta[,1:num.lv]/(2*abs(object$params$theta[,-c(1:num.lv)]))
