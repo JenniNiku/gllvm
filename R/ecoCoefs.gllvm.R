@@ -185,7 +185,7 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[(p/2):((p/2)+1)]
     }else{
       #odd
-      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[p-round(p/2)]
+      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[ceiling(p-p/2)]
     }
     
     if(quadratic=="LV"|length(idx[[q]])==1){
@@ -220,8 +220,10 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
   grad.length.sd <- sqrt(abs(gradSD))
   }
 
-  if(quadratic==TRUE){
-    grad.length <- apply(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),2,function(x)16*sum(x^-0.5)^-1)
+  if(quadratic==TRUE&(p%%2==0)){
+    grad.length <- apply(matrix(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),ncol=num.lv,nrow=length(idx[[1]])),2,function(x)16*sum(x^-0.5)^-1)
+  }else if(quadratic==TRUE&(p%%2==0)){
+    grad.length <- sapply(1:num.lv,function(q)8*abs(object$params$theta[idx[[q]],num.lv+q])^0.5)
   }else if(quadratic=="LV"){
     grad.length <- 8*abs(object$params$theta[1,-c(1:num.lv)])^0.5
   }
