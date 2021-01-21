@@ -222,7 +222,7 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
 
   if(quadratic==TRUE&(p%%2==0)){
     grad.length <- apply(matrix(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),ncol=num.lv,nrow=length(idx[[1]])),2,function(x)16*sum(x^-0.5)^-1)
-  }else if(quadratic==TRUE&(p%%2==0)){
+  }else if(quadratic==TRUE&(p%%2==1)){
     grad.length <- sapply(1:num.lv,function(q)8*abs(object$params$theta[idx[[q]],num.lv+q])^0.5)
   }else if(quadratic=="LV"){
     grad.length <- 8*abs(object$params$theta[1,-c(1:num.lv)])^0.5
