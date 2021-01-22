@@ -217,7 +217,7 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad[idx2[[q]]]%*%t(grad[idx2[[q]]])*V[(p*(q-1)+1):(p*q),(p*(q-1)+1):(p*q)][idx[[q]],idx[[q]]]))))) #scalar because function of 2 parameters, which we sum over
       }
     }
-  grad.length.sd <- sqrt(abs(gradSD))
+  grad.length.sd <- gradSD
   }
 
   if(quadratic==TRUE&(p%%2==0)){
