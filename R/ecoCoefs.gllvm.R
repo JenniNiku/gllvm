@@ -20,7 +20,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
-  quadratic <- mod$quadratic
+  quadratic <- object$quadratic
     num.lv <- object$num.lv
     p <- ncol(object$y)
     opt<-object$params$theta[,1:num.lv]/(2*abs(object$params$theta[,-c(1:num.lv)]))
@@ -112,21 +112,23 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
     idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
     V <- V[idx,idx,drop=F]
     colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
-    if(quadratic=="LV"){
-      idx <- rep(1:num.lv,times=p)
+    
+    #re-arrange V for easier access
+    if(quadratic==TRUE){
+      idx <- c(matrix(1:(p*num.lv),ncol=num.lv,nrow=p,byrow=T))
     }else{
-      idx <- 1:ncol(V)
+      idx <- rep(1:num.lv,each=p)
     }
-    V <- V[idx,idx]
+    V<-V[idx,idx]
+
     tol.sd<-matrix(0,nrow=p,ncol=num.lv)
-    dt<-NULL
+    dt<-matrix(0,nrow=p,ncol=num.lv)
     for (j in 1:p) {
       for (i in 1:num.lv) {
-        dt <- c(dt,1 / (2 * object$params$theta[, -c(1:num.lv),drop=F][j, i] * (sqrt(-2 * object$params$theta[, -c(1:num.lv),drop=F][j, i])))) # need to be calculated with covariance of gamma3 if gamma2>0..that also requires subtracting theta3 from theta2
+        dt[j,i] <- -0.5*2^-0.5*abs(mod$params$theta[,-c(1:num.lv),drop=F][j,i])^-1.5
       }
     }
-    #no scalar here as in optima, tolerance is only a function of one parameter
-    tol.sd <- matrix(sqrt(abs(diag(dt%*%t(dt)*V))),ncol=num.lv,nrow=p,byrow=T)
+    tol.sd <- sqrt(abs(dt^2*matrix(diag(V),ncol=num.lv,nrow=p)))
   }
  
   
@@ -167,6 +169,14 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
   V <- V[idx,idx,drop=F]
   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
   
+  #re-arrange V for easier access
+  if(quadratic==TRUE){
+    idx <- c(matrix(1:(p*num.lv),ncol=num.lv,nrow=p,byrow=T))
+  }else{
+    idx <- rep(1:num.lv)
+  }
+  V<-V[idx,idx]
+  
   grad <- NULL
   idx<-list()
   for(q in 1:num.lv){
@@ -175,20 +185,20 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[(p/2):((p/2)+1)]
     }else{
       #odd
-      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[p-round(p/2)]
+      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[ceiling(p-p/2)]
     }
     
     if(quadratic=="LV"|length(idx[[q]])==1){
       if(quadratic=="LV"){
         #only a function of one parameter, so this is derivative of gradient length (since there is no median)
-        grad<-c(grad,2*abs(object$params$theta[1,num.lv+q])^-0.5)
+        grad<-c(grad,4*abs(object$params$theta[1,num.lv+q])^-0.5)
       }else{
-        grad<-c(grad,2*abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)#Only needs the right idx, no transformations
+        grad<-c(grad,4*abs(2*object$params$theta[idx[[q]],num.lv+q])^-0.5)#Only needs the right idx, no transformations. Idx of 2 parameters
       }
       
     }else{
       #this one is a little more, due to the presence of the median on the tolerance scale.
-      grad<-c(grad,4*sum(abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)^-2*abs(object$params$theta[idx[[q]],num.lv+q])^-1.5)#4*sqrt(0.5)abs(out$params$theta[idx,num.lv+i])^3  
+      grad<-c(grad,sapply(1:2,function(i)8*(abs(object$params$theta[idx[[q]][i],num.lv+q])^1.5*sum(abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)^2)^-1))
     }
     
   }
@@ -196,20 +206,27 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     if(quadratic=="LV"){
       gradSD <- c(gradSD, sqrt(abs(diag((grad%*%t(grad)*V))))) #no scalar, only function of one parameter
     }else{
-      idx2 <- split(1:(num.lv*2),factor(rep(1:num.lv,each=2)))
+      if(p%%2==0){
+        idx2 <- split(1:(num.lv*2),factor(rep(1:num.lv,each=2)))
+      }else{
+        idx2 <- 1:num.lv
+      }
+      
       
       for(q in 1:num.lv){
-      gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad%*%t(grad)*V[unlist(idx),unlist(idx)])[idx2[[q]],idx2[[q]]])))) #scalar because function of 2 parameters, which we sum over
+      gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad[idx2[[q]]]%*%t(grad[idx2[[q]]])*V[(p*(q-1)+1):(p*q),(p*(q-1)+1):(p*q)][idx[[q]],idx[[q]]]))))) #scalar because function of 2 parameters, which we sum over
       }
     }
-  grad.length.sd <- sqrt(abs(gradSD))
+  grad.length.sd <- gradSD
   }
-  if(quadratic==TRUE){
-    grad.length <- 4*sqrt(0.5)*1/apply(tol,2,median)
+
+  if(quadratic==TRUE&(p%%2==0)){
+    grad.length <- apply(matrix(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),ncol=num.lv,nrow=length(idx[[1]])),2,function(x)16*sum(x^-0.5)^-1)
+  }else if(quadratic==TRUE&(p%%2==1)){
+    grad.length <- sapply(1:num.lv,function(q)8*abs(object$params$theta[idx[[q]],num.lv+q])^0.5)
   }else if(quadratic=="LV"){
-    grad.length <- 4*sqrt(0.5)*1/tol[1,]
+    grad.length <- 8*abs(object$params$theta[1,-c(1:num.lv)])^0.5
   }
-  
   names(grad.length) <- paste("LV",1:num.lv,sep="")
   if(sd.errors==TRUE)names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
   

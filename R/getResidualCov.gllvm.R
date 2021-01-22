@@ -108,7 +108,7 @@ getResidualCov.gllvm = function(object, adjust = 1)
         if(any(class(object)=="gllvm.quadratic")){
           ResCov <- ResCov + diag(ncol(object$y))
           ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
-          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
         }else{
           ResCov <- ResCov + diag(ncol(object$y))
           ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)  

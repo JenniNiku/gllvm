@@ -484,9 +484,15 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
         fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
         tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
       }
-      if(tryfit) stop(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-      gamma<-matrix(fa$loadings,p,num.lv)
-      index <- fa$scores[1:n,]
+      if(tryfit) {
+        warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
+        pr <- princomp(resi)
+        gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
+        index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+      }else{
+        gamma<-matrix(fa$loadings,p,num.lv)
+        index <- fa$scores[1:n,]
+      }
     }
   } else {
     gamma <- matrix(1,p,num.lv)
