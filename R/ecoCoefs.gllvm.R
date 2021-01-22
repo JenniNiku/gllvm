@@ -125,7 +125,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
     dt<-matrix(0,nrow=p,ncol=num.lv)
     for (j in 1:p) {
       for (i in 1:num.lv) {
-        dt[j,i] <- -0.5*2^-0.5*mod$params$theta[,-c(1:num.lv),drop=F][j,i]
+        dt[j,i] <- -0.5*2^-0.5*abs(mod$params$theta[,-c(1:num.lv),drop=F][j,i])^-1.5
       }
     }
     tol.sd <- sqrt(abs(dt^2*matrix(diag(V),ncol=num.lv,nrow=p)))
