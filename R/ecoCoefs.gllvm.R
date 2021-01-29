@@ -191,14 +191,14 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
     if(quadratic=="LV"|length(idx[[q]])==1){
       if(quadratic=="LV"){
         #only a function of one parameter, so this is derivative of gradient length (since there is no median)
-        grad<-c(grad,4*abs(object$params$theta[1,num.lv+q])^-0.5)
+        grad<-c(grad,2*2^0.5*abs(object$params$theta[1,num.lv+q])^-0.5)
       }else{
-        grad<-c(grad,4*abs(2*object$params$theta[idx[[q]],num.lv+q])^-0.5)#Only needs the right idx, no transformations. Idx of 2 parameters
+        grad<-c(grad,2*2^0.5*abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)#still only 1 parameter so same derivative
       }
       
     }else{
       #this one is a little more, due to the presence of the median on the tolerance scale.
-      grad<-c(grad,sapply(1:2,function(i)8*(abs(object$params$theta[idx[[q]][i],num.lv+q])^1.5*sum(abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)^2)^-1))
+      grad<-c(grad,sapply(1:2,function(i)4*2^0.5*(abs(object$params$theta[idx[[q]][i],num.lv+q])^1.5*sum(abs(object$params$theta[idx[[q]],num.lv+q])^-0.5)^2)^-1))
     }
     
   }
@@ -221,11 +221,11 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
   }
 
   if(quadratic==TRUE&(p%%2==0)){
-    grad.length <- apply(matrix(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),ncol=num.lv,nrow=length(idx[[1]])),2,function(x)16*sum(x^-0.5)^-1)
+    grad.length <- apply(matrix(abs(sapply(1:num.lv,function(q)object$params$theta[idx[[q]],q+num.lv])),ncol=num.lv,nrow=length(idx[[1]])),2,function(x)8*2^0.5*sum(x^-0.5)^-1)
   }else if(quadratic==TRUE&(p%%2==1)){
-    grad.length <- sapply(1:num.lv,function(q)8*abs(object$params$theta[idx[[q]],num.lv+q])^0.5)
+    grad.length <- sapply(1:num.lv,function(q)4*abs(2*object$params$theta[idx[[q]],num.lv+q])^0.5)
   }else if(quadratic=="LV"){
-    grad.length <- 8*abs(object$params$theta[1,-c(1:num.lv)])^0.5
+    grad.length <- 4*abs(2*object$params$theta[1,-c(1:num.lv)])^0.5
   }
   names(grad.length) <- paste("LV",1:num.lv,sep="")
   if(sd.errors==TRUE)names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
