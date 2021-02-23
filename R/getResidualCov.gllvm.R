@@ -68,7 +68,9 @@
 #'@export getResidualCov.gllvm
 getResidualCov.gllvm = function(object, adjust = 1)
 {
-  
+  if(object$num.lv==0){
+    stop("No latent variables present in model.")
+  }
   if(any(class(object)=="gllvm.quadratic")){
     ResCov <- object$params$theta[,1:object$num.lv,drop=F] %*% t(object$params$theta[,1:object$num.lv,drop=F]) + 2*object$params$theta[,-c(1:object$num.lv),drop=F]%*%t(object$params$theta[,-c(1:object$num.lv),drop=F])
     ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
