@@ -546,7 +546,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
-    if(family == "ordinal" && num.lv ==0 && zeta.struc == "species"){
+    if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
       stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
     }
     if(family == "ordinal" && TMB && num.lv==0){

@@ -4,12 +4,16 @@
 \alias{anova.gllvm}
 \title{Analysis Of Deviance for gllvm}
 \usage{
-\method{anova}{gllvm}(object, ...)
+\method{anova}{gllvm}(object, ..., which = "multi", method = "holm")
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{...}{one or more objects of class 'gllvm'}
+
+\item{which}{either "multi" or "uni". If "uni", performs anova for each species separately.}
+
+\item{method}{method used to adjust p-values for multiple testing when \code{which="uni"}. One of "holm" (default), "hochberg", "hommel", "bonferonni", "BH", BY", "fdr", or "none". See \code{\link{p.adjust}} for more information.}
 }
 \description{
 Computes an analysis of deviance table for two generalized linear latent variable model fits.
@@ -38,5 +42,5 @@ anova(fit1, fit2)
 }
 }
 \author{
-Jenni Niku
+Jenni Niku, Bert van der Veen
 }
