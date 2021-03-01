@@ -293,7 +293,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           if(is.null(X) || !is.null(TR)) cw.fit <- glm(y.fac ~ index, family = binomial(link = "probit"))
           if(!is.null(X) & is.null(TR) & num.lv > 0) cw.fit <- glm(y.fac ~ X+index, family = binomial(link = "probit"))
         }
-        params[j,] <- cw.fit$coef
+        params[j,1:length(cw.fit$coef)] <- cw.fit$coef
       }
     }
     if(starting.val%in%c("res") && num.lv>0){

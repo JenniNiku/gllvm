@@ -218,6 +218,17 @@ if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       }
     }
   grad.length.sd <- gradSD
+  }else if(sd.errors==FALSE){
+    idx<-list()
+    for(q in 1:num.lv){
+      if(p%%2==0&quadratic==TRUE){
+        #even
+        idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[(p/2):((p/2)+1)]
+      }else{
+        #odd
+        idx[[q]]<-order(1/sqrt(2*-object$params$theta[,num.lv+q]),decreasing=T)[ceiling(p-p/2)]
+      }
+    }
   }
 
   if(quadratic==TRUE&(p%%2==0)){

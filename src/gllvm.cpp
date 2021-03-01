@@ -172,7 +172,7 @@ Type objective_function<Type>::operator() ()
           }}
       }
       //set VA covariances for random rows to zero for quadratic model
-      if(quadratic>0&nlvr>num_lv){
+      if(quadratic>0&&nlvr>num_lv){
         for(int i=0; i<n; i++){
           for (int d=0; d<(nlvr); d++){
             if(d!=0){
@@ -182,11 +182,11 @@ Type objective_function<Type>::operator() ()
         }
       }
       for(int i=0; i<n; i++){
-        if(nlvr == num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- ((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum()))/p;
-        if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() + 0.5*(- (Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum()))/p;
+        if(nlvr == num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-(u.row(i)*u.row(i).transpose()).sum())/p;
+        if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
-      nll.array() -= -0.5*atomic::logdet(Cu)*random(0)/p;
+      nll.array() -= -0.5*log(Cu.determinant())*random(0)/p;//n*
     }
     
     
@@ -223,10 +223,10 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           cQ(i,j) += 0.5*((xb.row(i))*((Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()*xb.row(i).transpose())).sum();
         }
-        nll.col(j).array() -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() + 0.5*(-(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum())))/n;// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        nll.col(j).array() -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() - 0.5*(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-0.5*(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()))/n;// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
-      nll.array() -= -0.5*atomic::logdet(S)/n;//n*
+      nll.array() -= -0.5*log(S.determinant())*random(0)/n;//n*
     }
     
     if(model<1){
