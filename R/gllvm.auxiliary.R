@@ -253,9 +253,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family == "ordinal") {
     max.levels <- length(unique(c(y)))
-    params <- matrix(NA,p,ncol(cbind(1,X))+num.lv)
+    params <- matrix(0,p,ncol(cbind(1,X))+num.lv)
     if(zeta.struc == "species"){
-      zeta <- matrix(NA,p,max.levels - 1)
+      zeta <- matrix(0,p,max.levels - 1)
       zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
     }else{
       cw.fit <- MASS::polr(factor(y) ~ 1, method = "probit")
@@ -267,11 +267,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       y.fac <- factor(y[,j])
       if(length(levels(y.fac)) > 2) {
         if(starting.val%in%c("zero","res") || num.lv==0){
-          if(is.null(X) ) cw.fit <- MASS::polr(y.fac ~ 1, method = "probit")
-          if(!is.null(X) ) cw.fit <- MASS::polr(y.fac ~ X, method = "probit")
+          if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = "probit"),silent = TRUE)
+          if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ X, method = "probit"),silent = TRUE)
         } else {
-          if(is.null(X)) cw.fit <- MASS::polr(y.fac ~ index, method = "probit")
-          if(!is.null(X)) cw.fit <- MASS::polr(y.fac ~ X+index, method = "probit")
+          if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = "probit"),silent = TRUE)
+          if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ X+index, method = "probit"),silent = TRUE)
         }
         if(starting.val=="random"){
           params[j,] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
@@ -287,11 +287,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       }
       if(length(levels(y.fac)) == 2) {
         if(starting.val%in%c("zero","res") || num.lv==0){
-          if(is.null(X)) cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit"))
-          if(!is.null(X)) cw.fit <- glm(y.fac ~ X, family = binomial(link = "probit"))
+          if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit")),silent = TRUE)
+          if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X, family = binomial(link = "probit")),silent = TRUE)
         } else { # || (!is.null(TR) && NCOL(TR)>0) & is.null(TR)
-          if(is.null(X)) cw.fit <- glm(y.fac ~ index, family = binomial(link = "probit"))
-          if(!is.null(X)) cw.fit <- glm(y.fac ~ X+index, family = binomial(link = "probit"))
+          if(is.null(X)) try(cw.fit <- glm(y.fac ~ index, family = binomial(link = "probit")),silent = TRUE)
+          if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X+index, family = binomial(link = "probit")),silent = TRUE)
         }
         params[j,1:length(cw.fit$coef)] <- cw.fit$coef
       }
