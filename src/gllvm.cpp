@@ -226,7 +226,7 @@ Type objective_function<Type>::operator() ()
         nll.col(j).array() -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() - 0.5*(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-0.5*(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()))/n;// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
-      nll.array() -= -0.5*log(S.determinant())*random(0)/n;//n*
+      nll.array() -= -0.5*log(S.determinant())*random(1)/n;//n*
     }
     
     if(model<1){
@@ -561,6 +561,14 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll(i,j) -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
+          }
+        }
+      } else if(family==9) {// beta family
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+            } else {mu(i,j) = pnorm(eta(i,j));}
+            nll(i,j) -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(j)), Type((1-mu(i,j))*iphi(j)), 1);
           }
         }
       }
