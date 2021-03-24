@@ -10,7 +10,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{adjust}{The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.}
+\item{adjust}{The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.}
 }
 \value{
 Function returns following components:
@@ -32,7 +32,7 @@ The residual covariance with \code{adjust = 1} can be obtained using the lognorm
 where \eqn{\lambda_j \sim lognormal(-\sigma^2/2, \sigma^2)} and \eqn{\sigma^2 = log(\phi_j + 1)} and \eqn{log(\mu_{ij}) = \eta_{ij}}. Now \eqn{E[Y_{ij}] = \mu_{ij}} and variance \eqn{V(\mu_{ij}) = \mu_{ij} + \mu_{ij}^2 (exp(\sigma^2) - 1) = \mu_{ij} + \mu_{ij}^2 \phi_j}, which are the same as for the NB distribution.
 Therefore, on linear predictor scale, we have the variance 
 \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j) + \sigma^2 = \theta_j'\theta_j + log(\phi_j + 1).}
-which leads to the residual covariance matrix \eqn{\Theta \Theta' + diag(\Phi)}, where \eqn{\Psi} is the diagonal matrix with \eqn{log(\phi_j + 1)} as diagonal elements (\code{adjust = 1}).
+which leads to the residual covariance matrix \eqn{\Theta \Theta' + \eqn{\Psi}}, where \eqn{\Psi} is the diagonal matrix with \eqn{log(\phi_j + 1)} as diagonal elements (\code{adjust = 1}).
 
 Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
 \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).}
@@ -55,6 +55,12 @@ On linear predictor scale we then have that
 \deqn{V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).}
 For the probit model, the residual covariance matrix is then \eqn{\Theta\Theta' + I_m}, and for the logit model \eqn{\Theta\Theta' + \pi^2/3 I_m}.
 Similarly as above, for a GLLVM where species are a quadratic function of the latent variables, the term \eqn{2\Gamma_j\Gamma_j'} is added to the residual covariance matrix.
+
+For normal distribution, we can write
+\deqn{Y_{ij} = \eta_{ij} + e_{ij},}
+where \eqn{e_{ij} \sim N(0, \phi_j^2)} and thus we have that
+\deqn{V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).}
+For the gaussian model, the residual covariance matrix is then \eqn{\Theta\Theta' + diag(\Phi^2)}.
 }
 \examples{
 \dontrun{
@@ -67,7 +73,7 @@ fit <- gllvm(y = y, family = poisson())
 rescov <- getResidualCov(fit)
 rescov$cov
 # Trace of the covariance matrix
-rescov$tr
+rescov$trace
 # Trace per latent variable
 rescov$trace.q
 }
