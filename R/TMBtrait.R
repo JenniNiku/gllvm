@@ -10,7 +10,7 @@ trait.TMB <- function(
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
-      ,zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE) {
+      ,zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
   
@@ -249,7 +249,7 @@ trait.TMB <- function(
           if(family=="ZIP") {
             lastart <- FAstart(res$mu, family="poisson", y=y, num.lv = num.lv, jitter.var = jitter.var[1])
           } else {
-            lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1])
+            lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta)
           }
           theta <- lastart$gamma#/lastart$gamma
           vameans<-lastart$index#/max(lastart$index)
@@ -365,7 +365,7 @@ trait.TMB <- function(
       if(length(Lambda.start)>2) { 
         a.var <- Lambda.start[3];
       } else {a.var <- 0.5;}
-      if(randomX.start == "res"){ # !!!! && !is.null(res$fitstart$Ab)
+      if(randomX.start == "res" && !is.null(res$fitstart$Ab)){ # !!!! && !is.null(res$fitstart$Ab)
         if(Ab.struct == "diagonal" || Ab.diag.iter>0){
           Abb <- c(log(c(apply(res$fitstart$Ab,1, diag))))
         } else {
@@ -411,6 +411,10 @@ trait.TMB <- function(
     if(family == "ZIP"){ familyn <- 6;}
     if(family == "ordinal") {familyn=7}
     if(family == "exponential") {familyn=8}
+    if(family == "beta"){
+      familyn=9
+      if(link=="probit") extra[1] <- 1
+    }
     if(beta0com){
       extra[2] <- 0
       Xd<-cbind(1,Xd)
@@ -485,7 +489,10 @@ trait.TMB <- function(
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
-        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+        if(optim.method != "BFGS")
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+        else
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       lambda2 <- matrix(optr$par, byrow = T, ncol = num.lv, nrow = p)
       
@@ -505,9 +512,12 @@ trait.TMB <- function(
       Au=0; Abb=0
       map.list$Au <- map.list$Abb <- factor(NA)
       parameter.list = list(r0=matrix(r0), b = rbind(a), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
-      
+      data.list <- list(y = y, x = Xd,xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      if(family == "ordinal"){
+        data.list$method = 0
+      }
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd,xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0)), silent=!trace,
+        data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
         random = randomp, DLL = "gllvm")
@@ -517,7 +527,10 @@ trait.TMB <- function(
       timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
     }
     if(optimizer=="optim") {
-      timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+      if(optim.method != "BFGS")
+        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+      else
+        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
     }
     if(inherits(optr,"try-error")) warning(optr[1]);
 
@@ -588,7 +601,10 @@ trait.TMB <- function(
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
-        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+        if(optim.method != "BFGS")
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+        else
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       if(inherits(optr, "try-error")){optr <- optr1; objr <- objr1; Lambda.struc <- "diagonal"}
 
@@ -652,7 +668,10 @@ trait.TMB <- function(
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
-        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+        if(optim.method != "BFGS")
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method, control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+        else
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS", control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       
       #quick check to see if something actually happened
@@ -666,7 +685,7 @@ trait.TMB <- function(
     }
     
     param <- objr$env$last.par.best
-    if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma")) {
+    if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
       phis=exp(param[names(param)=="lg_phi"])
     }
     if(family=="ZIP") {
@@ -705,6 +724,7 @@ trait.TMB <- function(
     if(nlvr > 0){
       lvs <- (matrix(param[ui],n,nlvr))
       theta <- matrix(0,p,num.lv)
+      if(num.lv>0)
       if(p>1) {
         theta[lower.tri(theta,diag=TRUE)] <- param[li];
         if(quadratic!=FALSE){
@@ -785,7 +805,7 @@ trait.TMB <- function(
         out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
         out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
       }
-      if(family %in% c("gaussian","tweedie","gamma")) {
+      if(family %in% c("gaussian","tweedie","gamma","beta")) {
         out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
       }
       if(family =="ZIP") {
@@ -800,7 +820,7 @@ trait.TMB <- function(
         out$corr <- sigmaB_ #!!!!
         rownames(out$params$Br) <- rownames(out$params$sigmaB) <- colnames(out$params$sigmaB) <- colnames(xb)
       }
-      if(family == "binomial") out$link <- link;
+      if(family %in% c("binomial", "beta")) out$link <- link;
       out$row.eff <- row.eff
       out$time <- timeo
       out$start <- res
@@ -1021,7 +1041,7 @@ trait.TMB <- function(
           out$sd$phi <- se.lphis*out$params$phi;
           names(out$sd$inv.phi) <- names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
         }
-        if(family %in% c("gaussian","tweedie","gamma")) {
+        if(family %in% c("gaussian","tweedie","gamma","beta")) {
           se.lphis <- se[1:p];
           out$sd$phi <- se.lphis*out$params$phi;
           names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]

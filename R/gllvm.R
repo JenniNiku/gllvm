@@ -8,13 +8,13 @@
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
-#' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
+#' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method), beta (\code{"beta"}) (with logit and probit link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
-#' @param la.link.bin link function for binomial family if \code{method = "LA"}. Options are "logit" and "probit.
+#' @param la.link.bin link function for binomial/beta family if \code{method = "LA"}. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -33,6 +33,7 @@
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE}, defaults to 200.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
@@ -298,7 +299,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, la.link.bin = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
-                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE), 
+                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = "BFGS"), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV"), ...
                   ) {
@@ -314,6 +315,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
         x$optimizer = "optim"
+      if (!("optim.method" %in% names(x))) 
+        x$optim.method = "BFGS"
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
       if (!("maxit" %in% names(x))) 
@@ -358,7 +361,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
-    reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace;
+    reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start
@@ -530,7 +533,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
       TMB = TRUE
     }
-    if (method == "VA" && (family == "tweedie" || family == "ZIP")) {
+    if (method == "VA" && (family == "tweedie" || family == "ZIP" || family == "beta")) {
       cat("VA method cannot handle", family, " family, so LA method is used instead. \n")
       method <- "LA"
     }
@@ -546,12 +549,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
-    if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
-      stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
-    }
-    if(family == "ordinal" && TMB && num.lv==0){
-      stop("Ordinal model without latent variables not yet implemented using TMB.")
-    }
+    # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
+    #   stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
+    # }
+    # if(family == "ordinal" && TMB && num.lv==0){
+    #   stop("Ordinal model without latent variables not yet implemented using TMB.")
+    # }
     if(!TMB && zeta.struc == "common"){
       stop("Ordinal model with species-common cut-offs not implemented without TMB.")
     }
@@ -587,7 +590,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com)
     if(return.terms) {out$terms = term} #else {terms <- }
 
-    if (family == "binomial") {
+    if (family == "binomial" || family == "beta") {
       if (method == "LA")
         out$link <- la.link.bin
       if (method == "VA")
@@ -636,7 +639,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             beta0com = beta0com, 
             scale.X = scale.X,
             zeta.struc = zeta.struc,
-            quadratic = quadratic
+            quadratic = quadratic,
+            optim.method=optim.method
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -672,8 +676,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
-            quadratic = quadratic
-          )
+            quadratic = quadratic,
+            optim.method=optim.method
+        )
       }
 
       out$X.design <- fitg$X.design

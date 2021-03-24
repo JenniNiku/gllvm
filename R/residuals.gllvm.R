@@ -88,7 +88,7 @@ residuals.gllvm <- function(object, ...) {
   mu <- exp(eta.mat)
   if (any(mu == 0))
     mu <- mu + 1e-10
-  if (object$family == "binomial")
+  if (object$family == "binomial" || object$family == "beta")
     mu <- binomial(link = object$link)$linkinv(eta.mat)
   if (object$family == "gaussian")
     mu <- (eta.mat)
@@ -128,6 +128,14 @@ residuals.gllvm <- function(object, ...) {
         phis <- object$params$phi # - 1
         a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
         b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "beta") {
+        a <- pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
+        b <- pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16

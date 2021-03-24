@@ -173,7 +173,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
-  if(object$family == "binomial")
+  if(object$family == "binomial" || object$family == "beta")
     ilinkfun <- binomial(link = object$link)$linkinv
   if(object$family == "ordinal")
     ilinkfun <- pnorm
