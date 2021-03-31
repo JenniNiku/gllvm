@@ -1,0 +1,30 @@
+citHeader("To cite the 'gllvm' package in publications use:")
+
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
+vers <- paste("R package version", meta$Version)
+
+citEntry(entry="Manual",
+         title = "gllvm: Generalized Linear Latent Variable Models",
+         author = personList(as.person("Jenni Niku"), as.person("Wesley Brooks"), as.person("Riki Herliansyah"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton"), as.person("Bert van der Veen")),
+         year = year,
+         note = vers,
+         textVersion =
+         paste("Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., Warton, D. I., and van der Veen, B. (",
+               year,
+               "). gllvm: Generalized Linear Latent Variable Models.",
+               vers, ".", sep="")
+)
+
+citEntry(entry="Article",
+         title = "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R",
+         author = personList(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
+    	 journal = "Methods in Ecology and Evolution",
+         year     = "2019",
+         volume      = "10",
+          pages   = "2173--2182",
+
+         textVersion =
+         paste("Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2019)",
+  	       "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R",
+               "Methods in Ecology and Evolution, 10, 2173--2182.")
+)
