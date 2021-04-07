@@ -5,6 +5,7 @@
 #'
 #' @param object   an object of class 'gllvm'.
 #' @param sd.errors logical. If \code{TRUE}, also returns standard errors.
+#' @param ... Not used.
 #'
 #' 
 #' @author Bert van der Veen
@@ -16,7 +17,7 @@
 #'@export tolerances.gllvm 
 #'@export gradient.length.gllvm
 #'
-optima.gllvm <- function(object,sd.errors = TRUE) {
+optima.gllvm <- function(object,sd.errors = TRUE, ...) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Optima can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
@@ -95,7 +96,7 @@ optima.gllvm <- function(object,sd.errors = TRUE) {
 
 #'@rdname optima
 #'@export
-tolerances.gllvm <- function(object,sd.errors = TRUE) {
+tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Tolerances can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
@@ -151,7 +152,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE) {
 
 #'@rdname optima
 #'@export
-gradient.length.gllvm <- function(object,sd.errors = TRUE) {
+gradient.length.gllvm <- function(object,sd.errors = TRUE, ...) {
   if(!inherits(object,"gllvm.quadratic")){
     stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.\n")
   }
