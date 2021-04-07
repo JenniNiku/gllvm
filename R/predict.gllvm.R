@@ -142,6 +142,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     X.d<- as.matrix(X.d[, colnames(X.d)!= "(Intercept)"])
     eta <- eta + matrix(X.d %*% B, n, p)
+    if(!is.null(object$randomX)){
+      if(!is.null(newdata)) {
+        X.xr <- as.matrix(model.matrix(object$randomX, data = yXT))
+        xr <- as.matrix(X.xr[1:n,])
+      } else {
+        xr <- object$Xrandom
+      }
+      eta <- eta + matrix(xr %*% object$params$Br, n, p)
+    }
   }
   
   
