@@ -44,6 +44,7 @@ residuals.gllvm <- function(object, ...) {
   p <- NCOL(object$y)
 
   num.lv <- object$num.lv
+  num.lv.c <- object$num.lv.c
   quadratic <- object$quadratic
   X <- object$X
   y <- object$y
@@ -78,10 +79,10 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
-  if (num.lv > 0)
-    eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta[,1:num.lv,drop=F])
+  if ((num.lv+num.lv.c) > 0)
+    eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
   if(quadratic != FALSE)
-    eta.mat <- eta.mat  + object$lvs^2 %*% t(object$params$theta[,-c(1:num.lv),drop=F])
+    eta.mat <- eta.mat  + object$lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
   if (!is.null(object$randomX))
     eta.mat <- eta.mat + (object$Xrandom %*% object$params$Br)
   

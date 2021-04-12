@@ -65,10 +65,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
                            jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
+  
+  if(any(class(object)=="gllvm.quadratic")){
+    warning("A biplot does not accurately visualize a GLLVM with quadratic response model. \n")
+  }
   a <- jitter.amount
   n <- NROW(object$y)
   p <- NCOL(object$y)
   num.lv <- object$num.lv
+  num.lv.c <- object$num.lv.c 
   quadratic <- object$quadratic
   if (!is.null(ind.spp)) {
     ind.spp <- min(c(p, ind.spp))
@@ -80,27 +85,28 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }else if(length(spp.colors)!=p){
     stop("spp.colors needs to be of length p or 1.")
   }
-  if (object$num.lv == 0)
+  if ((num.lv+num.lv.c) == 0)
     stop("No latent variables to plot.")
   
   if (is.null(rownames(object$params$theta)))
     rownames(object$params$theta) = paste("V", 1:p)
   
-  if (object$num.lv == 1) {
-    plot(1:n, object$lvs, ylab = "LV1", xlab = "Row index")
+  if ((num.lv+num.lv.c) == 1) {
+    if(num.lv==1)plot(1:n, getLV(object), ylab = "LV1", xlab = "Row index")
+    if(num.lv.c==1)plot(1:n, getLV(object), ylab = "CLV1", xlab = "Row index")
   }
   
-  if (object$num.lv > 1) {
-    do_svd <- svd(object$lvs)
+  if ((num.lv+num.lv.c) > 1) {
+    do_svd <- svd(getLV(object))
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
     
-    choose.lvs <- object$lvs
+    choose.lvs <- getLV(object)
     if(quadratic == FALSE)choose.lv.coefs <- object$params$theta
     if(quadratic != FALSE){
-      testcov <- object$lvs %*% t(object$params$theta[, 1:object$num.lv]) + 
-        object$lvs^2 %*% t(object$params$theta[, -c(1:object$num.lv)])
-      do_svd <- svd(testcov, object$num.lv, object$num.lv)
+      testcov <- getLV(object) %*% t(object$params$theta[, 1:(num.lv+num.lv.c)]) + 
+        getLV(object)^2 %*% t(object$params$theta[, -c(1:(num.lv+num.lv.c))])
+      do_svd <- svd(testcov, (num.lv+num.lv.c), (num.lv+num.lv.c))
       choose.lvs <- do_svd$u
       choose.lv.coefs <- do_svd$v
     }
@@ -115,21 +121,21 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)
     if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     # testcov <- object$lvs %*% t(object$params$theta)
-    # do.svd <- svd(testcov, object$num.lv, object$num.lv)
-    # choose.lvs <- do.svd$u * matrix( do.svd$d[1:object$num.lv] ^ alpha,
-    #     nrow = n, ncol = object$num.lv, byrow = TRUE )
-    # choose.lv.coefs <- do.svd$v * matrix(do.svd$d[1:object$num.lv] ^ (1 - alpha),
-    #     nrow = p, ncol = object$num.lv, byrow = TRUE )
+    # do.svd <- svd(testcov, num.lv, num.lv)
+    # choose.lvs <- do.svd$u * matrix( do.svd$d[1:num.lv] ^ alpha,
+    #     nrow = n, ncol = num.lv, byrow = TRUE )
+    # choose.lv.coefs <- do.svd$v * matrix(do.svd$d[1:num.lv] ^ (1 - alpha),
+    #     nrow = p, ncol = num.lv, byrow = TRUE )
     
     
     if (!biplot) {
       plot(choose.lvs[, which.lvs],
-           xlab = paste("Latent variable ", which.lvs[1]),
-           ylab = paste("Latent variable ", which.lvs[2]),
+           xlab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])), 
+           ylab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
            main = main , type = "n", ... )
       
       if (predict.region) {
@@ -139,7 +145,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           for (i in 1:n) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
             #covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
           sdb<-sdA(object)
@@ -149,13 +155,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%diag(object$A[i,1:(num.lv+num.lv.c)+r])%*%B)[which.lvs,which.lvs];
               # covm <- diag(object$A[i,which.lvs+r]);
             } else {
-              covm <- (t(B)%*%object$A[i,1:num.lv+r,1:num.lv+r]%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c)+r,1:(num.lv+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
               # covm <- object$A[i,which.lvs+r,which.lvs+r];
             }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         }
       }
@@ -183,8 +189,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       plot(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs]),
-        xlab = paste("Latent variable ", which.lvs[1]),
-        ylab = paste("Latent variable ", which.lvs[2]),
+        xlab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])),
+        ylab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
         main = main, type = "n", ... )
       
       if (predict.region) {
@@ -194,7 +200,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           for (i in 1:n) {
             #covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
           sdb<-sdA(object)
@@ -204,13 +210,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%diag(object$A[i,1:(num.lv+num.lv.c)+r])%*%B)[which.lvs,which.lvs];
               #covm <- diag(object$A[i,which.lvs+r]);
             } else {
-              covm <- (t(B)%*%object$A[i,1:num.lv+r,1:num.lv+r]%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c)+r,1:(num.lv+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
               # covm <- object$A[i,which.lvs+r,which.lvs+r];
             }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=object$num.lv)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         }
       }
@@ -244,10 +250,28 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           col = spp.colors, cex = cex.spp )
       }
     }
+
+    if(num.lv.c>1&all(which.lvs<=num.lv.c)){
+            #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
+      # LVcor <- t(cor(choose.lvs+object$X.lv%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
+      # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
+
+        LVcor <- t(cor(getLV(object),object$X.lv)*(apply(getLV(object),2,sd)/apply(object$X.lv,2,sd)))        
+        marg<-par("usr")
     
-    
-    
-  }
+        Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
+        Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
+        
+        #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
+        LVcor <- t(t(LVcor)/apply(abs(LVcor),2,max))*min(Xlength,Ylength)*0.8
+        
+        for(i in 1:nrow(object$params$LvXcoef)){
+          arrows(x0=mean(marg[1:2]),y0=mean(marg[3:4]),x1=mean(marg[1:2])+LVcor[i,1],y1=mean(marg[3:4])+LVcor[i,2],col="red",length=0.1)  
+          text(x=mean(marg[1:2])+LVcor[i,1],y=mean(marg[3:4])+LVcor[i,2],labels = colnames(object$X.lv)[i],col="red")
+        }
+      }
+
+    }
 }
 
 

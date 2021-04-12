@@ -74,16 +74,16 @@
 #'@export getResidualCov.gllvm
 getResidualCov.gllvm = function(object, adjust = 1)
 {
-  if(object$num.lv==0){
+  if((object$num.lv+object$num.lv.c)==0){
     stop("No latent variables present in model.")
   }
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov <- object$params$theta[,1:object$num.lv,drop=F] %*% t(object$params$theta[,1:object$num.lv,drop=F]) + 2*object$params$theta[,-c(1:object$num.lv),drop=F]%*%t(object$params$theta[,-c(1:object$num.lv),drop=F])
-    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
-    ResCov.q2 <- sapply(1:object$num.lv, function(q) 2*object$params$theta[, q+object$num.lv] %*% t(object$params$theta[, q+object$num.lv]), simplify = F)
+    ResCov <- object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F] %*% t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F]) + 2*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
   }else{
     ResCov <- object$params$theta %*% t(object$params$theta)
-    ResCov.q <- sapply(1:object$num.lv, function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
   }
   
   
@@ -92,21 +92,21 @@ getResidualCov.gllvm = function(object, adjust = 1)
     if(adjust == 1) {
       if(any(class(object)=="gllvm.quadratic")){
         ResCov <- ResCov + diag(log(object$params$phi + 1))
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
-        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(log(object$params$phi + 1))/(object$num.lv*2), simplify = F) 
+        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/((object$num.lv+object$num.lv.c)*2), simplify = F) 
+        ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(log(object$params$phi + 1))/((object$num.lv+object$num.lv.c)*2), simplify = F) 
       }else{
         ResCov <- ResCov + diag(log(object$params$phi + 1))
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/object$num.lv, simplify = F)  
+        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/(object$num.lv+object$num.lv.c), simplify = F)  
       }
       }
     if(adjust == 2){
       if(any(class(object)=="gllvm.quadratic")){
         ResCov <- ResCov + diag(trigamma(1/object$params$phi))
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
-        ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv*2), simplify = F)   
+        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/((object$num.lv+object$num.lv.c)*2), simplify = F)   
+        ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(trigamma(1/object$params$phi))/((object$num.lv+object$num.lv.c)*2), simplify = F)   
       }else{
      ResCov <- ResCov + diag(trigamma(1/object$params$phi))
-     ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/object$num.lv, simplify = F)
+     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv+object$num.lv.c), simplify = F)
     }
      }
     
@@ -115,36 +115,40 @@ getResidualCov.gllvm = function(object, adjust = 1)
       if(object$link == "probit"){
         if(any(class(object)=="gllvm.quadratic")){
           ResCov <- ResCov + diag(ncol(object$y))
-          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
-          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
+          ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
         }else{
           ResCov <- ResCov + diag(ncol(object$y))
-          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)  
+          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv+object$num.lv.c), simplify = F)  
         }  
         
       } 
       if(object$link == "logit"){
         ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
-        ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + (diag(ncol(object$y))*pi^2/3)/object$num.lv, simplify = F)
+        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + (diag(ncol(object$y))*pi^2/3)/(object$num.lv+object$num.lv.c), simplify = F)
       } 
     }
     if(object$family == "gaussian"){
         if(any(class(object)=="gllvm.quadratic")){
           ResCov <- ResCov + diag((object$params$phi^2))
-          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
-          ResCov.q2 <- sapply(1:object$num.lv, function(q) ResCov.q2[[q]] + diag(ncol(object$y))/(object$num.lv*2), simplify = F)
+          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
+          ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
         }else{
           ResCov <- ResCov + diag((object$params$phi^2))
-          ResCov.q <- sapply(1:object$num.lv, function(q) ResCov.q[[q]] + diag(ncol(object$y))/object$num.lv, simplify = F)  
+          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv+object$num.lv.c), simplify = F)  
         }
       
     }
   }
-  ResCov.q <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q[[q]])))
-  names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
+  ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q[[q]])))
+  if(object$num.lv.c==0)names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
+  if(object$num.lv==0)names(ResCov.q) <- paste("CLV", 1:object$num.lv.c, sep = "")
+  if(object$num.lv.c>0&object$num.lv>0)names(ResCov.q) <-c( paste("CLV", 1:object$num.lv.c, sep = ""), paste("LV", 1:object$num.lv, sep = ""))
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov.q2 <- sapply(1:object$num.lv, function(q) sum(diag(ResCov.q2[[q]])))
-    names(ResCov.q2) <- paste("LV", 1:object$num.lv, "^2",sep = "")
+    ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q2[[q]])))
+    if(object$num.lv.c==0)names(ResCov.q2) <- paste("LV", 1:object$num.lv, "^2",sep = "")
+    if(object$num.lv==0)names(ResCov.q2) <- paste("CLV", 1:object$num.lv.c, "^2",sep = "")
+    if(object$num.lv>0&object$num.lv.c>0)names(ResCov.q2) <- c(paste("CLV", 1:object$num.lv.c, "^2",sep = ""),paste("LV", 1:object$num.lv, "^2",sep = ""))
   }
   
   colnames(ResCov) <- colnames(object$y)
@@ -154,7 +158,7 @@ getResidualCov.gllvm = function(object, adjust = 1)
   }else{
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)  
   }
-  
+  warning("Still requires proper implementation of constrained variance")
   return(out)
 }
 

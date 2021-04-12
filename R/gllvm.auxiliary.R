@@ -1,8 +1,9 @@
-start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family, 
-        offset= NULL, trial.size = 1, num.lv = 0, start.lvs = NULL, 
-        seed = NULL,power=NULL,starting.val="res",formula=NULL, 
+start.values.gllvm.TMB <- function(y, X = NULL, X.lv = NULL, TR=NULL, family, 
+        offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, start.lvs = NULL, 
+        seed = NULL,power=NULL,starting.val="res",formula=NULL, formula.lv = NULL,
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
         link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL) {
+
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
@@ -49,11 +50,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta")))
     stop("inputed family not allowed...sorry =(")
 
-  if(num.lv > 0) {
+  if((num.lv+num.lv.c) > 0) {
     unique.ind <- which(!duplicated(y))
     if(is.null(start.lvs)) {
-      index <- mvtnorm::rmvnorm(N, rep(0, num.lv));
-      colnames(index) <- paste("LV",1:num.lv, sep = "")
+      index <- mvtnorm::rmvnorm(N, rep(0, num.lv+num.lv.c));
+      if(num.lv>0&num.lv.c==0)colnames(index) <- paste("LV",1:num.lv, sep = "")
+      if(num.lv==0&num.lv.c>0)colnames(index) <- paste("CLV",1:num.lv.c, sep = "")
+      if(num.lv>0&num.lv.c>0)colnames(index) <- c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
       unique.index <- as.matrix(index[unique.ind,])
     }
 
@@ -63,7 +66,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     }
   }
 
-  if(num.lv == 0) { index <- NULL }
+  if((num.lv+num.lv.c) == 0) { index <- NULL }
 
   y <- as.matrix(y)
 
@@ -83,18 +86,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     if(starting.val=="res" && is.null(start.lvs) ){# && num.lv>0
       if(is.null(TR)){
         if(family!="gaussian") {
-          if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+          if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, X.lv = X.lv, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
           if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
           coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
           fit.mva$phi <- fit.mva$params$phi
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
-          if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
-            mu <- exp(mu)
-          }
-          if(family %in% c("binomial","beta")) {
-            mu <-  binomial(link = link)$linkinv(mu)
-          }
         } else {
           if(!is.null(X)) fit.mva <- mlm(y, X = X)
           if(is.null(X)) fit.mva <- mlm(y)
@@ -104,10 +101,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
         }
         gamma=NULL
-        if(num.lv>0){
-          lastart <- FAstart(mu=mu, family=family, y=y, num.lv = num.lv, phis=fit.mva$phi, resi=resi)
+        if((num.lv+num.lv.c)>0){
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, resi=resi, X.lv = X.lv)
           gamma<-lastart$gamma
           index<-lastart$index
+          if(num.lv.c>0)b.lv<-lastart$b.lv
         }
       } else {
         n1 <- colnames(X)
@@ -161,18 +159,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
           if(ncol(fit.mva$Xrandom)>1) sigmaij <- fit.mva$TMBfn$par[names(fit.mva$TMBfn$par)=="sigmaij"]#fit.mva$params$sigmaB[lower.tri(fit.mva$params$sigmaB)]
           mu <- mu + fit.mva$Xrandom%*%Br
         }
-        if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
-          mu <- exp(mu)
-        }
-        if(family %in% c("binomial","beta")) {
-          mu <-  binomial(link = link)$linkinv(mu)
-        }
-        
+
         gamma=NULL
-        if(num.lv>0){
-          lastart <- FAstart(mu, family=family, y=y, num.lv = num.lv, phis=fit.mva$phi)
+        if((num.lv+num.lv.c)>0){
+          lastart <- FAstart(eta, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, X.lv = X.lv)
           gamma<-lastart$gamma
           index<-lastart$index
+          if(num.lv.c>0)b.lv<-lastart$b.lv
         } 
       }
       
@@ -182,14 +175,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       if(family!="gaussian") {
         if(is.null(TR)){
           
-          if(!is.null(X) & num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(is.null(X) & num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(!is.null(X) & num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(is.null(X) & num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if(is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if(is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
 
         } else {
-          if(num.lv > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(num.lv == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if((num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if((num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
           env  <-  rep(0,num.X)
           trait  <-  rep(0,num.T)
           inter <- rep(0, num.T * num.X)
@@ -200,13 +193,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         
       } else {
         if(is.null(TR)){
-          if(!is.null(X) & num.lv > 0) fit.mva <- mlm(y, X = X, index = index)
-          if(is.null(X) & num.lv > 0) fit.mva <- mlm(y, index = index)
-          if(!is.null(X) & num.lv == 0) fit.mva <- mlm(y, X = X)
-          if(is.null(X) & num.lv == 0) fit.mva <- mlm(y)
+          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- mlm(y, X = X, index = index)
+          if(is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- mlm(y, index = index)
+          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- mlm(y, X = X)
+          if(is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- mlm(y)
         } else {
-          if(num.lv > 0) fit.mva <- mlm(y, index = index)
-          if(num.lv == 0) fit.mva <- mlm(y)
+          if((num.lv+num.lv.c) > 0) fit.mva <- mlm(y, index = index)
+          if((num.lv+num.lv.c) == 0) fit.mva <- mlm(y)
           env  <-  rep(0,num.X)
           trait  <-  rep(0,num.T)
           inter <- rep(0, num.T * num.X)
@@ -233,17 +226,17 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     if(is.null(TR)){
       indeX <- cbind(index, X)
     }else{indeX <- cbind(index)}
-    if(num.lv == 0) indeX <- X
+    if((num.lv+num.lv.c) == 0) indeX <- X
 
     phi0<-NULL
     coefs0<-NULL
     for(j in 1:p){
       fitj <- try(glm( y[,j] ~ indeX, family=statmod::tweedie(var.power=power, link.power=0) ),silent = TRUE)
-      if(is.null(X) && num.lv == 0) fitj<-try(glm( y[,j] ~ 1, family=statmod::tweedie(var.power=power, link.power=0) ),silent = TRUE)
+      if(is.null(X) && (num.lv+num.lv.c) == 0) fitj<-try(glm( y[,j] ~ 1, family=statmod::tweedie(var.power=power, link.power=0) ),silent = TRUE)
       if(!inherits(fitj, "try-error")){
         coefs0<-rbind(coefs0,fitj$coefficients)
         phi0<-c(phi0,summary(fitj)$dispersion)
-      } else {coefs0<-rbind(coefs0,rnorm(num.lv+dim(X)[2]+1)); phi0<-c(phi0,runif(1,0.2,3));}
+      } else {coefs0<-rbind(coefs0,rnorm((num.lv+num.lv.c)+dim(X)[2]+1)); phi0<-c(phi0,runif(1,0.2,3));}
     }
 
     if(!is.null(TR)) B=rep(0,num.X+num.T+num.X*num.T)
@@ -253,7 +246,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
 
   if(family == "ordinal") {
     max.levels <- length(unique(c(y)))
-    params <- matrix(0,p,ncol(cbind(1,X))+num.lv)
+    params <- matrix(0,p,ncol(cbind(1,X))+(num.lv+num.lv.c))
     if(zeta.struc == "species"){
       zeta <- matrix(0,p,max.levels - 1)
       zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
@@ -266,7 +259,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
     for(j in 1:p) {
       y.fac <- factor(y[,j])
       if(length(levels(y.fac)) > 2) {
-        if(starting.val%in%c("zero","res") || num.lv==0){
+        if(starting.val%in%c("zero","res") || (num.lv+num.lv.c)==0){
           if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = "probit"),silent = TRUE)
           if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ X, method = "probit"),silent = TRUE)
         } else {
@@ -286,7 +279,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         }
       }
       if(length(levels(y.fac)) == 2) {
-        if(starting.val%in%c("zero","res") || num.lv==0){
+        if(starting.val%in%c("zero","res") || (num.lv+num.lv.c)==0){
           if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit")),silent = TRUE)
           if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X, family = binomial(link = "probit")),silent = TRUE)
         } else { # || (!is.null(TR) && NCOL(TR)>0) & is.null(TR)
@@ -296,12 +289,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
         params[j,1:length(cw.fit$coef)] <- cw.fit$coef
       }
     }
-    if(starting.val%in%c("res") && num.lv>0){
+    if(starting.val%in%c("res") && (num.lv+num.lv.c)>0){
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       
-      lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, zeta = zeta, zeta.struc = zeta.struc)
+      lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, X.lv = X.lv)
       gamma<-lastart$gamma
       index<-lastart$index
       params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
@@ -313,49 +306,99 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   }
 
   if((family!="ordinal" || (family=="ordinal" & starting.val=="res")) & starting.val!="zero"){
-    if(num.lv>1 && p>2){
+    if(num.lv>1 && num.lv.c == 0 && p>2){
       gamma<-as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)])
       qr.gamma <- qr(t(gamma))
       params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.gamma))
       index<-(index%*%qr.Q(qr.gamma))
-    }}
+    }else if(num.lv.c>1 && num.lv == 0 && p>2){
+      gamma<-as.matrix(params[,(ncol(params) - num.lv.c + 1):ncol(params)])
+      qr.gamma <- qr(t(gamma))
+      params[,(ncol(params) - num.lv.c + 1):ncol(params)]<-t(qr.R(qr.gamma))
+      index<-(index%*%qr.Q(qr.gamma))
+    }else if(num.lv.c>1 && num.lv>1 && p>2){
+      gamma<-as.matrix(params[,(ncol(params) - num.lv.c - num.lv + 1):ncol(params)])
+      qr.gamma1 <- qr(t(gamma[,1:num.lv.c]))
+      qr.gamma2 <- qr(t(gamma[,(num.lv.c+1):ncol(gamma)]))
+      params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)- num.lv)]<-t(qr.R(qr.gamma1))
+      params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.gamma2))
+      index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1))
+      index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index),drop=F]%*%qr.Q(qr.gamma2))
+    }
+    }
   if(starting.val=="zero"){
-    params=matrix(0,p,1+num.X+num.lv)
-    params[,1:(ncol(params) - num.lv)] <- 0
+    params=matrix(0,p,1+num.X+(num.lv+num.lv.c))
+    params[,1:(ncol(params) - (num.lv+num.lv.c))] <- 0
     env <- rep(0,num.X)
     trait <- rep(0,num.T)
     inter <- rep(0, num.T * num.X)
     B=c(env,trait,inter)
-    if(num.lv > 0) {
+    if(num.lv > 0 && num.lv.c == 0) {
       gamma <- matrix(1,p,num.lv)
-      gamma[upper.tri(gamma)]=0
+      if(num.lv>1)gamma[upper.tri(gamma)]=0
       params[,(ncol(params) - num.lv + 1):ncol(params)] <- gamma
       index <- matrix(0,n,num.lv)
+    }else if(num.lv == 0 & num.lv.c > 0){
+        gamma <- matrix(1,p,num.lv.c)
+        if(num.lv.c>1)gamma[upper.tri(gamma)]=0
+        params[,(ncol(params) - num.lv.c + 1):ncol(params)] <- gamma
+        index <- matrix(0,n,num.lv.c)
+    }else if(num.lv > 0 & num.lv.c>0){
+      gamma <- matrix(1,p,num.lv+num.lv.c)
+      if(num.lv.c>1)gamma[,1:num.lv.c][upper.tri(gamma[,1:num.lv.c])]=0
+      if(num.lv>1)gamma[,(num.lv.c+1):ncol(gamma)][upper.tri(gamma[,(num.lv.c+1):ncol(gamma)])] <- 0
+      params[,(ncol(params) - num.lv.c - num.lv + 1):ncol(params)] <- gamma
+      index <- matrix(0,n,num.lv.c+num.lv)
     }
     phi <- rep(1,p)
+    if(num.lv.c>0){
+      b.lv <- matrix(1,nrow=ncol(X.lv),ncol=num.lv.c)
+    }
+    
   }
-  if(num.lv > 0) {
-    index <- index+mvtnorm::rmvnorm(n, rep(0, num.lv),diag(num.lv)*jitter.var);
-    try({
-      gamma.new <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
-      sig <- sign(diag(gamma.new));
-      params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)*sig)
-      index <- t(t(index)*sig)}, silent = TRUE)
+  if((num.lv+num.lv.c) > 0) {
+    index <- index+mvtnorm::rmvnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
+    if(num.lv>0&num.lv.c==0){
+      try({
+        gamma.new <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
+        sig <- sign(diag(gamma.new));
+        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)*sig)
+        index <- t(t(index)*sig)}, silent = TRUE)  
+    }else if(num.lv==0 & num.lv.c >0){
+      try({
+        gamma.new <- as.matrix(params[,(ncol(params) - num.lv.c + 1):ncol(params)]);
+        sig <- sign(diag(gamma.new));
+        params[,(ncol(params) - num.lv.c + 1):ncol(params)] <- t(t(gamma.new)*sig)
+        index <- t(t(index)*sig)}, silent = TRUE)
+    }else if(num.lv >0 & num.lv.c >0){
+      try({
+        gamma.new <- as.matrix(params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)-num.lv)]);
+        gamma.new2 <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
+        sig <- sign(diag(gamma.new));
+        sig2 <- sign(diag(gamma.new2));
+        params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)-num.lv)] <- t(t(gamma.new)*sig)
+        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new2)*sig2)
+        index[,1:num.lv.c,drop=F] <- t(t(index[,1:num.lv.c,drop=F])*sig)
+        index[,(num.lv.c+1):ncol(index),drop=F] <- t(t(index[,(num.lv.c+1):ncol(index),drop=F])*sig2)}, silent = TRUE)
+    }
+    
   }
-  
-  if(num.lv == 0){
+  if((num.lv+num.lv.c) == 0){
     qqs <- quantile(params)
     uppout <- qqs[4] + (qqs[4]- qqs[2])*2
     lowout <- qqs[2] - (qqs[4]- qqs[2])*2
     params[params < lowout] <- lowout
     params[params > uppout] <- uppout
   }
-
+  
   out$params <- params
+  if(num.lv.c>0){
+    out$b.lv <- b.lv
+  }
   out$phi <- phi
   out$mu <- mu
   if(!is.null(TR)) { out$B <- B}
-  if(num.lv > 0) out$index <- index
+  if((num.lv+num.lv.c) > 0) out$index <- index
   if(family == "ordinal") out$zeta <- zeta
   options(warn = 0)
   if(row.eff!=FALSE) {
@@ -371,12 +414,17 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
   return(out)
 }
 
+FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = NULL, phis = NULL, 
+                    jitter.var = 0, resi = NULL, row.eff = FALSE, X.lv){
 
-FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis = NULL, 
-                    jitter.var = 0, resi = NULL, row.eff = FALSE){
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
-  
+  if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
+    mu <- exp(eta)
+  }
+  if(family %in% c("binomial","beta")) {
+    mu <-  binomial(link = link)$linkinv(eta)
+  }
   if(is.null(resi)){
     ds.res <- matrix(NA, n, p)
     rownames(ds.res) <- rownames(y)
@@ -470,79 +518,332 @@ FAstart <- function(mu, family, y, num.lv, zeta = NULL, zeta.struc = NULL, phis 
     ds.res <- resi
   }
   resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-  
+  #generate starting value sfor constrained LVs
+  if(num.lv.c>0){
   if(p>2 && n>2){
     if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
     
     if(n>p){
-      fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
-      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-      gamma<-matrix(fa$loadings,p,num.lv)
+      fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"))
+      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
+      gamma<-matrix(fa$loadings,p,num.lv.c)
       index <- fa$scores
     } else if(n<p) {
-      fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
-      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+      fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"))
+      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
       gamma<-fa$scores
-      index <- matrix(fa$loadings,n,num.lv)
+      index <- matrix(fa$loadings,n,num.lv.c)
     } else {
       tryfit <- TRUE; tryi <- 1
       while(tryfit && tryi<5) {
-        fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
+        fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv.c,scores = "regression"), silent = TRUE)
         tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
       }
       if(tryfit) {
         warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
         pr <- princomp(resi)
-        gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
-        index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+        gamma<-matrix(pr$loadings[,1:num.lv.c],p,num.lv.c)
+        index<-matrix(pr$scores[,1:num.lv.c],n,num.lv.c)
       }else{
-        gamma<-matrix(fa$loadings,p,num.lv)
+        gamma<-matrix(fa$loadings,p,num.lv.c)
         index <- fa$scores[1:n,]
       }
     }
+    #Here we regress the LV on the covariates to generate starting values for b.lv, and so we may generate num.lv conditionally
+    if(ncol(index)>1)b.lv<-coef(lm(index~0+X.lv))
+    if(ncol(index)==1)b.lv<-matrix(coef(lm(index~0+X.lv)),ncol=1)
+    gamma <- t(coef(lm(resi~0+I(index[,1:num.lv.c,drop=F]+X.lv%*%b.lv))))
+    colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
   } else {
-    gamma <- matrix(1,p,num.lv)
+    gamma <- matrix(1,p,num.lv.c)
     gamma[upper.tri(gamma)]=0
-    index <- matrix(0,n,num.lv)
+    index <- matrix(0,n,num.lv.c)
+    eta <-  eta+(index+X.lv%*%b.lv)%*%t(gamma)
+    
+  }
+    if(num.lv>0){
+    gamma.c <- gamma
+    index.c <- index
+    }
+  }
+  if(num.lv.c>0&num.lv>0){
+    #re-calculate resi to include effect of constrained ordination
+    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
+      mu <- exp(eta)
+    }
+    if(family %in% c("binomial","beta")) {
+      mu <-  binomial(link = link)$linkinv(eta)
+    }
+    if(is.null(resi)){
+      ds.res <- matrix(NA, n, p)
+      rownames(ds.res) <- rownames(y)
+      colnames(ds.res) <- colnames(y)
+      for (i in 1:n) {
+        for (j in 1:p) {
+          if (family == "poisson") {
+            a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
+            b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "negative.binomial") {
+            phis <- phis + 1e-05
+            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "binomial") {
+            a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
+            b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "gaussian") {
+            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "gamma") {
+            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "exponential") {
+            a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "beta") {
+            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "ordinal") {
+            if(zeta.struc == "species"){
+              probK <- NULL
+              probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+              probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+              if(max(y[,j]) > 2) {
+                j.levels <- 2:(max(y[,j])-1)
+                for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
+              }
+              probK <- c(0,probK)
+              cumsum.b <- sum(probK[1:(y[i,j]+1)])
+              cumsum.a <- sum(probK[1:(y[i,j])])
+              u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+              if (abs(u - 1) < 1e-05)
+                u <- 1
+              if (abs(u - 0) < 1e-05)
+                u <- 0
+              ds.res[i, j] <- qnorm(u)
+            }else{
+              probK <- NULL
+              probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
+              probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+              levels <- 2:(max(y) - min(y))#
+              for (k in levels) {
+                probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
+              }
+              probK <- c(0, probK)
+              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
+              cumsum.a <- sum(probK[1:(y[i, j])])
+              u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+              if (abs(u - 1) < 1e-05)
+                u <- 1
+              if (abs(u - 0) < 1e-05)
+                u <- 0
+              ds.res[i, j] <- qnorm(u)
+            }
+          }
+        }
+      }
+      
+    } else {
+      ds.res <- resi
+    }
+    resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    if(p>2 && n>2){
+      if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
+      
+      if(n>p){
+        fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
+        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        gamma<-matrix(fa$loadings,p,num.lv)
+        index <- fa$scores
+      } else if(n<p) {
+        fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
+        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        gamma<-fa$scores
+        index <- matrix(fa$loadings,n,num.lv)
+      } else {
+        tryfit <- TRUE; tryi <- 1
+        while(tryfit && tryi<5) {
+          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
+          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
+        }
+        if(tryfit) {
+          warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
+          pr <- princomp(resi)
+          gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
+          index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+        }else{
+          gamma<-matrix(fa$loadings,p,num.lv)
+          index <- fa$scores[1:n,]
+        }
+      }
+    } else {
+      gamma <- matrix(1,p,num.lv)
+      gamma[upper.tri(gamma)]=0
+      index <- matrix(0,n,num.lv)
+    }
+    index <- cbind(index.c,index)
+    gamma<-cbind(gamma.c,gamma)
+  }
+  
+    if(num.lv>0&num.lv.c==0){
+    if(p>2 && n>2){
+      if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
+      
+      if(n>p){
+        fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
+        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        gamma<-matrix(fa$loadings,p,num.lv)
+        index <- fa$scores
+      } else if(n<p) {
+        fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
+        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        gamma<-fa$scores
+        index <- matrix(fa$loadings,n,num.lv)
+      } else {
+        tryfit <- TRUE; tryi <- 1
+        while(tryfit && tryi<5) {
+          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
+          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
+        }
+        if(tryfit) {
+          warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
+          pr <- princomp(resi)
+          gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
+          index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+        }else{
+          gamma<-matrix(fa$loadings,p,num.lv)
+          index <- fa$scores[1:n,]
+        }
+      }
+    } else {
+      gamma <- matrix(1,p,num.lv)
+      gamma[upper.tri(gamma)]=0
+      index <- matrix(0,n,num.lv)
+    }
+    b.lv <- NULL
   }
   
   if(row.eff == "random") { # !!!!
-    row.params <- index[,num.lv]* (sd(matrix(index[,num.lv])%*%matrix(gamma[, num.lv], nrow=1)))/sd(index[,num.lv])
+    row.params <- index[,(num.lv+num.lv.c)]* (sd(matrix(index[,(num.lv+num.lv.c)])%*%matrix(gamma[, (num.lv+num.lv.c)], nrow=1)))/sd(index[,(num.lv+num.lv.c)])
     
-    index <- as.matrix(index[,-num.lv])
-    gamma <- as.matrix(gamma[,-num.lv])
-    num.lv <- num.lv-1
+    index <- as.matrix(index[,-(num.lv+num.lv.c)])
+    gamma <- as.matrix(gamma[,-(num.lv+num.lv.c)])
+    (num.lv+num.lv.c) <- (num.lv+num.lv.c)-1
   }
-  
-  if(num.lv>1 && p>2){
+  if((num.lv+num.lv.c)>1 && p>2){
+    if(num.lv.c==0&num.lv>0|num.lv==0&num.lv.c>0){
     qr.gamma <- qr(t(gamma))
     gamma.new<-t(qr.R(qr.gamma))
-    sig <- sign(diag(gamma.new));
+    sig <- sign(diag(gamma.new))
     gamma <- t(t(gamma.new)*sig)
     index<-(index%*%qr.Q(qr.gamma))
+    if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
     index <- t(t(index)*sig)
+    }else{
+      qr.gamma1 <- qr(t(gamma[,1:num.lv.c,drop=F]))
+      qr.gamma2 <- qr(t(gamma[,(num.lv.c+1):ncol(gamma),drop=F]))
+      b.lv<-b.lv%*%qr.Q(qr.gamma1)
+      gamma.new1<-t(qr.R(qr.gamma1))
+      gamma.new2<-t(qr.R(qr.gamma2))
+      sig1 <- sign(diag(gamma.new1))
+      b.lv <- t(t(b.lv)*sig1)
+      sig2 <- sign(diag(gamma.new2))
+      gamma.new1 <- t(t(gamma.new1)*sig1)
+      gamma.new2 <- t(t(gamma.new2)*sig2)
+      gamma <- cbind(gamma.new1,gamma.new2)
+      index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1))
+      index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index)]%*%qr.Q(qr.gamma2))
+      index[,1:num.lv.c] <- t(t(index[,1:num.lv.c])*sig1)
+      index[,(num.lv.c+1):ncol(index)] <- t(t(index[,(num.lv.c+1):ncol(index)])*sig2)
+    }
   } else {
-    sig <- sign(diag(gamma));
+    if(num.lv.c==0|num.lv==0){
+    sig <- sign(diag(gamma))
+    if(num.lv.c>0)b.lv <- t(t(b.lv)*sig)
     gamma <- t(t(gamma)*sig)
     index <- t(t(index)*sig)
+    }else if(num.lv.c>0&num.lv>0){
+      sig1 <- sign(diag(gamma[,1:num.lv.c,drop=F]));
+      sig2 <- sign(diag(gamma[,(num.lv.c+1):ncol(gamma),drop=F]))
+      b.lv <- t(t(b.lv)*sig1)
+      gamma[,1:num.lv.c] <- t(t(gamma[,1:num.lv.c,drop=F])*sig1)
+      gamma[,(num.lv.c+1):ncol(gamma)] <- t(t(gamma[,(num.lv.c+1):ncol(gamma),drop=F])*sig2)
+      index[,1:num.lv.c] <- t(t(index[,1:num.lv.c,drop=F])*sig1)
+      index[,(num.lv.c+1):ncol(index)] <- t(t(index[,(num.lv.c+1):ncol(index),drop=F])*sig2)
+    }
   }
   if(p>n) {
-    sdi <- sqrt(diag(cov(index)))
-    sdt <- sqrt(diag(cov(gamma)))
-    indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
-    index <- index%*%indexscale
-    gammascale <- diag(x = 1/sdt, nrow = length(sdi))
-    gamma <- gamma%*%gammascale
+    if(num.lv==0|num.lv.c==0){
+      sdi <- sqrt(diag(cov(index)))
+      sdt <- sqrt(diag(cov(gamma)))
+      indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
+      index <- index%*%indexscale
+      gammascale <- diag(x = 1/sdt, nrow = length(sdi))
+      gamma <- gamma%*%gammascale  
+    }else if(num.lv>0&num.lv.c>0){
+      
+      sdi <- sqrt(diag(cov(index[,1:num.lv.c,drop=F])))
+      sdt <- sqrt(diag(cov(gamma[,1:num.lv.c,drop=F])))
+      indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
+      index[,1:num.lv.c] <- index[,1:num.lv.c,drop=F]%*%indexscale
+      gammascale <- diag(x = 1/sdt, nrow = length(sdi))
+      gamma[,1:num.lv.c] <- gamma[,1:num.lv.c,drop=F]%*%gammascale  
+      
+      sdi <- sqrt(diag(cov(index[,(num.lv.c+1):ncol(index),drop=F])))
+      sdt <- sqrt(diag(cov(gamma[,(num.lv.c+1):ncol(index),drop=F])))
+      indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
+      index[,(num.lv.c+1):ncol(index)] <- index[,(num.lv.c+1):ncol(index),drop=F]%*%indexscale
+      gammascale <- diag(x = 1/sdt, nrow = length(sdi))
+      gamma[,(num.lv.c+1):ncol(index)] <- gamma[,(num.lv.c+1):ncol(index),drop=F]%*%gammascale  
+    }
+    
   } else {
-    sdi <- sqrt(diag(cov(index)))
-    sdt <- sqrt(diag(cov(gamma)))
-    indexscale <- diag(x = 1/sdi, nrow = length(sdi))
-    index <- index%*%indexscale
-    gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
-    gamma <- gamma%*%gammascale
+    if(num.lv==0|num.lv.c==0){
+      sdi <- sqrt(diag(cov(index)))
+      sdt <- sqrt(diag(cov(gamma)))
+      indexscale <- diag(x = 1/sdi, nrow = length(sdi))
+      index <- index%*%indexscale
+      gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
+      gamma <- gamma%*%gammascale  
+    }else if(num.lv>0&num.lv.c>0){
+      sdi <- sqrt(diag(cov(index[,1:num.lv.c,drop=F])))
+      sdt <- sqrt(diag(cov(gamma[,1:num.lv.c,drop=F])))
+      indexscale <- diag(x = 1/sdi, nrow = length(sdi))
+      index[,1:num.lv.c] <- index[,1:num.lv.c,drop=F]%*%indexscale
+      gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
+      gamma[,1:num.lv.c] <- gamma[,1:num.lv.c,drop=F]%*%gammascale
+      
+      sdi <- sqrt(diag(cov(index[,(num.lv.c+1):ncol(index),drop=F])))
+      sdt <- sqrt(diag(cov(gamma[,(num.lv.c+1):ncol(index),drop=F])))
+      indexscale <- diag(x = 1/sdi, nrow = length(sdi))
+      index[,(num.lv.c+1):ncol(index)] <- index[,(num.lv.c+1):ncol(index),drop=F]%*%indexscale
+      gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
+      gamma[,(num.lv.c+1):ncol(index)] <- gamma[,(num.lv.c+1):ncol(index),drop=F]%*%gammascale
+    }
+    
   }
-  index <- index + mvtnorm::rmvnorm(n, rep(0, num.lv),diag(num.lv)*jitter.var);
-  return(list(index = index, gamma = gamma, row.params =row.params))
+  index <- index + mvtnorm::rmvnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
+  return(list(index = index, gamma = gamma, row.params =row.params, b.lv = b.lv))
 }
 
 

@@ -11,6 +11,7 @@ Type objective_function<Type>::operator() ()
   //declares all data and parameters used
   DATA_MATRIX(y);
   DATA_MATRIX(x);
+  DATA_MATRIX(x_lv);
   DATA_MATRIX(xr);
   DATA_MATRIX(xb);
   DATA_MATRIX(offset);
@@ -19,6 +20,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(b);
   PARAMETER_MATRIX(B);
   PARAMETER_MATRIX(Br);
+  PARAMETER_MATRIX(b_lv);
   PARAMETER_VECTOR(lambda);
   PARAMETER_MATRIX(lambda2);
   
@@ -30,6 +32,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect)
   
   DATA_INTEGER(num_lv);
+  DATA_INTEGER(num_lv_c);
   DATA_INTEGER(family);
   DATA_INTEGER(quadratic);
   
@@ -52,7 +55,7 @@ Type objective_function<Type>::operator() ()
   Type sigma = exp(log_sigma(0));
   
   if(random(0)<1){  r0(0,0) = 0;}
-  int nlvr = num_lv;
+  int nlvr = num_lv+num_lv_c;
   if(random(0)>0){  nlvr++;}
   
   matrix<Type> eta(n,p);
@@ -63,7 +66,7 @@ Type objective_function<Type>::operator() ()
   Cu.fill(0.0);
   
   matrix<Type> newlam(nlvr,p);
-  
+
   if(nlvr>0){
     newlam.row(0).fill(1.0);
     Cu.diagonal().fill(1.0);
@@ -79,15 +82,38 @@ Type objective_function<Type>::operator() ()
     
     //To create lambda as matrix upper triangle
     if (num_lv>0){
-      
+      int tri = 0;
+      if(num_lv_c>0){
+        //because the lambdas for constrained and unconstrained LVs are separately identifiable
+        tri += num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
+      }
       for (int j=0; j<p; j++){
         for (int i=0; i<num_lv; i++){
           if (j < i){
             newlam(i+nlvr-num_lv,j) = 0;
           } else{
-            newlam(i+nlvr-num_lv,j) = lambda(j);
+            newlam(i+nlvr-num_lv,j) = lambda(j+tri);
             if (i > 0){
-              newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
+              newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i+tri);
+            }
+          }
+          // set diag>0 !!!!!!!!!!!
+          // if (j == i){
+          //   newlam(i+nlvr-num_lv,j) = exp(newlam(i+nlvr-num_lv,j));
+          // }
+        }
+      }
+    }
+    if (num_lv_c>0){
+      
+      for (int j=0; j<p; j++){
+        for (int i=0; i<num_lv_c; i++){
+          if (j < i){
+            newlam(i+nlvr-num_lv-num_lv_c,j) = 0;
+          } else{
+            newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(j);
+            if (i > 0){
+              newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
             }
           }
           // set diag>0 !!!!!!!!!!!
@@ -98,8 +124,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    lam += u*newlam;
-  }
+}
   
   matrix<Type> mu(n,p);
   mu.fill(0.0);
@@ -115,7 +140,7 @@ Type objective_function<Type>::operator() ()
     array<Type> D(nlvr,nlvr,p);
     D.fill(0.0);
     if(quadratic>0){
-      if(nlvr>num_lv){
+      if(nlvr>(num_lv+num_lv_c)){
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
             for (int q=1; q<nlvr; q++){
@@ -133,13 +158,13 @@ Type objective_function<Type>::operator() ()
       }else{
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
-            for (int q=0; q<num_lv; q++){
+            for (int q=0; q<(num_lv+num_lv_c); q++){
               D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
-            for (int q=0; q<num_lv; q++){
+            for (int q=0; q<(num_lv+num_lv_c); q++){
               D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
             }
           } 
@@ -172,7 +197,7 @@ Type objective_function<Type>::operator() ()
           }}
       }
       //set VA covariances for random rows to zero for quadratic model
-      if(quadratic>0&&nlvr>num_lv){
+      if(quadratic>0&&nlvr>(num_lv+num_lv_c)){
         for(int i=0; i<n; i++){
           for (int d=0; d<(nlvr); d++){
             if(d!=0){
@@ -182,8 +207,8 @@ Type objective_function<Type>::operator() ()
         }
       }
       for(int i=0; i<n; i++){
-        if(nlvr == num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
-         if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
+        if(nlvr == (num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
+         if(nlvr>(num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
       nll.array() -= -0.5*log(Cu.determinant())*random(0)/p;//n*
@@ -242,6 +267,26 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
+ if(num_lv_c>0){
+      if(random(0)>0){
+        //b_lv has rows K, colummns q
+        //so, first column is random intercept,
+        //second to num_lv_c are constrained
+        //rest lvs are unconstrained
+        //this needs to be done after the integration of (just) the std. normal
+        for (int q=0; q<num_lv_c; q++){
+          u.col(q+1) += x_lv*b_lv.col(q);
+        }
+      }else{
+        for (int q=0; q<num_lv_c; q++){
+          u.col(q) += x_lv*b_lv.col(q);
+        }
+        }
+    }
+      if(nlvr>0){
+        lam += u*newlam;
+      }
+        
     if(quadratic < 1 && nlvr > 0){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
@@ -467,11 +512,7 @@ Type objective_function<Type>::operator() ()
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
   } else {
-    eta += r0*xr + offset;
-    if(nlvr>0){
-      eta += lam;
-    }
-    
+
     // Include random slopes if random(1)>0
     if(random(1)>0){
       vector<Type> sdsv = exp(sigmaB);
@@ -481,6 +522,39 @@ Type objective_function<Type>::operator() ()
       }
       eta += xb*Br;
     }
+    
+    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
+    if(nlvr>0){
+      
+      MVNORM_t<Type> mvnorm(Cu);
+      for (int i=0; i<n; i++) {
+        nll.row(i).array() += mvnorm(u.row(i))/p;
+      }
+    }
+    if(num_lv_c>0){
+      if(random(0)>0){
+        //b_lv has rows K, colummns d
+        //so, first column is random intercept,
+        //second to num_lv_c are constrained
+        //rest lvs are unconstrained
+        //this needs to be done after the integration of (just) the std. normal
+        for (int q=0; q<num_lv_c; q++){
+          u.col(q+1) += x_lv*b_lv.col(q);
+        }
+      }else{
+        for (int q=0; q<num_lv_c; q++){
+          u.col(q) += x_lv*b_lv.col(q);
+        }
+      }
+    }
+    if(nlvr>0){
+      lam += u*newlam;
+    }
+    eta += r0*xr + offset;
+    if(nlvr>0){
+      eta += lam;
+    }
+    
     
     if(model<1){
       
@@ -503,14 +577,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
-    if(nlvr>0){
-      
-      MVNORM_t<Type> mvnorm(Cu);
-      for (int i=0; i<n; i++) {
-        nll.row(i).array() += mvnorm(u.row(i))/p;
-      }
-    }
+    
     
     //likelihood model with the log link function
     if(family==0){//poisson family
@@ -573,8 +640,8 @@ Type objective_function<Type>::operator() ()
         }
       }
   }
-  
   REPORT(nll);//only works for VA!!
-  
+  REPORT(newlam);
+  REPORT(b_lv);
   return nll.sum();
 }

@@ -8,6 +8,7 @@
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
+#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response and predictor variables (m,k). Defaults to 0. Requires specification of "formula.lv" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects. Covariates are automatically scaled and centered to improve convergence (and backtransformed).
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method), beta (\code{"beta"}) (with logit and probit link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
@@ -293,8 +294,8 @@
 #'@importFrom mgcv gam predict.gam
 #'@importFrom mvtnorm rmvnorm
 
-gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
-                  num.lv = 2, family, row.eff = FALSE,
+gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, formula.lv = NULL,
+                  num.lv = 2, num.lv.c = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, la.link.bin = "probit",
@@ -365,9 +366,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start
-    
-    
-    
+    if(!is.null(start.fit)){
+    if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.params$num.lv){
+      stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
+    }
+    if(all(class(start.fit))=="gllvm"&quadratic!=FALSE){
+      stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
+    }
+    }
+    if(num.lv.c>0&method=="VA"&TMB==FALSE){
+      warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
+      control$TMB <- TRUE
+    }
+    # if(num.lv.c>0&is.null(formula.lv)){
+    #   stop("Formula.lv argument required for constrained ordination.")
+    # }
+
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
         stop("X must be a matrix or data.frame.")
@@ -376,15 +390,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
-
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
         datayx <- list(y)
         m1 <- model.frame(y ~ NULL, data = datayx)
         term <- terms(m1)
+        term2 <- NULL
       } else if (is.null(TR)) {
-        if (is.null(formula)) {
+        if (is.null(formula)&is.null(formula.lv)&num.lv.c==0) {
           ff <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
           if (is.data.frame(X)) {
             datayx <- list(y = y, X = model.matrix(ff, X))
@@ -393,13 +407,44 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           }
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
-        } else {
+        } else if(is.null(formula)&is.null(formula.lv)&num.lv.c>0){
+          formula.lv <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
+          if (is.data.frame(X)) {
+            datayx <- list(y = y, X = model.matrix(formula.lv, X))
+          } else {
+            datayx <- list(y = y, X = X)
+          }
+          m2 <- model.frame(y ~ X, data = datayx)
+          term2 <- terms(m2)
+          X.lv<-data.matrix(X)
+          X <- NULL
+          m1 <- NULL
+          term <- NULL
+        }else if(is.null(formula.lv)&!is.null(formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
+        } else if(is.null(formula)&!is.null(formula.lv)){
+          datayx <- data.frame(y, X)
+          m2 <- model.frame(formula.lv, data = datayx)
+          X.lv <- data.matrix(m2)
+          X<-NULL
+        }else if(!is.null(formula)&!is.null(formula.lv)){
+          datayx <- data.frame(y, X)
+          m1 <- model.frame(formula, data = datayx)
+          m2 <- model.frame(formula.lv, data = datayx)
+          X.lv <- data.matrix(m2)
         }
-        term <- terms(m1)
-      } else {
+        try(term <- terms(m1),silent=T)
+        try(term2 <- terms(m2),silent=T)
+        
+       } else {
         term <- NULL
+        term2 <- NULL
+       }
+      if(!is.null(X)|!is.null(data)){
+      if(!is.null(formula)&!is.null(formula.lv)&any(term2==term)){
+        stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+      }
       }
       p <- NCOL(y)
       n <- NROW(y)
@@ -407,8 +452,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         y <- as.matrix(y)
     } else {
       if (!is.null(data)) {
-        if (is.null(formula))
-          stop("Define formula when 'data' attribute is used.")
+        if (is.null(formula)&is.null(formula.lv))
+          stop("Define a formula when 'data' attribute is used.")
         if ("id" %in% colnames(data)) {
           id <- data[, "id"]
           n <- max(id)
@@ -428,20 +473,36 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       mf[[1]] <- as.name("model.frame")
       mf <- eval(mf, parent.frame())
       term <- attr(mf, "terms")
+      
+      cl2 <- match.call()
+      mf2 <- match.call(expand.dots = FALSE)
+      m2 <- match(c("formula.lv", "data", "na.action"), names(mf2), 0)
+      mf2 <- mf2[c(1, m2)]
+      mf2$drop.unused.levels <- TRUE
+      mf2[[1]] <- as.name("model.frame")
+      mf2 <- eval(mf2, parent.frame())
+      term2 <- attr(mf2, "terms")
+      
       abundances <- model.response(mf, "numeric")
       if (any(is.na(abundances)))
         stop("There are NA values in the response.")
       y <- abundances
       #
       X <- model.matrix(term, mf)
+      X.lv <- model.matrix(term2, mf2)
 
+      atr2 <- c(attr(X.lv, "assign"))
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {
         X <- X[, (atr > 0) * 1:ncol(X)]
       } else{
         X <- NULL
       }
-
+      if (sum(atr2) > 0) {
+        X.lv <- X.lv[, (atr2 > 0) * 1:ncol(X.lv)]
+      } else{
+        X.lv <- NULL
+      }
       if (NCOL(y) == 1 &&
           !is.null(data)) {
         y <- matrix(y, n, p)
@@ -453,9 +514,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       } else {
         datayx <- data.frame(y = y, X = X)
       }, silent = TRUE)
-
+      
       if (!is.null(data)) {
         frame1 <- mf
+        frame2 <- mf2
         X <- TR <- NULL
         if (length(attr(term, "term.labels")) > 0) {
           datax <- frame1[, colnames(frame1)!="y"]
@@ -486,6 +548,27 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             }
           }
         }
+        if (length(attr(term2, "term.labels")) > 0) {
+          datax2 <- frame2[, colnames(frame2)!="y"]
+          colnames(datax2) <- colnames(frame2)[colnames(frame2)!="y"]
+          
+          for (k in 1:ncol(datax2)) {
+            lngth <- NULL
+            namek <- colnames(datax2)[k]
+            for (i in 1:n) {
+              lngth <- c(lngth, length(unique(datax2[(id == i), k])))
+            }
+            if (max(lngth) == 1) {
+              if (!is.null(X))
+                X.lv <- data.frame(X, datax2[1:n, k])
+              else
+                X.lv <- data.frame(datax2[1:n, k])
+              
+              colnames(X.lv)[ncol(X.lv)] <- namek
+            } 
+          }
+        }
+        
       }
     }
     p <- NCOL(y)
@@ -497,7 +580,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       la.link.bin <- family$link
       family <- family$family
     }
-    if(num.lv==0)quadratic <- FALSE
+    if(num.lv==0&num.lv.c==0)quadratic <- FALSE
     
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
@@ -579,13 +662,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
     if (is.matrix(start.lvs)) {
       starting.val <- "random"
-      if (ncol(start.lvs) != num.lv || nrow(start.lvs) != n)
+      if (ncol(start.lvs) != (num.lv+num.lv.c) || nrow(start.lvs) != n)
         stop("Given starting value matrix for latent variables has a wrong dimension.")
-      colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
+      if(num.lv>0&num.lv.c==0)colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
+      if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("LV(c)",1:num.lv.c, sep = "")
+      if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("LV(c)",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
+    }
+    if(ncol(X.lv)<=num.lv.c){
+      stop("Number of constrained latent variables need to be at least one fewer than the number of covariates used to constrain \n.")
     }
     n.i <- 1
 
-    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
+    out <- list( y = y, formula.lv = formula.lv, X = X, X.lv = X.lv, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com)
     if(return.terms) {out$terms = term} #else {terms <- }
@@ -606,9 +694,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         fitg <- trait.TMB(
             y,
             X = X,
+            X.lv = X.lv,
             TR = TR,
             formula = formula,
+            formula.lv = formula.lv,
             num.lv = num.lv,
+            num.lv.c = num.lv.c,
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
@@ -649,8 +740,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         fitg <- gllvm.TMB(
             y,
             X = X,
+            X.lv = X.lv,
             formula = formula,
+            formula.lv = formula.lv,
             num.lv = num.lv,
+            num.lv.c = num.lv.c,
             family = family,
             method = method,
             Lambda.struc = Lambda.struc,
@@ -685,7 +779,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
       
-      if (num.lv > 0)
+      if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
       out$X <- fitg$X
       
@@ -744,7 +838,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           jitter.var = jitter.var
         )
       out$logL <- fitg$logLik
-      if (num.lv > 0)
+      if ((num.lv+num.lv.c) > 0)
         out$lvs <- fitg$lvs
       out$X <- fitg$X
       out$TR <- fitg$TR
