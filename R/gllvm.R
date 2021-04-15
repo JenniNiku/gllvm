@@ -8,13 +8,13 @@
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
-#' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method), beta (\code{"beta"}) (with logit and probit link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
-#' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
+#' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
+#' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
-#' @param la.link.bin link function for binomial/beta family if \code{method = "LA"}. Options are "logit" and "probit.
+#' @param link.bin link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -33,7 +33,7 @@
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
-#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}.}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
@@ -297,9 +297,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   num.lv = 2, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, la.link.bin = "probit",
+                  plot = FALSE, link.bin = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
-                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = "BFGS"), 
+                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
@@ -315,8 +315,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
         x$optimizer = "optim"
-      if (!("optim.method" %in% names(x))) 
-        x$optim.method = "BFGS"
+      if (!("optim.method" %in% names(x))) {
+        if(family == "tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
+        }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
       if (!("maxit" %in% names(x))) 
@@ -366,7 +367,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start
     
-    
+    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
     
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -494,10 +495,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       y <- as.matrix(y)
 
     if (class(family) == "family") {
-      la.link.bin <- family$link
+      link.bin <- family$link
       family <- family$family
     }
-    if(num.lv==0)quadratic <- FALSE
+    if(num.lv==0) quadratic <- FALSE
     
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
@@ -533,9 +534,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       cat("Laplace's method is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
       TMB = TRUE
     }
-    if (method == "VA" && (family == "tweedie" || family == "ZIP" || family == "beta")) {
+    if (method == "VA" && (family == "ZIP")) {
       cat("VA method cannot handle", family, " family, so LA method is used instead. \n")
       method <- "LA"
+    }
+    if (quadratic != FALSE && family %in% c("tweedie", "beta")){
+      stop("The quadratic model is not implemented for ", family, " family yet. \n")
+    }
+    if (method == "VA" && family %in% c("tweedie", "beta")){
+      cat("Note that, the ", family, " family is implemented using extended variational approximation method. \n")
+    }
+    if (method == "EVA"){
+      method = "VA"
     }
     if (p < 3 && !is.null(TR)) {
       stop("Fourth corner model can not be fitted with less than three response variables.\n")
@@ -587,14 +597,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
     out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
 
-    if (family == "binomial" || family == "beta") {
+    if (family == "binomial") {
       if (method == "LA")
-        out$link <- la.link.bin
+        out$link <- link.bin
       if (method == "VA")
         out$link <- "probit"
+    }
+    if (family == "beta") {
+        out$link <- link.bin
     }
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
@@ -622,7 +635,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = la.link.bin,
+            link = link.bin,
             n.init = n.init,
             start.params = start.fit,
             optimizer = optimizer,
@@ -666,7 +679,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = la.link.bin,
+            link = link.bin,
             n.init = n.init,
             restrict = restrict,
             start.params = start.fit,

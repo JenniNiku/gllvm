@@ -27,7 +27,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   
   if (!is.numeric(y))
     stop( "y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
-  if ((family %in% c("tweedie", "ZIP")) && method == "VA")
+  if ((family %in% c("ZIP")) && method == "VA") #"tweedie", 
     stop("family=\"", family, "\" : family not implemented with VA method, change the method to 'LA'")
   if (is.null(rownames(y)))
     rownames(y) <- paste("Row", 1:n, sep = "")
@@ -303,9 +303,13 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       if(family == "binomial") { familyn <- 2}
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
+      if(family == "tweedie"){ familyn=5; extra=Power}
       if(family == "ordinal") {familyn=7}
       if(family == "exponential") {familyn=8}
-      
+      if(family == "beta"){ 
+        familyn=9
+        if(link=="probit") extra=1
+      }
       if(starting.val!="zero" && quadratic != FALSE && num.lv>0){
       #generate starting values quadratic coefficients in some cases
       data.list = list(y = y, x = Xd,xr=xr,xb=xb,offset=offset, num_lv = num.lv,quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
@@ -461,7 +465,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
 
       param<-objr$env$last.par.best
-      if(family %in% c("negative.binomial", "gaussian", "gamma")) {
+      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
         phis <- exp(param[names(param)=="lg_phi"])
       }
       if(family == "ordinal"){
@@ -759,13 +763,13 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   out$quadratic <- quadratic
   out$logL <- -out$logL
   
-  if(method == "VA"){
-    if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
-    if(row.eff == "random") out$logL = out$logL + n*0.5
-    if(family=="gaussian") {
-      out$logL <- out$logL - n*p*log(pi)/2
-    }
-  }
+  # if(method == "VA"){ # These have been moved to gllvm.cpp
+  #   if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+  #   if(row.eff == "random") out$logL = out$logL + n*0.5
+  #   if(family=="gaussian") {
+  #     out$logL <- out$logL - n*p*log(pi)/2
+  #   }
+  # }
   
   
   tr<-try({
