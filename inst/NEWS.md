@@ -18,3 +18,5 @@ Version 1.2.4
 
 * Problems occurred in calculation of the starting values for ordinal model.
 
+* Problems occurred in predict() and residuals(), when random slopes for X covariates were included.
+

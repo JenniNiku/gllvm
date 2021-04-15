@@ -6,7 +6,7 @@
 trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
       Lambda.struc = "unstructured", Ab.struct = "unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
-      maxit = 1000, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
+      maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim",
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
@@ -486,7 +486,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
@@ -524,7 +524,7 @@ trait.TMB <- function(
     }
 
     if(optimizer=="nlminb") {
-      timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
+      timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
     }
     if(optimizer=="optim") {
       if(optim.method != "BFGS")
@@ -598,7 +598,7 @@ trait.TMB <- function(
         DLL = "gllvm")
 
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
@@ -665,7 +665,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=maxit,eval.max=maxit)),silent = TRUE))
+        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
@@ -843,7 +843,7 @@ trait.TMB <- function(
             while (r <= nlvr){
               for(i in 1:n){
                 A[i,r,c1] <- Au[nlvr*n+k*n+i];
-                A[i,c1,r] <- A[i,r,c1];
+                # A[i,c1,r] <- A[i,r,c1];
               }
               k <- k+1; r <- r+1;
             }
@@ -871,7 +871,7 @@ trait.TMB <- function(
             while (r <= dr){
               for(j in 1:p){
                 Ab[j,r,c1] <- Abb[dr*p+k*p+j];
-                Ab[j,c1,r] <- Ab[j,r,c1];
+                # Ab[j,c1,r] <- Ab[j,r,c1];
               }
               k <- k+1; r <- r+1;
             }
