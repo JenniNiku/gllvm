@@ -97,10 +97,10 @@ trait.TMB <- function(
   }
 
   if(!is.null(X) || !is.null(TR)){
-    yX <- cbind(cbind(X,id = 1:nrow(y))[rep(1:nrow(X), times=ncol(y)),],  time = rep(1:ncol(y), each= nrow(y)), y = c(as.matrix(y))) #reshape(data.frame(cbind(y, X)), direction = "long", varying = colnames(y), v.names = "y")
-    TR2 <- data.frame(time = 1:p, TR)
+    yX <- cbind(cbind(X,id = 1:nrow(y))[rep(1:nrow(X), times=ncol(y)),],  species = rep(1:ncol(y), each= nrow(y)), y = c(as.matrix(y))) #reshape(data.frame(cbind(y, X)), direction = "long", varying = colnames(y), v.names = "y")
+    TR2 <- data.frame(species = 1:p, TR)
     if(is.null(yXT)){
-      yXT <- merge(yX, TR2, by = "time")
+      yXT <- merge(yX, TR2, by = "species")
     }
     data <- yXT
 
@@ -901,14 +901,14 @@ trait.TMB <- function(
   out$zeta.struc <- zeta.struc
   out$beta0com <- beta0com
   
-  if(method == "VA"){
-    if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
-    if(row.eff == "random") out$logL = out$logL + n*0.5
-    if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
-    if(family=="gaussian") {
-      out$logL <- out$logL - n*p*log(pi)/2
-    }
-  }
+  # if(method == "VA"){ # These have been moved to gllvm.cpp
+  #   if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+  #   if(row.eff == "random") out$logL = out$logL + n*0.5
+  #   if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
+  #   if(family=="gaussian") {
+  #     out$logL <- out$logL - n*p*log(pi)/2
+  #   }
+  # }
   
     tr<-try({
       if(sd.errors && is.finite(out$logL)) {
