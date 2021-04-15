@@ -3,13 +3,13 @@
 ## Original author: Jenni Niku
 ##########################################################################################
 #t(mod$TMBfn$report()$newlam)
-# y=spider$abund; X = spider$x[,1:2]; X.lv = spider$x[,3:4]; formula = NULL; formula.lv = NULL; num.lv = 2; num.lv.c = 2; family = "poisson";
+# y=spider$abund; X = spider$x[,1:2]; lv.X = spider$x[,3:4]; formula = NULL; lv.formula = NULL; num.lv = 2; num.lv.c = 2; family = "poisson";
 # method="VA";Lambda.struc="unstructured"; row.eff = FALSE; reltol = 1e-8;
 # seed = NULL;maxit = 2000; start.lvs = NULL; offset=NULL; sd.errors = FALSE;
 # trace=FALSE;link="logit";n.init=1;restrict=30;start.params=NULL;
 # optimizer="optim";starting.val="zero";Power=1.5;diag.iter=1; dependent.row = FALSE;
 # Lambda.start=c(0.1,0.5); quad.start=0.01; jitter.var=0; zeta.struc = "species"; quadratic = FALSE; start.struc = "LV"; optim.method = "BFGS"
-gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NULL, num.lv = 2, num.lv.c = 0, family = "poisson",
+gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 2000, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL,
@@ -24,8 +24,8 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
   tr <- NULL
   num.lv <- num.lv
   y <- as.matrix(y)
-  if(is.null(X.lv)){
-    X.lv<-matrix(0)
+  if(is.null(lv.X)){
+    lv.X<-matrix(0)
   }
   formula1 <- formula
   if(method=="VA"){ link="probit"}
@@ -110,7 +110,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
     if(n.init > 1 && trace)
       cat("Initial run ", n.i, "\n")
 
-    fit <- start.values.gllvm.TMB(y = y, X = X, X.lv = X.lv, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
     
     sigma <- 1
     if (is.null(start.params)) {
@@ -316,14 +316,14 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
 
       
       if(quadratic == TRUE && start.struc == "LV"){
-        start.fit <- try(gllvm.TMB(y=y, X=X, X.lv = X.lv, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
+        start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
 
         if(inherits(start.fit,"try-error")&starting.val!="zero"){
-          start.fit <- try(gllvm.TMB(y=y, X=X, X.lv = X.lv, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
+          start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
         }
         if(!inherits(start.fit,"ery-error")&starting.val!="zero"){
           if(is.null(start.fit$lvs)){
-            start.fit <- try(gllvm.TMB(y=y, X=X, X.lv = X.lv, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
+            start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
           }
         }
         if(!inherits(start.fit,"try-error")){
@@ -346,7 +346,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
       
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c)>0){
       #generate starting values quadratic coefficients in some cases
-      data.list = list(y = y, x = Xd,x_lv = X.lv, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      data.list = list(y = y, x = Xd,x_lv = lv.X, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       
       if(row.eff=="random"){
         if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv+num.lv.c))
@@ -409,7 +409,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
     
       
       #fit model in all cases
-      data.list = list(y = y, x = Xd,x_lv = X.lv, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      data.list = list(y = y, x = Xd,x_lv = lv.X, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       
       if(row.eff=="random"){
         if(dependent.row&quadratic==F|dependent.row&starting.val=="zero") sigma<-c(log(sigma), rep(0, num.lv+num.lv.c))
@@ -458,7 +458,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
         nam <- names(param1)
         r1 <- matrix(param1[nam=="r0"])
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
-        if(num.lv.c>0){b.lv1 <- matrix(param1[nam=="b_lv"],ncol(X.lv),num.lv.c)}else{b.lv1<-matrix(0)}
+        if(num.lv.c>0){b.lv1 <- matrix(param1[nam=="b_lv"],ncol(lv.X),num.lv.c)}else{b.lv1<-matrix(0)}
         lambda1 <- param1[nam=="lambda"]
         if (quadratic=="LV" | quadratic == T && start.struc == "LV"){
           lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+num.lv.c, nrow = 1)#In this scenario we have estimated two quadratic coefficients before
@@ -473,7 +473,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
         Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), nlvr*n)), rep(0,nlvr*(nlvr-1)/2*n))
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd, x_lv = X.lv, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
 
         parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1,Abb=0, zeta=zeta)
         
@@ -592,7 +592,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
       betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
       beta0 <- betaM[,1]
       if(!is.null(X)) betas <- betaM[,-1]
-      if(num.lv.c>0)b.lv <- matrix(param[bi.lv],ncol(X.lv),num.lv.c)
+      if(num.lv.c>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),num.lv.c)
       
       new.loglik <- objr$env$value.best[1]
 
@@ -620,7 +620,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
         if(link=="probit") extra=1
       }
       
-      data.list = list(y = y, x = Xd, x_lv = X.lv, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = FALSE, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = FALSE, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       if(family == "ordinal"){
         data.list$method = 0
         }
@@ -736,7 +736,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
       betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
       beta0 <- betaM[,1]
       if(!is.null(X)) betas=betaM[,-1]
-      if(num.lv.c>0)b.lv <- matrix(param[bi.lv],ncol(X.lv),num.lv.c)
+      if(num.lv.c>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),num.lv.c)
       
       new.loglik <- objr$env$value.best[1]
       
@@ -785,7 +785,7 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
         if(num.lv.c>0){
           out$params$LvXcoef <- b.lv
           colnames(out$params$LvXcoef) <- paste("CLV",1:num.lv.c, sep="")
-          row.names(out$params$LvXcoef) <- colnames(X.lv)
+          row.names(out$params$LvXcoef) <- colnames(lv.X)
         }
         
         rownames(out$lvs) <- rownames(out$y);
@@ -1020,10 +1020,10 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }
       }else if(num.lv==0&num.lv.c>0){
-        se.LvXcoef <- matrix(se[1:(num.lv.c*ncol(X.lv))],ncol=num.lv.c,nrow=ncol(X.lv))
-        se <- se[-c(1:(num.lv.c*ncol(X.lv)))]
+        se.LvXcoef <- matrix(se[1:(num.lv.c*ncol(lv.X))],ncol=num.lv.c,nrow=ncol(lv.X))
+        se <- se[-c(1:(num.lv.c*ncol(lv.X)))]
         colnames(se.LvXcoef) <- paste("CLV",1:num.lv.c,sep="")
-        row.names(se.LvXcoef) <- colnames(X.lv)
+        row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
         se.lambdas <- matrix(0,p,num.lv.c); se.lambdas[lower.tri(se.lambdas, diag = TRUE)] <- se[1:(p * num.lv.c - sum(0:(num.lv.c-1)))];
         colnames(se.lambdas) <- paste("CLV", 1:num.lv.c, sep="");
@@ -1043,10 +1043,10 @@ gllvm.TMB <- function(y, X = NULL, X.lv = NULL, formula = NULL, formula.lv = NUL
         }
         
       }else if(num.lv>0&num.lv.c>0){
-        se.LvXcoef <- matrix(se[1:(num.lv.c*ncol(X.lv))],ncol=num.lv.c,nrow=ncol(X.lv))
-        se <- se[-c(1:(num.lv.c*ncol(X.lv)))]
+        se.LvXcoef <- matrix(se[1:(num.lv.c*ncol(lv.X))],ncol=num.lv.c,nrow=ncol(lv.X))
+        se <- se[-c(1:(num.lv.c*ncol(lv.X)))]
         colnames(se.LvXcoef) <- paste("CLV",1:num.lv.c,sep="")
-        row.names(se.LvXcoef) <- colnames(X.lv)
+        row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
         se.lambdas <- matrix(0,p,num.lv+num.lv.c);
         se.lambdas[,1:num.lv.c][lower.tri(se.lambdas[,1:num.lv.c,drop=F], diag = TRUE)] <- se[1:(p * num.lv.c - sum(0:(num.lv.c-1)))];

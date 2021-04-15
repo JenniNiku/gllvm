@@ -8,7 +8,7 @@
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
-#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response and predictor variables (m,k). Defaults to 0. Requires specification of "formula.lv" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects. Covariates are automatically scaled and centered to improve convergence (and backtransformed).
+#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response and predictor variables (m,k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects. Covariates are automatically scaled and centered to improve convergence (and backtransformed).
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, only with \code{"LA"}-method), beta (\code{"beta"}) (with logit and probit link, only with \code{"LA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}). Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
@@ -75,6 +75,14 @@
 #'For a model with quadratic responses, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
 #'per species and can be expected to be more applicable to most datasets. The quadratic coefficients D can be used to calculate the length of 
 #'ecological gradients.
+#'For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analysis.
+#'The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
+#'
+#'For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
+#'
+#'\deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
+#'where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
+#'the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
 #'
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 #' are included. The expectation of response \eqn{Y_{ij}} is
@@ -86,20 +94,11 @@
 #' optional species-specific random slopes for environmental covariates.
 #' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 #'
-#'
-#'
 #' The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 #' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 #' However, sometimes this is computationally too demanding, and default option
 #' \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
 #'  
-#' For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analaysis.
-#' The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
-#' For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
-#' This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
-#' As a result, it should rarely be required to fit a GLLVM with quadratic responses and negative binomial distribution (or row-effects).
-#' 
-#'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #'
 #' With ordinal family response classes must start from 0 or 1.
@@ -294,7 +293,7 @@
 #'@importFrom mgcv gam predict.gam
 #'@importFrom mvtnorm rmvnorm
 
-gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, formula.lv = NULL,
+gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
                   num.lv = 2, num.lv.c = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
@@ -307,7 +306,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
+    term2 <- NULL
     datayx <- NULL
+    if(is.null(X)|!is.null(X)&num.lv.c==0)lv.X <- NULL
     pp.pars <- list(...)
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
@@ -374,13 +375,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
       stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
     }
     }
+    
     if(num.lv.c>0&method=="VA"&TMB==FALSE){
       warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
       control$TMB <- TRUE
     }
-    # if(num.lv.c>0&is.null(formula.lv)){
-    #   stop("Formula.lv argument required for constrained ordination.")
-    # }
 
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -390,15 +389,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
+    if(is.null(X)&is.null(data)&num.lv.c>0){
+      stop("Cannot constrain latent variables without predictors. Please provide covariates, or set num.lv.c=0. \n")
+    }
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
         datayx <- list(y)
         m1 <- model.frame(y ~ NULL, data = datayx)
         term <- terms(m1)
-        term2 <- NULL
       } else if (is.null(TR)) {
-        if (is.null(formula)&is.null(formula.lv)&num.lv.c==0) {
+        if (is.null(formula)&is.null(lv.formula)&num.lv.c==0) {
           ff <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
           if (is.data.frame(X)) {
             datayx <- list(y = y, X = model.matrix(ff, X))
@@ -407,43 +408,41 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
           }
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
-        } else if(is.null(formula)&is.null(formula.lv)&num.lv.c>0){
-          formula.lv <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
+        } else if(is.null(formula)&is.null(lv.formula)&num.lv.c>0){
+          lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
           if (is.data.frame(X)) {
-            datayx <- list(y = y, X = model.matrix(formula.lv, X))
+            datayx <- list(y = y, X = model.matrix(lv.formula, X))
           } else {
             datayx <- list(y = y, X = X)
+            lv.formula <- formula(paste("~", paste(paste("X",colnames(X),sep=""), collapse = "+")))
           }
-          m2 <- model.frame(y ~ X, data = datayx)
-          term2 <- terms(m2)
-          X.lv<-data.matrix(X)
+          lv.X <- model.matrix(y ~ X, data = datayx)
           X <- NULL
-          m1 <- NULL
-          term <- NULL
-        }else if(is.null(formula.lv)&!is.null(formula)){
+          m1 <- model.frame(y ~ NULL, data = datayx)
+        }else if(is.null(lv.formula)&!is.null(formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
-        } else if(is.null(formula)&!is.null(formula.lv)){
+          lv.X <- NULL
+          lv.formula <- y ~ NULL
+        } else if(is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
-          m2 <- model.frame(formula.lv, data = datayx)
-          X.lv <- data.matrix(m2)
+          m1 <- model.frame(y ~ NULL, data = datayx)
+          lv.X <- model.matrix(lv.formula,datayx)
           X<-NULL
-        }else if(!is.null(formula)&!is.null(formula.lv)){
+        }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
-          m2 <- model.frame(formula.lv, data = datayx)
-          X.lv <- data.matrix(m2)
+          lv.X <- data.matrix(m2)
         }
         try(term <- terms(m1),silent=T)
-        try(term2 <- terms(m2),silent=T)
+        try(term2 <- terms(model.frame(lv.formula,datayx)),silent=T)
         
-       } else {
-        term <- NULL
-        term2 <- NULL
-       }
-      if(!is.null(X)|!is.null(data)){
-      if(!is.null(formula)&!is.null(formula.lv)&any(term2==term)){
-        stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+       } 
+      if(!is.null(X)&num.lv.c>0|!is.null(data)&num.lv.c>0){
+      if(!is.null(formula)&!is.null(lv.formula)){
+        if(any(attr(term,"term.labels")==attr(term2,"term.labels"))){
+          stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+        }
       }
       }
       p <- NCOL(y)
@@ -452,7 +451,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
         y <- as.matrix(y)
     } else {
       if (!is.null(data)) {
-        if (is.null(formula)&is.null(formula.lv))
+        if (is.null(formula)&is.null(lv.formula))
           stop("Define a formula when 'data' attribute is used.")
         if ("id" %in% colnames(data)) {
           id <- data[, "id"]
@@ -476,10 +475,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
       
       cl2 <- match.call()
       mf2 <- match.call(expand.dots = FALSE)
-      m2 <- match(c("formula.lv", "data", "na.action"), names(mf2), 0)
+      m2 <- match(c("lv.formula", "data", "na.action"), names(mf2), 0)
       mf2 <- mf2[c(1, m2)]
       mf2$drop.unused.levels <- TRUE
-      mf2[[1]] <- as.name("model.frame")
+      mf2[[1]] <- as.name("model.matrix")
       mf2 <- eval(mf2, parent.frame())
       term2 <- attr(mf2, "terms")
       
@@ -489,9 +488,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
       y <- abundances
       #
       X <- model.matrix(term, mf)
-      X.lv <- model.matrix(term2, mf2)
+      lv.X <- model.matrix(term2, mf2)
 
-      atr2 <- c(attr(X.lv, "assign"))
+      atr2 <- c(attr(lv.X, "assign"))
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {
         X <- X[, (atr > 0) * 1:ncol(X)]
@@ -499,9 +498,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
         X <- NULL
       }
       if (sum(atr2) > 0) {
-        X.lv <- X.lv[, (atr2 > 0) * 1:ncol(X.lv)]
+        lv.X <- lv.X[, (atr2 > 0) * 1:ncol(lv.X)]
       } else{
-        X.lv <- NULL
+        lv.X <- NULL
       }
       if (NCOL(y) == 1 &&
           !is.null(data)) {
@@ -560,11 +559,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
             }
             if (max(lngth) == 1) {
               if (!is.null(X))
-                X.lv <- data.frame(X, datax2[1:n, k])
+                lv.X <- data.frame(X, datax2[1:n, k])
               else
-                X.lv <- data.frame(datax2[1:n, k])
+                lv.X <- data.frame(datax2[1:n, k])
               
-              colnames(X.lv)[ncol(X.lv)] <- namek
+              colnames(lv.X)[ncol(lv.X)] <- namek
             } 
           }
         }
@@ -665,20 +664,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
       if (ncol(start.lvs) != (num.lv+num.lv.c) || nrow(start.lvs) != n)
         stop("Given starting value matrix for latent variables has a wrong dimension.")
       if(num.lv>0&num.lv.c==0)colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
-      if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("LV(c)",1:num.lv.c, sep = "")
-      if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("LV(c)",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
+      if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("CLV",1:num.lv.c, sep = "")
+      if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
     }
-    if(ncol(X.lv)<=num.lv.c){
+    if(num.lv.c>0){
+    if(ncol(lv.X)<=num.lv.c){
       stop("Number of constrained latent variables need to be at least one fewer than the number of covariates used to constrain \n.")
+    }
     }
     n.i <- 1
 
-    out <- list( y = y, formula.lv = formula.lv, X = X, X.lv = X.lv, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c,
+    out <- list( y = y, lv.formula = lv.formula, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com)
-    if(return.terms) {out$terms = term} #else {terms <- }
+    if(return.terms) {out$terms = term;out$lv.terms<-term2} #else {terms <- }
 
-    if (family == "binomial" || family == "beta") {
+      if (family == "binomial" || family == "beta") {
       if (method == "LA")
         out$link <- la.link.bin
       if (method == "VA")
@@ -694,10 +695,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
         fitg <- trait.TMB(
             y,
             X = X,
-            X.lv = X.lv,
+            lv.X = lv.X,
             TR = TR,
             formula = formula,
-            formula.lv = formula.lv,
+            lv.formula = lv.formula,
             num.lv = num.lv,
             num.lv.c = num.lv.c,
             family = family,
@@ -740,9 +741,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fo
         fitg <- gllvm.TMB(
             y,
             X = X,
-            X.lv = X.lv,
+            lv.X = lv.X,
             formula = formula,
-            formula.lv = formula.lv,
+            lv.formula = lv.formula,
             num.lv = num.lv,
             num.lv.c = num.lv.c,
             family = family,

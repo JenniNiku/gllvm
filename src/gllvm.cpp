@@ -643,5 +643,6 @@ Type objective_function<Type>::operator() ()
   REPORT(nll);//only works for VA!!
   REPORT(newlam);
   REPORT(b_lv);
+  REPORT(u);
   return nll.sum();
 }

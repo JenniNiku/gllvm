@@ -5,7 +5,7 @@
 #' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternative \code{"response"} is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
-#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
+#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. If a row-effect is included in the model, the first column can be used to specify a new row-intercept.
 #' @param ... not used.
 #'
 #' @details
@@ -53,6 +53,11 @@
 #'@export predict.gllvm
 
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
+  r0 <- NULL
+  if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
+    warning("First column of newLV taken to be row-intercepts. \n")
+    r0 <- newLV[,1];newLV<-newLV[,-1,drop=F]
+  }
   newdata <- newX
   p <- ncol(object$y)
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
@@ -145,12 +150,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   
-  if((object$num.lv+object$num.lv.c) > 0) {
+  if(object$num.lv > 0 && is.null(newdata)|object$num.lv.c>0 && is.null(newdata)) {
     theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
     if(is.null(newLV) && is.null(newdata) && is.null(newTR)){
-      eta <- eta + object$lvs %*% t(theta)
+      eta <- eta + getLV(object) %*% t(theta)
     if(object$quadratic != FALSE)
-      eta <- eta + object$lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+      eta <- eta + getLV(object)^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
     }
     if(!is.null(newLV)) {
       if(ncol(newLV) != (object$num.lv+object$num.lv.c)) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
@@ -164,11 +169,31 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
      
     }
+  }else{
+    theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
+    if(is.null(newLV) && !is.null(newdata)){
+      LV <- NULL
+      if(num.lv.c>0)lvs <- model.frame(object$lv.formula,as.data.frame(newdata))%*%object$params$LvXcoef + object$lvs[,1:num.lv.c,drop=F]
+      if(num.lv>0) lvs <- cbind(lvs,object$lvs[,-c(1:num.lv.c),drop=F])
+      eta <- eta + lvs %*% t(theta)
+      if(object$quadratic != FALSE)
+        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+    }
+    if(!is.null(newLV)) {
+      if(num.lv.c>0)lvs <- model.frame(object$lv.formula,as.data.frame(newdata))%*%object$params$LvXcoef + newLV[,1:num.lv.c,drop=F]
+      if(num.lv>0) lvs <- cbind(lvs,newLV[,-c(1:num.lv.c),drop=F])
+      eta <- eta + lvs %*% t(theta)
+      if(object$quadratic != FALSE)
+        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+      
+    }
   }
   
-  if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)) {
+  if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)&is.null(r0)) {
     r0 <- object$params$row.params
     eta <- eta + r0
+  }else if(!is.null(r0)){
+    eta <- eta+r0
   }
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))

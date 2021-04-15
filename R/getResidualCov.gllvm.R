@@ -3,12 +3,14 @@
 #'
 #' @param object  an object of class 'gllvm'.
 #' @param adjust  The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.
+#' @param site.index A site index used used in the calculation of a GLLVM with quadratic response model, for which the residual covariance is calculated.
 #'
 #' @return Function returns following components:
 #'  \item{cov }{residual covariance matrix}
-#'  \item{trace }{trace of the residual covariance matrix}
-#'  \item{trace.q }{trace of the residual covariance matrix per latent variable}
-#'
+#'  \item{trace }{trace of the residual covariance matrix, the total variance explained}
+#'  \item{var.q }{trace of the residual covariance matrix per latent variable, variance explained per latent variable}
+#'  \item{var.q2 }{trace of the squared term of the residual covariance matrix per latent variable, for quadratic responses. Variance explained per latent variable by the quadratic term}
+
 #' @details 
 #' Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}.
 #' 
@@ -65,22 +67,32 @@
 #'rescov$cov
 #'# Trace of the covariance matrix
 #'rescov$trace
-#'# Trace per latent variable
-#'rescov$trace.q
+#'# Variance explained per latent variable
+#'rescov$var.q
 #'}
 #'@aliases getResidualCov getResidualCov.gllvm
 #'@method getResidualCov gllvm
 #'@export
 #'@export getResidualCov.gllvm
-getResidualCov.gllvm = function(object, adjust = 1)
+getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
 {
+  if(object$quadratic!=FALSE&&is.null(site.index)&object$num.lv.c>0){
+    stop("Please provide a site index vector for which the residual covariances should be calculated. \n")
+  }else if(object$quadratic!=FALSE&&!is.null(site.index)){
+    if(length(site.index)!=1&object$num.lv.c>0&object$quadratic!=FALSE){
+      stop("Site.index should be of length 1. \n")
+    }
+  }
+  
   if((object$num.lv+object$num.lv.c)==0){
     stop("No latent variables present in model.")
   }
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov <- object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F] %*% t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F]) + 2*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+    ResCov <- object$params$theta[, 1:object$num.lv, drop = F] %*% t(object$params$theta[, 1:object$num.lv, drop = F]) + 2 * object$params$theta[, -c(1:object$num.lv), drop = F] %*% t(object$params$theta[, -c(1:object$num.lv), drop = F])
+    if(object$num.lv.c>0)ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F))
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
+    if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,q,drop=F])+object$params$theta[,q,drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])),simplify=F))
   }else{
     ResCov <- object$params$theta %*% t(object$params$theta)
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
@@ -154,11 +166,10 @@ getResidualCov.gllvm = function(object, adjust = 1)
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
   if(any(class(object)=="gllvm.quadratic")){
-    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q, trace.q2 = ResCov.q2)
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, trace.q2 = ResCov.q2)
   }else{
-    out <- list(cov = ResCov, trace = sum(diag(ResCov)), trace.q = ResCov.q)  
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q)  
   }
-  warning("Still requires proper implementation of constrained variance")
   return(out)
 }
 

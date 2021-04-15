@@ -32,6 +32,12 @@
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 #' For details for constructing a biplot, see Gabriel (1971).
 #' 
+#' Effects of environmental variables in constrained ordination are indicated with arrows. 
+#' If standard errors are available in the provided model, the slopes of environmental variables
+#' for which the 95% confidence intervals do not include zero are shown as red, while others 
+#' are slightly less intensely colored.
+#' 
+#' 
 #' @note 
 #' - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
 #' 
@@ -253,21 +259,39 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
     if(num.lv.c>1&all(which.lvs<=num.lv.c)){
             #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
-      # LVcor <- t(cor(choose.lvs+object$X.lv%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
+      # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
-
-        LVcor <- t(cor(getLV(object),object$X.lv)*(apply(getLV(object),2,sd)/apply(object$X.lv,2,sd)))        
+      LVcoef <- object$params$LvXcoef
+      if(any(row.names(LVcoef)%in%"(Intercept)")){
+        intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
+        LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
+      }
+      if(!is.logical(object$sd)){
+        cilow <- object$params$LvXcoef+qnorm( (1 - 0.95) / 2)*object$sd$LvXcoef
+        ciup <- object$params$LvXcoef+qnorm(1- (1 - 0.95) / 2)*object$sd$LvXcoef
+        lty <- rep("solid",ncol(object$lv.X))
+        col <- rep("red", ncol(object$lv.X))
+        lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
+        col[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- hcl(0, 100, 80)#rgb(1,0,0,alpha=0.3)
+        
+      }else{
+        lty <- rep("dashed",ncol(object$lv.X))
+        col<-rep("red",ncol(object$lv.X))
+      }
+        LVcoef <- LVcoef%*%svd_rotmat_sites
+        LVcoef <- LVcoef/apply(object$lv.X[,!colnames(object$lv.X)%in%"(Intercept)",drop=F],2,sd)
         marg<-par("usr")
     
         Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
         Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
-        
+        origin<- c(mean(marg[1:2]),mean(marg[3:4]))
+
         #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-        LVcor <- t(t(LVcor)/apply(abs(LVcor),2,max))*min(Xlength,Ylength)*0.8
+        LVcoef <- t(t(LVcoef)/apply(abs(LVcoef),2,max))*min(Xlength,Ylength)*0.8
         
-        for(i in 1:nrow(object$params$LvXcoef)){
-          arrows(x0=mean(marg[1:2]),y0=mean(marg[3:4]),x1=mean(marg[1:2])+LVcor[i,1],y1=mean(marg[3:4])+LVcor[i,2],col="red",length=0.1)  
-          text(x=mean(marg[1:2])+LVcor[i,1],y=mean(marg[3:4])+LVcor[i,2],labels = colnames(object$X.lv)[i],col="red")
+        for(i in 1:nrow(LVcoef)){
+          arrows(x0=origin[1],y0=origin[2],x1=origin[1]+LVcoef[i,1],y1=origin[2]+LVcoef[i,2],col=col[i],length=0.1,lty=lty[i])  
+          text(x=origin[1]+LVcoef[i,1],y=origin[2]+LVcoef[i,2],labels = row.names(LVcoef)[i],col=col[i])
         }
       }
 

@@ -79,10 +79,12 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
-  if ((num.lv+num.lv.c) > 0)
-    eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
-  if(quadratic != FALSE)
-    eta.mat <- eta.mat  + object$lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
+  if (num.lv > 0|num.lv.c>0)
+    eta.mat <- eta.mat  + getLV(object) %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
+  if(quadratic != FALSE){
+    if (num.lv>0|num.lv.c > 0)eta.mat <- eta.mat  + getLV(object)^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
+  }
+  
   if (!is.null(object$randomX))
     eta.mat <- eta.mat + (object$Xrandom %*% object$params$Br)
   
