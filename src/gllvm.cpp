@@ -125,6 +125,7 @@ Type objective_function<Type>::operator() ()
     }
     
 }
+
   
   matrix<Type> mu(n,p);
   mu.fill(0.0);
@@ -211,7 +212,9 @@ Type objective_function<Type>::operator() ()
          if(nlvr>(num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
       }
-      nll.array() -= -0.5*log(Cu.determinant())*random(0)/p;//n*
+      nll.array() -= 0.5*(nlvr - log(Cu.determinant())*random(0))/p; //n*
+      
+      // REPORT(A);  
     }
     
     
@@ -251,7 +254,11 @@ Type objective_function<Type>::operator() ()
         nll.col(j).array() -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() - 0.5*(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-0.5*(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()))/n;// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
-      nll.array() -= -0.5*log(S.determinant())*random(1)/n;//n*
+      nll.array() -= 0.5*(l - log(S.determinant())*random(1))/n;//n*
+      // REPORT(S);  
+      // REPORT(sds);  
+      // REPORT(xb);  
+      // REPORT(Ab);  
     }
     
     if(model<1){
@@ -318,7 +325,7 @@ Type objective_function<Type>::operator() ()
         }
       }
       // //NB, gamma, exponential
-      if(family==1|family==4|family==8){
+      if((family==1)|(family==4)|(family==8)){
         matrix <Type> B(nlvr,nlvr);
         matrix <Type> v(nlvr,1);
         for (int i=0; i<n; i++) {
@@ -336,7 +343,7 @@ Type objective_function<Type>::operator() ()
         }
       }
       //Binomial, Gaussian, Ordinal
-      if(family==2|family==3|family==7){
+      if((family==2)|(family==3)|(family==7)){
         for (int i=0; i<n; i++) {
           Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
           for (int j=0; j<p;j++){
@@ -346,6 +353,8 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
+    // REPORT(eta);
+    // REPORT(cQ);
     
     if(family==0){//poisson
       if(quadratic<1){
@@ -392,7 +401,7 @@ Type objective_function<Type>::operator() ()
     } else if(family==3) {//gaussian
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j)));
+          nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
@@ -413,6 +422,20 @@ Type objective_function<Type>::operator() ()
         }
       }
       
+    } else if(family==5){ // Tweedie EVA
+      Type v = extra(0);
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p; j++) {
+          // Tweedie log-likelihood:
+          nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), v, true);
+          if (y(i,j) == 0) {
+            // Hessian-trace part:
+            nll(i,j) += (1/iphi(j)) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
+          } else if (y(i,j) > 0) {
+            nll(i,j) -= (1/iphi(j)) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
+          }
+        }
+      }
     } else if(family==7 && zetastruc == 1){//ordinal
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -460,7 +483,7 @@ Type objective_function<Type>::operator() ()
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    }else if(family==7 && zetastruc==0){
+    } else if(family==7 && zetastruc==0){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
       
@@ -508,6 +531,51 @@ Type objective_function<Type>::operator() ()
         }
       }
       
+    } else if(family==9) { // Beta EVA
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p; j++) {
+          // define mu, mu' and mu''
+          Type mu = 0.0;
+          Type mu_prime = 0.0;
+          Type mu_prime2 = 0.0;
+          if (extra(0) == 0) { // logit
+
+            CppAD::vector<Type> z(4);
+            z[0] = eta(i,j);
+            z[1] = 0;
+            z[2] = 1/(1+exp(-z[0]));
+            z[3] = exp(z[0])/(exp(z[0])+1);
+
+            mu = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+            mu_prime = mu * (1-mu);
+            mu_prime2 = mu_prime * (1-2*mu);
+
+          } else if (extra(0) == 1) { // probit
+            mu = pnorm(eta(i,j), Type(0), Type(1));
+            mu_prime = dnorm(eta(i,j), Type(0), Type(1));
+            mu_prime2 = (-eta(i,j))*mu_prime;
+          }
+          CppAD::vector<Type> a(2);
+          CppAD::vector<Type> b(2);
+          a[0] = mu*iphi(j);
+          a[1] = 1;
+          b[0] = (1-mu)*iphi(j);
+          b[1] = 1;
+          CppAD::vector<Type> aa = a;
+          CppAD::vector<Type> bb = b;
+          aa[1] = 2;
+          bb[1] = 2;
+          Type dig_a = Type(atomic::D_lgamma(a)[0]);
+          Type dig_b = Type(atomic::D_lgamma(b)[0]);
+          Type trig_a = Type(atomic::D_lgamma(aa)[0]);
+          Type trig_b = Type(atomic::D_lgamma(bb)[0]);
+    //       
+          nll(i,j) -= dbeta(squeeze(y(i,j)), Type(a[0]), Type(b[0]), 1);
+          nll(i,j) -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
+          nll(i,j) -= iphi(j) * mu_prime2 * (log(squeeze(y(i,j))) - log(1-squeeze(y(i,j)))) * cQ(i,j);
+    //       
+        }
+      }
     }
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
@@ -641,6 +709,7 @@ Type objective_function<Type>::operator() ()
       }
   }
   REPORT(nll);//only works for VA!!
+
   REPORT(newlam);
   REPORT(b_lv);
   REPORT(u);

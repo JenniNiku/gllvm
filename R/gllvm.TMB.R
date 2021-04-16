@@ -2,13 +2,6 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-#t(mod$TMBfn$report()$newlam)
-# y=spider$abund; X = spider$x[,1:2]; lv.X = spider$x[,3:4]; formula = NULL; lv.formula = NULL; num.lv = 2; num.lv.c = 2; family = "poisson";
-# method="VA";Lambda.struc="unstructured"; row.eff = FALSE; reltol = 1e-8;
-# seed = NULL;maxit = 2000; start.lvs = NULL; offset=NULL; sd.errors = FALSE;
-# trace=FALSE;link="logit";n.init=1;restrict=30;start.params=NULL;
-# optimizer="optim";starting.val="zero";Power=1.5;diag.iter=1; dependent.row = FALSE;
-# Lambda.start=c(0.1,0.5); quad.start=0.01; jitter.var=0; zeta.struc = "species"; quadratic = FALSE; start.struc = "LV"; optim.method = "BFGS"
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
@@ -36,7 +29,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   
   if (!is.numeric(y))
     stop( "y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
-  if ((family %in% c("tweedie", "ZIP")) && method == "VA")
+  if ((family %in% c("ZIP")) && method == "VA") #"tweedie", 
     stop("family=\"", family, "\" : family not implemented with VA method, change the method to 'LA'")
   if (is.null(rownames(y)))
     rownames(y) <- paste("Row", 1:n, sep = "")
@@ -341,9 +334,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(family == "binomial") { familyn <- 2}
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
+      if(family == "tweedie"){ familyn=5; extra=Power}
       if(family == "ordinal") {familyn=7}
       if(family == "exponential") {familyn=8}
-      
+      if(family == "beta"){ 
+        familyn=9
+        if(link=="probit") extra=1
+      }      
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c)>0){
       #generate starting values quadratic coefficients in some cases
       data.list = list(y = y, x = Xd,x_lv = lv.X, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
@@ -501,7 +498,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
 
       param<-objr$env$last.par.best
-      if(family %in% c("negative.binomial", "gaussian", "gamma")) {
+      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
         phis <- exp(param[names(param)=="lg_phi"])
       }
       if(family == "ordinal"){
@@ -890,15 +887,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   out$quadratic <- quadratic
   out$logL <- -out$logL
   
-  if(method == "VA"){
-    if((num.lv+num.lv.c) > 0) out$logL = out$logL + n*0.5*(num.lv+num.lv.c)
-    if(row.eff == "random") out$logL = out$logL + n*0.5
-    if(family=="gaussian") {
-      out$logL <- out$logL - n*p*log(pi)/2
-    }
-  }
-  
-  
+  # if(method == "VA"){ # These have been moved to gllvm.cpp
+  #   if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
+  #   if(row.eff == "random") out$logL = out$logL + n*0.5
+  #   if(family=="gaussian") {
+  #     out$logL <- out$logL - n*p*log(pi)/2
+  #   }
+  # }
+
   tr<-try({
     if(sd.errors && !is.infinite(out$logL)) {
       if(trace) cat("Calculating standard errors for parameters...\n")

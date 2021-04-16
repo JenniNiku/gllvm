@@ -1,4 +1,4 @@
-Version 1.2.4
+Version 1.3.0
 ==============
 
 ### New Features
@@ -6,7 +6,9 @@ Version 1.2.4
 * Quadratic latent variables allowed, that is term - u_i'D_j u_i can be included in the model. 
   In addition, functions 'optima()', 'tolerances()' and 'gradient.length()' included.
 
-* Beta distribution implemented for the responses.
+* Beta response distribution implemented using Laplace approximation and extended variational approximation method.
+
+* Tweedie response model implemented using extended variational approximation method.
 
 * Ordinal model works now for 'num.lv=0'.
 
