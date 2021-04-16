@@ -304,16 +304,19 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         params[j,1:length(cw.fit$coef)] <- cw.fit$coef
       }
     }
-    if(starting.val%in%c("res") && (num.lv+num.lv.c)>0){
   }
+    if(starting.val%in%c("res") && (num.lv+num.lv.c)>0){
+  
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
-      
-      lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X)
-      gamma<-lastart$gamma
-      index<-lastart$index
-      params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
+      if((num.lv+num.lv.c)>0){
+        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X)
+        gamma<-lastart$gamma
+        index<-lastart$index
+        params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
+        if(num.lv.c>0)b.lv<-lastart$b.lv
+      } 
     }
 
   }
@@ -570,10 +573,19 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
       # }else{
       #   index.lm<-lm(fa$scores~0+lv.X)  
       # }
-      index.lm <-  lm(fa$scores~0+lv.X)
-      index <- residuals(index.lm)
-      b.lv<-coef(index.lm)
-      gamma.lm <- lm(resi~0+I(index+lv.X%*%b.lv))
+      if(n>p){
+        if(num.lv.c>1)index.lm <-  lm(fa$scores~0+lv.X)
+        if(num.lv.c==1)index.lm <-  lm(c(fa$scores)~0+lv.X)
+      }else{
+        if(num.lv.c>1)index.lm <-  lm(fa$loadings~0+lv.X)
+        if(num.lv.c==1)index.lm <-  lm(c(fa$loadings)~0+lv.X)
+      }
+      index <- matrix(residuals(index.lm),ncol=num.lv.c,nrow=n)
+      b.lv<-matrix(coef(index.lm),ncol=num.lv.c,nrow=ncol(lv.X))
+      gamma.lm <- try(lm(resi~0+I(index+lv.X%*%b.lv)),silent=T)
+      if(inherits(gamma.lm,"try-error")){
+        stop("Error in generating starting values. Possibly redundant factors in X.\n")
+      }
       gamma<-t(coef(gamma.lm))
       
       # b.lv.fa <- try(factanal(lv.X,factors=num.lv.c),silent=T)
@@ -625,7 +637,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
     eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
   }
   }else if(num.lv.c>0&num.lv>0){
-    start.fit <<- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F)
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc)
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
@@ -847,7 +859,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
       index[,(num.lv.c+1):ncol(index)] <- t(t(index[,(num.lv.c+1):ncol(index)])*sig2)
     }
   } else {
-    if(num.lv.c==0|num.lv==0){
+    if(num.lv.c>0&num.lv.c==0|num.lv>0&num.lv==0){
     sig <- sign(diag(gamma))
     if(num.lv.c>0)b.lv <- t(t(b.lv)*sig)
     gamma <- t(t(gamma)*sig)
@@ -863,7 +875,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
     }
   }
   if(p>n) {
-    if(num.lv==0|num.lv.c==0){
+    if(num.lv==0&num.lv.c>0|num.lv.c==0&num.lv>0){
       sdi <- sqrt(diag(cov(index)))
       sdt <- sqrt(diag(cov(gamma)))
       indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))

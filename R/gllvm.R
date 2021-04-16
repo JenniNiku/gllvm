@@ -136,6 +136,7 @@
 #'  \item{params}{list of parameters
 #'  \itemize{
 #'    \item{theta }{ coefficients related to latent variables}
+#'    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
@@ -409,38 +410,47 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
         } else if(is.null(formula)&is.null(lv.formula)&num.lv.c>0){
-          lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
+          lv.formula <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
           if (is.data.frame(X)) {
-            datayx <- list(y = y, X = model.matrix(lv.formula, X))
+            datayx <- list(X = model.matrix(lv.formula, X))
           } else {
-            datayx <- list(y = y, X = X)
-            lv.formula <- formula(paste("~", paste(paste("X",colnames(X),sep=""), collapse = "+")))
+            datayx <- list(X = X)
           }
-          lv.X <- model.matrix(y ~ X, data = datayx)
+          lv.X <- as.matrix(model.frame(~ X, data = datayx))
           X <- NULL
-          m1 <- model.frame(y ~ NULL, data = datayx)
         }else if(is.null(lv.formula)&!is.null(formula)){
-          datayx <- data.frame(y, X)
+          # datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
           lv.X <- NULL
           lv.formula <- y ~ NULL
         } else if(is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(y ~ NULL, data = datayx)
-          lv.X <- model.matrix(lv.formula,datayx)
+          labterm <- labels(terms(lv.formula))
+          if(any(labterm==1)|any(labterm==0)){
+            labterm<-labterm[labterm!=1&labterm!=0]
+          }
+          
+          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
+          lv.X<- model.matrix(lv.formula,data=datayx)
           X<-NULL
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
-          lv.X <- data.matrix(m2)
+          labterm <- labels(terms(lv.formula))
+          if(any(labterm==1)|any(labterm==0)){
+            labterm<-labterm[labterm!=1&labterm!=0]
+          }
+          
+          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
+          lv.X<- model.matrix(lv.formula,data=datayx)
         }
         try(term <- terms(m1),silent=T)
-        try(term2 <- terms(model.frame(lv.formula,datayx)),silent=T)
-        
-       } 
+
+      } 
       if(!is.null(X)&num.lv.c>0|!is.null(data)&num.lv.c>0){
       if(!is.null(formula)&!is.null(lv.formula)){
-        if(any(attr(term,"term.labels")==attr(term2,"term.labels"))){
+        if(any(attr(term,"term.labels")==labterm)){
           stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
         }
       }
@@ -669,7 +679,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     if(num.lv.c>0){
     if(ncol(lv.X)<=num.lv.c){
-      stop("Number of constrained latent variables need to be at least one fewer than the number of covariates used to constrain \n.")
+      stop("The number of constrained latent variables needs to be at least one less than the number of covariates used to constrain \n.")
     }
     }
     n.i <- 1

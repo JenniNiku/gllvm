@@ -262,10 +262,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
       LVcoef <- object$params$LvXcoef
-      if(any(row.names(LVcoef)%in%"(Intercept)")){
-        intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
-        LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
-      }
+      # if(any(row.names(LVcoef)%in%"(Intercept)")){
+      #   intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
+      #   LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
+      # }
       if(!is.logical(object$sd)){
         cilow <- object$params$LvXcoef+qnorm( (1 - 0.95) / 2)*object$sd$LvXcoef
         ciup <- object$params$LvXcoef+qnorm(1- (1 - 0.95) / 2)*object$sd$LvXcoef
@@ -279,7 +279,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         col<-rep("red",ncol(object$lv.X))
       }
         LVcoef <- LVcoef%*%svd_rotmat_sites
-        LVcoef <- LVcoef/apply(object$lv.X[,!colnames(object$lv.X)%in%"(Intercept)",drop=F],2,sd)
+        LVcoef <- LVcoef/apply(object$lv.X,2,sd)
         marg<-par("usr")
     
         Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))

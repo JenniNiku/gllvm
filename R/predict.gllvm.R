@@ -182,7 +182,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
     if(is.null(newLV) && !is.null(newdata)){
       LV <- NULL
-      if(num.lv.c>0)lvs <- model.frame(object$lv.formula,as.data.frame(newdata))%*%object$params$LvXcoef + object$lvs[,1:num.lv.c,drop=F]
+      if(num.lv.c>0)lvs <- model.matrix(object$lv.formula,model.frame(object$lv.formula,as.data.frame(newdata)))%*%object$params$LvXcoef + object$lvs[,1:num.lv.c,drop=F]
       if(num.lv>0) lvs <- cbind(lvs,object$lvs[,-c(1:num.lv.c),drop=F])
       eta <- eta + lvs %*% t(theta)
       if(object$quadratic != FALSE)

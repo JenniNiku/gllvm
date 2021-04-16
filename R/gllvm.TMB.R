@@ -20,7 +20,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   n <- dim(y)[1]
   p <- dim(y)[2]
   objrFinal <- optrFinal <- NULL
-  
   tr <- NULL
   num.lv <- num.lv
   y <- as.matrix(y)
@@ -91,6 +90,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       formula1 <- formulab
     }}
+  
   if (is.null(formula) && is.null(X)) {
     formula = "~ 1"
   }
