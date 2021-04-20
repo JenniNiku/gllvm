@@ -316,11 +316,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, TR=NULL, family,
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
-      
+      if(num.lv>0){
       lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, zeta = zeta, zeta.struc = zeta.struc)
       gamma<-lastart$gamma
       index<-lastart$index
       params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
+      }
     }
 
   }
