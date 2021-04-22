@@ -637,6 +637,9 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
     eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
   }
   }else if(num.lv.c>0&num.lv>0){
+    if(family!="ordinal"){
+      zeta.struc<-"species"
+    }
     start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc)
     gamma <- start.fit$params$theta
     index <- start.fit$lvs

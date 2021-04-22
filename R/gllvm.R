@@ -421,6 +421,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           }
           lv.X <- as.matrix(model.frame(~ X, data = datayx))
           X <- NULL
+          m1 <- model.frame(y ~ NULL, data = datayx)
+          term <- terms(m1)
         }else if(is.null(lv.formula)&!is.null(formula)){
           # datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
@@ -447,8 +449,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
+          term <- terms(m1)
         }
-        try(term <- terms(m1),silent=T)
 
       } 
       if(!is.null(X)&num.lv.c>0|!is.null(data)&num.lv.c>0){
@@ -691,8 +693,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
     }
     if(num.lv.c>0){
-    if(ncol(lv.X)<=num.lv.c){
-      stop("The number of constrained latent variables needs to be at least one less than the number of covariates used to constrain \n.")
+    if(ncol(lv.X)<num.lv.c){
+      stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
     }
     }
     n.i <- 1
