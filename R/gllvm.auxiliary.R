@@ -1312,7 +1312,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
 }
 
 
-start.values.randomX <- function(y, Xb, family, starting.val, power = NULL) {
+start.values.randomX <- function(y, Xb, family, starting.val, power = NULL, link=NULL) {
   y <- as.matrix(y)
   Xb <- as.matrix(Xb)
   n <- NROW(y)
@@ -1446,37 +1446,3 @@ mlm <- function(y, X = NULL, index = NULL){
   out
 }
                                  
-#'@export
-#'@export nobs.gllvm
-nobs.gllvm <- function(object){
-  n <- prod(dim(object$y))
-  return(n)
-}
-
-#'@export nobs
-nobs <- function(object, ...)
-{
-  UseMethod(generic = "nobs")
-}
-
-
-#'@export
-#'@export AICc.gllvm
-AICc.gllvm <- function(object, ...){
-  objectlist <- list(object, ...)
-  IC<-lapply(objectlist,function(x){
-    abund=x$y
-    n <- dim(abund)[1]
-    p <- dim(abund)[2]
-    k<-attributes(logLik.gllvm(x))$df
-    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n*p-k-1)
-    return(AICc)
-  })
-  return(unlist(IC))
-}
-
-#'@export AICc
-AICc <- function(object, ...)
-{
-  UseMethod(generic = "AICc")
-}

@@ -24,7 +24,7 @@ vcov.gllvm <- function(object){
 }
 
 #'@export vcov
-vcov <- function(object, ...)
+vcov <- function(object)
 {
   UseMethod(generic = "vcov")
 }
