@@ -28,9 +28,10 @@
 #'@export
 #'@export predictLVs.gllvm
 
-predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
+predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...) 
 {
-  if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
+  # predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
+    if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
   if(is.null(newX)==FALSE)
@@ -78,11 +79,15 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
           for(i in 1:n)
           {
             A[i,r,c1] <- Au[nlvr*n+k*n+i];
-            A[i,c1,r] <- A[i,r,c1];
+            # A[i,c1,r] <- A[i,r,c1];
           }
           k <- k+1; r <- r+1;
         }
       }
+    }
+    for(i in 1:n)
+    {
+      A[i,,] <- A[i,,]%*%t(A[i,,])
     }
     out$A <- A
   }
@@ -142,6 +147,10 @@ getPars = function(pars,objectTest,object)
   tpar[names(tpar)=="lambda"] = opar[names(opar)=="lambda"]
   tpar[names(tpar)=="lg_phi"] = opar[names(opar)=="lg_phi"]
   tpar[names(tpar)=="log_sigma"] = opar[names(opar)=="log_sigma"]
+  tpar[names(tpar)=="sigmaB"] = opar[names(opar)=="sigmaB"]
+  if(length(tpar[names(tpar)=="sigmaB"]))   tpar[names(tpar)=="sigmaij"] = opar[names(opar)=="sigmaij"]
+  tpar[names(tpar)=="Br"] = opar[names(opar)=="Br"]
+  tpar[names(tpar)=="Abb"] = opar[names(opar)=="Abb"]
   return(tpar)
 }
 

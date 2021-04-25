@@ -287,7 +287,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam
@@ -367,7 +367,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start
     
-    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
     
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -498,6 +497,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       link.bin <- family$link
       family <- family$family
     }
+    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
     if(num.lv==0) quadratic <- FALSE
     
     if(any(colSums(y)==0))
@@ -595,7 +595,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     }
     n.i <- 1
 
-    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv,
+    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv, formula = formula,
         method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
@@ -658,7 +658,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
-
+        out$formula <- fitg$formula
+        
       } else {
         fitg <- gllvm.TMB(
             y,
@@ -694,6 +695,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             quadratic = quadratic,
             optim.method=optim.method
         )
+        if(is.null(formula)) {
+          out$formula <- fitg$formula
+          out$X <- fitg$X
+        }
       }
 
       out$X.design <- fitg$X.design
@@ -702,8 +707,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       
       if (num.lv > 0)
         out$lvs <- fitg$lvs
-      out$X <- fitg$X
-      
+      # out$X <- fitg$X
       
 
       out$params <- fitg$params
@@ -778,7 +782,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       warning("Algorithm converged to infinity, try other starting values or different method.")
       cat("Algorithm converged to infinity, try other starting values or different method. \n")
       }
-    out$formula <- fitg$formula
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {

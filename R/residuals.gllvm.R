@@ -45,10 +45,10 @@ residuals.gllvm <- function(object, ...) {
 
   num.lv <- object$num.lv
   quadratic <- object$quadratic
-  X <- object$X
+  if(!is.null(object$X)) X <- as.matrix(object$X.design[1:n,]) else X=NULL
   y <- object$y
 
-  num.X <- ncol(object$X)
+  num.X <- ncol(object$X.design)
   num.T <- ncol(object$TR)
 
   pzip <- function(y, mu, sigma)
@@ -73,7 +73,7 @@ residuals.gllvm <- function(object, ...) {
 
   eta.mat <- matrix(object$params$beta0, n, p, byrow = TRUE) + offset
   if (!is.null(object$X) && is.null(object$TR))
-    eta.mat <- eta.mat + (X %*% matrix(t(object$params$Xcoef), num.X, p))
+    eta.mat <- eta.mat + (object$X.design %*% matrix(t(object$params$Xcoef), num.X, p))
   if (!is.null(object$TR))
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)

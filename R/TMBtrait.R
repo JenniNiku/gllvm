@@ -41,9 +41,10 @@ trait.TMB <- function(
         X[,i] <- Xi
         X.new <- cbind(X.new,Xi); if(!is.null(colnames(X)[i])) colnames(X.new)[dim(X.new)[2]] <- colnames(X)[i]
       } else {
-        dum <- model.matrix( ~ X[,i])
+        dum <- model.matrix( ~ X[,i]-1)
         dum <- as.matrix(dum[, !(colnames(dum) %in% c("(Intercept)"))])
-        colnames(dum) <- paste(colnames(X)[i], levels(X[,i])[ - 1], sep = "")
+        # colnames(dum) <- paste(colnames(X)[i], levels(X[,i])[ - 1], sep = "")
+        colnames(dum) <- paste(colnames(X)[i], levels(X[,i]), sep = "")
         X.new <- cbind(X.new, dum)
       }
     }
@@ -169,7 +170,7 @@ trait.TMB <- function(
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
-      bstart <- start.values.randomX(y, xb, family, starting.val = randomX.start, power = Power)
+      bstart <- start.values.randomX(y, xb, family, starting.val = randomX.start, power = Power, link = link)
       Br <- bstart$Br
       sigmaB <- bstart$sigmaB
       sigmaij <- rep(0,(ncol(xb)-1)*ncol(xb)/2)
@@ -773,7 +774,7 @@ trait.TMB <- function(
     new.loglik<-objr$env$value.best[1]
 
 
-    if((n.i==1 || out$logL > abs(new.loglik)) && is.finite(new.loglik) && !inherits(optr, "try-error") && new.loglik>0){ #
+    if( (n.i==1 || out$logL > (new.loglik)) && is.finite(new.loglik) && !inherits(optr, "try-error")){ #
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;
       out$logL <- new.loglik
       if(num.lv > 0) {
