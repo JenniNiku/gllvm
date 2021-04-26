@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -69,6 +69,9 @@
     </li>
   </ul>
 </li>
+<li>
+  <a href="news/index.html">Changelog</a>
+</li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
@@ -89,9 +92,26 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-Analysis of multivariate data using generalized linear latent variable models (gllvm). 
-      Estimation is performed using either Laplace approximation method or variational approximation method implemented via TMB (Kristensen et al., (2016), &lt;<a href="https://doi.org/10.18637/jss.v070.i05">doi:10.18637/jss.v070.i05</a>&gt;). 
-      For details see Niku et al. (2019a) &lt;<a href="https://doi.org/10.1371/journal.pone.0216129">doi:10.1371/journal.pone.0216129</a>&gt; and Niku et al. (2019b) &lt;<a href="https://doi.org/10.1111/2041-210X.13303">doi:10.1111/2041-210X.13303</a>&gt;.
+
+<div id="gllvm" class="section level1">
+<div class="page-header"><h1 class="hasAnchor">
+<a href="#gllvm" class="anchor"></a>gllvm</h1></div>
+<p><code>gllvm</code> is an R package for analysing multivariate ecological data with Generalized Linear Latent Variable Models (GLLVM). Estimation is performed using maximum likelihood estimation, together with either variational approximation (VA) or Laplace approximation (LA) method to approximate the marginal likelihood.</p>
+</div>
+<div id="installation" class="section level1">
+<h1 class="hasAnchor">
+<a href="#installation" class="anchor"></a>Installation</h1>
+<p>From CRAN you can install the package using:</p>
+<pre><code><a href="https://rdrr.io/r/utils/install.packages.html">install.packages("gllvm")</a></code></pre>
+<p>Or the development version of <code>gllvm</code> from github with the help of <code>devtools</code> package using:</p>
+<pre><code><a href="https://devtools.r-lib.org//reference/remote-reexports.html">devtools::install_github("JenniNiku/gllvm")</a></code></pre>
+</div>
+<div id="getting-started" class="section level1">
+<h1 class="hasAnchor">
+<a href="#getting-started" class="anchor"></a>Getting started</h1>
+<p>For getting started with <code>gllvm</code> we recommend to read vignette <a href="https://jenniniku.github.io/gllvm/articles/vignette1.html">Analysing multivariate abundance data using gllvm</a> or introductions for using <code>gllvm</code> for <a href="https://jenniniku.github.io/gllvm/articles/vignette3.html">ordination</a> and for <a href="https://jenniniku.github.io/gllvm/articles/vignette4.html">analysing species correlations</a>.</p>
+</div>
+
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -112,10 +132,22 @@ Analysis of multivariate data using generalized linear latent variable models (g
 <li><a href="https://www.r-project.org/Licenses/GPL-2">GPL-2</a></li>
 </ul>
 </div>
+<div class="citation">
+<h2>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html">Citing gllvm</a></li>
+</ul>
+</div>
 <div class="developers">
 <h2>Developers</h2>
 <ul class="list-unstyled">
-<li>Jenni Niku <br><small class="roles"> Maintainer </small>  </li>
+<li>Jenni Niku <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Wesley Brooks <br><small class="roles"> Author </small>  </li>
+<li>Riki Herliansyah <br><small class="roles"> Author </small>  </li>
+<li>Francis K.C. Hui <br><small class="roles"> Author </small>  </li>
+<li>Sara Taskinen <br><small class="roles"> Author </small>  </li>
+<li>David I. Warton <br><small class="roles"> Author </small>  </li>
+<li>Bert van der Veen <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
 
@@ -124,7 +156,7 @@ Analysis of multivariate data using generalized linear latent variable models (g
 
 
       <footer><div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">

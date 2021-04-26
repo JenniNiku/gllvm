@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -67,6 +67,9 @@
     </li>
   </ul>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
@@ -92,7 +95,7 @@
       <h1 data-toc-skip>Analysing multivariate abundance data using gllvm</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2020-12-14</h4>
+            <h4 class="date">2021-04-26</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/master/vignettes/vignette1.Rmd"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -133,7 +136,7 @@
 <span class="co">#&gt;     coefplot</span>
 <span class="co">#&gt; The following objects are masked from 'package:stats':</span>
 <span class="co">#&gt; </span>
-<span class="co">#&gt;     predict, simulate</span>
+<span class="co">#&gt;     nobs, predict, simulate, vcov</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">)</span>
 <span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span>
 <span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html">scale</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">$</span><span class="va">env</span><span class="op">)</span><span class="op">)</span>
@@ -256,7 +259,7 @@
 <tr class="even">
 <td>Biomass</td>
 <td align="center">Tweedie</td>
-<td align="left">LA</td>
+<td align="left">LA/EVA</td>
 <td align="left">log</td>
 <td align="left">
 <span class="math inline">\(E(y_{ij}) = \mu_{ij}\)</span>, <span class="math inline">\(V(\mu_{ij}) = \phi_j\mu_{ij}^\nu\)</span>,</td>
@@ -301,12 +304,21 @@
 <td align="left">where <span class="math inline">\(\phi_j\)</span> is a shape parameter</td>
 </tr>
 <tr class="even">
-<td>non-negative continuous</td>
+<td>Non-negative continuous</td>
 <td align="center">Exponential</td>
 <td align="left">VA/LA</td>
 <td align="left">log</td>
 <td align="left">
 <span class="math inline">\(E(y_{ij}) = \mu_{ij}\)</span>, <span class="math inline">\(V(y_{ij}) = \mu_{ij}^2\)</span>
+</td>
+</tr>
+<tr class="odd">
+<td>Percent cover</td>
+<td align="center">beta</td>
+<td align="left">LA/EVA</td>
+<td align="left">probit/logit</td>
+<td align="left">
+<span class="math inline">\(E(y_{ij}) = \mu_{ij}\)</span>, <span class="math inline">\(V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)\)</span>
 </td>
 </tr>
 </tbody>
@@ -329,7 +341,7 @@
 <span class="co">#&gt; log-likelihood:  -2098.631 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1108 </span>
 <span class="co">#&gt; AIC:  4441.261 </span>
-<span class="co">#&gt; AICc:  4118.552 </span>
+<span class="co">#&gt; AICc:  4468.372 </span>
 <span class="co">#&gt; BIC:  4612.207</span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fit_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span>
@@ -344,7 +356,7 @@
 <span class="co">#&gt; log-likelihood:  -1865.085 </span>
 <span class="co">#&gt; Residual degrees of freedom:  1067 </span>
 <span class="co">#&gt; AIC:  4056.17 </span>
-<span class="co">#&gt; AICc:  3657.185 </span>
+<span class="co">#&gt; AICc:  4106.324 </span>
 <span class="co">#&gt; BIC:  4284.566</span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.</p>
 <p>In addition to information criterias, we can use residual plots for diagnosing model fit. As a default, <code>plot</code> function utilizes <code>residual</code> fuction to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument <code>which</code> one can define which plots will be produced.</p>
@@ -411,7 +423,7 @@
 <p>Alternatively, model-selection on covariates, latent variables or both can be performed by dredging, using the MuMIn package. Though especially for large datasets with many covariates and latent variables, this can take a while to run.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">MuMIn</span><span class="op">)</span>
-<span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu">dredge</span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AIC"</span><span class="op">)</span>
+<span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/MuMIn/man/dredge.html">dredge</a></span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AIC"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">fit_table</span>, <span class="va">delta</span><span class="op">&lt;</span><span class="fl">2</span><span class="op">)</span>
 <span class="co"># Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Shrub.cover + Volume.lying.CWD, </span>
 <span class="co">#     num.lv = i, family = "negative.binomial", sd.errors = FALSE, </span>
@@ -464,10 +476,10 @@
 <code class="sourceCode R"><span class="va">rcov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit_env</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
 <span class="va">rcov0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit4lv</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
 <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>; <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span>
-<span class="co">#&gt; [1] 79.62605</span>
-<span class="co">#&gt; [1] 64.57779</span>
+<span class="co">#&gt; [1] 79.6387</span>
+<span class="co">#&gt; [1] 64.57821</span>
 <span class="fl">1</span> <span class="op">-</span> <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span> <span class="op">/</span> <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>
-<span class="co">#&gt; [1] 0.1889866</span></code></pre></div>
+<span class="co">#&gt; [1] 0.1891103</span></code></pre></div>
 </div>
 <div id="incorporating-functional-traits-into-fourth-corner-models" class="section level2">
 <h2 class="hasAnchor">
@@ -535,7 +547,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">

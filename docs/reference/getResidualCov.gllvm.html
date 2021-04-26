@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -107,6 +107,9 @@
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
   </ul>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -150,7 +153,7 @@
     </tr>
     <tr>
       <th>adjust</th>
-      <td><p>The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.</p></td>
+      <td><p>The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.</p></td>
     </tr>
     </table>
 
@@ -171,7 +174,11 @@ $$Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),$$
 where \(\lambda_j \sim lognormal(-\sigma^2/2, \sigma^2)\) and \(\sigma^2 = log(\phi_j + 1)\) and \(log(\mu_{ij}) = \eta_{ij}\). Now \(E[Y_{ij}] = \mu_{ij}\) and variance \(V(\mu_{ij}) = \mu_{ij} + \mu_{ij}^2 (exp(\sigma^2) - 1) = \mu_{ij} + \mu_{ij}^2 \phi_j\), which are the same as for the NB distribution.
 Therefore, on linear predictor scale, we have the variance 
 $$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j) + \sigma^2 = \theta_j'\theta_j + log(\phi_j + 1).$$
-which leads to the residual covariance matrix \(\Theta \Theta' + diag(\Phi)\), where \(\Psi\) is the diagonal matrix with \(log(\phi_j + 1)\) as diagonal elements (<code>adjust = 1</code>).</p>
+which leads to the residual covariance matrix \(\Theta \Theta' + \eqn{\Psi}\), where \(\Psi\) is the diagonal matrix with \(log(\phi_j + 1)\) as diagonal elements (<code>adjust = 1</code>).</p>
+<p>Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
+$$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).$$
+which leads to the residual covariance matrix \(\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)\), where \(\Gamma_j\) holds the quadratic coefficients.
+Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.</p>
 <p>The residual covariance matrix with <code>adjust = 2</code> can be obtained by using Poisson-Gamma parametrization
 $$Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),$$
 where \(\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)\) and \(\mu_{ij}\) is as above. The mean and the variance are of similar form as above and we have that
@@ -185,10 +192,16 @@ Then binary response is defined as \(Y_{ij} = 1\), if \(Y^*_{ij} &gt; 0\) and 0 
 Now we have that \(\mu_{ij} = P(Y_{ij} = 1) = P(Y^*_{ij} &gt; 0) = P(\eta_{ij} &gt; -e_{ij}) = P(e_{ij} &lt;= \eta_{ij})\) which leads to probit and logit models.
 On linear predictor scale we then have that
 $$V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).$$
-For the probit model, the residual covariance matrix is then \(\Theta\Theta' + I_m\), and for the logit model \(\Theta\Theta' + \pi^2/3 I_m\).</p>
+For the probit model, the residual covariance matrix is then \(\Theta\Theta' + I_m\), and for the logit model \(\Theta\Theta' + \pi^2/3 I_m\).
+Similarly as above, for a GLLVM where species are a quadratic function of the latent variables, the term \(2\Gamma_j\Gamma_j'\) is added to the residual covariance matrix.</p>
+<p>For normal distribution, we can write
+$$Y_{ij} = \eta_{ij} + e_{ij},$$
+where \(e_{ij} \sim N(0, \phi_j^2)\) and thus we have that
+$$V(\eta_{ij} + e_{ij}) = V(\eta_{ij}) + V(e_{ij}).$$
+For the gaussian model, the residual covariance matrix is then \(\Theta\Theta' + diag(\Phi^2)\).</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
-    <p>Francis K.C. Hui, Jenni Niku, David I. Warton</p>
+    <p>Francis K.C. Hui, Jenni Niku, David I. Warton, Bert van der Veen</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
@@ -201,7 +214,7 @@ For the probit model, the residual covariance matrix is then \(\Theta\Theta' + I
 <span class='va'>rescov</span> <span class='op'>&lt;-</span> <span class='fu'>getResidualCov</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
 <span class='va'>rescov</span><span class='op'>$</span><span class='va'>cov</span>
 <span class='co'># Trace of the covariance matrix</span>
-<span class='va'>rescov</span><span class='op'>$</span><span class='va'>tr</span>
+<span class='va'>rescov</span><span class='op'>$</span><span class='va'>trace</span>
 <span class='co'># Trace per latent variable</span>
 <span class='va'>rescov</span><span class='op'>$</span><span class='va'>trace.q</span>
 <span class='op'>}</span>
@@ -217,7 +230,7 @@ For the probit model, the residual covariance matrix is then \(\Theta\Theta' + I
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">

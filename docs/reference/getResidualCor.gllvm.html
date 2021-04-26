@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -107,6 +107,9 @@
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
   </ul>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -171,11 +174,11 @@
 </div><div class='output co'>#&gt; [1] -4242.667</div><div class='input'><span class='va'>cr</span> <span class='op'>&lt;-</span> <span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
 <span class='va'>cr</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span>,<span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span><span class='op'>]</span>
 </div><div class='output co'>#&gt;             OTU_79    OTU_164    OTU_462     OTU_95    OTU_833
-#&gt; OTU_79   1.0000000  0.3893722  0.3428440 -0.7496175  0.9956254
-#&gt; OTU_164  0.3893722  1.0000000  0.9987499 -0.9015170  0.4737298
-#&gt; OTU_462  0.3428440  0.9987499  1.0000000 -0.8787587  0.4291161
-#&gt; OTU_95  -0.7496175 -0.9015170 -0.8787587  1.0000000 -0.8081800
-#&gt; OTU_833  0.9956254  0.4737298  0.4291161 -0.8081800  1.0000000</div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+#&gt; OTU_79   1.0000000  0.3893696  0.3428408 -0.7496213  0.9956260
+#&gt; OTU_164  0.3893696  1.0000000  0.9987499 -0.9015132  0.4737217
+#&gt; OTU_462  0.3428408  0.9987499  1.0000000 -0.8787543  0.4291073
+#&gt; OTU_95  -0.7496213 -0.9015132 -0.8787543  1.0000000 -0.8081796
+#&gt; OTU_833  0.9956260  0.4737217  0.4291073 -0.8081796  1.0000000</div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>)</span>
 <span class='va'>y</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>$</span><span class='va'>abund</span><span class='op'>)</span>
@@ -203,7 +206,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">

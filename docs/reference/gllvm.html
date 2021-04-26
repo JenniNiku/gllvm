@@ -73,7 +73,7 @@ approximation method." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -108,6 +108,9 @@ approximation method." />
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
   </ul>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -150,6 +153,7 @@ approximation method.</p>
   <span class='va'>family</span>,
   row.eff <span class='op'>=</span> <span class='cn'>FALSE</span>,
   offset <span class='op'>=</span> <span class='cn'>NULL</span>,
+  quadratic <span class='op'>=</span> <span class='cn'>FALSE</span>,
   sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>,
   method <span class='op'>=</span> <span class='st'>"VA"</span>,
   randomX <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -157,18 +161,19 @@ approximation method.</p>
   beta0com <span class='op'>=</span> <span class='cn'>FALSE</span>,
   zeta.struc <span class='op'>=</span> <span class='st'>"species"</span>,
   plot <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  la.link.bin <span class='op'>=</span> <span class='st'>"probit"</span>,
+  link.bin <span class='op'>=</span> <span class='st'>"probit"</span>,
   Power <span class='op'>=</span> <span class='fl'>1.1</span>,
   seed <span class='op'>=</span> <span class='cn'>NULL</span>,
   scale.X <span class='op'>=</span> <span class='cn'>TRUE</span>,
   return.terms <span class='op'>=</span> <span class='cn'>TRUE</span>,
   gradient.check <span class='op'>=</span> <span class='cn'>FALSE</span>,
   control <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>reltol <span class='op'>=</span> <span class='fl'>1e-10</span>, TMB <span class='op'>=</span> <span class='cn'>TRUE</span>, optimizer <span class='op'>=</span> <span class='st'>"optim"</span>, max.iter <span class='op'>=</span> <span class='fl'>200</span>, maxit
-    <span class='op'>=</span> <span class='fl'>4000</span>, trace <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>,
+    <span class='op'>=</span> <span class='fl'>4000</span>, trace <span class='op'>=</span> <span class='cn'>FALSE</span>, optim.method <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span>,
   control.va <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>Lambda.struc <span class='op'>=</span> <span class='st'>"unstructured"</span>, Ab.struct <span class='op'>=</span> <span class='st'>"unstructured"</span>,
     diag.iter <span class='op'>=</span> <span class='fl'>1</span>, Ab.diag.iter <span class='op'>=</span> <span class='fl'>0</span>, Lambda.start <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.3</span>, <span class='fl'>0.3</span>, <span class='fl'>0.3</span><span class='op'>)</span><span class='op'>)</span>,
   control.start <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>starting.val <span class='op'>=</span> <span class='st'>"res"</span>, n.init <span class='op'>=</span> <span class='fl'>1</span>, jitter.var <span class='op'>=</span> <span class='fl'>0</span>, start.fit <span class='op'>=</span>
-    <span class='cn'>NULL</span>, start.lvs <span class='op'>=</span> <span class='cn'>NULL</span>, randomX.start <span class='op'>=</span> <span class='st'>"res"</span><span class='op'>)</span>,
+    <span class='cn'>NULL</span>, start.lvs <span class='op'>=</span> <span class='cn'>NULL</span>, randomX.start <span class='op'>=</span> <span class='st'>"zero"</span>, quad.start <span class='op'>=</span> <span class='fl'>0.01</span>, start.struc <span class='op'>=</span>
+    <span class='st'>"LV"</span><span class='op'>)</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
@@ -189,7 +194,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>data</th>
-      <td><p>data in long format, that is, matrix of responses, environmental and trait covariates and row index named as ’id’. When used, model needs to be defined using formula. This is alternative data input for y, X and TR.</p></td>
+      <td><p>data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.</p></td>
     </tr>
     <tr>
       <th>formula</th>
@@ -201,7 +206,7 @@ approximation method.</p>
     </tr>
     <tr>
       <th>family</th>
-      <td><p>distribution function for responses. Options are <code><a href='https://rdrr.io/r/stats/family.html'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "probit")</a></code> (and also <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://rdrr.io/r/stats/family.html'>gaussian(link = "identity")</a></code>, <code>"gamma"</code> (with log link), <code>"exponential"</code> (with log link), Tweedie (<code>"tweedie"</code>) (with log link, only with <code>"LA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
+      <td><p>distribution function for responses. Options are <code><a href='https://rdrr.io/r/stats/family.html'>poisson(link = "log")</a></code>, <code>"negative.binomial"</code> (with log link), <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "probit")</a></code> (and also <code><a href='https://rdrr.io/r/stats/family.html'>binomial(link = "logit")</a></code> when <code>method = "LA"</code>), zero inflated poisson (<code>"ZIP"</code>), <code><a href='https://rdrr.io/r/stats/family.html'>gaussian(link = "identity")</a></code>, <code>"gamma"</code> (with log link), <code>"exponential"</code> (with log link), Tweedie (<code>"tweedie"</code>) (with log link, for <code>"LA"</code> and <code>"EVA"</code>-method), beta (<code>"beta"</code>) (with logit and probit link, for <code>"LA"</code> and  <code>"EVA"</code>-method) and <code>"ordinal"</code> (only with <code>"VA"</code>-method).</p></td>
     </tr>
     <tr>
       <th>row.eff</th>
@@ -212,12 +217,16 @@ approximation method.</p>
       <td><p>vector or matrix of offset terms.</p></td>
     </tr>
     <tr>
+      <th>quadratic</th>
+      <td><p>either <code>FALSE</code>(default), <code>TRUE</code>, or <code>LV</code>. If <code>FALSE</code> models species responses as a linear function of the latent variables. If <code>TRUE</code> models species responses as a quadratic function of the latent variables. If <code>LV</code> assumes species all have the same quadratic coefficient per latent variable.</p></td>
+    </tr>
+    <tr>
       <th>sd.errors</th>
       <td><p>logical. If <code>TRUE</code> (default) standard errors for parameter estimates are calculated.</p></td>
     </tr>
     <tr>
       <th>method</th>
-      <td><p>model can be fitted using Laplace approximation method (<code>method = "LA"</code>) or variational approximation method (<code>method = "VA"</code>). Defaults to <code>"VA"</code>.</p></td>
+      <td><p>model can be fitted using Laplace approximation method (<code>method = "LA"</code>) or variational approximation method (<code>method = "VA"</code>), or with extended variational approximation method (<code>method = "EVA"</code>) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to <code>"VA"</code>.</p></td>
     </tr>
     <tr>
       <th>randomX</th>
@@ -240,8 +249,8 @@ approximation method.</p>
       <td><p>logical, if <code>TRUE</code> ordination plots will be printed in each iteration step when <code>TMB = FALSE</code>. Defaults to <code>FALSE</code>.</p></td>
     </tr>
     <tr>
-      <th>la.link.bin</th>
-      <td><p>link function for binomial family if <code>method = "LA"</code>. Options are "logit" and "probit.</p></td>
+      <th>link.bin</th>
+      <td><p>link function for binomial family if <code>method = "LA"</code> and beta family. Options are "logit" and "probit.</p></td>
     </tr>
     <tr>
       <th>Power</th>
@@ -269,9 +278,10 @@ approximation method.</p>
 <li><p><em>reltol</em>:  convergence criteria for log-likelihood, defaults to 1e-8.</p></li>
 <li><p><em>TMB</em>:  logical, if <code>TRUE</code> model will be fitted using Template Model Builder (TMB). TMB is always used if <code>method = "LA"</code>.  Defaults to <code>TRUE</code>.</p></li>
 <li><p><em>optimizer</em>:  if <code>TMB=TRUE</code>, log-likelihood can be optimized using <code>"<a href='https://rdrr.io/r/stats/optim.html'>optim</a>"</code> (default) or <code>"<a href='https://rdrr.io/r/stats/nlminb.html'>nlminb</a>"</code>.</p></li>
-<li><p><em>max.iter</em>:  maximum number of iterations when <code>TMB = FALSE</code>, defaults to 200.</p></li>
-<li><p><em>maxit</em>:  maximum number of iterations within <code>optim</code> function, defaults to 1000.</p></li>
+<li><p><em>max.iter</em>:  maximum number of iterations when <code>TMB = FALSE</code> or for <code>optimizer = "nlminb"</code> when <code>TMB = TRUE</code>, defaults to 200.</p></li>
+<li><p><em>maxit</em>:  maximum number of iterations for optimizer, defaults to 4000.</p></li>
 <li><p><em>trace</em>:  logical, if <code>TRUE</code> in each iteration step information on current step will be printed. Defaults to <code>FALSE</code>. Only with <code>TMB = FALSE</code>.</p></li>
+<li><p><em>optim.method</em>:  optimization method to be used if optimizer is <code>"<a href='https://rdrr.io/r/stats/optim.html'>optim</a>"</code>. Defaults to <code>"BFGS"</code>, and <code>"L-BFGS-B"</code> to Tweedie family due the limited-memory use.</p></li>
 </ul></td>
     </tr>
     <tr>
@@ -292,7 +302,9 @@ approximation method.</p>
 <li><p><em>start.fit</em>:  object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).</p></li>
 <li><p><em>start.lvs</em>:  initialize starting values for latent variables with (n x num.lv) matrix. Defaults to <code>NULL</code>.</p></li>
 <li><p><em>jitter.var</em>:  jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.</p></li>
-<li><p><em>randomX.start</em>:  Starting value method for the random slopes. Options are <code>"zero"</code> and <code>"res"</code>. Defaults to <code>"res"</code>.</p></li>
+<li><p><em>randomX.start</em>:  Starting value method for the random slopes. Options are <code>"zero"</code> and <code>"res"</code>. Defaults to <code>"zero"</code>.</p></li>
+<li><p><em>start.struc</em>:  Starting value method for the quadratic term. Options are <code>"LV"</code>(default) and <code>"all"</code>.</p></li>
+<li><p><em>quad.start</em>:  Starting values for quadratic coefficients. Defaults to 0.01.</p></li>
 </ul></td>
     </tr>
     <tr>
@@ -333,18 +345,32 @@ site related environmental covariates are used, the expectation of response \(Y_
 <p>where \(g(.)\) is a known link function, \(u_i\) are \(d\)-variate latent variables (\(d\)&lt;&lt;\(m\)), \(\alpha_i\) is an optional row effect
 at site \(i\), and it can be fixed or random effect, \(\beta_{0j}\) is an intercept term for species \(j\), \(\beta_j\) and \(\theta_j\) are column
 specific coefficients related to covariates and the latent variables, respectively.</p>
+<p>Alternatively, a more complex version of the model can be fitted with <code>quadratic = TRUE</code>, where species are modeled as a quadratic function of the latent variables:
+$$g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i$$.
+Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
+the ecological theoretical model where species are generally recognized to exhibit non-linear response curves.
+For a model with quadratic responses, quadratic coefficients are assumed to be the same for all species: $$D_j = D$$. This model requires less information
+per species and can be expected to be more applicable to most datasets. The quadratic coefficients D can be used to calculate the length of 
+ecological gradients.</p>
 <p>An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 are included. The expectation of response \(Y_{ij}\) is</p>
-<p>$$g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j$$</p>
+<p>$$g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'(\beta_x + b_j) + TR_j'\beta_t + vec(B)*kronecker(TR_j,X_i) + u_i'\theta_j - u_i'D_ju_i$$</p>
 <p>where g(.), \(u_i\), \(\beta_{0j}\) and \(\theta_j\) are defined as above. Vectors \(\beta_x\) and \(\beta_t\) are the main effects
 or coefficients related to environmental and trait covariates, respectively, matrix \(B\) includes interaction terms. Vectors \(b_j\) are 
 optional species-specific random slopes for environmental covariates.
 The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.</p>
 
+
 <p>The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 However, sometimes this is computationally too demanding, and default option
-<code>starting.val = "res"</code> is recommended. For more details on different starting value methods, see Niku et al., (2018).</p>
+<code>starting.val = "res"</code> is recommended. For more details on different starting value methods, see Niku et al., (2018).</p> 
+<p>For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analaysis.
+The latent variables can then be passed to the <code>start.lvs</code> argument inside the <code>control.start</code> list, which in many cases gives good results. 
+For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
+This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
+As a result, it should rarely be required to fit a GLLVM with quadratic responses and negative binomial distribution (or row-effects).</p>
+
 <p>Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).</p>
 <p>With ordinal family response classes must start from 0 or 1.</p>
 <h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Distributions</h3>
@@ -355,6 +381,7 @@ However, sometimes this is computationally too demanding, and default option
 <li><p><code>family = "negative.binomial"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j\), or</p></li>
 <li><p><code>family = "ZIP"</code>: Expectation \(E[Y_{ij}] = (1-p)\mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)\).</p></li>
 <li><p>For binary data <code>family = binomial()</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})\).</p></li>
+<li><p>For percent cover data \(0 &lt; Y_{ij} &lt; 1\) <code>family = "beta"</code>: Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})//(1+\phi_j)\).</p></li>
 <li><p>For positive continuous data <code>family = "gamma"</code>:Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}^2/\phi_j\), where \(\phi_j\) is species specific shape parameter.</p></li>
 <li><p>For non-negative  continuous data <code>family = "exponential"</code>:Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \mu_{ij}^2\).</p></li>
 <li><p>For non-negative continuous or biomass data<code>family = "tweedie"</code> Expectation \(E[Y_{ij}] = \mu_{ij}\), variance \(V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu\), where \(\nu\) is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).</p></li>
@@ -414,19 +441,19 @@ However, sometimes this is computationally too demanding, and default option
 <span class='fu'><a href='https://rdrr.io/pkg/mvabund/man/mvabund-internal.html'>plot</a></span><span class='op'>(</span><span class='va'>fitv0</span>, mfrow <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>,<span class='fl'>2</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='img'><img src='gllvm-5.png' alt='' width='700' height='433' /></div><div class='img'><img src='gllvm-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>fitv0</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; $`log-likelihood`
-#&gt; [1] -1865.815
+#&gt; [1] -1865.085
 #&gt; 
 #&gt; $df
 #&gt; [1] 163
 #&gt; 
 #&gt; $AIC
-#&gt; [1] 4057.63
+#&gt; [1] 4056.17
 #&gt; 
 #&gt; $AICc
-#&gt; [1] 3658.644
+#&gt; [1] 4106.324
 #&gt; 
 #&gt; $BIC
-#&gt; [1] 4286.025
+#&gt; [1] 4284.566
 #&gt; 
 #&gt; $Call
 #&gt; gllvm(y = y, family = "negative.binomial", method = "VA")
@@ -435,260 +462,260 @@ However, sometimes this is computationally too demanding, and default option
 #&gt; [1] "negative.binomial"
 #&gt; 
 #&gt; $Coefficients
-#&gt;                                 Intercept     theta.LV1     theta.LV2
-#&gt; Amblyopone.australis          -0.93487604  8.615485e-01  0.000000e+00
-#&gt; Aphaenogaster.longiceps       -3.26535016  1.714602e-01  2.776101e+00
-#&gt; Camponotus.cinereus.amperei   -2.25921605  8.281921e-01  5.041441e-01
-#&gt; Camponotus.claripes            0.50780578  4.080778e-01  4.199238e-01
-#&gt; Camponotus.consobrinus         1.22630591  7.201167e-01 -8.489552e-01
-#&gt; Camponotus.nigriceps          -0.61590758 -5.206479e-01  8.160903e-01
-#&gt; Camponotus.nigroaeneus        -0.54808265  5.286213e-01  3.750750e-01
-#&gt; Cardiocondyla.nuda.atalanta   -2.67477540 -2.226903e+00 -8.636439e-01
-#&gt; Crematogaster.sp..A           -2.33325006  1.877125e+00  1.481226e+00
-#&gt; Heteroponera.sp..A             1.23592304  1.762079e-01 -5.690508e-01
-#&gt; Iridomyrmex.bicknelli          1.29631996  1.461682e-01 -1.012175e+00
-#&gt; Iridomyrmex.dromus            -0.79593329  8.755191e-01 -9.427780e-02
-#&gt; Iridomyrmex.mjobergi           1.33548198 -4.484132e-01  6.395597e-02
-#&gt; Iridomyrmex.purpureus         -0.08051729  1.269129e+00  8.992716e-01
-#&gt; Iridomyrmex.rufoniger          2.36322262 -1.791221e-01 -7.847789e-01
-#&gt; Iridomyrmex.suchieri           0.46298601  3.410289e-01 -7.454024e-01
-#&gt; Iridomyrmex.suchieroides      -0.44273081 -4.848252e-01 -8.008634e-01
-#&gt; Melophorus.sp..E              -1.19343081  1.211399e-01 -4.299584e-01
-#&gt; Melophorus.sp..F               0.53232205 -5.560241e-01 -3.541583e-01
-#&gt; Melophorus.sp..H              -0.55098793 -8.216253e-01 -4.331531e-01
-#&gt; Meranoplus.sp..A              -0.40109904 -9.636525e-01 -9.716680e-01
-#&gt; Monomorium.leae                1.33936847  6.444380e-01  3.508593e-01
-#&gt; Monomorium.rothsteini          0.23248265 -9.416829e-01 -1.616386e+00
-#&gt; Monomorium.sydneyense         -0.45356252 -7.813245e-01 -7.733047e-01
-#&gt; Myrmecia.pilosula.complex     -1.12328104  1.201785e-01 -7.417177e-01
-#&gt; Notoncus.capitatus            -0.95916928  1.317719e+00  3.812668e-01
-#&gt; Notoncus.ectatommoides         0.73769343 -7.934476e-01 -1.906508e-01
-#&gt; Nylanderia.sp..A               0.75528112 -7.927724e-01 -9.708544e-01
-#&gt; Ochetellus.glaber             -2.02101952 -6.270713e-01 -1.962975e+00
-#&gt; Paraparatrechina.sp..B        -1.48138568 -1.362632e+00  8.950157e-01
-#&gt; Pheidole.sp..A                 2.31907981 -3.756805e-01 -1.893311e-01
-#&gt; Pheidole.sp..B                -1.08740590 -2.379831e-01  7.934508e-01
-#&gt; Pheidole.sp..E                 1.60124336  3.892588e-01 -2.116852e-01
-#&gt; Pheidole.sp..J                -1.77059748 -2.686217e-01  5.507202e-01
-#&gt; Polyrhachis.sp..A             -1.26110047  3.366833e-01 -8.184573e-02
-#&gt; Rhytidoponera.metallica.sp..A  2.02315581 -3.491588e-01 -2.790859e-01
-#&gt; Rhytidoponera.sp..B            0.34755057 -1.008213e+00 -6.104732e-01
-#&gt; Solenopsis.sp..A              -2.01490391 -3.144517e-07  7.034328e-08
-#&gt; Stigmacros.sp..A              -0.30613154  8.535899e-01  6.203070e-02
-#&gt; Tapinoma.sp..A                 0.75351717  3.607007e-01 -4.449917e-01
-#&gt; Tetramorium.sp..A              0.07245915 -8.303926e-01 -8.853097e-01
+#&gt;                                 Intercept  theta.LV1   theta.LV2
+#&gt; Amblyopone.australis          -0.94358534  0.8759558  0.00000000
+#&gt; Aphaenogaster.longiceps       -3.28651075  0.1075521  2.78311321
+#&gt; Camponotus.cinereus.amperei   -2.26650136  0.8389971  0.50741804
+#&gt; Camponotus.claripes            0.51196436  0.3809603  0.42525755
+#&gt; Camponotus.consobrinus         1.21758883  0.7410973 -0.84975645
+#&gt; Camponotus.nigriceps          -0.59975605 -0.5058506  0.79102956
+#&gt; Camponotus.nigroaeneus        -0.54149873  0.5006675  0.38321054
+#&gt; Cardiocondyla.nuda.atalanta   -2.67328976 -2.2323023 -0.91384953
+#&gt; Crematogaster.sp..A           -2.31818052  1.8466201  1.51634108
+#&gt; Heteroponera.sp..A             1.23920546  0.1760873 -0.56130646
+#&gt; Iridomyrmex.bicknelli          1.28814978  0.1686671 -1.02280640
+#&gt; Iridomyrmex.dromus            -0.79823317  0.8853071 -0.09664888
+#&gt; Iridomyrmex.mjobergi           1.33243838 -0.4537971  0.06007794
+#&gt; Iridomyrmex.purpureus         -0.08674306  1.2709278  0.91415373
+#&gt; Iridomyrmex.rufoniger          2.36208014 -0.1649632 -0.79026141
+#&gt; Iridomyrmex.suchieri           0.45346348  0.3653227 -0.75263182
+#&gt; Iridomyrmex.suchieroides      -0.44428792 -0.4673964 -0.81572325
+#&gt; Melophorus.sp..E              -1.19199886  0.1169573 -0.42727655
+#&gt; Melophorus.sp..F               0.53223256 -0.5533112 -0.35908923
+#&gt; Melophorus.sp..H              -0.55692053 -0.8249152 -0.44180746
+#&gt; Meranoplus.sp..A              -0.40363238 -0.9301964 -1.00522119
+#&gt; Monomorium.leae                1.34471314  0.6296220  0.36330769
+#&gt; Monomorium.rothsteini          0.23815699 -0.9319480 -1.61121228
+#&gt; Monomorium.sydneyense         -0.45719623 -0.7822301 -0.77564571
+#&gt; Myrmecia.pilosula.complex     -1.12806971  0.1312814 -0.74941621
+#&gt; Notoncus.capitatus            -0.96854362  1.3349009  0.39694429
+#&gt; Notoncus.ectatommoides         0.73039054 -0.8016113 -0.20665307
+#&gt; Nylanderia.sp..A               0.74958151 -0.7879607 -0.98529626
+#&gt; Ochetellus.glaber             -2.04174858 -0.5918911 -2.00061716
+#&gt; Paraparatrechina.sp..B        -1.51829191 -1.4130760  0.86636073
+#&gt; Pheidole.sp..A                 2.31790208 -0.3766362 -0.19492879
+#&gt; Pheidole.sp..B                -1.09155870 -0.2613652  0.78739188
+#&gt; Pheidole.sp..E                 1.60307451  0.3893559 -0.20438766
+#&gt; Pheidole.sp..J                -1.77262529 -0.2868452  0.55547340
+#&gt; Polyrhachis.sp..A             -1.25642738  0.3242471 -0.07419608
+#&gt; Rhytidoponera.metallica.sp..A  2.02287634 -0.3477131 -0.28174335
+#&gt; Rhytidoponera.sp..B            0.34790982 -0.9997243 -0.62461991
+#&gt; Solenopsis.sp..A              -2.20144367 -0.5268932  0.22619938
+#&gt; Stigmacros.sp..A              -0.28910029  0.8264462  0.08076963
+#&gt; Tapinoma.sp..A                 0.75989334  0.3586528 -0.43645583
+#&gt; Tetramorium.sp..A              0.07289878 -0.8161172 -0.89862035
 #&gt; 
 #&gt; $`Dispersion parameters`
 #&gt;          Amblyopone.australis       Aphaenogaster.longiceps 
-#&gt;                  1.874863e+00                  2.591358e+00 
+#&gt;                     1.8546467                     2.5099556 
 #&gt;   Camponotus.cinereus.amperei           Camponotus.claripes 
-#&gt;                  1.324717e+00                  1.261768e+00 
+#&gt;                     1.3274340                     1.2684258 
 #&gt;        Camponotus.consobrinus          Camponotus.nigriceps 
-#&gt;                  5.240584e-01                  4.325960e+00 
+#&gt;                     0.5147553                     4.3772936 
 #&gt;        Camponotus.nigroaeneus   Cardiocondyla.nuda.atalanta 
-#&gt;                  2.065007e+00                  5.592449e+00 
+#&gt;                     2.0732181                     5.6682642 
 #&gt;           Crematogaster.sp..A            Heteroponera.sp..A 
-#&gt;                  4.407116e+00                  7.359263e-01 
+#&gt;                     4.4535773                     0.7423673 
 #&gt;         Iridomyrmex.bicknelli            Iridomyrmex.dromus 
-#&gt;                  4.188874e-01                  3.999454e+00 
+#&gt;                     0.4070896                     4.0057935 
 #&gt;          Iridomyrmex.mjobergi         Iridomyrmex.purpureus 
-#&gt;                  4.393825e-01                  4.644658e+00 
+#&gt;                     0.4284768                     4.6316930 
 #&gt;         Iridomyrmex.rufoniger          Iridomyrmex.suchieri 
-#&gt;                  1.065428e-01                  9.290044e-01 
+#&gt;                     0.1049295                     0.9078945 
 #&gt;      Iridomyrmex.suchieroides              Melophorus.sp..E 
-#&gt;                  5.188247e-01                  1.348801e+00 
+#&gt;                     0.5178410                     1.3440214 
 #&gt;              Melophorus.sp..F              Melophorus.sp..H 
-#&gt;                  4.190694e-01                  6.469172e-01 
+#&gt;                     0.4176694                     0.6387015 
 #&gt;              Meranoplus.sp..A               Monomorium.leae 
-#&gt;                  3.239066e+00                  1.018074e+00 
+#&gt;                     3.2307779                     1.0311735 
 #&gt;         Monomorium.rothsteini         Monomorium.sydneyense 
-#&gt;                  7.234829e-01                  1.708943e+00 
+#&gt;                     0.7243791                     1.6958150 
 #&gt;     Myrmecia.pilosula.complex            Notoncus.capitatus 
-#&gt;                  1.987254e+00                  5.818282e+00 
+#&gt;                     1.9732136                     5.8098253 
 #&gt;        Notoncus.ectatommoides              Nylanderia.sp..A 
-#&gt;                  5.146587e-01                  1.327909e+00 
+#&gt;                     0.5018416                     1.3169757 
 #&gt;             Ochetellus.glaber        Paraparatrechina.sp..B 
-#&gt;                  2.316428e+00                  8.639082e+00 
+#&gt;                     2.2926374                     8.4083216 
 #&gt;                Pheidole.sp..A                Pheidole.sp..B 
-#&gt;                  1.068043e-01                  2.058733e+00 
+#&gt;                     0.1044570                     2.0236004 
 #&gt;                Pheidole.sp..E                Pheidole.sp..J 
-#&gt;                  6.578595e-01                  3.799056e+00 
+#&gt;                     0.6637594                     3.8318370 
 #&gt;             Polyrhachis.sp..A Rhytidoponera.metallica.sp..A 
-#&gt;                  2.880357e-01                  1.413681e-01 
+#&gt;                     0.2708177                     0.1404663 
 #&gt;           Rhytidoponera.sp..B              Solenopsis.sp..A 
-#&gt;                  1.474439e+00                  1.976487e-07 
+#&gt;                     1.4743647                     0.8885972 
 #&gt;              Stigmacros.sp..A                Tapinoma.sp..A 
-#&gt;                  1.922781e+00                  8.229701e-01 
+#&gt;                     1.9572699                     0.8382369 
 #&gt;             Tetramorium.sp..A 
-#&gt;                  5.995425e-01 
+#&gt;                     0.5997327 
 #&gt; 
 #&gt; attr(,"class")
 #&gt; [1] "summary.gllvm"</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/stats/confint.html'>confint</a></span><span class='op'>(</span><span class='va'>fitv0</span><span class='op'>)</span>
-</div><div class='output co'>#&gt;                                                 2.5 %        97.5 %
-#&gt; theta.LV1.1                              3.222219e-02  1.690875e+00
-#&gt; theta.LV1.2                             -1.229300e+00  1.572221e+00
-#&gt; theta.LV1.3                             -5.374030e-01  2.193787e+00
-#&gt; theta.LV1.4                             -3.335894e-01  1.149745e+00
-#&gt; theta.LV1.5                              2.051243e-01  1.235109e+00
-#&gt; theta.LV1.6                             -2.058136e+00  1.016840e+00
-#&gt; theta.LV1.7                             -5.573122e-01  1.614555e+00
-#&gt; theta.LV1.8                             -4.288731e+00 -1.650756e-01
-#&gt; theta.LV1.9                             -2.742016e-03  3.756992e+00
-#&gt; theta.LV1.10                            -2.419541e-01  5.943700e-01
-#&gt; theta.LV1.11                            -2.910482e-01  5.833847e-01
-#&gt; theta.LV1.12                            -3.724920e-01  2.123530e+00
-#&gt; theta.LV1.13                            -7.806571e-01 -1.161693e-01
-#&gt; theta.LV1.14                            -5.822546e-02  2.596483e+00
-#&gt; theta.LV1.15                            -4.343163e-01  7.607217e-02
-#&gt; theta.LV1.16                            -2.283949e-01  9.104526e-01
-#&gt; theta.LV1.17                            -1.019765e+00  5.011485e-02
-#&gt; theta.LV1.18                            -7.221768e-01  9.644566e-01
-#&gt; theta.LV1.19                            -9.268266e-01 -1.852217e-01
-#&gt; theta.LV1.20                            -1.410081e+00 -2.331695e-01
-#&gt; theta.LV1.21                            -2.129834e+00  2.025289e-01
-#&gt; theta.LV1.22                             1.299923e-01  1.158884e+00
-#&gt; theta.LV1.23                            -1.590629e+00 -2.927372e-01
-#&gt; theta.LV1.24                            -1.459144e+00 -1.035052e-01
-#&gt; theta.LV1.25                            -7.341632e-01  9.745202e-01
-#&gt; theta.LV1.26                            -6.101719e-01  3.245609e+00
-#&gt; theta.LV1.27                            -1.229075e+00 -3.578203e-01
-#&gt; theta.LV1.28                            -1.395675e+00 -1.898702e-01
-#&gt; theta.LV1.29                            -1.721248e+00  4.671059e-01
-#&gt; theta.LV1.30                            -3.627135e+00  9.018701e-01
-#&gt; theta.LV1.31                            -5.825460e-01 -1.688150e-01
-#&gt; theta.LV1.32                            -1.182044e+00  7.060782e-01
-#&gt; theta.LV1.33                             8.922598e-03  7.695950e-01
-#&gt; theta.LV1.34                            -1.285658e+00  7.484143e-01
-#&gt; theta.LV1.35                            -4.524390e-01  1.125806e+00
-#&gt; theta.LV1.36                            -5.676617e-01 -1.306558e-01
-#&gt; theta.LV1.37                            -1.792299e+00 -2.241276e-01
-#&gt; theta.LV1.38                            -6.767276e-04  6.760987e-04
-#&gt; theta.LV1.39                            -8.326224e-02  1.790442e+00
-#&gt; theta.LV1.40                            -9.912453e-02  8.205259e-01
-#&gt; theta.LV1.41                            -1.373750e+00 -2.870348e-01
-#&gt; theta.LV2.1                              0.000000e+00  0.000000e+00
-#&gt; theta.LV2.2                             -1.940918e+00  7.493121e+00
-#&gt; theta.LV2.3                             -4.187786e-01  1.427067e+00
-#&gt; theta.LV2.4                             -2.523296e-02  8.650805e-01
-#&gt; theta.LV2.5                             -1.429500e+00 -2.684109e-01
-#&gt; theta.LV2.6                             -1.239983e-01  1.756179e+00
-#&gt; theta.LV2.7                             -2.760137e-01  1.026164e+00
-#&gt; theta.LV2.8                             -3.043919e+00  1.316631e+00
-#&gt; theta.LV2.9                             -1.544722e-01  3.116925e+00
-#&gt; theta.LV2.10                            -1.003281e+00 -1.348206e-01
-#&gt; theta.LV2.11                            -1.537936e+00 -4.864153e-01
-#&gt; theta.LV2.12                            -1.179517e+00  9.909616e-01
-#&gt; theta.LV2.13                            -2.694244e-01  3.973364e-01
-#&gt; theta.LV2.14                            -7.152399e-02  1.870067e+00
-#&gt; theta.LV2.15                            -1.100039e+00 -4.695191e-01
-#&gt; theta.LV2.16                            -1.380911e+00 -1.098934e-01
-#&gt; theta.LV2.17                            -1.561003e+00 -4.072433e-02
-#&gt; theta.LV2.18                            -1.321837e+00  4.619200e-01
-#&gt; theta.LV2.19                            -7.907365e-01  8.241996e-02
-#&gt; theta.LV2.20                            -1.085704e+00  2.193982e-01
-#&gt; theta.LV2.21                            -2.223945e+00  2.806091e-01
-#&gt; theta.LV2.22                            -4.748061e-02  7.491993e-01
-#&gt; theta.LV2.23                            -2.637449e+00 -5.953221e-01
-#&gt; theta.LV2.24                            -1.662425e+00  1.158152e-01
-#&gt; theta.LV2.25                            -1.931558e+00  4.481231e-01
-#&gt; theta.LV2.26                            -6.894793e-01  1.452013e+00
-#&gt; theta.LV2.27                            -6.376132e-01  2.563115e-01
-#&gt; theta.LV2.28                            -1.712638e+00 -2.290707e-01
-#&gt; theta.LV2.29                            -3.985368e+00  5.941814e-02
-#&gt; theta.LV2.30                            -1.976567e-01  1.987688e+00
-#&gt; theta.LV2.31                            -3.959580e-01  1.729581e-02
-#&gt; theta.LV2.32                             1.093994e-01  1.477502e+00
-#&gt; theta.LV2.33                            -5.772708e-01  1.539004e-01
-#&gt; theta.LV2.34                            -7.507362e-01  1.852176e+00
-#&gt; theta.LV2.35                            -6.922735e-01  5.285820e-01
-#&gt; theta.LV2.36                            -5.108959e-01 -4.727592e-02
-#&gt; theta.LV2.37                            -1.275759e+00  5.481250e-02
-#&gt; theta.LV2.38                            -8.405272e-04  8.406679e-04
-#&gt; theta.LV2.39                            -5.361047e-01  6.601661e-01
-#&gt; theta.LV2.40                            -8.822386e-01 -7.744740e-03
-#&gt; theta.LV2.41                            -1.608404e+00 -1.622156e-01
-#&gt; Intercept.Amblyopone.australis          -1.839750e+00 -3.000187e-02
-#&gt; Intercept.Aphaenogaster.longiceps       -6.226465e+00 -3.042356e-01
-#&gt; Intercept.Camponotus.cinereus.amperei   -3.678661e+00 -8.397709e-01
-#&gt; Intercept.Camponotus.claripes           -4.319264e-02  1.058804e+00
-#&gt; Intercept.Camponotus.consobrinus         6.555587e-01  1.797053e+00
-#&gt; Intercept.Camponotus.nigriceps          -1.708836e+00  4.770208e-01
-#&gt; Intercept.Camponotus.nigroaeneus        -1.329251e+00  2.330854e-01
-#&gt; Intercept.Cardiocondyla.nuda.atalanta   -5.321626e+00 -2.792497e-02
-#&gt; Intercept.Crematogaster.sp..A           -4.756745e+00  9.024485e-02
-#&gt; Intercept.Heteroponera.sp..A             7.980010e-01  1.673845e+00
-#&gt; Intercept.Iridomyrmex.bicknelli          7.851157e-01  1.807524e+00
-#&gt; Intercept.Iridomyrmex.dromus            -1.851464e+00  2.595972e-01
-#&gt; Intercept.Iridomyrmex.mjobergi           9.836568e-01  1.687307e+00
-#&gt; Intercept.Iridomyrmex.purpureus         -1.273580e+00  1.112545e+00
-#&gt; Intercept.Iridomyrmex.rufoniger          2.023230e+00  2.703215e+00
-#&gt; Intercept.Iridomyrmex.suchieri          -1.218107e-01  1.047783e+00
-#&gt; Intercept.Iridomyrmex.suchieroides      -1.132991e+00  2.475297e-01
-#&gt; Intercept.Melophorus.sp..E              -2.011672e+00 -3.751898e-01
-#&gt; Intercept.Melophorus.sp..F               8.237785e-02  9.822663e-01
-#&gt; Intercept.Melophorus.sp..H              -1.265508e+00  1.635326e-01
-#&gt; Intercept.Meranoplus.sp..A              -1.450442e+00  6.482435e-01
-#&gt; Intercept.Monomorium.leae                8.365308e-01  1.842206e+00
-#&gt; Intercept.Monomorium.rothsteini         -7.429468e-01  1.207912e+00
-#&gt; Intercept.Monomorium.sydneyense         -1.318798e+00  4.116730e-01
-#&gt; Intercept.Myrmecia.pilosula.complex     -2.045614e+00 -2.009480e-01
-#&gt; Intercept.Notoncus.capitatus            -2.449463e+00  5.311247e-01
-#&gt; Intercept.Notoncus.ectatommoides         2.479065e-01  1.227480e+00
-#&gt; Intercept.Nylanderia.sp..A               3.761442e-02  1.472948e+00
-#&gt; Intercept.Ochetellus.glaber             -3.831561e+00 -2.104785e-01
-#&gt; Intercept.Paraparatrechina.sp..B        -3.283364e+00  3.205924e-01
-#&gt; Intercept.Pheidole.sp..A                 2.093678e+00  2.544482e+00
-#&gt; Intercept.Pheidole.sp..B                -2.027452e+00 -1.473596e-01
-#&gt; Intercept.Pheidole.sp..E                 1.224913e+00  1.977574e+00
-#&gt; Intercept.Pheidole.sp..J                -2.971909e+00 -5.692863e-01
-#&gt; Intercept.Polyrhachis.sp..A             -1.994575e+00 -5.276256e-01
-#&gt; Intercept.Rhytidoponera.metallica.sp..A  1.772693e+00  2.273618e+00
-#&gt; Intercept.Rhytidoponera.sp..B           -3.977332e-01  1.092834e+00
-#&gt; Intercept.Solenopsis.sp..A              -2.994886e+00 -1.034921e+00
-#&gt; Intercept.Stigmacros.sp..A              -1.115144e+00  5.028807e-01
-#&gt; Intercept.Tapinoma.sp..A                 2.759993e-01  1.231035e+00
-#&gt; Intercept.Tetramorium.sp..A             -6.326824e-01  7.776007e-01
-#&gt; inv.phi.Amblyopone.australis            -2.626800e-01  1.329424e+00
-#&gt; inv.phi.Aphaenogaster.longiceps         -2.024048e-01  9.742009e-01
-#&gt; inv.phi.Camponotus.cinereus.amperei     -1.089683e+00  2.599439e+00
-#&gt; inv.phi.Camponotus.claripes              5.741264e-02  1.527665e+00
-#&gt; inv.phi.Camponotus.consobrinus           6.892526e-02  3.747444e+00
-#&gt; inv.phi.Camponotus.nigriceps            -6.311092e-02  5.254361e-01
-#&gt; inv.phi.Camponotus.nigroaeneus          -1.067826e-01  1.075302e+00
-#&gt; inv.phi.Cardiocondyla.nuda.atalanta     -7.181728e-02  4.294424e-01
-#&gt; inv.phi.Crematogaster.sp..A             -8.079349e-02  5.346050e-01
-#&gt; inv.phi.Heteroponera.sp..A               2.233008e-01  2.494363e+00
-#&gt; inv.phi.Iridomyrmex.bicknelli           -8.740118e-02  4.861954e+00
-#&gt; inv.phi.Iridomyrmex.dromus              -6.698430e-02  5.670525e-01
-#&gt; inv.phi.Iridomyrmex.mjobergi            -1.281205e-01  4.679963e+00
-#&gt; inv.phi.Iridomyrmex.purpureus            9.338082e-03  4.212641e-01
-#&gt; inv.phi.Iridomyrmex.rufoniger           -7.520929e-02  1.884701e+01
-#&gt; inv.phi.Iridomyrmex.suchieri            -1.383350e-01  2.291177e+00
-#&gt; inv.phi.Iridomyrmex.suchieroides        -8.793506e-01  4.734218e+00
-#&gt; inv.phi.Melophorus.sp..E                -8.182001e-01  2.300999e+00
-#&gt; inv.phi.Melophorus.sp..F                -5.031020e-01  5.275581e+00
-#&gt; inv.phi.Melophorus.sp..H                -4.154827e-01  3.507068e+00
-#&gt; inv.phi.Meranoplus.sp..A                -1.757434e-02  6.350364e-01
-#&gt; inv.phi.Monomorium.leae                  2.482830e-01  1.716210e+00
-#&gt; inv.phi.Monomorium.rothsteini            1.673167e-02  2.747674e+00
-#&gt; inv.phi.Monomorium.sydneyense           -9.773271e-02  1.268047e+00
-#&gt; inv.phi.Myrmecia.pilosula.complex       -3.593455e-01  1.365759e+00
-#&gt; inv.phi.Notoncus.capitatus              -4.145771e-02  3.852018e-01
-#&gt; inv.phi.Notoncus.ectatommoides          -7.446529e-02  3.960536e+00
-#&gt; inv.phi.Nylanderia.sp..A                 1.082686e-01  1.397858e+00
-#&gt; inv.phi.Ochetellus.glaber               -1.868582e-01  1.050256e+00
-#&gt; inv.phi.Paraparatrechina.sp..B          -6.217200e-02  2.936781e-01
-#&gt; inv.phi.Pheidole.sp..A                  -1.314141e+00  2.003997e+01
-#&gt; inv.phi.Pheidole.sp..B                  -3.344611e-01  1.305933e+00
-#&gt; inv.phi.Pheidole.sp..E                   3.158509e-01  2.724312e+00
-#&gt; inv.phi.Pheidole.sp..J                  -2.809300e-01  8.073765e-01
-#&gt; inv.phi.Polyrhachis.sp..A               -6.801645e+00  1.374523e+01
-#&gt; inv.phi.Rhytidoponera.metallica.sp..A   -8.222697e-01  1.496973e+01
-#&gt; inv.phi.Rhytidoponera.sp..B              5.000631e-03  1.351447e+00
-#&gt; inv.phi.Solenopsis.sp..A                 5.059481e+06  5.059484e+06
-#&gt; inv.phi.Stigmacros.sp..A                -3.084027e-02  1.071001e+00
-#&gt; inv.phi.Tapinoma.sp..A                   9.856830e-02  2.331654e+00
-#&gt; inv.phi.Tetramorium.sp..A               -2.942493e-01  3.630126e+00</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
+</div><div class='output co'>#&gt;                                                2.5 %       97.5 %
+#&gt; theta.LV1.1                             -0.101702983  1.853614661
+#&gt; theta.LV1.2                             -2.929810174  3.144914397
+#&gt; theta.LV1.3                             -0.633781105  2.311775355
+#&gt; theta.LV1.4                             -0.485481227  1.247401917
+#&gt; theta.LV1.5                             -0.204479470  1.686674013
+#&gt; theta.LV1.6                             -2.259972487  1.248271198
+#&gt; theta.LV1.7                             -0.660944329  1.662279327
+#&gt; theta.LV1.8                             -4.481690363  0.017085829
+#&gt; theta.LV1.9                             -0.577927772  4.271168031
+#&gt; theta.LV1.10                            -0.482079356  0.834253875
+#&gt; theta.LV1.11                            -0.880690312  1.218024494
+#&gt; theta.LV1.12                            -0.384062030  2.154676183
+#&gt; theta.LV1.13                            -0.788305415 -0.119288814
+#&gt; theta.LV1.14                            -0.358303662  2.900159319
+#&gt; theta.LV1.15                            -0.932399953  0.602473455
+#&gt; theta.LV1.16                            -0.516009123  1.246654586
+#&gt; theta.LV1.17                            -1.396458244  0.461665505
+#&gt; theta.LV1.18                            -0.807371124  1.041285808
+#&gt; theta.LV1.19                            -1.045927780 -0.060694684
+#&gt; theta.LV1.20                            -1.537323747 -0.112506692
+#&gt; theta.LV1.21                            -2.436799945  0.576407221
+#&gt; theta.LV1.22                            -0.006613762  1.265857784
+#&gt; theta.LV1.23                            -2.543215991  0.679320032
+#&gt; theta.LV1.24                            -1.762627167  0.198167051
+#&gt; theta.LV1.25                            -0.971896362  1.234459083
+#&gt; theta.LV1.26                            -0.656463071  3.326264802
+#&gt; theta.LV1.27                            -1.275293824 -0.327928706
+#&gt; theta.LV1.28                            -1.880278483  0.304357129
+#&gt; theta.LV1.29                            -2.760527449  1.576745325
+#&gt; theta.LV1.30                            -3.827488955  1.001336898
+#&gt; theta.LV1.31                            -0.651550119 -0.101722203
+#&gt; theta.LV1.32                            -1.470789306  0.948058849
+#&gt; theta.LV1.33                            -0.030547414  0.809259184
+#&gt; theta.LV1.34                            -1.429813427  0.856122942
+#&gt; theta.LV1.35                            -0.464174856  1.112669113
+#&gt; theta.LV1.36                            -0.685543009 -0.009883095
+#&gt; theta.LV1.37                            -1.955657898 -0.043790705
+#&gt; theta.LV1.38                            -1.521570362  0.467784034
+#&gt; theta.LV1.39                            -0.119669511  1.772561979
+#&gt; theta.LV1.40                            -0.249412427  0.966718003
+#&gt; theta.LV1.41                            -1.796720254  0.164485951
+#&gt; theta.LV2.1                              0.000000000  0.000000000
+#&gt; theta.LV2.2                              1.078959953  4.487266467
+#&gt; theta.LV2.3                             -0.665769140  1.680605210
+#&gt; theta.LV2.4                             -0.125753983  0.976269084
+#&gt; theta.LV2.5                             -1.691124406 -0.008388488
+#&gt; theta.LV2.6                             -0.220654553  1.802713668
+#&gt; theta.LV2.7                             -0.402115485  1.168536563
+#&gt; theta.LV2.8                             -3.924399877  2.096700819
+#&gt; theta.LV2.9                             -0.806071483  3.838753652
+#&gt; theta.LV2.10                            -1.013254539 -0.109358378
+#&gt; theta.LV2.11                            -1.556016363 -0.489596441
+#&gt; theta.LV2.12                            -1.397275486  1.203977728
+#&gt; theta.LV2.13                            -0.447668949  0.567824825
+#&gt; theta.LV2.14                            -0.562334626  2.390642094
+#&gt; theta.LV2.15                            -1.137085029 -0.443437784
+#&gt; theta.LV2.16                            -1.454076457 -0.051187192
+#&gt; theta.LV2.17                            -1.675291872  0.043845375
+#&gt; theta.LV2.18                            -1.326489441  0.471936337
+#&gt; theta.LV2.19                            -0.998467681  0.280289218
+#&gt; theta.LV2.20                            -1.413559145  0.529944228
+#&gt; theta.LV2.21                            -2.528578835  0.518136456
+#&gt; theta.LV2.22                            -0.303583565  1.030198939
+#&gt; theta.LV2.23                            -2.890196972 -0.332227589
+#&gt; theta.LV2.24                            -1.891590043  0.340298632
+#&gt; theta.LV2.25                            -1.949767668  0.450935243
+#&gt; theta.LV2.26                            -1.169107629  1.962996210
+#&gt; theta.LV2.27                            -1.035042833  0.621736696
+#&gt; theta.LV2.28                            -2.006638886  0.036046358
+#&gt; theta.LV2.29                            -4.114177996  0.112943679
+#&gt; theta.LV2.30                            -0.780308808  2.513030263
+#&gt; theta.LV2.31                            -0.578880026  0.189022442
+#&gt; theta.LV2.32                             0.066401799  1.508381954
+#&gt; theta.LV2.33                            -0.692429533  0.283654213
+#&gt; theta.LV2.34                            -0.783589703  1.894536502
+#&gt; theta.LV2.35                            -0.732132523  0.583740367
+#&gt; theta.LV2.36                            -0.653995331  0.090508623
+#&gt; theta.LV2.37                            -1.700178793  0.450938973
+#&gt; theta.LV2.38                            -0.830421032  1.282819782
+#&gt; theta.LV2.39                            -0.832294052  0.993833307
+#&gt; theta.LV2.40                            -0.963973533  0.091061872
+#&gt; theta.LV2.41                            -1.891715752  0.094475045
+#&gt; Intercept.Amblyopone.australis          -1.855366631 -0.031804044
+#&gt; Intercept.Aphaenogaster.longiceps       -6.254767563 -0.318253931
+#&gt; Intercept.Camponotus.cinereus.amperei   -3.697350800 -0.835651929
+#&gt; Intercept.Camponotus.claripes           -0.036383817  1.060312542
+#&gt; Intercept.Camponotus.consobrinus         0.642068172  1.793109495
+#&gt; Intercept.Camponotus.nigriceps          -1.679394222  0.479882115
+#&gt; Intercept.Camponotus.nigroaeneus        -1.317184939  0.234187473
+#&gt; Intercept.Cardiocondyla.nuda.atalanta   -5.332314783 -0.014264740
+#&gt; Intercept.Crematogaster.sp..A           -4.739353866  0.102992832
+#&gt; Intercept.Heteroponera.sp..A             0.802051014  1.676359898
+#&gt; Intercept.Iridomyrmex.bicknelli          0.772305785  1.803993772
+#&gt; Intercept.Iridomyrmex.dromus            -1.858793438  0.262327108
+#&gt; Intercept.Iridomyrmex.mjobergi           0.981633396  1.683243372
+#&gt; Intercept.Iridomyrmex.purpureus         -1.286876595  1.113390485
+#&gt; Intercept.Iridomyrmex.rufoniger          2.021608061  2.702552213
+#&gt; Intercept.Iridomyrmex.suchieri          -0.135413427  1.042340384
+#&gt; Intercept.Iridomyrmex.suchieroides      -1.136100740  0.247524890
+#&gt; Intercept.Melophorus.sp..E              -2.009241962 -0.374755758
+#&gt; Intercept.Melophorus.sp..F               0.082356466  0.982108655
+#&gt; Intercept.Melophorus.sp..H              -1.273599879  0.159758810
+#&gt; Intercept.Meranoplus.sp..A              -1.455271544  0.648006785
+#&gt; Intercept.Monomorium.leae                0.841783171  1.847643101
+#&gt; Intercept.Monomorium.rothsteini         -0.732395880  1.208709869
+#&gt; Intercept.Monomorium.sydneyense         -1.321262127  0.406869673
+#&gt; Intercept.Myrmecia.pilosula.complex     -2.053970180 -0.202169234
+#&gt; Intercept.Notoncus.capitatus            -2.471969428  0.534882191
+#&gt; Intercept.Notoncus.ectatommoides         0.238716117  1.222064960
+#&gt; Intercept.Nylanderia.sp..A               0.029679738  1.469483287
+#&gt; Intercept.Ochetellus.glaber             -3.866786263 -0.216710898
+#&gt; Intercept.Paraparatrechina.sp..B        -3.311405894  0.274822077
+#&gt; Intercept.Pheidole.sp..A                 2.092272007  2.543532147
+#&gt; Intercept.Pheidole.sp..B                -2.029985121 -0.153132275
+#&gt; Intercept.Pheidole.sp..E                 1.226608744  1.979540277
+#&gt; Intercept.Pheidole.sp..J                -2.978146281 -0.567104290
+#&gt; Intercept.Polyrhachis.sp..A             -1.984266427 -0.528588330
+#&gt; Intercept.Rhytidoponera.metallica.sp..A  1.772491114  2.273261575
+#&gt; Intercept.Rhytidoponera.sp..B           -0.397830423  1.093650066
+#&gt; Intercept.Solenopsis.sp..A              -3.427089464 -0.975797868
+#&gt; Intercept.Stigmacros.sp..A              -1.091206003  0.513005413
+#&gt; Intercept.Tapinoma.sp..A                 0.282465795  1.237320884
+#&gt; Intercept.Tetramorium.sp..A             -0.632401597  0.778199158
+#&gt; inv.phi.Amblyopone.australis            -0.270456755  1.348829269
+#&gt; inv.phi.Aphaenogaster.longiceps         -0.211399305  1.008226146
+#&gt; inv.phi.Camponotus.cinereus.amperei     -1.083923627  2.590589831
+#&gt; inv.phi.Camponotus.claripes              0.057471444  1.519286156
+#&gt; inv.phi.Camponotus.consobrinus           0.053098540  3.832242450
+#&gt; inv.phi.Camponotus.nigriceps            -0.061338953  0.518242282
+#&gt; inv.phi.Camponotus.nigroaeneus          -0.106570052  1.071253908
+#&gt; inv.phi.Cardiocondyla.nuda.atalanta     -0.070033515  0.422875217
+#&gt; inv.phi.Crematogaster.sp..A             -0.079410610  0.528487805
+#&gt; inv.phi.Heteroponera.sp..A               0.225149530  2.468934816
+#&gt; inv.phi.Iridomyrmex.bicknelli           -0.118167884  5.031091438
+#&gt; inv.phi.Iridomyrmex.dromus              -0.066771158  0.566048019
+#&gt; inv.phi.Iridomyrmex.mjobergi            -0.169842233  4.837539174
+#&gt; inv.phi.Iridomyrmex.purpureus            0.009089938  0.422717610
+#&gt; inv.phi.Iridomyrmex.rufoniger           -0.083719525 19.144135779
+#&gt; inv.phi.Iridomyrmex.suchieri            -0.154633282  2.357532463
+#&gt; inv.phi.Iridomyrmex.suchieroides        -0.884488470  4.746677631
+#&gt; inv.phi.Melophorus.sp..E                -0.832185299  2.320256850
+#&gt; inv.phi.Melophorus.sp..F                -0.512497282  5.300973679
+#&gt; inv.phi.Melophorus.sp..H                -0.424143423  3.555496588
+#&gt; inv.phi.Meranoplus.sp..A                -0.018455896  0.637501860
+#&gt; inv.phi.Monomorium.leae                  0.248436808  1.691101100
+#&gt; inv.phi.Monomorium.rothsteini            0.014831829  2.746153382
+#&gt; inv.phi.Monomorium.sydneyense           -0.099532229  1.278906136
+#&gt; inv.phi.Myrmecia.pilosula.complex       -0.365803586  1.379378612
+#&gt; inv.phi.Notoncus.capitatus              -0.041813610  0.386058038
+#&gt; inv.phi.Notoncus.ectatommoides          -0.084172891  4.069494542
+#&gt; inv.phi.Nylanderia.sp..A                 0.107367749  1.411263116
+#&gt; inv.phi.Ochetellus.glaber               -0.188684014  1.061041777
+#&gt; inv.phi.Paraparatrechina.sp..B          -0.063985324  0.301844923
+#&gt; inv.phi.Pheidole.sp..A                  -1.416443528 20.563082434
+#&gt; inv.phi.Pheidole.sp..B                  -0.348496256  1.336833683
+#&gt; inv.phi.Pheidole.sp..E                   0.320684198  2.692455697
+#&gt; inv.phi.Pheidole.sp..J                  -0.276763686  0.798706556
+#&gt; inv.phi.Polyrhachis.sp..A               -7.665319196 15.050360570
+#&gt; inv.phi.Rhytidoponera.metallica.sp..A   -0.859063055 15.097355061
+#&gt; inv.phi.Rhytidoponera.sp..B              0.003906587  1.352609906
+#&gt; inv.phi.Solenopsis.sp..A                -1.919078389  4.169816877
+#&gt; inv.phi.Stigmacros.sp..A                -0.028717196  1.050548675
+#&gt; inv.phi.Tapinoma.sp..A                   0.106419837  2.279540631
+#&gt; inv.phi.Tetramorium.sp..A               -0.300588412  3.635407503</div><div class='input'><span class='co'># Using Laplace approximation: (this line may take about 30 sec to run)</span>
 <span class='va'>fitl0</span> <span class='op'>&lt;-</span> <span class='fu'>gllvm</span><span class='op'>(</span><span class='va'>y</span>, family <span class='op'>=</span> <span class='st'>"negative.binomial"</span>, method <span class='op'>=</span> <span class='st'>"LA"</span><span class='op'>)</span>
 <span class='fu'><a href='ordiplot.gllvm.html'>ordiplot</a></span><span class='op'>(</span><span class='va'>fitl0</span><span class='op'>)</span>
 
@@ -795,7 +822,7 @@ However, sometimes this is computationally too demanding, and default option
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">
