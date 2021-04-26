@@ -53,11 +53,11 @@ The values for information criterias based on the Poisson and negative binomial 
 
 ```{r fig.height=4, fig.width=8}
 par(mfrow = c(1, 2))
-plot(ftNULL, which = 1:2, var.colors = 1, xlim = c(-9, 5), n.plot = 100)
+plot(ftNULL, which = 1:2, var.colors = 1, n.plot = 100)
 ```
 ```{r fig.height=4, fig.width=8}
 par(mfrow = c(1, 2))
-plot(ftNULLpois, which = 1:2, var.colors = 1, xlim = c(-9, 5), n.plot = 100)
+plot(ftNULLpois, which = 1:2, var.colors = 1, n.plot = 100)
 ```
 The ordination of sites based on the negative binomial GLLVM can be plotted using function `ordiplot`. The sites can be coloured according to their environmental variable values, `pH`, `SOM` and `phosp` using an argument `s.colors`. In addition, the ordination points are labeled according to the sampling location (Kilpisjarvi, Ny-Alesund and Innsbruck). This can be done by setting `symbols = TRUE` and defining the symbols for each site using argument `pch`, see below:
 

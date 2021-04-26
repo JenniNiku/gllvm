@@ -82,8 +82,9 @@ devtools::install_github("JenniNiku/gllvm")
 |Ordinal 	    | Ordinal  | VA      |probit  |
 |Normal       | Gaussian     | VA/LA   |identity|
 |Positive continuous| Gamma     | VA/LA   |log|
-|non-negative continuous| Exponential | VA/LA   |log|
-|Biomass    	| Tweedie 	   | LA   	 |log 	  |
+|Non-negative continuous| Exponential | VA/LA   |log|
+|Biomass    	| Tweedie 	   | LA/EVA |log 	  |
+|Percent cover| beta    	   | LA/EVA |probit/logit |
 
 ## Data input
 

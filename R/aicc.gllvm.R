@@ -1,4 +1,4 @@
-#' @title Auxiliary functions
+#' @title Corrected Akaike information criterion and number of observations
 #' @description Calculates corrected Akaike information criterion for small sample sizes, and extracts number of observations.
 #' 
 #'@name AICc

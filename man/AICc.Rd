@@ -5,7 +5,7 @@
 \alias{AICc.gllvm}
 \alias{nobs}
 \alias{nobs.gllvm}
-\title{Auxiliary functions}
+\title{Corrected Akaike information criterion and number of observations}
 \usage{
 \method{AICc}{gllvm}(object, ...)
 
