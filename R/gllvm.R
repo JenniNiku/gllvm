@@ -14,7 +14,7 @@
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
-#' @param link.bin link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
+#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -299,7 +299,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   num.lv = 2, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, link.bin = "probit",
+                  plot = FALSE, link = "probit",
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
@@ -495,8 +495,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if (p == 1)
       y <- as.matrix(y)
 
+    
     if (class(family) == "family") {
-      link.bin <- family$link
+      link <- family$link
       family <- family$family
     }
     if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
@@ -602,14 +603,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
 
+    if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
     if (family == "binomial") {
       if (method == "LA")
-        out$link <- link.bin
+        out$link <- link
       if (method == "VA")
         out$link <- "probit"
     }
     if (family == "beta") {
-        out$link <- link.bin
+        out$link <- link
     }
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
@@ -637,7 +639,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = link.bin,
+            link = link,
             n.init = n.init,
             start.params = start.fit,
             optimizer = optimizer,
@@ -682,7 +684,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = link.bin,
+            link = link,
             n.init = n.init,
             restrict = restrict,
             start.params = start.fit,

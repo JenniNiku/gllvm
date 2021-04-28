@@ -22,7 +22,7 @@ gllvm(
   beta0com = FALSE,
   zeta.struc = "species",
   plot = FALSE,
-  link.bin = "probit",
+  link = "probit",
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -73,7 +73,7 @@ gllvm(
 
 \item{plot}{logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
-\item{link.bin}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
+\item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
 
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.}
 
