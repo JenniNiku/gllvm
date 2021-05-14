@@ -7,8 +7,8 @@
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
-#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
-#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response and predictor variables (m,k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects. Covariates are automatically scaled and centered to improve convergence (and backtransformed).
+#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.
+#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects.
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
@@ -192,13 +192,18 @@
 #'ordiplot(fit)
 #'coefplot(fit)
 #'
-#'## Example 1: Fit model with two latent variables
+#'## Example 1: Fit model with two unconstrained latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
 #'ordiplot(fitv0)
 #'plot(fitv0, mfrow = c(2,2))
 #'summary(fitv0)
 #'confint(fitv0)
+#'
+#'## Example 1a: Fit model with two constrained latent variables and with quadratic response model
+#'fity1 <- gllvm(y, X = X, family = "negative.binomial", num.lv.c=2, method="VA", quadratic = TRUE)
+#'ordiplot(fity1, biplot = T)
+#'
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 #'ordiplot(fitl0)
@@ -295,7 +300,7 @@
 #'@importFrom mvtnorm rmvnorm
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
-                  num.lv = 2, num.lv.c = 0, family, row.eff = FALSE,
+                  num.lv = 0, num.lv.c = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link.bin = "probit",
