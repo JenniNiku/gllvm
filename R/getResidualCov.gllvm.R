@@ -12,7 +12,7 @@
 #'  \item{var.q2 }{trace of the squared term of the residual covariance matrix per latent variable, for quadratic responses. Variance explained per latent variable by the quadratic term}
 
 #' @details 
-#' Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}.
+#' Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}, and the dispersion parameter related to the distribution of choice, is applicable (e.g. in the case of negative-binomial distributed responses).
 #' 
 #' When the responses are modelled using the negative binomial distribution, the residual variances for each species must be adjusted for overdispersion. The two possible adjustement terms are \eqn{log(\phi_j + 1)} (\code{adjust = 1}) and \eqn{\psi^{(1)}(1/\phi_j)} (\code{adjust = 2}), where \eqn{\psi^{(1)}} is the trigamma function.
 #' 
@@ -82,18 +82,19 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     if(length(site.index)>2&object$num.lv.c>0&object$quadratic!=FALSE){
       stop("Site.index should be a vector of length 1 or 2. \n")
     }
-  }
-  if(!is.null(site.index)){
+  }else if(object$quadratic!=FALSE){
     if(length(site.index)==1){
       site.index <- rep(site.index,2)
-    }
+  }
   }
   
   if((object$num.lv+object$num.lv.c)==0){
     stop("No latent variables present in model.")
   }
+
+  ResCov <- matrix(0,ncol=ncol(object$y),nrow=ncol(object$y))
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov <- object$params$theta[, 1:object$num.lv, drop = F] %*% t(object$params$theta[, 1:object$num.lv, drop = F]) + 2 * object$params$theta[, -c(1:object$num.lv), drop = F] %*% t(object$params$theta[, -c(1:object$num.lv), drop = F])
+    ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]) + 2 * object$params$theta[, -c(1:object$num.lv), drop = F] %*% t(object$params$theta[, -c(1:object$num.lv), drop = F])
     if(object$num.lv.c>0)ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F))
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
@@ -107,54 +108,22 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
   if(adjust > 0 && object$family %in% c("negative.binomial", "binomial", "gaussian")){
   if(object$family == "negative.binomial"){ 
     if(adjust == 1) {
-      if(any(class(object)=="gllvm.quadratic")){
         ResCov <- ResCov + diag(log(object$params$phi + 1))
-        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/((object$num.lv+object$num.lv.c)*2), simplify = F) 
-        ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(log(object$params$phi + 1))/((object$num.lv+object$num.lv.c)*2), simplify = F) 
-      }else{
-        ResCov <- ResCov + diag(log(object$params$phi + 1))
-        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(log(object$params$phi + 1))/(object$num.lv+object$num.lv.c), simplify = F)  
-      }
-      }
-    if(adjust == 2){
-      if(any(class(object)=="gllvm.quadratic")){
+      }else if(adjust == 2){
         ResCov <- ResCov + diag(trigamma(1/object$params$phi))
-        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/((object$num.lv+object$num.lv.c)*2), simplify = F)   
-        ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(trigamma(1/object$params$phi))/((object$num.lv+object$num.lv.c)*2), simplify = F)   
-      }else{
-     ResCov <- ResCov + diag(trigamma(1/object$params$phi))
-     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(trigamma(1/object$params$phi))/(object$num.lv+object$num.lv.c), simplify = F)
-    }
      }
     
   }
     if(object$family == "binomial"){ 
       if(object$link == "probit"){
-        if(any(class(object)=="gllvm.quadratic")){
-          ResCov <- ResCov + diag(ncol(object$y))
-          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
-          ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
-        }else{
-          ResCov <- ResCov + diag(ncol(object$y))
-          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv+object$num.lv.c), simplify = F)  
-        }  
-        
+        ResCov <- ResCov + diag(ncol(object$y))
       } 
       if(object$link == "logit"){
         ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
-        ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + (diag(ncol(object$y))*pi^2/3)/(object$num.lv+object$num.lv.c), simplify = F)
       } 
     }
     if(object$family == "gaussian"){
-        if(any(class(object)=="gllvm.quadratic")){
           ResCov <- ResCov + diag((object$params$phi^2))
-          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
-          ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q2[[q]] + diag(ncol(object$y))/((object$num.lv+object$num.lv.c)*2), simplify = F)
-        }else{
-          ResCov <- ResCov + diag((object$params$phi^2))
-          ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) ResCov.q[[q]] + diag(ncol(object$y))/(object$num.lv+object$num.lv.c), simplify = F)  
-        }
-      
     }
   }
   ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q[[q]])))
@@ -168,14 +137,25 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     if(object$num.lv>0&object$num.lv.c>0)names(ResCov.q2) <- c(paste("CLV", 1:object$num.lv.c, "^2",sep = ""),paste("LV", 1:object$num.lv, "^2",sep = ""))
   }
   
-    if(any(ResCov.q[1:object$num.lv.c]<0.01)){
-      warning("The residual variance of ",paste("CLV",(1:object$num.lv.c)[which(ResCov.q<0.01)],collapse=", and ")," are very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
+  if(object$quadratic==F){
+    if(object$num.lv.c>0){
+      if(any(ResCov.q[1:object$num.lv.c]<0.01)){
+        warning("The residual variance of ",paste(colnames(object$lvs)[which(ResCov.q[1:object$num.lv.c]<0.01)],collapse=", and ")," is very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
+      }
+    }  
+  }else{
+    if(object$num.lv.c>0){
+      if(any((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)){
+        warning("The residual variance related to ",paste(colnames(object$lvs)[which((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)],collapse=", and ")," is very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
+      }
+    }  
   }
+  
   
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
   if(any(class(object)=="gllvm.quadratic")){
-    out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, trace.q2 = ResCov.q2)
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, var.q2 = ResCov.q2)
   }else{
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q)  
   }

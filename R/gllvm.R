@@ -394,8 +394,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         stop("TR must be a matrix or data.frame.")
     }
     if(is.null(X)&is.null(data)&num.lv.c>0){
-      stop("Cannot constrain latent variables without predictors. Please provide covariates, or set num.lv.c=0. \n")
+      stop("Cannot constrain latent variables without predictors. Please provide X, or set num.lv.c=0. \n")
     }
+    
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
@@ -413,19 +414,20 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
         } else if(is.null(formula)&is.null(lv.formula)&num.lv.c>0){
-          lv.formula <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
+          lv.formula <- formula(paste("~", 0,paste("+", colnames(X), collapse = "")))
           if (is.data.frame(X)) {
             datayx <- list(X = model.matrix(lv.formula, X))
           } else {
-            datayx <- list(X = X)
+             datayx <- list(X = X)
           }
           lv.X <- as.matrix(model.frame(~ X, data = datayx))
           X <- NULL
           m1 <- model.frame(y ~ NULL, data = datayx)
           term <- terms(m1)
         }else if(is.null(lv.formula)&!is.null(formula)){
-          # datayx <- data.frame(y, X)
+          datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
+          term <- terms(m1)
           lv.X <- NULL
           lv.formula <- y ~ NULL
         } else if(is.null(formula)&!is.null(lv.formula)){
@@ -435,7 +437,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-          
+
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
           X<-NULL
@@ -446,7 +448,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-          
+
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
           term <- terms(m1)
@@ -478,13 +480,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           id <- 1:n
         }
       }
-
+    warning("This code does not run properly yet")
       cl <- match.call()
       mf <- match.call(expand.dots = FALSE)
-      m <- match(c("formula", "data", "na.action"), names(mf), 0)
+      m <- match(c("lv.formula", "data", "na.action"), names(mf), 0)
       mf <- mf[c(1, m)]
       mf$drop.unused.levels <- TRUE
-      mf[[1]] <- as.name("model.frame")
+      mf[[1]] <- as.name("model.matrix")
       mf <- eval(mf, parent.frame())
       term <- attr(mf, "terms")
       
@@ -585,6 +587,49 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         
       }
     }
+    
+    #check for redundant predictors
+    
+    if(!is.null(X)){
+      #check for redundant predictors
+      QR<-qr(X)
+      if(QR$rank<ncol(X)){
+        warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
+        X.red <- colnames(X)[QR$pivot[-c(1:QR$rank)]]
+        X<-X[,QR$pivot[1:QR$rank],drop=F]
+        
+        #remove redundant terms from formulas
+        if(!is.null(formula)){
+          formula <- formula(paste("~",paste(attr(terms(formula),"term.labels")[!attr(terms(formula),"term.labels")%in%X.red],collapse="+")))
+        }
+        #modify terms object
+        if(X.red%in%attr(term,"term.labels")){
+          term <- drop.terms(term,dropx=QR$pivot[-c(1:QR$rank)])  
+        }
+      }
+    }
+    
+    if(!is.null(lv.X)){
+      #check for redundant predictors
+      QR<-qr(lv.X)
+      if(QR$rank<ncol(lv.X)){
+        warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
+        if(num.lv.c==ncol(lv.X)){
+          num.lv.c <- QR$rank
+          warning("Setting num.lv.c. to number of non-redunant predictors")
+        }
+        lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
+        lv.X<-lv.X[,QR$pivot[1:QR$rank],drop=F]
+        
+        #remove redundant terms from formulas
+        if(!is.null(lv.formula)){
+          lv.formula <- formula(paste("~",paste(attr(terms(lv.formula),"term.labels")[!attr(terms(lv.formula),"term.labels")%in%lv.X.red],collapse="+")))
+        }
+        
+        #modify terms object
+      }
+    }
+    
     p <- NCOL(y)
     n <- NROW(y)
     if (p == 1)
@@ -656,6 +701,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
+    if(!is.null(TR)&num.lv.c>0){
+      stop("CGLLVM and traits not yet implemented together")
+    }
     # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
     #   stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
     # }
@@ -722,12 +770,12 @@ if (family == "binomial" || family == "beta") {
         fitg <- trait.TMB(
             y,
             X = X,
-            lv.X = lv.X,
+            # lv.X = lv.X,
             TR = TR,
             formula = formula,
-            lv.formula = lv.formula,
+            # lv.formula = lv.formula,
             num.lv = num.lv,
-            num.lv.c = num.lv.c,
+            # num.lv.c = num.lv.c,
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
@@ -911,6 +959,7 @@ if (family == "binomial" || family == "beta") {
         if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
     }
+
     if(is.null(out$sd)){
       out$sd <- FALSE
     }

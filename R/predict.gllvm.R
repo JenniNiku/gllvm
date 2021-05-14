@@ -159,44 +159,41 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   
-  if(object$num.lv > 0 && is.null(newdata)|object$num.lv.c>0 && is.null(newdata)) {
-    theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
-    if(is.null(newLV) && is.null(newdata) && is.null(newTR)){
-      eta <- eta + getLV(object) %*% t(theta)
-    if(object$quadratic != FALSE)
-      eta <- eta + getLV(object)^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
-    }
+  if(object$num.lv > 0 |object$num.lv.c>0) {
     if(!is.null(newLV)) {
       if(ncol(newLV) != (object$num.lv+object$num.lv.c)) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
       if(!is.null(newdata)) 
       {  
-        if(nrow(newLV) != nrow(Xnew)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
+        if(nrow(newLV) != nrow(newdata)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
       }
       lvs <- newLV
-      eta <- eta + lvs %*% t(theta)
-      if(object$quadratic != FALSE)
-        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
-     
+    }else{
+      lvs <- object$lvs
     }
-  }else{
+    if(object$num.lv.c>0&!is.null(newdata)){lv.X <-  as.matrix(model.frame(object$lv.formula,as.data.frame(newdata)))}else{lv.X<-object$lv.X}
     theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
-    if(is.null(newLV) && !is.null(newdata)){
-      LV <- NULL
-      if(num.lv.c>0)lvs <- model.matrix(object$lv.formula,model.frame(object$lv.formula,as.data.frame(newdata)))%*%object$params$LvXcoef + object$lvs[,1:num.lv.c,drop=F]
-      if(num.lv>0) lvs <- cbind(lvs,object$lvs[,-c(1:num.lv.c),drop=F])
       eta <- eta + lvs %*% t(theta)
-      if(object$quadratic != FALSE)
-        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
+      if(object$num.lv.c>0){
+        if(object$num.lv.c>1){thetaC <- theta[,1:object$num.lv.c,drop=F]%*%solve(diag(diag(theta[,1:object$num.lv.c,drop=F])))}else{thetaC<-theta[,1:num.lv.c,drop=F]/theta[1]}
+        eta <- eta + lv.X%*%object$params$LvXcoef%*%t(thetaC)
+      }
+    if(object$quadratic != FALSE){
+      theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F]
+      eta <- eta + lvs^2 %*% t(theta2)
+      if(object$num.lv.c>0){
+        theta2C <- abs(theta2[,1:object$num.lv.c,drop=F])
+        if(object$num.lv.c>1){theta2CX <- theta2C%*%solve(diag(diag(theta2C)))}else{theta2CX<-theta2C/theta2C[1]}
+        for(i in 1:n){
+          for(j in 1:p){
+            eta[i,j]<- eta[i,j] - 2*lvs[i,1:object$num.lv.c,drop=F]%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef) - lv.X[i,,drop=F]%*%object$params$LvXcoef%*%diag(theta2CX[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef)
+          }
+      }
     }
-    if(!is.null(newLV)) {
-      if(num.lv.c>0)lvs <- model.frame(object$lv.formula,as.data.frame(newdata))%*%object$params$LvXcoef + newLV[,1:num.lv.c,drop=F]
-      if(num.lv>0) lvs <- cbind(lvs,newLV[,-c(1:num.lv.c),drop=F])
-      eta <- eta + lvs %*% t(theta)
-      if(object$quadratic != FALSE)
-        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F])
-      
     }
+
   }
+
+ 
   
   if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)&is.null(r0)) {
     r0 <- object$params$row.params

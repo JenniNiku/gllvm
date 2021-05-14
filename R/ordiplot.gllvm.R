@@ -12,7 +12,10 @@
 #' @param s.colors colors for sites
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param cex.spp size of species labels in biplot
+#' @param cex.env size of labels for arrows in constrianed ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
+#' @param spp.scale, value between 0 and 1, to scale species optima arrows for a quadratic response model
+#' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param predict.region logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.
 #' @param level level for prediction regions.
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
@@ -32,10 +35,13 @@
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 #' For details for constructing a biplot, see Gabriel (1971).
 #' 
+#' For a quadratic response model, species optima are plotted. Species optima that are outside the range 
+#' of the predicted site scores are not plotted, but the main direction is indicated with arrows instead.
+#' 
 #' Effects of environmental variables in constrained ordination are indicated with arrows. 
 #' If standard errors are available in the provided model, the slopes of environmental variables
 #' for which the 95% confidence intervals do not include zero are shown as red, while others 
-#' are slightly less intensely colored.
+#' are slightly less intensely coloured.
 #' 
 #' 
 #' @note 
@@ -68,13 +74,10 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", spp.scale = 0.5, cex.env = 0.7, lab.dist = 0.1, env.lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-  
-  if(any(class(object)=="gllvm.quadratic")){
-    warning("A biplot does not accurately visualize a GLLVM with quadratic response model. \n")
-  }
+
   a <- jitter.amount
   n <- NROW(object$y)
   p <- NCOL(object$y)
@@ -108,19 +111,67 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     svd_rotmat_species <- do_svd$v
     
     choose.lvs <- getLV(object)
-    if(quadratic == FALSE)choose.lv.coefs <- object$params$theta
-    if(quadratic != FALSE){
-      testcov <- getLV(object) %*% t(object$params$theta[, 1:(num.lv+num.lv.c)]) + 
-        getLV(object)^2 %*% t(object$params$theta[, -c(1:(num.lv+num.lv.c))])
-      do_svd <- svd(testcov, (num.lv+num.lv.c), (num.lv+num.lv.c))
-      choose.lvs <- do_svd$u
-      choose.lv.coefs <- do_svd$v
+    if(all(which.lvs>num.lv.c) | num.lv.c == 0){
+      if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
+    }else{
+      if(num.lv.c>0){
+        thetaC <- object$params$theta[,1:num.lv.c,drop=F]
+        if(num.lv.c>1){thetaC <- thetaC%*%solve(diag(diag(thetaC)))}else{thetaC=thetaC/diag(thetaC)}
+        if(quadratic!=FALSE){
+          theta2C <- object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c,drop=F]
+          if(num.lv.c>1){theta2C <- theta2C%*%solve(diag(diag(theta2C)))}else{theta2C<-theta2C/diag(theta2C)}
+        }else{
+          theta2C <- NULL
+        }
+        }else{thetaC<-theta2C<-NULL}
+      if(num.lv>0){
+        thetaU <- object$params$theta[,-c(1:num.lv.c),drop=F][,1:num.lv,drop=F]
+        if(num.lv>1){thetaU <- thetaU%*%solve(diag(diag(thetaU)))}else{thetaU<-thetaU/diag(thetaU)}
+      if(quadratic!=FALSE){
+        theta2U <- abs(object$params$theta[,-c(1:(num.lv+2*num.lv.c)),drop=F])
+        if(num.lv>1){theta2U <- theta2U%*%solve(diag(diag(theta2U)))}else{theta2U<-theta2U/diag(theta2U)}
+      }else{
+        theta2U <- NULL
+      }
+      }else{
+          theta2U<-thetaU<- NULL
+          }
+      
+      theta<-cbind(thetaC,thetaU,theta2C,theta2U)
+      object$params$theta<-theta
+      if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     }
     
-    bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2)) 
+    # if(quadratic != FALSE){
+    #   testcov <- getLV(object) %*% t(object$params$theta[, 1:(num.lv+num.lv.c)]) + 
+    #     getLV(object)^2 %*% t(object$params$theta[, -c(1:(num.lv+num.lv.c))])
+    #   do_svd <- svd(testcov, (num.lv+num.lv.c), (num.lv+num.lv.c))
+    #   choose.lvs <- do_svd$u
+    #   choose.lv.coefs <- do_svd$v
+    # }
+    
+    if(quadratic==FALSE){
+      bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2))
+      idx <- matrix(TRUE,ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs))
+    }else{
+      idx <- choose.lv.coefs>matrix(apply(object$lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(object$lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+      bothnorms <- vector("numeric",ncol(choose.lv.coefs))
+      for(i in 1:ncol(choose.lv.coefs)){
+        bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))
+      }
+    }
+    
     ## Standardize both to unit norm then scale using bothnorms. Note alpha = 0.5 so both have same norm. Otherwise "significance" becomes scale dependent
     scaled_cw_sites <- t(t(choose.lvs) / sqrt(colSums(choose.lvs^2)) * (bothnorms^alpha)) 
-    scaled_cw_species <- t(t(choose.lv.coefs) / sqrt(colSums(choose.lv.coefs^2)) * (bothnorms^(1-alpha))) 
+    if(quadratic==FALSE){
+      scaled_cw_species <- t(t(choose.lv.coefs) / sqrt(colSums(choose.lv.coefs^2)) * (bothnorms^(1-alpha)))   
+    }else{
+      scaled_cw_species <- choose.lv.coefs
+      for(i in 1:ncol(scaled_cw_species)){
+        scaled_cw_species[,i] <- choose.lv.coefs[,i] / sqrt(sum(choose.lv.coefs[idx[,i],i]^2)) * (bothnorms^(1-alpha)) 
+      }
+      
+    }
     
     # equally: lvstr <- object$lvs%*%(diag((bothnorms^0.5)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
@@ -128,7 +179,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)
-    if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
+    # if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
@@ -191,10 +242,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
     
     if (biplot) {
-      largest.lnorms <- order(apply(object$params$theta ^ 2, 1, sum), decreasing = TRUE)[1:ind.spp]
+      if(quadratic==F)largest.lnorms <- order(apply(object$params$theta ^ 2, 1, sum), decreasing = TRUE)[1:ind.spp]
+      if(quadratic!=F)largest.lnorms <- order(apply(object$params$theta[,1:(num.lv.c+num.lv)] ^ 2, 1, sum)+2*apply(object$params$theta[,-c(1:(num.lv.c+num.lv))] ^ 2, 1, sum) , decreasing = TRUE)[1:ind.spp]
       
       plot(
-        rbind(choose.lvs[, which.lvs], choose.lv.coefs[, which.lvs]),
+        rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
         xlab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])),
         ylab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
         main = main, type = "n", ... )
@@ -235,8 +287,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         }
         spp.colors <- spp.colors[largest.lnorms][1:ind.spp]
         text(
-          matrix(choose.lv.coefs[largest.lnorms, which.lvs], nrow = length(largest.lnorms)),
-          label = rownames(object$params$theta)[largest.lnorms],
+          matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
+          label = names(which(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
           col = spp.colors, cex = cex.spp )
       }
       if (jitter){
@@ -249,53 +301,70 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
             label = 1:n, cex = 1.2, col = s.colors )
         }
-        spp.colors <- spp.colors[largest.lnorms][1:ind.spp]
+        spp.colors <- spp.colors[apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x))]
         text(
-          (matrix(choose.lv.coefs[largest.lnorms, which.lvs], nrow = length(largest.lnorms)) + runif(2*length(largest.lnorms),-a,a)),
-          label = rownames(object$params$theta)[largest.lnorms],
+          (matrix(choose.lv.coefs[largest.lnorms,which.lvs][apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)),], nrow =sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))) + runif(2*sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x))),-a,a)),
+          label = rownames(object$params$theta)[largest.lnorms][apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x))],
           col = spp.colors, cex = cex.spp )
       }
+      
+      ##Here add arrows for species with optima outside of range LV
+      if(quadratic!=FALSE){
+        marg<-par("usr")
+        Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
+        Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
+        origin<- c(mean(marg[1:2]),mean(marg[3:4]))
+        opt_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,,drop=F],1,all)],,drop=F]
+        if(nrow(opt_to_plot)>0){
+        ends <- t(t(t(t(opt_to_plot)-origin)/sqrt((opt_to_plot[,1]-origin[1])^2+(opt_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*spp.scale
+        for(i in 1:nrow(opt_to_plot)){
+          arrows(origin[1],origin[2],ends[i,1]+origin[1],ends[i,2]+origin[2],col=spp.colors[i], cex = cex.spp, length = 0.2)
+          text(x=ends[i,1]*(1+lab.dist)+origin[1],y=ends[i,2]*(1+lab.dist)+origin[2],labels = row.names(opt_to_plot)[i],col=spp.colors[i], cex = cex.spp)
+        }
+        }
+      }
+      
     }
-
+    
     if(num.lv.c>1&all(which.lvs<=num.lv.c)){
-            #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
+      #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
       # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
-      LVcoef <- object$params$LvXcoef
+      LVcoef <- object$params$LvXcoef[,which.lvs]
       # if(any(row.names(LVcoef)%in%"(Intercept)")){
       #   intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
       #   LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
       # }
       if(!is.logical(object$sd)){
-        cilow <- object$params$LvXcoef+qnorm( (1 - 0.95) / 2)*object$sd$LvXcoef
-        ciup <- object$params$LvXcoef+qnorm(1- (1 - 0.95) / 2)*object$sd$LvXcoef
+        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*object$sd$LvXcoef[,which.lvs]
+        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*object$sd$LvXcoef[,which.lvs]
         lty <- rep("solid",ncol(object$lv.X))
         col <- rep("red", ncol(object$lv.X))
         lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
         col[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- hcl(0, 100, 80)#rgb(1,0,0,alpha=0.3)
         
       }else{
-        lty <- rep("dashed",ncol(object$lv.X))
-        col<-rep("red",ncol(object$lv.X))
+        lty <- rep("solid",ncol(object$lv.X))
+        col<-rep(hcl(0, 60, 80),ncol(object$lv.X))
       }
-        LVcoef <- LVcoef%*%svd_rotmat_sites
-        LVcoef <- LVcoef/apply(object$lv.X,2,sd)
-        marg<-par("usr")
-    
-        Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
-        Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
-        origin<- c(mean(marg[1:2]),mean(marg[3:4]))
-
-        #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-        LVcoef <- t(t(LVcoef)/apply(abs(LVcoef),2,max))*min(Xlength,Ylength)*0.8
-        
-        for(i in 1:nrow(LVcoef)){
-          arrows(x0=origin[1],y0=origin[2],x1=origin[1]+LVcoef[i,1],y1=origin[2]+LVcoef[i,2],col=col[i],length=0.1,lty=lty[i])  
-          text(x=origin[1]+LVcoef[i,1],y=origin[2]+LVcoef[i,2],labels = row.names(LVcoef)[i],col=col[i])
-        }
+      LVcoef <- LVcoef%*%svd_rotmat_sites[which.lvs,which.lvs]
+      LVcoef <- LVcoef/apply(object$lv.X,2,sd)
+      marg<-par("usr")
+      
+      Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
+      Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
+      origin<- c(mean(marg[1:2]),mean(marg[3:4]))
+      
+      #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
+      LVcoef <- t(t(LVcoef)/apply(abs(LVcoef),2,max))*min(Xlength,Ylength)*0.8
+      print(LVcoef)
+      for(i in 1:nrow(LVcoef)){
+        arrows(x0=origin[1],y0=origin[2],x1=origin[1]+LVcoef[i,1],y1=origin[2]+LVcoef[i,2],col=col[i],length=0.2,lty=lty[i])  
+        text(x=origin[1]+LVcoef[i,1]*(1+lab.dist),y=origin[2]+LVcoef[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
       }
-
     }
+   
+  }
 }
 
 
@@ -304,4 +373,3 @@ ordiplot <- function(object, ...)
 {
   UseMethod(generic = "ordiplot")
 }
-

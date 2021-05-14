@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, start.lvs = NULL, 
         seed = NULL,power=NULL,starting.val="res",formula=NULL, lv.formula = NULL,
         jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL) {
+        link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL, maxit=4000,max.iter=4000) {
 
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
@@ -87,8 +87,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     if(starting.val=="res" && is.null(start.lvs) ){# && num.lv>0
       if(is.null(TR)){
         if(family!="gaussian") {
-          if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, lv.X = lv.X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
-          if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+          if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, lv.X = lv.X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+          if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
           coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
           fit.mva$phi <- fit.mva$params$phi
           resi <- NULL
@@ -103,7 +103,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         }
         gamma=NULL
         if((num.lv+num.lv.c)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, resi=resi, lv.X = lv.X)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, resi=resi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0)b.lv<-lastart$b.lv
@@ -163,7 +163,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
 
         gamma=NULL
         if((num.lv+num.lv.c)>0){
-          lastart <- FAstart(eta, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X)
+          lastart <- FAstart(eta, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0)b.lv<-lastart$b.lv
@@ -176,14 +176,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       if(family!="gaussian") {
         if(is.null(TR)){
           
-          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if(is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
+          if(is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
+          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
+          if(is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
 
         } else {
-          if((num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
-          if((num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link)
+          if((num.lv+num.lv.c) > 0) fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
+          if((num.lv+num.lv.c) == 0) fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter)
           env  <-  rep(0,num.X)
           trait  <-  rep(0,num.T)
           inter <- rep(0, num.T * num.X)
@@ -262,8 +262,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     }
     
   if(starting.val=="res"){
-    if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc)
-    if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc)
+    if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
+    if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
     params[,1:ncol(cbind(1,X))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
     zeta <- fit.mva$params$zeta
     resi <- NULL
@@ -311,7 +311,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       if((num.lv+num.lv.c)>0){
-        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X)
+        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter)
         gamma<-lastart$gamma
         index<-lastart$index
         params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
@@ -371,6 +371,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       b.lv <- matrix(1,nrow=ncol(lv.X),ncol=num.lv.c)
     }
     
+  }else if(starting.val=="random"&num.lv.c>0){
+    b.lv <- matrix(1,nrow=ncol(lv.X),ncol=num.lv.c)
   }
   if((num.lv+num.lv.c) > 0) {
     index <- index+mvtnorm::rmvnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
@@ -431,18 +433,18 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
 }
 
 FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = NULL, phis = NULL, 
-                    jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X){
+                    jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL){
 
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
   
   if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
     mu <- exp(eta)
-  }
-  if(family %in% c("binomial","beta")) {
+  }else if(family %in% c("binomial","beta")) {
     mu <-  binomial(link = link)$linkinv(eta)
+  }else {
+    mu<-eta
   }
-  if(family=="ordinal")mu<-eta
   if(is.null(resi)){
     ds.res <- matrix(NA, n, p)
     rownames(ds.res) <- rownames(y)
@@ -541,12 +543,20 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
   if(num.lv.c>0&num.lv==0){
     if(p>2 && n>2){
     if(n>p){
-      fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"))
-      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
+      fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
+      if(family=="gaussian"&inherits(fa,"try-error")){
+        fa <- princomp(resi)
+        fa$scores <- fa$scores[,1:num.lv.c,drop=F]
+      }
+      if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
       index <- fa$scores
     } else if(n<p) {
-      fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"))
-      if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
+      fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
+      if(family=="gaussian"&inherits(fa,"try-error")){
+        fa <- princomp(t(resi))
+        fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
+      }
+      if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
       index <- matrix(fa$loadings,n,num.lv.c)
     } else {
       tryfit <- TRUE; tryi <- 1
@@ -554,12 +564,10 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
         fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv.c,scores = "regression"), silent = TRUE)
         tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
       }
-      if(tryfit) {
-        warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
+      if(inherits(fa,"try-error")) {
+        warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
         fa <- princomp(resi)
         index<-matrix(fa$scores[,1:num.lv.c],n,num.lv.c)
-      }else{
-        index <- fa$scores[1:n,]
       }
     }
 
@@ -580,7 +588,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
         if(num.lv.c>1)index.lm <-  lm(fa$loadings~0+lv.X)
         if(num.lv.c==1)index.lm <-  lm(c(fa$loadings)~0+lv.X)
       }
-      index <- matrix(residuals(index.lm),ncol=num.lv.c,nrow=n)
+      index <- matrix(residuals.lm(index.lm),ncol=num.lv.c,nrow=n)
       b.lv<-matrix(coef(index.lm),ncol=num.lv.c,nrow=ncol(lv.X))
       gamma.lm <- try(lm(resi~0+I(index+lv.X%*%b.lv)),silent=T)
       if(inherits(gamma.lm,"try-error")){
@@ -640,7 +648,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc)
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
@@ -655,9 +663,10 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
   if(num.lv.c>0&num.lv>0){
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
       mu <- exp(eta)
-    }
-    if(family %in% c("binomial","beta")) {
+    }else if(family %in% c("binomial","beta")) {
       mu <-  binomial(link = link)$linkinv(eta)
+    }else{
+      mu <- eta
     }
     if(is.null(resi)){
       ds.res <- matrix(NA, n, p)
@@ -757,12 +766,22 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
       
       if(n>p){
         fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
-        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        if(family=="gaussian"&inherits(fa,"try-error")){
+          fa <- princomp(resi)
+          fa$scores <- fa$scores[,1:num.lv,drop=F]
+          fa$loadings <- fa$loadings[,1:num.lv,drop=F]
+        }
+        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
         gamma<-matrix(fa$loadings,p,num.lv)
         index <- fa$scores
       } else if(n<p) {
         fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
-        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+        if(family=="gaussian"&inherits(fa,"try-error")){
+          fa <- princomp(t(resi))
+          fa$loadings <- fa$loadings[,1:num.lv,drop=F]
+          fa$scores <- fa$scores[,1:num.lv,drop=F]
+        }
+        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
         gamma<-fa$scores
         index <- matrix(fa$loadings,n,num.lv)
       } else {
@@ -778,7 +797,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
           index<-matrix(pr$scores[,1:num.lv],n,num.lv)
         }else{
           gamma<-matrix(fa$loadings,p,num.lv)
-          index <- fa$scores[1:n,]
+          index <- fa$scores[1:num.lv,]
         }
       }
     } else {
@@ -812,12 +831,11 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
         }
         if(tryfit) {
           warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
-          pr <- princomp(resi)
-          gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+          fa <- princomp(resi)
+ 
         }else{
-          gamma<-matrix(fa$loadings,p,num.lv)
-          index <- fa$scores[1:n,]
+          gamma<-matrix(fa$loadings[,1:num.lv],p,num.lv)
+          index<-matrix(fa$scores[,1:num.lv],n,num.lv)
         }
       }
     } else {
@@ -1694,7 +1712,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, power = NULL) {
     if(starting.val %in% c("res", "random")){
       if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP")){
         if(family == "ZIP") family <- "poisson"
-        f1 <- gllvm.TMB(y=y, X=Xb, family = family, num.lv=0, starting.val = "zero", link =link)
+        f1 <- gllvm.TMB(y=y, X=Xb, family = family, num.lv=0, starting.val = "zero", link =link, maxit=maxit,max.iter=max.iter)
         coefs0 <- as.matrix(scale((f1$params$Xcoef), scale = FALSE))
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)
