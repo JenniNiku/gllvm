@@ -588,13 +588,18 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, zeta = NULL, zeta.struc = 
         if(num.lv.c>1)index.lm <-  lm(fa$loadings~0+lv.X)
         if(num.lv.c==1)index.lm <-  lm(c(fa$loadings)~0+lv.X)
       }
+      
       index <- matrix(residuals.lm(index.lm),ncol=num.lv.c,nrow=n)
+      
+      scale <- abs(diag(t(coef(lm(resi~0+index)))))
       b.lv<-matrix(coef(index.lm),ncol=num.lv.c,nrow=ncol(lv.X))
-      gamma.lm <- try(lm(resi~0+I(index+lv.X%*%b.lv)),silent=T)
+      b.lv <- t(t(b.lv)*scale)
+      gamma.lm <- try(lm(resi~0+I(t(t(index)*scale)+lv.X%*%b.lv)),silent=T)
+      
       if(inherits(gamma.lm,"try-error")){
         stop("Error in generating starting values. Possibly redundant factors in X.\n")
       }
-      gamma<-t(coef(gamma.lm))
+      gamma<-t(coef(gamma.lm)*scale)
       
       # b.lv.fa <- try(factanal(lv.X,factors=num.lv.c),silent=T)
       # if(!inherits(b.lv.fa,"try-error")){
