@@ -37,16 +37,23 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
       
       
-      if(num.lv>0&num.lv.c==0)idx<-which(c(upper.tri(object$params$theta[,1:num.lv])))
-      if(num.lv.c>0)idx<-which(c(upper.tri(object$params$theta[,1:num.lv.c])))
+      if(num.lv>0&num.lv.c==0)idx<-which(c(upper.tri(object$params$theta[,1:num.lv],diag=T)))[-1]
+      if(num.lv.c>0)idx<-which(c(upper.tri(object$params$theta[,1:num.lv.c],diag=T)))[-1]
       
+      #add first row and column of zeros
+      V<-rbind(0,cbind(0,V))
+
       #add zeros where necessary
       for(q in 1:length(idx)){
         V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
         V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
       }
       if(num.lv>0&num.lv.c>0){
-        idx<-which(c(upper.tri(object$params$theta[,(num.lv.c+1):(num.lv.c+num.lv)])))
+        idx<-which(c(upper.tri(object$params$theta[,(num.lv.c+1):(num.lv.c+num.lv)],diag=T)))[-1]
+      #add a zero infront of second set of  parameters
+      V <- cbind(V[,1:(p*num.lv.c)],0,V[,-c(1:(p*num.lv.c))])
+      V <- rbind(V[1:(p*num.lv.c),],0,V[-c(1:(p*num.lv.c)),])
+      
         for(q in 1:length(idx)){
           #we now have p*num.lv.c elements before the zeros need to be added
           V <- rbind(V[1:(idx[q]-1+p*num.lv.c),],0,V[(idx[q]+p*num.lv.c):ncol(V),])
@@ -160,12 +167,12 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
       if(num.lv==0)colnames(tol) <- paste("CLV",1:num.lv.c,sep="")
       if(num.lv>0&num.lv.c>0)colnames(tol) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
   }
-  if(num.lv>1&sd.errors==TRUE){
+  if((num.lv+num.lv.c)>1&sd.errors==TRUE){
     if(num.lv.c==0)colnames(tol.sd) <- paste("LV",1:num.lv,sep="")
     if(num.lv==0)colnames(tol.sd) <- paste("CLV",1:num.lv.c,sep="")
     if(num.lv>0&num.lv.c>0)colnames(tol.sd) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
   }
-  if(num.lv>1){
+  if((num.lv+num.lv.c)>1){
     row.names(tol) <- colnames(object$y)
   if(sd.errors==TRUE)row.names(tol.sd) <- colnames(object$y)
   }else{

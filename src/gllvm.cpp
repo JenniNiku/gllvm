@@ -21,6 +21,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(B);
   PARAMETER_MATRIX(Br);
   PARAMETER_MATRIX(b_lv);
+  PARAMETER_VECTOR(sigmaLV);
   PARAMETER_VECTOR(lambda);
   PARAMETER_MATRIX(lambda2);
   
@@ -67,10 +68,9 @@ Type objective_function<Type>::operator() ()
   
   matrix<Type> b_lv2(x_lv.cols(),nlvr);
   matrix <Type> Delta(nlvr,nlvr);
-  matrix <Type> Delta2(nlvr,nlvr);
   b_lv2.fill(0.0);
   Delta.fill(0.0);
-  Delta2.fill(0.0);
+  
   array<Type> D(nlvr,nlvr,p);
   D.fill(0.0);
   
@@ -79,35 +79,39 @@ Type objective_function<Type>::operator() ()
   if(nlvr>0){
     newlam.row(0).fill(1.0);
     Cu.diagonal().fill(1.0);
+    
     if(random(0)>0){
+      for (int d=1; d<nlvr; d++){
+        Delta(d,d) = fabs(sigmaLV(d-1));
+      }
+      Delta(0,0) = 1;
       Cu(0,0) = sigma*sigma;
       if(log_sigma.size()>1){
-        for (int d=1; d<(nlvr); d++){
+        for (int d=1; d<nlvr; d++){
           Cu(d,0) = log_sigma(d);
           Cu(0,d) = Cu(d,0);
         }
       }
+    }else{
+      for (int d=0; d<nlvr; d++){
+        Delta(d,d) = fabs(sigmaLV(d));
+      }
     }
-    
     //To create lambda as matrix upper triangle
     if (num_lv>0){
       int tri = 0;
       if(num_lv_c>0){
         //because the lambdas for constrained and unconstrained LVs are separately identifiable
-        tri += num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
+        tri += num_lv_c*p-(num_lv_c*num_lv_c-num_lv_c)/2-num_lv_c; //num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
       }
       for (int j=0; j<p; j++){
         for (int i=0; i<num_lv; i++){
-          if (j < i){
-            newlam(i+nlvr-num_lv,j) = 0;
-          } else if (j>i){
-            newlam(i+nlvr-num_lv,j) = lambda(j+tri);
-            if (i > 0){
-              newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i+tri);
-            }
+          if(j<i){
+            newlam(i+nlvr-num_lv-num_lv_c,j) = 0;
           }else if (j == i){
-            Delta(i+nlvr-num_lv,i+nlvr-num_lv) = fabs(lambda(i+j+i*p-(i*(i-1))/2-2*i+tri));
-            newlam(i+nlvr-num_lv,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i+tri); 
+            newlam(i+nlvr-num_lv,j) = 1;
+          }else if(j>i){
+            newlam(i+nlvr-num_lv,j) = lambda(j+i*p-(i*(i-1))/2-2*i+tri-1);
           }
         }
       }
@@ -117,22 +121,14 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<num_lv_c; i++){
           if (j < i){
             newlam(i+nlvr-num_lv-num_lv_c,j) = 0;
-          } else if (j>i){
-            newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(j);
-            if (i > 0){
-              newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
-            }
-          }else if (j == i){
-            Delta(i+nlvr-num_lv-num_lv_c,i+nlvr-num_lv-num_lv_c) = fabs(lambda(i+j+i*p-(i*(i-1))/2-2*i));
-            newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(i+j+i*p-(i*(i-1))/2-2*i);
+          } else if (j == i){
+            newlam(i+nlvr-num_lv-num_lv_c,j) = 1;
+          }else if (j > i){
+            newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);//lambda(i+j+i*p-(i*(i-1))/2-2*i);
           }
         }
       }
     }
-    if(random(0)>0){
-      Delta(0,0) = 1.0;
-    }
-    newlam = Delta.inverse()*newlam;
   }
   
   
@@ -148,54 +144,32 @@ Type objective_function<Type>::operator() ()
     //quadratic coefficients
     //if random rows, add quadratic coefficients to q>0
     if(quadratic>0){
-      
-      
       if(nlvr>(num_lv+num_lv_c)){
-        if(lambda2.cols()==1){
-          for (int q=1; q<nlvr; q++){
-            Delta2(q,q) = fabs(lambda2(q-1,0));
-          }
-        }else{
-          for (int q=1; q<nlvr; q++){
-            Delta2(q,q) = fabs(lambda2(q-1,q-1));
-          }
-        }
-        Delta2(0,0) = 1.0;
-        
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
             for (int q=1; q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-1,0))/Delta2(q,q); //common tolerances model
+              D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
             for (int q=1; q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-1,j))/Delta2(q,q); //full quadratic model
+              D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
             }
           } 
         }
         
       }else{
         if(lambda2.cols()==1){
-          for (int q=0; q<nlvr; q++){
-            Delta2(q,q) = fabs(lambda2(q,0));
-          }
-        }else{
-          for (int q=0; q<nlvr; q++){
-            Delta2(q,q) = fabs(lambda2(q,q));
-          }
-        }
-        if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
             for (int q=0; q<(num_lv+num_lv_c); q++){
-              D(q,q,j) = fabs(lambda2(q,0))/Delta2(q,q); //common tolerances model
+              D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
             for (int q=0; q<(num_lv+num_lv_c); q++){
-              D(q,q,j) = fabs(lambda2(q,j))/Delta2(q,q); //full quadratic model
+              D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
             }
           } 
         }
@@ -236,6 +210,11 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
+      
+      // for(int i=0; i<n; i++){
+      //   A.col(i) = Delta*A.col(i).matrix();
+      // }
+      
       for(int i=0; i<n; i++){
         if(nlvr == (num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
         if(nlvr>(num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
@@ -299,112 +278,110 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    if(num_lv_c>0){
-      if(random(0)>0){
-        b_lv2.middleCols(1,num_lv_c) = b_lv;
-        
-      }else{
-        b_lv2.leftCols(num_lv_c) = b_lv;
-      }  
-      eta += x_lv*b_lv2*newlam;
-      if(quadratic>0){
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            eta(i,j) -=  x_lv.row(i)*b_lv2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-          }
-        }
-      }
-      
-    }
-    if(nlvr>0){
-      newlam = Delta*newlam;
-      if(quadratic>0){
-      for (int j=0; j<p;j++){
-        D.col(j) = D.col(j).matrix()*Delta2;
-      }
-      }
-      lam += u*newlam;
-    }
     
-    if(quadratic < 1 && nlvr > 0){
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          cQ(i,j) += 0.5*((newlam.col(j)).transpose()*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()*newlam.col(j))).sum();
-        }
-      }
-      eta += lam;
-    }
     matrix <Type> e_eta(n,p);
     e_eta.fill(0.0);
-    
-    if(quadratic>0 && nlvr > 0){
-      matrix <Type> Acov(nlvr,nlvr);
-      //quadratic model approximation
-      //Poisson
-      if(family==0){
-        matrix <Type> B(nlvr,nlvr);
-        matrix <Type> v(nlvr,1);
-        for (int i=0; i<n; i++) {
-          Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-          matrix <Type> Q = atomic::matinv(Acov);
+    if(nlvr>0){
+      u *= Delta;
+      for (int i=0; i<n; i++) {
+        A.col(i) = (Delta*A.col(i).matrix()).array(); 
+      }
+      if(num_lv_c>0){
+        if(random(0)>0){
+          b_lv2.middleCols(1,num_lv_c) = b_lv;
+          
+        }else{
+          b_lv2.leftCols(num_lv_c) = b_lv;
+        }  
+        eta += x_lv*b_lv2*newlam;
+        if(quadratic>0){
           for (int j=0; j<p;j++){
-            B = (2*D.col(j).matrix()+Q);
-            if(num_lv_c==0){
-              v = (newlam.col(j)+Q*u.row(i).transpose());
-            }else{
-              v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
-            }
-            
-            Type detB = atomic::logdet(B);
-            Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
-            e_eta(i,j) += exp(cQ(i,j) + eta(i,j) + 0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value()-detB)-detA); //add all the other stuff to the quadratic approximation
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value()- (D.col(j).matrix()*Acov).trace();
-            
-            
-            if(num_lv_c>0){
-              eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+            for (int i=0; i<n; i++) {
+              eta(i,j) -=  x_lv.row(i)*b_lv2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
             }
           }
         }
+        
       }
-      // //NB, gamma, exponential
-      if((family==1)|(family==4)|(family==8)){
-        matrix <Type> B(nlvr,nlvr);
-        matrix <Type> v(nlvr,1);
+      lam += u*newlam;
+      
+      if(quadratic < 1){
         for (int i=0; i<n; i++) {
-          Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-          matrix <Type> Q = atomic::matinv(Acov);
           for (int j=0; j<p;j++){
-            B = (-2*D.col(j).matrix()+Q);
-            if(num_lv_c==0){
-              v = (-newlam.col(j)+Q*u.row(i).transpose());
-            }else{
-              v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
-            }
-            
-            Type detB = log((B.llt().matrixL()).determinant());//required like this due to potential negative semi-definiteness
-            Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum();
-            e_eta(i,j) += exp(-eta(i,j) - cQ(i,j)+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value())-detA-detB);
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-            if(num_lv_c>0){
-              eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+            cQ(i,j) += 0.5*((newlam.col(j)).transpose()*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()*newlam.col(j))).sum();
+          }
+        }
+        eta += lam;
+      }
+      
+      if(quadratic>0){
+        matrix <Type> Acov(nlvr,nlvr);
+        //quadratic model approximation
+        //Poisson
+        if(family==0){
+          matrix <Type> B(nlvr,nlvr);
+          matrix <Type> v(nlvr,1);
+          for (int i=0; i<n; i++) {
+            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
+            matrix <Type> Q = atomic::matinv(Acov);
+            for (int j=0; j<p;j++){
+              B = (2*D.col(j).matrix()+Q);
+              if(num_lv_c==0){
+                v = (newlam.col(j)+Q*u.row(i).transpose());
+              }else{
+                v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
+              }
+              
+              Type detB = atomic::logdet(B);
+              Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
+              e_eta(i,j) += exp(cQ(i,j) + eta(i,j) + 0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value()-detB)-detA); //add all the other stuff to the quadratic approximation
+              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
+              
+              if(num_lv_c>0){
+                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+              }
             }
           }
         }
-      }
-      //Binomial, Gaussian, Ordinal
-      if((family==2)|(family==3)|(family==7)){
-        for (int i=0; i<n; i++) {
-          Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-          for (int j=0; j<p;j++){
-            if(num_lv_c==0){
-              cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
-            }else{
-              cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
+        // //NB, gamma, exponential
+        if((family==1)|(family==4)|(family==8)){
+          matrix <Type> B(nlvr,nlvr);
+          matrix <Type> v(nlvr,1);
+          for (int i=0; i<n; i++) {
+            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
+            matrix <Type> Q = atomic::matinv(Acov);
+            for (int j=0; j<p;j++){
+              B = (-2*D.col(j).matrix()+Q);
+              if(num_lv_c==0){
+                v = (-newlam.col(j)+Q*u.row(i).transpose());
+              }else{
+                v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
+              }
+              
+              Type detB = log((B.llt().matrixL()).determinant());//required like this due to potential negative semi-definiteness
+              Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
+              e_eta(i,j) += exp(-eta(i,j) - cQ(i,j)+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value())-detA-detB);
+              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
+              if(num_lv_c>0){
+                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+              }
             }
-            eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-            if(num_lv_c>0){
-              eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+          }
+        }
+        //Binomial, Gaussian, Ordinal
+        if((family==2)|(family==3)|(family==7)){
+          for (int i=0; i<n; i++) {
+            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
+            for (int j=0; j<p;j++){
+              if(num_lv_c==0){
+                cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
+              }else{
+                cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*(u.row(i)).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
+              }
+              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
+              if(num_lv_c>0){
+                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
+              }
             }
           }
         }
@@ -655,27 +632,24 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         nll.row(i).array() += mvnorm(u.row(i))/p;
       }
-    }
-
-    if(num_lv_c>0){
-      if(random(0)>0){
-        b_lv2.middleCols(1,num_lv_c) = b_lv;
-        
-      }else{
-        b_lv2.leftCols(num_lv_c) = b_lv;
-      }  
-      eta += x_lv*b_lv2*newlam;
+      
+      u *= Delta;
+      if(num_lv_c>0){
+        if(random(0)>0){
+          b_lv2.middleCols(1,num_lv_c) = b_lv;
+          
+        }else{
+          b_lv2.leftCols(num_lv_c) = b_lv;
+        }  
+        eta += x_lv*b_lv2*newlam;
       }
-    if(nlvr>0){
-      newlam = Delta*newlam;
+      
       lam += u*newlam;
-    }
-    
-       eta += r0*xr + offset;
-    if(nlvr>0){
       eta += lam;
+      
     }
     
+    eta += r0*xr + offset;
     
     if(model<1){
       
@@ -732,7 +706,7 @@ Type objective_function<Type>::operator() ()
             nll(i,j) -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
           }
         }
-      } else if(family==5){//tweedie family
+      } else if(family==5){//tweedie familyF
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
@@ -761,6 +735,10 @@ Type objective_function<Type>::operator() ()
         }
       }
   }
+  REPORT(Delta);
+  REPORT(u);
+  REPORT(newlam);
+  REPORT(eta);
   REPORT(nll);//only works for VA!!
   return nll.sum();
-}
+} 

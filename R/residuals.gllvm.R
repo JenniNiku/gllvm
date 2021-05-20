@@ -80,19 +80,16 @@ residuals.gllvm <- function(object, ...) {
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0){
-  eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
-  thetaU <- object$params$theta[,1:num.lv.c,drop=F]
-  if(num.lv.c>1){thetaU <- thetaU%*%solve(diag(diag(thetaU)))}else if(num.lv.c>0){thetaU<-thetaU/thetaU[1]}
-  if(num.lv.c>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(thetaU)
+    lvs <- t(t(object$lvs)*object$params$sigma.lv)
+  eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
+  if(num.lv.c>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(object$params$theta[,1:num.lv.c,drop=F])
   }
   if(quadratic != FALSE){
-    if (num.lv>0|num.lv.c > 0)eta.mat <- eta.mat  + object$lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
-    thetaC <- abs(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c,drop=F])
-    if(num.lv.c>1){thetaC <- thetaC%*%solve(diag(diag(thetaC)))}else if(num.lv.c>0){thetaC<-thetaC/thetaC[1]}
+    if (num.lv>0|num.lv.c > 0)eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
     if(num.lv.c>0){
       for(i in 1:n){
         for(j in 1:p){
-          eta.mat[i,j] <- eta.mat[i,j] -2*object$lvs[i,1:num.lv.c,drop=F]%*%abs(diag(object$params$theta[j,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef) - object$lv.X[i,,drop=F]%*%object$params$LvXcoef%*%diag(thetaC[j,])%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef)
+          eta.mat[i,j] <- eta.mat[i,j] -2*lvs[i,1:num.lv.c,drop=F]%*%abs(diag(object$params$theta[j,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef) - object$lv.X[i,,drop=F]%*%object$params$LvXcoef%*%abs(diag(object$params$theta[j,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef)
         }
       }
     }

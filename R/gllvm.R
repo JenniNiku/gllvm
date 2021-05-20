@@ -871,6 +871,12 @@ if (family == "binomial" || family == "beta") {
       out$params <- fitg$params
       if (sd.errors) {
         out$sd <- fitg$sd
+        if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
+          if(det(fitg$Hess$cov.mat.mod)==0){
+            warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
+          }
+        }
+        
       }
       if (family == "tweedie") {
         out$Power <- fitg$Power
@@ -934,6 +940,30 @@ if (family == "binomial" || family == "beta") {
       out$A <- fitg$Lambda
       out$start <- fitg$start
     }
+    
+    #post-hoc processing for sigma.lv
+    # if((num.lv.c+num.lv)>0){
+    # if(num.lv.c>1){
+    #   if(num.lv.c>1){out$params$sigma.lv <- abs(diag(out$params$theta[,1:num.lv.c]));diag(out$params$theta[,1:num.lv.c])<-1}else{out$params$sigma.lv <- abs(out$params$theta[1,1]);out$params$theta[1,1]<-1}
+    #   if(!is.null(out$sd)){
+    #     if(num.lv.c>1){out$sd$sigma.lv <- diag(out$sd$theta[,1:num.lv.c]);diag(out$sd$theta[,1:num.lv.c])<-0}else{out$sd$sigma.lv <- out$sd$theta[1];out$sd$theta[1]<-0}
+    #   }
+    # }
+    # if(num.lv>0){
+    #   if(num.lv.c==0){
+    #     if(num.lv>1){out$params$sigma.lv <- abs(diag(out$params$theta[,1:num.lv]));diag(out$params$theta[,1:num.lv])<-1}else{out$params$sigma.lv <- abs(out$params$theta[1,1]);out$params$theta[1,1]<-1}
+    #     if(!is.null(out$sd)){
+    #       if(num.lv>1){out$sd$sigma.lv <- diag(out$sd$theta[,1:num.lv]);diag(out$sd$theta[,1:num.lv])<-0}else{out$sd$sigma.lv <- out$sd$theta[1];out$sd$theta[1]<-0}
+    #     }
+    #   }else{
+    #     if(num.lv>1){out$params$sigma.lv <- c(out$params$sigma.lv, abs(diag(out$params$theta[,-c(1:num.lv.c),drop=F])));diag(out$params$theta[,-c(1:num.lv.c)])<-1}else{out$params$sigma.lv <- c(out$params$sigma.lv,out$params$theta[1,-c(1:num.lv.c)]);out$params$theta[1,-c(1:num.lv.c)]<-1}
+    #     if(!is.null(out$sd)){
+    #       if(num.lv>1){out$sd$sigma.lv <- c(out$sd$sigma.lv, diag(out$sd$theta[,-c(1:num.lv.c),drop=F]));diag(out$sd$theta[,-c(1:num.lv.c)])<-0}else{out$sd$sigma.lv <- c(out$sd$sigma.lv,out$sd$theta[1,-c(1:num.lv.c)]);out$sd$theta[1,-c(1:num.lv.c)]<-0}
+    #     }
+    #   }
+    # }
+    #   names(out$params$sigma.lv) <- names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c)])
+    #   }
     if (family == "negative.binomial")
       out$params$inv.phi <- 1 / out$params$phi
     if (is.infinite(out$logL)){

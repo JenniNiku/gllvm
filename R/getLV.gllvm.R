@@ -10,15 +10,15 @@
 
 getLV.gllvm <- function(object)
 {
-  if(object$num.lv.c==0){
-    return(object$lvs)  
-  }else{
-    lvs<-cbind(object$lv.X%*%object$params$LvXcoef+object$lvs[,1:object$num.lv.c],object$lvs[,-c(1:object$num.lv.c)])
+  lvs <- t(t(object$lvs)*object$params$sigma.lv)
+  
+  if(object$num.lv.c>0){
+    lvs<-cbind(object$lv.X%*%object$params$LvXcoef+lvs[,1:object$num.lv.c],lvs[,-c(1:object$num.lv.c)])
     if(object$num.lv.c>0&object$num.lv>0)colnames(lvs)<-c(paste("CLV",1:object$num.lv.c,sep=""),paste("LV",1:object$num.lv,sep=""))
     if(object$num.lv.c>0&object$num.lv==0)colnames(lvs)<-paste("CLV",1:object$num.lv.c,sep="")
-    return(lvs)
   }
   
+  return(lvs)
 }
 
 #'@export getLV

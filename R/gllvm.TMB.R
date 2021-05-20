@@ -51,7 +51,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
   num.X <- 0;
   if(!is.null(X)){
-
     if (!is.null(formula)) {
       xb <- as.matrix(model.matrix(formula, data = data.frame(X)))
       X <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)"))])
@@ -99,7 +98,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   if (n.init > 1)
     seed <- sample(1:10000, n.init)
 
-  #while(n.i <= n.init){
+  while(n.i <= n.init){
     
     if(n.init > 1 && trace)
       cat("Initial run ", n.i, "\n")
@@ -116,6 +115,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       lambdas <- NULL
 
       if ((num.lv+num.lv.c) > 0) {
+        sigma.lv <- fit$sigma.lv
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv - num.lv.c + 1):ncol(fit$params)])
         if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
           lambda2 <- matrix(quad.start, ncol = num.lv + num.lv.c, nrow = 1)  
@@ -173,13 +173,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           betas <- c(start.params$params$Xcoef) ## covariates coefficients
         lambdas <- NULL
         if ((num.lv+num.lv.c) > 0){
+          sigma.lv <- start.params$params$sigma.lv
           lambdas <- start.params$params$theta
           if(num.lv>1&num.lv.c==0){
             lambdas[,1:num.lv][upper.tri(lambdas[,1:num.lv,drop=F]),] <- 0}  
         }else if(num.lv>0&num.lv.c>0){
           if(num.lv.c>1)lambdas[,1:num.lv.c][upper.tri(lambdas[,1:num.lv.c,drop=F]),] <- 0
           if(num.lv>1)lambdas[,(num.lv.c+1):ncol(lambdas)][upper.tri(lambdas[,(num.lv.c+1):ncol(lambdas),drop=F]),] <- 0
-          }
+        }
           
         row.params <- NULL
         if (start.params$row.eff != FALSE) {
@@ -244,18 +245,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     a <- c(beta0)
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
     lambda=0
-    if(num.lv+num.lv.c==0)u <- lambda2<-matrix(0)
+    if((num.lv+num.lv.c)==0)u <- lambda2<-matrix(0)
     if(num.lv > 0 & num.lv.c == 0) {
       # diag(lambdas) <- log(diag(lambdas)) #!!!
-      lambda <- lambdas[lower.tri(lambdas,diag = TRUE)]
+      lambda <- lambdas[lower.tri(lambdas,diag = F)]
       u <- lvs
     }else if(num.lv == 0 & num.lv.c > 0){
-      lambda <- lambdas[lower.tri(lambdas,diag = TRUE)]
+      lambda <- lambdas[lower.tri(lambdas,diag = F)]
       u <- lvs
     }else if(num.lv>0&num.lv.c>0){
-      lambda <- lambdas[,1:num.lv.c][lower.tri(lambdas[,1:num.lv.c,drop=F],diag = TRUE)]
-      lambda <- c(lambda,lambdas[,(num.lv.c+1):ncol(lambdas)][lower.tri(lambdas[,(num.lv.c+1):ncol(lambdas),drop=F],diag = TRUE)])
+      lambda <- lambdas[,1:num.lv.c][lower.tri(lambdas[,1:num.lv.c,drop=F],diag = F)]
+      lambda <- c(lambda,lambdas[,(num.lv.c+1):ncol(lambdas)][lower.tri(lambdas[,(num.lv.c+1):ncol(lambdas),drop=F],diag = F)])
       u <- lvs
+    }
+    if((num.lv+num.lv.c)==0){
+      sigma.lv <- 0
     }
     if(!is.null(phis)) { 
       phi <- phis 
@@ -323,7 +327,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(!inherits(start.fit,"try-error")){
           if(!is.null(start.fit$lvs)){
           u <- start.fit$lvs
-          fit$index <- u          
+          fit$index <- u
           }
         }
         start.struc="all"
@@ -357,6 +361,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=0,Au=Au,Abb=0, zeta=zeta)
       }
         map.list2 <- map.list 
+        map.list2$sigmaLV = factor(rep(NA,length(sigma.lv)))
         map.list2$r0 = factor(rep(NA, length(r0)))
         map.list2$b_lv = factor(rep(NA, length(b.lv)))
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
@@ -371,14 +376,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$Au = factor(rep(NA, length(Au)))
         map.list2$zeta = factor(rep(NA, length(zeta)))
 
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
       
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list2,
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
-      
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -419,6 +423,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lambda = 0
           map.list$lambda = factor(NA)
           map.list$lambda2 = factor(NA)
+          map.list$sigmaLV = factor(NA)
           #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = 0, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
         }
       } else {
@@ -429,14 +434,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(quadratic == FALSE){
         map.list$lambda2<-factor(NA)
       }
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
-      
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
+
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
-      
+
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -463,6 +468,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }else if(quadratic == T){
           lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+num.lv.c, nrow = p)
         }
+        sigma.lv1 <- param1[nam=="sigmaLV"]
         u1 <- matrix(param1[nam=="u"],n,nlvr)
         if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         sigmaB1 <- param1[nam=="sigmaB"]
@@ -473,7 +479,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         #Because then there is no next iteration
         data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
 
-        parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1,Abb=0, zeta=zeta)
+        parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br, sigmaLV = sigma.lv1, lambda = lambda1, lambda2 = t(lambda2), u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1,Abb=0, zeta=zeta)
         
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -531,15 +537,19 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
+      si <- names(param) == "sigmaLV"
       li2 <- names(param)=="lambda2"
       ui <- names(param)=="u"
+      
       if(nlvr > 0){
         lvs<-(matrix(param[ui],n,nlvr))
         theta <- matrix(0,p,num.lv+num.lv.c)  
-        
+        if(num.lv.c>1){diag(theta[,1:num.lv.c])<-1}else if(num.lv.c==1){theta[1,1]<-1}
+        if(num.lv>1){diag(theta[,(num.lv.c+1):(num.lv.c+num.lv)])<-1}else if(num.lv==1){theta[1,(num.lv.c+1):(num.lv.c+num.lv)]<-1}
+        sigma.lv <- abs(param[si])
         if(num.lv>0&num.lv.c==0){
         if(p>1) {
-          theta[lower.tri(theta[,1:num.lv,drop=F],diag=TRUE)] <- param[li];
+          theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
           if(quadratic!=FALSE){
             theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
           }
@@ -551,7 +561,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
         }else if(num.lv==0&num.lv.c>0){
           if(p>1) {
-            theta[lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE)] <- param[li];
+            theta[lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv.c,nrow=p,byrow=T))
             }
@@ -563,8 +573,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
         }else if(num.lv>0&num.lv.c>0){
           if(p>1) {
-            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE)] <- param[li][1:sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE))];
-            theta[,(num.lv.c+1):ncol(theta)][lower.tri(theta[,(num.lv.c+1):ncol(theta),drop=F],diag=TRUE)] <- param[li][(sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE))+1):length(param[li])];
+            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE)] <- param[li][1:sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE))];
+            theta[,(num.lv.c+1):ncol(theta)][lower.tri(theta[,(num.lv.c+1):ncol(theta),drop=F],diag=FALSE)] <- param[li][(sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE))+1):length(param[li])];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv+num.lv.c,nrow=p,byrow=T))
             }
@@ -642,7 +652,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           randomp <- NULL
         }
       }
-      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv, B=matrix(0), Br=Br,lambda = lambda, lambda2 = matrix(0), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma),Au=0,Abb=0, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv, B=matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = matrix(0), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma),Au=0,Abb=0, zeta=zeta)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -674,15 +684,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
+      si <- names(param) == "sigmaLV"
       ui <- names(param)=="u"
-      
+        
       if(nlvr > 0){
         lvs<-(matrix(param[ui],n,nlvr))
-        theta <- matrix(0,p,num.lv+num.lv.c)  
-        
+        theta <- matrix(0,p,num.lv+num.lv.c)
+        if(num.lv.c>1){diag(theta[,1:num.lv.c])<-1}else if(num.lv.c==1){theta[1,1]<-1}
+        if(num.lv>1){diag(theta[,(num.lv.c+1):(num.lv.c+num.lv)])<-1}else if(num.lv==1){theta[1,(num.lv.c+1):(num.lv.c+num.lv)]<-1}
+        sigma.lv <- abs(param[si])
         if(num.lv>0&num.lv.c==0){
           if(p>1) {
-            theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=TRUE)] <- param[li];
+            theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
             }
@@ -694,7 +707,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
         }else if(num.lv==0&num.lv.c>0){
           if(p>1) {
-            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE)] <- param[li];
+            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv.c,nrow=p,byrow=T))
             }
@@ -706,8 +719,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
         }else if(num.lv>0&num.lv.c>0){
           if(p>1) {
-            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE)] <- param[li][1:sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE))];
-            theta[,(num.lv.c+1):ncol(theta)][lower.tri(theta[,(num.lv.c+1):ncol(theta),drop=F],diag=TRUE)] <- param[li][(sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=TRUE))+1):length(param[li])];
+            theta[,1:num.lv.c][lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE)] <- param[li][1:sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE))];
+            theta[,(num.lv.c+1):ncol(theta)][lower.tri(theta[,(num.lv.c+1):ncol(theta),drop=F],diag=FALSE)] <- param[li][(sum(lower.tri(theta[,1:num.lv.c,drop=F],diag=FALSE))+1):length(param[li])];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv+num.lv.c,nrow=p,byrow=T))
             }
@@ -780,6 +793,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if((num.lv+num.lv.c) > 0) {
         out$lvs <- lvs
         out$params$theta <- theta
+        out$params$sigma.lv  <- sigma.lv
         if(num.lv.c>0){
           out$params$LvXcoef <- b.lv
           colnames(out$params$LvXcoef) <- paste("CLV",1:num.lv.c, sep="")
@@ -809,6 +823,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
           rownames(out$params$theta) <- colnames(out$y)
         }
+        names(out$params$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c),drop=F])
       }
       names(beta0) <- colnames(out$y); out$params$beta0 <- beta0;
       if(!is.null(X)){betas <- matrix(betas,ncol=ncol(X)); out$params$Xcoef <- betas;
@@ -873,11 +888,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         }
     }
-
+    seed.best <- seed[n.i]
     n.i <- n.i+1;
   
-    #}
+    }
   
+  #So we may reproduce results, even if a seed was not provided
+  out$seed <- seed.best
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
   
@@ -896,7 +913,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   #     out$logL <- out$logL - n*p*log(pi)/2
   #   }
   # }
-
   tr<-try({
     if(sd.errors && !is.infinite(out$logL)) {
       if(trace) cat("Calculating standard errors for parameters...\n")
@@ -1000,11 +1016,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
       if(row.eff == "fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params) <- rownames(out$y); se <- se[-(1:(n-1))] }
       sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
+      if((num.lv.c+num.lv)>0)se.sigma.lv <- se[1:(num.lv+num.lv.c)];se<-se[-c(1:(num.lv+num.lv.c))]
       if(num.lv > 0&num.lv.c==0) {
-        se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag = TRUE)] <- se[1:(p * num.lv - sum(0:(num.lv-1)))];
+        se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(out$y)
-        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
+        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
 
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
@@ -1023,10 +1040,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         colnames(se.LvXcoef) <- paste("CLV",1:num.lv.c,sep="")
         row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
-        se.lambdas <- matrix(0,p,num.lv.c); se.lambdas[lower.tri(se.lambdas, diag = TRUE)] <- se[1:(p * num.lv.c - sum(0:(num.lv.c-1)))];
+        se.lambdas <- matrix(0,p,num.lv.c); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv.c - sum(0:num.lv.c))];
         colnames(se.lambdas) <- paste("CLV", 1:num.lv.c, sep="");
         rownames(se.lambdas) <- colnames(out$y)
-        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv.c - sum(0:(num.lv.c-1))))];
+        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv.c - sum(0:num.lv.c)))];
         
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * num.lv.c)], p, num.lv.c, byrow = T)  
@@ -1047,10 +1064,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
         se.lambdas <- matrix(0,p,num.lv+num.lv.c);
-        se.lambdas[,1:num.lv.c][lower.tri(se.lambdas[,1:num.lv.c,drop=F], diag = TRUE)] <- se[1:(p * num.lv.c - sum(0:(num.lv.c-1)))];
-        se <- se[-c(1:(p * num.lv.c - sum(0:(num.lv.c-1))))];
-        se.lambdas[,(num.lv.c+1):ncol(se.lambdas)][lower.tri(se.lambdas[,(num.lv.c+1):ncol(se.lambdas),drop=F], diag = TRUE)] <- se[1:(p * num.lv - sum(0:(num.lv-1)))];
-        se <- se[-c(1:(p * num.lv - sum(0:(num.lv-1))))]
+        se.lambdas[,1:num.lv.c][lower.tri(se.lambdas[,1:num.lv.c,drop=F], diag=FALSE)] <- se[1:(p * num.lv.c - sum(0:num.lv.c))];
+        se <- se[-c(1:(p * num.lv.c - sum(0:num.lv.c)))];
+        se.lambdas[,(num.lv.c+1):ncol(se.lambdas)][lower.tri(se.lambdas[,(num.lv.c+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
+        se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
         colnames(se.lambdas) <- c(paste("CLV", 1:num.lv.c, sep=""),paste("LV", 1:num.lv, sep=""));
         rownames(se.lambdas) <- colnames(out$y)
         out$sd$theta <- se.lambdas;
@@ -1067,6 +1084,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }
         
+      }
+      if((num.lv+num.lv.c)){
+        out$sd$sigma.lv  <- se.sigma.lv
+        names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c)])
       }
       out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(out$y);
       if(!is.null(X)){

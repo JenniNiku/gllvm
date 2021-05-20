@@ -3,7 +3,7 @@
 #'
 #' @param object  an object of class 'gllvm'.
 #' @param adjust  The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.
-#' @param site.index A site index, vector of length one or two, that is used in the calculation of a GLLVM with quadratic response model.
+#' @param site.index A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.
 #'
 #' @return Function returns following components:
 #'  \item{cov }{residual covariance matrix}
@@ -77,15 +77,11 @@
 getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
 {
   if(object$quadratic!=FALSE&&is.null(site.index)&object$num.lv.c>0){
-    stop("Please provide a site index vector for which the residual covariances should be calculated. \n")
+    stop("Please provide a site index for which the residual covariances should be calculated. \n")
   }else if(object$quadratic!=FALSE&&!is.null(site.index)){
     if(length(site.index)>2&object$num.lv.c>0&object$quadratic!=FALSE){
       stop("Site.index should be a vector of length 1 or 2. \n")
     }
-  }else if(object$quadratic!=FALSE){
-    if(length(site.index)==1){
-      site.index <- rep(site.index,2)
-  }
   }
   
   if((object$num.lv+object$num.lv.c)==0){
@@ -94,14 +90,18 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
 
   ResCov <- matrix(0,ncol=ncol(object$y),nrow=ncol(object$y))
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]) + 2 * object$params$theta[, -c(1:object$num.lv), drop = F] %*% t(object$params$theta[, -c(1:object$num.lv), drop = F])
-    if(object$num.lv.c>0)ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F))
-    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
-    ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
-    if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
+    ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% diag(object$params$sigma.lv) %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% diag(object$params$sigma.lv)) + 2 * object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2) %*% t(object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2))
+    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$sigma.lv[q]^2*object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$sigma.lv[q]^4*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
+    if(num.lv.c>0){
+      ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F))
+      ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q)ResCov.q2[[q]]+ 4*object$params$sigma.lv[q]^2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
+      
+    }
+    #if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
   }else{
-    ResCov <- object$params$theta %*% t(object$params$theta)
-    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
+    ResCov <- object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% diag(object$params$sigma.lv) %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% diag(object$params$sigma.lv))
+    ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) (object$params$theta[, q, drop = F]* object$params$sigma.lv[q]) %*% t(object$params$theta[, q, drop = F] * object$params$sigma.lv[q]), simplify = F)
   }
   
   
@@ -139,13 +139,13 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
   
   if(object$quadratic==F){
     if(object$num.lv.c>0){
-      if(any(ResCov.q[1:object$num.lv.c]<0.01)){
+      if(any(object$params$sigma.lv<0.1)){
         warning("The residual variance of ",paste(colnames(object$lvs)[which(ResCov.q[1:object$num.lv.c]<0.01)],collapse=", and ")," is very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
       }
     }  
   }else{
     if(object$num.lv.c>0){
-      if(any((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)){
+      if(any(object$params$sigma.lv<0.01)){
         warning("The residual variance related to ",paste(colnames(object$lvs)[which((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)],collapse=", and ")," is very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
       }
     }  

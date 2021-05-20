@@ -170,22 +170,21 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }else{
       lvs <- object$lvs
     }
+    lvs <- t(t(lvs)*object$params$sigma.lv)
     if(object$num.lv.c>0&!is.null(newdata)){lv.X <-  as.matrix(model.frame(object$lv.formula,as.data.frame(newdata)))}else{lv.X<-object$lv.X}
     theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c)]
       eta <- eta + lvs %*% t(theta)
       if(object$num.lv.c>0){
-        if(object$num.lv.c>1){thetaC <- theta[,1:object$num.lv.c,drop=F]%*%solve(diag(diag(theta[,1:object$num.lv.c,drop=F])))}else{thetaC<-theta[,1:num.lv.c,drop=F]/theta[1]}
-        eta <- eta + lv.X%*%object$params$LvXcoef%*%t(thetaC)
+        eta <- eta + lv.X%*%object$params$LvXcoef%*%t(theta[,1:object$num.lv.c])
       }
     if(object$quadratic != FALSE){
       theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F]
       eta <- eta + lvs^2 %*% t(theta2)
       if(object$num.lv.c>0){
         theta2C <- abs(theta2[,1:object$num.lv.c,drop=F])
-        if(object$num.lv.c>1){theta2CX <- theta2C%*%solve(diag(diag(theta2C)))}else{theta2CX<-theta2C/theta2C[1]}
         for(i in 1:n){
           for(j in 1:p){
-            eta[i,j]<- eta[i,j] - 2*lvs[i,1:object$num.lv.c,drop=F]%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef) - lv.X[i,,drop=F]%*%object$params$LvXcoef%*%diag(theta2CX[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef)
+            eta[i,j]<- eta[i,j] - 2*lvs[i,1:object$num.lv.c,drop=F]%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef) - lv.X[i,,drop=F]%*%object$params$LvXcoef%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef)
           }
       }
     }
