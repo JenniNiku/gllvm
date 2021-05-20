@@ -74,7 +74,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", spp.scale = 0.5, cex.env = 0.7, lab.dist = 0.1, env.lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", spp.scale = 0.5, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
@@ -100,47 +100,20 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   if (is.null(rownames(object$params$theta)))
     rownames(object$params$theta) = paste("V", 1:p)
   
+  lv <- getLV(object)
+  
   if ((num.lv+num.lv.c) == 1) {
-    if(num.lv==1)plot(1:n, getLV(object), ylab = "LV1", xlab = "Row index")
-    if(num.lv.c==1)plot(1:n, getLV(object), ylab = "CLV1", xlab = "Row index")
+    if(num.lv==1)plot(1:n, lv, ylab = "LV1", xlab = "Row index")
+    if(num.lv.c==1)plot(1:n, lv, ylab = "CLV1", xlab = "Row index")
   }
   
   if ((num.lv+num.lv.c) > 1) {
-    do_svd <- svd(getLV(object))
+    do_svd <- svd(lv)
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
     
-    choose.lvs <- getLV(object)
-    if(all(which.lvs>num.lv.c) | num.lv.c == 0){
-      if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
-    }else{
-      if(num.lv.c>0){
-        thetaC <- object$params$theta[,1:num.lv.c,drop=F]
-        if(num.lv.c>1){thetaC <- thetaC%*%solve(diag(diag(thetaC)))}else{thetaC=thetaC/diag(thetaC)}
-        if(quadratic!=FALSE){
-          theta2C <- object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c,drop=F]
-          if(num.lv.c>1){theta2C <- theta2C%*%solve(diag(diag(theta2C)))}else{theta2C<-theta2C/diag(theta2C)}
-        }else{
-          theta2C <- NULL
-        }
-        }else{thetaC<-theta2C<-NULL}
-      if(num.lv>0){
-        thetaU <- object$params$theta[,-c(1:num.lv.c),drop=F][,1:num.lv,drop=F]
-        if(num.lv>1){thetaU <- thetaU%*%solve(diag(diag(thetaU)))}else{thetaU<-thetaU/diag(thetaU)}
-      if(quadratic!=FALSE){
-        theta2U <- abs(object$params$theta[,-c(1:(num.lv+2*num.lv.c)),drop=F])
-        if(num.lv>1){theta2U <- theta2U%*%solve(diag(diag(theta2U)))}else{theta2U<-theta2U/diag(theta2U)}
-      }else{
-        theta2U <- NULL
-      }
-      }else{
-          theta2U<-thetaU<- NULL
-          }
-      
-      theta<-cbind(thetaC,thetaU,theta2C,theta2U)
-      object$params$theta<-theta
-      if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
-    }
+    choose.lvs <- lv
+    if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     
     # if(quadratic != FALSE){
     #   testcov <- getLV(object) %*% t(object$params$theta[, 1:(num.lv+num.lv.c)]) + 
@@ -178,7 +151,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites)
     # if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     # testcov <- object$lvs %*% t(object$params$theta)
@@ -205,6 +178,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
+          for(i in 1:n){
+            object$A[i,,] <- diag(object$params$sigma.lv)%*%object$A[i,,]%*%diag(object$params$sigma.lv)  
+          }
+          
           sdb<-sdA(object)
           object$A<-sdb+object$A
           r=0
@@ -261,7 +238,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
+          for(i in 1:n){
+            object$A[i,,] <- diag(object$params$sigma.lv)%*%object$A[i,,]%*%diag(object$params$sigma.lv)  
+          }
+          
           sdb<-sdA(object)
+          
           object$A<-sdb+object$A
           r=0
           if(object$row.eff=="random") r=1
@@ -285,10 +267,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
         }
+    
         spp.colors <- spp.colors[largest.lnorms][1:ind.spp]
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
-          label = names(which(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
+          label = rownames(object$params$theta)[largest.lnorms][apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x))],
           col = spp.colors, cex = cex.spp )
       }
       if (jitter){
@@ -345,7 +328,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         
       }else{
         lty <- rep("solid",ncol(object$lv.X))
-        col<-rep(hcl(0, 60, 80),ncol(object$lv.X))
+        col<-rep("red",ncol(object$lv.X))
       }
       LVcoef <- LVcoef%*%svd_rotmat_sites[which.lvs,which.lvs]
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
@@ -357,7 +340,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
       LVcoef <- t(t(LVcoef)/apply(abs(LVcoef),2,max))*min(Xlength,Ylength)*0.8
-      print(LVcoef)
       for(i in 1:nrow(LVcoef)){
         arrows(x0=origin[1],y0=origin[2],x1=origin[1]+LVcoef[i,1],y1=origin[2]+LVcoef[i,2],col=col[i],length=0.2,lty=lty[i])  
         text(x=origin[1]+LVcoef[i,1]*(1+lab.dist),y=origin[2]+LVcoef[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
