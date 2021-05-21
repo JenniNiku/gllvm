@@ -379,25 +379,30 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     if(num.lv>0&num.lv.c==0){
       try({
         gamma.new <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
-        sig <- sign(diag(gamma.new));
-        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)*sig)
+        sigma.lv <- diag(gamma.new)
+        sign <- sign(diag(gamma.new))
+        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new)/sigma.lv)
         index <- t(t(index)*sig)}, silent = TRUE)  
     }else if(num.lv==0 & num.lv.c >0){
       try({
         gamma.new <- as.matrix(params[,(ncol(params) - num.lv.c + 1):ncol(params)]);
         sig <- sign(diag(gamma.new));
-        params[,(ncol(params) - num.lv.c + 1):ncol(params)] <- t(t(gamma.new)*sig)
+        sigma.lv <- diag(gamma.new)
+        params[,(ncol(params) - num.lv.c + 1):ncol(params)] <- t(t(gamma.new)/sigma.lv)
         index <- t(t(index)*sig)}, silent = TRUE)
     }else if(num.lv >0 & num.lv.c >0){
       try({
         gamma.new <- as.matrix(params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)-num.lv)]);
         gamma.new2 <- as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)]);
         sig <- sign(diag(gamma.new));
+        sigma.lv <- diag(gamma.new)
+        sigma.lv2 <- diag(gamma.new2)
         sig2 <- sign(diag(gamma.new2));
-        params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)-num.lv)] <- t(t(gamma.new)*sig)
-        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new2)*sig2)
+        params[,(ncol(params) - num.lv.c - num.lv + 1):(ncol(params)-num.lv)] <- t(t(gamma.new)/sigma.lv)
+        params[,(ncol(params) - num.lv + 1):ncol(params)] <- t(t(gamma.new2)/sigma.lv2)
         index[,1:num.lv.c,drop=F] <- t(t(index[,1:num.lv.c,drop=F])*sig)
         index[,(num.lv.c+1):ncol(index),drop=F] <- t(t(index[,(num.lv.c+1):ncol(index),drop=F])*sig2)}, silent = TRUE)
+      sigma.lv <- c(sigma.lv, sigma.lv2)
     }
     
   }
@@ -416,7 +421,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   out$phi <- phi
   out$mu <- mu
   if(!is.null(TR)) { out$B <- B}
-  if((num.lv+num.lv.c) > 0) out$index <- index
+  if((num.lv+num.lv.c) > 0) {
+    out$sigma.lv <- abs(sigma.lv)
+    out$index <- index
+  }
   if(family == "ordinal") out$zeta <- zeta
   options(warn = 0)
   if(row.eff!=FALSE) {
