@@ -29,6 +29,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   nTR <- 0; if(!is.null(object$TR)) nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
+  num.RR <- object$num.RR
   quadratic <- object$quadratic
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
@@ -54,19 +55,19 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     rnames <- names(unlist(object$params[parmincl]))
     
     cal <- 0
-    if (num.lv.c > 0 & num.lv == 0) {
-      nr <- rep(1:num.lv.c, each = p)
-      nc <- rep(1:p, num.lv.c)
+    if ((num.lv.c+num.RR) > 0 & num.lv == 0) {
+      nr <- rep(1:(num.lv.c+num.RR), each = p)
+      nc <- rep(1:p, (num.lv.c+num.RR))
       if(quadratic == FALSE)
-        rnames[1:(num.lv.c * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
+        rnames[1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[1:(num.lv.c * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
+        rnames[1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
                                                                                                           sep = ""
         ), nc, sep = "."))
-      if(quadratic==FALSE)cal <- cal + num.lv.c * p
-      if(quadratic!=FALSE)cal <- cal + num.lv.c * p * 2
+      if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
+      if(quadratic!=FALSE)cal <- cal + (num.lv.c+num.RR) * p * 2
     }
-    if (num.lv > 0 & num.lv.c ==0) {
+    if (num.lv > 0 & (num.lv.c+num.RR) ==0) {
       nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
       if(quadratic == FALSE)
@@ -78,34 +79,34 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
     }
-    if (num.lv.c > 0 & num.lv>0) {
-      nr <- rep(1:num.lv.c, each = p)
-      nc <- rep(1:p, num.lv.c)
+    if ((num.lv.c+num.RR) > 0 & num.lv>0) {
+      nr <- rep(1:(num.lv.c+num.RR), each = p)
+      nc <- rep(1:p, (num.lv.c+num.RR))
       if(quadratic == FALSE)
-        rnames[1:(num.lv.c * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
+        rnames[1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[1:(num.lv.c * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
+        rnames[1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
                                                                                                              sep = ""
         ), nc, sep = "."))
-      if(quadratic==FALSE)cal <- cal + num.lv.c * p
-      if(quadratic!=FALSE)cal <- cal + num.lv.c * p * 2
+      if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
+      if(quadratic!=FALSE)cal <- cal + (num.lv.c+num.RR) * p * 2
     
     
       nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
       if(quadratic == FALSE)
-        rnames[(num.lv.c*p+1):(num.lv.c*p+num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
+        rnames[((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[(num.lv.c*p+1):(num.lv.c*p+num.lv * p)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
+        rnames[((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
                                                                                                           sep = ""
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
     }
     
-    if(num.lv.c>0){
-      rnames[-c(1:cal)][1:(ncol(object$lv.X)*num.lv.c)] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:num.lv.c,each=ncol(object$lv.X)),sep=".")
-      cal<-cal + ncol(object$lv.X)*num.lv.c
+    if((num.lv.c+num.RR)>0){
+      rnames[-c(1:cal)][1:(ncol(object$lv.X)*(num.lv.c+num.RR))] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
+      cal<-cal + ncol(object$lv.X)*(num.lv.c+num.RR)
     }
     
     if(!object$beta0com){
@@ -173,7 +174,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     if("theta"%in%parm){
       
-      if(num.lv>0&num.lv.c==0){
+      if(num.lv>0&(num.lv.c+num.RR)==0){
         if(object$quadratic==FALSE){
           names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")
           names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")
@@ -181,29 +182,29 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
           names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-c(paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
           names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   c(paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
         }
-      }else if(num.lv==0&num.lv.c>0){
+      }else if(num.lv==0&(num.lv.c+num.RR)>0){
         if(object$quadratic==FALSE){
-          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep=".")
-          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep=".")
+          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep=".")
+          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep=".")
         }else{
-          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.CLV", 1:num.lv.c, "^2",sep = ""),each=p),1:p,sep="."))
-          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.CLV", 1:num.lv.c, "^2",sep = ""),each=p),1:p,sep="."))
+          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), "^2",sep = ""),each=p),1:p,sep="."))
+          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), "^2",sep = ""),each=p),1:p,sep="."))
         }
-      }else if(num.lv>0&num.lv.c>0){
+      }else if(num.lv>0&(num.lv.c+num.RR)>0){
         if(object$quadratic==FALSE){
-          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."))
-          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."))
+          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."))
+          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-   c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep="."))
         }else{
-          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-c(c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")),paste(rep(paste("theta.CLV", 1:num.lv.c, "^2",sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
-          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- c(c(paste(rep(paste("theta.CLV", 1:num.lv.c, sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")),paste(rep(paste("theta.CLV", 1:num.lv.c, "^2",sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
+          names(cilow)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <-c(c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")),paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), "^2",sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
+          names(ciup)[gsub("theta.*","theta",names(unlist(object$sd[parm])))%in%"theta"] <- c(c(paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, sep = ""),each=p),1:p,sep=".")),paste(rep(paste("theta.CLV", 1:(num.lv.c+num.RR), "^2",sep = ""),each=p),1:p,sep="."),paste(rep(paste("theta.LV", 1:num.lv, "^2",sep = ""),each=p),1:p,sep="."))
         }
       }
       
       
     }
     if("LvXcoef"%in%parm){
-      names(cilow)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <-paste(rep(colnames(object$lv.X),2),"LV",rep(1:num.lv.c,each=ncol(object$lv.X)),sep=".")
-      names(ciup)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:num.lv.c,each=ncol(object$lv.X)),sep=".")
+      names(cilow)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <-paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
+      names(ciup)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
     }
       
     

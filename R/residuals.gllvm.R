@@ -45,6 +45,7 @@ residuals.gllvm <- function(object, ...) {
 
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
+  num.RR <- object$num.RR
   quadratic <- object$quadratic
   X <- object$X
   y <- object$y
@@ -79,17 +80,22 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
-  if (num.lv > 0|num.lv.c>0){
-    lvs <- t(t(object$lvs)*object$params$sigma.lv)
-  eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c),drop=F])
-  if(num.lv.c>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(object$params$theta[,1:num.lv.c,drop=F])
+  if (num.lv > 0|num.lv.c>0|num.RR>0){
+  lvs <- t(t(object$lvs)*object$params$sigma.lv)
+  if(num.RR>0&num.lv==0&num.lv.c==0){
+    lvs <- matrix(0,ncol=num.RR,nrow=n)
+  }else if(num.RR>0){
+    lvs<- cbind(t(t(object$lvs[,1:num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=num.RR,nrow=n),t(t(lvs[,-c(1:num.lv.c)])*object$params$sigma.lv[1:num.lv]))
+  }
+  eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
+  if((num.lv.c+num.RR)>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(object$params$theta[,1:(num.lv.c+num.RR),drop=F])
   }
   if(quadratic != FALSE){
     if (num.lv>0|num.lv.c > 0)eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
-    if(num.lv.c>0){
+    if((num.lv.c+num.RR)>0){
       for(i in 1:n){
         for(j in 1:p){
-          eta.mat[i,j] <- eta.mat[i,j] -2*lvs[i,1:num.lv.c,drop=F]%*%abs(diag(object$params$theta[j,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef) - object$lv.X[i,,drop=F]%*%object$params$LvXcoef%*%abs(diag(object$params$theta[j,-c(1:(num.lv+num.lv.c)),drop=F][,1:num.lv.c]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef)
+          eta.mat[i,j] <- eta.mat[i,j] -2*lvs[i,1:(num.lv.c+num.RR),drop=F]%*%abs(diag(object$params$theta[j,-c(1:(num.lv+(num.lv.c+num.RR))),drop=F][,1:(num.lv.c+num.RR)]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef) - object$lv.X[i,,drop=F]%*%object$params$LvXcoef%*%abs(diag(object$params$theta[j,-c(1:(num.lv+(num.lv.c+num.RR))),drop=F][,1:(num.lv.c+num.RR)]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef)
         }
       }
     }

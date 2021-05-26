@@ -83,6 +83,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   p <- NCOL(object$y)
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c 
+  num.RR <- object$num.RR
   quadratic <- object$quadratic
   if (!is.null(ind.spp)) {
     ind.spp <- min(c(p, ind.spp))
@@ -94,7 +95,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }else if(length(spp.colors)!=p){
     stop("spp.colors needs to be of length p or 1.")
   }
-  if ((num.lv+num.lv.c) == 0)
+  if ((num.lv+(num.lv.c+num.RR)) == 0)
     stop("No latent variables to plot.")
   
   if (is.null(rownames(object$params$theta)))
@@ -102,12 +103,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   
   lv <- getLV(object)
   
-  if ((num.lv+num.lv.c) == 1) {
+  if ((num.lv+(num.lv.c+num.RR)) == 1) {
     if(num.lv==1)plot(1:n, lv, ylab = "LV1", xlab = "Row index")
-    if(num.lv.c==1)plot(1:n, lv, ylab = "CLV1", xlab = "Row index")
+    if((num.lv.c+num.RR)==1)plot(1:n, lv, ylab = "CLV1", xlab = "Row index")
   }
   
-  if ((num.lv+num.lv.c) > 1) {
+  if ((num.lv+(num.lv.c+num.RR)) > 1) {
     do_svd <- svd(lv)
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
@@ -164,8 +165,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     if (!biplot) {
       plot(choose.lvs[, which.lvs],
-           xlab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])), 
-           ylab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
+           xlab = ifelse(which.lvs[1]<=(num.lv.c+num.RR),paste("Constrained latent variable",(1:(num.lv.c+num.RR))[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])), 
+           ylab = ifelse(which.lvs[1]<=(num.lv.c+num.RR),paste("Constrained latent variable",(1:(num.lv.c+num.RR))[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
            main = main , type = "n", ... )
       
       if (predict.region) {
@@ -220,12 +221,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     if (biplot) {
       if(quadratic==F)largest.lnorms <- order(apply(object$params$theta ^ 2, 1, sum), decreasing = TRUE)[1:ind.spp]
-      if(quadratic!=F)largest.lnorms <- order(apply(object$params$theta[,1:(num.lv.c+num.lv)] ^ 2, 1, sum)+2*apply(object$params$theta[,-c(1:(num.lv.c+num.lv))] ^ 2, 1, sum) , decreasing = TRUE)[1:ind.spp]
+      if(quadratic!=F)largest.lnorms <- order(apply(object$params$theta[,1:((num.lv.c+num.RR)+num.lv)] ^ 2, 1, sum)+2*apply(object$params$theta[,-c(1:((num.lv.c+num.RR)+num.lv))] ^ 2, 1, sum) , decreasing = TRUE)[1:ind.spp]
       
       plot(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
-        xlab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])),
-        ylab = ifelse(which.lvs[1]<=num.lv.c,paste("Constrained latent variable",(1:num.lv.c)[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
+        xlab = ifelse(which.lvs[1]<=(num.lv.c+num.RR),paste("Constrained latent variable",(1:(num.lv.c+num.RR))[which.lvs[1]]),paste("Latent variable",(1:num.lv)[which.lvs[1]])),
+        ylab = ifelse(which.lvs[1]<=(num.lv.c+num.RR),paste("Constrained latent variable",(1:(num.lv.c+num.RR))[which.lvs[2]]),paste("Latent variable",(1:num.lv)[which.lvs[2]])),
         main = main, type = "n", ... )
       
       if (predict.region) {
@@ -309,7 +310,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
     }
     
-    if(num.lv.c>1&all(which.lvs<=num.lv.c)){
+    if((num.lv.c+num.RR)>1&all(which.lvs<=(num.lv.c+num.RR))){
       #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
       # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))

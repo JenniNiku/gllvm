@@ -40,7 +40,11 @@ logLik.gllvm <- function(object, ...)
   if(object$quadratic=="LV"){
     object$params$theta[-1,-c(1:(object$num.lv+object$num.lv.c))]<-NA
   }
-  attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))]) - ((object$num.lv+object$num.lv.c) * ((object$num.lv+object$num.lv.c) - 1) / 2+object$num.lv+object$num.lv.c)
+  if(object$num.lv>0|object$num.RR>0|object$num.lv.c>0){
+    object$params$theta[object$params$theta==0|object$params$theta==1]<-NA  
+  }
+  
+  attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))])
   attributes(logL)$nobs <- dim(object$y)[1]
   class(logL) <- "logLik"
   return(logL)

@@ -34,6 +34,7 @@ Type objective_function<Type>::operator() ()
   
   DATA_INTEGER(num_lv);
   DATA_INTEGER(num_lv_c);
+  DATA_INTEGER(num_RR);
   DATA_INTEGER(family);
   DATA_INTEGER(quadratic);
   
@@ -75,11 +76,14 @@ Type objective_function<Type>::operator() ()
   D.fill(0.0);
   
   matrix<Type> newlam(nlvr,p);
+  matrix<Type> RRgamma(num_RR,p);
   
-  if(nlvr>0){
-    newlam.row(0).fill(1.0);
-    Cu.diagonal().fill(1.0);
+    if((nlvr+num_RR)>0){
     
+    if((num_lv_c+num_lv)>0){
+      newlam.row(0).fill(1.0);
+      Cu.diagonal().fill(1.0);
+      
     if(random(0)>0){
       for (int d=1; d<nlvr; d++){
         Delta(d,d) = fabs(sigmaLV(d-1));
@@ -97,12 +101,13 @@ Type objective_function<Type>::operator() ()
         Delta(d,d) = fabs(sigmaLV(d));
       }
     }
+    }
     //To create lambda as matrix upper triangle
     if (num_lv>0){
       int tri = 0;
-      if(num_lv_c>0){
+      if((num_lv_c+num_RR)>0){
         //because the lambdas for constrained and unconstrained LVs are separately identifiable
-        tri += num_lv_c*p-(num_lv_c*num_lv_c-num_lv_c)/2-num_lv_c; //num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
+        tri += (num_lv_c+num_RR)*p-((num_lv_c+num_RR)*(num_lv_c+num_RR)-(num_lv_c+num_RR))/2-(num_lv_c+num_RR); //num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
       }
       for (int j=0; j<p; j++){
         for (int i=0; i<num_lv; i++){
@@ -116,19 +121,31 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    if (num_lv_c>0){
+    if ((num_lv_c+num_RR)>0){
       for (int j=0; j<p; j++){
-        for (int i=0; i<num_lv_c; i++){
-          if (j < i){
-            newlam(i+nlvr-num_lv-num_lv_c,j) = 0;
-          } else if (j == i){
-            newlam(i+nlvr-num_lv-num_lv_c,j) = 1;
-          }else if (j > i){
-            newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);//lambda(i+j+i*p-(i*(i-1))/2-2*i);
-          }
+        for (int i=0; i<(num_lv_c+num_RR); i++){
+          if(i<num_lv_c){
+            if (j < i){
+              newlam(i+nlvr-num_lv-num_lv_c,j) = 0;
+            } else if (j == i){
+              newlam(i+nlvr-num_lv-num_lv_c,j) = 1;
+            }else if (j > i){
+              newlam(i+nlvr-num_lv-num_lv_c,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);//lambda(i+j+i*p-(i*(i-1))/2-2*i);
+            }
+          }else{
+            if (j < i){
+              RRgamma(i-num_lv_c,j) = 0;
+            } else if (j == i){
+              RRgamma(i-num_lv_c,j) = 1;
+            }else if (j > i){
+              RRgamma(i-num_lv_c,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);//lambda(i+j+i*p-(i*(i-1))/2-2*i);
+            }
+            }
+
         }
       }
     }
+
   }
   
   
@@ -281,18 +298,58 @@ Type objective_function<Type>::operator() ()
     
     matrix <Type> e_eta(n,p);
     e_eta.fill(0.0);
+    REPORT(b_lv);
+    if(num_RR>0){
+      matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
+      eta += x_lv*b_lv3*RRgamma;
+      REPORT(RRgamma);
+      REPORT(b_lv3);
+       if(quadratic>0){
+        matrix <Type> D_RR(num_RR,num_RR);
+        D_RR.fill(0.0);
+        if(lambda2.cols()==1){
+          for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
+            D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,0));
+          }
+          for (int j=0; j<p;j++){
+            for (int i=0; i<n; i++) {
+              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
+            }
+          }
+
+          }else{
+          for (int j=0; j<p;j++){
+            for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
+              D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,j));
+            }
+            for (int i=0; i<n; i++) {
+              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
+            }
+
+          }
+        }
+
+    }
+    }
+    
     if(nlvr>0){
+      if(nlvr>0){
       u *= Delta;
       for (int i=0; i<n; i++) {
         A.col(i) = (Delta*A.col(i).matrix()).array(); 
       }
+      }
+      
+
       if(num_lv_c>0){
         if(random(0)>0){
-          b_lv2.middleCols(1,num_lv_c) = b_lv;
+          b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
         }else{
-          b_lv2.leftCols(num_lv_c) = b_lv;
+          b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         }  
+        REPORT(b_lv2);
+        REPORT(newlam);
         eta += x_lv*b_lv2*newlam;
         if(quadratic>0){
           for (int j=0; j<p;j++){
@@ -303,6 +360,7 @@ Type objective_function<Type>::operator() ()
         }
         
       }
+      
       lam += u*newlam;
       
       if(quadratic < 1){
@@ -614,7 +672,12 @@ Type objective_function<Type>::operator() ()
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
   } else {
-    
+    if(num_RR>0){
+      matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
+      eta += x_lv*b_lv3*RRgamma;
+      REPORT(RRgamma);
+      REPORT(b_lv3);
+    }
     // Include random slopes if random(1)>0
     if(random(1)>0){
       vector<Type> sdsv = exp(sigmaB);
