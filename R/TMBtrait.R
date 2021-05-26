@@ -213,6 +213,7 @@ trait.TMB <- function(
       vameans <- theta <- lambda <- NULL
 
       if(num.lv > 0) {
+        sigma.lv <- fit$sigma.lv
         if(!is.null(randomXb) && family != "ordinal"){
           Br <- res$Br
           sigmaB <- (res$sigmaB)
@@ -254,6 +255,8 @@ trait.TMB <- function(
           theta <- lastart$gamma#/lastart$gamma
           vameans<-lastart$index#/max(lastart$index)
         }
+      }else{
+        sigma.lv <- matrix(0)
       }
       
     } else{
@@ -341,7 +344,7 @@ trait.TMB <- function(
     a <- c(beta0)
     if(num.lv > 0) {
       # diag(theta) <- log(diag(theta)) # !!!
-      theta <- theta[lower.tri(theta, diag = TRUE)]
+      theta <- theta[lower.tri(theta, diag = F)]
       u <- vameans
     }
     if(!is.null(phis)) {phi=(phis)} else {phi <- rep(1,p)}
@@ -470,6 +473,7 @@ trait.TMB <- function(
       map.list2$B = factor(rep(NA, length(B)))
       map.list2$Br = factor(rep(NA,length(Br)))
       map.list2$lambda = factor(rep(NA, length(theta)))
+      map.list2$sigmaLV = factor(rep(NA, length(theta)))
       map.list2$u = factor(rep(NA, length(u)))
       map.list2$lg_phi = factor(rep(NA, length(phi)))
       map.list2$sigmaB = factor(rep(NA,length(sigmaB)))
@@ -478,7 +482,7 @@ trait.TMB <- function(
       map.list2$Au = factor(rep(NA, length(Au)))
       map.list2$Abb = factor(rep(NA, length(Abb)))
       map.list2$zeta = factor(rep(NA, length(zeta)))
-      parameter.list = list(r0=matrix(r0), b = rbind(a), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, family=familyn, extra=extra, quadratic = 1, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0)), silent=!trace,
         parameters = parameter.list, map = map.list2,
@@ -502,7 +506,7 @@ trait.TMB <- function(
       
 # Call makeADFun
     if(method == "VA" && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
-      parameter.list = list(r0=matrix(r0), b = rbind(a), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0)), silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -511,8 +515,8 @@ trait.TMB <- function(
     } else {
       Au=0; Abb=0
       map.list$Au <- map.list$Abb <- factor(NA)
-      parameter.list = list(r0=matrix(r0), b = rbind(a), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
-      data.list <- list(y = y, x = Xd,xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, Abb=Abb, zeta=zeta)
+      data.list <- list(y = y, x = Xd,xr=xr, xb=xb, offset=offset, num_lv = num.lv, num.RR = 0, num.lv.c = 0, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       if(family == "ordinal"){
         data.list$method = 0
       }
@@ -542,6 +546,8 @@ trait.TMB <- function(
       r1 <- matrix(param1[nam=="r0"])
       b1 <- rbind(param1[nam=="b"])
       B1 <- matrix(param1[nam=="B"])
+      sigma.lv1 <- param1[nam=="sigmaLV"]
+      
       if(!is.null(randomX)) {
         Br1 <- matrix(param1[nam=="Br"], ncol(xb), p) #!!!
         sigmaB1 <- param1[nam=="sigmaB"]
@@ -580,7 +586,7 @@ trait.TMB <- function(
       # parameters = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = 0,u = matrix(0), lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=0,   Abb=Abb1, zeta=zeta)
       # parameters = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
       
-      parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=r1, b = b1, b_lv = matrix(0), B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, Abb=Abb, zeta=zeta)
       # if(nlvr>0 || !is.null(randomX)){
       #   if(nlvr>0){
       #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au1, Abb=Abb1, zeta=zeta)
@@ -590,7 +596,7 @@ trait.TMB <- function(
       # } else {
       #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
       # }
-      data.list = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      data.list = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num.RR = 0, num.lv.c = 0, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -618,6 +624,8 @@ trait.TMB <- function(
       r1 <- matrix(param1[nam=="r0"])
       b1 <- rbind(param1[nam=="b"])
       B1 <- matrix(param1[nam=="B"])
+      sigma.lv1 <- param1[nam=="sigmaLV"]
+      
       if(!is.null(randomX)) {
         Br1 <- matrix(param1[nam=="Br"], ncol(xb), p) #!!!
         sigmaB1 <- param1[nam=="sigmaB"]
@@ -647,7 +655,7 @@ trait.TMB <- function(
       # parameters = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = 0,u = matrix(0), lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=0,   Abb=Abb1, zeta=zeta)
       # parameters = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
       
-      parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=r1, b = b1, b_lv = matrix(0), B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, Abb=Abb, zeta=zeta)
       # if(nlvr>0 || !is.null(randomX)){
       #   if(nlvr>0){
       #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au1, Abb=Abb1, zeta=zeta)
@@ -657,7 +665,7 @@ trait.TMB <- function(
       # } else {
       #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
       # }
-      data.list = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, quadratic = 1, family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      data.list = list(y = y, x = Xd, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num.RR = 0, num.lv.c = 0, quadratic = 1, family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -719,14 +727,16 @@ trait.TMB <- function(
     bi<-names(param)=="b"
     Bi<-names(param)=="B"
     li<-names(param)=="lambda"
+    si <- names(param)=="sigmaLV"
     li2 <- names(param)=="lambda2"
     ui<-names(param)=="u"
     if(nlvr > 0){
+      if(nlvr>0)sigma.lv <- abs(param[si])
       lvs <- (matrix(param[ui],n,nlvr))
       theta <- matrix(0,p,num.lv)
       if(num.lv>0)
       if(p>1) {
-        theta[lower.tri(theta,diag=TRUE)] <- param[li];
+        theta[lower.tri(theta,diag=F)] <- param[li];
         if(quadratic!=FALSE){
           theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
         }
@@ -779,6 +789,7 @@ trait.TMB <- function(
       if(num.lv > 0) {
         out$lvs <- lvs
         out$params$theta <- theta
+        if((num.lv+num.lv.c)>0)out$params$sigma.lv  <- sigma.lv
         rownames(out$lvs) <- rownames(out$y);
         rownames(out$params$theta) <- colnames(out$y)
         if(quadratic==FALSE)colnames(out$params$theta) <- colnames(out$lvs) <- paste("LV", 1:num.lv, sep="");
@@ -786,6 +797,7 @@ trait.TMB <- function(
           colnames(out$lvs) <- paste("LV", 1:num.lv, sep="");
           colnames(out$params$theta)<- c(paste("LV", 1:num.lv, sep=""),paste("LV", 1:num.lv, "^2",sep=""));
         }
+        names(out$params$sigma.lv) <-  paste("LV", 1:num.lv, sep="");
       }
       if(!beta0com) names(beta0) <- colnames(out$y); 
       if(beta0com) names(beta0) <- "Community intercept";
@@ -926,9 +938,10 @@ trait.TMB <- function(
         m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
         incl[names(objrFinal$par)=="Abb"] <- FALSE;
         incl[names(objrFinal$par)=="Au"] <- FALSE;
+        incl[names(objrFinal$par)=="b_lv"] <- FALSE;
         if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
         if(nlvr > 0) incld[names(objrFinal$par)=="Au"] <- TRUE
-
+        if(num.lv==0){incl[names(objrFinal$par)=="sigmaLV"] <- FALSE;}
         if(beta0com){
           incl[names(objrFinal$par)=="b"] <- FALSE
         }
@@ -1014,10 +1027,13 @@ trait.TMB <- function(
         }
         se.B <- se[1:length(B)]; se <- se[-(1:length(B))];
         if(num.lv>0) {
-          se.theta <- matrix(0,p,num.lv); se.theta[lower.tri(se.theta, diag = TRUE)]<-se[1:(p * num.lv - sum(0:(num.lv-1)))];
+          out$sd$sigma.lv <- se.sigma.lv <- se[1:num.lv];se<-se[-c(1:num.lv)]
+          names(out$sd$sigma.lv) <- paste("LV",1:num.lv,sep="");
+          
+          se.theta <- matrix(0,p,num.lv); se.theta[lower.tri(se.theta, diag = F)]<-se[1:(p * num.lv - sum(0:(num.lv)))];
           colnames(se.theta) <- paste("LV", 1:num.lv, sep="");
           rownames(se.theta) <- colnames(out$y)
-          out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv-1))))];
+          out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv))))];
           # diag(out$sd$theta) <- diag(out$sd$theta)*diag(out$params$theta) !!!
           if(quadratic==TRUE){
             se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
