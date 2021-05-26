@@ -169,12 +169,14 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       lvs <- t(t(newLV)*object$params$sigma.lv)
     }else{
       if(object$num.RR==0){
-        lvs <- object$lvs
+        lvs <- t(t(object$lvs)*object$params$sigma.lv)
       }else{
         if(object$num.lv.c>0){
-          lvs<- cbind(t(t(object$lvs[,1:object$num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs[,-c(1:object$num.lv.c)])*object$params$sigma.lv[1:object$num.lv]))
-        }else{
+          lvs<- cbind(t(t(object$lvs[,1:object$num.lv.c])*object$params$sigma.lv[1:object$num.lv.c]),matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs[,-c(1:object$num.lv.c)])*object$params$sigma.lv[1:object$num.lv]))
+        }else if(object$num.lv>0&object$num.lv.c==0){
           lvs<- cbind(matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs)*object$params$sigma.lv))
+        }else{
+          lvs <- matrix(0,ncol=object$num.RR,nrow=n)
         }
       }
     }

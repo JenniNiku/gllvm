@@ -128,7 +128,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2))
       idx <- matrix(TRUE,ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs))
     }else{
-      idx <- choose.lv.coefs>matrix(apply(object$lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(object$lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+      idx <- choose.lv.coefs>matrix(apply(getLV(object),2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(getLV(object),2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
       bothnorms <- vector("numeric",ncol(choose.lv.coefs))
       for(i in 1:ncol(choose.lv.coefs)){
         bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))

@@ -81,11 +81,16 @@ residuals.gllvm <- function(object, ...) {
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
-  lvs <- t(t(object$lvs)*object$params$sigma.lv)
-  if(num.RR>0&num.lv==0&num.lv.c==0){
-    lvs <- matrix(0,ncol=num.RR,nrow=n)
-  }else if(num.RR>0){
-    lvs<- cbind(t(t(object$lvs[,1:num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=num.RR,nrow=n),t(t(lvs[,-c(1:num.lv.c)])*object$params$sigma.lv[1:num.lv]))
+  if(num.RR==0){
+    lvs <- t(t(object$lvs)*object$params$sigma.lv)
+  }else{
+    if(num.lv.c>0){
+      lvs<- cbind(t(t(object$lvs[,1:num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=num.RR,nrow=n),t(t(object$lvs[,-c(1:num.lv.c)])*object$params$sigma.lv[1:num.lv]))
+    }else if(num.lv>0&num.lv.c==0){
+      lvs<- cbind(matrix(0,ncol=num.RR,nrow=n),t(t(object$lvs)*object$params$sigma.lv))
+    }else{
+      lvs <- matrix(0,ncol=object$num.RR,nrow=n)
+    }
   }
   eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
   if((num.lv.c+num.RR)>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(object$params$theta[,1:(num.lv.c+num.RR),drop=F])
