@@ -1,5 +1,5 @@
 #' @title Extract prediction errors for latent variables from gllvm object
-#' @description  Calculates the prediction errors for latent variables for gllvm model.
+#' @description  Calculates the prediction errors for latent variables and random effects for gllvm model.
 #'
 #' @param object   an object of class 'gllvm'.
 #' @param CMSEP logical, if \code{TRUE} conditional mean squared errors for predictions are calculated. If \code{FALSE}, prediction errors are based on covariances of the variational distributions for \code{method ="VA"}.
@@ -43,17 +43,16 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
   
   if(object$method == "VA"){
     if(CMSEP) {
-      sdb<-sdA(object)
-      object$A<-sdb+object$A
+      sdb <- CMSEPf(object)
+      # sdb<-sdA(object)
+      if(object$num.lv>0) object$A<-sdb$A+object$A
+      if(object$row.eff == "random") object$Ar<-sdb$Ar+object$Ar
+      # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
     }
       r=0
-      if(object$row.eff=="random"){ 
-        r=1
-        if(length(dim(object$A))==2){
-          out$row.effects <- sqrt(object$A[,1])
-        } else {
-          out$row.effects <- sqrt(object$A[,1,1])
-        }
+      if(object$row.eff=="random"){
+        # r=1
+        out$row.effects <- sqrt(object$Ar)
         }
       if(length(dim(object$A))==2){
         out$lvs <- sqrt(object$A[,1:num.lv+r])

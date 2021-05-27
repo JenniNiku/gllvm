@@ -58,8 +58,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
   if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
-  
   formula <- formula(terms(object))
+  
+  if(object$row.eff != FALSE) {
+    if(length(object$params$row.params) != nrow(object$y))
+      object$params$row.params = c(object$TMBfn$env$data$dr0 %*% object$params$row.params)
+  }
   
   b0 <- object$params$beta0
   eta <- matrix(b0, n, p, byrow = TRUE)

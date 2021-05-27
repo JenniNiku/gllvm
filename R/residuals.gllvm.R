@@ -48,6 +48,11 @@ residuals.gllvm <- function(object, ...) {
   if(!is.null(object$X)) X <- as.matrix(object$X.design[1:n,]) else X=NULL
   y <- object$y
 
+  if(object$row.eff != FALSE) {
+    if(length(object$params$row.params) != nrow(object$y))
+      object$params$row.params = c(object$TMBfn$env$data$dr0 %*% object$params$row.params)
+  }
+  
   num.X <- ncol(object$X.design)
   num.T <- ncol(object$TR)
 
