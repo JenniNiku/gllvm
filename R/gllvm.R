@@ -10,7 +10,9 @@
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
-#' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
+#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
+#' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
+#' @param dist coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
@@ -289,7 +291,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam
@@ -299,7 +301,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   num.lv = 2, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, link = "probit",
+                  plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
@@ -310,6 +312,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     term <- NULL
     datayx <- NULL
     pp.pars <- list(...)
+    
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
         x$reltol = 1e-8
@@ -378,6 +381,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
+    
 
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -495,6 +499,38 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     if (p == 1)
       y <- as.matrix(y)
 
+# Structured row parameters
+    rstruc = 0; dr = NULL; cstruc = "diag"
+    if(inherits(row.eff,"formula")) {
+      bar.f <- findbars1(row.eff) # list with 3 terms
+      grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
+      if(!is.null(data)) {
+        if(any(colnames(data) %in% grps)){
+          xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
+          colnames(xgrps) <- grps
+          X<-cbind(X,xgrps)
+          }
+      }
+      if(is.null(bar.f)) {
+        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
+      } else if(!all(grps %in% colnames(X))) {
+        stop("Grouping variable need to be included in 'X'")
+      } else if(!all(order(X[,(colnames(X) %in% grps)])==c(1:n)) && (corWithin)) {
+        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+      } else {
+        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
+        mf <- model.frame(subbars1(row.eff),data=X)
+        dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
+        if(corWithin){ rstruc=2} else { rstruc=1}
+        xnames<-colnames(X)[!(colnames(X) %in% grps)]
+        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
+        colnames(X)<-xnames
+        if(ncol(X)==0) X<-NULL
+      }
+      cstruc = corstruc(row.eff)[1]
+      if(cstruc == "diag" & rstruc==2) {rstruc=0; dr=NULL}
+      row.eff = "random"
+    }
     
     if (class(family) == "family") {
       link <- family$link
@@ -599,7 +635,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
     n.i <- 1
 
     out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv, formula = formula,
-        method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -658,7 +694,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             scale.X = scale.X,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
-            optim.method=optim.method
+            optim.method=optim.method, 
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -697,7 +734,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
-            optim.method=optim.method
+            optim.method=optim.method, 
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula

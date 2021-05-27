@@ -1,3 +1,10 @@
+Version 1.3.dev
+==============
+
+### New Features
+
+- Structured row parameters are implemented, including a possibility for between or within group correlations for random row effects.
+
 Version 1.3.0
 ==============
 

@@ -1381,6 +1381,7 @@ sdB<-function(fit){
   p<-ncol(fit$y)
   incla<-rep(FALSE, length(fit$Hess$incl))
   incla[names(fit$TMBfn$par)%in%c("u", "Br")] <- TRUE
+  if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
   fit$Hess$incla <- incla
   
   A<- fit$Hess$cov.mat.mod  #
@@ -1389,17 +1390,60 @@ sdB<-function(fit){
   D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
   covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
   se <- (diag(abs(covb)))
-  CovAerr<-array(0, dim(fit$A))
-  for (i in 1:ncol(fit$A)) {
-    CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+  if(fit$row.eff == "random") {
+    CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
+    se<-se[-(1:length(fit$params$row.params))]
   }
   CovABerr<-array(0, dim(fit$Ab))
   for (i in 1:ncol(fit$Ab)) {
     CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
   }
+  if(fit$num.lv > 0) {
+    CovAerr<-array(0, dim(fit$A))
+    for (i in 1:ncol(fit$A)) {
+      CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+    }
+  }
   CovABerr
 }
 
+CMSEPf <- function(fit){
+  n<-nrow(fit$y)
+  p<-ncol(fit$y)
+  incla<-rep(FALSE, length(fit$Hess$incl))
+  if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
+  if(!is.null(fit$randomX)) incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
+  if(fit$num.lv>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
+  fit$Hess$incla <- incla
+  
+  A<- fit$Hess$cov.mat.mod  #
+  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+  se <- (diag(abs(covb)))
+  out <- list()
+  if(fit$row.eff == "random") {
+    CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
+    se<-se[-(1:length(fit$params$row.params))]
+    out$Ar <- CovArerr
+  }
+  if(!is.null(fit$randomX)){
+    CovABerr<-array(0, dim(fit$Ab))
+    for (i in 1:ncol(fit$Ab)) {
+      CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
+    }
+    out$Ab <- CovABerr
+  }
+  if(fit$num.lv > 0) {
+    CovAerr<-array(0, dim(fit$A))
+    for (i in 1:ncol(fit$A)) {
+      CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+    }
+    out$A <- CovAerr
+  }
+  out
+}
 
 # draw an ellipse
 ellipse<-function(center, covM, rad, col=4, lwd = 1, lty = 1){
