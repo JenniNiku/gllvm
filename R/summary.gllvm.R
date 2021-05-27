@@ -24,6 +24,7 @@ summary.gllvm <- function(object, ...) {
   nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
+  num.RR <- object$num.RR
   quadratic <- object$quadratic
   family <- object$family
 
@@ -41,19 +42,19 @@ summary.gllvm <- function(object, ...) {
 
   if (num.lv > 0){
     if(quadratic != FALSE){
-      if(num.lv.c==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""), paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
-      if(num.lv.c>0)newnams <- c(newnams, paste("theta.CLV", 1:num.lv.c, sep = ""), paste("theta.LV", 1:num.lv, sep = ""), paste("theta.CLV", 1:num.lv.c, "^2" ,sep = ""),paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
+      if((num.lv.c+num.RR)==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""), paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
+      if(num.lv.c+num.RR>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""), paste("theta.LV", 1:num.lv, sep = ""), paste("theta.CLV", 1:(num.lv.c+num.RR), "^2" ,sep = ""),paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
     }
     if(quadratic == FALSE){
-      if(num.lv.c==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
-    if(num.lv.c>0)newnams <- c(newnams, paste("theta.CLV", 1:num.lv.c, sep = ""), paste("theta.LV", 1:num.lv, sep = ""))
+      if((num.lv.c+num.RR)==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
+    if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""), paste("theta.LV", 1:num.lv, sep = ""))
     }
-  }else if(num.lv==0&num.lv.c>0){
+  }else if(num.lv==0&(num.lv.c+num.RR)>0){
     if(quadratic != FALSE){
-      if(num.lv.c>0)newnams <- c(newnams, paste("theta.CLV", 1:num.lv.c, sep = ""), paste("theta.CLV", 1:num.lv.c, "^2" ,sep = ""))
+      if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""), paste("theta.CLV", 1:(num.lv.c+num.RR), "^2" ,sep = ""))
     }
     if(quadratic == FALSE){
-      if(num.lv.c>0)newnams <- c(newnams, paste("theta.CLV", 1:num.lv.c, sep = ""))
+      if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""))
     }
   }
     
