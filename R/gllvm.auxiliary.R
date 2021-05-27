@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
                                    offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, num.RR = 0, start.lvs = NULL, 
                                    seed = NULL,power=NULL,starting.val="res",formula=NULL, lv.formula = NULL,
                                    jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-                                   link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc=NULL, maxit=4000,max.iter=4000) {
+                                   link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc="species", maxit=4000,max.iter=4000) {
   
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
@@ -263,7 +263,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   if(family == "ordinal") {
     max.levels <- length(unique(c(y)))
-    params <- matrix(0,p,ncol(cbind(1,X))+(num.lv+num.lv.c))
+    params <- matrix(0,p,ncol(cbind(1,X))+(num.lv+num.lv.c+num.RR))
     env <- rep(0,num.X)
     trait <- rep(0,num.T)
     inter <- rep(0, num.T * num.X)
@@ -321,13 +321,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         }
       }
     }
-    if(starting.val%in%c("res") && (num.lv+num.lv.c)>0){
+    if(starting.val%in%c("res") && (num.lv+num.lv.c+num.RR)>0){
       
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       if((num.lv+num.lv.c+num.RR)>0){
-        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter)
+        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR= num.RR, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter)
         gamma<-lastart$gamma
         index<-lastart$index
         params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
@@ -388,11 +388,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
    
     phi <- rep(1,p)
     if((num.lv.c+num.RR)>0){
-      b.lv <- matrix(1,nrow=ncol(lv.X),ncol=(num.lv.c+num.RR))
+      b.lv <- matrix(0,nrow=ncol(lv.X),ncol=(num.lv.c+num.RR))
     }
     sigma.lv <- rep(1,num.lv+num.lv.c)
   }else if(starting.val=="random"&(num.lv.c+num.RR)>0){
-    b.lv <- matrix(1,nrow=ncol(lv.X),ncol=num.lv.c+num.RR)
+    b.lv <- matrix(0,nrow=ncol(lv.X),ncol=num.lv.c+num.RR)
   }
   
   if((num.lv+num.lv.c+num.RR) > 0 & starting.val!="zero") {
@@ -440,6 +440,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   out$params <- params
   if((num.lv.c+num.RR)>0){
+    if(num.lv.c>0){
+      b.lv[,1:num.lv.c]<-t(t(b.lv[,1:num.lv.c])*sigma.lv[1:num.lv.c])
+    }
     out$b.lv <- b.lv
   }
 
@@ -465,7 +468,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   return(out)
 }
 
-FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.struc = NULL, phis = NULL, 
+FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.struc = "species", phis = NULL, 
                     jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL){
   
   n<-NROW(y); p <- NCOL(y)
@@ -620,24 +623,24 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       #   index.lm<-lm(fa$scores~0+lv.X)  
       # }
       if(n>p){
-        if(num.lv.c>1)index.lm <-  lm(fa$scores~0+lv.X)
-        if(num.lv.c==1)index.lm <-  lm(c(fa$scores)~0+lv.X)
+        index<-as.matrix(fa$scores)
       }else{
-        if(num.lv.c>1)index.lm <-  lm(fa$loadings~0+lv.X)
-        if(num.lv.c==1)index.lm <-  lm(c(fa$loadings)~0+lv.X)
+        index<-as.matrix(fa$loadings)
       }
       
-      index <- matrix(residuals.lm(index.lm),ncol=num.lv.c,nrow=n)
+      start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=0,num.RR = num.lv.c, family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
+      b.lv <- start.fit$params$LvXcoef
+      index <- index-lv.X%*%b.lv
+      # scale <- apply(index,2,sd)
+      # index <- t(t(index)/scale)
+      # b.lv <- t(t(b.lv)*scale)
       
-      scale <- abs(diag(t(coef(lm(resi~0+index)))))
-      b.lv<-matrix(coef(index.lm),ncol=num.lv.c,nrow=ncol(lv.X))
-      b.lv <- t(t(b.lv)*scale)
-      gamma.lm <- try(lm(resi~0+I(t(t(index)*scale)+lv.X%*%b.lv)),silent=T)
+      gamma.lm <- try(lm(resi~0+I(t(t(index))+lv.X%*%b.lv)),silent=T)
       
       if(inherits(gamma.lm,"try-error")){
         stop("Error in generating starting values. Possibly redundant factors in X.\n")
       }
-      gamma<-t(coef(gamma.lm)*scale)
+      gamma<-t(coef(gamma.lm))
       
       # b.lv.fa <- try(factanal(lv.X,factors=num.lv.c),silent=T)
       # if(!inherits(b.lv.fa,"try-error")){
@@ -691,7 +694,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta)
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
@@ -705,8 +708,9 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   
   if(num.RR>0){
     if(num.lv.c==0){
+      pca <- princomp(resi)
       RRmod <- lm(resi~0+lv.X)
-      RRcoef <- svd(coef(RRmod))$u[,1:num.RR]
+      RRcoef <- coef(RRmod)%*%pca$loadings[,1:num.RR,drop=F]
       RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
       qr.RRgamma <- qr(t(RRgamma))
       RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
@@ -714,8 +718,9 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       RRgamma <- t(t(RRgamma)/diag(RRgamma))
       eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
     }else{
-      RRmod <- lm(resi~0+lv.X+offset(index+lv.X%*%b.lv)%*%t(gamma))
-      RRcoef <- svd(coef(RRmod))$u[,1:num.RR]
+      pca <- princomp(resi)
+      RRmod <-  lm(resi~0+lv.X+offset(index+lv.X%*%b.lv)%*%t(gamma))
+      RRcoef <- coef(RRmod)%*%pca$loadings[,1:num.RR,drop=F]
       RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef+offset(index+lv.X%*%b.lv)%*%t(gamma))))
       qr.RRgamma <- qr(t(RRgamma))
       RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
