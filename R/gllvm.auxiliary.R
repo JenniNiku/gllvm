@@ -708,9 +708,16 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   
   if(num.RR>0){
     if(num.lv.c==0){
-      pca <- princomp(resi)
+      if(n<p){
+        pca <- princomp(t(resi))
+        comp <- pca$scores
+      }else{
+        pca <- princomp(resi)
+        comp <- pcaloadings
+      }
+      
       RRmod <- lm(resi~0+lv.X)
-      RRcoef <- coef(RRmod)%*%pca$loadings[,1:num.RR,drop=F]
+      RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
       RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
       qr.RRgamma <- qr(t(RRgamma))
       RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
@@ -718,10 +725,118 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       RRgamma <- t(t(RRgamma)/diag(RRgamma))
       eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
     }else{
-      pca <- princomp(resi)
-      RRmod <-  lm(resi~0+lv.X+offset(index+lv.X%*%b.lv)%*%t(gamma))
-      RRcoef <- coef(RRmod)%*%pca$loadings[,1:num.RR,drop=F]
-      RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef+offset(index+lv.X%*%b.lv)%*%t(gamma))))
+      #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
+      if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
+        mu <- exp(eta)
+      }else if(family %in% c("binomial","beta")) {
+        mu <-  binomial(link = link)$linkinv(eta)
+      }else{
+        mu <- eta
+      }
+      if(is.null(resi)){
+        ds.res <- matrix(NA, n, p)
+        rownames(ds.res) <- rownames(y)
+        colnames(ds.res) <- colnames(y)
+        for (i in 1:n) {
+          for (j in 1:p) {
+            if (family == "poisson") {
+              a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
+              b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "negative.binomial") {
+              phis <- phis + 1e-05
+              a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+              b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "binomial") {
+              a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
+              b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "gaussian") {
+              a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+              b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "gamma") {
+              a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+              b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "exponential") {
+              a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+              b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "beta") {
+              a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "ordinal") {
+              if(zeta.struc == "species"){
+                probK <- NULL
+                probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+                probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+                if(max(y[,j]) > 2) {
+                  j.levels <- 2:(max(y[,j])-1)
+                  for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
+                }
+                probK <- c(0,probK)
+                cumsum.b <- sum(probK[1:(y[i,j]+1)])
+                cumsum.a <- sum(probK[1:(y[i,j])])
+                u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+                if (abs(u - 1) < 1e-05)
+                  u <- 1
+                if (abs(u - 0) < 1e-05)
+                  u <- 0
+                ds.res[i, j] <- qnorm(u)
+              }else{
+                probK <- NULL
+                probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
+                probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+                levels <- 2:(max(y) - min(y))#
+                for (k in levels) {
+                  probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
+                }
+                probK <- c(0, probK)
+                cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
+                cumsum.a <- sum(probK[1:(y[i, j])])
+                u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+                if (abs(u - 1) < 1e-05)
+                  u <- 1
+                if (abs(u - 0) < 1e-05)
+                  u <- 0
+                ds.res[i, j] <- qnorm(u)
+              }
+            }
+          }
+        }
+        
+      } else {
+        ds.res <- resi
+      }
+      resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+      
+      if(n<p){
+        pca <- princomp(t(resi))
+        comp <- pca$scores
+      }else{
+        pca <- princomp(resi)
+        comp <- pcaloadings
+      }
+      RRmod <-  lm(resi~0+lv.X)
+      RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
+      RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
       qr.RRgamma <- qr(t(RRgamma))
       RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
       RRcoef <- t(t(RRcoef%*%qr.Q(qr.RRgamma))*diag(RRgamma))
@@ -731,6 +846,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   }
   
   if((num.lv.c+num.RR)>0&num.lv>0){
+    # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta")) {
@@ -879,7 +995,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
     gamma<-cbind(gamma.c,gamma)
   }
   
-  if(num.lv>0&num.lv.c==0){
+  if(num.lv>0&(num.lv.c+num.RR)==0){
     if(p>2 && n>2){
       if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
       
