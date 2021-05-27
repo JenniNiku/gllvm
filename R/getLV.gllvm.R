@@ -10,7 +10,7 @@
 
 getLV.gllvm <- function(object)
 {
-  
+  n <- nrow(object$y)
   if(object$num.RR==0){
     lvs <- t(t(object$lvs)*object$params$sigma.lv)
   }else{
