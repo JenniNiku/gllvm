@@ -2,13 +2,6 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-# y=spider$abund; X = NULL; lv.X = spider$x; formula = NULL; lv.formula = NULL; num.lv = 1; num.lv.c = 1; num.RR = 2; family = "poisson";
-# method="VA";Lambda.struc="unstructured"; row.eff = FALSE; reltol = 1e-8;
-# seed = NULL;maxit = 3000; max.iter=200; start.lvs = NULL; offset=NULL; sd.errors = FALSE;
-# trace=FALSE;link="logit";n.init=1;restrict=30;start.params=NULL;
-# optimizer="optim";starting.val="res";Power=1.5;diag.iter=1; dependent.row = FALSE;
-# Lambda.start=c(0.1,0.5); quad.start=0.01; jitter.var=0; zeta.struc = "species"; quadratic = FALSE; start.struc = "LV"; optim.method = "BFGS"
-
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, num.RR = 0, family = "poisson",
       method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
