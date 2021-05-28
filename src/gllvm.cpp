@@ -20,6 +20,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(b);
   PARAMETER_MATRIX(B);
   PARAMETER_MATRIX(Br);
+  //Predictor coefficients for RRR and constrained ordination
+  //Left columns are for constrained ordination, Right for RRR
   PARAMETER_MATRIX(b_lv);
   PARAMETER_VECTOR(sigmaLV);
   PARAMETER_VECTOR(lambda);
@@ -106,7 +108,7 @@ Type objective_function<Type>::operator() ()
     if (num_lv>0){
       int tri = 0;
       if((num_lv_c+num_RR)>0){
-        //because the lambdas for constrained and unconstrained LVs are separately identifiable
+        //because the lambdas for constrained and unconstrained LVs are separately identifiable and in the same vector
         tri += (num_lv_c+num_RR)*p-((num_lv_c+num_RR)*(num_lv_c+num_RR)-(num_lv_c+num_RR))/2-(num_lv_c+num_RR); //num_lv_c-1+p+(num_lv_c-1)*p-((num_lv_c-1)*(num_lv_c-1-1))/2-2*(num_lv_c-1); //number of elements for num_lv
       }
       for (int j=0; j<p; j++){
@@ -121,6 +123,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
+    //species scores for constrained ordination and RRR
     if ((num_lv_c+num_RR)>0){
       for (int j=0; j<p; j++){
         for (int i=0; i<(num_lv_c+num_RR); i++){
@@ -158,7 +161,7 @@ Type objective_function<Type>::operator() ()
   nll.fill(0.0);
   
   if(method<1){
-    //quadratic coefficients
+    //quadratic coefficients for ordination
     //if random rows, add quadratic coefficients to q>0
     if(quadratic>0){
       if(nlvr>(num_lv+num_lv_c)){
@@ -298,15 +301,17 @@ Type objective_function<Type>::operator() ()
     
     matrix <Type> e_eta(n,p);
     e_eta.fill(0.0);
-    REPORT(b_lv);
+    //components for reduced rank regression terms
     if(num_RR>0){
+      //predictor coefficients RRR
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
       eta += x_lv*b_lv3*RRgamma;
-      REPORT(RRgamma);
-      REPORT(b_lv3);
+      
+      //quadratic terms for RRR
       if(quadratic>0){
         matrix <Type> D_RR(num_RR,num_RR);
         D_RR.fill(0.0);
+        //quadratic coefficients for RRR
         if(lambda2.cols()==1){
           for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
             D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,0));
@@ -333,6 +338,7 @@ Type objective_function<Type>::operator() ()
     }
     
     if(nlvr>0){
+      //scale LVs with standard deviations, as well as the VA covariance matrices
       if(nlvr>0){
         u *= Delta;
         for (int i=0; i<n; i++) {
@@ -340,9 +346,11 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      
+      //constrained ordination terms
       if(num_lv_c>0){
+        //predictor coefficients for constrained ordination
         if(random(0)>0){
+          //first column are zeros in case of random intercept
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
         }else{
@@ -350,6 +358,7 @@ Type objective_function<Type>::operator() ()
         }  
         
         eta += x_lv*b_lv2*newlam;
+        //quadratic term for constrained ordination 
         if(quadratic>0){
           for (int j=0; j<p;j++){
             for (int i=0; i<n; i++) {
@@ -386,6 +395,7 @@ Type objective_function<Type>::operator() ()
               if(num_lv_c==0){
                 v = (newlam.col(j)+Q*u.row(i).transpose());
               }else{
+                //extra term for constrained ordination
                 v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
               
@@ -412,6 +422,7 @@ Type objective_function<Type>::operator() ()
               if(num_lv_c==0){
                 v = (-newlam.col(j)+Q*u.row(i).transpose());
               }else{
+                //extra term for constrained ordination
                 v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
               
@@ -433,6 +444,7 @@ Type objective_function<Type>::operator() ()
               if(num_lv_c==0){
                 cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
               }else{
+                //extra terms for constrained ordination
                 cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*(u.row(i)).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
               }
               eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
@@ -671,6 +683,7 @@ Type objective_function<Type>::operator() ()
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
   } else {
+    //For fixed-effects RRR with and without quadratic term
     if(num_RR>0){
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
       eta += x_lv*b_lv3*RRgamma;
@@ -719,7 +732,7 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         nll.row(i).array() += mvnorm(u.row(i))/p;
       }
-      
+      //variances of LVs
       u *= Delta;
       if(num_lv_c>0){
         if(random(0)>0){
@@ -821,11 +834,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-  }
-  REPORT(Delta);
-  REPORT(u);
-  REPORT(newlam);
-  REPORT(eta);
-  REPORT(nll);//only works for VA!!
-  return nll.sum();
-} 
+      
+      REPORT(nll);//only works for VA!!
+      return nll.sum();
+  } 
