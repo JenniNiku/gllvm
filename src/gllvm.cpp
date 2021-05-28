@@ -66,8 +66,11 @@ Type objective_function<Type>::operator() ()
   vector<Type> Ar = exp(lg_Ar);
   Type sigma = exp(log_sigma(0));
   
+  // Set first row param to zero, if row effects are fixed
   if(random(0)<1){  r0(0,0) = 0;}
   int nlvr = num_lv;
+  
+  // if row params are in the same form as LVs, let's put them together
   if((random(0)>0) & (n == nr)){
     nlvr++;
     
@@ -94,6 +97,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> Cu(nlvr,nlvr); 
   Cu.fill(0.0);
   
+  // put LV loadings into a matrix
   matrix<Type> newlam(nlvr,p);
   if(nlvr>0){
     newlam.row(0).fill(1.0);
@@ -108,7 +112,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    //To create lambda as matrix upper triangle
+  //To create lambda as matrix, set upper triangle to zero
     if (num_lv>0){
       
       for (int j=0; j<p; j++){
@@ -130,9 +134,9 @@ Type objective_function<Type>::operator() ()
     }
     
     lam += u*newlam;
-    REPORT(u);
-    REPORT(Cu);
-    REPORT(newlam);
+    // REPORT(u);
+    // REPORT(Cu);
+    // REPORT(newlam);
   }
   
   matrix<Type> mu(n,p);
@@ -143,6 +147,7 @@ Type objective_function<Type>::operator() ()
   matrix <Type> nll(n,p); // initial value of log-likelihood
   nll.fill(0.0);
   
+  // Variational approximation
   if(method<1){
     //quadratic coefficients
     //if random rows, add quadratic coefficients to q>0
@@ -180,9 +185,11 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    REPORT(D);
+    // REPORT(D);
     
+    // add offset
     eta += offset;
+    // add fixed row effects
     if((random(0)==0)){
       eta += r0*xr;
     }
@@ -192,8 +199,9 @@ Type objective_function<Type>::operator() ()
     array<Type> A(nlvr,nlvr,n);
     A.fill(0.0);
     
+  // Set up variational covariance matrix for LVs 
     if(nlvr>0){
-      
+      // Include variational covs of row effects, if structure is same for both
       if(nlvr>num_lv){
         for(int i=0; i<n; i++){
           A(0,0,i)=exp(lg_Ar(i));
@@ -238,6 +246,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
+      // Add VA terms to logL
       for(int i=0; i<n; i++){
         if(nlvr == num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
          if(nlvr>num_lv) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
@@ -249,8 +258,9 @@ Type objective_function<Type>::operator() ()
       REPORT(A);
     }
     
-    // Row/Site effects
+    // Structured Row/Site effects
     if(((random(0)>0) & (nlvr==num_lv)) & (rstruc>0)){
+      // Group specific random row effects:
       if(rstruc == 1){
         if(cstruc==0){
           for (int j=0; j<p;j++){
@@ -261,6 +271,7 @@ Type objective_function<Type>::operator() ()
             nll.array() -= 0.5*(1 + log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2) - log(sigma))/(n*p)*random(0);
           }
         } else {
+          // group specific random row effects, which are correlated between groups
           int j,d,r;
           
           matrix<Type> Sr(nr,nr);
@@ -293,6 +304,7 @@ Type objective_function<Type>::operator() ()
             }
           }
           
+          // Variational covariance for row effects
           matrix<Type> Arm(nr,nr);
           for (d=0; d<(nr); d++){
             Arm(d,d)=Ar(d);
@@ -320,9 +332,11 @@ Type objective_function<Type>::operator() ()
         }
         
       } else if(rstruc == 2){
+        // site specific random row effects, which are correlated within groups
         int i,j,d,r;
         matrix<Type> Sr(times,times);
         
+        // Define covariance matrix
         if(cstruc==1){// AR1 covariance
           Type rho = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
           for (d=0;d<times;d++) {
@@ -352,6 +366,7 @@ Type objective_function<Type>::operator() ()
           }
         }
         
+        // Variational covariance for row effects
         array<Type> Arm(times,times,nr);
         for(i=0; i<nr; i++){
           for (d=0; d<(times); d++){
@@ -387,8 +402,8 @@ Type objective_function<Type>::operator() ()
         // REPORT(Arm);
         // REPORT(Sr);
       }
-      REPORT(nr);
-      REPORT(r0);
+      // REPORT(nr);
+      // REPORT(r0);
       // eta += dr*r0;
     }
     
@@ -399,6 +414,7 @@ Type objective_function<Type>::operator() ()
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
       
+      // Variational covariance for random slopes
       // log-Cholesky parametrization for A_bj:s
       array<Type> Ab(l,l,p);
       Ab.fill(0.0);
@@ -436,9 +452,10 @@ Type objective_function<Type>::operator() ()
     }
     
     if(model<1){
+      // basic gllvm, gllvm.TMB.R
       eta += x*b;
     } else {
-      // Fourth corner model
+      // Fourth corner model TMB.trait.R
       matrix<Type> eta1=x*B;
       int m=0;
       for (int j=0; j<p;j++){
@@ -448,6 +465,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
+    // No quadratic term, add LV term to lin. predictor 
     if((quadratic < 1) && (nlvr > 0)){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
@@ -736,11 +754,15 @@ Type objective_function<Type>::operator() ()
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
   } else {
+    // Laplace approximation
+    
+    // add offset to lin. predictor 
     eta += offset;
     if(random(0)==0){
       eta += r0*xr;
     }
     
+    // add LV term to lin. predictor 
     if(nlvr>0){
       eta += lam;
     }
@@ -755,10 +777,10 @@ Type objective_function<Type>::operator() ()
       eta += xb*Br;
     }
     
-    // Row/Site effects
+    // Structured Row/Site effects
     if(((random(0)>0) & (nlvr==num_lv)) & (rstruc>0)){
       int i,j,d;
-      
+      // Group specific random row effects:
       if(rstruc == 1){
         if(cstruc ==0){
           matrix<Type> Sr(1,1);
@@ -766,10 +788,11 @@ Type objective_function<Type>::operator() ()
           MVNORM_t<Type> mvnorm(Sr);
           for (int i=0; i<nr; i++) {
             nll.array() += mvnorm(r0.row(i))/(n*p);
-            // nll += dnorm(r0(i), Type(0), sigma);
           }
         } else {
+          // group specific random row effects, which are correlated between groups
           matrix<Type> Sr(nr,nr);
+          // Define covariance matrix
           if(cstruc==1){// AR1 covariance
             Type rho = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
             for (d=0;d<nr;d++) {
@@ -806,8 +829,10 @@ Type objective_function<Type>::operator() ()
           eta.col(j) = eta.col(j) + dr*r0;
         }
       } else {
-        matrix<Type> Sr(times,times);
+        // site specific random row effects, which are correlated within groups
         
+        // Define covariance matrix
+        matrix<Type> Sr(times,times);
         if(cstruc==1){// AR1 covariance
           Type rho = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
           for (d=0;d<times;d++) {
@@ -860,7 +885,7 @@ Type objective_function<Type>::operator() ()
     }
     
     if(model<1){
-      
+      // gllvm.TMB.R
       eta += x*b;
       for (int j=0; j<p; j++){
         for(int i=0; i<n; i++){
@@ -869,7 +894,7 @@ Type objective_function<Type>::operator() ()
       }
       
     } else {
-      // Fourth corner model
+      // Fourth corner model, TMBtrait.R
       matrix<Type> eta1=x*B;
       int m=0;
       for (int j=0; j<p;j++){

@@ -16,21 +16,22 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   objrFinal <- optrFinal <- NULL
   cstrucn = switch(cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3)
   
+  # Structure for row effects
   model = 0
   xr = NULL
-  if(rstruc==0){
+  if(rstruc==0){ # No structure
     dr <- diag(n)
   }
   if(rstruc>0){#rstruc
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
-    if(rstruc==1){
+    if(rstruc==1){# group specific
       nr <- dim(dr)[2]
       if((cstrucn == 2)) {
         if(is.null(dist) || length(dist)!=nr)
           dist=1:nr
       }
     }
-    if(rstruc==2) {
+    if(rstruc==2) { # correlated within groups
       if(is.null(dr)) stop("Define structure for row params if 'rstruc == 2'.")
       nr <- dim(dr)[2]
       times <- n/nr#dim(dr)[1]
@@ -75,6 +76,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       stop("Can't fit ordinal model if there are missing classes. Please reclassify.")
   }
 
+  # Define design matrix for covariates
   num.X <- 0;
   if(!is.null(X)){
 
@@ -124,11 +126,16 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   if (n.init > 1)
     seed <- sample(1:10000, n.init)
 
+  # n.init model fits
   while(n.i <= n.init){
     if(n.init > 1 && trace)
       cat("Initial run ", n.i, "\n")
 
+    #### Calculate starting values
+    
     fit <- start.values.gllvm.TMB(y = y, X = X, TR = NULL, family = family, offset= offset, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    
+    ## Set initial values
     
     sigma <- 1
     if (is.null(start.params)) {
@@ -250,7 +257,6 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       offset <- matrix(0, nrow = n, ncol = p)
 
     current.loglik <- -1e6; iter <- 1; err <- 10;
-    ## LA-likelihood
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0,n)}
     a <- c(beta0)
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
@@ -270,6 +276,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     
     q <- num.lv
 
+## map.list defines parameters which are not estimated in this model
+    
     map.list <- list()    
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0
@@ -289,7 +297,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     timeo<-NULL
     se <- NULL
 
-
+### VA method, used only if there is some random effects/LVs in the model
+    
     if((method=="VA" && (num.lv>0 || row.eff == "random"))){
       # Variational covariances for latent variables
       if(num.lv>0){
@@ -333,6 +342,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       } else {lg_Ar <- 0}
       
       
+      # Quadratic model, calculate starting values
       
       if(quadratic == TRUE && start.struc == "LV"){
         start.fit <- try(gllvm.TMB(y=y, X=X, num.lv=num.lv, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer),silent=T)
@@ -346,6 +356,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         }
         start.struc="all"
       }
+      
+    ### family settings
       
       extra <- 0
       if(family == "poisson") { familyn <- 0}
@@ -375,7 +387,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         map.list$Au = factor(NA) 
       }
       
-      # Random rows
+    ## Row effect settings
       if(row.eff=="random"){
         if(dependent.row&quadratic==F|dependent.row&starting.val=="zero") 
           sigma<-c(log(sigma), rep(0, num.lv))
@@ -394,8 +406,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       
       
-    if(starting.val!="zero" && quadratic != FALSE && num.lv>0){
-      #generate starting values quadratic coefficients in some cases
+  ## generate starting values quadratic coefficients in some cases
+      if(starting.val!="zero" && quadratic != FALSE && num.lv>0){
       data.list = list(y = y, x = Xd, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv,quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       # if(row.eff=="random"){
@@ -453,10 +465,13 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     
       
 
-      #fit model in all cases
+    ## Set up data and parameters
+      
       data.list = list(y = y, x = Xd, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv,quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
+      
+#### Call makeADFun
       
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -464,18 +479,23 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
       
+      
+#### Fit model 
+      
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
-        if(optim.method != "BFGS")
+        if(optim.method != "BFGS")# Due the memory issues, "BFGS" should not be used for Tweedie
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
       if(inherits(optr,"try-error")) warning(optr[1]);
 
-      #now diag.iter
+      
+ ### Now diag.iter, improves the model fit sometimes
+      
       if(diag.iter>0 && Lambda.struc=="unstructured" && nlvr>1 && !inherits(optr,"try-error")){
         objr1 <- objr
         optr1 <- optr
@@ -528,6 +548,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 
       }
 
+      
+#### Extract estimated values
+      
       param<-objr$env$last.par.best
       if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
         phis <- exp(param[names(param)=="lg_phi"])
@@ -601,6 +624,9 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
 ## Laplace method / nlvr==0
     if(method=="LA" || (nlvr==0 && method=="VA" && row.eff!="random")){
       if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
+      
+### Family settings
+  
       extra=0
       if(family == "poisson") {familyn=0}
       if(family == "negative.binomial") {familyn=1}
@@ -636,7 +662,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         map.list$u = factor(NA) 
       }
       
-      # Random rows
+      # Row parameter settings
       if(row.eff=="random"){
         randoml[1] <- 1
         randomp <- c(randomp,"r0")
@@ -652,24 +678,32 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
         # if(row.eff != "random") map.list$r0 <- factor(rep(NA, length(r0)))
       }
       
+      
+#### Set up data and parameters
+      
       data.list = list(y = y, x = Xd, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv,quadratic = FALSE, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       if(family == "ordinal"){
         data.list$method = 0
       }
       parameter.list = list(r0=matrix(r0), b = rbind(a,b),B=matrix(0), Br=Br,lambda = lambda, lambda2 = matrix(0), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
 
+#### Call makeADFun
+      
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
         random = randomp, DLL = "gllvm")
       
-      if(family=="ZIP" && FALSE) {
-        m <- length(objr$par)
-        low <- rep(-restrict,m); upp=rep(restrict,m);
-        low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
-      }
+#### Fit model 
+      
+      # Not used for now
+      # if(family=="ZIP" && FALSE) {
+      #   m <- length(objr$par)
+      #   low <- rep(-restrict,m); upp=rep(restrict,m);
+      #   low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
+      #   timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
+      # }
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -681,6 +715,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       }
       if(inherits(optr,"try-error")) warning(optr[1]);
 
+      
+#### Extract estimated values
 
       param <- objr$env$last.par.best
       bi <- names(param)=="b"
@@ -746,6 +782,8 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
     }
 
 
+#### Check if model fit succeeded/improved on this iteration n.i
+    
     if(((n.i==1 || out$logL > (new.loglik))  && is.finite(new.loglik)) && !inherits(optr, "try-error")){
       out$start <- fit
       objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;
@@ -796,6 +834,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
       out$time <- timeo
       pars <- optr$par
 
+## Collect VA covariances
       if(method=="VA"){
         param <- objr$env$last.par.best
         if(nlvr>0){
@@ -913,6 +952,7 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
   #   }
   # }
   
+#### Try to calculate sd errors
   
   tr<-try({
     if(sd.errors && !is.infinite(out$logL)) {

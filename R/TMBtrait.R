@@ -21,21 +21,22 @@ trait.TMB <- function(
   n <- nr <- dim(y)[1]; p <- dim(y)[2];
   times = 1
   
+  # Structure for row effects
   model = 1
   xr = NULL
-  if(rstruc==0){
+  if(rstruc==0){ # No structure
     dr <- diag(n)
   }
   if(rstruc>0){#rstruc
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
-    if(rstruc==1){
+    if(rstruc==1){# group specific
       nr <- dim(dr)[2]
       if((cstrucn == 2)) {
         if(is.null(dist) || length(dist)!=nr)
           dist=1:nr
       }
     }
-    if(rstruc==2) {
+    if(rstruc==2) { # correlated within groups
       nr <- dim(dr)[2]
       times <- n/nr#dim(dr)[1]
       if((cstrucn == 2)) {
@@ -79,8 +80,6 @@ trait.TMB <- function(
     X.new <- data.frame(X.new);
   }
   
-
-
   num.T <- 0
   T.new <- NULL
   if(!is.null(TR)) {
@@ -125,6 +124,7 @@ trait.TMB <- function(
     formula <- formula(formula1)
   }
 
+  # Define design matrix for covariates
   if(!is.null(X) || !is.null(TR)){
     yX <- cbind(cbind(X,id = 1:nrow(y))[rep(1:nrow(X), times=ncol(y)),],  species = rep(1:ncol(y), each= nrow(y)), y = c(as.matrix(y))) #reshape(data.frame(cbind(y, X)), direction = "long", varying = colnames(y), v.names = "y")
     TR2 <- data.frame(species = 1:p, TR)
@@ -186,10 +186,13 @@ trait.TMB <- function(
   
   n.i <- 1;
   if(n.init > 1) seed <- sample(1:10000, n.init)
+
+  # n.init model fits
   while(n.i <= n.init){
 
     randomXb <- NULL
     
+    # Design for random slopes
     if(!is.null(randomX)){
       #
       if(num.lv>0 && randomX.start == "res" && starting.val == "res") {randomXb <- randomX}
@@ -220,9 +223,13 @@ trait.TMB <- function(
     
     if(n.init > 1 && trace) cat("initial run ",n.i,"\n");
 
+    #### Calculate starting values
+
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc)
 
+    ## Set initial values
+    
     if(is.null(start.params)){
       
       beta0 <- res$params[,1]
@@ -436,13 +443,15 @@ trait.TMB <- function(
     timeo<-NULL
     se <- NULL
 
-
+## map.list defines parameters which are not estimated in this model
+    
     map.list <- list()    
     #    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
     if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,p))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     
-    # family settings
+  ### family settings
+    
     extra <- c(0,1)
     if(family == "poisson") { familyn=0}
     if(family == "negative.binomial") { familyn=1}
@@ -460,6 +469,8 @@ trait.TMB <- function(
       familyn=9
       if(link=="probit") extra[1] <- 1
     }
+    
+  # Common intercept
     if(beta0com){
       extra[2] <- 0
       Xd<-cbind(1,Xd)
@@ -487,7 +498,7 @@ trait.TMB <- function(
       map.list$Au = factor(NA) 
     }
     
-    # Random rows
+    ## Row effect settings
     if(row.eff=="random"){
       randoml[1] <- 1
       randomp <- c(randomp,"r0")
@@ -521,7 +532,7 @@ trait.TMB <- function(
     }
     
     
-
+## Something for quadratic model, what?
     if(starting.val!="zero" && start.struc != "LV" && quadratic == TRUE && num.lv>0 && method == "VA"){
       map.list2 <- map.list
       map.list2$r0 = factor(rep(NA, length(r0)))
@@ -560,7 +571,8 @@ trait.TMB <- function(
     }
       
       
-# Call makeADFun
+#### Call makeADFun
+    
     if(method == "VA" && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
       parameter.list = list(r0=matrix(r0), b = rbind(a), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
@@ -583,17 +595,21 @@ trait.TMB <- function(
         random = randomp, DLL = "gllvm")
     }
 
+#### Fit model 
+    
     if(optimizer=="nlminb") {
       timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
     }
     if(optimizer=="optim") {
-      if(optim.method != "BFGS")
+      if(optim.method != "BFGS") # Due the memory issues, "BFGS" should not be used for Tweedie
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
       else
         timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
     }
     if(inherits(optr,"try-error")) warning(optr[1]);
 
+ ### Now diag.iter, improves the model fit sometimes
+    
     if(diag.iter>0 && Lambda.struc=="unstructured" && method =="VA" && (num.lv>1 || !is.null(randomX)) && !inherits(optr,"try-error")){
       objr1 <- objr
       optr1 <- optr
@@ -638,15 +654,7 @@ trait.TMB <- function(
       
 
       parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
-      # if(nlvr>0 || !is.null(randomX)){
-      #   if(nlvr>0){
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au1, Abb=Abb1, zeta=zeta)
-      #   } else {
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br, lambda = 0,u = matrix(0), lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=0,   Abb=Abb1, zeta=zeta)
-      #     }
-      # } else {
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
-      # }
+
       data.list = list(y = y, x = Xd, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -701,15 +709,7 @@ trait.TMB <- function(
       if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
       
       parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
-      # if(nlvr>0 || !is.null(randomX)){
-      #   if(nlvr>0){
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au1, Abb=Abb1, zeta=zeta)
-      #   } else {
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br, lambda = 0,u = matrix(0), lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=0,   Abb=Abb1, zeta=zeta)
-      #     }
-      # } else {
-      #     parameter.list = list(r0=r1, b = b1, B=B1, Br=Br1, lambda = lambda1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=0,         Au=Au1, Abb=Abb1, zeta=zeta)
-      # }
+
       data.list = list(y = y, x = Xd, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, quadratic = 1, family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -736,6 +736,9 @@ trait.TMB <- function(
       if(inherits(optr, "try-error") || flag == 0){optr <- optr1; objr <- objr1; quadratic <- "LV";}
       
     }
+
+        
+#### Extract estimated values
     
     param <- objr$env$last.par.best
     if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
@@ -825,7 +828,9 @@ trait.TMB <- function(
     }
     new.loglik<-objr$env$value.best[1]
 
-
+    
+#### Check if model fit succeeded/improved on this iteration n.i
+    
     if( (n.i==1 || out$logL > (new.loglik)) && is.finite(new.loglik) && !inherits(optr, "try-error")){ #
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;
       out$logL <- new.loglik
@@ -881,6 +886,7 @@ trait.TMB <- function(
       out$Power <- Power
       pars <- optr$par
 
+## Collect VA covariances
       if(method=="VA"){
         param <- objr$env$last.par.best
         
@@ -1029,6 +1035,8 @@ trait.TMB <- function(
   #     out$logL <- out$logL - n*p*log(pi)/2
   #   }
   # }
+  
+#### Try to calculate sd errors
   
     tr<-try({
       if(sd.errors && is.finite(out$logL)) {
