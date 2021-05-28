@@ -78,29 +78,29 @@ Type objective_function<Type>::operator() ()
   matrix<Type> newlam(nlvr,p);
   matrix<Type> RRgamma(num_RR,p);
   
-    if((nlvr+num_RR)>0){
+  if((nlvr+num_RR)>0){
     
-    if((num_lv_c+num_lv)>0){
+    if(nlvr>0){
       newlam.row(0).fill(1.0);
       Cu.diagonal().fill(1.0);
       
-    if(random(0)>0){
-      for (int d=1; d<nlvr; d++){
-        Delta(d,d) = fabs(sigmaLV(d-1));
-      }
-      Delta(0,0) = 1;
-      Cu(0,0) = sigma*sigma;
-      if(log_sigma.size()>1){
+      if(random(0)>0){
         for (int d=1; d<nlvr; d++){
-          Cu(d,0) = log_sigma(d);
-          Cu(0,d) = Cu(d,0);
+          Delta(d,d) = fabs(sigmaLV(d-1));
+        }
+        Delta(0,0) = 1;
+        Cu(0,0) = sigma*sigma;
+        if(log_sigma.size()>1){
+          for (int d=1; d<nlvr; d++){
+            Cu(d,0) = log_sigma(d);
+            Cu(0,d) = Cu(d,0);
+          }
+        }
+      }else{
+        for (int d=0; d<nlvr; d++){
+          Delta(d,d) = fabs(sigmaLV(d));
         }
       }
-    }else{
-      for (int d=0; d<nlvr; d++){
-        Delta(d,d) = fabs(sigmaLV(d));
-      }
-    }
     }
     //To create lambda as matrix upper triangle
     if (num_lv>0){
@@ -140,12 +140,12 @@ Type objective_function<Type>::operator() ()
             }else if (j > i){
               RRgamma(i-num_lv_c,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);//lambda(i+j+i*p-(i*(i-1))/2-2*i);
             }
-            }
-
+          }
+          
         }
       }
     }
-
+    
   }
   
   
@@ -304,7 +304,7 @@ Type objective_function<Type>::operator() ()
       eta += x_lv*b_lv3*RRgamma;
       REPORT(RRgamma);
       REPORT(b_lv3);
-       if(quadratic>0){
+      if(quadratic>0){
         matrix <Type> D_RR(num_RR,num_RR);
         D_RR.fill(0.0);
         if(lambda2.cols()==1){
@@ -316,8 +316,8 @@ Type objective_function<Type>::operator() ()
               eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
             }
           }
-
-          }else{
+          
+        }else{
           for (int j=0; j<p;j++){
             for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
               D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,j));
@@ -325,22 +325,22 @@ Type objective_function<Type>::operator() ()
             for (int i=0; i<n; i++) {
               eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
             }
-
+            
           }
         }
-
-    }
+        
+      }
     }
     
     if(nlvr>0){
       if(nlvr>0){
-      u *= Delta;
-      for (int i=0; i<n; i++) {
-        A.col(i) = (Delta*A.col(i).matrix()).array(); 
-      }
+        u *= Delta;
+        for (int i=0; i<n; i++) {
+          A.col(i) = (Delta*A.col(i).matrix()).array(); 
+        }
       }
       
-
+      
       if(num_lv_c>0){
         if(random(0)>0){
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
@@ -348,8 +348,7 @@ Type objective_function<Type>::operator() ()
         }else{
           b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         }  
-        REPORT(b_lv2);
-        REPORT(newlam);
+        
         eta += x_lv*b_lv2*newlam;
         if(quadratic>0){
           for (int j=0; j<p;j++){
@@ -675,9 +674,34 @@ Type objective_function<Type>::operator() ()
     if(num_RR>0){
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
       eta += x_lv*b_lv3*RRgamma;
-      REPORT(RRgamma);
-      REPORT(b_lv3);
+      if(quadratic>0){
+        matrix <Type> D_RR(num_RR,num_RR);
+        D_RR.fill(0.0);
+        if(lambda2.cols()==1){
+          for (int d=0; d<num_RR;d++){
+            D_RR(d,d) = fabs(lambda2(d,0));
+          }
+          for (int j=0; j<p;j++){
+            for (int i=0; i<n; i++) {
+              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
+            }
+          }
+          
+        }else{
+          for (int j=0; j<p;j++){
+            for (int d=0; d<num_RR;d++){
+              D_RR(d,d) = fabs(lambda2(d,j));
+            }
+            
+            for (int i=0; i<n; i++) {
+              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
+            }
+          }
+        }
+        
+      }
     }
+    
     // Include random slopes if random(1)>0
     if(random(1)>0){
       vector<Type> sdsv = exp(sigmaB);
