@@ -713,7 +713,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         comp <- pca$scores
       }else{
         pca <- princomp(resi)
-        comp <- pcaloadings
+        comp <- pca$loadings
       }
       
       RRmod <- lm(resi~0+lv.X)
@@ -1144,12 +1144,12 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
     }
   }
   
-  if(num.lv.c>0&num.RR>0){
-    gammaC <- gamma[,1:num.lv.c]
-    gammaU <- gamma[,-c(1:num.lv.c)]
+  if((num.lv.c+num.lv)>0&num.RR>0){
+    gammC <- NULL
+    gammaU <- NULL
+    if(num.lv.c>0)gammaC <- gamma[,1:num.lv.c]
+    if(num.lv>0)gammaU <- gamma[,(ncol(gamma)-num.lv+1):ncol(gamma)]
     gamma <- cbind(gammaC,RRgamma,gammaU)
-  }else if(num.lv.c==0&num.RR>0){
-    gamma <- cbind(RRgamma,gamma)
   }
   return(list(index = index, gamma = gamma, row.params =row.params, b.lv = cbind(b.lv,RRcoef)))
 }
