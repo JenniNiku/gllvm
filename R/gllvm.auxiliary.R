@@ -832,7 +832,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         comp <- pca$scores
       }else{
         pca <- princomp(resi)
-        comp <- pcaloadings
+        comp <- pca$loadings
       }
       RRmod <-  lm(resi~0+lv.X)
       RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
