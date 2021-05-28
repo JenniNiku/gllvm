@@ -29,11 +29,13 @@
 #' The latent variables are labeled using the row index of the response matrix y.
 #'
 #' Coefficients related to latent variables are plotted in the same figure with the latent
-#' variables if \code{biplot = TRUE}. They are labeled using the column names of y. The number
+#' variables if \code{biplot = TRUE}. They are labelled using the column names of y. The number
 #' of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 #' is used to control the relative scaling of the latent variables and their coefficients.
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 #' For details for constructing a biplot, see Gabriel (1971).
+#' 
+#' Latent variable scores are always scaled by their estimated standard deviations, for plotting.
 #' 
 #' For a quadratic response model, species optima are plotted. Species optima that are outside the range 
 #' of the predicted site scores are not plotted, but the main direction is indicated with arrows instead.
@@ -101,7 +103,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   if (is.null(rownames(object$params$theta)))
     rownames(object$params$theta) = paste("V", 1:p)
   
-  lv <- getLV(object)
+  if((num.lv.c+num.RR)>0){
+    type <- "constrained"
+  }else{
+    type <- "scaled"
+  }
+  
+  lv <- getLV(object, type = type)
   
   if ((num.lv+(num.lv.c+num.RR)) == 1) {
     if(num.lv==1)plot(1:n, lv, ylab = "LV1", xlab = "Row index")

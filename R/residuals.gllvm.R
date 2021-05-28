@@ -82,7 +82,7 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
   if(num.RR==0){
-    lvs <- t(t(object$lvs)*object$params$sigma.lv)
+    lvs <- getLV(object,type="scaled")
   }else{
     if(num.lv.c>0){
       lvs<- cbind(t(t(object$lvs[,1:num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=num.RR,nrow=n),t(t(object$lvs[,-c(1:num.lv.c)])*object$params$sigma.lv[1:num.lv]))
