@@ -367,10 +367,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         x$start.struc = "LV"
       x
     }
+   
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
+    # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
+    #   control.start$start.struc <- "all"
+    # }
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
@@ -658,7 +662,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       family <- family$family
     }
 
-    if(num.lv==0&num.lv.c==0)quadratic <- FALSE
+    if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
 
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
@@ -682,7 +686,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
       method <- "VA"
     }
-    if (method == "LA" && quadratic != FALSE){
+    if (method == "LA" && quadratic != FALSE && (num.lv+num.lv.c)>0){
       cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA is instead. \n")
       method <- "VA"
     }
@@ -728,6 +732,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     # if(family == "ordinal" && TMB && num.lv==0){
     #   stop("Ordinal model without latent variables not yet implemented using TMB.")
     # }
+    
     if(!TMB && zeta.struc == "common"){
       stop("Ordinal model with species-common cut-offs not implemented without TMB.")
     }

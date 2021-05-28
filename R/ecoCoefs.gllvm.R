@@ -23,7 +23,7 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
   }
   quadratic <- object$quadratic
     num.lv <- object$num.lv
-    num.lv.c <- object$num.lv.c
+    num.lv.c <- object$num.lv.c+object$num.RR
     p <- ncol(object$y)
     opt<-object$params$theta[,1:(num.lv+num.lv.c)]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c))]))
     if(sd.errors==TRUE){
@@ -129,7 +129,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
     stop("Tolerances can only be extracted for a GLLVM where species are a quadratic function of the latent variables.")
   }
   num.lv <- object$num.lv
-  num.lv.c <- object$num.lv.c
+  num.lv.c <- object$num.lv.c+object$num.RR
   p <- ncol(object$y)
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:(num.lv+num.lv.c))])

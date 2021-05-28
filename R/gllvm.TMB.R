@@ -92,6 +92,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   if(!is.null(seed)) {
     set.seed(seed)
   }
+  if(starting.val=="zero"&quadratic == TRUE && start.struc == "LV" && (num.lv + num.lv.c)==0){
+    start.struc <- "all"
+  }
 
   n.i <- 1
 
@@ -107,17 +110,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, maxit=maxit, max.iter=max.iter, num.RR = num.RR)
     
     out$start <- fit
-    
-    if(num.RR>0){
-      if(quadratic>0){
-        #lambda2.RR <- 0
-      }
-    }else{
-      if(quadratic>0){
-        #lambda2.RR <- 0
-      }
-    }
-    
     
     sigma <- 1
     if (is.null(start.params)) {
@@ -155,6 +147,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
       }
+      if(method=="LA"&quadratic>0){
+        lambda2 <- lambda2[,1:num.RR,drop=F]
+      }
+      
       row.params <- NULL
 
       if (row.eff != FALSE) {
@@ -259,7 +255,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     a <- c(beta0)
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
     lambda=0
-    if((num.lv+(num.lv.c))==0)u <- lambda2<-matrix(0)
+    if((num.lv+(num.lv.c))==0)u <- matrix(0)
+    if((num.lv+num.RR+num.lv.c)==0)lambda2 <- matrix(0)
     if(num.lv > 0 & (num.lv.c+num.RR) == 0) {
       # diag(lambdas) <- log(diag(lambdas)) #!!!
       lambda <- lambdas[lower.tri(lambdas,diag = F)]
@@ -435,7 +432,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         } else {
           u<-cbind(r0)
           if(num.RR==0)lambda = 0
-          map.list$lambda = factor(NA)
+          if(num.RR==0)map.list$lambda = factor(NA)
           map.list$lambda2 = factor(NA)
           map.list$sigmaLV = factor(NA)
           #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = 0, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
@@ -448,7 +445,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(quadratic == FALSE){
         map.list$lambda2<-factor(NA)
       }
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
+      parameter.list <- list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au,Abb=0, zeta=zeta)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -642,13 +639,50 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(link=="probit") extra=1
       }
       
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = FALSE, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      if(starting.val!="zero" && quadratic == TRUE && (num.lv+(num.lv.c+num.RR))>0 && start.struc=="LV"){
+        #generate starting values quadratic coefficients in some cases
+        data.list = list(y = y, x = Xd,x_lv = lv.X, xr=xr,xb=xb,offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+        
+        sigma = 0 
+        map.list2 <- map.list
+        map.list2$log_sigma = factor(NA)
+        map.list2$Au <- map.list2$Abb <- factor(NA)# map.list$lambda2 <- 
+        map.list2$b_lv <- factor(rep(NA,length(b.lv)))
+        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=0,Abb=0, zeta=zeta)
+        
+        objr <- TMB::MakeADFun(
+          data = data.list, silent=TRUE,
+          parameters = parameter.list, map = map.list,
+          inner.control=list(maxit = maxit), #mgcmax = 1e+200,
+          DLL = "gllvm")##GLLVM
+        if(optimizer=="nlminb") {
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+        }
+        if(optimizer=="optim") {
+          if(optim.method != "BFGS")
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+          else
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+        }
+        if(!inherits(optr,"try-error")){
+          lambda <- optr$par[names(optr$par)=="lambda"]
+          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"],ncol=num.RR,nrow=p,byrow=T)
+          b.lv <- matrix(objr$par[names(objr$par)=="b_lv"],ncol=num.RR)
+          fit$params[,2:(1+num.RR)][lower.tri(fit$params[,2:(1+num.RR)],diag=F)] <- lambda
+          fit$params[,(ncol(fit$params)-num.RR+1):ncol(fit$params)] <- lambda2
+          fit$b.lv <- b.lv
+        }
+        
+      }
+      
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0))
+      
       if(family == "ordinal"){
         data.list$method = 0
         }
       
       randomp <- "u"
-      map.list$Au <- map.list$Abb <-  map.list$lambda2 <- factor(NA)
+      map.list$Au <- map.list$Abb <- factor(NA)# map.list$lambda2 <- 
       
       if(row.eff=="random"){
         if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv+num.lv.c))
@@ -666,7 +700,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           randomp <- NULL
         }
       }
-      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv, B=matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = matrix(0), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma),Au=0,Abb=0, zeta=zeta)
+
+      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv, B=matrix(0), Br=Br, sigmaLV = sigma.lv, lambda = lambda, lambda2 = t(lambda2), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma),Au=0,Abb=0, zeta=zeta)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -698,6 +733,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
+      li2 <- names(param)=="lambda2"
       si <- names(param) == "sigmaLV"
       ui <- names(param)=="u"
         
@@ -991,7 +1027,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(nlvr==0){
           incl[names(objrFinal$par)=="u"] <- FALSE;
           if(num.RR==0)incl[names(objrFinal$par)=="lambda"] <- FALSE;
-          incl[names(objrFinal$par)=="lambda2"] <- FALSE;
+          if(num.RR==0&quadratic==FALSE)incl[names(objrFinal$par)=="lambda2"] <- FALSE;
           incl[names(objrFinal$par)=="sigmaLV"] <- FALSE;
         }
         covM <- try(MASS::ginv(sdr[incl,incl]))
@@ -1020,6 +1056,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }
           out$prediction.errors <- prediction.errors
         }
+        
+        out$Hess <- list(Hess.full=sdr, incla = NULL, incl=incl, incld=NULL, cov.mat.mod=covM)
+        
       } else {
         incl[names(objrFinal$par)=="Au"] <- FALSE;
 
