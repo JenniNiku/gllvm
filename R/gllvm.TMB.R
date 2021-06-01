@@ -89,9 +89,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   }
 
   ## Set initial values for model parameters (including dispersion prm) and latent variables
-  if(!is.null(seed)) {
-    set.seed(seed)
+  # If no seed is saimpled it is randomly drawn
+  if(is.null(seed)&starting.val!="zero"){
+    seed <- sample(1:10000, n.init)
   }
+  # if(!is.null(seed)) {
+  #   set.seed(seed)
+  # }
   if(starting.val=="zero"&quadratic == TRUE && start.struc == "LV" && (num.lv + num.lv.c)==0){
     start.struc <- "all"
   }
@@ -99,8 +103,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   n.i <- 1
 
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, family = family, X.design = X, method = method, zeta.struc = zeta.struc)
-  if (n.init > 1)
-    seed <- sample(1:10000, n.init)
+  #if (n.init > 1)
+    
 
   while(n.i <= n.init){
     
@@ -966,7 +970,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   
     }
   
-  #So we may reproduce results, even if a seed was not provided
+  #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
   out$seed <- seed.best
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}

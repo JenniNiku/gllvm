@@ -603,26 +603,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     
     #check for redundant predictors
     
-    if(!is.null(X)){
-      #check for redundant predictors
-      QR<-qr(X)
-      if(QR$rank<ncol(X)){
-        warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
-        X.red <- colnames(X)[QR$pivot[-c(1:QR$rank)]]
-        X<-X[,QR$pivot[1:QR$rank],drop=F]
-        
-        #remove redundant terms from formulas
-        if(!is.null(formula)){
-          formula <- formula(paste("~",paste(attr(terms(formula),"term.labels")[!attr(terms(formula),"term.labels")%in%X.red],collapse="+")))
-        }
-        #modify terms object
-        if(X.red%in%attr(term,"term.labels")){
-          term <- drop.terms(term,dropx=QR$pivot[-c(1:QR$rank)])  
-        }
-      }
-    }
-    
-    
     if(!is.null(lv.X)){
       if((num.RR+num.lv.c)>ncol(lv.X)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
@@ -876,7 +856,7 @@ if (family == "binomial" || family == "beta") {
             optim.method=optim.method
         )
       }
-
+      out$seed <- fitg$seed
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
