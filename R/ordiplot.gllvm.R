@@ -42,7 +42,9 @@
 #' For a quadratic response model, species optima are plotted. Species optima that are outside the range 
 #' of the predicted site scores are not plotted, but the main direction is indicated with arrows instead.
 #' 
-#' Effects of environmental variables in constrained ordination are indicated with arrows. 
+#' Effects of environmental variables in constrained ordination are indicated with arrows.
+#' If any of the arrows exceeds the range of the plot, arrows are scaled to 80% of the plot range,
+#' but so that the relative contribution of predictors is maintained.
 #' If standard errors are available in the provided model, the slopes of environmental variables
 #' for which the 95% confidence intervals do not include zero are shown as red, while others 
 #' are slightly less intensely coloured.
@@ -364,9 +366,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
       
       #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-      LVcoef <- t(t(LVcoef)/apply(abs(LVcoef),2,max))*min(Xlength,Ylength)*0.8
+      if(any(LVcoef>min(Xlength*0.8,Ylength*0.8))){
+        ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)*min(Xlength,Ylength)))*0.8
+      }else{
+        ends<-LVcoef    
+        }
+      
       for(i in 1:nrow(LVcoef)){
-        arrows(x0=origin[1],y0=origin[2],x1=origin[1]+LVcoef[i,1],y1=origin[2]+LVcoef[i,2],col=col[i],length=0.2,lty=lty[i])  
+        arrows(x0=origin[1],y0=origin[2],x1=origin[1]+ends[i,1],y1=origin[2]+ends[i,2],col=col[i],length=0.2,lty=lty[i])  
         text(x=origin[1]+LVcoef[i,1]*(1+lab.dist),y=origin[2]+LVcoef[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
       }
     }
