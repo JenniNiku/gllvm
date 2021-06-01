@@ -6,7 +6,7 @@
 #' @param ind.spp  the number of response variables (usually, species) to include on the biplot. The default is none, or all if \code{biplot = TRUE}.
 #' @param alpha    a numeric scalar between 0 and 1 that is used to control the relative scaling of the latent variables and their coefficients, when constructing a biplot.
 #' @param main  main title.
-#' @param which.lvs indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}.
+#' @param which.lvs indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}. 
 #' @param jitter   if \code{TRUE}, jittering is applied on points.
 #' @param jitter.amount   numeric, positive value indicating an amount of jittering for each point, defaults to 0.2 (jitter range).
 #' @param s.colors colors for sites
@@ -24,8 +24,10 @@
 #' @param ...	additional graphical arguments.
 #'
 #' @details
-#' Function constructs a scatter plot of two latent variables, i.e. an ordination plot. If only one latent
-#' variable is in the fitted model, latent variables are plotted against their corresponding row indices.
+#' Function constructs a scatter plot of two latent variables, i.e. an ordination plot. 
+#' Latent variables are re-rotated to their principal direction using singular value decomposition,
+#' so that the first plotted latent variable does not have to be the first latent variable in the model.
+#' If only one latent variable is in the fitted model, latent variables are plotted against their corresponding row indices.
 #' The latent variables are labeled using the row index of the response matrix y.
 #'
 #' Coefficients related to latent variables are plotted in the same figure with the latent
@@ -136,7 +138,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2))
       idx <- matrix(TRUE,ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs))
     }else{
-      idx <- choose.lv.coefs>matrix(apply(getLV(object),2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(getLV(object),2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+      idx <- choose.lv.coefs>matrix(apply(getLV(object,type),2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(getLV(object,type),2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
       bothnorms <- vector("numeric",ncol(choose.lv.coefs))
       for(i in 1:ncol(choose.lv.coefs)){
         bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))
@@ -158,6 +160,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     # equally: lvstr <- object$lvs%*%(diag((bothnorms^0.5)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
+    
+    #re+calculate index for quadratic model due to rotation
+    if(quadratic!=FALSE){
+      idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+    }
+
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites)
@@ -306,7 +314,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
         Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
         origin<- c(mean(marg[1:2]),mean(marg[3:4]))
-        opt_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,,drop=F],1,all)],,drop=F]
+        opt_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,which.lvs,drop=F],1,all)],which.lvs,drop=F]
         if(nrow(opt_to_plot)>0){
         ends <- t(t(t(t(opt_to_plot)-origin)/sqrt((opt_to_plot[,1]-origin[1])^2+(opt_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*spp.scale
         for(i in 1:nrow(opt_to_plot)){
@@ -322,14 +330,23 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
       # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
-      LVcoef <- object$params$LvXcoef[,which.lvs]
+      LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       # if(any(row.names(LVcoef)%in%"(Intercept)")){
       #   intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
       #   LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
       # }
       if(!is.logical(object$sd)){
-        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*object$sd$LvXcoef[,which.lvs]
-        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*object$sd$LvXcoef[,which.lvs]
+        covB <- object$Hess$cov.mat.mod
+        colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
+        covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+        rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
+        
+        for(i in 1:ncol(object$lv.X)){
+          rotSD[i,] <- sqrt(diag(t(B)%*%covB[seq(i,num.RR*ncol(lv.X),by=ncol(lv.X)),seq(i,num.RR*ncol(lv.X),by=ncol(lv.X))]%*%B))
+        }
+        rotSD <- rotSD[,which.lvs]
+        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD[,which.lvs]
+        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*rotSD[,which.lvs]
         lty <- rep("solid",ncol(object$lv.X))
         col <- rep("red", ncol(object$lv.X))
         lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
@@ -339,7 +356,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         lty <- rep("solid",ncol(object$lv.X))
         col<-rep("red",ncol(object$lv.X))
       }
-      LVcoef <- LVcoef%*%svd_rotmat_sites[which.lvs,which.lvs]
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
       
