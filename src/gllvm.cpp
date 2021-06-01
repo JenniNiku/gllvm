@@ -834,7 +834,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-      
-      REPORT(nll);//only works for VA!!
-      return nll.sum();
-  } 
+  }
+  REPORT(nll);//only works for VA!!
+  return nll.sum();
+} 
