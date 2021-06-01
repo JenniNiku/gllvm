@@ -859,6 +859,7 @@ trait.TMB <- function(
           }
         out$params$row.params <- row.params; 
         if(length(row.params) == n) names(out$params$row.params) <- rownames(out$y)
+        if((length(row.params) == ncol(dr)) && (rstruc==1)) try(names(out$params$row.params) <- colnames(dr), silent = TRUE)
       }
       if(family %in% c("negative.binomial")) {
         out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
