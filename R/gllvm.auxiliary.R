@@ -346,17 +346,19 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   }
   
   if((family!="ordinal" || (family=="ordinal" & starting.val=="res")) & starting.val!="zero"){
-    if(num.lv>1 && (num.lv.c+num.RR) == 0 && p>2){
-      gamma<-as.matrix(params[,(ncol(params) - num.lv + 1):ncol(params)])
+    if(num.lv==0 &&p>2 & (num.lv.c+num.RR)>1 | (num.lv.c+num.RR) == 0 && p>2 & num.lv>1){
+      gamma<-as.matrix(params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)])
       qr.gamma <- qr(t(gamma))
-      params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.gamma))
-      index<-(index%*%qr.Q(qr.gamma))
+      if(num.lv.c>0)b.lv <- b.lv%*%qr.Q(qr.gamma)
+      params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)]<-t(qr.R(qr.gamma))
+      if(num.lv.c>0)index<-(index%*%qr.Q(qr.gamma))
     }else if((num.lv.c+num.RR)>1 && num.lv>1 && p>2){
       gamma<-as.matrix(params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):ncol(params)])
       qr.gamma1 <- qr(t(gamma[,1:(num.lv.c+num.RR)]))
       qr.gamma2 <- qr(t(gamma[,(num.lv.c+num.RR+1):ncol(gamma)]))
       params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params)- num.lv)]<-t(qr.R(qr.gamma1))
       params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.gamma2))
+      b.lv <- b.lv%*%qr.Q(qr.gamma2)
       if(num.lv.c>0)index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1))
       index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index),drop=F]%*%qr.Q(qr.gamma2))
     }
@@ -479,259 +481,21 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   gamma <- NULL
   index.c <- NULL
   gamma.c <- NULL
-  if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
-    mu <- exp(eta)
-  }else if(family %in% c("binomial","beta")) {
-    mu <-  binomial(link = link)$linkinv(eta)
-  }else {
-    mu<-eta
-  }
-  if(is.null(resi)){
-    ds.res <- matrix(NA, n, p)
-    rownames(ds.res) <- rownames(y)
-    colnames(ds.res) <- colnames(y)
-    for (i in 1:n) {
-      for (j in 1:p) {
-        if (family == "poisson") {
-          a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
-          b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "negative.binomial") {
-          phis <- phis + 1e-05
-          a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
-          b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "binomial") {
-          a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
-          b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "gaussian") {
-          a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
-          b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-          # ds.res[i, j] <- (y[i, j] - mu[i, j])/phis[j]
-        }
-        if (family == "gamma") {
-          a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
-          b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "exponential") {
-          a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
-          b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "beta") {
-          a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-          b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-          u <- runif(n = 1, min = a, max = b)
-          ds.res[i, j] <- qnorm(u)
-        }
-        if (family == "ordinal") {
-          if(zeta.struc == "species"){
-            probK <- NULL
-            probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
-            probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
-            if(max(y[,j]) > 2) {
-              j.levels <- 2:(max(y[,j])-1)
-              for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
-            }
-            probK <- c(0,probK)
-            cumsum.b <- sum(probK[1:(y[i,j]+1)])
-            cumsum.a <- sum(probK[1:(y[i,j])])
-            u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
-            if (abs(u - 1) < 1e-05)
-              u <- 1
-            if (abs(u - 0) < 1e-05)
-              u <- 0
-            ds.res[i, j] <- qnorm(u)
-          }else{
-            probK <- NULL
-            probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
-            probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
-            levels <- 2:(max(y) - min(y))#
-            for (k in levels) {
-              probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
-            }
-            probK <- c(0, probK)
-            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-            cumsum.a <- sum(probK[1:(y[i, j])])
-            u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
-            if (abs(u - 1) < 1e-05)
-              u <- 1
-            if (abs(u - 0) < 1e-05)
-              u <- 0
-            ds.res[i, j] <- qnorm(u)
-          }
-        }
-      }
-    }
-    
-  } else {
-    ds.res <- resi
-  }
-  resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+ 
   #generate starting values for constrained LVs
   if(num.lv.c>0&num.lv==0){
     if(p>2 && n>2){
-      if(n>p){
-        fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
-        if(family=="gaussian"&inherits(fa,"try-error")){
-          fa <- princomp(resi)
-          fa$scores <- fa$scores[,1:num.lv.c,drop=F]
-        }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
-        index <- fa$scores
-      } else if(n<p) {
-        fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
-        if(family=="gaussian"&inherits(fa,"try-error")){
-          fa <- princomp(t(resi))
-          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
-        }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv.c' value or change 'starting.val' to 'zero' or 'random'.")
-        index <- matrix(fa$loadings,n,num.lv.c)
-      } else {
-        tryfit <- TRUE; tryi <- 1
-        while(tryfit && tryi<5) {
-          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv.c,scores = "regression"), silent = TRUE)
-          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
-        }
-        if(inherits(fa,"try-error")) {
-          warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
-          fa <- princomp(resi)
-          index<-matrix(fa$scores[,1:num.lv.c],n,num.lv.c)
-        }
-      }
-      
-      # if(num.lv.c>1){
-      #   gamma <- fa$loadings
-      #   qr.gamma <- qr(t(gamma))
-      #   sig <- sign(diag(qr.R(qr.gamma)))
-      #   index<-(index%*%qr.Q(qr.gamma))
-      #   index <- t(t(index)*sig)
-      #   index.lm<-lm(index~0+lv.X)
-      # }else{
-      #   index.lm<-lm(fa$scores~0+lv.X)  
-      # }
-      if(n>p){
-        index<-as.matrix(fa$scores)
-      }else{
-        index<-as.matrix(fa$loadings)
-      }
-      
-      start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=0,num.RR = num.lv.c, family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
+      start.fit <- gllvm.TMB(y,lv.X=scale(lv.X),num.lv=0,num.lv.c=0,num.RR = num.lv.c, family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
       b.lv <- start.fit$params$LvXcoef
-      index <- index-lv.X%*%b.lv
-      # scale <- apply(index,2,sd)
-      # index <- t(t(index)/scale)
-      # b.lv <- t(t(b.lv)*scale)
-      
-      gamma.lm <- try(lm(resi~0+I(t(t(index))+lv.X%*%b.lv)),silent=T)
-      
-      if(inherits(gamma.lm,"try-error")){
-        stop("Error in generating starting values. Possibly redundant factors in X.\n")
-      }
-      gamma<-t(coef(gamma.lm))
-      
-      # b.lv.fa <- try(factanal(lv.X,factors=num.lv.c),silent=T)
-      # if(!inherits(b.lv.fa,"try-error")){
-      #   b.lv <- matrix(b.lv.fa$loadings,ncol=num.lv.c)
-      #   index <- index-lv.X%*%b.lv
-      # }else{
-      #   #Here we regress the LV on the covariates to generate starting values for b.lv, and so we may generate num.lv conditionally
-      #   index.lm <- lm(index~0+lv.X)
-      #   if(ncol(index)>1){
-      #     b.lv<-coef(index.lm)
-      #     index <- residuals(index.lm)
-      #   }
-      #   
-      #   if(ncol(index)==1){
-      #     b.lv<-matrix(coef(lm(index~0+lv.X)),ncol=1)
-      #     index <- matrix(residuals(index.lm),ncol=1)
-      #     
-      #   }
-      # }
-      #still need to get..LV here..
-      #   warning("still change index")
-      # gamma.lm <- lm(resi~0+I(index+lv.X%*%b.lv))
-      # gamma <- t(coef(gamma.lm))
-      colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
-      
-      if(num.lv.c>1 && p>2){
-        qr.gamma <- qr(t(gamma))
-        gamma.new<-t(qr.R(qr.gamma))
-        sig <- sign(diag(gamma.new))
-        gamma <- t(t(gamma.new)*sig)
-        index<-(index%*%qr.Q(qr.gamma))
-        b.lv<-b.lv%*%qr.Q(qr.gamma)
-        b.lv<-t(t(b.lv)*sig)
-        index <- t(t(index)*sig)
-      } else if(p>n & num.lv.c>1) {
-        sdi <- sqrt(diag(cov(index)))
-        sdt <- sqrt(diag(cov(gamma)))
-        indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
-        index <- index%*%indexscale
-        gammascale <- diag(x = 1/sdt, nrow = length(sdi))
-        gamma <- gamma%*%gammascale  
-      }
-    } else {
-      b.lv <- matrix(1,ncol=num.lv.c,nrow=ncol(lv.X))
-      gamma <- matrix(1,p,num.lv.c)
-      gamma[upper.tri(gamma)]=0
-      index <- matrix(0,n,num.lv.c)
-      eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
-    }
-  }else if(num.lv.c>0&num.lv>0){
-    if(family!="ordinal"){
-      zeta.struc<-"species"
-    }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta)
-    gamma <- start.fit$params$theta
-    index <- start.fit$lvs
-    b.lv <- start.fit$params$LvXcoef
-    
-    eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
-    if(num.lv>0){
-      gamma.c <- gamma
-      index.c <- index
-    }
-  }
-  
-  if(num.RR>0){
-    if(num.lv.c==0){
-      if(n<p){
-        pca <- princomp(t(resi))
-        comp <- pca$scores
-      }else{
-        pca <- princomp(resi)
-        comp <- pca$loadings
-      }
-      
-      RRmod <- lm(resi~0+lv.X)
-      RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
-      RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
-      qr.RRgamma <- qr(t(RRgamma))
-      RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
-      RRcoef <- t(t(RRcoef%*%qr.Q(qr.RRgamma))*diag(RRgamma))
-      RRgamma <- t(t(RRgamma)/diag(RRgamma))
-      eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
-    }else{
-      #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
+      gamma <- start.fit$params$theta
+      eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
+
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
         mu <- exp(eta)
       }else if(family %in% c("binomial","beta")) {
         mu <-  binomial(link = link)$linkinv(eta)
-      }else{
-        mu <- eta
+      }else {
+        mu<-eta
       }
       if(is.null(resi)){
         ds.res <- matrix(NA, n, p)
@@ -763,6 +527,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
               b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
+              # ds.res[i, j] <- (y[i, j] - mu[i, j])/phis[j]
             }
             if (family == "gamma") {
               a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
@@ -827,6 +592,185 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       }
       resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
       
+      if(n>p){
+        fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
+        if(family=="gaussian"&inherits(fa,"try-error")){
+          fa <- princomp(resi)
+          fa$scores <- fa$scores[,1:num.lv.c,drop=F]
+        }
+        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
+        index <- fa$scores
+      } else if(n<p) {
+        fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
+        if(family=="gaussian"&inherits(fa,"try-error")){
+          fa <- princomp(t(resi))
+          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
+        }
+        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
+        index <- matrix(fa$loadings,n,num.lv.c)
+      } else {
+        tryfit <- TRUE; tryi <- 1
+        while(tryfit && tryi<5) {
+          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv.c,scores = "regression"), silent = TRUE)
+          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
+        }
+        if(inherits(fa,"try-error")) {
+          warning(attr(fa,"condition")$message, "\n Factor analysis for Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
+          fa <- princomp(resi)
+          index<-matrix(fa$scores[,1:num.lv.c],n,num.lv.c)
+        }
+      }
+      if(n>p){
+        index<-as.matrix(fa$scores)
+      }else{
+        index<-as.matrix(fa$loadings)
+      }
+      
+      colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
+      
+      if(num.lv.c>1 && p>2){
+        qr.gamma <- qr(t(gamma))
+        gamma.new<-t(qr.R(qr.gamma))
+        sig <- sign(diag(gamma.new))
+        gamma <- t(t(gamma.new)*sig)
+        index<-(index%*%qr.Q(qr.gamma))
+        b.lv<-b.lv%*%qr.Q(qr.gamma)
+        b.lv<-t(t(b.lv)*sig)
+        index <- t(t(index)*sig)
+      } else if(p>n & num.lv.c>1) {
+        sdi <- sqrt(diag(cov(index)))
+        sdt <- sqrt(diag(cov(gamma)))
+        indexscale <- diag(x = 0.8/sdi, nrow = length(sdi))
+        index <- index%*%indexscale
+        gammascale <- diag(x = 1/sdt, nrow = length(sdi))
+        gamma <- gamma%*%gammascale  
+      }
+    } else {
+      b.lv <- matrix(1,ncol=num.lv.c,nrow=ncol(lv.X))
+      gamma <- matrix(1,p,num.lv.c)
+      gamma[upper.tri(gamma)]=0
+      index <- matrix(0,n,num.lv.c)
+      eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
+    }
+  }else if(num.lv.c>0&num.lv>0){
+    if(family!="ordinal"){
+      zeta.struc<-"species"
+    }
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta)
+    gamma <- start.fit$params$theta
+    index <- start.fit$lvs
+    b.lv <- start.fit$params$LvXcoef
+    
+    eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
+    if(num.lv>0){
+      gamma.c <- gamma
+      index.c <- index
+    }
+  }
+  #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
+  if(family %in% c("poisson", "negative.binomial", "gamma", "exponential")) {
+    mu <- exp(eta)
+  }else if(family %in% c("binomial","beta")) {
+    mu <-  binomial(link = link)$linkinv(eta)
+  }else{
+    mu <- eta
+  }
+  if(is.null(resi)){
+    ds.res <- matrix(NA, n, p)
+    rownames(ds.res) <- rownames(y)
+    colnames(ds.res) <- colnames(y)
+    for (i in 1:n) {
+      for (j in 1:p) {
+        if (family == "poisson") {
+          a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
+          b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "negative.binomial") {
+          phis <- phis + 1e-05
+          a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+          b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "binomial") {
+          a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
+          b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "gaussian") {
+          a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+          b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "gamma") {
+          a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+          b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "exponential") {
+          a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+          b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "beta") {
+          a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+          b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+          u <- runif(n = 1, min = a, max = b)
+          ds.res[i, j] <- qnorm(u)
+        }
+        if (family == "ordinal") {
+          if(zeta.struc == "species"){
+            probK <- NULL
+            probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+            probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+            if(max(y[,j]) > 2) {
+              j.levels <- 2:(max(y[,j])-1)
+              for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
+            }
+            probK <- c(0,probK)
+            cumsum.b <- sum(probK[1:(y[i,j]+1)])
+            cumsum.a <- sum(probK[1:(y[i,j])])
+            u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+            if (abs(u - 1) < 1e-05)
+              u <- 1
+            if (abs(u - 0) < 1e-05)
+              u <- 0
+            ds.res[i, j] <- qnorm(u)
+          }else{
+            probK <- NULL
+            probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
+            probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+            levels <- 2:(max(y) - min(y))#
+            for (k in levels) {
+              probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
+            }
+            probK <- c(0, probK)
+            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
+            cumsum.a <- sum(probK[1:(y[i, j])])
+            u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+            if (abs(u - 1) < 1e-05)
+              u <- 1
+            if (abs(u - 0) < 1e-05)
+              u <- 0
+            ds.res[i, j] <- qnorm(u)
+          }
+        }
+      }
+    }
+    
+  } else {
+    ds.res <- resi
+  }
+  resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+  
+  if(num.RR>0){
+    if(num.lv.c==0){
       if(n<p){
         pca <- princomp(t(resi))
         comp <- pca$scores
@@ -834,9 +778,14 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         pca <- princomp(resi)
         comp <- pca$loadings
       }
-      RRmod <-  lm(resi~0+lv.X)
-      RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
-      RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
+      
+      RRmod <- lm(resi~0+lv.X)
+      # RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
+      do_svd<-svd(coef(RRmod)%*%comp[,1:num.RR]%*%t(comp[,1:num.RR]))
+      RRcoef <- do_svd$u[,1:num.RR]
+      RRgamma <- do_svd$v[,1:num.RR]
+      
+      #RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
       qr.RRgamma <- qr(t(RRgamma))
       RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
       RRcoef <- t(t(RRcoef%*%qr.Q(qr.RRgamma))*diag(RRgamma))
@@ -1046,6 +995,10 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         qr.gamma <- qr(t(gamma))
         gamma.new<-t(qr.R(qr.gamma))
         sig <- sign(diag(gamma.new))
+        if(num.lv.c>0){
+          b.lv<-b.lv%*%qr.Q(qr.gamma)
+          b.lv <- t(t(b.lv)*sig)
+        }
         gamma <- t(t(gamma.new)*sig)
         index<-(index%*%qr.Q(qr.gamma))
         if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
@@ -1053,10 +1006,10 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       }else{
         qr.gamma1 <- qr(t(gamma[,1:num.lv.c,drop=F]))
         qr.gamma2 <- qr(t(gamma[,(num.lv.c+1):ncol(gamma),drop=F]))
-        b.lv<-b.lv%*%qr.Q(qr.gamma1)
         gamma.new1<-t(qr.R(qr.gamma1))
         gamma.new2<-t(qr.R(qr.gamma2))
         sig1 <- sign(diag(gamma.new1))
+        b.lv<-b.lv%*%qr.Q(qr.gamma1)
         b.lv <- t(t(b.lv)*sig1)
         sig2 <- sign(diag(gamma.new2))
         gamma.new1 <- t(t(gamma.new1)*sig1)
