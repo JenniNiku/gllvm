@@ -47,7 +47,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   nCols = dim(object$params$theta)[1]
   if(conditional == FALSE){
   # generate new latent variables
-  lvsNew = matrix(rnorm(nsim*nRows*object$num.lv),ncol=object$num.lv)
+  lvsNew = matrix(rnorm(nsim*nRows*(object$num.lv+object$num.lv.c)),ncol=(object$num.lv+object$num.lv.c))
   }else{
     lvsNew = object$lvs[rep(1:nRows,nsim),]
   }
@@ -68,9 +68,9 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="tweedie")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family %in% c("gaussian", "gamma"))
+  if(object$family %in% c("gaussian", "gamma", "beta"))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-     if(object$family == "ordinal"){
+  if(object$family == "ordinal"){
        if(object$zeta.struc=="species"){
          sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
          for(j in 1:nCols){
@@ -105,6 +105,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
                   "exponential" = rexp(nTot, rate = 1/prs),
                   "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
                   "ordinal" = sims,
+                  "beta" = rbeta(nTot, shape1 = phis*prs, shape2 = phis*(1-prs)),
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))

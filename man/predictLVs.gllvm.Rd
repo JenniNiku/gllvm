@@ -5,12 +5,7 @@
 \alias{predictLVs}
 \title{Predict latent variables for gllvm Fits}
 \usage{
-\method{predictLVs}{gllvm}(
-  object,
-  newX = if (is.null(object$X)) NULL else object$X,
-  newY = object$y,
-  ...
-)
+\method{predictLVs}{gllvm}(object, newX = NULL, newY = object$y, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}

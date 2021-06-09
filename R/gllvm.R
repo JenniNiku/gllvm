@@ -12,11 +12,13 @@
 #' @param num.RR number of reduced rank dimensions for predictor variables.
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
-#' @param row.eff  \code{FALSE}, \code{fixed} or \code{"random"}, Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included.
+#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
+#' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
+#' @param dist coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
-#' @param link.bin link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
+#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -113,6 +115,8 @@
 #'   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)}.}
 #'
 #'   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
+#'   
+#'   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})//(1+\phi_j)}.}
 #'
 #'   \item{For positive continuous data \code{family = "gamma"}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}^2/\phi_j}, where \eqn{\phi_j} is species specific shape parameter.}
 #'   
@@ -294,7 +298,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
 #'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam
@@ -304,7 +308,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   num.lv = 0, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, link.bin = "probit",
+                  plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
@@ -317,6 +321,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     datayx <- NULL
     if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
     pp.pars <- list(...)
+    
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
         x$reltol = 1e-8
@@ -397,7 +402,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
 
     if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
-    
+
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
         stop("X must be a matrix or data.frame.")
@@ -427,14 +432,29 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
         } else if(is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)>0){
-          lv.formula <- formula(paste("~", 0,paste("+", colnames(X), collapse = "")))
-          if (is.data.frame(X)) {
-            datayx <- list(X = model.matrix(lv.formula, X))
-          } else {
-             datayx <- list(X = X)
+
+          if(inherits(row.eff,"formula")){
+            lv.formula <- formula(paste("~", 0,paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))
+            if (is.data.frame(X)) {
+              datayx <- list(X = model.matrix(lv.formula, X))
+            } else {
+              datayx <- list(X = X)
+            }
+            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            
+            X <-  X[,all.vars(row.eff),drop=F]
+          }else{
+            lv.formula <- formula(paste("~", 0,paste("+", colnames(X), collapse = "")))
+            if (is.data.frame(X)) {
+              datayx <- list(X = model.matrix(lv.formula, X))
+            } else {
+              datayx <- list(X = X)
+            }
+            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            
+            X <- NULL
           }
-          lv.X <- as.matrix(model.frame(~ X, data = datayx))
-          X <- NULL
+          
           m1 <- model.frame(y ~ NULL, data = datayx)
           term <- terms(m1)
         }else if(is.null(lv.formula)&!is.null(formula)){
@@ -444,7 +464,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           lv.X <- NULL
           lv.formula <- y ~ NULL
         } else if(is.null(formula)&!is.null(lv.formula)){
-          datayx <- data.frame(y, X)
+          if(inherits(row.eff,"formula")){
+            datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
+            X <-  X[,all.vars(row.eff),drop=F]
+          }else{
+            datayx <- data.frame(y, X)
+            X <- NULL
+          }
           m1 <- model.frame(y ~ NULL, data = datayx)
           labterm <- labels(terms(lv.formula))
           if(any(labterm==1)|any(labterm==0)){
@@ -453,7 +479,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
 
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
-          X<-NULL
+     
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
@@ -461,7 +487,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-
+warning("Remove row.effect from lv.x here")
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
           term <- terms(m1)
@@ -637,12 +663,46 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if (p == 1)
       y <- as.matrix(y)
 
+# Structured row parameters
+    rstruc = 0; dr = NULL; cstruc = "diag"
+    if(inherits(row.eff,"formula")) {
+      bar.f <- findbars1(row.eff) # list with 3 terms
+      grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
+      if(!is.null(data)) {
+        if(any(colnames(data) %in% grps)){
+          xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
+          colnames(xgrps) <- grps
+          X<-cbind(X,xgrps)
+          }
+      }
+      if(is.null(bar.f)) {
+        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
+      } else if(!all(grps %in% colnames(X))) {
+        stop("Grouping variable need to be included in 'X'")
+      } else if(!all(order(X[,(colnames(X) %in% grps)])==c(1:n)) && (corWithin)) {
+        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+      } else {
+        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
+        mf <- model.frame(subbars1(row.eff),data=X)
+        dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
+        if(corWithin){ rstruc=2} else { rstruc=1}
+        xnames<-colnames(X)[!(colnames(X) %in% grps)]
+        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
+        colnames(X)<-xnames
+        if(ncol(X)==0) X<-NULL
+      }
+      cstruc = corstruc(row.eff)[1]
+      if(cstruc == "diag" & rstruc==2) {rstruc=0; dr=NULL}
+      row.eff = "random"
+    }
+    
     if (class(family) == "family") {
-      link.bin <- family$link
+      link <- family$link
       family <- family$family
     }
-
     if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
+
+    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
@@ -686,7 +746,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("The quadratic model is not implemented for ", family, " family yet. \n")
     }
     if (method == "VA" && family %in% c("tweedie", "beta")){
-      cat("Note that, the ", family, " family is implemented using extended variational approximation method. \n")
+      cat("Note that, the", family, "family is implemented using extended variational approximation method. \n")
     }
     if (method == "EVA"){
       method = "VA"
@@ -750,18 +810,21 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     n.i <- 1
 
-    out <- list( y = y, lv.formula = lv.formula, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, 
-        method = method, family = family, row.eff = row.eff, randomX = randomX, n.init = n.init, sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
+
+    out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, lv.formula = lv.formula, formula = formula,
+        method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
 
-if (family == "binomial" || family == "beta") {
+    if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
+    if (family == "binomial") {
       if (method == "LA")
-        out$link <- link.bin
+        out$link <- link
       if (method == "VA")
         out$link <- "probit"
     }
     if (family == "beta") {
-        out$link <- link.bin
+        out$link <- link
     }
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
@@ -792,7 +855,7 @@ if (family == "binomial" || family == "beta") {
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = link.bin,
+            link = link,
             n.init = n.init,
             start.params = start.fit,
             optimizer = optimizer,
@@ -811,11 +874,13 @@ if (family == "binomial" || family == "beta") {
             scale.X = scale.X,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
-            optim.method=optim.method
+            optim.method=optim.method, 
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
-
+        out$formula <- fitg$formula
+        
       } else {
         fitg <- gllvm.TMB(
             y,
@@ -840,7 +905,7 @@ if (family == "binomial" || family == "beta") {
             offset = O,
             sd.errors = sd.errors,
             trace = trace,
-            link = link.bin,
+            link = link,
             n.init = n.init,
             restrict = restrict,
             start.params = start.fit,
@@ -853,8 +918,13 @@ if (family == "binomial" || family == "beta") {
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
-            optim.method=optim.method
+            optim.method=optim.method, 
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
         )
+        if(is.null(formula)) {
+          out$formula <- fitg$formula
+          out$X <- fitg$X
+        }
       }
       out$seed <- fitg$seed
       out$X.design <- fitg$X.design
@@ -863,8 +933,7 @@ if (family == "binomial" || family == "beta") {
       
       if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
-      out$X <- fitg$X
-      
+      # out$X <- fitg$X
       
 
       out$params <- fitg$params
@@ -969,7 +1038,6 @@ if (family == "binomial" || family == "beta") {
       warning("Algorithm converged to infinity, try other starting values or different method.")
       cat("Algorithm converged to infinity, try other starting values or different method. \n")
       }
-    out$formula <- fitg$formula
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {

@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
       </span>
     </div>
 
@@ -108,6 +108,9 @@
     </li>
   </ul>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
@@ -139,12 +142,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>predictLVs</span><span class='op'>(</span>
-  <span class='va'>object</span>,
-  newX <span class='op'>=</span> <span class='kw'>if</span> <span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/NULL.html'>is.null</a></span><span class='op'>(</span><span class='va'>object</span><span class='op'>$</span><span class='va'>X</span><span class='op'>)</span><span class='op'>)</span> <span class='cn'>NULL</span> <span class='kw'>else</span> <span class='va'>object</span><span class='op'>$</span><span class='va'>X</span>,
-  newY <span class='op'>=</span> <span class='va'>object</span><span class='op'>$</span><span class='va'>y</span>,
-  <span class='va'>...</span>
-<span class='op'>)</span></pre>
+<span class='fu'>predictLVs</span><span class='op'>(</span><span class='va'>object</span>, newX <span class='op'>=</span> <span class='cn'>NULL</span>, newY <span class='op'>=</span> <span class='va'>object</span><span class='op'>$</span><span class='va'>y</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -187,7 +185,7 @@
 <span class='va'>fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='gllvm.html'>gllvm</a></span><span class='op'>(</span>y <span class='op'>=</span> <span class='va'>y</span>, <span class='va'>X</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
 <span class='co'># fitted values</span>
 <span class='va'>predLVs</span> <span class='op'>&lt;-</span> <span class='fu'>predictLVs.gllvm</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
-<span class='co'># }</span>
+</div><div class='output co'>#&gt; <span class='error'>Error in gllvm(y = y, X = X, family = poisson()): object 'X' not found</span></div><div class='input'><span class='co'># }</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -200,7 +198,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jenni Niku.</p>
+  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
 </div>
 
 <div class="pkgdown">

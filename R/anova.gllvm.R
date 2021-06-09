@@ -104,6 +104,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
       df <- df-n-1
     }else if(x$row.eff=="random"){
       df<-df-length(x$params$sigma)
+      if(!is.null(x$params$rho)) df<-df-length(x$params$rho)
     }
       if(x$family=="ordinal"){
     if(x$zeta.struc=="common"){
@@ -126,6 +127,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
       df <- df+n-1
     }else if(x$row.eff=="random"){
       df<-df+length(x$params$sigma)
+      if(!is.null(x$params$rho)) df<-df+length(x$params$rho)
     }
     if(x$family=="ordinal"){
     if(x$zeta.struc=="common"){
@@ -150,13 +152,14 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
   ll.list <- sapply(objects_order, function(x){
     LL<--colSums(x$TMBfn$report()$nll)
     
-    if(x$method == "VA"){
-      if((x$num.lv+x.num.lv.c) > 0) LL = LL + n*0.5*(x$num.lv+x$num.lv.c)
-      if(x$row.eff == "random") LL = LL + n*0.5
-      if(x$family=="gaussian") {
-        LL <- LL - n*p*log(pi)/2
-      }
-    }
+
+    # if(x$method == "VA"){
+    #   if(x$num.lv > 0) LL = LL + n*0.5*x$num.lv
+    #   if(x$row.eff == "random") LL = LL + length(x$params$row.params)*0.5
+    #   if(x$family=="gaussian") {
+    #     LL <- LL - n*p*log(pi)/2
+    #   }
+    # }
     return(LL)
   }
     )

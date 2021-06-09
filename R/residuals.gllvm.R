@@ -47,10 +47,15 @@ residuals.gllvm <- function(object, ...) {
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
   quadratic <- object$quadratic
-  X <- object$X
+  if(!is.null(object$X)) X <- as.matrix(object$X.design[1:n,]) else X=NULL
   y <- object$y
 
-  num.X <- ncol(object$X)
+  if(object$row.eff != FALSE) {
+    if(length(object$params$row.params) != nrow(object$y))
+      object$params$row.params = c(object$TMBfn$env$data$dr0 %*% object$params$row.params)
+  }
+  
+  num.X <- ncol(object$X.design)
   num.T <- ncol(object$TR)
 
   pzip <- function(y, mu, sigma)
@@ -75,35 +80,21 @@ residuals.gllvm <- function(object, ...) {
 
   eta.mat <- matrix(object$params$beta0, n, p, byrow = TRUE) + offset
   if (!is.null(object$X) && is.null(object$TR))
-    eta.mat <- eta.mat + (X %*% matrix(t(object$params$Xcoef), num.X, p))
+    eta.mat <- eta.mat + (object$X.design %*% matrix(t(object$params$Xcoef), num.X, p))
   if (!is.null(object$TR))
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
-  if(num.RR==0){
+  if((num.RR+num.lv.c)==0){
     lvs <- getLV(object,type="scaled")
   }else{
-    if(num.lv.c>0){
-      lvs<- cbind(t(t(object$lvs[,1:num.lv.c])*object$params$sigma.lv[1:num.lv.c]),matrix(0,ncol=num.RR,nrow=n),t(t(object$lvs[,-c(1:num.lv.c)])*object$params$sigma.lv[1:num.lv]))
-    }else if(num.lv>0&num.lv.c==0){
-      lvs<- cbind(matrix(0,ncol=num.RR,nrow=n),t(t(object$lvs)*object$params$sigma.lv))
-    }else{
-      lvs <- matrix(0,ncol=object$num.RR,nrow=n)
-    }
+    lvs <- getLV(object, type="constrained")
   }
   eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
-  if((num.lv.c+num.RR)>0)eta.mat <- eta.mat + object$lv.X%*%object$params$LvXcoef%*%t(object$params$theta[,1:(num.lv.c+num.RR),drop=F])
   }
   if(quadratic != FALSE){
-    if (num.lv>0|num.lv.c > 0)eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
-    if((num.lv.c+num.RR)>0){
-      for(i in 1:n){
-        for(j in 1:p){
-          eta.mat[i,j] <- eta.mat[i,j] -2*lvs[i,1:(num.lv.c+num.RR),drop=F]%*%abs(diag(object$params$theta[j,-c(1:(num.lv+(num.lv.c+num.RR))),drop=F][,1:(num.lv.c+num.RR)]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef) - object$lv.X[i,,drop=F]%*%object$params$LvXcoef%*%abs(diag(object$params$theta[j,-c(1:(num.lv+(num.lv.c+num.RR))),drop=F][,1:(num.lv.c+num.RR)]))%*%t(object$lv.X[i,,drop=F]%*%object$params$LvXcoef)
-        }
-      }
-    }
+   eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
   }
   
   if (!is.null(object$randomX))
@@ -126,6 +117,7 @@ residuals.gllvm <- function(object, ...) {
         a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i, j])
         b <- ppois(as.vector(unlist(y[i, j])), mu[i, j])
         u <- runif(n = 1, min = a, max = b)
+        
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)

@@ -36,8 +36,10 @@ se.gllvm <- function(object, ...){
   lv.X <- object$lv.X
   
   quadratic <- object$quadratic
-  
-  nlvr <- num.lv + num.lv.c + (object$row.eff=="random")*1
+  nlvr <- num.lv + num.lv.c 
+  nlvr <- num.lv  #+ (object$row.eff=="random")*1
+  cstrucn = switch(object$cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3)
+  rstruc = object$rstruc
   family = object$family
   familyn <- objrFinal$env$data$family
   out <- list()
@@ -58,24 +60,40 @@ se.gllvm <- function(object, ...){
       }
 
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
+      
+      # Variational params not included for incl
       incl[names(objrFinal$par)=="Abb"] <- FALSE;
       if((num.lv.c+num.RR)==0){incl[names(objrFinal$par)=="b_lv"] <- FALSE}
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
+
+      incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
+      incl[names(objrFinal$par)=="Au"] <- FALSE;
+      incl[names(objrFinal$par)=="u"] <- FALSE; 
+
+      if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
+      if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
+      if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+      if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+
       
-      incl[names(objrFinal$par)=="Au"] <- FALSE; 
-      if(nlvr > 0) incld[names(objrFinal$par)=="Au"] <- TRUE
-      
-      if(object$beta0com){ 
-        incl[names(objrFinal$par)=="b"] <- FALSE
+      if((num.lv+num.lv.c)>0) {
+        incld[names(objrFinal$par)=="Au"] <- TRUE
+        incld[names(objrFinal$par)=="u"] <- TRUE
+      } else {
+        if(num.RR==0)incl[names(objrFinal$par)=="lambda"] <- FALSE;
+        if(num.RR==0)incl[names(objrFinal$par)=="lambda2"] <- FALSE;
       }
+      
       
       if(object$row.eff=="random") {
-        incl[names(objrFinal$par)=="r0"] <- FALSE; incld[names(objrFinal$par)=="r0"] <- FALSE
+        incld[names(objrFinal$par)=="lg_Ar"] <- TRUE
+        incld[names(objrFinal$par)=="r0"] <- TRUE
+        incl[names(objrFinal$par)=="r0"] <- FALSE; 
       } else {
         incl[names(objrFinal$par)=="log_sigma"] <- FALSE
+        if(object$row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
+        if(object$row.eff=="fixed") incl[1] <- FALSE
       }
-      if(object$row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
-      if(object$row.eff=="fixed") incl[1] <- FALSE
       
       
       if(is.null(object$randomX)) {
@@ -86,38 +104,23 @@ se.gllvm <- function(object, ...){
         incl[names(objrFinal$par)=="Br"] <- FALSE; incld[names(objrFinal$par)=="Br"] <- TRUE
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
       }
-      
-      incl[names(objrFinal$par)=="Au"] <- FALSE; if((num.lv+num.lv.c)>0) incld[names(objrFinal$par)=="Au"] <- TRUE
-      incl[names(objrFinal$par)=="u"] <- FALSE; incld[names(objrFinal$par)=="u"] <- TRUE
-      
-      if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-      if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
-      if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
-      
-      if(nlvr==0){
-        incl[names(objrFinal$par)=="u"] <- FALSE;
-        incld[names(objrFinal$par)=="u"] <- FALSE;
-        incl[names(objrFinal$par)=="lambda"] <- FALSE;
-        incl[names(objrFinal$par)=="lambda2"] <- FALSE;
-        incl[names(objrFinal$par)=="Au"] <- FALSE;
-      }
-      
+ 
       if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$row.eff!="random" && is.null(object$randomX)))){
-        incl[names(objrFinal$par)=="Au"] <- FALSE;
-        
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
         if((num.lv+num.lv.c) > 0 || object$row.eff == "random" || !is.null(object$randomX)) {
           sd.random <- sdrandom(objrFinal, covM, incl)
           prediction.errors <- list()
+          
+          if(object$row.eff=="random"){
+            prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(object$params$row.params)];
+            sd.random <- sd.random[-(1:length(object$params$row.params)),-(1:length(object$params$row.params))]
+          }
           if(!is.null(object$randomX)){
             prediction.errors$Br  <- matrix(diag(as.matrix(sd.random))[1:(ncol(xb)*p)], ncol(xb), p);
             sd.random <- sd.random[-(1:(ncol(xb)*p)),-(1:(ncol(xb)*p))]
           }
-          if(object$row.eff=="random"){
-            prediction.errors$row.params <- diag(as.matrix(sd.random))[1:n];
-            sd.random <- sd.random[-(1:n),-(1:n)]
-          }
+
           if((num.lv+num.lv.c) > 0){
             cov.lvs <- array(0, dim = c(n, num.lv+num.lv.c, num.lv+num.lv.c))
             for (i in 1:n) {
@@ -234,7 +237,7 @@ se.gllvm <- function(object, ...){
         out$sd$phi <- se.lphis*object$params$phi;
         names(out$sd$inv.phi) <- names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
       }
-      if(family %in% c("gaussian","tweedie","gamma")) {
+      if(family %in% c("gaussian","tweedie","gamma", "beta")) {
         se.lphis <- se[1:p];
         out$sd$phi <- se.lphis*object$params$phi;
         names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
@@ -259,6 +262,8 @@ se.gllvm <- function(object, ...){
         out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
         names(out$sd$sigma) <- "sigma"; 
         se=se[-(1:(length(object$params$sigma)))] 
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; se = se[-1]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn ==2)) {out$sd$rho <- se[1]*object$params$rho; se = se[-1]}
       }
       if(family %in% c("ordinal")){
         y <- object$y
@@ -306,46 +311,66 @@ se.gllvm <- function(object, ...){
       sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
     }
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
+    
+    # Not used for this model
     incl[names(objrFinal$par)=="B"] <- FALSE
     incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
-    incl[names(objrFinal$par)=="Abb"]=FALSE;
-    if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     
+    # Variational params not included for incl
+    incl[names(objrFinal$par)=="Abb"]=FALSE;
+    incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
+    incl[names(objrFinal$par)=="Au"] <- FALSE;
+    incl[names(objrFinal$par)=="u"] <- FALSE;
+    
+    if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+    if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+
+    if(num.lv>0){
+      inclr[names(objrFinal$par)=="u"] <- TRUE;
+      incld[names(objrFinal$par)=="u"] <- TRUE;
+      incld[names(objrFinal$par)=="Au"] <- TRUE;
+    } else {
+      incl[names(objrFinal$par)=="lambda"] <- FALSE;
+      incl[names(objrFinal$par)=="lambda2"] <- FALSE;
+    }
+
+    if(object$row.eff=="random") {
+      incld[names(objrFinal$par) == "lg_Ar"] <- TRUE
+      incld[names(objrFinal$par) == "r0"] <- TRUE
+      inclr[names(objrFinal$par) == "r0"] <- TRUE;
+      incl[names(objrFinal$par) == "r0"] <- FALSE; 
+    } else {
+      incl[names(objrFinal$par)=="log_sigma"] <- FALSE
+      if(object$row.eff==FALSE) { incl[names(objrFinal$par)=="r0"] <- FALSE }
+      if(object$row.eff=="fixed"){ incl[1] <- FALSE }
+    }
+    
+    
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && method=="VA" && object$row.eff!="random")){
-      incl[names(objrFinal$par)=="Au"] <- FALSE;
-      if(object$row.eff=="random") {
-        incl[names(objrFinal$par)=="r0"] <- FALSE; incld[names(objrFinal$par)=="r0"] <- FALSE
-      } 
-      if(object$row.eff=="fixed"){ incl[1] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
-      if(object$row.eff==FALSE) {incl[names(objrFinal$par)=="r0"] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
-      if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-      if(familyn==7) incl[names(objrFinal$par)=="zeta"] <- TRUE
-      if(nlvr==0){
-        incl[names(objrFinal$par)=="u"] <- FALSE;
-        if(num.RR==0)incl[names(objrFinal$par)=="lambda"] <- FALSE;
-      }
       covM <- try(MASS::ginv(sdr[incl,incl]))
       se <- try(sqrt(diag(abs(covM))))
-      if(nlvr>0){
+      
+      if((num.lv+num.lv.c) > 0 || object$row.eff == "random"){
         sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)
         prediction.errors <- list()
-        # if(object$row.eff=="random" && FALSE){
-        #   prediction.errors$row.params <- diag(as.matrix(sd.random))[1:n];
-        #   sd.random <- sd.random[-(1:n),-(1:n)]
-        # }
-        if(nlvr>0){
-          cov.lvs <- array(0, dim = c(n, nlvr, nlvr))
-          # cov.lvs <- array(0, dim = c(n, num.lv, num.lv))
+        
+        if(object$row.eff=="random"){
+          prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(object$params$row.params)];
+          sd.random <- sd.random[-(1:length(object$params$row.params)),-(1:length(object$params$row.params))]
+        }
+        if((num.lv+num.lv.c)>0){
+          # cov.lvs <- array(0, dim = c(n, nlvr, nlvr))
+          cov.lvs <- array(0, dim = c(n, (num.lv+num.lv.c), (num.lv+num.lv.c)))
           for (i in 1:n) {
-            cov.lvs[i,,] <- as.matrix(sd.random[(0:(nlvr-1)*n+i),(0:(nlvr-1)*n+i)])
-            # cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv-1)*n+i),(0:(num.lv-1)*n+i)])
+            # cov.lvs[i,,] <- as.matrix(sd.random[(0:(nlvr-1)*n+i),(0:(nlvr-1)*n+i)])
+            cov.lvs[i,,] <- as.matrix(sd.random[(0:((num.lv+num.lv.c)-1)*n+i),(0:((num.lv+num.lv.c)-1)*n+i)])
           }
-          if(object$row.eff=="random"){
-            prediction.errors$row.params <- cov.lvs[,1,1]
-            if((num.lv+num.lv.c) > 0) cov.lvs <- array(cov.lvs[,-1,-1], dim = c(n, num.lv+num.lv.c, num.lv+num.lv.c))
-          }
+          # if(object$row.eff=="random"){
+          #   prediction.errors$row.params <- cov.lvs[,1,1]
+          #   if(num.lv > 0) cov.lvs <- array(cov.lvs[,-1,-1], dim = c(n, num.lv, num.lv))
+          # }
           
           prediction.errors$lvs <- cov.lvs
           #sd.random <- sd.random[-(1:(n*num.lv))]
@@ -355,27 +380,7 @@ se.gllvm <- function(object, ...){
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       
     } else {
-      incl[names(objrFinal$par)=="Au"] <- FALSE;
-      
-      if(object$row.eff=="random") {
-        inclr[names(objrFinal$par) == "r0"] <- FALSE;
-        incl[names(objrFinal$par) == "r0"] <- FALSE; incld[names(objrFinal$par) == "r0"] <- FALSE
-        incld[names(objrFinal$par)=="Au"] <- TRUE
-      }
-      if(object$row.eff=="fixed") {incl[1] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
-      if(object$row.eff==FALSE) {incl[names(objrFinal$par)=="r0"] <- FALSE; incl[names(objrFinal$par)=="log_sigma"] <- FALSE}
-      
-      if(nlvr>0){
-        inclr[names(objrFinal$par)=="u"] <- TRUE;
-        incl[names(objrFinal$par)=="u"] <- FALSE;
-        incld[names(objrFinal$par)=="u"] <- TRUE;
-        incld[names(objrFinal$par)=="Au"] <- TRUE;
-      } else {
-        incl[names(objrFinal$par)=="u"] <- FALSE;
-        incl[names(objrFinal$par)=="lambda"] <- FALSE;
-      }
-      if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-      
+
       A.mat <- sdr[incl, incl] # a x a
       D.mat <- sdr[incld, incld] # d x d
       B.mat <- sdr[incl, incld] # a x d
@@ -388,7 +393,7 @@ se.gllvm <- function(object, ...){
       
     }
     
-    num.X <- 0; if(!is.null(object$X)) num.X <- dim(object$X)[2]
+    num.X <- 0; if(!is.null(object$X)) num.X <- dim(object$X.design)[2]
     if(object$row.eff == "fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params) <- rownames(object$y); se <- se[-(1:(n-1))] }
     sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
     if((num.lv.c+num.lv)>0)se.sigma.lv <- se[1:(num.lv+num.lv.c)];se<-se[-c(1:(num.lv+num.lv.c))]
@@ -468,7 +473,7 @@ se.gllvm <- function(object, ...){
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
     if(!is.null(object$X)){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));
-      rownames(out$sd$Xcoef) <- colnames(object$y); colnames(out$sd$Xcoef) <- colnames(object$X);
+      rownames(out$sd$Xcoef) <- colnames(object$y); colnames(out$sd$Xcoef) <- colnames(object$X.design);
     }
     if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
     
@@ -477,7 +482,7 @@ se.gllvm <- function(object, ...){
       out$sd$phi <- se.lphis*object$params$phi;
       names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
     }
-    if(family %in% c("tweedie", "gaussian", "gamma")) {
+    if(family %in% c("tweedie", "gaussian", "gamma","beta")) {
       se.lphis <- se[1:p];
       out$sd$phi <- se.lphis*object$params$phi;
       names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
@@ -492,6 +497,8 @@ se.gllvm <- function(object, ...){
       out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
       se=se[-(1:length(out$sd$sigma))] 
       names(out$sd$sigma) <- "sigma" 
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; se = se[-1]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn ==2)) {out$sd$rho <- se[1]*object$params$rho; se = se[-1]}
     }
     if(family %in% c("ordinal")){
       y <- object$y

@@ -20,7 +20,7 @@ Function returns following components:
  \item{row.effects }{prediction errors for random row effects if included}
 }
 \description{
-Calculates the prediction errors for latent variables for gllvm model.
+Calculates the prediction errors for latent variables and random effects for gllvm model.
 }
 \details{
 Calculates conditional mean squared errors for predictions.

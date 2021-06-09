@@ -25,7 +25,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   if(is.logical(object$sd)) stop("Standard errors for parameters haven't been calculated, so confidence intervals can not be calculated.");
   n <- NROW(object$y)
   p <- NCOL(object$y)
-  nX <- 0; if(!is.null(object$X)) nX <- dim(object$X)[2]
+  nX <- 0; if(!is.null(object$X)) nX <- dim(object$X.design)[2]
   nTR <- 0; if(!is.null(object$TR)) nTR <- dim(object$TR)[2]
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
@@ -123,7 +123,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     }
 
     if (is.null(object$TR) && !is.null(object$X)) {
-      cnx <- rep(colnames(object$X), each = p)
+      cnx <- rep(colnames(object$X.design), each = p)
       rnc <- rep(rownames(object$params$Xcoef), nX)
       newnam <- paste(cnx, rnc, sep = ":")
       rnames[(cal + 1):(cal + nX * p)] <- paste("Xcoef", newnam, sep = ".")
@@ -136,6 +136,10 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if (object$row.eff == "random") {
       rnames[(cal + 1)] <- "sigma"
       cal <- cal + length(object$sd$sigma)
+      # if(!is.null(object$params$rho)) {
+      #   rnames[(cal + 1)] <- "rho"
+      #   cal <- cal + length(object$sd$rho)
+      # }
     }
     if (!is.null(object$randomX)) {
       cal <- cal + length(object$params$sigmaB)

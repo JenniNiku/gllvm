@@ -29,7 +29,7 @@ test_that("row effects works", {
   y <- microbialdata$Y[1:30, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[21:35]]
   fr0<-gllvm(y, family = "negative.binomial", seed = 999, row.eff = "fixed", num.lv = 1)
   fr1<-gllvm(y, family = "negative.binomial", seed = 999, row.eff = "random", num.lv = 0)
-  result<-c(0.34, 0.29)
+  result<-c(-0.34, 0.29)
   names(result)<-c("AB3", "sigma")
   expect_true(round(fr0$params$row.params[2], digits = 2)- result[1]<0.1)
   expect_true(round(fr1$params$sigma, digits = 2)- result[2]<0.1)

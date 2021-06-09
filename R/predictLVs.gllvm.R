@@ -28,15 +28,16 @@
 #'@export
 #'@export predictLVs.gllvm
 
-predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
+predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...) 
 {
-  if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
+  # predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
+    if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
   if(is.null(newX)==FALSE)
     assign(as.character(object$call[3]),newX)
   objectTest=eval(object$call)
-  nlvr <- (objectTest$num.lv + (objectTest$row.eff=="random")*1)
+  nlvr <- num.lv <- objectTest$num.lv #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
 
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
@@ -56,43 +57,47 @@ predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else obj
 
   out <- list(lvs=lvs,logL=-optLVs$value)
   # and their sds: (assuming method="VA")
-  if(nlvr>0 && object$method=="VA")
+  if(num.lv>0 && object$method=="VA")
   {
     Au <- optLVs$par[names(optLVs$par)=="Au"]
-    A <- array(0,dim=c(n,nlvr,nlvr))
-    for (d in 1:nlvr)
+    A <- array(0,dim=c(n,num.lv,num.lv))
+    for (d in 1:num.lv)
     {
       for(i in 1:n)
       {
         A[i,d,d] <- exp(Au[(d-1)*n+i]);
       }
     }
-    if(length(Au)>nlvr*n)
+    if(length(Au)>num.lv*n)
     {
       k <- 0;
-      for (c1 in 1:nlvr)
+      for (c1 in 1:num.lv)
       {
         r <- c1+1;
-        while (r <=nlvr)
+        while (r <=num.lv)
         {
           for(i in 1:n)
           {
-            A[i,r,c1] <- Au[nlvr*n+k*n+i];
-            A[i,c1,r] <- A[i,r,c1];
+            A[i,r,c1] <- Au[num.lv*n+k*n+i];
+            # A[i,c1,r] <- A[i,r,c1];
           }
           k <- k+1; r <- r+1;
         }
       }
+    }
+    for(i in 1:n)
+    {
+      A[i,,] <- A[i,,]%*%t(A[i,,])
     }
     out$A <- A
   }
   if(object$method == "VA"){
     n<-nrow(newY)
     p<-ncol(newY)
-    if(object$row.eff == "random") out$logL = out$logL + n*0.5
-    if(object$family=="gaussian") {
-      out$logL <- out$logL - n*p*log(pi)/2
-    }
+    # if(object$row.eff == "random") out$logL = out$logL + n*0.5
+    # if(object$family=="gaussian") {
+    #   out$logL <- out$logL - n*p*log(pi)/2
+    # }
   }
   return(out)
 }
@@ -126,8 +131,9 @@ getPars = function(pars,objectTest,object)
   tpar = objectTest$TMBfn$par
   
   # set row effects and their variances to their mean value
-  # r0s=tpar[names(tpar)=="r0"]
-  # tpar[names(tpar)=="r0"] = mean(r0s)
+  # r0s=opar[names(tpar)=="r0"]
+  tpar[names(tpar)=="r0"] = opar[names(tpar)=="r0"]
+  tpar[names(tpar)=="lg_Ar"] = opar[names(opar)=="lg_Ar"]
   # if(object$method =="VA") lg_Ars=tpar[names(tpar)=="lg_Ar"]
   # if(object$method =="VA") tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
   
@@ -142,6 +148,10 @@ getPars = function(pars,objectTest,object)
   tpar[names(tpar)=="lambda"] = opar[names(opar)=="lambda"]
   tpar[names(tpar)=="lg_phi"] = opar[names(opar)=="lg_phi"]
   tpar[names(tpar)=="log_sigma"] = opar[names(opar)=="log_sigma"]
+  tpar[names(tpar)=="sigmaB"] = opar[names(opar)=="sigmaB"]
+  if(length(tpar[names(tpar)=="sigmaB"]))   tpar[names(tpar)=="sigmaij"] = opar[names(opar)=="sigmaij"]
+  tpar[names(tpar)=="Br"] = opar[names(opar)=="Br"]
+  tpar[names(tpar)=="Abb"] = opar[names(opar)=="Abb"]
   return(tpar)
 }
 
