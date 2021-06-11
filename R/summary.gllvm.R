@@ -4,7 +4,7 @@
 #' @param object   an object of class 'gllvm'
 #' @param ...	not used.
 #'
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
 #'
 #' @examples
 #' \dontrun{
@@ -16,6 +16,7 @@
 #' summary(fit)
 #'}
 #'@export
+#'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, ...) {
   n <- NROW(object$y)
@@ -30,6 +31,11 @@ summary.gllvm <- function(object, ...) {
 
   M <- cbind(object$params$beta0, object$params$theta)
   sumry <- list()
+  sumry$num.lv <- num.lv
+  sumry$num.lv.c <- num.lv.c
+  sumry$num.RR <- num.RR
+  sumry$formula <- object$formula
+  sumry$lv.formula <- object$lv.formula
   sumry$'log-likelihood' <- object$logL
   crit <- inf.criteria(object)
   sumry$df <- crit$k
@@ -57,6 +63,37 @@ summary.gllvm <- function(object, ...) {
       if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""))
     }
   }
+  
+  if (!is.logical(object$sd)&!is.null(object$X)&is.null(object$TR)) {
+    pars <- c(object$params$Xcoef)
+    se <- c(object$sd$Xcoef)
+    
+    zval <- pars/se
+    pvalue <- 2 * pnorm(-abs(zval))
+    coef.table <- cbind(pars, se, zval, pvalue)
+    dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }else if(!is.logical(object$sd)&!is.null(object$X)){
+    pars <- c(object$params$B)
+    se <- c(object$sd$B)
+    nX <- dim(object$X)[2]
+    cnx <- rep(colnames(object$X.design), each = p)
+    rnc <- rep(rownames(object$params$Xcoef), nX)
+    newnam <- paste(cnx, rnc, sep = ":")
+    zval <- pars/se
+    pvalue <- 2 * pnorm(-abs(zval))
+    coef.table <- cbind(pars, se, zval, pvalue)
+    dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }
+  
+  if (!is.logical(object$sd)&!is.null(object$lv.X)) {
+    pars <- c(object$params$LvXcoef)
+    se <- c(object$sd$LvXcoef)
+    
+    zval <- pars/se
+    pvalue <- 2 * pnorm(-abs(zval))
+    coef.table.constrained <- cbind(pars, se, zval, pvalue)
+    dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }
     
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
@@ -65,13 +102,13 @@ summary.gllvm <- function(object, ...) {
   sumry$Coefficients <- M
 
   if (!is.null(object$TR)) {
-    if (!is.null(object$X)) {
-      sumry$'Covariate coefficients' <- object$params$B
-    }
+    # if (!is.null(object$X)) {
+    #   sumry$'Covariate coefficients' <- object$params$B
+    # }
   } else {
-    if (!is.null(object$X)) {
-      sumry$'Environmental coefficients' <- object$params$Xcoef
-    }
+    # if (!is.null(object$X)) {
+    #   sumry$'Environmental coefficients' <- object$params$Xcoef
+    # }
   }
   if (!is.null(object$params$row.params)) {
     sumry$'Row intercepts' <- object$params$row.params
@@ -98,6 +135,98 @@ summary.gllvm <- function(object, ...) {
   if(object$family == "gaussian"){
     sumry$'Standard deviations' <- object$params$phi
   }
+  if(!is.null(object$X)){
+  sumry$'Coef.tableX' <- coef.table
+  }
+  if((num.lv+num.lv.c)>0){
+    sumry$sigma.lv <- object$params$sigma.lv
+  }
+  
+  if((object$num.lv.c+object$num.RR)>0){
+    sumry$'Coef.tableLV' <- coef.table.constrained
+  }
   class(sumry) <- "summary.gllvm"
   return(sumry)
 }
+
+#'@export
+
+print.summary.gllvm <- function (x, digits = max(3L, getOption("digits") - 3L),
+                                 signif.stars = getOption("show.signif.stars"), 
+                                 ...) 
+{
+  cat("\nCall:\n", paste(deparse(x$Call), sep = "\n", 
+                         collapse = "\n"), "\n\n", sep = "")
+  cat("Family: ", x$family, "\n\n")
+  
+  AIC <- round(x$AIC,digits)
+  BIC <- round(x$BIC,digits)
+  AICc <- round(x$AICc,digits)
+  
+  cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", x$`log-likelihood`, "df: ", x$df, "\n\n")
+  
+  cat("Reduced Ranks: ", x$num.RR,"\n")
+  cat("Unconstrained LVs: ", x$num.lv, "\n")
+  cat("Constrained LVs: ", x$num.lv.c, "\n")
+  if((x$num.lv+x$num.lv.c)>0){cat("Standard deviation of LVs: ", x$sigma.lv,"\n\n")}else{cat("\n")}
+  
+  cat("Formula: ", paste(x$formula,collapse=""), "\n")
+  cat("LV formula: ", ifelse(is.null(x$lv.formula),"~0", paste(x$lv.formula,collapse="")), "\n")
+  
+  df <- x[["df"]]
+  if(!is.null(x$Coef.tableX)){
+    cat("\nCoefficients predictors:\n")
+    coefs <- x$Coef.tableX
+    
+    printCoefmat(coefs, digits = digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,signif.stars), 
+                 na.print = "NA")
+  }
+  
+  if((x$num.lv+x$num.lv.c)>0){
+    cat("\nCoefficients LVs: \n")
+    
+    print(x$Coefficients[,-1,drop=F])
+  }
+  
+  if(!is.null(x$Coef.tableLV)){
+    cat("\nCoefficients LV predictors:\n")
+    coefs <- x$Coef.tableLV
+    
+    printCoefmat(coefs, digits = digits, signif.stars = signif.stars, 
+                 na.print = "NA")
+  }
+  cat("\n Species Intercepts: \n")
+  print(zapsmall(x$Coefficients[,1],digits))
+  
+  if(!is.null(x$`Row intercepts`)){
+    cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',digits), ":\n")
+    print(zapsmall(x$`Row intercepts`))
+  }
+  
+  
+  if (x$family == "negative.binomial") {
+    phi <- x$'Dispersion parameters'
+  }
+  if (x$family == "gamma") {
+    phi <- x$'Shape parameters'
+  }
+  if (x$family == "tweedie") {
+    phi <- x$'Dispersion parameters'
+  }
+  if (x$family == "ZIP") {
+    phi <- x$'Zero inflation p'
+  }
+  if(x$family == "gaussian"){
+    phi <- x$'Standard deviations'
+  }
+  if(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian")){
+    names(phi) <- row.names(x$Coefficients)
+    cat("\n(Dispersion estimates for ", x$family, ":\n")
+    print(phi)
+    
+  }
+  
+  cat("\n")
+  invisible(x)
+}
+
