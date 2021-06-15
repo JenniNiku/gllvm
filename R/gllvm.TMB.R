@@ -1233,7 +1233,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       #slopes for reduced rank predictors
       if((num.lv.c+num.RR)==0){incl[names(objrFinal$par)=="b_lv"] <- FALSE}
       
-      #loadings for quadratic model
+      #loadings for quadratic models
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
       
       if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
@@ -1308,6 +1308,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(row.eff == "fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params) <- rownames(out$y); se <- se[-(1:(n-1))] }
       sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
 
+      if((num.lv.c+num.RR)>0){
+        se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=(num.lv.c+num.RR),nrow=ncol(lv.X))
+        se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
+        colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
+        row.names(se.LvXcoef) <- colnames(lv.X)
+        out$sd$LvXcoef <- se.LvXcoef
+      }
       if((num.lv.c+num.lv)>0){se.sigma.lv <- se[1:(num.lv+num.lv.c)];se<-se[-c(1:(num.lv+num.lv.c))]}
       if(num.lv > 0&(num.lv.c+num.RR)==0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
@@ -1327,12 +1334,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }
       }else if(num.lv==0&(num.lv.c+num.RR)>0){
-        se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=(num.lv.c+num.RR),nrow=ncol(lv.X))
-
-        se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
-        colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
-        row.names(se.LvXcoef) <- colnames(lv.X)
-        out$sd$LvXcoef <- se.LvXcoef
         se.lambdas <- matrix(0,p,(num.lv.c+num.RR)); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
 
         colnames(se.lambdas) <- paste("CLV", 1:(num.lv.c+num.RR), sep="");
@@ -1352,11 +1353,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
       }else if(num.lv>0&(num.lv.c+num.RR)>0){
-        se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=(num.lv.c+num.RR),nrow=ncol(lv.X))
-        se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
-        colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
-        row.names(se.LvXcoef) <- colnames(lv.X)
-        out$sd$LvXcoef <- se.LvXcoef
         se.lambdas <- matrix(0,p,num.lv+(num.lv.c+num.RR));
         se.lambdas[,1:(num.lv.c+num.RR)][lower.tri(se.lambdas[,1:(num.lv.c+num.RR),drop=F], diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
         se <- se[-c(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
