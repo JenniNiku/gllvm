@@ -323,7 +323,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
               zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
             }
           }else{
-            params[j,1:ncol(cbind(1,X))] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
+            params[j,1:length( c(cw.fit$zeta[1],-cw.fit$coefficients))]<- c(cw.fit$zeta[1],-cw.fit$coefficients)
             if(zeta.struc == "species"){
               zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
             }
@@ -710,6 +710,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       index.c <- index
     }
   }
+  if(num.RR>0){
   #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
   if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
     mu <- exp(eta)
@@ -823,9 +824,8 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
     ds.res <- resi
   }
   resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-  
-  if(num.RR>0){
-    if(num.lv.c==0){
+  }
+  if(num.RR>0&num.lv.c==0){
       # if(n<p){
       #   pca <- princomp(t(resi))
       #   comp <- pca$scores
@@ -833,25 +833,26 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
       #   pca <- princomp(resi)
       #   comp <- pca$loadings
       # }
-      
+      # try(start.fit <- start.values.gllvm.TMB(y,X=lv.X,num.lv=0,num.RR=0,family=family,row.eff=row.eff,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta),silent=T)
+      # if(inherits(start.fit,"try-error")){
+      #   stop("Calculating starting values for Reduced Rank failed. Reduce the number of parameters in the model or change starting.val to `zero` or `random`")
+      # }
+      # qr.gam <- qr(t(start.fit$params[,-1,drop=F]))
       RRmod <- lm(resi~0+lv.X)
-      # RRcoef <- coef(RRmod)%*%comp[,1:num.RR,drop=F]
-      # coef(RRmod)%*%comp[,1:num.RR]%*%t(comp[,1:num.RR])
-      # RRcoef <- do_svd$u[,1:num.RR]
-      # RRgamma <- do_svd$v[,1:num.RR]
-      # 
-      # #RRgamma <- t(coef(lm(resi~0+lv.X%*%RRcoef)))
-      # qr.RRgamma <- qr(t(RRgamma))
-      # RRgamma <- RRgamma%*%qr.Q(qr.RRgamma)
-      # RRcoef <- t(t(RRcoef%*%qr.Q(qr.RRgamma))*diag(RRgamma))
-      # RRgamma <- t(t(RRgamma)/diag(RRgamma))
       qr.gam <- qr(coef(RRmod))
       RRcoef <- qr.Q(qr.gam)[,1:num.RR]
       RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
       RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
       eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
-    }
   }
+  # else if(num.lv.c>0&num.RR>0){
+  #   RRmod <- lm(resi~0+lv.X)
+  #   qr.gam <- qr(coef(RRmod))
+  #   RRcoef <- qr.Q(qr.gam)[,1:num.RR]
+  #   RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
+  #   RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
+  #   eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
+  # }
   
   if((num.lv.c+num.RR)>0&num.lv>0){
     # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
@@ -1015,6 +1016,117 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   }
   
   if(num.lv>0&(num.lv.c+num.RR)==0){
+    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
+      mu <- exp(eta)
+    }else if(family %in% c("binomial","beta")) {
+      mu <-  binomial(link = link)$linkinv(eta)
+    }else{
+      mu <- eta
+    }
+    if(is.null(resi)){
+      ds.res <- matrix(NA, n, p)
+      rownames(ds.res) <- rownames(y)
+      colnames(ds.res) <- colnames(y)
+      for (i in 1:n) {
+        for (j in 1:p) {
+          if (family == "tweedie") {
+            phis <- phis + 1e-05
+            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
+            if((as.vector(unlist(y[i, j])) - 1)<0)
+              a<-0
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "poisson") {
+            a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
+            b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "negative.binomial") {
+            phis <- phis + 1e-05
+            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "binomial") {
+            a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
+            b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "gaussian") {
+            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "gamma") {
+            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "exponential") {
+            a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "beta") {
+            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "ordinal") {
+            if(zeta.struc == "species"){
+              probK <- NULL
+              probK[1] <- pnorm(zeta[j,1]-mu[i,j],log.p = FALSE)
+              probK[max(y[,j])] <- 1 - pnorm(zeta[j,max(y[,j]) - 1] - mu[i,j])
+              if(max(y[,j]) > 2) {
+                j.levels <- 2:(max(y[,j])-1)
+                for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
+              }
+              probK <- c(0,probK)
+              cumsum.b <- sum(probK[1:(y[i,j]+1)])
+              cumsum.a <- sum(probK[1:(y[i,j])])
+              u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+              if (abs(u - 1) < 1e-05)
+                u <- 1
+              if (abs(u - 0) < 1e-05)
+                u <- 0
+              ds.res[i, j] <- qnorm(u)
+            }else{
+              probK <- NULL
+              probK[1] <- pnorm(zeta[1] - mu[i, j], log.p = FALSE)
+              probK[max(y)] <- 1 - pnorm(zeta[max(y) - 1] - mu[i,j])
+              levels <- 2:(max(y) - min(y))#
+              for (k in levels) {
+                probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
+              }
+              probK <- c(0, probK)
+              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
+              cumsum.a <- sum(probK[1:(y[i, j])])
+              u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
+              if (abs(u - 1) < 1e-05)
+                u <- 1
+              if (abs(u - 0) < 1e-05)
+                u <- 0
+              ds.res[i, j] <- qnorm(u)
+            }
+          }
+        }
+      }
+      
+    } else {
+      ds.res <- resi
+    }
+    resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
     if(p>2 && n>2){
       if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
       
@@ -1904,10 +2016,20 @@ getFourthCorner<- function(object){
 
 # Calculates standard errors for random effects
 sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
+  obj<<-obj
+  Vtheta<<-Vtheta
+  incl<<-incl
   r <- obj$env$random
   par = obj$env$last.par.best
   hessian.random <- obj$env$spHess(par, random = TRUE)
   L <- obj$env$L.created.by.newton
+  n <- nrow(obj$env$data$y)
+  p <- ncol(obj$env$data$y)
+  lv.X <- obj$env$data$x_lv
+  num.lv <- obj$env$data$num_lv
+  num.lv.c <- obj$env$data$num_lv_c
+  sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
+  diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv,num.lv.c+num.lv))
   if (ignore.u) {
     diag.term2 <- 0
   } else {
@@ -1921,8 +2043,29 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
     tmp <- sapply(nonr, reverse.sweep)
     if (!is.matrix(tmp))
       tmp <- matrix(tmp, ncol = length(nonr))
-    A <- solve(hessian.random, tmp[, incl])
-    diag.term2 <- diag(rowSums((A %*% Vtheta) * A))
+    
+    A <- solve(hessian.random, tmp[, incl]) #n*d by N_psi
+    
+    #Matrix Q for predictors
+    Q<-matrix(0,nrow=num.lv+num.lv.c+radidx,ncol=ncol(A))
+    colnames(A)<-names(obj$par[incl])
+    if(radidx>0){
+      sigma.lv <- c(rep(1,radidx),sigma.lv) #1 could be replaced with fit$params$sigma but keeping this behavior the same for now
+    }
+    #    diag.term2 <- diag(rowSums((A %*% Vtheta) * A))
+    se  <- rep(0,n*(num.lv+num.lv.c+radidx))
+    for(i in 1:n){
+      if(num.lv.c>0){
+        for(q in (1+radidx):(num.lv.c+radidx)){
+          Q[q,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X[i,]
+        }
+        Q <- diag(1/sigma.lv)%*%Q #inverse scale for fixed-effects term
+      }
+      idx <- seq(i,n*(num.lv.c+num.lv+radidx),by=n)
+      se[idx] <- diag((Q+A[idx,])%*%Vtheta%*%t(Q+A[idx,]))
+    }
+    diag.term2 <-diag(se)
+    
   }
   diag.term1 <- Matrix::chol2inv(L)
   diag.cov.random <- diag.term1 + diag.term2
@@ -1978,51 +2121,51 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
 
 
 # Calculates adjusted prediction errors for random effects
-sdA<-function(fit){
-  n<-nrow(fit$y)
-  A<- fit$Hess$cov.mat.mod  #
-  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
-  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
-  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
-  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
-  se <- (diag(abs(covb)))
-  CovAerr<-array(0, dim(fit$A))
-  for (i in 1:ncol(fit$A)) {
-    CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
-  }
-  CovAerr
-}
-
-sdB<-function(fit){
-  n<-nrow(fit$y)
-  p<-ncol(fit$y)
-  incla<-rep(FALSE, length(fit$Hess$incl))
-  incla[names(fit$TMBfn$par)%in%c("u", "Br")] <- TRUE
-  if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
-  fit$Hess$incla <- incla
-  
-  A<- fit$Hess$cov.mat.mod  #
-  B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
-  C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
-  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
-  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
-  se <- (diag(abs(covb)))
-  if(fit$row.eff == "random") {
-    CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
-    se<-se[-(1:length(fit$params$row.params))]
-  }
-  CovABerr<-array(0, dim(fit$Ab))
-  for (i in 1:ncol(fit$Ab)) {
-    CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
-  }
-  if((fit$num.lv+fit$num.lv.c) > 0) {
-    CovAerr<-array(0, dim(fit$A))
-    for (i in 1:ncol(fit$A)) {
-      CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
-    }
-  }
-  CovABerr
-}
+# sdA<-function(fit){
+#   n<-nrow(fit$y)
+#   A<- fit$Hess$cov.mat.mod  #
+#   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+#   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+#   D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+#   covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+#   se <- (diag(abs(covb)))
+#   CovAerr<-array(0, dim(fit$A))
+#   for (i in 1:ncol(fit$A)) {
+#     CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+#   }
+#   CovAerr
+# }
+# 
+# sdB<-function(fit){
+#   n<-nrow(fit$y)
+#   p<-ncol(fit$y)
+#   incla<-rep(FALSE, length(fit$Hess$incl))
+#   incla[names(fit$TMBfn$par)%in%c("u", "Br")] <- TRUE
+#   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
+#   fit$Hess$incla <- incla
+#   
+#   A<- fit$Hess$cov.mat.mod  #
+#   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
+#   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
+#   D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
+#   covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+#   se <- (diag(abs(covb)))
+#   if(fit$row.eff == "random") {
+#     CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
+#     se<-se[-(1:length(fit$params$row.params))]
+#   }
+#   CovABerr<-array(0, dim(fit$Ab))
+#   for (i in 1:ncol(fit$Ab)) {
+#     CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
+#   }
+#   if((fit$num.lv+fit$num.lv.c) > 0) {
+#     CovAerr<-array(0, dim(fit$A))
+#     for (i in 1:ncol(fit$A)) {
+#       CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
+#     }
+#   }
+#   CovABerr
+# }
 
 CMSEPf <- function(fit){
   n<-nrow(fit$y)
@@ -2037,8 +2180,25 @@ CMSEPf <- function(fit){
   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
   D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
-  covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
-  se <- (diag(abs(covb)))
+  radidx <- ifelse(fit$row.eff%in%c(FALSE,"fixed",NULL),0,1)+ifelse(!is.null(fit$randomX),1,0)
+  
+  se  <- rep(0,n*(fit$num.lv+fit$num.lv.c+radidx))
+  Q<-matrix(0,nrow=fit$num.lv+fit$num.lv.c+radidx,ncol=ncol(A))
+  if(radidx>0){
+    fit$params$sigma.lv <- c(rep(1,radidx),fit$params$sigma.lv) #1 could be replaced with fit$params$sigma but keeping this behavior the same for now
+  }
+  for(i in 1:n){
+    if(fit$num.lv.c>0){
+    for(q in (1+radidx):(fit$num.lv.c+radidx)){
+      Q[q,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X[i,]
+    }
+      Q <- diag(1/fit$params$sigma.lv)%*%Q #inverse scale for fixed-effects term
+    }
+    idx <- seq(i,n*(fit$num.lv.c+fit$num.lv+radidx),by=n)
+    covb <- (Q+D[idx,idx]%*%C[idx,])%*%(A)%*%(t(Q)+B[,idx]%*%t(D[idx,idx]))
+    se[idx] <- (diag(abs(covb)))
+  }
+  
   out <- list()
   if(fit$row.eff == "random") {
     CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
@@ -2053,8 +2213,8 @@ CMSEPf <- function(fit){
     out$Ab <- CovABerr
   }
   if((fit$num.lv+fit$num.lv.c) > 0) {
-    CovAerr<-array(0, dim(fit$A))
-    for (i in 1:ncol(fit$A)) {
+    CovAerr<-array(0, dim = c(n,fit$num.lv+fit$num.lv.c,fit$num.lv+fit$num.lv.c))
+    for (i in 1:ncol(CovAerr)) {
       CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
     }
     out$A <- CovAerr
