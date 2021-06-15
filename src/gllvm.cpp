@@ -553,13 +553,11 @@ Type objective_function<Type>::operator() ()
     
     if(nlvr>0){
       //scale LVs with standard deviations, as well as the VA covariance matrices
-      if(nlvr>0){
         u *= Delta;
 
         for (int i=0; i<n; i++) {
           A.col(i) = (Delta*A.col(i).matrix()).array(); 
         }
-      }
       
       //constrained ordination terms
       if(num_lv_c>0){
