@@ -1,5 +1,7 @@
 #' @title Summarizing gllvm model fits
 #' @description A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
+#' 
+#' Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 #'
 #' @param object   an object of class 'gllvm'
 #' @param digits the number of significant digits to use when printing
@@ -7,6 +9,7 @@
 #' @param dispersion option to return dispersion parameters, defaults to \code{FALSE}
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
+#' @param theta option to return species scores in the ordination, defaults to \code{FALSE}
 #' @param ...	not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -24,7 +27,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, 
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, theta = FALSE,
                           ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
@@ -43,6 +46,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   sumry$dispersion <- dispersion
   sumry$spp.intercepts <- spp.intercepts
   sumry$row.intercepts <- row.intercepts
+  sumry$theta <- theta
   sumry$num.lv <- num.lv
   sumry$num.lv.c <- num.lv.c
   sumry$num.RR <- num.RR
@@ -191,11 +195,12 @@ print.summary.gllvm <- function (x)
     printCoefmat(coefs, digits = x$digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,signif.stars), 
                  na.print = "NA")
   }
-  
+  if(x$theta){
   if((x$num.lv+x$num.lv.c)>0){
     cat("\nCoefficients LVs: \n")
     
     print(x$Coefficients[,-1,drop=F])
+  }
   }
   
   if(!is.null(x$Coef.tableLV)){
