@@ -189,6 +189,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           } else {
           
           sdb<-CMSEPf(object)$A
+          if(object$row.eff=="random"){
+            object$A<- object$A[,-1,-1]
+          }
           if(num.RR>0){
             #variational covariances but add 0s for RRR
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
@@ -248,6 +251,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           
           sdb<-CMSEPf(object)$A
+          if(object$row.eff=="random"){
+            object$A<- object$A[,-1,-1]
+          }
           if(num.RR>0){
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
             A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
@@ -316,16 +322,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
     
     #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
-    #Could alternatively post-hoc regress unconstrained LVs..
+    #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
     if(num.lv==0&(num.lv.c+num.RR)>0){
-      #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
-      # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
-      # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
-      # if(any(row.names(LVcoef)%in%"(Intercept)")){
-      #   intercept <- LVcoef[row.names(LVcoef)%in%"(Intercept)",]
-      #   LVcoef <- LVcoef[!row.names(LVcoef)%in%"(Intercept)",]
-      # }
+
       if(!is.logical(object$sd)){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
