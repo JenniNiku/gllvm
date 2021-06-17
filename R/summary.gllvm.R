@@ -2,6 +2,11 @@
 #' @description A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 #'
 #' @param object   an object of class 'gllvm'
+#' @param digits the number of significant digits to use when printing
+#' @param  signif.starts If \code{TRUE}, ‘significance stars’ are printed for each coefficient, defaults to \code{TRUE}
+#' @param dispersion option to return dispersion parameters, defaults to \code{FALSE}
+#' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
+#' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param ...	not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -18,7 +23,9 @@
 #'@export
 #'@export print.summary.gllvm 
 
-summary.gllvm <- function(object, ...) {
+summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, 
+                          ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
   nX <- dim(object$X)[2]
@@ -31,6 +38,11 @@ summary.gllvm <- function(object, ...) {
 
   M <- cbind(object$params$beta0, object$params$theta)
   sumry <- list()
+  sumry$digits <- digits
+  sumry$signif.stars <- signif.stars
+  sumry$dispersion <- dispersion
+  sumry$spp.intercepts <- spp.intercepts
+  sumry$row.intercepts <- row.intercepts
   sumry$num.lv <- num.lv
   sumry$num.lv.c <- num.lv.c
   sumry$num.RR <- num.RR
@@ -151,19 +163,17 @@ summary.gllvm <- function(object, ...) {
 
 #'@export
 
-print.summary.gllvm <- function (x, digits = max(3L, getOption("digits") - 3L),
-                                 signif.stars = getOption("show.signif.stars"), 
-                                 ...) 
+print.summary.gllvm <- function (x) 
 {
   cat("\nCall:\n", paste(deparse(x$Call), sep = "\n", 
                          collapse = "\n"), "\n\n", sep = "")
   cat("Family: ", x$family, "\n\n")
   
-  AIC <- round(x$AIC,digits)
-  BIC <- round(x$BIC,digits)
-  AICc <- round(x$AICc,digits)
+  AIC <- round(x$AIC,x$digits)
+  BIC <- round(x$BIC,x$digits)
+  AICc <- round(x$AICc,x$digits)
   
-  cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", x$`log-likelihood`, "df: ", x$df, "\n\n")
+  cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", zapsmall(x$`log-likelihood`, x$digits), "df: ", x$df, "\n\n")
   
   cat("Reduced Ranks: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
@@ -178,7 +188,7 @@ print.summary.gllvm <- function (x, digits = max(3L, getOption("digits") - 3L),
     cat("\nCoefficients predictors:\n")
     coefs <- x$Coef.tableX
     
-    printCoefmat(coefs, digits = digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,signif.stars), 
+    printCoefmat(coefs, digits = x$digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,signif.stars), 
                  na.print = "NA")
   }
   
@@ -192,17 +202,20 @@ print.summary.gllvm <- function (x, digits = max(3L, getOption("digits") - 3L),
     cat("\nCoefficients LV predictors:\n")
     coefs <- x$Coef.tableLV
     
-    printCoefmat(coefs, digits = digits, signif.stars = signif.stars, 
+    printCoefmat(coefs, digits = x$digits, signif.stars = x$signif.stars, 
                  na.print = "NA")
   }
+  if(x$spp.intercepts){
   cat("\n Species Intercepts: \n")
-  print(zapsmall(x$Coefficients[,1],digits))
-  
-  if(!is.null(x$`Row intercepts`)){
-    cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',digits), ":\n")
-    print(zapsmall(x$`Row intercepts`))
+  print(zapsmall(x$Coefficients[,1],x$digits))
   }
-  
+  if(x$row.intercepts){
+  if(!is.null(x$`Row intercepts`)){
+    cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',x$digits), ":\n")
+    print(zapsmall(x$`Row intercepts`,x$digits))
+  }
+  }
+  if(x$dispersion){
   
   if (x$family == "negative.binomial") {
     phi <- x$'Dispersion parameters'
@@ -223,10 +236,9 @@ print.summary.gllvm <- function (x, digits = max(3L, getOption("digits") - 3L),
     names(phi) <- row.names(x$Coefficients)
     cat("\n(Dispersion estimates for ", x$family, ":\n")
     print(phi)
-    
+  }
   }
   
   cat("\n")
   invisible(x)
 }
-
