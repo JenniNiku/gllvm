@@ -179,9 +179,9 @@ print.summary.gllvm <- function (x)
   
   cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", zapsmall(x$`log-likelihood`, x$digits), "df: ", x$df, "\n\n")
   
+  cat("Constrained LVs: ", x$num.lv.c, "\n")
   cat("Reduced Ranks: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
-  cat("Constrained LVs: ", x$num.lv.c, "\n")
   if((x$num.lv+x$num.lv.c)>0){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula,collapse=""), "\n")
