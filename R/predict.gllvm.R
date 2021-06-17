@@ -5,7 +5,7 @@
 #' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternative \code{"response"} is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
-#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. If a row-effect is included in the model, the first column can be used to specify a new row-intercept.
+#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
 #' @param ... not used.
 #'
 #' @details
@@ -54,10 +54,10 @@
 
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
   r0 <- NULL
-  if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
-    warning("First column of newLV taken to be row-intercepts. \n")
-    r0 <- newLV[,1];newLV<-newLV[,-1,drop=F]
-  }
+  # if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
+  #   warning("First column of newLV taken to be row-intercepts. \n")
+  #   r0 <- newLV[,1];newLV<-newLV[,-1,drop=F]
+  # }
   newdata <- newX
   p <- ncol(object$y)
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
