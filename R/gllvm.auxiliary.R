@@ -2271,9 +2271,9 @@ CMSEPf <- function(fit){
   }
 
   
-  if(!is.null(D)){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
+  if(prod(dim(D))!=0){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
-  if(is.null(D)&num.RR>0){
+  if(prod(dim(D))==0&num.RR>0){
     D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
     B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
     C <- t(B)
@@ -2284,7 +2284,7 @@ CMSEPf <- function(fit){
     C <- t(B)
   }
   }else{
-    if(is.null(D)&num.RR>0){
+    if(prod(dim(D))==0&num.RR>0){
       D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
