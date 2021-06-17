@@ -385,15 +385,15 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       qr.gamma <- qr(t(gamma))
       if(num.lv.c>0)b.lv <- b.lv%*%qr.Q(qr.gamma)
       params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)]<-t(qr.R(qr.gamma))
-      if(num.lv.c>0)index<-(index%*%qr.Q(qr.gamma))
+      if(num.lv.c>1)index<-(index%*%qr.Q(qr.gamma))
     }else if((num.lv.c+num.RR)>1 && num.lv>1 && p>2){
       gamma<-as.matrix(params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):ncol(params)])
       qr.gamma1 <- qr(t(gamma[,1:(num.lv.c+num.RR)]))
       qr.gamma2 <- qr(t(gamma[,(num.lv.c+num.RR+1):ncol(gamma)]))
       params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params)- num.lv)]<-t(qr.R(qr.gamma1))
       params[,(ncol(params) - num.lv + 1):ncol(params)]<-t(qr.R(qr.gamma2))
-      b.lv <- b.lv%*%qr.Q(qr.gamma2)
-      if(num.lv.c>0)index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1))
+      b.lv <- b.lv%*%qr.Q(qr.gamma1)
+      if(num.lv.c>0)index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1)[1:num.lv.c,1:num.lv.c])
       index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index),drop=F]%*%qr.Q(qr.gamma2))
     }
   }
@@ -454,10 +454,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         params[,(ncol(params) - num.lv + 1):(ncol(params))] <- t(t(gamma.new2)/sigma.lv2)
         sigma.lv <- NULL
         if(num.lv.c>0){
-          gamma.new <- params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params)-num.lv-num.RR),drop=F];
+          gamma.new <- params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params)-num.lv),drop=F];
           sig <- sign(diag(gamma.new));
           sigma.lv <- diag(gamma.new)
-          params[,(ncol(params) - num.lv.c - num.lv -num.RR + 1):(ncol(params)-num.lv-num.RR)] <- t(t(gamma.new)/sigma.lv)
+          params[,(ncol(params) - num.lv.c - num.lv -num.RR + 1):(ncol(params)-num.lv)] <- t(t(gamma.new)/sigma.lv)
           index[,1:num.lv.c,drop=F] <- t(t(index[,1:num.lv.c,drop=F])*sig)  
         }
         index[,(num.lv.c+1):ncol(index),drop=F] <- t(t(index[,(num.lv.c+1):ncol(index),drop=F])*sig2)}, silent = TRUE)
@@ -484,7 +484,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   out$mu <- mu
   if(!is.null(TR)) { out$B <- B}
   if((num.lv+num.lv.c) > 0) {
-    out$sigma.lv <- abs(sigma.lv)
+    out$sigma.lv <- abs(sigma.lv)[1:(num.lv+num.lv.c)]
     out$index <- index
   }
   if(family == "ordinal") out$zeta <- zeta
@@ -669,6 +669,9 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         index<-as.matrix(fa$loadings)
       }
       
+      #Ensure independence of LVs with predictors
+      index <- matrix(residuals.lm(lm(index~0+lv.X)),ncol=num.lv.c)
+      
       colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
       
       if(num.lv.c>1 && p>2){
@@ -825,7 +828,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   }
   resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
-  if(num.RR>0&num.lv.c==0){
+  if(num.RR>0){
       # if(n<p){
       #   pca <- princomp(t(resi))
       #   comp <- pca$scores
@@ -1197,9 +1200,9 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
         gamma.new1 <- t(t(gamma.new1)*sig1)
         gamma.new2 <- t(t(gamma.new2)*sig2)
         gamma <- cbind(gamma.new1,gamma.new2)
-        index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1))
+        index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1)[1:num.lv.c,1:num.lv.c])
         index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index)]%*%qr.Q(qr.gamma2))
-        index[,1:num.lv.c] <- t(t(index[,1:num.lv.c])*sig1)
+        index[,1:num.lv.c] <- t(t(index[,1:num.lv.c])*sig1[1:num.lv.c])
         index[,(num.lv.c+1):ncol(index)] <- t(t(index[,(num.lv.c+1):ncol(index)])*sig2)
       }
     } else {
@@ -1280,7 +1283,7 @@ FAstart <- function(eta, family, y, num.lv, num.lv.c, num.RR, zeta = NULL, zeta.
   }
   
   if((num.lv.c+num.lv)>0&num.RR>0){
-    gammC <- NULL
+    gammaC <- NULL
     gammaU <- NULL
     if(num.lv.c>0)gammaC <- gamma[,1:num.lv.c]
     if(num.lv>0)gammaU <- gamma[,(ncol(gamma)-num.lv+1):ncol(gamma)]
@@ -2016,23 +2019,36 @@ getFourthCorner<- function(object){
 
 # Calculates standard errors for random effects
 sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
-  obj<<-obj
-  Vtheta<<-Vtheta
-  incl<<-incl
+  #For num.RR we treat the LV as zero
+  
   r <- obj$env$random
   par = obj$env$last.par.best
+  
+  num.lv <- obj$env$data$num_lv
+  num.lv.c <- obj$env$data$num_lv_c
+  num.RR <- obj$env$data$num_RR
+  
+  xb<- obj$env$data$xb
+  
+  random <- obj$env$data$random
+  
+  if((num.lv+num.lv.c)>0){
   hessian.random <- obj$env$spHess(par, random = TRUE)
   L <- obj$env$L.created.by.newton
+  }
   n <- nrow(obj$env$data$y)
   p <- ncol(obj$env$data$y)
   lv.X <- obj$env$data$x_lv
-  num.lv <- obj$env$data$num_lv
-  num.lv.c <- obj$env$data$num_lv_c
+  
   sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
-  diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv,num.lv.c+num.lv))
+  diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv+num.RR,num.lv.c+num.lv+num.RR))
+  
+  radidx <- 0
+  
   if (ignore.u) {
     diag.term2 <- 0
   } else {
+    if((num.lv.c+num.lv)>0){
     f <- obj$env$f
     w <- rep(0, length(par))
     reverse.sweep <- function(i) {
@@ -2045,31 +2061,86 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
       tmp <- matrix(tmp, ncol = length(nonr))
     
     A <- solve(hessian.random, tmp[, incl]) #n*d by N_psi
+    row.names(A) <- names(obj$env$last.par.best[r])
+    radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br"))
+    }
+     if(num.lv.c>0&num.RR>0){
+      A <- rbind(A[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n)),])
+    }else if(num.lv>0&num.RR>0){
+      A <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(A)),A)
+    }
     
-    #Matrix Q for predictors
-    Q<-matrix(0,nrow=num.lv+num.lv.c+radidx,ncol=ncol(A))
-    colnames(A)<-names(obj$par[incl])
-    if(radidx>0){
-      sigma.lv <- c(rep(1,radidx),sigma.lv) #1 could be replaced with fit$params$sigma but keeping this behavior the same for now
-    }
-    #    diag.term2 <- diag(rowSums((A %*% Vtheta) * A))
-    se  <- rep(0,n*(num.lv+num.lv.c+radidx))
-    for(i in 1:n){
+    if(num.RR>0){
+      row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
       if(num.lv.c>0){
-        for(q in (1+radidx):(num.lv.c+radidx)){
-          Q[q,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X[i,]
-        }
-        Q <- diag(1/sigma.lv)%*%Q #inverse scale for fixed-effects term
+        sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+      }else if(num.lv>0){
+        sigma.lv <- c(rep(1,num.RR),sigma.lv)
+      }else{
+        sigma.lv <- rep(1,num.RR)
       }
-      idx <- seq(i,n*(num.lv.c+num.lv+radidx),by=n)
-      se[idx] <- diag((Q+A[idx,])%*%Vtheta%*%t(Q+A[idx,]))
     }
-    diag.term2 <-diag(se)
+
+    #Matrix Q for predictors
+    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
+    if((num.lv.c+num.lv)==0)A<-Q
+    if((num.lv.c+num.RR)>0){
+      for(q in 1:(num.lv.c+num.RR)){
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X/sigma.lv[q]
+      }
+    }
+    diag.term2 <- (Q+A)%*%Vtheta%*%t(Q+A)
     
   }
-  diag.term1 <- Matrix::chol2inv(L)
-  diag.cov.random <- diag.term1 + diag.term2
-  return(diag.cov.random)
+  if((num.lv+num.lv.c+radidx)>0){diag.term1 <- Matrix::chol2inv(L)
+  
+  if(radidx>0&num.RR>0){
+    diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
+    diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n+radidx))])
+  }else if(num.RR>0){
+    if(num.lv.c>0){
+      diag.term1 <- rbind(diag.term1[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n)),])
+      diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n))])
+    }else if(num.lv>0){
+      diag.term1 <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1)
+      diag.term1 <- cbind(matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1)
+    }
+  }
+  diag.term1 <- as.matrix(diag.term1)
+  }else{diag.term1<-0;colnames(diag.term2)<-rep("XB",n*num.RR)}
+  covb <- diag.term1 + diag.term2
+  row.names(covb)<-colnames(covb) <- colnames(diag.term2)
+  out <- list()
+  
+  #separate errors row-effects
+  ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])
+  covb <- covb[colnames(covb)!="r0",colnames(covb)!="r0"]
+  
+  if(random[1] >0) {
+    CovRow <- matrix(ser0); 
+    out$row <- CovRow
+  }
+  
+  #separate errors AB
+  seBr <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
+  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
+  
+  if(random[2]>0){
+    CovABerr<-array(0, c(p,ncol(xb),ncol(xb)))
+    for (i in 1:ncol(fit$Ab)) {
+      CovABerr[,i,i] <- seBr[1:p]; seBr<-seBr[-(1:p)]
+    }
+    out$Ab <- CovABerr
+  }
+    
+  se <- aperm(simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F)),c(3,1,2))
+  
+  if((num.RR+num.lv+num.lv.c)>0){
+    out$A <- se
+  }
+  
+  
+  return(out)
 }
 
 
@@ -2168,56 +2239,112 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
 # }
 
 CMSEPf <- function(fit){
+  #for num.RR we are treating the LV as zero
+  
   n<-nrow(fit$y)
   p<-ncol(fit$y)
+  num.lv <- fit$num.lv
+  num.lv.c <- fit$num.lv.c
+  num.RR <- fit$num.RR
   incla<-rep(FALSE, length(fit$Hess$incl))
   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
   if(!is.null(fit$randomX)) incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
-  if((fit$num.lv+fit$num.lv.c)>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
+  if((num.lv+num.lv.c)>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
   fit$Hess$incla <- incla
   
   A<- fit$Hess$cov.mat.mod  #
   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
-  D<- solve(fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla])
-  radidx <- ifelse(fit$row.eff%in%c(FALSE,"fixed",NULL),0,1)+ifelse(!is.null(fit$randomX),1,0)
+  D<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla]
+  if((num.lv+num.lv.c)>0){
+    D <- solve(D)
+  }
+  radidx <- 0
+  if(!fit$row.eff%in%c(FALSE,"fixed",NULL)){
+    radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="r0"]) 
+  }
+  if(!is.null(fit$randomX)){
+    radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
+  }
   
-  se  <- rep(0,n*(fit$num.lv+fit$num.lv.c+radidx))
-  Q<-matrix(0,nrow=fit$num.lv+fit$num.lv.c+radidx,ncol=ncol(A))
+  if(!is.null(D)){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
-    fit$params$sigma.lv <- c(rep(1,radidx),fit$params$sigma.lv) #1 could be replaced with fit$params$sigma but keeping this behavior the same for now
+  if(is.null(D)&num.RR>0){
+    D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
+    B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
+    C <- t(B)
+  }else if(num.RR>0){
+    D <- cbind(D[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n+radidx))])
+    D <- rbind(D[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n+radidx)),])
+    B <- cbind(B[,1:(num.lv.c*n+radidx)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n+radidx))])
+    C <- t(B)
   }
-  for(i in 1:n){
-    if(fit$num.lv.c>0){
-    for(q in (1+radidx):(fit$num.lv.c+radidx)){
-      Q[q,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X[i,]
+  }else{
+    if(prod(dim(D))==0&num.RR>0){
+      D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
+      B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
+      C <- t(B)
+    }else if(num.lv.c>0&num.RR>0){
+      D <- cbind(D[,1:(num.lv.c*n)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n))])
+      D <- rbind(D[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n)),])
+      B <- cbind(B[,1:(num.lv.c*n)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n))])
+      C <- t(B)
+    }else if(num.lv>0&num.RR>0){
+      D <- cbind(matrix(0,nrow=nrow(D),ncol=num.RR*n),D)
+      D <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(D)),D)
+      B <- cbind(matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B)
+      C <- t(B)
     }
-      Q <- diag(1/fit$params$sigma.lv)%*%Q #inverse scale for fixed-effects term
-    }
-    idx <- seq(i,n*(fit$num.lv.c+fit$num.lv+radidx),by=n)
-    covb <- (Q+D[idx,idx]%*%C[idx,])%*%(A)%*%(t(Q)+B[,idx]%*%t(D[idx,idx]))
-    se[idx] <- (diag(abs(covb)))
   }
-  
+  if(num.RR>0){
+    if((num.lv+num.lv.c)==0){colnames(D)<-rep("",ncol(D))}
+    colnames(D)[colnames(D)==""]<-"XB"
+    row.names(D)<-colnames(D)
+    if(num.lv.c>0){
+      fit$params$sigma.lv <- c(fit$params$sigma.lv[1:num.lv.c],rep(1,num.RR),fit$params$sigma.lv[-c(1:num.lv)])
+    }else if(num.lv>0){
+      fit$params$sigma.lv <- c(rep(1,num.RR),fit$params$sigma.lv)
+    }else{
+      fit$params$sigma.lv <- rep(1,num.RR)
+    }
+  }
+
+  Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
+
+  if((num.lv.c+num.RR)>0){
+    for(q in 1:(num.lv.c+num.RR)){
+      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X/fit$params$sigma.lv[q]
+    }
+    }
+    covb <- (Q+D%*%C)%*%(A)%*%(t(Q)+B%*%t(D))
+    
+    #separate errors row-effects
+    ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])
+    covb <- covb[colnames(covb)!="r0",colnames(covb)!="r0"]
+
   out <- list()
   if(fit$row.eff == "random") {
-    CovArerr <- matrix(se[1:length(fit$params$row.params)]); 
-    se<-se[-(1:length(fit$params$row.params))]
+    CovArerr <- matrix(ser0); 
     out$Ar <- CovArerr
   }
+  
+  #separate errors AB
+  seAb <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
+  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
+  
   if(!is.null(fit$randomX)){
     CovABerr<-array(0, dim(fit$Ab))
     for (i in 1:ncol(fit$Ab)) {
-      CovABerr[,i,i] <- se[1:p]; se<-se[-(1:p)]
+      CovABerr[,i,i] <- seAb[1:p]; seAb<-seAb[-(1:p)]
     }
     out$Ab <- CovABerr
   }
-  if((fit$num.lv+fit$num.lv.c) > 0) {
-    CovAerr<-array(0, dim = c(n,fit$num.lv+fit$num.lv.c,fit$num.lv+fit$num.lv.c))
-    for (i in 1:ncol(CovAerr)) {
-      CovAerr[,i,i] <- se[1:n]; se<-se[-(1:n)]
-    }
-    out$A <- CovAerr
+  
+  #re-order, select submatrices
+  se <- aperm(simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F)),c(3,1,2))
+  
+  if((num.lv+num.lv.c+num.RR) > 0) {
+    out$A <- se
   }
   out
 }

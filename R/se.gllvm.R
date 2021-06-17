@@ -112,20 +112,14 @@ se.gllvm <- function(object, ...){
           prediction.errors <- list()
           
           if(object$row.eff=="random"){
-            prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(object$params$row.params)];
-            sd.random <- sd.random[-(1:length(object$params$row.params)),-(1:length(object$params$row.params))]
+            prediction.errors$row.params <- sd.random$row
           }
           if(!is.null(object$randomX)){
-            prediction.errors$Br  <- matrix(diag(as.matrix(sd.random))[1:(ncol(xb)*p)], ncol(xb), p);
-            sd.random <- sd.random[-(1:(ncol(xb)*p)),-(1:(ncol(xb)*p))]
+            prediction.errors$Br  <- sd.random$Ab
           }
 
           if(num.lv > 0){
-            cov.lvs <- array(0, dim = c(n, num.lv, num.lv))
-            for (i in 1:n) {
-              cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv-1)*n+i),(0:(num.lv-1)*n+i)])
-            }
-            prediction.errors$lvs <- cov.lvs
+            prediction.errors$lvs <- sd.random$A
           }
           out$prediction.errors <- prediction.errors
         }
@@ -305,16 +299,11 @@ se.gllvm <- function(object, ...){
         prediction.errors <- list()
         
         if(object$row.eff=="random"){
-          prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(object$params$row.params)];
-          sd.random <- sd.random[-(1:length(object$params$row.params)),-(1:length(object$params$row.params))]
+          prediction.errors$row.params <- sd.random$row
         }
-        if((num.lv+num.lv.c)>0){
+        if((num.lv+num.lv.c+num.RR)>0){
           # cov.lvs <- array(0, dim = c(n, nlvr, nlvr))
-          cov.lvs <- array(0, dim = c(n, (num.lv+num.lv.c), (num.lv+num.lv.c)))
-          for (i in 1:n) {
-            # cov.lvs[i,,] <- as.matrix(sd.random[(0:(nlvr-1)*n+i),(0:(nlvr-1)*n+i)])
-            cov.lvs[i,,] <- as.matrix(sd.random[(0:((num.lv+num.lv.c)-1)*n+i),(0:((num.lv+num.lv.c)-1)*n+i)])
-          }
+          cov.lvs <- sd.random$A
           # if(object$row.eff=="random"){
           #   prediction.errors$row.params <- cov.lvs[,1,1]
           #   if(num.lv > 0) cov.lvs <- array(cov.lvs[,-1,-1], dim = c(n, num.lv, num.lv))
@@ -345,7 +334,7 @@ se.gllvm <- function(object, ...){
     if(object$row.eff == "fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params) <- rownames(object$y); se <- se[-(1:(n-1))] }
     sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
     if((num.lv.c+num.RR)>0){
-    se.LvXcoef <- matrix(se[1:(num.lv.c*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
+    se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
     se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
     colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
     row.names(se.LvXcoef) <- colnames(lv.X)

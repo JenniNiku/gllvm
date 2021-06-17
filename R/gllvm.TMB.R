@@ -140,7 +140,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <<- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
     ## Set initial values
         sigma <- 1
     if (is.null(start.params)) {
@@ -1266,25 +1266,24 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
         
-        if((num.lv+num.lv.c) > 0 || row.eff == "random") {
+        if(((num.lv+num.lv.c+num.RR) > 0 || row.eff == "random")&& method != "VA") {
           sd.random <- sdrandom(objrFinal, covM, incl,ignore.u = ignore.u)
           prediction.errors <- list()
           
           if(row.eff=="random"){
-            prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(out$params$row.params)];
-            sd.random <- sd.random[-(1:length(out$params$row.params)),-(1:length(out$params$row.params))]
+            prediction.errors$row.params <- sd.random$row
           }
-          if((num.lv+num.lv.c)>0){
-            cov.lvs <- array(0, dim = c(n, num.lv+num.lv.c, num.lv+num.lv.c))
-            for (i in 1:n) {
-              cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv+num.lv.c-1)*n+i),(0:(num.lv+num.lv.c-1)*n+i)])
+          if((num.lv+num.lv.c+num.RR)>0){
+            # cov.lvs <- array(0, dim = c(n, num.lv+num.lv.c, num.lv+num.lv.c))
+            # for (i in 1:n) {
+            #   cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv+num.lv.c-1)*n+i),(0:(num.lv+num.lv.c-1)*n+i)])
               # cov.lvs[i,,] <- as.matrix(sd.random[(0:(nlvr-1)*n+i),(0:(nlvr-1)*n+i)])
-            }
+            #}
             # if(row.eff=="random"){
             #   prediction.errors$row.params <- cov.lvs[,1,1]
             #   if(num.lv > 0) cov.lvs <- array(cov.lvs[,-1,-1], dim = c(n, num.lv, num.lv))
             # }
-            prediction.errors$lvs <- cov.lvs
+            prediction.errors$lvs <- sd.random$A
           }
           out$prediction.errors <- prediction.errors
         }

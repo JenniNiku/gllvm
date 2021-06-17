@@ -482,7 +482,7 @@ trait.TMB <- function(
     }
 
     
-    # For Laplace method, specify random paramteters to randomp
+    # For Laplace method, specify random parameters to randomp
     randomp= NULL #c("u","r0,"Br")
     randoml=c(0,0)
     
@@ -1120,19 +1120,13 @@ trait.TMB <- function(
             prediction.errors <- list()
             
             if(row.eff=="random"){
-              prediction.errors$row.params <- diag(as.matrix(sd.random))[1:length(out$params$row.params)];
-              sd.random <- sd.random[-(1:length(out$params$row.params)),-(1:length(out$params$row.params))]
+              prediction.errors$row.params <- sdrandom$row
             }
             if(!is.null(randomX)){
-              prediction.errors$Br  <- matrix(diag(as.matrix(sd.random))[1:(ncol(xb)*ncol(y))], ncol(xb), ncol(y));
-              sd.random <- sd.random[-(1:(ncol(xb)*ncol(y))),-(1:(ncol(xb)*ncol(y)))]
+              prediction.errors$Br  <- sdrandom$Ab
             }
             if(num.lv > 0){
-              cov.lvs <- array(0, dim = c(n, num.lv, num.lv))
-              for (i in 1:n) {
-                cov.lvs[i,,] <- as.matrix(sd.random[(0:(num.lv-1)*n+i),(0:(num.lv-1)*n+i)])
-              }
-              prediction.errors$lvs <- cov.lvs
+              prediction.errors$lvs <- sdrandom$A
             }
             out$prediction.errors <- prediction.errors
           }

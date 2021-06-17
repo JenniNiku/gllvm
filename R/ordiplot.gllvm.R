@@ -14,7 +14,8 @@
 #' @param cex.spp size of species labels in biplot
 #' @param cex.env size of labels for arrows in constrianed ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
-#' @param spp.scale, value between 0 and 1, to scale species optima arrows for a quadratic response model
+#' @param spp.scale value between 0 and 1, to scale species optima arrows for a quadratic response model
+#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param predict.region logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.
 #' @param level level for prediction regions.
@@ -81,11 +82,12 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", spp.scale = 0.5, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", spp.scale = 0.5, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
-  a <- jitter.amount
+  
+    a <- jitter.amount
   n <- NROW(object$y)
   p <- NCOL(object$y)
   num.lv <- object$num.lv
@@ -128,51 +130,39 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
-    
-    # if(quadratic != FALSE){
-    #   testcov <- getLV(object) %*% t(object$params$theta[, 1:(num.lv+num.lv.c)]) + 
-    #     getLV(object)^2 %*% t(object$params$theta[, -c(1:(num.lv+num.lv.c))])
-    #   do_svd <- svd(testcov, (num.lv+num.lv.c), (num.lv+num.lv.c))
-    #   choose.lvs <- do_svd$u
-    #   choose.lv.coefs <- do_svd$v
-    # }
-    
-    # if(quadratic==FALSE){
-    #   bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2))
-    #   idx <- matrix(TRUE,ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs))
-    # }else{
+    if(spp.arrows){
       idx <- choose.lv.coefs>matrix(apply(getLV(object,type),2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(getLV(object,type),2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+    }else{
+      idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
+    }
       bothnorms <- vector("numeric",ncol(choose.lv.coefs))
       for(i in 1:ncol(choose.lv.coefs)){
-        bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))
+        bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i]]^2))
       }
-    # }
-    choose.lvs <<-choose.lvs
-    choose.lv.coefs<<-choose.lv.coefs
+
+
+      
     ## Standardize both to unit norm then scale using bothnorms. Note alpha = 0.5 so both have same norm. Otherwise "significance" becomes scale dependent
     scaled_cw_sites <- t(t(choose.lvs) / sqrt(colSums(choose.lvs^2)) * (bothnorms^alpha)) 
-    if(quadratic==FALSE){
-      scaled_cw_species <- t(t(choose.lv.coefs) / sqrt(colSums(choose.lv.coefs^2)) * (bothnorms^(1-alpha)))   
-    }else{
+
       scaled_cw_species <- choose.lv.coefs
       for(i in 1:ncol(scaled_cw_species)){
-        scaled_cw_species[,i] <- choose.lv.coefs[,i] / sqrt(sum(choose.lv.coefs[idx[,i],i]^2)) * (bothnorms^(1-alpha)) 
+        scaled_cw_species[,i] <- choose.lv.coefs[,i] / sqrt(sum(choose.lv.coefs[idx[,i]]^2)) * (bothnorms^(1-alpha)) 
       }
-      
-    }
+
     
     # equally: lvstr <- object$lvs%*%(diag((bothnorms^0.5)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
     
-    #re+calculate index for quadratic model due to rotation
-    # if(quadratic!=FALSE){
-      idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
-    # }
-
     # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
+    if(num.RR>0&num.lv.c>0){
+      object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(1,num.RR),object$params$sigma.lv[-c(1:num.lv.c)])
+    }else if(num.RR>0){
+      object$params$sigma.lv <- c(rep(1,num.RR),object$params$sigma.lv)
+    }
     
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites)
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites%*%diag(object$params$sigma.lv))
     # if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
     
     # testcov <- object$lvs %*% t(object$params$theta)
@@ -191,35 +181,33 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
-        
         if (object$method == "LA") {
           for (i in 1:n) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
-            #covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
-          }
-        } else {
-          for(i in 1:n){
-            object$A[i,,] <- diag(object$params$sigma.lv)%*%object$A[i,,]%*%diag(object$params$sigma.lv)  
-          }
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+          }        
+          } else {
           
-          sdb<-sdA(object)
-          object$A<-sdb+object$A
+          sdb<-CMSEPf(object)$A
+          if(num.RR>0){
+            A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+            A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+          }else{A<-object$A}
+          object$A<-sdb+A
           r=0
-          if(object$row.eff=="random") r=1
-          
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- (t(B)%*%diag(object$A[i,1:(num.lv+num.lv.c)+r])%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
               # covm <- diag(object$A[i,which.lvs+r]);
             } else {
-              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c)+r,1:(num.lv+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.RR+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
               # covm <- object$A[i,which.lvs+r,which.lvs+r];
             }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.RR+num.lv.c)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         }
       }
+      
       
       if (!jitter)
         if (symbols) {
@@ -251,33 +239,29 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
-        
         if (object$method == "LA") {
           for (i in 1:n) {
-            #covm <- object$prediction.errors$lvs[i,which.lvs,which.lvs];
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
-          for(i in 1:n){
-            object$A[i,,] <- diag(object$params$sigma.lv)%*%object$A[i,,]%*%diag(object$params$sigma.lv)  
-          }
           
-          sdb<-sdA(object)
-          
-          object$A<-sdb+object$A
+          sdb<-CMSEPf(object)$A
+          if(num.RR>0){
+            A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+            A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+          }else{A<-object$A}
+          object$A<-sdb+A
           r=0
-          if(object$row.eff=="random") r=1
-          
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- (t(B)%*%diag(object$A[i,1:(num.lv+num.lv.c)+r])%*%B)[which.lvs,which.lvs];
-              #covm <- diag(object$A[i,which.lvs+r]);
+              covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
+              # covm <- diag(object$A[i,which.lvs+r]);
             } else {
-              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c)+r,1:(num.lv+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.RR+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
               # covm <- object$A[i,which.lvs+r,which.lvs+r];
             }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=(num.lv+num.lv.c))), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.RR+num.lv.c)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         }
       }
@@ -330,7 +314,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
     }
     
-    if((num.lv.c+num.RR)>1&all(which.lvs<=(num.lv.c+num.RR))){
+    #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
+    #Could alternatively post-hoc regress unconstrained LVs..
+    if(num.lv==0&(num.lv.c+num.RR)>0){
       #LvXcoef <- LvXcoef/ sqrt(colSums(object$lvs[,which.lvs]^2)) * (bothnorms^alpha)
       # LVcor <- t(cor(choose.lvs+object$lv.X%*%t(svd_rotmat_sites%*%t(object$params$LvXcoef[,which.lvs])),spider$x))
       # LVcor<-t(t(LVcor)/ (bothnorms^alpha) *sqrt(colSums(object$lvs[,which.lvs]^2)))
@@ -368,12 +354,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
       
       #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-      # if(any(LVcoef>min(Xlength*0.8,Ylength*0.8))){
-        ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)*min(Xlength,Ylength)))*0.8
-      # }else{
-      #   ends<-LVcoef    
-      #   }
-      
+      ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)*min(Xlength,Ylength)))*0.8
+
       for(i in 1:nrow(LVcoef)){
         arrows(x0=origin[1],y0=origin[2],x1=origin[1]+ends[i,1],y1=origin[2]+ends[i,2],col=col[i],length=0.2,lty=lty[i])  
         text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
