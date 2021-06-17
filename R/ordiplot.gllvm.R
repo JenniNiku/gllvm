@@ -190,6 +190,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           
           sdb<-CMSEPf(object)$A
           if(num.RR>0){
+            #variational covariances but add 0s for RRR
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
             A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
           }else{A<-object$A}
@@ -346,6 +347,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         lty <- rep("solid",ncol(object$lv.X))
         col<-rep("red",ncol(object$lv.X))
       }
+      
+      #account for variance of the predictors
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
       
@@ -354,8 +357,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
       
       #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-      ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)*min(Xlength,Ylength)))*0.8
-
+      ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)/abs(max(LVcoef))*min(Xlength,Ylength)))*0.8
       for(i in 1:nrow(LVcoef)){
         arrows(x0=origin[1],y0=origin[2],x1=origin[1]+ends[i,1],y1=origin[2]+ends[i,2],col=col[i],length=0.2,lty=lty[i])  
         text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
