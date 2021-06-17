@@ -2020,7 +2020,7 @@ getFourthCorner<- function(object){
 # Calculates standard errors for random effects
 sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   #For num.RR we treat the LV as zero
-  
+
   r <- obj$env$random
   par = obj$env$last.par.best
   
@@ -2031,8 +2031,9 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   xb<- obj$env$data$xb
   
   random <- obj$env$data$random
+  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br"))
   
-  if((num.lv+num.lv.c)>0){
+  if((num.lv+num.lv.c+radidx)>0){
   hessian.random <- obj$env$spHess(par, random = TRUE)
   L <- obj$env$L.created.by.newton
   }
@@ -2043,12 +2044,11 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
   diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv+num.RR,num.lv.c+num.lv+num.RR))
   
-  radidx <- 0
   
   if (ignore.u) {
     diag.term2 <- 0
   } else {
-    if((num.lv.c+num.lv)>0){
+    if((num.lv.c+num.lv+radidx)>0){
     f <- obj$env$f
     w <- rep(0, length(par))
     reverse.sweep <- function(i) {
@@ -2062,13 +2062,16 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
     
     A <- solve(hessian.random, tmp[, incl]) #n*d by N_psi
     row.names(A) <- names(obj$env$last.par.best[r])
-    radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br"))
     }
-     if(num.lv.c>0&num.RR>0){
-      A <- rbind(A[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n)),])
-    }else if(num.lv>0&num.RR>0){
-      A <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(A)),A)
-    }
+     if(radidx==0){
+       if((num.lv.c)>0&num.RR>0){
+         A <- rbind(A[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n)),])
+       }else if(num.lv>0&num.RR>0){
+         A <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(A)),A)
+       }
+     }else{
+       if(num.RR>0)A <- rbind(A[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n+radidx)),])
+       }
     
     if(num.RR>0){
       row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
@@ -2083,7 +2086,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
 
     #Matrix Q for predictors
     Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
-    if((num.lv.c+num.lv)==0)A<-Q
+    if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0){
       for(q in 1:(num.lv.c+num.RR)){
         Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X/sigma.lv[q]
@@ -2256,9 +2259,6 @@ CMSEPf <- function(fit){
   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
   D<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla]
-  if((num.lv+num.lv.c)>0){
-    D <- solve(D)
-  }
   radidx <- 0
   if(!fit$row.eff%in%c(FALSE,"fixed",NULL)){
     radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="r0"]) 
@@ -2266,6 +2266,10 @@ CMSEPf <- function(fit){
   if(!is.null(fit$randomX)){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
   }
+  if((num.lv+num.lv.c+radidx)>0){
+    D <- solve(D)
+  }
+
   
   if(!is.null(D)){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
@@ -2280,7 +2284,7 @@ CMSEPf <- function(fit){
     C <- t(B)
   }
   }else{
-    if(prod(dim(D))==0&num.RR>0){
+    if(is.null(D)&num.RR>0){
       D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
@@ -2297,7 +2301,7 @@ CMSEPf <- function(fit){
     }
   }
   if(num.RR>0){
-    if((num.lv+num.lv.c)==0){colnames(D)<-rep("",ncol(D))}
+    if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
     if(num.lv.c>0){
