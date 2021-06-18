@@ -856,18 +856,18 @@ gllvm.TMB <- function(y, X = NULL, formula = NULL, num.lv = 2, family = "poisson
           
         if(num.lv>0){
           Au <- param[names(param)=="Au"]
-          for (d in 1:nlvr){
+          for (d in 1:num.lv){
             for(i in 1:n){
-              A[i,d,d] <- exp(Au[(d-1)*n+i]);
+              A[i,(nlvr-num.lv)+ d,(nlvr-num.lv)+ d] <- exp(Au[(d-1)*n+i]);
             }
           }
-          if(length(Au) > nlvr*n){
+          if(length(Au) > num.lv*n){
             k <- 0;
-            for (c1 in 1:nlvr){
+            for (c1 in 1:num.lv){
               r <- c1 + 1;
-              while (r <= nlvr){
+              while (r <= num.lv){
                 for(i in 1:n){
-                  A[i,r,c1] <- Au[nlvr*n+k*n+i];
+                  A[i,(nlvr-num.lv)+ r,(nlvr-num.lv)+ c1] <- Au[num.lv*n+k*n+i];
                   # A[i,c1,r] <- A[i,r,c1];
                 }
                 k <- k+1; r <- r+1;
