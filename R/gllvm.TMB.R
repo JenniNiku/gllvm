@@ -1097,32 +1097,32 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             }
           }
           
-        if((num.lv+num.lv.c)>0){
-          Au <- param[names(param)=="Au"]
-          for (d in 1:nlvr){
-            for(i in 1:n){
-              A[i,d,d] <- exp(Au[(d-1)*n+i]);
-            }
-          }
-          if(length(Au) > nlvr*n){
-            k <- 0;
-            for (c1 in 1:nlvr){
-              r <- c1 + 1;
-              while (r <= nlvr){
-                for(i in 1:n){
-                  A[i,r,c1] <- Au[nlvr*n+k*n+i];
-                  # A[i,c1,r] <- A[i,r,c1];
-                }
-                k <- k+1; r <- r+1;
+          if((num.lv+num.lv.c)>0){
+            Au <- param[names(param)=="Au"]
+            for (d in 1:(num.lv+num.lv.c)){
+              for(i in 1:n){
+                A[i,(nlvr-(num.lv+num.lv.c))+ d,(nlvr-(num.lv+num.lv.c))+ d] <- exp(Au[(d-1)*n+i]);
               }
             }
-          }
-          for(i in 1:n){
-            A[i,,] <- A[i,,]%*%t(A[i,,])
-          }
-          out$A <- A
-        } else {
-          out$Ar <- A
+            if(length(Au) > (num.lv+num.lv.c)*n){
+              k <- 0;
+              for (c1 in 1:(num.lv+num.lv.c)){
+                r <- c1 + 1;
+                while (r <= (num.lv+num.lv.c)){
+                  for(i in 1:n){
+                    A[i,(nlvr-(num.lv+num.lv.c))+ r,(nlvr-(num.lv+num.lv.c))+ c1] <- Au[(num.lv+num.lv.c)*n+k*n+i];
+                    # A[i,c1,r] <- A[i,r,c1];
+                  }
+                  k <- k+1; r <- r+1;
+                }
+              }
+            }
+            for(i in 1:n){
+              A[i,,] <- A[i,,]%*%t(A[i,,])
+            }
+            out$A <- A
+          } else {
+            out$Ar <- A
           }
         }
         
@@ -1173,6 +1173,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
       }
     }
+    
     seed.best <- seed[n.i]
     n.i <- n.i+1;
   
