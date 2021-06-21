@@ -201,7 +201,7 @@ trait.TMB <- function(
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
-      bstart <- start.values.randomX(y, xb, family, starting.val = randomX.start, power = Power, link = link)
+      bstart <- start.values.randomX(y, xb, family, starting.val = randomX.start, Power = Power, link = link)
       Br <- bstart$Br
       sigmaB <- bstart$sigmaB
       sigmaij <- rep(0,(ncol(xb)-1)*ncol(xb)/2)
@@ -225,7 +225,7 @@ trait.TMB <- function(
 
     #### Calculate starting values
 
-    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,power=Power,formula = formula, jitter.var=jitter.var, #!!!
+    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc)
 
     ## Set initial values
