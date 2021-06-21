@@ -383,10 +383,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start;
+    
+    
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
       stop("Cannot fit model with traits and reduced rank predictors. \n")
     }
+    
     if(!is.null(start.fit)){
     if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.params$num.lv){
       stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
@@ -400,7 +403,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
       control$TMB <- TRUE
     }
-
+      
     if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
@@ -414,6 +417,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if(is.null(X)&is.null(data)&num.lv.c>0|num.RR>0&is.null(X)&is.null(data)){
       stop("Cannot constrain latent variables without predictors. Please provide X, or set num.lv.c=0 or num.RR=0. \n")
     }
+    
     
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -487,7 +491,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-warning("Remove row.effect from lv.x here")
           lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
           lv.X<- model.matrix(lv.formula,data=datayx)
           term <- terms(m1)
@@ -519,7 +522,6 @@ warning("Remove row.effect from lv.x here")
           id <- 1:n
         }
       }
-    warning("This code does not run properly yet")
       cl <- match.call()
       mf <- match.call(expand.dots = FALSE)
       m <- match(c("lv.formula", "data", "na.action"), names(mf), 0)
@@ -675,6 +677,7 @@ warning("Remove row.effect from lv.x here")
           X<-cbind(X,xgrps)
           }
       }
+      
       if(is.null(bar.f)) {
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
       } else if(!all(grps %in% colnames(X))) {
@@ -940,7 +943,7 @@ warning("Remove row.effect from lv.x here")
       if (sd.errors) {
         out$sd <- fitg$sd
         if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
-          if(det(fitg$Hess$cov.mat.mod)==0){
+          if(is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
         }
