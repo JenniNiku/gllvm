@@ -1,5 +1,5 @@
 #' @title Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables.
-#' @description Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the Delta method).
+#' @description Extracts species optima and tolerances, potentially with standard errors (derived with the Delta method).
 #'
 #'@name optima
 #'
@@ -10,12 +10,11 @@
 #' 
 #' @author Bert van der Veen
 #'
-#'@aliases optima optima.gllvm tolerances tolerances.gllvm gradient.length gradient.length.gllvm
+#'@aliases optima optima.gllvm tolerances tolerances.gllvm
 #'
 #'@export
 #'@export optima.gllvm 
 #'@export tolerances.gllvm 
-#'@export gradient.length.gllvm
 #'
 optima.gllvm <- function(object,sd.errors = TRUE, ...) {
   if(!inherits(object,"gllvm.quadratic")){
@@ -186,113 +185,113 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
   }
   
 }
-
-#'@rdname optima
-#'@export
-gradient.length.gllvm <- function(object,sd.errors = TRUE, ...) {
-  if(!inherits(object,"gllvm.quadratic")){
-    stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.\n")
-  }
-  num.lv <- object$num.lv
-  num.lv.c <- object$num.lv.c
-  p <- ncol(object$y)
-  quadratic <- object$quadratic
-  tol<-1/sqrt(-2*object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
-  if(sd.errors==TRUE){
-if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
-    cat("Standard errors not present in model, calculating...")
-    object$Hess<-se.gllvm(object)$Hess
-  }
-  V <- object$Hess$cov.mat.mod
-  idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
-  V <- V[idx,idx,drop=F]
-  colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
-  
-  #re-arrange V for easier access
-  if(quadratic==TRUE){
-    idx <- c(matrix(1:(p*(num.lv+num.lv.c)),ncol=(num.lv+num.lv.c),nrow=p,byrow=T))
-  }else{
-    idx <- rep(1:(num.lv+num.lv.c))
-  }
-  V<-V[idx,idx]
-  
-  grad <- NULL
-  idx<-list()
-  for(q in 1:(num.lv+num.lv.c)){
-    if(p%%2==0&quadratic==TRUE){
-      #even
-      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[(p/2):((p/2)+1)]
-    }else{
-      #odd
-      idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[ceiling(p-p/2)]
-    }
-    
-    if(quadratic=="LV"|length(idx[[q]])==1){
-      if(quadratic=="LV"){
-        #only a function of one parameter, so this is derivative of gradient length (since there is no median)
-        grad<-c(grad,2*2^0.5*abs(object$params$theta[1,(num.lv+num.lv.c)+q])^-0.5)
-      }else{
-        grad<-c(grad,2*2^0.5*abs(object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^-0.5)#still only 1 parameter so same derivative
-      }
-      
-    }else{
-      #this one is a little more, due to the presence of the median on the tolerance scale.
-      grad<-c(grad,sapply(1:2,function(i)4*2^0.5*(abs(object$params$theta[idx[[q]][i],(num.lv+num.lv.c)+q])^1.5*sum(abs(object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^-0.5)^2)^-1))
-    }
-    
-  }
-  gradSD <- NULL
-    if(quadratic=="LV"){
-      gradSD <- c(gradSD, sqrt(abs(diag((grad%*%t(grad)*V))))) #no scalar, only function of one parameter
-    }else{
-      if(p%%2==0){
-        idx2 <- split(1:((num.lv+num.lv.c)*2),factor(rep(1:(num.lv+num.lv.c),each=2)))
-      }else{
-        idx2 <- 1:(num.lv+num.lv.c)
-      }
-      
-      
-      for(q in 1:(num.lv+num.lv.c)){
-      gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad[idx2[[q]]]%*%t(grad[idx2[[q]]])*V[(p*(q-1)+1):(p*q),(p*(q-1)+1):(p*q)][idx[[q]],idx[[q]]]))))) #scalar because function of 2 parameters, which we sum over
-      }
-    }
-  grad.length.sd <- gradSD
-  }else if(sd.errors==FALSE){
-    idx<-list()
-    for(q in 1:(num.lv+num.lv.c)){
-      if(p%%2==0&quadratic==TRUE){
-        #even
-        idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[(p/2):((p/2)+1)]
-      }else{
-        #odd
-        idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[ceiling(p-p/2)]
-      }
-    }
-  }
-
-  if(quadratic==TRUE&(p%%2==0)){
-    grad.length <- apply(matrix(abs(sapply(1:(num.lv+num.lv.c),function(q)object$params$theta[idx[[q]],q+(num.lv+num.lv.c)])),ncol=(num.lv+num.lv.c),nrow=length(idx[[1]])),2,function(x)8*2^0.5*sum(x^-0.5)^-1)
-  }else if(quadratic==TRUE&(p%%2==1)){
-    grad.length <- sapply(1:(num.lv+num.lv.c),function(q)4*abs(2*object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^0.5)
-  }else if(quadratic=="LV"){
-    grad.length <- 4*abs(2*object$params$theta[1,-c(1:(num.lv+num.lv.c))])^0.5
-  }
-  if(num.lv.c==0) names(grad.length) <- paste("LV",1:num.lv,sep="")
-  if(num.lv==0) names(grad.length) <- paste("CLV",1:num.lv.c,sep="")
-  if(num.lv>0&num.lv.c>0) names(grad.length) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
-  if(sd.errors==TRUE){
-    if(num.lv.c==0) names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
-    if(num.lv==0) names(grad.length.sd) <- paste("CLV",1:num.lv.c,sep="")
-    if(num.lv>0&num.lv.c>0) names(grad.length.sd) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
-  }
-  
-  if(sd.errors==TRUE){
-    return(list(gradient.length=grad.length,sd=grad.length.sd))   
-  }else{
-    return(gradient.length=grad.length)
-  }
-  
-}
+#' 
+#' #'@rdname optima
+#' #'@export
+#' gradient.length.gllvm <- function(object,sd.errors = TRUE, ...) {
+#'   if(!inherits(object,"gllvm.quadratic")){
+#'     stop("Gradient length can only be extracted for a GLLVM where species are a quadratic function of the latent variables.\n")
+#'   }
+#'   num.lv <- object$num.lv
+#'   num.lv.c <- object$num.lv.c
+#'   p <- ncol(object$y)
+#'   quadratic <- object$quadratic
+#'   tol<-1/sqrt(-2*object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
+#'   if(sd.errors==TRUE){
+#' if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
+#'     cat("Standard errors not present in model, calculating...")
+#'     object$Hess<-se.gllvm(object)$Hess
+#'   }
+#'   V <- object$Hess$cov.mat.mod
+#'   idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
+#'   V <- V[idx,idx,drop=F]
+#'   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
+#'   
+#'   #re-arrange V for easier access
+#'   if(quadratic==TRUE){
+#'     idx <- c(matrix(1:(p*(num.lv+num.lv.c)),ncol=(num.lv+num.lv.c),nrow=p,byrow=T))
+#'   }else{
+#'     idx <- rep(1:(num.lv+num.lv.c))
+#'   }
+#'   V<-V[idx,idx]
+#'   
+#'   grad <- NULL
+#'   idx<-list()
+#'   for(q in 1:(num.lv+num.lv.c)){
+#'     if(p%%2==0&quadratic==TRUE){
+#'       #even
+#'       idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[(p/2):((p/2)+1)]
+#'     }else{
+#'       #odd
+#'       idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[ceiling(p-p/2)]
+#'     }
+#'     
+#'     if(quadratic=="LV"|length(idx[[q]])==1){
+#'       if(quadratic=="LV"){
+#'         #only a function of one parameter, so this is derivative of gradient length (since there is no median)
+#'         grad<-c(grad,2*2^0.5*abs(object$params$theta[1,(num.lv+num.lv.c)+q])^-0.5)
+#'       }else{
+#'         grad<-c(grad,2*2^0.5*abs(object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^-0.5)#still only 1 parameter so same derivative
+#'       }
+#'       
+#'     }else{
+#'       #this one is a little more, due to the presence of the median on the tolerance scale.
+#'       grad<-c(grad,sapply(1:2,function(i)4*2^0.5*(abs(object$params$theta[idx[[q]][i],(num.lv+num.lv.c)+q])^1.5*sum(abs(object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^-0.5)^2)^-1))
+#'     }
+#'     
+#'   }
+#'   gradSD <- NULL
+#'     if(quadratic=="LV"){
+#'       gradSD <- c(gradSD, sqrt(abs(diag((grad%*%t(grad)*V))))) #no scalar, only function of one parameter
+#'     }else{
+#'       if(p%%2==0){
+#'         idx2 <- split(1:((num.lv+num.lv.c)*2),factor(rep(1:(num.lv+num.lv.c),each=2)))
+#'       }else{
+#'         idx2 <- 1:(num.lv+num.lv.c)
+#'       }
+#'       
+#'       
+#'       for(q in 1:(num.lv+num.lv.c)){
+#'       gradSD <- c(gradSD, sqrt(abs(1/2*sum((grad[idx2[[q]]]%*%t(grad[idx2[[q]]])*V[(p*(q-1)+1):(p*q),(p*(q-1)+1):(p*q)][idx[[q]],idx[[q]]]))))) #scalar because function of 2 parameters, which we sum over
+#'       }
+#'     }
+#'   grad.length.sd <- gradSD
+#'   }else if(sd.errors==FALSE){
+#'     idx<-list()
+#'     for(q in 1:(num.lv+num.lv.c)){
+#'       if(p%%2==0&quadratic==TRUE){
+#'         #even
+#'         idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[(p/2):((p/2)+1)]
+#'       }else{
+#'         #odd
+#'         idx[[q]]<-order(1/sqrt(2*-object$params$theta[,(num.lv+num.lv.c)+q]),decreasing=T)[ceiling(p-p/2)]
+#'       }
+#'     }
+#'   }
+#' 
+#'   if(quadratic==TRUE&(p%%2==0)){
+#'     grad.length <- apply(matrix(abs(sapply(1:(num.lv+num.lv.c),function(q)object$params$theta[idx[[q]],q+(num.lv+num.lv.c)])),ncol=(num.lv+num.lv.c),nrow=length(idx[[1]])),2,function(x)8*2^0.5*sum(x^-0.5)^-1)
+#'   }else if(quadratic==TRUE&(p%%2==1)){
+#'     grad.length <- sapply(1:(num.lv+num.lv.c),function(q)4*abs(2*object$params$theta[idx[[q]],(num.lv+num.lv.c)+q])^0.5)
+#'   }else if(quadratic=="LV"){
+#'     grad.length <- 4*abs(2*object$params$theta[1,-c(1:(num.lv+num.lv.c))])^0.5
+#'   }
+#'   if(num.lv.c==0) names(grad.length) <- paste("LV",1:num.lv,sep="")
+#'   if(num.lv==0) names(grad.length) <- paste("CLV",1:num.lv.c,sep="")
+#'   if(num.lv>0&num.lv.c>0) names(grad.length) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
+#'   if(sd.errors==TRUE){
+#'     if(num.lv.c==0) names(grad.length.sd) <- paste("LV",1:num.lv,sep="")
+#'     if(num.lv==0) names(grad.length.sd) <- paste("CLV",1:num.lv.c,sep="")
+#'     if(num.lv>0&num.lv.c>0) names(grad.length.sd) <- c(paste("CLV",1:num.lv.c,sep=""),paste("LV",1:num.lv,sep=""))
+#'   }
+#'   
+#'   if(sd.errors==TRUE){
+#'     return(list(gradient.length=grad.length,sd=grad.length.sd))   
+#'   }else{
+#'     return(gradient.length=grad.length)
+#'   }
+#'   
+#' }
 
 #'@export optima
 optima <- function(object, ...)
@@ -307,9 +306,9 @@ tolerances <- function(object, ...)
 }
 
 
-#'@method gradient.length gllvm
-#'@export gradient.length
-gradient.length <- function(object, ...)
-{
-  UseMethod(generic = "gradient.length")
-}
+#' #'@method gradient.length gllvm
+#' #'@export gradient.length
+#' gradient.length <- function(object, ...)
+#' {
+#'   UseMethod(generic = "gradient.length")
+#' }
