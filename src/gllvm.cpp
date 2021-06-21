@@ -95,8 +95,7 @@ Type objective_function<Type>::operator() ()
       u = r0;
     }
   }
-  REPORT(u);
-  
+
   matrix<Type> eta(n,p);
   eta.fill(0.0);
   matrix<Type> lam(n,p);
@@ -121,7 +120,7 @@ Type objective_function<Type>::operator() ()
       newlam.row(0).fill(1.0);
       Cu.diagonal().fill(1.0);
       
-      if(random(0)>0 && (n == nr)){
+      if((random(0)>0) && (n == nr)){
         for (int d=1; d<nlvr; d++){
           Delta(d,d) = fabs(sigmaLV(d-1));
         }
@@ -184,7 +183,6 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    REPORT(Delta);
   }
   
   
@@ -284,7 +282,7 @@ Type objective_function<Type>::operator() ()
       }
     }
       //set VA covariances for random rows to zero for quadratic model
-      if(quadratic>0&&nlvr>(num_lv+num_lv_c)){
+      if((quadratic>0)&&(nlvr>(num_lv+num_lv_c))){
         for(int i=0; i<n; i++){
           for (int d=0; d<(nlvr); d++){
             if(d!=0){
@@ -306,9 +304,7 @@ Type objective_function<Type>::operator() ()
       }
       nll.array() -= 0.5*(nlvr - log(Cu.determinant())*random(0))/p; //n*
       
-      REPORT(A);
     }
-    REPORT(Ar);
     // Structured Row/Site effects
     if(((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0)){
       // Group specific random row effects:
@@ -562,7 +558,7 @@ Type objective_function<Type>::operator() ()
       //constrained ordination terms
       if(num_lv_c>0){
         //predictor coefficients for constrained ordination
-        if(random(0)>0 && (n == nr)){
+        if((random(0)>0) && (n == nr)){
           //first column are zeros in case of random intercept
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
@@ -579,7 +575,6 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
-      REPORT(b_lv2);
       }
       
       lam += u*newlam;
@@ -790,7 +785,7 @@ Type objective_function<Type>::operator() ()
             nll(i,j) -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
           }else if(ymaxj>2){
             for (int l=2; l<ymaxj; l++) {
-              if(y(i,j)==l && l != ymaxj){
+              if((y(i,j)==l) && (l != ymaxj)){
                 nll(i,j) -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1))); 
               }
             }
@@ -898,6 +893,7 @@ Type objective_function<Type>::operator() ()
     // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
     
   } else {
+    
     //For fixed-effects RRR with and without quadratic term
     if(num_RR>0){
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
@@ -928,8 +924,6 @@ Type objective_function<Type>::operator() ()
         }
         
       }
-      REPORT(b_lv3);
-      REPORT(RRgamma);
     }
 
     // Laplace approximation
@@ -961,7 +955,7 @@ Type objective_function<Type>::operator() ()
       //variances of LVs
       u *= Delta;
       if(num_lv_c>0){
-        if(random(0)>0 && (n == nr)){
+        if((random(0)>0) && (n == nr)){
           b_lv2.middleCols(1,num_lv_c) = b_lv;
           
         }else{
@@ -1167,7 +1161,6 @@ Type objective_function<Type>::operator() ()
         }
       }
   }
-  REPORT(newlam);
   REPORT(nll);//only works for VA!!
   return nll.sum();
 } 
