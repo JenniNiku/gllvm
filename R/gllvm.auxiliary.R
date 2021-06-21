@@ -385,7 +385,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       qr.gamma <- qr(t(gamma))
       if(num.lv.c>0)b.lv <- b.lv%*%qr.Q(qr.gamma)
       params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)]<-t(qr.R(qr.gamma))
-      if(num.lv.c>1)index<-(index%*%qr.Q(qr.gamma))
+      if(num.lv.c>1)index<-(index%*%qr.Q(qr.gamma)[1:num.lv.c,1:num.lv.c])
     }else if((num.lv.c+num.RR)>1 && num.lv>1 && p>2){
       gamma<-as.matrix(params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):ncol(params)])
       qr.gamma1 <- qr(t(gamma[,1:(num.lv.c+num.RR)]))
