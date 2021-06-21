@@ -20,6 +20,10 @@
   symbols = FALSE,
   cex.spp = 0.7,
   spp.colors = "blue",
+  spp.scale = 0.5,
+  spp.arrows = FALSE,
+  cex.env = 0.7,
+  lab.dist = 0.1,
   lwd.ellips = 0.5,
   col.ellips = 4,
   lty.ellips = 1,
@@ -55,6 +59,14 @@
 
 \item{spp.colors}{colors for sites, defaults to \code{"blue"}}
 
+\item{spp.scale}{value between 0 and 1, to scale species optima arrows for a quadratic response model}
+
+\item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}}
+
+\item{cex.env}{size of labels for arrows in constrianed ordination}
+
+\item{lab.dist}{distance between label and arrow heads. Value between 0 and 1}
+
 \item{lwd.ellips}{line width for prediction ellipses. See graphical parameter lwd.}
 
 \item{col.ellips}{colors for prediction ellipses.}
@@ -67,16 +79,31 @@
 Plots latent variables and their corresponding coefficients (biplot).
 }
 \details{
-Function constructs a scatter plot of two latent variables, i.e. an ordination plot. If only one latent
-variable is in the fitted model, latent variables are plotted against their corresponding row indices.
+Function constructs a scatter plot of two latent variables, i.e. an ordination plot. 
+Latent variables are re-rotated to their principal direction using singular value decomposition,
+so that the first plotted latent variable does not have to be the first latent variable in the model.
+If only one latent variable is in the fitted model, latent variables are plotted against their corresponding row indices.
 The latent variables are labeled using the row index of the response matrix y.
 
 Coefficients related to latent variables are plotted in the same figure with the latent
-variables if \code{biplot = TRUE}. They are labeled using the column names of y. The number
+variables if \code{biplot = TRUE}. They are labelled using the column names of y. The number
 of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 is used to control the relative scaling of the latent variables and their coefficients.
 If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 For details for constructing a biplot, see Gabriel (1971).
+
+Latent variable scores are always scaled by their estimated standard deviations, for plotting.
+
+For a quadratic response model, species optima are plotted. Any species scores that are outside the range 
+of the predicted site scores are not directly plotted, but their main direction is indicated with arrows instead.
+This ensures that the plot remains on a reasonable scale.
+
+Effects of environmental variables in constrained ordination are indicated with arrows.
+If any of the arrows exceeds the range of the plot, arrows are scaled to 80% of the plot range,
+but so that the relative contribution of predictors is maintained.
+If standard errors are available in the provided model, the slopes of environmental variables
+for which the 95% confidence intervals do not include zero are shown as red, while others 
+are slightly less intensely coloured.
 }
 \note{
 - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.

@@ -5,24 +5,27 @@
 \alias{getResidualCov}
 \title{Extract residual covariance matrix from gllvm object}
 \usage{
-\method{getResidualCov}{gllvm}(object, adjust = 1)
+\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{adjust}{The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.}
+
+\item{site.index}{A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.}
 }
 \value{
 Function returns following components:
  \item{cov }{residual covariance matrix}
- \item{trace }{trace of the residual covariance matrix}
- \item{trace.q }{trace of the residual covariance matrix per latent variable}
+ \item{trace }{trace of the residual covariance matrix, the total variance explained}
+ \item{var.q }{trace of the residual covariance matrix per latent variable, variance explained per latent variable}
+ \item{var.q2 }{trace of the squared term of the residual covariance matrix per latent variable, for quadratic responses. Variance explained per latent variable by the quadratic term}
 }
 \description{
 Calculates the residual covariance matrix for gllvm model.
 }
 \details{
-Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}.
+Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}, and the dispersion parameter related to the distribution of choice, is applicable (e.g. in the case of negative-binomial distributed responses).
 
 When the responses are modelled using the negative binomial distribution, the residual variances for each species must be adjusted for overdispersion. The two possible adjustement terms are \eqn{log(\phi_j + 1)} (\code{adjust = 1}) and \eqn{\psi^{(1)}(1/\phi_j)} (\code{adjust = 2}), where \eqn{\psi^{(1)}} is the trigamma function.
 
@@ -74,8 +77,8 @@ rescov <- getResidualCov(fit)
 rescov$cov
 # Trace of the covariance matrix
 rescov$trace
-# Trace per latent variable
-rescov$trace.q
+# Variance explained per latent variable
+rescov$var.q
 }
 }
 \author{

@@ -5,15 +5,13 @@
 \alias{optima.gllvm}
 \alias{tolerances}
 \alias{tolerances.gllvm}
-\alias{gradient.length}
-\alias{gradient.length.gllvm}
 \title{Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables.}
 \usage{
 \method{optima}{gllvm}(object, sd.errors = TRUE, ...)
 
 \method{tolerances}{gllvm}(object, sd.errors = TRUE, ...)
 
-\method{gradient.length}{gllvm}(object, sd.errors = TRUE, ...)
+optima(object, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
@@ -23,7 +21,9 @@
 \item{...}{Not used.}
 }
 \description{
-Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the Delta method).
+Extracts species optima and tolerances, potentially with standard errors (derived with the Delta method).
+
+
 }
 \author{
 Bert van der Veen
