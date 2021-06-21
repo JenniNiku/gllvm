@@ -1,0 +1,112 @@
+--
+title: 'How to use the quadratic response model'
+author: "Bert van der Veen"
+date: "`r Sys.Date()`"
+output:  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How to use the quadratic response model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
+```
+
+In this example we demonstrate how to implement the quadratic response model in \texttt{gllvm}. Quadratic curves are frequently occuring in community ecology, specifically to describe the response of species to the environment. When one has measured predictor variables, a quadratic function can straightforwardly be included in a regression in R using the $poly(\cdot,2)$ function. However, in a GLLVM, latent variables are included that can represent unmeasured predictors. As such, we might want to test if species respond to those unknown predictors too. This is similar to the theory behind other ordination methods, such as Correspondence Annalysis and its constrained variant (CCA).
+
+We will use the hunting spider dataset as an example, which includes 12 species at 100 sites. It also includes measurements of the environment at 28 sites, though we will not use those here.
+
+```{r}
+library(gllvm)
+data("spider")
+Y <- spider$abund
+```
+
+```{r, echo=FALSE}
+load(file = "ftEqTol.RData")
+load(file = "ftComTol.RData")
+load(file = "ftUneqTol.RData")
+```
+
+The unique thing about the quadratic response model, is that specifying a quadratic term for each species separately, coincides with the assumption that species have their own ecological tolerances. A more simple more, would be to assume that species have the same tolerance, in essence that all species are a generalist or specialist to the same degree. This can be done using a linear response model, with random row-effects:
+
+
+```{r, eval = FALSE}
+ftEqTol <- gllvm(Y, family = "poisson", row.eff = "random", num.lv = 2)
+```
+
+Next, we can fit a model where we assume species tolerances are the same for all species, but unique per latent variable, which we will refer to as species common tolerances. We do this using the `quadratic` flag in the $\text{gllvm}(.)$ function, which has the options `FALSE`, `LV` (common tolerances), and `TRUE` (unique tolerances for all species).
+
+```{r, eval = FALSE}
+ftComTol <- gllvm(Y, family = "poisson", num.lv = 2, quadratic = "LV")
+```
+
+And lastly, we can fit the full quadratic model.
+
+```{r, eval = FALSE}
+ftUneqTol <- gllvm(Y, family = "poisson", num.lv = 2, quadratic = T)
+```
+
+GLLVMs are sensitive to the starting values, and with a quadratic response model even more so. As such, the unequal tolerances model by defaults fits a common tolerances model first, to use as starting values. This option is control through the `start.struc` argument in `start.control`.
+
+Now, we can use information criteria to determine which of the models fits the hunting spider data best.
+
+```{r}
+AIC(ftEqTol,ftComTol,ftUneqTol)
+```
+The unequal tolerances model fits best, as measured by AICc. Species optima and tolerances, and their approximate standard errors, can be extracted:
+
+```{r }
+#Species optima for LVs
+optima(ftUneqTol)
+
+#Species tolerances
+tolerances(ftUneqTol)
+```
+
+The standard deviation of the latent variables can be printed using the $summary(.)$ function. Since latent variable models are scale invariant, this scale parameter is relative to the identifiability constraint (diagonal of the species scores matrix). It can be understood as a measure of gradient length, though for a measure that might be more comparable to DCA (i.e. on average unit variance species curves), see the reference below.
+
+The residual variation explained can be used to calculate residual correlations, or to partition variation, similar as in the vanilla GLLVM:
+```{r}
+#Residual variance per latent variable
+#for the linear term
+getResidualCov(ftUneqTol)$q
+
+#for the quadratic term
+getResidualCov(ftUneqTol)$q2
+```
+
+Finally, we can use the $ordiplot(.)$ function to visualize the species optima. However, since species optima can be quite large if they are unobserved, or if too little information is present in the data, creating a nice figure can be challenging. One attempt to improve readability of the species optima in a figure is to point an arrow in their general direction, if species optima are "unobserved": outside of the range of the predicted site scores.
+
+```
+ordiplot(ftUneqTol, biplot=TRUE, spp.arrows = TRUE)
+```
+
+The standard deviation of the latent variables, presented in the summary information of the model, can serve as a measure of gradient length. This measure is different to that presented in @vanderVeen2021, and not directly comparable to e.g. the output of axis length by Detrended Correspondence Analysis (DCA).
+
+# References
+
+---
+references:
+- id: vanderVeen2021
+  title: Generalized linear latent variable models for multivariate count and biomass data in ecology.
+  author: 
+  - family: van der Veen
+    given: B.
+  - family: Hui
+    given: F.K.C.
+  - family: Hovstad
+    given: K.A.
+  - family: Solbu
+    given: E.B.
+  - family: O'Hara
+    given: R.B.
+  publisher: Methods in Ecology and Evolution
+  volume: 
+  page: 
+  type: article-journal
+  issued:
+    year: 2021
+
+---

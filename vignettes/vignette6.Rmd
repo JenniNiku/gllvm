@@ -1,0 +1,110 @@
+--
+title: 'Model-based constrained ordination with latent variables'
+author: "Bert van der Veen"
+date: "`r Sys.Date()`"
+output:  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Model-based constrained ordination with latent variables}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
+```
+
+
+```{r, echo=FALSE}
+load(file = "CGLLVM.RData")
+```
+
+Until recently, the \texttt{gllvm} R-package only supported unconstrained ordination. When including predictor variables, the interpretation of the ordination would shift to a residual ordination, conditional on the predictors.
+
+However, if the number of predictor variables is large and so is the number of species, including predictors can result in a very large number of parameters to estimate. For data of ecological communities, which can be quite sparse, this is not always a reasonable model to fit. As alternative, ecologists have performed constrained ordination for decades, with methods such as Canonical Correspondence Analysis, or Redundancy Analysis.
+
+In this vignette, we demonstrate how to perform constrained ordination with the \texttt{gllvm} R-package. We load the hunting spider dataset:
+
+```{r data, eval=FALSE}
+data(spider)
+Y <- spider$abund
+X <- spider$x
+
+#And scale the predictors
+X <- scale(X)
+```
+which includes six predictor variables: "soil.dry": soil dry mass, "bare.sand": cover bare sand, "fallen.leaves": "cover of fallen leaves", "moss": cover moss, "herb.layer": cover of the herb layer, "reflection": "reflection of the soil surface with a cloudless sky". 
+
+For that, it is important to first understand what a constrained ordination is. Classical constrained ordination is statistically referred to as reduced rank regression (RRR). First, consider a multivariate Generalized Linear Model (GLM):
+
+\begin{equation}
+\eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{\beta}_j.
+\end{equation}
+
+Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $K$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the GLLVM R-package, the code to fit this model is:
+
+```{r eval=FALSE}
+MGLM <- gllvm(Y,X=X,family=family)
+```
+
+The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. RRR introduces a constraint on the species slopes matrix, namely on the number of independent columns in $\boldsymbol{\beta}_j$ (a column is not independent when it can be formulated as a linear combination of another). The reduced ranks are in community ecology referred to as ecological gradients, or can be understood as ordination axes. If we define a latent variable $\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X_{i,lv}} + \boldsymbol{\epsilon}_i$, for a $K\times d$ matrix of slopes, we can understand RRR as a regression of the latent variable or ecological gradient, except that the residual $\boldsymbol{\epsilon}_i$ is omitted, i.e. we assume that the ecological gradient can be represented perfectly by the predictor variables, so that the model becomes:
+\begin{equation}
+\eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{B}\boldsymbol{\gamma}_j.
+\end{equation}
+
+Where $\boldsymbol{\gamma}_j$ is a set of reduced rank slopes for each species. This model can also be fitted in, e.g., the \texttt{VGAM} R-package. This parametrization is practically useful, as it drastically reduces the number of parameters. The Rank can be determined by cross-validation, or alternatively, using information criteria. In the \texttt{gllvm} R-package, the code for this model is, for an arbitrary choice of Rank 2:
+
+```{r eval=FALSE}
+RRGLM <- gllvm(Y,X=X,family=family, num.RR=2)
+```
+
+The reduced rank slopes are available under `RRGLM$params$LvXcoef`. Note: in general to improve convergence, it is good practice to center and scale the predictor variables. Unlike in other R-packages, we can now formulate a RRR with residual (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the latter is how the residual can be understood). The code for this is:
+
+```{r eval=FALSE}
+CGLLVM <- gllvm(Y,X=X,family=family, num.lv.c = 2, n.init=10)
+```
+
+The number of reduced ranks, constrained latent variables, unconstrained latent variables can be freely combined. It is also possible to combine those with full-rank predictors. If combining RRR (with or without latent variable), with full-rank predictors, the formula interface has to be used:
+
+```{r eval=FALSE}
+CGLLVMX <- gllvm(Y,X=X,family=family, num.lv.c = 2, lv.formula = RR.formula, formula = X.formula)
+```
+where `RR.formula` is the formula for the constrained ordination, and `X.formula` is the formula which informs the model which predictors should be modelled in full-rank. Note, that those two formulas cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. Reduced Rank regression can never include an (additional) intercept.
+
+Though we did not do so here, information criteria can be used to determine the correct number of Reduced Ranks, constrained and unconstrained latent variables. Our recommendation is not to perform model-selection on the included predictor variables, but just on the Ranks. A wald-statistic with accompanying p-values can then be used to determine significance of the predictors:
+
+```{r}
+summary(CGLLVM)
+```
+
+Finally, we can use all the other tools in the \texttt{gllvm} R-package for inference, such as creating an ordination diagram with arrows:
+
+```{r}
+ordiplot(CGLLVM,biplot=T)
+```
+Arrows that show as less intense red (pink), are predictors of which the confidence interval for the slope includes zero, for at least one of the two plotted dimensions. The arrows are always proportional to the size of the plot, so that the predictor with the largest slope estimate is the largest arrow. If the predictors have no effect, the slopes $\boldsymbol{B}$ will be close to zero.
+
+It is also possible to use the `quadratic` flag to fit a quadratic response model, though we will not demonstrate that here.
+
+# References
+
+---
+references:
+- id: vanderVeen2021
+  title: Model-based constrained ordination with latent variables (in prep)
+  author: 
+  - family: van der Veen
+    given: B.
+  - family: Hui
+    given: F.K.C.
+  - family: Hovstad
+    given: K.A.
+  - family: O'Hara
+    given: R.B.
+  publisher: 
+  volume: 
+  page: 
+  type: article-journal
+  issued:
+    year: 2021
+
+---
