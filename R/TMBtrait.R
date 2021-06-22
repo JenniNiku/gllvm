@@ -304,6 +304,8 @@ trait.TMB <- function(
         if(!is.null(TR) && !is.null(X)) {
           B <- start.params$params$B;
         }
+        b.lv <- matrix(0)
+        
         fourth <- inter <- NULL; if(!is.null(TR) ) inter <- start.params$params$fourth   # let's treat this as a vector (vec(B'))'
         vameans <- theta <- lambda <- NULL
 
@@ -316,8 +318,10 @@ trait.TMB <- function(
             row.params <- res$row.params
           }
           
-        }     
+        } 
+        sigma.lv <- 0
         if(num.lv > 0) {
+          sigma.lv <- start.params$params$sigma.lv
           theta <- (start.params$params$theta) ## LV coefficients
           vameans <- matrix(start.params$lvs, ncol = num.lv);
           lambda <- start.params$A

@@ -95,13 +95,13 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           if(!is.null(X)) fit.mva <- mlm(y, X = X)
           if(is.null(X)) fit.mva <- mlm(y)
           mu <- NULL
-          resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+          # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
         }
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, resi=resi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, Power = Power)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, Power = Power)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0){
@@ -504,7 +504,6 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
 
 FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta = NULL, zeta.struc = "species", phis = NULL, 
                     jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL){
-  
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
   b.lv <- NULL
@@ -829,18 +828,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
   if(num.RR>0){
-      # if(n<p){
-      #   pca <- princomp(t(resi))
-      #   comp <- pca$scores
-      # }else{
-      #   pca <- princomp(resi)
-      #   comp <- pca$loadings
-      # }
-      # try(start.fit <- start.values.gllvm.TMB(y,X=lv.X,num.lv=0,num.RR=0,family=family,row.eff=row.eff,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta),silent=T)
-      # if(inherits(start.fit,"try-error")){
-      #   stop("Calculating starting values for Reduced Rank failed. Reduce the number of parameters in the model or change starting.val to `zero` or `random`")
-      # }
-      # qr.gam <- qr(t(start.fit$params[,-1,drop=F]))
       RRmod <- lm(resi~0+lv.X)
       qr.gam <- qr(coef(RRmod))
       RRcoef <- qr.Q(qr.gam)[,1:num.RR]
@@ -848,15 +835,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
       eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
   }
-  # else if(num.lv.c>0&num.RR>0){
-  #   RRmod <- lm(resi~0+lv.X)
-  #   qr.gam <- qr(coef(RRmod))
-  #   RRcoef <- qr.Q(qr.gam)[,1:num.RR]
-  #   RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
-  #   RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
-  #   eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
-  # }
-  
+
   if((num.lv.c+num.RR)>0&num.lv>0){
     # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {

@@ -391,10 +391,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     
     if(!is.null(start.fit)){
-    if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.params$num.lv){
+    if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.fit$num.lv){
       stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
     }
-    if(all(class(start.fit))=="gllvm"&quadratic!=FALSE){
+    if(all(class(start.fit)=="gllvm")&quadratic!=FALSE){
       stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
     }
     }
@@ -513,8 +513,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         y <- as.matrix(y)
     } else {
       if (!is.null(data)) {
-        if (is.null(formula)&is.null(lv.formula))
-          stop("Define a formula when 'data' attribute is used.")
+        if (is.null(formula))
+          stop("Define formula when 'data' attribute is used.")
         if ("id" %in% colnames(data)) {
           id <- data[, "id"]
           n <- max(id)
@@ -525,66 +525,50 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           id <- 1:n
         }
       }
+      
       cl <- match.call()
       mf <- match.call(expand.dots = FALSE)
-      m <- match(c("lv.formula", "data", "na.action"), names(mf), 0)
+      m <- match(c("formula", "data", "na.action"), names(mf), 0)
       mf <- mf[c(1, m)]
       mf$drop.unused.levels <- TRUE
-      mf[[1]] <- as.name("model.matrix")
+      mf[[1]] <- as.name("model.frame")
       mf <- eval(mf, parent.frame())
       term <- attr(mf, "terms")
-      
-      cl2 <- match.call()
-      mf2 <- match.call(expand.dots = FALSE)
-      m2 <- match(c("lv.formula", "data", "na.action"), names(mf2), 0)
-      mf2 <- mf2[c(1, m2)]
-      mf2$drop.unused.levels <- TRUE
-      mf2[[1]] <- as.name("model.matrix")
-      mf2 <- eval(mf2, parent.frame())
-      term2 <- attr(mf2, "terms")
-      
       abundances <- model.response(mf, "numeric")
       if (any(is.na(abundances)))
         stop("There are NA values in the response.")
       y <- abundances
       #
       X <- model.matrix(term, mf)
-      lv.X <- model.matrix(term2, mf2)
-
-      atr2 <- c(attr(lv.X, "assign"))
+      
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {
         X <- X[, (atr > 0) * 1:ncol(X)]
       } else{
         X <- NULL
       }
-      if (sum(atr2) > 0) {
-        lv.X <- lv.X[, (atr2 > 0) * 1:ncol(lv.X)]
-      } else{
-        lv.X <- NULL
-      }
+      
       if (NCOL(y) == 1 &&
           !is.null(data)) {
         y <- matrix(y, n, p)
         colnames(y) <- paste("y", 1:p, sep = "")
       }
       try(
-      if (is.null(X)) {
-        datayx <- data.frame(y = y)
-      } else {
-        datayx <- data.frame(y = y, X = X)
-      }, silent = TRUE)
+        if (is.null(X)) {
+          datayx <- data.frame(y = y)
+        } else {
+          datayx <- data.frame(y = y, X = X)
+        }, silent = TRUE)
       
       if (!is.null(data)) {
         frame1 <- mf
-        frame2 <- mf2
         X <- TR <- NULL
         if (length(attr(term, "term.labels")) > 0) {
           datax <- frame1[, colnames(frame1)!="y"]
           colnames(datax) <- colnames(frame1)[colnames(frame1)!="y"]
           #datax <- frame1[, attr(term, "term.labels")[attr(term, "order") == 1]]
           # colnames(datax) <- attr(term, "term.labels")[attr(term, "order") == 1]
-
+          
           for (k in 1:ncol(datax)) {
             lngth <- NULL
             namek <- colnames(datax)[k]
@@ -596,41 +580,21 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                 X <- data.frame(X, datax[1:n, k])
               else
                 X <- data.frame(datax[1:n, k])
-
+              
               colnames(X)[ncol(X)] <- namek
             } else {
               if (!is.null(TR)){
                 TR <- data.frame(TR, datax[id == 1, k])
               } else{
                 TR <- data.frame(datax[id == 1, k])
-                }
+              }
               colnames(TR)[ncol(TR)] <- namek
             }
           }
         }
-        if (length(attr(term2, "term.labels")) > 0) {
-          datax2 <- frame2[, colnames(frame2)!="y"]
-          colnames(datax2) <- colnames(frame2)[colnames(frame2)!="y"]
-          
-          for (k in 1:ncol(datax2)) {
-            lngth <- NULL
-            namek <- colnames(datax2)[k]
-            for (i in 1:n) {
-              lngth <- c(lngth, length(unique(datax2[(id == i), k])))
-            }
-            if (max(lngth) == 1) {
-              if (!is.null(X))
-                lv.X <- data.frame(X, datax2[1:n, k])
-              else
-                lv.X <- data.frame(datax2[1:n, k])
-              
-              colnames(lv.X)[ncol(lv.X)] <- namek
-            } 
-          }
-        }
-        
       }
     }
+
     
     #check for redundant predictors
     

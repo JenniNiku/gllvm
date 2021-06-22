@@ -206,6 +206,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             lambda2 <- matrix(quad.start, ncol = num.lv+num.lv.c+num.RR, nrow = p)
           }
         }
+        if((start.params$num.lv.c+start.params$num.RR)==0){
+          b.lv <- matrix(0)
+        }else{
+          b.lv <- start.params$params$b.lv
+        }
         beta0 <- start.params$params$beta0 ## column intercepts
         betas <- NULL
         if (!is.null(X))
@@ -231,9 +236,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             sigma <- start.params$params$sigma
         }## row parameters
         lvs <- NULL
+        sigma.lv <- 0
         if ((num.lv+num.lv.c) > 0) {
+          sigma.lv <- start.params$params$sigma.lv
           lvs <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
-        }## LVs
+        }
       } else {
         stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other.")
       }
