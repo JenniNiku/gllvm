@@ -37,7 +37,7 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
   if(is.null(newX)==FALSE)
     assign(as.character(object$call[3]),newX)
   objectTest=eval(object$call)
-  nlvr <- num.lv <- objectTest$num.lv #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
+  nlvr <- num.lv <- objectTest$num.lv+objectTest$num.lv.c #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
 
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
@@ -49,36 +49,36 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
   n <- dim(objectTest$y)[1]
   lvs <- (matrix(optLVs$par[ui],n,nlvr))
   rownames(lvs) <- rownames(objectTest$y);
-  if(objectTest$num.lv>1 && nlvr==objectTest$num.lv){ 
-    colnames(lvs) <- paste("LV", 1:objectTest$num.lv, sep="");
-  } else if(objectTest$num.lv > 1 && nlvr > objectTest$num.lv) {
-    colnames(lvs) <- c("row", paste("LV", 1:objectTest$num.lv, sep=""));
+  if((objectTest$num.lv+objectTest$num.lv.c)>1 && nlvr==(objectTest$num.lv+objectTest$num.lv.c)){ 
+    colnames(lvs) <- paste("LV", 1:(objectTest$num.lv+objectTest$num.lv.c), sep="");
+  } else if((objectTest$num.lv+objectTest$num.lv.c) > 1 && nlvr > (objectTest$num.lv+objectTest$num.lv.c)) {
+    colnames(lvs) <- c("row", paste("LV", 1:(objectTest$num.lv+objectTest$num.lv.c), sep=""));
     }
 
   out <- list(lvs=lvs,logL=-optLVs$value)
   # and their sds: (assuming method="VA")
-  if(num.lv>0 && object$method=="VA")
+  if((objectTest$num.lv+objectTest$num.lv.c)>0 && object$method=="VA")
   {
     Au <- optLVs$par[names(optLVs$par)=="Au"]
-    A <- array(0,dim=c(n,num.lv,num.lv))
-    for (d in 1:num.lv)
+    A <- array(0,dim=c(n,(objectTest$num.lv+objectTest$num.lv.c),(objectTest$num.lv+objectTest$num.lv.c)))
+    for (d in 1:(objectTest$num.lv+objectTest$num.lv.c))
     {
       for(i in 1:n)
       {
         A[i,d,d] <- exp(Au[(d-1)*n+i]);
       }
     }
-    if(length(Au)>num.lv*n)
+    if(length(Au)>(objectTest$num.lv+objectTest$num.lv.c)*n)
     {
       k <- 0;
-      for (c1 in 1:num.lv)
+      for (c1 in 1:(objectTest$num.lv+objectTest$num.lv.c))
       {
         r <- c1+1;
-        while (r <=num.lv)
+        while (r <=(objectTest$num.lv+objectTest$num.lv.c))
         {
           for(i in 1:n)
           {
-            A[i,r,c1] <- Au[num.lv*n+k*n+i];
+            A[i,r,c1] <- Au[(objectTest$num.lv+objectTest$num.lv.c)*n+k*n+i];
             # A[i,c1,r] <- A[i,r,c1];
           }
           k <- k+1; r <- r+1;
