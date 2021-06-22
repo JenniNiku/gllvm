@@ -305,7 +305,7 @@
 #'@importFrom mvtnorm rmvnorm
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
-                  num.lv = 0, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
+                  num.lv = NULL, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
@@ -314,6 +314,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
+    #change default behavior of num.lv.
+    #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
+  if(is.null(num.lv)&num.lv.c==0){
+    num.lv <- 2
+  }else if(is.null(num.lv)){num.lv<-0}
+  
+  
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
