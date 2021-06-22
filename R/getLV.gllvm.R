@@ -3,13 +3,14 @@
 #' 
 #' @param object an object of class 'gllvm'.
 #' @param type type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "unconstrained". For models with constrained latent variables, defaults to "constrained". A third option is "scaled", which returns latent variables multiplied with their standard deviations.
+#' @param ... not used
 #' 
 #'@aliases getLV getLV.gllvm
 #'@method getLV gllvm
 #'@export
 #'@export getLV.gllvm
 
-getLV.gllvm <- function(object, type = NULL)
+getLV.gllvm <- function(object, type = NULL, ...)
 {
   if(is.null(type)){
   if(object$num.lv.c==0&object$num.RR==0){

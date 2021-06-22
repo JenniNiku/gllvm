@@ -93,7 +93,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% diag(object$params$sigma.lv) %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% diag(object$params$sigma.lv)) + 2 * object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2) %*% t(object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2))
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$sigma.lv[q]^2*object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$sigma.lv[q]^4*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
-    if(num.lv.c>0){
+    if(object$num.lv.c>0){
       ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index,,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F))
       ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q)ResCov.q2[[q]]+ 4*object$params$sigma.lv[q]^2*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
       

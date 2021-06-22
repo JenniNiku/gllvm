@@ -220,11 +220,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if ((num.lv+(num.lv.c+num.RR)) > 0){
           sigma.lv <- start.params$params$sigma.lv
           lambdas <- start.params$params$theta
-          if(num.lv>1&(num.lv.c+num.RR)==0){
-            lambdas[,1:num.lv][upper.tri(lambdas[,1:num.lv,drop=F]),] <- 0}  
-        }else if(num.lv>0&(num.lv.c+num.RR)>0){
           if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR),drop=F]),] <- 0
           if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas),drop=F]),] <- 0
+          
         }
           
         row.params <- NULL

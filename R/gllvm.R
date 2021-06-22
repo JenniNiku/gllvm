@@ -6,7 +6,8 @@
 #' @param X matrix or data.frame of environmental covariates.
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
-#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
+#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).
+#' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.
 #' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects.
 #' @param num.RR number of reduced rank dimensions for predictor variables.
@@ -207,7 +208,7 @@
 #'
 #'## Example 1a: Fit model with two constrained latent variables and with quadratic response model
 #'fity1 <- gllvm(y, X = X, family = "negative.binomial", num.lv.c=2, method="VA", quadratic = TRUE)
-#'ordiplot(fity1, biplot = T)
+#'ordiplot(fity1, biplot = TRUE)
 #'
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
@@ -303,6 +304,13 @@
 #'@importFrom MASS ginv polr
 #'@importFrom mgcv gam predict.gam
 #'@importFrom mvtnorm rmvnorm
+#'@importFrom stats residuals.lm
+#'@importFrom stats coef
+#'@importFrom stats printCoefmat
+#'@importFrom stats dist
+#'@importFrom grDevices hcl
+#'@importFrom graphics arrows
+
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,

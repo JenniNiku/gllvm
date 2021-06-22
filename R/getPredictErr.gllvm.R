@@ -66,7 +66,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
         out$lvs <- sqrt(object$A[,1:(num.lv+num.lv.c+num.RR)+r])
       } else {
         if((num.lv+num.lv.c+num.RR) ==1) {
-          out$lvs <- sqrt(as.matrix(object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.R)+r]))
+          out$lvs <- sqrt(as.matrix(object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]))
         } else {
           out$lvs <- sqrt(apply((object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]),1,diag))
         }
