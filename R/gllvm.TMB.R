@@ -9,6 +9,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS") {
   if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
+
   if(!is.null(start.params)) starting.val <- "zero"
   ignore.u=FALSE
   n <- nr <- dim(y)[1]

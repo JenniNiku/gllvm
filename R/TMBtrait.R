@@ -851,7 +851,7 @@ trait.TMB <- function(
       if(num.lv > 0) {
         out$lvs <- lvs
         out$params$theta <- theta
-        if((num.lv+num.lv.c)>0)out$params$sigma.lv  <- sigma.lv
+        if(num.lv>0)out$params$sigma.lv  <- sigma.lv
         rownames(out$lvs) <- rownames(out$y);
         rownames(out$params$theta) <- colnames(out$y)
         if(quadratic==FALSE)colnames(out$params$theta) <- colnames(out$lvs) <- paste("LV", 1:num.lv, sep="");

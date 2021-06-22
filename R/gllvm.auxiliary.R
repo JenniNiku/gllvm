@@ -2136,8 +2136,12 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
     out$Ab <- CovABerr
   }
     
-  se <- aperm(simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F)),c(3,1,2))
-  
+  se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
+  if((num.RR+num.lv+num.lv.c)>1){
+    se <- aperm(se,c(3,2,1))
+  }else{
+    se <- as.matrix(se)
+  }
   if((num.RR+num.lv+num.lv.c)>0){
     out$A <- se
   }
@@ -2345,8 +2349,12 @@ CMSEPf <- function(fit){
   }
   
   #re-order, select submatrices
-  se <- aperm(simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F)),c(3,1,2))
-  
+  se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
+  if((num.RR+num.lv+num.lv.c)>1){
+    se <- aperm(se,c(3,2,1))
+  }else{
+    se <- as.matrix(se)
+  }
   if((num.lv+num.lv.c+num.RR) > 0) {
     out$A <- se
   }

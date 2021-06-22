@@ -403,7 +403,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
       control$TMB <- TRUE
     }
-      
+    if (class(family) == "family") {
+      link <- family$link
+      family <- family$family
+    }  
     if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
@@ -699,13 +702,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       row.eff = "random"
     }
     
-    if (class(family) == "family") {
-      link <- family$link
-      family <- family$family
-    }
     if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
-
-    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
@@ -943,7 +940,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if (sd.errors) {
         out$sd <- fitg$sd
         if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
-          if(is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
+          if(!is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
         }
