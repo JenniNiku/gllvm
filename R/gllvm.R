@@ -297,19 +297,13 @@
 #'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
-#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
-#'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula
+#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
+#'@importFrom grDevices rainbow hcl
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat dist
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom MASS mvrnorm
 #'@importFrom mgcv gam predict.gam
-#'@importFrom stats residuals.lm
-#'@importFrom stats coef
-#'@importFrom stats printCoefmat
-#'@importFrom stats dist
-#'@importFrom grDevices hcl
-#'@importFrom graphics arrows
 
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
