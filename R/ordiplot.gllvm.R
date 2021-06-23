@@ -317,8 +317,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       # if(quadratic!=FALSE){
       if(spp.arrows){
         marg<-par("usr")
-        Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
-        Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
+        Xlength<-sum(abs(marg[1:2]))/2
+        Ylength<-sum(abs(marg[3:4]))/2
         origin<- c(mean(marg[1:2]),mean(marg[3:4]))
         #scores_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,which.lvs,drop=F],1,all)],which.lvs,drop=F]
         scores_to_plot <- choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!all(x)),,drop=F]
@@ -363,15 +363,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       #account for variance of the predictors
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
-      
-      Xlength<-min(dist(c(mean(marg[1:2]),marg[1])),dist(c(mean(marg[1:2]),marg[2])))
-      Ylength<-min(dist(c(mean(marg[3:4]),marg[3])),dist(c(mean(marg[3:4]),marg[4])))
+    
+      Xlength<-sum(abs(marg[1:2]))/2
+      Ylength<-sum(abs(marg[3:4]))/2
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
       
-      #scale the largest arrow to 80% of the smallest distance from 0 to the edge of the plot
-      ends <- t(t(t(t(LVcoef))/sqrt((LVcoef[,1])^2+(LVcoef[,2])^2)/abs(max(LVcoef))*min(Xlength,Ylength)))*0.8
+      ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)
+
       for(i in 1:nrow(LVcoef)){
-        arrows(x0=origin[1],y0=origin[2],x1=origin[1]+ends[i,1],y1=origin[2]+ends[i,2],col=col[i],length=0.2,lty=lty[i])  
+        # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
+         arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i])  
         text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
       }
     }
