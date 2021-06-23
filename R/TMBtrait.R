@@ -377,7 +377,7 @@ trait.TMB <- function(
     }
     if(jitter.var.r>0){ 
       if(row.eff == "random") row.params <- row.params + rnorm(n, 0, sd = sqrt(jitter.var.r));
-      if(!is.null(randomX)) Br <- Br + t(mvtnorm::rmvnorm(p, rep(0, nrow(Br)),diag(nrow(Br))*jitter.var.r));
+      if(!is.null(randomX)) Br <- Br + t(MASS::mvrnorm(p, rep(0, nrow(Br)),diag(nrow(Br))*jitter.var.r));
     }
     
     q <- num.lv

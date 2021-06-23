@@ -53,7 +53,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   if((num.lv+num.lv.c) > 0) {
     unique.ind <- which(!duplicated(y))
     if(is.null(start.lvs)) {
-      index <- mvtnorm::rmvnorm(N, rep(0, num.lv+num.lv.c));
+      index <- MASS::mvrnorm(N, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c));
       if(num.lv>0&num.lv.c==0)colnames(index) <- paste("LV",1:num.lv, sep = "")
       if(num.lv==0&num.lv.c>0)colnames(index) <- paste("CLV",1:num.lv.c, sep = "")
       if(num.lv>0&num.lv.c>0)colnames(index) <- c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
@@ -430,7 +430,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   }
   
   if((num.lv+num.lv.c+num.RR) > 0 & starting.val!="zero") {
-    if((num.lv+num.lv.c)>0)index <- index+mvtnorm::rmvnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
+    if((num.lv+num.lv.c)>0)index <- index+ MASS::mvrnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
     if(num.lv>0&(num.lv.c+num.RR)==0){
       try({
         gamma.new <- params[,(ncol(params) - num.lv + 1):(ncol(params)),drop=F];
@@ -1249,7 +1249,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }
       
     }
-    index <- index + mvtnorm::rmvnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
+    index <- index +  MASS::mvrnorm(n, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c)*jitter.var);
     
   }else{
     index <- NULL

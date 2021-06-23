@@ -5,12 +5,14 @@
 \alias{getLV}
 \title{Extract latent variables}
 \usage{
-\method{getLV}{gllvm}(object, type = NULL)
+\method{getLV}{gllvm}(object, type = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{type}{type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "unconstrained". For models with constrained latent variables, defaults to "constrained". A third option is "scaled", which returns latent variables multiplied with their standard deviations.}
+
+\item{...}{not used}
 }
 \description{
 Extract latent variables from gllvm object.

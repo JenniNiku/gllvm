@@ -11,7 +11,7 @@ gllvm(
   data = NULL,
   formula = NULL,
   lv.formula = NULL,
-  num.lv = 0,
+  num.lv = NULL,
   num.lv.c = 0,
   num.RR = 0,
   family,
@@ -52,7 +52,9 @@ gllvm(
 
 \item{data}{data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.}
 
-\item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.}
+\item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).}
+
+\item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.}
 
@@ -266,7 +268,7 @@ confint(fitv0)
 
 ## Example 1a: Fit model with two constrained latent variables and with quadratic response model
 fity1 <- gllvm(y, X = X, family = "negative.binomial", num.lv.c=2, method="VA", quadratic = TRUE)
-ordiplot(fity1, biplot = T)
+ordiplot(fity1, biplot = TRUE)
 
 # Using Laplace approximation: (this line may take about 30 sec to run)
 fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
