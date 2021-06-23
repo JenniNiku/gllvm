@@ -23,7 +23,8 @@
 Extracts species optima and tolerances, potentially with standard errors (derived with the Delta method).
 }
 \details{
-
+Currently no separate method for calculating species maxima or gradient length are implemented.
+Gradient length can be inferred from the standard deviation of the latent variables, which is reported by \code{\link{summary.gllvm}}.
 }
 \author{
 Bert van der Veen
