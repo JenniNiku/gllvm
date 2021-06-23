@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=
 
 
 ```{r, echo=FALSE}
-load(file = "CGLLVM.RData")
+load(file = "ftCGLLVM.RData")
 ```
 
 Until recently, the \texttt{gllvm} R-package only supported unconstrained ordination. When including predictor variables, the interpretation of the ordination would shift to a residual ordination, conditional on the predictors.
@@ -43,7 +43,7 @@ For that, it is important to first understand what a constrained ordination is. 
 Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $K$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the GLLVM R-package, the code to fit this model is:
 
 ```{r eval=FALSE}
-MGLM <- gllvm(Y,X=X,family=family)
+MGLM <- gllvm(Y,X=X,family="poisson")
 ```
 
 The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. RRR introduces a constraint on the species slopes matrix, namely on the number of independent columns in $\boldsymbol{\beta}_j$ (a column is not independent when it can be formulated as a linear combination of another). The reduced ranks are in community ecology referred to as ecological gradients, or can be understood as ordination axes. If we define a latent variable $\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X_{i,lv}} + \boldsymbol{\epsilon}_i$, for a $K\times d$ matrix of slopes, we can understand RRR as a regression of the latent variable or ecological gradient, except that the residual $\boldsymbol{\epsilon}_i$ is omitted, i.e. we assume that the ecological gradient can be represented perfectly by the predictor variables, so that the model becomes:
@@ -54,21 +54,21 @@ The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. RRR introduces
 Where $\boldsymbol{\gamma}_j$ is a set of reduced rank slopes for each species. This model can also be fitted in, e.g., the \texttt{VGAM} R-package. This parametrization is practically useful, as it drastically reduces the number of parameters. The Rank can be determined by cross-validation, or alternatively, using information criteria. In the \texttt{gllvm} R-package, the code for this model is, for an arbitrary choice of Rank 2:
 
 ```{r eval=FALSE}
-RRGLM <- gllvm(Y,X=X,family=family, num.RR=2)
+RRGLM <- gllvm(Y,X=X,family="poisson", num.RR=2)
 ```
 
 The reduced rank slopes are available under `RRGLM$params$LvXcoef`. Note: in general to improve convergence, it is good practice to center and scale the predictor variables. Unlike in other R-packages, we can now formulate a RRR with residual (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the latter is how the residual can be understood). The code for this is:
 
 ```{r eval=FALSE}
-CGLLVM <- gllvm(Y,X=X,family=family, num.lv.c = 2, n.init=10)
+CGLLVM <- gllvm(Y,X=X,family="poisson", num.lv.c = 2)
 ```
 
 The number of reduced ranks, constrained latent variables, unconstrained latent variables can be freely combined. It is also possible to combine those with full-rank predictors. If combining RRR (with or without latent variable), with full-rank predictors, the formula interface has to be used:
 
 ```{r eval=FALSE}
-CGLLVMX <- gllvm(Y,X=X,family=family, num.lv.c = 2, lv.formula = RR.formula, formula = X.formula)
+PCGLLVM <- gllvm(Y,X=X,family="poisson", num.lv.c = 2, lv.formula = ~bare.sand+fallen.leaves+moss+herb.layer+reflection, formula = ~soil.dry)
 ```
-where `RR.formula` is the formula for the constrained ordination, and `X.formula` is the formula which informs the model which predictors should be modelled in full-rank. Note, that those two formulas cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. Reduced Rank regression can never include an (additional) intercept.
+where `RR.formula` is the formula for the constrained ordination, and `X.formula` is the formula which informs the model which predictors should be modelled in full-rank. Note, that those two formulas cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. In essence, this performs a partial constrained ordination with latent variables. Reduced Rank regression can never include an (additional) intercept.
 
 Though we did not do so here, information criteria can be used to determine the correct number of Reduced Ranks, constrained and unconstrained latent variables. Our recommendation is not to perform model-selection on the included predictor variables, but just on the Ranks. A wald-statistic with accompanying p-values can then be used to determine significance of the predictors:
 
@@ -79,7 +79,7 @@ summary(CGLLVM)
 Finally, we can use all the other tools in the \texttt{gllvm} R-package for inference, such as creating an ordination diagram with arrows:
 
 ```{r}
-ordiplot(CGLLVM,biplot=T)
+ordiplot(CGLLVM, biplot=TRUE)
 ```
 Arrows that show as less intense red (pink), are predictors of which the confidence interval for the slope includes zero, for at least one of the two plotted dimensions. The arrows are always proportional to the size of the plot, so that the predictor with the largest slope estimate is the largest arrow. If the predictors have no effect, the slopes $\boldsymbol{B}$ will be close to zero.
 

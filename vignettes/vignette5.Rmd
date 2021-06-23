@@ -45,7 +45,7 @@ ftComTol <- gllvm(Y, family = "poisson", num.lv = 2, quadratic = "LV")
 And lastly, we can fit the full quadratic model.
 
 ```{r, eval = FALSE}
-ftUneqTol <- gllvm(Y, family = "poisson", num.lv = 2, quadratic = T)
+ftUneqTol <- gllvm(Y, family = "poisson", num.lv = 2, quadratic = TRUE)
 ```
 
 GLLVMs are sensitive to the starting values, and with a quadratic response model even more so. As such, the unequal tolerances model by defaults fits a common tolerances model first, to use as starting values. This option is control through the `start.struc` argument in `start.control`.
