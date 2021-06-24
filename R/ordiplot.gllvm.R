@@ -82,7 +82,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.6, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
@@ -364,12 +364,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
     
-      Xlength<-sum(abs(marg[1:2]))/2
-      Ylength<-sum(abs(marg[3:4]))/2
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
-      
-      ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
 
+      r<-c(range(choose.lvs[,1]),range(choose.lvs[,2]))
+      ends <- LVcoef*min(marg/r)*arrow.scale
       for(i in 1:nrow(LVcoef)){
         # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
          arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i])  
