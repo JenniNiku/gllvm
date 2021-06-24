@@ -345,7 +345,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
         
         for(i in 1:ncol(object$lv.X)){
-          rotSD[i,] <- sqrt(diag(t(B)%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%B))
+          rotSD[i,] <- sqrt(abs(diag(t(B)%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%B)))
         }
         rotSD <- rotSD[,which.lvs]
         cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD[,which.lvs]
