@@ -60,6 +60,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       unique.index <- as.matrix(index[unique.ind,])
     }
     if(!is.null(start.lvs)) {
+      if(num.lv.c>0){
+        index.lm <- lm(start.lvs ~ 0+lv.X)
+        b.lv <- coef(index.lm)
+        start.lvs <- as.matrix(residuals.lm(index.lm))
+      }
       index <- as.matrix(start.lvs)
       unique.index <- as.matrix(index[unique.ind,])
     }
@@ -233,7 +238,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   if(family == "negative.binomial") {
     phi <- fit.mva$phi  + 1e-5
-  } else if(family %in% c("gaussian", "gamma", "beta")) {
+  } else if(family %in% c("gaussian", "gamma", "beta","tweedie")) {
     phi <- fit.mva$phi
   } else { phi <- NULL }
   # 
@@ -424,7 +429,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     
     phi <- rep(1,p)
     if((num.lv.c+num.RR)>0){
-      b.lv <- matrix(0,nrow=ncol(lv.X),ncol=(num.lv.c+num.RR))
+      b.lv <- matrix(0.1,nrow=ncol(lv.X),ncol=(num.lv.c+num.RR))
     }
     sigma.lv <- rep(1,num.lv+num.lv.c)
   }
@@ -516,10 +521,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   #generate starting values for constrained LVs
   if(num.lv.c>0&num.lv==0){
     if(p>2 && n>2){
-      start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=0,num.RR = num.lv.c, family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
-      b.lv <- start.fit$params$LvXcoef
-      gamma <- start.fit$params$theta
-      eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
+      # start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=0,num.RR = num.lv.c, family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc,max.iter = 50,maxit=50)
+      # b.lv <- start.fit$params$LvXcoef
+      # gamma <- start.fit$params$theta
+      #eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
       
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
         mu <- exp(eta)
@@ -664,12 +669,17 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }
       if(n>p){
         index<-as.matrix(fa$scores)
+        gamma <- as.matrix(fa$loadings)
       }else{
         index<-as.matrix(fa$loadings)
+        gamma <- as.matrix(fa$scores)
       }
       
-      #Ensure independence of LVs with predictors
-      index <- matrix(residuals.lm(lm(index~0+lv.X)),ncol=num.lv.c)
+      index.lm <- lm(index~0+lv.X)
+      b.lv <- coef(index.lm)
+      
+      #Ensures independence of LVs with predictors
+      index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
       
       colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
       
@@ -701,7 +711,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, offset = eta)
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta)
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
@@ -1997,7 +2007,7 @@ getFourthCorner<- function(object){
 
 
 # Calculates standard errors for random effects
-sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
+sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
   #For num.RR we treat the LV as zero
 
   r <- obj$env$random
@@ -2114,7 +2124,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
     }
     out$Ab <- CovABerr
   }
-    
+    if(!return.covb){
   se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
   if((num.RR+num.lv+num.lv.c)>1){
     se <- aperm(se,c(3,2,1))
@@ -2124,7 +2134,9 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE){
   if((num.RR+num.lv+num.lv.c)>0){
     out$A <- se
   }
-  
+    }else{
+     out  <- covb
+    }
   
   return(out)
 }
@@ -2224,7 +2236,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
 #   CovABerr
 # }
 
-CMSEPf <- function(fit){
+CMSEPf <- function(fit, return.covb = F){
   #for num.RR we are treating the LV as zero
   
   n<-nrow(fit$y)
@@ -2326,7 +2338,7 @@ CMSEPf <- function(fit){
     }
     out$Ab <- CovABerr
   }
-  
+  if(!return.covb){
   #re-order, select submatrices
   se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
   if((num.RR+num.lv+num.lv.c)>1){
@@ -2337,7 +2349,10 @@ CMSEPf <- function(fit){
   if((num.lv+num.lv.c+num.RR) > 0) {
     out$A <- se
   }
-  out
+  }else{
+    out <- covb
+  }
+  return(out)
 }
 
 # draw an ellipse
