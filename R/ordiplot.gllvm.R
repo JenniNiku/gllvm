@@ -343,9 +343,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
         rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
-        
+        #using svd_rotmat_sites instead of B so that uncertainty of the predictors is not affected by the scaling using alpha and sigma.lv
         for(i in 1:ncol(object$lv.X)){
-          rotSD[i,] <- sqrt(abs(diag(t(B)%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%B)))
+          rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
         }
         rotSD <- rotSD[,which.lvs]
         cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD[,which.lvs]
