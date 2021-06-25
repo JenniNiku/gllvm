@@ -719,7 +719,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("The quadratic model is not implemented for ", family, " family yet. \n")
     }
     if (method == "VA" && family %in% c("tweedie", "beta")){
-      cat("Note that, the", family, "family is implemented using extended variational approximation method. \n")
+      cat("Note that, the", family, "family is implemented using the extended variational approximation method. \n")
     }
     if (method == "EVA"){
       method = "VA"
