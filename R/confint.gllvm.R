@@ -45,7 +45,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     }
     
     
-    parm_all <- c("theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "inv.phi", "phi", "p","zeta")
+    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "inv.phi", "phi", "p","zeta")
     parmincl <- parm_all[parm_all %in% names(object$params)]
     cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
     ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
@@ -103,7 +103,16 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
     }
-    
+    if((num.lv+num.lv.c)>0){
+      if(num.lv>0&num.lv.c>0){
+        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.CLV", 1:num.lv.c, sep=""),paste("sigma.LV", 1:num.lv, sep=""))
+      }else if(num.lv>0){
+        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.LV", 1:num.lv, sep=""))
+      }else if(num.lv.c>0){
+        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.CLV", 1:num.lv.c, sep=""))
+      }
+      cal <- cal+num.lv+num.lv.c
+    }
     if((num.lv.c+num.RR)>0){
       rnames[-c(1:cal)][1:(ncol(object$lv.X)*(num.lv.c+num.RR))] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
       cal<-cal + ncol(object$lv.X)*(num.lv.c+num.RR)
@@ -209,6 +218,16 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if("LvXcoef"%in%parm){
       names(cilow)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <-paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
       names(ciup)[gsub("LvXcoef.*","LvXcoef",names(unlist(object$sd[parm])))%in%"LvXcoef"] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
+    }
+    if("sigma.lv"%in%parm){
+      
+      if(num.lv>0&num.lv.c>0){
+        names(cilow)[gsub("sigma.lv.*","sigma.lv",names(unlist(object$sd[parm])))%in%"sigma.lv"]<-  c(paste("sigma.CLV", 1:num.lv.c, sep=""),paste("sigma.LV", 1:num.lv, sep=""))
+      }else if(num.lv>0){
+        names(cilow)[gsub("sigma.lv.*","sigma.lv",names(unlist(object$sd[parm])))%in%"sigma.lv"]<-  c(paste("sigma.LV", 1:num.lv, sep=""))
+      }else if(num.lv.c>0){
+        names(cilow)[gsub("sigma.lv.*","sigma.lv",names(unlist(object$sd[parm])))%in%"sigma.lv"]<-  c(paste("sigma.CLV", 1:num.lv.c, sep=""))
+      }
     }
       
     
