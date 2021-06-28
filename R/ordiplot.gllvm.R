@@ -16,7 +16,8 @@
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
 #' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
-#' @param arrow.scale value between 0 and 1, to scale arrows
+#' @param arrow.scale positive value, to scale arrows
+#' @param arrow.ci represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}
 #' @param predict.region logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.
 #' @param level level for prediction regions.
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
@@ -82,12 +83,12 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.6, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
-  
-    a <- jitter.amount
+  arrow.scale <- abs(arrow.scale)
+  a <- jitter.amount
   n <- NROW(object$y)
   p <- NCOL(object$y)
   num.lv <- object$num.lv
@@ -338,7 +339,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     if(num.lv==0&(num.lv.c+num.RR)>0){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
 
-      if(!is.logical(object$sd)){
+      if(!is.logical(object$sd)&arrow.ci){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
@@ -365,9 +366,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       marg<-par("usr")
     
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
+      Xlength<-sum(abs(marg[1:2]))/2
+      Ylength<-sum(abs(marg[3:4]))/2
 
-      r<-c(range(choose.lvs[,1]),range(choose.lvs[,2]))
-      ends <- LVcoef*min(marg/r)*arrow.scale
+      ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
       for(i in 1:nrow(LVcoef)){
         # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
          arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i])  
