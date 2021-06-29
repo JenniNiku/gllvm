@@ -92,7 +92,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
   }
   
   
-  if((num.lv+num.lv.c)>1){
+  if((object$num.lv+object$num.lv.c)>1){
     Sigma <- diag(object$params$sigma.lv)  
   }else{
     Sigma <- object$params$sigma.lv
