@@ -90,10 +90,17 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
   if((object$num.lv+object$num.lv.c)==0){
     stop("No latent variables present in model.")
   }
+  
+  
+  if((num.lv+num.lv.c)>1){
+    Sigma <- diag(object$params$sigma.lv)  
+  }else{
+    Sigma <- object$params$sigma.lv
+  } 
 
   ResCov <- matrix(0,ncol=ncol(object$y),nrow=ncol(object$y))
   if(any(class(object)=="gllvm.quadratic")){
-    ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% diag(object$params$sigma.lv) %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% diag(object$params$sigma.lv)) + 2 * object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2) %*% t(object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% diag(object$params$sigma.lv^2))
+    ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% Sigma %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% Sigma) + 2 * object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% Sigma^2 %*% t(object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% Sigma^2)
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$sigma.lv[q]^2*object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$sigma.lv[q]^4*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
     if(object$num.lv.c>0){
@@ -103,7 +110,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     }
     #if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
   }else{
-    ResCov <- object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% diag(object$params$sigma.lv) %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% diag(object$params$sigma.lv))
+    ResCov <- object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% Sigma %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% Sigma)
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) (object$params$theta[, q, drop = F]* object$params$sigma.lv[q]) %*% t(object$params$theta[, q, drop = F] * object$params$sigma.lv[q]), simplify = F)
   }
   
