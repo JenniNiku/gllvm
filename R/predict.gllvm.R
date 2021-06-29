@@ -62,6 +62,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   p <- ncol(object$y)
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
+  if(n!=nrow(object$y)&is.null(newLV)&(object$num.lv.c+object$num.lv)>0)stop("With new predictors with a different number of sites, new latent variables need to be provided.")
   if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
   if(!is.null(object$X)){formula <- formula(terms(object))}else{formula<-NULL}
   
@@ -181,8 +182,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if(object$num.lv > 0 |(object$num.lv.c+object$num.RR)>0) {
     if(!is.null(newLV)) {
       if(ncol(newLV) != (object$num.lv+object$num.lv.c)) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
-      if(!is.null(newdata)) 
-      {  
+      if(!is.null(newdata)){  
         if(nrow(newLV) != nrow(newdata)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
       }
       lvs <- t(t(newLV)*object$params$sigma.lv)

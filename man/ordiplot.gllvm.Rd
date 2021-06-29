@@ -21,6 +21,7 @@
   cex.spp = 0.7,
   spp.colors = "blue",
   arrow.scale = 0.8,
+  arrow.ci = TRUE,
   spp.arrows = FALSE,
   cex.env = 0.7,
   lab.dist = 0.1,
@@ -59,7 +60,9 @@
 
 \item{spp.colors}{colors for sites, defaults to \code{"blue"}}
 
-\item{arrow.scale}{value between 0 and 1, to scale arrows}
+\item{arrow.scale}{positive value, to scale arrows}
+
+\item{arrow.ci}{represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}}
 
 \item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}}
 

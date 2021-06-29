@@ -372,8 +372,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
       for(i in 1:nrow(LVcoef)){
         # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
-         arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i])  
-        text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)
+        tryCatch({arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i]);
+        text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)},
+        warning=function(w){print(paste("The effect for", row.names(LVcoef)[i],"was too small too plot an arrow."))}
+        )
       }
     }
    

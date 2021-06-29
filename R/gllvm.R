@@ -207,7 +207,8 @@
 #'confint(fitv0)
 #'
 #'## Example 1a: Fit model with two constrained latent variables and with quadratic response model
-#'fity1 <- gllvm(y, X = X, family = "negative.binomial", num.lv.c=2, method="VA", quadratic = TRUE)
+#'# We scale and centre the  predictors to improve convergence
+#'fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", num.lv.c=2, method="VA")
 #'ordiplot(fity1, biplot = TRUE)
 #'
 #'# Using Laplace approximation: (this line may take about 30 sec to run)

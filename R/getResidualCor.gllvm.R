@@ -53,7 +53,7 @@ getResidualCor.gllvm = function(object, adjust = 1, site.index = NULL, ...)
 }
 
 #'@export getResidualCor
-getResidualCor <- function(object, adjust)
+getResidualCor <- function(object, ...)
 {
   UseMethod(generic = "getResidualCor")
 }

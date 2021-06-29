@@ -166,7 +166,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
 }
 
 #'@export getResidualCov
-getResidualCov <- function(object, adjust, site.index)
+getResidualCov <- function(object, ...)
 {
   UseMethod(generic = "getResidualCov")
 }

@@ -2,6 +2,7 @@
 % Please edit documentation in R/summary.gllvm.R
 \name{summary.gllvm}
 \alias{summary.gllvm}
+\alias{print.summary.gllvm}
 \title{Summarizing gllvm model fits}
 \usage{
 \method{summary}{gllvm}(
@@ -14,13 +15,15 @@
   theta = FALSE,
   ...
 )
+
+\method{print}{summary.gllvm}(x, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'}
 
 \item{digits}{the number of significant digits to use when printing}
 
-\item{signif.stars}{If \code{TRUE}, ‘significance stars’ are printed for each coefficient, defaults to \code{TRUE}}
+\item{signif.stars}{If \code{TRUE}, significance stars are printed for each coefficient, defaults to \code{TRUE}}
 
 \item{dispersion}{option to return dispersion parameters, defaults to \code{FALSE}}
 
@@ -31,6 +34,8 @@
 \item{theta}{option to return species scores in the ordination, defaults to \code{FALSE}}
 
 \item{...}{not used.}
+
+\item{x}{a summary object}
 }
 \description{
 A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.

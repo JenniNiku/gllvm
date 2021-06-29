@@ -168,8 +168,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }else if(num.lv==0&(num.lv.c+num.RR)>1){
             lambdas[upper.tri(lambdas)] <- 0
           }else if(num.lv>0&num.lv.c>0){
-            if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR),drop=F])] <- 0
-            if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas),drop=F])] <- 0
+            if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)])] <- 0
+            if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
           }
           
         if(quadratic != FALSE){
@@ -205,6 +205,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           }else if(start.struc=="all"&quadratic==TRUE){
             lambda2 <- matrix(quad.start, ncol = num.lv+num.lv.c+num.RR, nrow = p)
           }
+        }else if(quadratic == FALSE){
+          lambda2 <- 0
         }
         if((start.params$num.lv.c+start.params$num.RR)==0){
           b.lv <- matrix(0)
@@ -220,8 +222,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if ((num.lv+(num.lv.c+num.RR)) > 0){
           sigma.lv <- start.params$params$sigma.lv
           lambdas <- start.params$params$theta
-          if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR),drop=F]),] <- 0
-          if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas),drop=F]),] <- 0
+          if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)]),] <- 0
+          if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)]),] <- 0
           
         }
           
@@ -986,7 +988,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
 
 #### Check if model fit succeeded/improved on this iteration n.i
-    
+    out$start <- fit
     if(((n.i==1 || out$logL > (new.loglik))  && is.finite(new.loglik)) && !inherits(optr, "try-error")){
       out$start <- fit
       objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;

@@ -3,9 +3,10 @@
 #' 
 #' Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 #'
-#' @param object   an object of class 'gllvm'
+#' @param object an object of class 'gllvm'
+#' @param x a summary object
 #' @param digits the number of significant digits to use when printing
-#' @param signif.stars If \code{TRUE}, ‘significance stars’ are printed for each coefficient, defaults to \code{TRUE}
+#' @param signif.stars If \code{TRUE}, significance stars are printed for each coefficient, defaults to \code{TRUE}
 #' @param dispersion option to return dispersion parameters, defaults to \code{FALSE}
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
@@ -166,7 +167,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
 }
 
 #'@export
-
+#'@rdname summary.gllvm 
 print.summary.gllvm <- function (x, ...) 
 {
   cat("\nCall:\n", paste(deparse(x$Call), sep = "\n", 

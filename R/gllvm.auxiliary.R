@@ -1160,7 +1160,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     
     index <- as.matrix(index[,-(num.lv+num.lv.c)])
     gamma <- as.matrix(gamma[,-(num.lv+num.lv.c)])
-    (num.lv+num.lv.c) <- (num.lv+num.lv.c)-1
+    num.lv <- num.lv-1
   }
   
   if((num.lv+num.lv.c)>0){
