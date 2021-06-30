@@ -91,6 +91,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     stop("No latent variables present in model.")
   }
   
+  # Remove Reduced Rank parameters if present without residual term
   if(object$num.RR>0){
     if(object$quadratic==FALSE){
     if(object$num.lv.c>0){
