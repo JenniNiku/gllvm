@@ -91,6 +91,25 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     stop("No latent variables present in model.")
   }
   
+  if(object$num.RR>0){
+    if(object$quadratic==FALSE){
+    if(object$num.lv.c>0){
+      object$params$theta <- object$params$theta[,-c((object$num.lv.c+1):(object$num.lv.c+object$num.RR)),drop=F]
+      object$params$LvXcoef <- object$params$LvXcoef[,1:object$num.lv.c,drop=F]
+    }else{
+      object$params$theta <- object$params$theta[,-c(1:object$num.RR),drop=F]
+    }
+    }else{
+        theta <- object$params$theta[,1:(object$num.lv+object$num.lv.c+object$num.RR),drop=F]
+        theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR)),drop=F]
+        theta <- theta[,-c((object$num.lv.c+1):(object$num.lv.c+object$num.RR)),drop=F]
+        theta2 <- theta2[,-c((object$num.lv.c+1):(object$num.lv.c+object$num.RR)),drop=F]
+        object$params$theta <- cbind(theta,theta2)
+        if(object$num.lv.c>0){
+          object$params$LvXcoef <- object$params$LvXcoef[,1:object$num.lv.c,drop=F]
+        }
+    }
+  }
   
   if((object$num.lv+object$num.lv.c)>1){
     Sigma <- diag(object$params$sigma.lv)  
@@ -105,7 +124,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$sigma.lv[q]^4*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
     if(object$num.lv.c>0){
       ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F))
-      ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q)ResCov.q2[[q]]+4*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F)
+      ResCov.q2[1:object$num.lv.c] <- sapply(1:object$num.lv.c, function(q)ResCov.q2[[q]]+4*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F)
       
     }
     #if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
