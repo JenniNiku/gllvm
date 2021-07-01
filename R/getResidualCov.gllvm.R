@@ -74,7 +74,7 @@
 #'@method getResidualCov gllvm
 #'@export
 #'@export getResidualCov.gllvm
-getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL)
+getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
 {
   if(object$quadratic!=FALSE&&is.null(site.index)&object$num.lv.c>0){
     stop("Please provide a site index for which the residual covariances should be calculated. \n")

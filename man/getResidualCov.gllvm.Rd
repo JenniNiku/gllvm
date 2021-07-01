@@ -5,7 +5,7 @@
 \alias{getResidualCov}
 \title{Extract residual covariance matrix from gllvm object}
 \usage{
-\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL)
+\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
