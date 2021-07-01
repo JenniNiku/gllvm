@@ -47,7 +47,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   nCols = dim(object$params$theta)[1]
   if(conditional == FALSE){
   # generate new latent variables
-  lvsNew = matrix(rnorm(nsim*nRows*object$num.lv),ncol=object$num.lv)
+  lvsNew = matrix(rnorm(nsim*nRows*(object$num.lv+object$num.lv.c)),ncol=(object$num.lv+object$num.lv.c))
   }else{
     lvsNew = object$lvs[rep(1:nRows,nsim),]
   }

@@ -34,10 +34,13 @@
 #'@export getPredictErr.gllvm
 getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
 {
+  n <- nrow(object$y)
   num.lv <- object$num.lv
+  num.lv.c <- object$num.lv.c
+  num.RR <- object$num.RR
   out <- list()
   if(object$method == "LA"){
-    if(object$num.lv>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
+    if((num.lv+num.lv.c+num.RR)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
     if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
   }
   
@@ -45,7 +48,12 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
     if(CMSEP) {
       sdb <- CMSEPf(object)
       # sdb<-sdA(object)
-      if(object$num.lv>0) object$A<-sdb$A+object$A
+      if(num.RR>0){
+      #variational covariances but add 0s for RRR
+      A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+      A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+    }else{A<-object$A}
+      if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(object$row.eff == "random") object$Ar<-sdb$Ar+object$Ar
       # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
     }
@@ -55,16 +63,16 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
         out$row.effects <- sqrt(object$Ar)
         }
       if(length(dim(object$A))==2){
-        out$lvs <- sqrt(object$A[,1:num.lv+r])
+        out$lvs <- sqrt(object$A[,1:(num.lv+num.lv.c+num.RR)+r])
       } else {
-        if(num.lv ==1) {
-          out$lvs <- sqrt(as.matrix(object$A[,1:num.lv+r,1:num.lv+r]))
+        if((num.lv+num.lv.c+num.RR) ==1) {
+          out$lvs <- sqrt(as.matrix(object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]))
         } else {
-          out$lvs <- sqrt(apply((object$A[,1:num.lv+r,1:num.lv+r]),1,diag))
+          out$lvs <- sqrt(apply((object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]),1,diag))
         }
       }
   }
-  if(object$num.lv > 1) out$lvs <- t(out$lvs)
+  if((num.lv+num.lv.c) > 1) out$lvs <- t(out$lvs)
   return(out)
 }
 

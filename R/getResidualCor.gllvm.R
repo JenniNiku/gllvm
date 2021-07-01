@@ -3,6 +3,8 @@
 #'
 #' @param object   an object of class 'gllvm'.
 #' @param adjust  The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.
+#' @param site.index A site index used used in the calculation of a GLLVM with quadratic response model, for which the residual correlations are calculated.
+#' @param ... not used
 #' 
 #' @details
 #' Residual correlation matrix is calculated based on the residual covariance matrix, see details from \code{\link{getResidualCov.gllvm}}.
@@ -38,9 +40,9 @@
 #'@method getResidualCor gllvm
 #'@export
 #'@export getResidualCor.gllvm
-getResidualCor.gllvm = function(object, adjust = 1)
+getResidualCor.gllvm = function(object, adjust = 1, site.index = NULL, ...)
 {
-  ResCov <- getResidualCov.gllvm(object, adjust = adjust)$cov
+  ResCov <- getResidualCov.gllvm(object, adjust = adjust, site.index = site.index)$cov
   Res.sd <- 1 / sqrt(diag(ResCov))
   Res.Cor <- diag(Res.sd) %*% ResCov %*% diag(Res.sd)
   colnames(Res.Cor) <- colnames(object$y)
@@ -51,7 +53,7 @@ getResidualCor.gllvm = function(object, adjust = 1)
 }
 
 #'@export getResidualCor
-getResidualCor <- function(object, adjust)
+getResidualCor <- function(object, ...)
 {
   UseMethod(generic = "getResidualCor")
 }

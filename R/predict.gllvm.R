@@ -6,6 +6,7 @@
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
+#' @param level specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.
 #' @param ... not used.
 #'
 #' @details
@@ -32,7 +33,7 @@
 #'# Generate matrix of environmental variables for 10 new sites
 #'xnew <- cbind(rnorm(10), rnorm(10), rnorm(10))
 #'colnames(xnew) <- colnames(X)
-#'predfit <- predict(fit, newX = xnew, type = "response")
+#'predfit <- predict(fit, newX = xnew, type = "response", level = 0)
 #'
 #'TR <- (antTraits$tr[, 1:3])
 #'fitt <- gllvm(y = y, X, TR, family = poisson())
@@ -45,20 +46,26 @@
 #'# Generate matrix of traits for species
 #'trnew <- data.frame(Femur.length = rnorm(41), No.spines = rnorm(41),
 #'  Pilosity = factor(sample(0:3, 41, replace = TRUE)))
-#'predfit <- predict(fitt, newX = xnew, newTR = trnew, type = "response")
+#'predfit <- predict(fitt, newX = xnew, newTR = trnew, type = "response", level = 0)
 #'}
 #'@aliases predict predict.gllvm
 #'@method predict gllvm
 #'@export
 #'@export predict.gllvm
 
-predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, ...){
+  r0 <- NULL
+  # if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
+  #   warning("First column of newLV taken to be row-intercepts. \n")
+  #   r0 <- newLV[,1];newLV<-newLV[,-1,drop=F]
+  # }
   newdata <- newX
   p <- ncol(object$y)
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
+  # if(n!=nrow(object$y)&is.null(newLV)&(object$num.lv.c+object$num.lv)>0)stop("With new predictors with a different number of sites, new latent variables need to be provided through the newLV argument.")
   if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
-  formula <- formula(terms(object))
+  if(!is.null(object$X)){formula <- formula(terms(object))}else{formula<-NULL}
   
   if(object$row.eff != FALSE) {
     if(length(object$params$row.params) != nrow(object$y))
@@ -172,31 +179,61 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
+
+  if(level==1){
+  if(is.null(newLV) && !is.null(newdata)){ stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")}
   
-  if(object$num.lv > 0) {
-    theta <- object$params$theta[,1:object$num.lv]
-    if(is.null(newLV) && is.null(newdata) && is.null(newTR)){
-      eta <- eta + object$lvs %*% t(theta)
-    if(object$quadratic != FALSE)
-      eta <- eta + object$lvs^2 %*% t(object$params$theta[,-c(1:object$num.lv),drop=F])
-    }
+  if(object$num.lv > 0 |(object$num.lv.c+object$num.RR)>0) {
+    
     if(!is.null(newLV)) {
-      if(ncol(newLV) != object$num.lv) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
-      if(!is.null(newdata)) 
-      {  
-        if(nrow(newLV) != nrow(Xnew)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
+      if(ncol(newLV) != (object$num.lv+object$num.lv.c)) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
+      if(!is.null(newdata)){  
+        if(nrow(newLV) != nrow(newdata)) stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.") 
       }
-      lvs <- newLV
-      eta <- eta + lvs %*% t(theta)
-      if(object$quadratic != FALSE)
-        eta <- eta + lvs^2 %*% t(object$params$theta[,-c(1:object$num.lv),drop=F])
-     
+      lvs <- t(t(newLV)*object$params$sigma.lv)
+    }else{
+      if(object$num.RR==0){
+        lvs <- t(t(object$lvs)*object$params$sigma.lv)
+      }else{
+        if(object$num.lv.c>0){
+          lvs<- cbind(t(t(object$lvs[,1:object$num.lv.c])*object$params$sigma.lv[1:object$num.lv.c]),matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs[,-c(1:object$num.lv.c)])*object$params$sigma.lv[1:object$num.lv]))
+        }else if(object$num.lv>0&object$num.lv.c==0){
+          lvs<- cbind(matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs)*object$params$sigma.lv))
+        }else{
+          lvs <- matrix(0,ncol=object$num.RR,nrow=n)
+        }
+      }
     }
+
+    if((object$num.lv.c+object$num.RR)>0&!is.null(newdata)){lv.X <-  as.matrix(model.frame(object$lv.formula,as.data.frame(newdata)))}else{lv.X<-object$lv.X}
+    theta <- object$params$theta[,1:(object$num.lv+(object$num.lv.c+object$num.RR))]
+      eta <- eta + lvs %*% t(theta)
+      if((object$num.lv.c+object$num.RR)>0){
+        eta <- eta + lv.X%*%object$params$LvXcoef%*%t(theta[,1:(object$num.lv.c+object$num.RR)])
+      }
+    if(object$quadratic != FALSE){
+      theta2 <- object$params$theta[,-c(1:(object$num.lv+(object$num.lv.c+object$num.RR))),drop=F]
+      eta <- eta + lvs^2 %*% t(theta2)
+      if((object$num.lv.c+object$num.RR)>0){
+        theta2C <- abs(theta2[,1:(object$num.lv.c+object$num.RR),drop=F])
+        for(i in 1:n){
+          for(j in 1:p){
+            eta[i,j]<- eta[i,j] - 2*lvs[i,1:(object$num.lv.c+object$num.RR),drop=F]%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef) - lv.X[i,,drop=F]%*%object$params$LvXcoef%*%diag(theta2C[j,])%*%t(lv.X[i,,drop=F]%*%object$params$LvXcoef)
+          }
+      }
+    }
+    }
+
   }
+  }
+
+ 
   
-  if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)) {
+  if(object$row.eff %in% c("random", "fixed", "TRUE") && nrow(eta)==length(object$params$row.params)&is.null(r0)) {
     r0 <- object$params$row.params
     eta <- eta + r0
+  }else if(!is.null(r0)){
+    eta <- eta+r0
   }
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))

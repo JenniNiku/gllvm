@@ -44,6 +44,8 @@ residuals.gllvm <- function(object, ...) {
   p <- NCOL(object$y)
 
   num.lv <- object$num.lv
+  num.lv.c <- object$num.lv.c
+  num.RR <- object$num.RR
   quadratic <- object$quadratic
   if(!is.null(object$X)) X <- as.matrix(object$X.design[1:n,]) else X=NULL
   y <- object$y
@@ -83,10 +85,18 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
-  if (num.lv > 0)
-    eta.mat <- eta.mat  + object$lvs %*% t(object$params$theta[,1:num.lv,drop=F])
-  if(quadratic != FALSE)
-    eta.mat <- eta.mat  + object$lvs^2 %*% t(object$params$theta[,-c(1:num.lv),drop=F])
+  if (num.lv > 0|num.lv.c>0|num.RR>0){
+  if((num.RR+num.lv.c)==0){
+    lvs <- getLV(object,type="scaled")
+  }else{
+    lvs <- getLV(object, type="constrained")
+  }
+  eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
+  }
+  if(quadratic != FALSE){
+   eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
+  }
+  
   if (!is.null(object$randomX))
     eta.mat <- eta.mat + (object$Xrandom %*% object$params$Br)
   
@@ -107,6 +117,7 @@ residuals.gllvm <- function(object, ...) {
         a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i, j])
         b <- ppois(as.vector(unlist(y[i, j])), mu[i, j])
         u <- runif(n = 1, min = a, max = b)
+        
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)

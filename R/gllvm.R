@@ -6,8 +6,11 @@
 #' @param X matrix or data.frame of environmental covariates.
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
-#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
-#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2.
+#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).
+#' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
+#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.
+#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects.
+#' @param num.RR number of reduced rank dimensions for predictor variables.
 #' @param family  distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
@@ -76,6 +79,14 @@
 #'For a model with quadratic responses, quadratic coefficients are assumed to be the same for all species: \deqn{D_j = D}. This model requires less information
 #'per species and can be expected to be more applicable to most datasets. The quadratic coefficients D can be used to calculate the length of 
 #'ecological gradients.
+#'For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analysis.
+#'The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
+#'
+#'For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
+#'
+#'\deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
+#'where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
+#'the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
 #'
 #' An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 #' are included. The expectation of response \eqn{Y_{ij}} is
@@ -87,20 +98,11 @@
 #' optional species-specific random slopes for environmental covariates.
 #' The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
 #'
-#'
-#'
 #' The method is sensitive for the choices of initial values of the latent variables. Therefore it is
 #' recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
 #' However, sometimes this is computationally too demanding, and default option
 #' \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
 #'  
-#' For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analaysis.
-#' The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
-#' For a GLLVM with quadratic responses and poisson distribution, it is recommended to fit GLLVM with linear responses and a negative binomial distribution, or using a Poisson distribution with random row-effects, instead.
-#' This is because the quadratic term can account for overdispersion in the Poisson case, which needs to be separately accounted for with linear responses.
-#' As a result, it should rarely be required to fit a GLLVM with quadratic responses and negative binomial distribution (or row-effects).
-#' 
-#'
 #' Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
 #'
 #' With ordinal family response classes must start from 0 or 1.
@@ -140,6 +142,7 @@
 #'  \item{params}{list of parameters
 #'  \itemize{
 #'    \item{theta }{ coefficients related to latent variables}
+#'    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
@@ -195,13 +198,19 @@
 #'ordiplot(fit)
 #'coefplot(fit)
 #'
-#'## Example 1: Fit model with two latent variables
+#'## Example 1: Fit model with two unconstrained latent variables
 #'# Using variational approximation:
 #'fitv0 <- gllvm(y, family = "negative.binomial", method = "VA")
 #'ordiplot(fitv0)
 #'plot(fitv0, mfrow = c(2,2))
 #'summary(fitv0)
 #'confint(fitv0)
+#'
+#'## Example 1a: Fit model with two constrained latent variables and with quadratic response model
+#'# We scale and centre the  predictors to improve convergence
+#'fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", num.lv.c=2, method="VA")
+#'ordiplot(fity1, biplot = TRUE)
+#'
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 #'ordiplot(fitl0)
@@ -289,16 +298,17 @@
 #'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
-#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon
-#'@importFrom grDevices rainbow
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula
+#'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
+#'@importFrom grDevices rainbow hcl
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
+#'@importFrom MASS mvrnorm
 #'@importFrom mgcv gam predict.gam
-#'@importFrom mvtnorm rmvnorm
 
-gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
-                  num.lv = 2, family, row.eff = FALSE,
+
+gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
+                  num.lv = NULL, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
@@ -307,10 +317,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
+    #change default behavior of num.lv.
+    #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
+  if(is.null(num.lv)&num.lv.c==0){
+    num.lv <- 2
+  }else if(is.null(num.lv)){num.lv<-0}
+  
+  
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
+    term2 <- NULL
     datayx <- NULL
+    if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
     pp.pars <- list(...)
     
     fill_control = function(x){
@@ -363,16 +382,43 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         x$start.struc = "LV"
       x
     }
+   
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
+    # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
+    #   control.start$start.struc <- "all"
+    # }
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start;
     
     
+    if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
+      stop("Cannot fit model with traits and reduced rank predictors. \n")
+    }
+    
+    if(!is.null(start.fit)){
+    if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.fit$num.lv){
+      stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
+    }
+    if(all(class(start.fit)=="gllvm")&quadratic!=FALSE){
+      stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
+    }
+    }
+    
+    if((num.lv.c+num.RR)>0&method=="VA"&TMB==FALSE){
+      warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
+      control$TMB <- TRUE
+    }
+    if (class(family) == "family") {
+      link <- family$link
+      family <- family$family
+    }  
+    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
+
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
         stop("X must be a matrix or data.frame.")
@@ -381,8 +427,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
+    if(is.null(X)&is.null(data)&num.lv.c>0|num.RR>0&is.null(X)&is.null(data)){
+      stop("Cannot constrain latent variables without predictors. Please provide X, or set num.lv.c=0 or num.RR=0. \n")
+    }
     
-
+    
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
@@ -390,7 +439,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         m1 <- model.frame(y ~ NULL, data = datayx)
         term <- terms(m1)
       } else if (is.null(TR)) {
-        if (is.null(formula)) {
+        if (is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)==0) {
           ff <- formula(paste("~", "0", paste("+", colnames(X), collapse = "")))
           if (is.data.frame(X)) {
             datayx <- list(y = y, X = model.matrix(ff, X))
@@ -399,13 +448,74 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           }
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
-        } else {
+        } else if(is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)>0){
+
+          if(inherits(row.eff,"formula")){
+            lv.formula <- formula(paste("~", 0,paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))
+            if (is.data.frame(X)) {
+              datayx <- list(X = model.matrix(lv.formula, X))
+            } else {
+              datayx <- list(X = X)
+            }
+            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            
+            X <-  X[,all.vars(row.eff),drop=F]
+          }else{
+            lv.formula <- formula(paste("~", 0,paste("+", colnames(X), collapse = "")))
+            if (is.data.frame(X)) {
+              datayx <- list(X = model.matrix(lv.formula, X))
+            } else {
+              datayx <- list(X = X)
+            }
+            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            
+            X <- NULL
+          }
+          
+          m1 <- model.frame(y ~ NULL, data = datayx)
+          term <- terms(m1)
+        }else if(is.null(lv.formula)&!is.null(formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
+          term <- terms(m1)
+          lv.X <- NULL
+          lv.formula <- y ~ NULL
+        } else if(is.null(formula)&!is.null(lv.formula)){
+          if(inherits(row.eff,"formula")){
+            datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
+            X <-  X[,all.vars(row.eff),drop=F]
+          }else{
+            datayx <- data.frame(y, X)
+            X <- NULL
+          }
+          m1 <- model.frame(y ~ NULL, data = datayx)
+          labterm <- labels(terms(lv.formula))
+          if(any(labterm==1)|any(labterm==0)){
+            labterm<-labterm[labterm!=1&labterm!=0]
+          }
+
+          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
+          lv.X<- model.matrix(lv.formula,data=datayx)
+     
+        }else if(!is.null(formula)&!is.null(lv.formula)){
+          datayx <- data.frame(y, X)
+          m1 <- model.frame(formula, data = datayx)
+          labterm <- labels(terms(lv.formula))
+          if(any(labterm==1)|any(labterm==0)){
+            labterm<-labterm[labterm!=1&labterm!=0]
+          }
+          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
+          lv.X<- model.matrix(lv.formula,data=datayx)
+          term <- terms(m1)
         }
-        term <- terms(m1)
-      } else {
-        term <- NULL
+
+      } 
+      if(!is.null(X)&(num.lv.c+num.RR)>0|!is.null(data)&(num.lv.c+num.RR)>0){
+      if(!is.null(formula)&!is.null(lv.formula)){
+        if(any(attr(term,"term.labels")==labterm)){
+          stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+        }
+      }
       }
       p <- NCOL(y)
       n <- NROW(y)
@@ -425,7 +535,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           id <- 1:n
         }
       }
-
+      
       cl <- match.call()
       mf <- match.call(expand.dots = FALSE)
       m <- match(c("formula", "data", "na.action"), names(mf), 0)
@@ -440,26 +550,26 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       y <- abundances
       #
       X <- model.matrix(term, mf)
-
+      
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {
         X <- X[, (atr > 0) * 1:ncol(X)]
       } else{
         X <- NULL
       }
-
+      
       if (NCOL(y) == 1 &&
           !is.null(data)) {
         y <- matrix(y, n, p)
         colnames(y) <- paste("y", 1:p, sep = "")
       }
       try(
-      if (is.null(X)) {
-        datayx <- data.frame(y = y)
-      } else {
-        datayx <- data.frame(y = y, X = X)
-      }, silent = TRUE)
-
+        if (is.null(X)) {
+          datayx <- data.frame(y = y)
+        } else {
+          datayx <- data.frame(y = y, X = X)
+        }, silent = TRUE)
+      
       if (!is.null(data)) {
         frame1 <- mf
         X <- TR <- NULL
@@ -468,7 +578,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           colnames(datax) <- colnames(frame1)[colnames(frame1)!="y"]
           #datax <- frame1[, attr(term, "term.labels")[attr(term, "order") == 1]]
           # colnames(datax) <- attr(term, "term.labels")[attr(term, "order") == 1]
-
+          
           for (k in 1:ncol(datax)) {
             lngth <- NULL
             namek <- colnames(datax)[k]
@@ -480,20 +590,53 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
                 X <- data.frame(X, datax[1:n, k])
               else
                 X <- data.frame(datax[1:n, k])
-
+              
               colnames(X)[ncol(X)] <- namek
             } else {
               if (!is.null(TR)){
                 TR <- data.frame(TR, datax[id == 1, k])
               } else{
                 TR <- data.frame(datax[id == 1, k])
-                }
+              }
               colnames(TR)[ncol(TR)] <- namek
             }
           }
         }
       }
     }
+
+    
+    #check for redundant predictors
+    
+    if(!is.null(lv.X)){
+      if((num.RR+num.lv.c)>ncol(lv.X)){
+        stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
+      }
+      #check for redundant predictors
+      QR<-qr(lv.X)
+      if(QR$rank<ncol(lv.X)){
+        warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
+        if(num.lv.c>=ncol(lv.X)&num.RR==0){
+          num.lv.c <- QR$rank
+          warning("Setting num.lv.c to number of non-redunant predictors")
+        }else if(num.RR>=ncol(lv.X)&num.lv.c==0){
+          num.RR <- QR$rank
+          warning("Setting num.RR to number of non-redunant predictors")
+        }else if(num.RR>=ncol(lv.X)|num.lv.c>=ncol(lv.X)){
+          stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of predictor variables.")
+        }
+        lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
+        lv.X<-lv.X[,QR$pivot[1:QR$rank],drop=F]
+        
+        #remove redundant terms from formulas
+        if(!is.null(lv.formula)){
+          lv.formula <- formula(paste("~",paste(attr(terms(lv.formula),"term.labels")[!attr(terms(lv.formula),"term.labels")%in%lv.X.red],collapse="+")))
+        }
+        
+        #modify terms object
+      }
+    }
+    
     p <- NCOL(y)
     n <- NROW(y)
     if (p == 1)
@@ -511,6 +654,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           X<-cbind(X,xgrps)
           }
       }
+      
       if(is.null(bar.f)) {
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
       } else if(!all(grps %in% colnames(X))) {
@@ -532,13 +676,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       row.eff = "random"
     }
     
-    if (class(family) == "family") {
-      link <- family$link
-      family <- family$family
-    }
-    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
-    if(num.lv==0) quadratic <- FALSE
-    
+    if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
+
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
 
@@ -561,7 +700,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       cat("Laplace's method cannot yet handle ordinal data, so VA method is used instead. \n")
       method <- "VA"
     }
-    if (method == "LA" && quadratic != FALSE){
+    if (method == "LA" && quadratic != FALSE && (num.lv+num.lv.c)>0){
       cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA is instead. \n")
       method <- "VA"
     }
@@ -581,7 +720,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       stop("The quadratic model is not implemented for ", family, " family yet. \n")
     }
     if (method == "VA" && family %in% c("tweedie", "beta")){
-      cat("Note that, the ", family, " family is implemented using extended variational approximation method. \n")
+      cat("Note that, the", family, "family is implemented using the extended variational approximation method. \n")
     }
     if (method == "EVA"){
       method = "VA"
@@ -598,12 +737,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
+    if(!is.null(TR)&num.lv.c>0){
+      stop("CGLLVM and traits not yet implemented together")
+    }
     # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
     #   stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
     # }
     # if(family == "ordinal" && TMB && num.lv==0){
     #   stop("Ordinal model without latent variables not yet implemented using TMB.")
     # }
+    
     if(!TMB && zeta.struc == "common"){
       stop("Ordinal model with species-common cut-offs not implemented without TMB.")
     }
@@ -628,13 +771,21 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
 
     if (is.matrix(start.lvs)) {
       starting.val <- "random"
-      if (ncol(start.lvs) != num.lv || nrow(start.lvs) != n)
+      if (ncol(start.lvs) != (num.lv+num.lv.c) || nrow(start.lvs) != n)
         stop("Given starting value matrix for latent variables has a wrong dimension.")
-      colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
+      if(num.lv>0&num.lv.c==0)colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
+      if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("CLV",1:num.lv.c, sep = "")
+      if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
+    }
+    if(num.lv.c>0){
+    if(ncol(lv.X)<(num.lv.c+num.RR)){
+      stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
+    }
     }
     n.i <- 1
 
-    out <- list( y = y, X = X, TR = TR, data = datayx, num.lv = num.lv, formula = formula,
+
+    out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, lv.formula = lv.formula, formula = formula,
         method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
     if(return.terms) {out$terms = term} #else {terms <- }
@@ -659,9 +810,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         fitg <- trait.TMB(
             y,
             X = X,
+            # lv.X = lv.X,
             TR = TR,
             formula = formula,
+            # lv.formula = lv.formula,
             num.lv = num.lv,
+            # num.lv.c = num.lv.c,
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
@@ -705,8 +859,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         fitg <- gllvm.TMB(
             y,
             X = X,
+            lv.X = lv.X,
             formula = formula,
+            lv.formula = lv.formula,
             num.lv = num.lv,
+            num.lv.c = num.lv.c,
+            num.RR = num.RR,
             family = family,
             method = method,
             Lambda.struc = Lambda.struc,
@@ -742,12 +900,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           out$X <- fitg$X
         }
       }
-
+      out$seed <- fitg$seed
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
       
-      if (num.lv > 0)
+      if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
       # out$X <- fitg$X
       
@@ -755,6 +913,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       out$params <- fitg$params
       if (sd.errors) {
         out$sd <- fitg$sd
+        if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
+          if(!is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
+            warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
+          }
+        }
+        
       }
       if (family == "tweedie") {
         out$Power <- fitg$Power
@@ -805,7 +969,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
           jitter.var = jitter.var
         )
       out$logL <- fitg$logLik
-      if (num.lv > 0)
+      if ((num.lv+num.lv.c) > 0)
         out$lvs <- fitg$lvs
       out$X <- fitg$X
       out$TR <- fitg$TR
@@ -818,6 +982,30 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
       out$A <- fitg$Lambda
       out$start <- fitg$start
     }
+    
+    #post-hoc processing for sigma.lv
+    # if((num.lv.c+num.lv)>0){
+    # if(num.lv.c>1){
+    #   if(num.lv.c>1){out$params$sigma.lv <- abs(diag(out$params$theta[,1:num.lv.c]));diag(out$params$theta[,1:num.lv.c])<-1}else{out$params$sigma.lv <- abs(out$params$theta[1,1]);out$params$theta[1,1]<-1}
+    #   if(!is.null(out$sd)){
+    #     if(num.lv.c>1){out$sd$sigma.lv <- diag(out$sd$theta[,1:num.lv.c]);diag(out$sd$theta[,1:num.lv.c])<-0}else{out$sd$sigma.lv <- out$sd$theta[1];out$sd$theta[1]<-0}
+    #   }
+    # }
+    # if(num.lv>0){
+    #   if(num.lv.c==0){
+    #     if(num.lv>1){out$params$sigma.lv <- abs(diag(out$params$theta[,1:num.lv]));diag(out$params$theta[,1:num.lv])<-1}else{out$params$sigma.lv <- abs(out$params$theta[1,1]);out$params$theta[1,1]<-1}
+    #     if(!is.null(out$sd)){
+    #       if(num.lv>1){out$sd$sigma.lv <- diag(out$sd$theta[,1:num.lv]);diag(out$sd$theta[,1:num.lv])<-0}else{out$sd$sigma.lv <- out$sd$theta[1];out$sd$theta[1]<-0}
+    #     }
+    #   }else{
+    #     if(num.lv>1){out$params$sigma.lv <- c(out$params$sigma.lv, abs(diag(out$params$theta[,-c(1:num.lv.c),drop=F])));diag(out$params$theta[,-c(1:num.lv.c)])<-1}else{out$params$sigma.lv <- c(out$params$sigma.lv,out$params$theta[1,-c(1:num.lv.c)]);out$params$theta[1,-c(1:num.lv.c)]<-1}
+    #     if(!is.null(out$sd)){
+    #       if(num.lv>1){out$sd$sigma.lv <- c(out$sd$sigma.lv, diag(out$sd$theta[,-c(1:num.lv.c),drop=F]));diag(out$sd$theta[,-c(1:num.lv.c)])<-0}else{out$sd$sigma.lv <- c(out$sd$sigma.lv,out$sd$theta[1,-c(1:num.lv.c)]);out$sd$theta[1,-c(1:num.lv.c)]<-0}
+    #     }
+    #   }
+    # }
+    #   names(out$params$sigma.lv) <- names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c)])
+    #   }
     if (family == "negative.binomial")
       out$params$inv.phi <- 1 / out$params$phi
     if (is.infinite(out$logL)){
@@ -847,6 +1035,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL,
         if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
     }
+
     if(is.null(out$sd)){
       out$sd <- FALSE
     }

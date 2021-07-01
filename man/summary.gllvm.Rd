@@ -2,17 +2,45 @@
 % Please edit documentation in R/summary.gllvm.R
 \name{summary.gllvm}
 \alias{summary.gllvm}
+\alias{print.summary.gllvm}
 \title{Summarizing gllvm model fits}
 \usage{
-\method{summary}{gllvm}(object, ...)
+\method{summary}{gllvm}(
+  object,
+  digits = max(3L, getOption("digits") - 3L),
+  signif.stars = getOption("show.signif.stars"),
+  dispersion = FALSE,
+  spp.intercepts = FALSE,
+  row.intercepts = FALSE,
+  theta = FALSE,
+  ...
+)
+
+\method{print}{summary.gllvm}(x, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'}
 
+\item{digits}{the number of significant digits to use when printing}
+
+\item{signif.stars}{If \code{TRUE}, significance stars are printed for each coefficient, defaults to \code{TRUE}}
+
+\item{dispersion}{option to return dispersion parameters, defaults to \code{FALSE}}
+
+\item{spp.intercepts}{option to return species intercepts, defaults to \code{FALSE}}
+
+\item{row.intercepts}{option to return row intercepts, defaults to \code{FALSE}}
+
+\item{theta}{option to return species scores in the ordination, defaults to \code{FALSE}}
+
 \item{...}{not used.}
+
+\item{x}{a summary object}
 }
 \description{
 A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
+
+Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 }
 \examples{
 \dontrun{
@@ -25,5 +53,5 @@ summary(fit)
 }
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>
+Jenni Niku <jenni.m.e.niku@jyu.fi>, Bert van der Veen
 }
