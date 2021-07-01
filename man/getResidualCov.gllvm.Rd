@@ -51,7 +51,7 @@ where \eqn{\psi^{(1)}} is the trigamma function.
 In the case of binomial distribution, the adjustment terms (\code{adjust = 1}) are 1 for probit link and \eqn{\pi^2/3} for logit link.
 These are obtained by treating binomial model as latent variable model. Assume
 \deqn{Y^*_{ij} = \eta_{ij} + e_{ij},}
-where \eqn{e_{ij} \sim N(0, 1)} for probit model, and \eqn{e_{ij} ~ logistic(0, 1)} for logit model.
+where \eqn{e_{ij} \sim N(0, 1)} for probit model, and \eqn{e_{ij} \sim logistic(0, 1)} for logit model.
 Then binary response is defined as \eqn{Y_{ij} = 1}, if \eqn{Y^*_{ij} > 0} and 0 otherwise.
 Now we have that \eqn{\mu_{ij} = P(Y_{ij} = 1) = P(Y^*_{ij} > 0) = P(\eta_{ij} > -e_{ij}) = P(e_{ij} <= \eta_{ij})} which leads to probit and logit models.
 On linear predictor scale we then have that
