@@ -6,6 +6,7 @@
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
+#' @param level specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.
 #' @param ... not used.
 #'
 #' @details
@@ -32,7 +33,7 @@
 #'# Generate matrix of environmental variables for 10 new sites
 #'xnew <- cbind(rnorm(10), rnorm(10), rnorm(10))
 #'colnames(xnew) <- colnames(X)
-#'predfit <- predict(fit, newX = xnew, type = "response")
+#'predfit <- predict(fit, newX = xnew, type = "response", level = 0)
 #'
 #'TR <- (antTraits$tr[, 1:3])
 #'fitt <- gllvm(y = y, X, TR, family = poisson())
@@ -45,14 +46,14 @@
 #'# Generate matrix of traits for species
 #'trnew <- data.frame(Femur.length = rnorm(41), No.spines = rnorm(41),
 #'  Pilosity = factor(sample(0:3, 41, replace = TRUE)))
-#'predfit <- predict(fitt, newX = xnew, newTR = trnew, type = "response")
+#'predfit <- predict(fitt, newX = xnew, newTR = trnew, type = "response", level = 0)
 #'}
 #'@aliases predict predict.gllvm
 #'@method predict gllvm
 #'@export
 #'@export predict.gllvm
 
-predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", ...){
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, ...){
   r0 <- NULL
   # if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
   #   warning("First column of newLV taken to be row-intercepts. \n")
@@ -62,7 +63,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   p <- ncol(object$y)
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
-  if(n!=nrow(object$y)&is.null(newLV)&(object$num.lv.c+object$num.lv)>0)stop("With new predictors with a different number of sites, new latent variables need to be provided.")
+  # if(n!=nrow(object$y)&is.null(newLV)&(object$num.lv.c+object$num.lv)>0)stop("With new predictors with a different number of sites, new latent variables need to be provided through the newLV argument.")
   if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
   if(!is.null(object$X)){formula <- formula(terms(object))}else{formula<-NULL}
   
@@ -178,8 +179,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
+
+  if(level==1){
+  if(is.null(newLV) && !is.null(newdata)){ stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")}
   
   if(object$num.lv > 0 |(object$num.lv.c+object$num.RR)>0) {
+    
     if(!is.null(newLV)) {
       if(ncol(newLV) != (object$num.lv+object$num.lv.c)) stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
       if(!is.null(newdata)){  
@@ -219,6 +224,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     }
 
+  }
   }
 
  
