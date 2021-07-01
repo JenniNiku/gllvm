@@ -1122,6 +1122,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
                     # A[i,c1,r] <- A[i,r,c1];
                   }
                   k <- k+1; r <- r+1;
+
                 }
               }
             }
