@@ -23,6 +23,7 @@
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
 #' @param lwd.ellips line width for prediction ellipses. See graphical parameter lwd.
 #' @param col.ellips colors for prediction ellipses.
+#' @param principal rotate latent variables to principal direction"? Defaults to \code{TRUE}.
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -83,7 +84,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, principal = TRUE, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
@@ -126,8 +127,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   
   if ((num.lv+(num.lv.c+num.RR)) > 1) {
     do_svd <- svd(lv)
+    if(principal){
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
+    }else{
+      svd_rotmat_species <- svd_rotmat_sites <- diag(ncol(do_svd$v))
+    }
     
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
@@ -362,7 +367,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
       
       #account for variance of the predictors
-      LVcoef <- LVcoef/apply(object$lv.X,2,sd)
+      # LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
     
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
