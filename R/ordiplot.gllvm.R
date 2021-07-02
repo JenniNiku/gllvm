@@ -125,12 +125,20 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }
   
   if ((num.lv+(num.lv.c+num.RR)) > 1) {
-    do_svd <- svd(lv)
+    if((num.lv.c+num.RR)>0){
+      do_svd <- svd(lv)
+    }else{
+      # This gives the right rotation for unconstrained ordination
+      do_svd <- svd(object$lvs)
+    }
+    # do_svd <- svd(lv)
+    # do_svd <- svd(object$lvs)
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
     
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
+    
     #A check if species scores are within the range of the LV
     ##If spp.arrows=TRUE plots those that are not in range as arrows
     if(spp.arrows){
@@ -139,41 +147,39 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     }
     
-    #add a sigma for the reduced rank
-    if(num.RR>0&num.lv.c>0){
-      object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(1,num.RR),object$params$sigma.lv[-c(1:num.lv.c)])
-    }else if(num.RR>0){
-      object$params$sigma.lv <- c(rep(1,num.RR),object$params$sigma.lv)
+    bothnorms <- vector("numeric",ncol(choose.lv.coefs))
+    for(i in 1:ncol(choose.lv.coefs)){
+      bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))
     }
     
-    #Divide by the SD again, as we scale using the B matrix below, which includes the SD
-    # choose.lvs <- t(t(choose.lvs)/object$params$sigma.lv)
-    
-      bothnorms <- vector("numeric",ncol(choose.lv.coefs))
-      for(i in 1:ncol(choose.lv.coefs)){
-        bothnorms[i] <- sqrt(sum(choose.lvs[,i]^2)) * sqrt(sum(choose.lv.coefs[idx[,i],i]^2))
-      }
-
+    # bothnorms <- sqrt(colSums(choose.lvs^2)) * sqrt(colSums(choose.lv.coefs^2)) 
     ## Standardize both to unit norm then scale using bothnorms. Note alpha = 0.5 so both have same norm. Otherwise "significance" becomes scale dependent
     scaled_cw_sites <- t(t(choose.lvs) / sqrt(colSums(choose.lvs^2)) * (bothnorms^alpha)) 
-
-      scaled_cw_species <- choose.lv.coefs
-      for(i in 1:ncol(scaled_cw_species)){
-        scaled_cw_species[,i] <- choose.lv.coefs[,i] / sqrt(sum(choose.lv.coefs[idx[,i],i]^2)) * (bothnorms[i]^(1-alpha)) 
-      }
-
-    # equally: lvstr <- object$lvs%*%(diag((bothnorms^0.5)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
+    # scaled_cw_species <- t(t(choose.lv.coefs) / sqrt(colSums(choose.lv.coefs^2)) * (bothnorms^(1-alpha))) 
+    scaled_cw_species <- choose.lv.coefs
+    for(i in 1:ncol(scaled_cw_species)){
+      scaled_cw_species[,i] <- choose.lv.coefs[,i] / sqrt(sum(choose.lv.coefs[idx[,i],i]^2)) * (bothnorms[i]^(1-alpha)) 
+    }
+    
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
-    #re-calculate due to rotation
-    # if(spp.arrows){
-    #   idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
-    # }
-    
-    # equally: thettr <- object$params$theta%*%(diag((bothnorms^(1-0.5))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites%*%diag(object$params$sigma.lv))
-    # if(quadratic==FALSE)Bt<-(diag((bothnorms^(1-alpha))/sqrt(colSums(object$params$theta^2)))%*%svd_rotmat_species)
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
+    
+    
+    # This next part is not needed for the unconstrained ordination, it distorts the prediction ellipses
+    # Is this scaling needed for constrained ordination:
+    if((num.lv.c+num.RR)>0){
+      #add a sigma for the reduced rank
+      if(num.RR>0&num.lv.c>0){
+        object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(1,num.RR),object$params$sigma.lv[-c(1:num.lv.c)])
+      }else if(num.RR>0){
+        object$params$sigma.lv <- c(rep(1,num.RR),object$params$sigma.lv)
+      }
+      #Divide by the SD again, as we scale using the B matrix below, which includes the SD
+      # choose.lvs <- t(t(choose.lvs)/object$params$sigma.lv)
+      B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites%*%diag(object$params$sigma.lv))
+    }
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
@@ -199,7 +205,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           } else {
           
           sdb<-CMSEPf(object)$A
-          if(object$row.eff=="random"){
+          if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
             object$A<- object$A[,-1,-1]
           }
           if(num.RR>0){
@@ -262,7 +268,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           
           sdb<-CMSEPf(object)$A
-          if(object$row.eff=="random"){
+          if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
             object$A<- object$A[,-1,-1]
           }
           if(num.RR>0){
