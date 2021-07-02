@@ -181,7 +181,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
 
   if(level==1){
-  if(is.null(newLV) && !is.null(newdata)){ stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")}
+  if(is.null(newLV) && !is.null(newdata) & nrow(newdata) != nrow(object$y)){ stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")}
   
   if(object$num.lv > 0 |(object$num.lv.c+object$num.RR)>0) {
     
@@ -205,7 +205,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
     }
 
-    if((object$num.lv.c+object$num.RR)>0&!is.null(newdata)){lv.X <-  as.matrix(model.frame(object$lv.formula,as.data.frame(newdata)))}else{lv.X<-object$lv.X}
+    if((object$num.lv.c+object$num.RR)>0&!is.null(newdata)){lv.X <-  model.matrix(object$lv.formula,as.data.frame(newdata))[,-1,drop=F]}else{lv.X<-object$lv.X}
     theta <- object$params$theta[,1:(object$num.lv+(object$num.lv.c+object$num.RR))]
       eta <- eta + lvs %*% t(theta)
       if((object$num.lv.c+object$num.RR)>0){

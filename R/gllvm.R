@@ -319,7 +319,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   ) {
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
-  if(is.null(num.lv)&num.lv.c==0){
+  if(is.null(num.lv)&num.lv.c==0&num.RR==0){
     num.lv <- 2
   }else if(is.null(num.lv)){num.lv<-0}
   
@@ -451,9 +451,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         } else if(is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)>0){
 
           if(inherits(row.eff,"formula")){
-            lv.formula <- formula(paste("~", 0,paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))
+            lv.formula <- formula(paste("~", paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))
             if (is.data.frame(X)) {
-              datayx <- list(X = model.matrix(lv.formula, X))
+              datayx <- list(X = model.matrix(lv.formula, X)[,-1,drop=F])
             } else {
               datayx <- list(X = X)
             }
@@ -461,9 +461,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             
             X <-  X[,all.vars(row.eff),drop=F]
           }else{
-            lv.formula <- formula(paste("~", 0,paste("+", colnames(X), collapse = "")))
+            lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
             if (is.data.frame(X)) {
-              datayx <- list(X = model.matrix(lv.formula, X))
+              datayx <- list(X = model.matrix(lv.formula, X)[,-1],drop=F)
             } else {
               datayx <- list(X = X)
             }
@@ -494,8 +494,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             labterm<-labterm[labterm!=1&labterm!=0]
           }
 
-          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
-          lv.X<- model.matrix(lv.formula,data=datayx)
+          lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
+          lv.X<- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
      
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
@@ -504,8 +504,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-          lv.formula <- formula(paste("~", 0,paste("+", labterm, collapse = "")))
-          lv.X<- model.matrix(lv.formula,data=datayx)
+          lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
+          lv.X<- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
           term <- terms(m1)
         }
 

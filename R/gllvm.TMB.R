@@ -1038,7 +1038,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             }
             };
           if(quadratic!=FALSE){
-            if((num.lv+num.lv.c)>0)colnames(out$lvs) <-  c(paste("CLV", 1:num.lv.c, sep=""),paste("LV", 1:num.lv, sep=""));
+            if(num.lv.c>0&num.lv==0){colnames(out$lvs) <-  paste("CLV", 1:num.lv.c, sep="")
+            }else if(num.lv>0&num.lv.c==0){colnames(out$lvs) <- paste("LV", 1:num.lv, sep="")
+            }else if(num.lv>0&num.lv.c>0){coolnames(out$lvs) <- c(paste("CLV", 1:num.lv.c, sep=""),paste("LV", 1:num.lv, sep=""))}
+            
             colnames(out$params$theta)<- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("LV", 1:num.lv, sep=""),paste("CLV", 1:(num.lv.c+num.RR), "^2",sep=""),paste("LV", 1:num.lv, "^2",sep=""));
           }
           rownames(out$params$theta) <- colnames(out$y)
