@@ -44,7 +44,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
     if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
   }
   
-  if(object$method == "VA"){
+  if((object$method %in% c("VA", "EVA"))){
     if(CMSEP) {
       sdb <- CMSEPf(object)
       # sdb<-sdA(object)
