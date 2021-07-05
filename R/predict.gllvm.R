@@ -64,7 +64,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   n <- max(nrow(object$y),nrow(newdata), nrow(newLV))
   if(!is.null(newdata)) n <- nrow(newdata)
   # if(n!=nrow(object$y)&is.null(newLV)&(object$num.lv.c+object$num.lv)>0)stop("With new predictors with a different number of sites, new latent variables need to be provided through the newLV argument.")
-  if(is.null(newdata) && !is.null(object$X) && !is.null(newLV) && (nrow(newLV) != nrow(object$y))) stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.") 
+  if(is.null(newdata) && !is.null(object$X) && !is.null(newLV)){
+    if(nrow(newLV) != nrow(object$y)){
+      stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.")   
+    }
+    
+  } 
   if(!is.null(object$X)){formula <- formula(terms(object))}else{formula<-NULL}
   
   if(object$row.eff != FALSE) {
@@ -181,7 +186,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
 
   if(level==1){
-  if(is.null(newLV) && !is.null(newdata) & nrow(newdata) != nrow(object$y)){ stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")}
+  if(is.null(newLV) && !is.null(newdata)){ 
+    if(nrow(newdata) != nrow(object$y)) {
+      
+      stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")
+    }
+  }
   
   if(object$num.lv > 0 |(object$num.lv.c+object$num.RR)>0) {
     
