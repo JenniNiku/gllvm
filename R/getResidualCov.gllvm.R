@@ -4,6 +4,7 @@
 #' @param object  an object of class 'gllvm'.
 #' @param adjust  The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.
 #' @param site.index A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.
+#' @param ...  not used.
 #'
 #' @return Function returns following components:
 #'  \item{cov }{residual covariance matrix}
