@@ -169,9 +169,10 @@ site related environmental covariates are used, the expectation of response \eqn
 \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
 
 where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional row effect
-at site \eqn{i}, and it can be fixed or random effect, \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
+at site \eqn{i}, and it can be fixed or random effect (also other structures are possible, see below), \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 specific coefficients related to covariates and the latent variables, respectively.
 
+\subsection{Quadratic model}{
 Alternatively, a more complex version of the model can be fitted with \code{quadratic = TRUE}, where species are modeled as a quadratic function of the latent variables:
 \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j - u_i' D_j u_i}.
 Here, D_j is a diagonal matrix of positive only quadratic coefficients, so that the model generates concave shapes only. This implementation follows
@@ -181,13 +182,17 @@ per species and can be expected to be more applicable to most datasets. The quad
 ecological gradients.
 For quadratic responses, it can be useful to provide the latent variables estimated with a GLLVM with linear responses, or estimated with (Detrended) Correspondence Analysis.
 The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
+}
 
+\subsection{Constrained ordination}{
 For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
 where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
 the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
+}
 
+\subsection{Fourth corner model}{
 An alternative model is the fourth corner model (Brown et al., 2014, Warton et al., 2015) which will be fitted if also trait covariates
 are included. The expectation of response \eqn{Y_{ij}} is
 
@@ -197,13 +202,34 @@ where g(.), \eqn{u_i}, \eqn{\beta_{0j}} and \eqn{\theta_j} are defined as above.
 or coefficients related to environmental and trait covariates, respectively, matrix \eqn{B} includes interaction terms. Vectors \eqn{b_j} are 
 optional species-specific random slopes for environmental covariates.
 The interaction/fourth corner terms are optional as well as are the main effects of trait covariates.
+}
 
+\subsection{Structured row effects}{
+In addition to the site-specific random effects, \eqn{\alpha_i}, it is also possible to set arbitrary structure/design for the row effects. 
+That is, assume that observations / rows \eqn{i=1,...,n} in the data matrix are from groups \eqn{t=1,...,T}, so that each row \eqn{i} belongs to one of the groups, denote \eqn{G(i) \in \{1,...,T\}}. Each group \eqn{t} has a number of observations \eqn{n_t}, so that \eqn{\sum_{t=1}^{T} n_t =n}.
+Now we can set random intercept for each group \eqn{t}, (see argument '\code{row.eff}'):
+
+ \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_{G(i)} + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
+ 
+ There is also a possibility to set correlation structure for the random intercepts between groups, so that \eqn{(\alpha_{1},...,\alpha_{T})^\top \sim N(0, \Sigma_r)}. That might be the case, for example, when the groups are spatially or temporally dependent.
+ Another option is to set row specific random intercepts \eqn{\alpha_i}, but to set the correlation structure for the observations within groups, (see argument '\code{corWithin}'). That is, we can set \eqn{corr(\alpha_{i},\alpha_{i'}) = C(i,i') \neq 0} according to some correlation function \eqn{C}, when \eqn{G(i)=G(i')}.
+ This model is restricted to the case, where each group has equal number of observations (rows), that is \eqn{n_t=n_{t'}} for all \eqn{t,t' \in \{1,...,T\}}.
+ 
+ The correlation structures available in the package are 
+\itemize{
+  \item{\code{corAR1}} { autoregressive process of order 1.}
+  \item{\code{corExp}} { exponentially decaying, see argument '\code{dist}'.}
+  \item{\code{corCS}} { compound symmetry.}
+}  
+}
+
+\subsection{Starting values}{
 The method is sensitive for the choices of initial values of the latent variables. Therefore it is
-recommendable to use multiple runs and pick up the one giving the highest log-likelihood value.
+recommendable to use multiple runs and pick up the one giving the highest log-likelihood value (see argument '\code{n.init}').
 However, sometimes this is computationally too demanding, and default option
 \code{starting.val = "res"} is recommended. For more details on different starting value methods, see Niku et al., (2018).
- 
-Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017) and Laplace approximation (Niku et al., 2017).
+}
+Models are implemented using TMB (Kristensen et al., 2015) applied to variational approximation (Hui et al., 2017), extended variational approximation (Korhonen et al., 2021) and Laplace approximation (Niku et al., 2017).
 
 With ordinal family response classes must start from 0 or 1.
 
@@ -364,6 +390,8 @@ Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015
 Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).  Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43.
 
 Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21.
+
+Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal estimation of latent variable models using extended variational approximations. Submitted.
 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.
 
