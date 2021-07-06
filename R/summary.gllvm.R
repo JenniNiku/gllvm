@@ -100,6 +100,8 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }else{
+    coef.table <- NULL
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)) {
@@ -110,6 +112,8 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table.constrained <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }else{
+    coef.table.constrained <- NULL
   }
     
   colnames(M) <- newnams
@@ -159,7 +163,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     sumry$sigma.lv <- object$params$sigma.lv
   }
   
-  if((object$num.lv.c+object$num.RR)>0){
+  if((object$num.lv.c+object$num.RR)>0&!is.null(coef.table.constrained)){
     sumry$'Coef.tableLV' <- coef.table.constrained
   }
   class(sumry) <- "summary.gllvm"
