@@ -99,7 +99,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         } else {
           if(!is.null(X)) fit.mva <- mlm(y, X = X)
           if(is.null(X)) fit.mva <- mlm(y)
-          mu <- NULL
+
+          mu <- cbind(rep(1,nrow(y)),X) %*% fit.mva$coefficients
           # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
