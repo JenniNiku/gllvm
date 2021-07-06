@@ -292,7 +292,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
       if (!jitter){
         if (symbols) {
-          points(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)all(x)),], col = s.colors[apply(idx,1,all)], ...)
+          points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
           text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
         }
