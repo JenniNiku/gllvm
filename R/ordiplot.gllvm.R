@@ -148,7 +148,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #A check if species scores are within the range of the LV
     ##If spp.arrows=TRUE plots those that are not in range as arrows
     if(spp.arrows){
-      idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+      lvth <- max(abs(choose.lvs))
+      idx <- choose.lv.coefs>(-lvth)&choose.lv.coefs<lvth
     }else{
       idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     }
