@@ -99,7 +99,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         } else {
           if(!is.null(X)) fit.mva <- mlm(y, X = X)
           if(is.null(X)) fit.mva <- mlm(y)
-          mu <- NULL
+
+          mu <- cbind(rep(1,nrow(y)),X) %*% fit.mva$coefficients
           # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- apply(fit.mva$residuals,2,sd)
@@ -644,6 +645,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(family=="gaussian"&inherits(fa,"try-error")){
           fa <- princomp(resi)
           fa$scores <- fa$scores[,1:num.lv.c,drop=F]
+          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
         }
         if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
         index <- fa$scores
@@ -651,10 +653,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
         if(family=="gaussian"&inherits(fa,"try-error")){
           fa <- princomp(t(resi))
-          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
+          fa$loadings <- fa$loadings[,1:num.lv.c, drop=F]
+          fa$scores <- fa$scores[,1:num.lv.c, drop=F]
         }
         if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
-        index <- matrix(fa$loadings,n,num.lv.c)
       } else {
         tryfit <- TRUE; tryi <- 1
         while(tryfit && tryi<5) {
@@ -664,7 +666,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(inherits(fa,"try-error")) {
           warning(attr(fa,"condition")$message, "\n Factor analysis for Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
           fa <- princomp(resi)
-          index<-matrix(fa$scores[,1:num.lv.c],n,num.lv.c)
         }
       }
       if(n>p){
@@ -680,7 +681,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       #Ensures independence of LVs with predictors
       index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
-      
       colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
       
       if(num.lv.c>1 && p>2){
@@ -2064,13 +2064,13 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
     
     if(num.RR>0){
       row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
-      if(num.lv.c>0){
-        sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
-      }else if(num.lv>0){
-        sigma.lv <- c(rep(1,num.RR),sigma.lv)
-      }else{
-        sigma.lv <- rep(1,num.RR)
-      }
+      # if(num.lv.c>0){
+      #   sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+      # }else if(num.lv>0){
+      #   sigma.lv <- c(rep(1,num.RR),sigma.lv)
+      # }else{
+      #   sigma.lv <- rep(1,num.RR)
+      # }
     }
 
     #Matrix Q for predictors
@@ -2078,7 +2078,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0){
       for(q in 1:(num.lv.c+num.RR)){
-        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X/sigma.lv[q]
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
       }
     }
     diag.term2 <- (Q+A)%*%Vtheta%*%t(Q+A)
@@ -2299,20 +2299,20 @@ CMSEPf <- function(fit, return.covb = F){
     if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
-    if(num.lv.c>0){
-      fit$params$sigma.lv <- c(fit$params$sigma.lv[1:num.lv.c],rep(1,num.RR),fit$params$sigma.lv[-c(1:num.lv)])
-    }else if(num.lv>0){
-      fit$params$sigma.lv <- c(rep(1,num.RR),fit$params$sigma.lv)
-    }else{
-      fit$params$sigma.lv <- rep(1,num.RR)
-    }
+    # if(num.lv.c>0){
+    #   fit$params$sigma.lv <- c(fit$params$sigma.lv[1:num.lv.c],rep(1,num.RR),fit$params$sigma.lv[-c(1:num.lv)])
+    # }else if(num.lv>0){
+    #   fit$params$sigma.lv <- c(rep(1,num.RR),fit$params$sigma.lv)
+    # }else{
+    #   fit$params$sigma.lv <- rep(1,num.RR)
+    # }
   }
 
   Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
 
   if((num.lv.c+num.RR)>0){
     for(q in 1:(num.lv.c+num.RR)){
-      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X/fit$params$sigma.lv[q]
+      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q]
     }
     }
     covb <- (Q+D%*%C)%*%(A)%*%(t(Q)+B%*%t(D))

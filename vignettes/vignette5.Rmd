@@ -79,7 +79,7 @@ getResidualCov(ftUneqTol)$q2
 
 Finally, we can use the $ordiplot(.)$ function to visualize the species optima. However, since species optima can be quite large if they are unobserved, or if too little information is present in the data, creating a nice figure can be challenging. One attempt to improve readability of the species optima in a figure is to point an arrow in their general direction, if species optima are "unobserved": outside of the range of the predicted site scores.
 
-```
+```{r quad_plot}
 ordiplot(ftUneqTol, biplot=TRUE, spp.arrows = TRUE)
 ```
 

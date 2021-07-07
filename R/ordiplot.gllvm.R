@@ -14,7 +14,7 @@
 #' @param cex.spp size of species labels in biplot
 #' @param cex.env size of labels for arrows in constrianed ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
-#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}
+#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param arrow.scale positive value, to scale arrows
 #' @param arrow.ci represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}
@@ -83,10 +83,16 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1,...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = NULL, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-
+  if(is.null(spp.arrows)){
+    if(object$quadratic!=FALSE){
+      spp.arrows <- TRUE
+    }else{
+      spp.arrows <- FALSE
+    }
+  }
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   n <- NROW(object$y)
@@ -135,14 +141,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     # do_svd <- svd(object$lvs)
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
-    
+
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     
     #A check if species scores are within the range of the LV
     ##If spp.arrows=TRUE plots those that are not in range as arrows
     if(spp.arrows){
-      idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+      lvth <- max(abs(choose.lvs))
+      idx <- choose.lv.coefs>(-lvth)&choose.lv.coefs<lvth
     }else{
       idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     }
@@ -163,23 +170,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
-
+    # 
+    # if(spp.arrows){
+    #   idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
+    # }else{
+    #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
+    # }
+    # 
     B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
     
-    
-    # This next part is not needed for the unconstrained ordination, it distorts the prediction ellipses
-    # Is this scaling needed for constrained ordination:
-    if((num.lv.c+num.RR)>0){
-      #add a sigma for the reduced rank
-      if(num.RR>0&num.lv.c>0){
-        object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(1,num.RR),object$params$sigma.lv[-c(1:num.lv.c)])
-      }else if(num.RR>0){
-        object$params$sigma.lv <- c(rep(1,num.RR),object$params$sigma.lv)
-      }
-      #Divide by the SD again, as we scale using the B matrix below, which includes the SD
-      # choose.lvs <- t(t(choose.lvs)/object$params$sigma.lv)
-      B<-(diag((bothnorms^alpha)/sqrt(colSums(lv^2)))%*%svd_rotmat_sites%*%diag(object$params$sigma.lv))
-    }
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)

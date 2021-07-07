@@ -94,7 +94,7 @@ residuals.gllvm <- function(object, ...) {
   eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
   }
   if(quadratic != FALSE){
-   eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F])
+   eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c+num.RR)),drop=F])
   }
   
   if (!is.null(object$randomX))
