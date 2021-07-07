@@ -45,7 +45,7 @@ se.gllvm <- function(object, ...){
   out <- list()
   if (!is.null(object$TR)) {
     {
-      if(object$method == "VA"){
+      if((object$method %in% c("VA", "EVA"))){
         sdr <- objrFinal$he(objrFinal$par)
       }
       if(object$method == "LA"){
@@ -246,7 +246,7 @@ se.gllvm <- function(object, ...){
       p0 <- p0+runif(p,0,0.001)
       pars[p0i] <- p0
     }
-    if(method == "VA"){
+    if((object$method %in% c("VA", "EVA"))){
       sdr <- objrFinal$he(pars)
     }
     if(method == "LA"){
@@ -290,7 +290,7 @@ se.gllvm <- function(object, ...){
     
     
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && method=="VA" && object$row.eff!="random")){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random")){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       se <- try(sqrt(diag(abs(covM))))
       

@@ -3,7 +3,11 @@ Version 1.3.dev
 
 ### New Features
 
-- Structured row parameters are implemented, including a possibility for between or within group correlations for random row effects.
+* Structured row parameters are implemented, including a possibility for between or within group correlations for random row effects.
+
+* Constrained ordination model is implemented.
+
+* NB and binomial (with probit and logit) response model implemented using extended variational approximation method.
 
 Version 1.3.0
 ==============

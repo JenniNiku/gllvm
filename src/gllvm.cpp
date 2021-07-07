@@ -46,7 +46,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(zeta); // ordinal family param
   
   DATA_VECTOR(extra); // extra values, power of 
-  DATA_INTEGER(method);// 0=VA, 1=LA
+  DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
   DATA_INTEGER(model);// which model, basic or 4th corner
   DATA_VECTOR(random);//1=random, 0=fixed row params
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
@@ -195,7 +195,7 @@ Type objective_function<Type>::operator() ()
   nll.fill(0.0);
   
   // Variational approximation
-  if(method<1){
+  if((method<1) | (method>1)){
     //quadratic coefficients for ordination
     //if random rows, add quadratic coefficients to q>0
     if(quadratic>0){
@@ -682,16 +682,14 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             nll(i,j) -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }
-    } else if(family==1){//NB
+    } else if((family == 1) & (method<1)){//NB VA
       if(quadratic<1){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }  
       }else{
         for (int i=0; i<n; i++) {
@@ -699,24 +697,59 @@ Type objective_function<Type>::operator() ()
             nll(i,j) -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
             //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }
       
-    } else if(family==2) {//binomial probit
+    } else if ((family == 1) & (method>1)) { // NB EVA
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          // nll(i,j) -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));
+          nll(i,j) -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
+          nll(i,j) += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
+          
+        }
+      }
+    } else if((family == 2) & (method<1)) {//binomial probit VA
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
           nll(i,j) -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+      }
+    } else if ((family == 2) & (method>1)) { // Binomial EVA
+      if (extra(0) == 0) { // logit
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p; j++) {
+            Type mu = 0.0;
+            Type mu_prime = 0.0;
+            
+            CppAD::vector<Type> z(4);
+            z[0] = eta(i,j);
+            z[1] = 0;
+            z[2] = 1/(1+exp(-z[0]));
+            z[3] = exp(z[0])/(exp(z[0])+1);
+            
+            mu = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+            mu_prime = mu * (1-mu);
+            nll(i,j) -= y(i,j) * eta(i,j) + log(1-mu);
+            nll(i,j) += mu_prime*cQ(i,j);
+          }
+        }
+      } else if (extra(0) == 1) { // probit
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p; j++) {
+            Type etaP = pnorm_approx(Type(eta(i,j)));   //pnorm funktion approksimaatio
+            nll(i,j) -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //  
+            Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
+            nll(i,j) -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j); //Tää toimii ok tähän etaD = (log=true)
+          }
+        }
       }
     } else if(family==3) {//gaussian
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==4) {//gamma
       if(quadratic<1){
@@ -724,14 +757,12 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));          
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }else{
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
         }
       }
       
@@ -794,7 +825,6 @@ Type objective_function<Type>::operator() ()
           nll(i,j) += cQ(i,j);
           //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));// 
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if((family==7) && (zetastruc==0)){
       int ymax =  CppAD::Integer(y.maxCoeff());

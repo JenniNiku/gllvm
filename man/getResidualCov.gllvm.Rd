@@ -5,7 +5,7 @@
 \alias{getResidualCov}
 \title{Extract residual covariance matrix from gllvm object}
 \usage{
-\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL)
+\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
@@ -13,6 +13,8 @@
 \item{adjust}{The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.}
 
 \item{site.index}{A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.}
+
+\item{...}{not used.}
 }
 \value{
 Function returns following components:
@@ -51,7 +53,7 @@ where \eqn{\psi^{(1)}} is the trigamma function.
 In the case of binomial distribution, the adjustment terms (\code{adjust = 1}) are 1 for probit link and \eqn{\pi^2/3} for logit link.
 These are obtained by treating binomial model as latent variable model. Assume
 \deqn{Y^*_{ij} = \eta_{ij} + e_{ij},}
-where \eqn{e_{ij} \sim N(0, 1)} for probit model, and \eqn{e_{ij} ~ logistic(0, 1)} for logit model.
+where \eqn{e_{ij} \sim N(0, 1)} for probit model, and \eqn{e_{ij} \sim logistic(0, 1)} for logit model.
 Then binary response is defined as \eqn{Y_{ij} = 1}, if \eqn{Y^*_{ij} > 0} and 0 otherwise.
 Now we have that \eqn{\mu_{ij} = P(Y_{ij} = 1) = P(Y^*_{ij} > 0) = P(\eta_{ij} > -e_{ij}) = P(e_{ij} <= \eta_{ij})} which leads to probit and logit models.
 On linear predictor scale we then have that

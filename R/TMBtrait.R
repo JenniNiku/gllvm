@@ -560,7 +560,7 @@ trait.TMB <- function(
 
       parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, family=familyn, extra=extra, quadratic = 1, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
+        data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
         parameters = parameter.list, map = map.list2,
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
         DLL = "gllvm")
@@ -582,10 +582,10 @@ trait.TMB <- function(
       
 #### Call makeADFun
     
-    if(method == "VA" && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
+    if((method %in% c("VA", "EVA")) && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
       parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
+        data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
         DLL = "gllvm")
@@ -619,7 +619,7 @@ trait.TMB <- function(
 
  ### Now diag.iter, improves the model fit sometimes
     
-    if(diag.iter>0 && Lambda.struc=="unstructured" && method =="VA" && (num.lv>1 || !is.null(randomX)) && !inherits(optr,"try-error")){
+    if(diag.iter>0 && Lambda.struc=="unstructured" && (method %in% c("VA", "EVA")) && (num.lv>1 || !is.null(randomX)) && !inherits(optr,"try-error")){
       objr1 <- objr
       optr1 <- optr
       param1 <- optr$par
@@ -665,7 +665,7 @@ trait.TMB <- function(
       
       parameter.list = list(r0=r1, b = b1, b_lv = matrix(0), B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
 
-      data.list = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -722,7 +722,7 @@ trait.TMB <- function(
       
       parameter.list = list(r0=r1, b = b1, b_lv = matrix(0), B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
 
-      data.list = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, family=familyn, extra=extra, method=0, model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -908,7 +908,7 @@ trait.TMB <- function(
       pars <- optr$par
 
 ## Collect VA covariances
-      if(method=="VA"){
+      if((method %in% c("VA", "EVA"))){
         param <- objr$env$last.par.best
         
         if(nlvr>0){
@@ -1002,7 +1002,7 @@ trait.TMB <- function(
         }
       }
       
-      if(method == "VA" && !is.null(randomX)){
+      if((method %in% c("VA", "EVA")) && !is.null(randomX)){
         Abb <- param[names(param) == "Abb"]
         xdr <- ncol(xb)
         Ab <- array(0,dim=c(p,xdr,xdr))
@@ -1065,7 +1065,7 @@ trait.TMB <- function(
         out$TMB <- TRUE
         # out <- c(out, se.gllvm(out))
 
-        if(method == "VA"){
+        if((method %in% c("VA", "EVA"))){
           sdr <- objrFinal$he(optrFinal$par)
         }
         if(method == "LA"){

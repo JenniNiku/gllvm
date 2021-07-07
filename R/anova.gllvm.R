@@ -44,7 +44,7 @@ anova.gllvm <- function(object, ... ,which="multi",method="holm") {
 
   tt <- sapply(objects, function(x)
     x$method)
-  if (!(all(tt == "VA") == !all(tt == "LA")))
+  if (!(all(tt == "VA") | all(tt == "LA") | all(tt == "EVA")))
     stop("The objects are not comparable when they are fitted using different methods.")
 
   y <- object$y

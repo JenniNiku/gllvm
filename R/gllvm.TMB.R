@@ -61,7 +61,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   
   if (!is.numeric(y))
     stop( "y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
-  if ((family %in% c("ZIP")) && method == "VA") #"tweedie", 
+  if ((family %in% c("ZIP")) && (method %in% c("VA", "EVA"))) #"tweedie", 
     stop("family=\"", family, "\" : family not implemented with VA method, change the method to 'LA'")
   if (is.null(rownames(y)))
     rownames(y) <- paste("Row", 1:n, sep = "")
@@ -223,7 +223,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           sigma.lv <- start.params$params$sigma.lv
           lambdas <- start.params$params$theta
           if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)]),] <- 0
-          if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)]),] <- 0
+          if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
           
         }
           
@@ -341,10 +341,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
    ### VA method, used only if there is some random effects/LVs in the model
     
-    if((method=="VA" && (nlvr>0 || row.eff == "random"))){
+    if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random"))){
       # Variational covariances for latent variables
       if((num.lv+num.lv.c)>0){
-        if(is.null(start.params) || start.params$method!="VA"){
+        if(is.null(start.params) || start.params$method=="LA"){
           if(Lambda.struc=="diagonal" || diag.iter>0){
             Au <- log(rep(Lambda.start[1],(num.lv+num.lv.c)*n)) #1/2, 1
           } else{
@@ -452,7 +452,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
   ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       # if(row.eff=="random"){
       #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -511,7 +511,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
     ## Set up data and parameters
       
-      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
       
@@ -567,7 +567,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
 
         parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta)
 
@@ -703,7 +703,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     
     
 ## Laplace method / nlvr==0
-    if(method=="LA" || (nlvr==0 && method=="VA" && row.eff!="random")){
+    if(method=="LA" || (nlvr==0 && (method %in% c("VA", "EVA")) && row.eff!="random")){
       if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
       
 ### Family settings
@@ -728,7 +728,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=0,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -1090,7 +1090,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       pars <- optr$par
 
 ## Collect VA covariances
-      if(method=="VA"){
+      if((method %in% c("VA", "EVA"))){
         param <- objr$env$last.par.best
         if(nlvr>0){
           param <- objr$env$last.par.best
@@ -1204,7 +1204,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   out$quadratic <- quadratic
   out$logL <- -out$logL
   
-  # if(method == "VA"){ # These have been moved to gllvm.cpp
+  # if((method %in% c("VA", "EVA"))){ # These have been moved to gllvm.cpp
   #   if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
   #   if(row.eff == "random") out$logL = out$logL + n*0.5
   #   if(family=="gaussian") {
@@ -1226,7 +1226,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         p0 <- p0+runif(p,0,0.001)
         pars[p0i] <- p0
       }
-      if(method == "VA"){
+      if((method %in% c("VA", "EVA"))){
         sdr <- objrFinal$he(pars)
       }
       if(method == "LA"){
@@ -1275,11 +1275,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(row.eff=="fixed"){ incl[1] <- FALSE }
       }
       
-      if(method=="LA" || ((num.lv+num.lv.c)==0 && method=="VA" && row.eff!="random")){
+      if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && row.eff!="random")){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
         
-        if(((num.lv+num.lv.c+num.RR) > 0 || row.eff == "random")&& method != "VA") {
+        if(((num.lv+num.lv.c+num.RR) > 0 || row.eff == "random")&& method == "LA") {
           sd.random <- sdrandom(objrFinal, covM, incl,ignore.u = ignore.u)
           prediction.errors <- list()
           

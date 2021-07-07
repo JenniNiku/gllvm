@@ -56,8 +56,8 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
     }
 
   out <- list(lvs=lvs,logL=-optLVs$value)
-  # and their sds: (assuming method="VA")
-  if((objectTest$num.lv+objectTest$num.lv.c)>0 && object$method=="VA")
+  # and their sds: (assuming (object$method %in% c("VA", "EVA")))
+  if((objectTest$num.lv+objectTest$num.lv.c)>0 && (object$method %in% c("VA", "EVA")))
   {
     Au <- optLVs$par[names(optLVs$par)=="Au"]
     A <- array(0,dim=c(n,(objectTest$num.lv+objectTest$num.lv.c),(objectTest$num.lv+objectTest$num.lv.c)))
@@ -91,7 +91,7 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
     }
     out$A <- A
   }
-  if(object$method == "VA"){
+  if((object$method %in% c("VA", "EVA"))){
     n<-nrow(newY)
     p<-ncol(newY)
     # if(object$row.eff == "random") out$logL = out$logL + n*0.5
@@ -134,12 +134,12 @@ getPars = function(pars,objectTest,object)
   # r0s=opar[names(tpar)=="r0"]
   tpar[names(tpar)=="r0"] = opar[names(tpar)=="r0"]
   tpar[names(tpar)=="lg_Ar"] = opar[names(opar)=="lg_Ar"]
-  # if(object$method =="VA") lg_Ars=tpar[names(tpar)=="lg_Ar"]
-  # if(object$method =="VA") tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
+  # if((object$method %in% c("VA", "EVA"))) lg_Ars=tpar[names(tpar)=="lg_Ar"]
+  # if((object$method %in% c("VA", "EVA"))) tpar[names(tpar)=="lg_Ar"] = mean(lg_Ars)
   
   # replace LVs and their estimated se's with input values
   tpar[names(tpar)=="u"] = pars[names(pars)=="u"]
-  # if(object$method =="VA") 
+  # if((object$method %in% c("VA", "EVA"))) 
     tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
   
   # replace other params with training values
