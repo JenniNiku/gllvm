@@ -14,7 +14,7 @@
 #' @param cex.spp size of species labels in biplot
 #' @param cex.env size of labels for arrows in constrianed ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
-#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}
+#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param arrow.scale positive value, to scale arrows
 #' @param arrow.ci represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}
@@ -83,10 +83,16 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = FALSE, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.ci = TRUE, spp.arrows = NULL, cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-
+  if(is.null(spp.arrows)){
+    if(object$quadratic!=FALSE){
+      spp.arrows <- TRUE
+    }else{
+      spp.arrows <- FALSE
+    }
+  }
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   n <- NROW(object$y)
