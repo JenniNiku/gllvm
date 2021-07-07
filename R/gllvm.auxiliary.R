@@ -645,6 +645,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(family=="gaussian"&inherits(fa,"try-error")){
           fa <- princomp(resi)
           fa$scores <- fa$scores[,1:num.lv.c,drop=F]
+          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
         }
         if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
         index <- fa$scores
@@ -652,10 +653,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
         if(family=="gaussian"&inherits(fa,"try-error")){
           fa <- princomp(t(resi))
-          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
+          fa$loadings <- fa$loadings[,1:num.lv.c, drop=F]
+          fa$scores <- fa$scores[,1:num.lv.c, drop=F]
         }
         if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
-        index <- matrix(fa$loadings,n,num.lv.c)
       } else {
         tryfit <- TRUE; tryi <- 1
         while(tryfit && tryi<5) {
@@ -665,7 +666,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(inherits(fa,"try-error")) {
           warning(attr(fa,"condition")$message, "\n Factor analysis for Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
           fa <- princomp(resi)
-          index<-matrix(fa$scores[,1:num.lv.c],n,num.lv.c)
         }
       }
       if(n>p){
@@ -681,7 +681,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       #Ensures independence of LVs with predictors
       index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
-      
       colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
       
       if(num.lv.c>1 && p>2){
