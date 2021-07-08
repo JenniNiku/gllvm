@@ -13,7 +13,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
 ```
 
-In this example we demonstrate how to implement the quadratic response model in \texttt{gllvm}. Quadratic curves are frequently occuring in community ecology, specifically to describe the response of species to the environment. When one has measured predictor variables, a quadratic function can straightforwardly be included in a regression in R using the $poly(\cdot,2)$ function. However, in a GLLVM, latent variables are included that can represent unmeasured predictors. As such, we might want to test if species respond to those unknown predictors too. This is similar to the theory behind other ordination methods, such as Correspondence Annalysis and its constrained variant (CCA).
+In this example we demonstrate how to implement the quadratic response model in \texttt{gllvm}. Quadratic curves are frequently occurring in community ecology, specifically to describe the response of species to the environment. When one has measured predictor variables, a quadratic function can straightforwardly be included in a regression in R using the $poly(\cdot,2)$ function. However, in a GLLVM, latent variables are included that can represent unmeasured predictors. As such, we might want to test if species respond to those unknown predictors too. This is similar to the theory behind other ordination methods, such as Correspondence Analysis and its constrained variant (CCA).
 
 We will use the hunting spider dataset as an example, which includes 12 species at 100 sites. It also includes measurements of the environment at 28 sites, though we will not use those here.
 
