@@ -197,7 +197,7 @@ print.summary.gllvm <- function (x, ...)
     cat("\nCoefficients predictors:\n")
     coefs <- x$Coef.tableX
     
-    printCoefmat(coefs, digits = x$digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,x$signif.stars), 
+    printCoefmat(coefs, digits = x$digits, signif.stars = x$signif.stars, 
                  na.print = "NA")
   }
   if(x$theta){
