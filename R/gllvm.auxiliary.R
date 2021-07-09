@@ -385,6 +385,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       params <- cbind(params[,1:(ncol(params)-num.lv)],matrix(rnorm(num.RR*p),ncol=num.RR,nrow=p),params[,(ncol(params)-num.lv+1):ncol(params)])
     }
   }
+  if((num.lv.c+num.lv)>0){
   if((family!="ordinal" || (family=="ordinal" & starting.val=="res")) & starting.val!="zero"){
     if(num.lv==0 &&p>2 & (num.lv.c+num.RR)>1 | (num.lv.c+num.RR) == 0 && p>2 & num.lv>1){
       gamma<-as.matrix(params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)])
@@ -402,6 +403,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       if(num.lv.c>0)index[,1:num.lv.c]<-(index[,1:num.lv.c,drop=F]%*%qr.Q(qr.gamma1)[1:num.lv.c,1:num.lv.c])
       index[,(num.lv.c+1):ncol(index)]<-(index[,(num.lv.c+1):ncol(index),drop=F]%*%qr.Q(qr.gamma2))
     }
+  }
   }
   if(starting.val=="zero"){
     params=matrix(0,p,1+num.X+(num.lv+num.lv.c+num.RR))
@@ -838,11 +840,29 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
   if(num.RR>0){
+    
+    #Alternative for RRcoef is factor analysis of the predictors.
       RRmod <- lm(resi~0+lv.X)
-      qr.gam <- qr(coef(RRmod))
-      RRcoef <- qr.Q(qr.gam)[,1:num.RR]
-      RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
-      RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
+      
+      beta <- t(coef(RRmod))
+      betaSD=apply(beta,1,sd)
+      beta=beta/betaSD
+      qr.beta=qr(t(beta))
+      R=t(qr.R(qr.beta))
+      R=R[,1:num.RR]/sqrt(num.RR*nrow(RRmod$coefficients))
+      Q=t(qr.Q(qr.beta))[1:num.RR,]
+      RRcoef = Q*sqrt(num.RR*nrow(RRmod$coefficients))
+      sgn=t(sign(diag(R)))
+      RRgamma = R%*%diag(c(sgn))
+      RRcoef = t(diag(c(sgn))%*%RRcoef)
+      #transfer RRgamma diagonals to RRcoef
+      RRcoef <- t(t(RRcoef)*diag(RRgamma))
+      RRgamma<-t(t(RRgamma)/diag(RRgamma))
+      
+      # qr.gam <- qr(coef(RRmod))
+      # RRcoef <- qr.Q(qr.gam)[,1:num.RR]
+      # RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
+      # RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
       eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
   }
 
@@ -2030,7 +2050,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
   p <- ncol(obj$env$data$y)
   lv.X <- obj$env$data$x_lv
   
-  sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
+  # sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
   diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv+num.RR,num.lv.c+num.lv+num.RR))
   
   
