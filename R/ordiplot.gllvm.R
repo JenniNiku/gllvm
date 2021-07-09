@@ -177,9 +177,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     # }
     # 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
-    
-    
+      B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)  
+  
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
     # choose.lvs <- do.svd$u * matrix( do.svd$d[1:num.lv] ^ alpha,
