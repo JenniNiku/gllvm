@@ -341,7 +341,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
-                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit = 4000, trace = FALSE, optim.method = NULL), 
+                  control = list(reltol = 1e-11, TMB = TRUE, optimizer = NULL, max.iter = 10e7, maxit = 01e7, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
@@ -351,6 +351,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     num.lv <- 2
   }else if(is.null(num.lv)){num.lv<-0}
   
+  if(is.null(control$optimizer)&num.RR>0){
+    control$optimizer <- "nlminb"
+  }else{
+    control$optimizer <- "optim"
+  }
   
     constrOpt <- FALSE
     restrict <- 30
