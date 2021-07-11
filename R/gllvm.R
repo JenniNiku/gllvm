@@ -1044,6 +1044,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if (is.infinite(out$logL)){
       warning("Algorithm converged to infinity, try other starting values or different method.")
       cat("Algorithm converged to infinity, try other starting values or different method. \n")
+      if(num.lv.c>0|num.RR>0){
+        cat("Try scaling and centering your predictors before entering them into the model. \n")
+      }
       }
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
