@@ -1,7 +1,7 @@
 #' @title Summarizing gllvm model fits
 #' @description A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 #' 
-#' Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
+#' @details Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 #'
 #' @param object an object of class 'gllvm'
 #' @param x a summary object
@@ -11,7 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param theta option to return species scores in the ordination, defaults to \code{FALSE}
-#' @param ...	not used.
+#' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
 #'
