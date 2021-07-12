@@ -565,6 +565,20 @@ trait.TMB <- function(
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
         DLL = "gllvm")
       
+      if(optimizer=="nlm") {
+        #because nlm discards parameter names
+        nam1 <- names(objr$par)
+        nam2 <- names(objr$env$last.par.best)
+        eval.fn <- function(x){
+          res <- objr$fn(x)
+          attr(res,"gradient")  <- objr$gr(x)
+          res
+        }
+        timeo <- system.time(optr <- try(nlm(eval.fn, objr$par, gradtol = reltol, iterlim = maxit, check.analyticals = FALSE),silent = TRUE))
+        optr$par <- optr$estimate
+        names(optr$par) <- nam1
+        names(objr$env$last.par.best) <- nam2
+      }
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -605,7 +619,20 @@ trait.TMB <- function(
     }
 
 #### Fit model 
-    
+    if(optimizer=="nlm") {
+      #because nlm discards parameter names
+      nam1 <- names(objr$par)
+      nam2 <- names(objr$env$last.par.best)
+      eval.fn <- function(x){
+        res <- objr$fn(x)
+        attr(res,"gradient")  <- objr$gr(x)
+        res
+      }
+      timeo <- system.time(optr <- try(nlm(eval.fn, objr$par, gradtol = reltol, iterlim = maxit, check.analyticals = FALSE),silent = TRUE))
+      optr$par <- optr$estimate
+      names(optr$par) <- nam1
+      names(objr$env$last.par.best) <- nam2
+    }
     if(optimizer=="nlminb") {
       timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
     }
@@ -671,7 +698,21 @@ trait.TMB <- function(
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = 1000),
         DLL = "gllvm")
-
+      
+      if(optimizer=="nlm") {
+        #because nlm discards parameter names
+        nam1 <- names(objr$par)
+        nam2 <- names(objr$env$last.par.best)
+        eval.fn <- function(x){
+          res <- objr$fn(x)
+          attr(res,"gradient")  <- objr$gr(x)
+          res
+        }
+        timeo <- system.time(optr <- try(nlm(eval.fn, objr$par, gradtol = reltol, iterlim = maxit, check.analyticals = FALSE),silent = TRUE))
+        optr$par <- optr$estimate
+        names(optr$par) <- nam1
+        names(objr$env$last.par.best) <- nam2
+      }
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -729,6 +770,20 @@ trait.TMB <- function(
         inner.control=list(mgcmax = 1e+200,maxit = 1000),
         DLL = "gllvm")
       
+      if(optimizer=="nlm") {
+        #because nlm discards parameter names
+        nam1 <- names(objr$par)
+        nam2 <- names(objr$env$last.par.best)
+        eval.fn <- function(x){
+          res <- objr$fn(x)
+          attr(res,"gradient")  <- objr$gr(x)
+          res
+        }
+        timeo <- system.time(optr <- try(nlm(eval.fn, objr$par, gradtol = reltol, iterlim = maxit, check.analyticals = FALSE),silent = TRUE))
+        optr$par <- optr$estimate
+        names(optr$par) <- nam1
+        names(objr$env$last.par.best) <- nam2
+      }
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -1042,7 +1097,12 @@ trait.TMB <- function(
   out$D <- Xd
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
-  out$convergence <- optrFinal$convergence == 0
+  if(optimizer  %in% c("optim","nlminb")){
+    out$convergence <- optrFinal$convergence == 0  
+  }else{
+    out$convergence <- optrFinal$convergence %in% c(1,2)
+  }
+  
   out$quadratic <- quadratic
   out$logL <- -out$logL
   out$zeta.struc <- zeta.struc
