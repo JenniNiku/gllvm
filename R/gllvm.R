@@ -328,7 +328,7 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
 #'@importFrom grDevices rainbow hcl
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlm nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom MASS mvrnorm
