@@ -7,7 +7,7 @@
 #' @param optimizers should the model be re-fitted with different optimizers? Defaults to \code{TRUE}.
 #' @param return.best return only the best fitting object (\code{TRUE})? Or all fitted objects \code{FALSE}? 
 #' @param return.table return a table with information of the fitted model objects? Defaults to \code{FALSE}.
-#' @param ...	 other arguments for a \code{\link{gllvm}} function call.
+#' @param ...	 additional arguments for a \code{\link{gllvm}} function call.
 #'
 #' @author Bert van der Veen
 #'@seealso  \code{\link{gllvm}}.
@@ -25,7 +25,6 @@
 
 
 allFit.gllvm <- function(object, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
- 
   fits <- list()
   suppressWarnings(
     {

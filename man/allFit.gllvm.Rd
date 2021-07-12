@@ -10,6 +10,7 @@
   optimizers = TRUE,
   return.best = TRUE,
   return.table = FALSE,
+  sd.errors = TRUE,
   ...
 )
 }
@@ -24,7 +25,9 @@
 
 \item{return.table}{return a table with information of the fitted model objects? Defaults to \code{FALSE}.}
 
-\item{...}{other arguments for a \code{\link{gllvm}} function call.}
+\item{sd.errors}{should standard errors be returned as part of the best fitting model? Defaults to \code{TRUE}.}
+
+\item{...}{additional arguments for a \code{\link{gllvm}} function call.}
 }
 \description{
 The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function re-fits GLLVM objects with different starting values or optimizers, for convenience, to ensure an optimal solution.
