@@ -33,8 +33,8 @@ gllvm(
   scale.X = TRUE,
   return.terms = TRUE,
   gradient.check = FALSE,
-  control = list(reltol = 1e-11, TMB = TRUE, optimizer = NULL, max.iter = 1e+08, maxit
-    = 1e+07, trace = FALSE, optim.method = NULL),
+  control = list(reltol = 1e-11, TMB = TRUE, optimizer = NULL, max.iter = 4000, maxit =
+    1000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured",
     diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
@@ -105,7 +105,7 @@ gllvm(
  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default with num.RR == 0), \code{"\link{nlminb}"} (default with num.RR > 0), or \code{"\link{nlm}"}.}
- \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
+ \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 1000.}
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
