@@ -1085,10 +1085,13 @@ trait.TMB <- function(
         out$Ab <- Ab
       }
     }
-
+    
+    seed.best <- seed[n.i]
     n.i <- n.i+1;
   }
-
+  
+  #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
+  out$seed <- seed.best
   
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
