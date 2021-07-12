@@ -2,6 +2,7 @@
 #' @description The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function re-fits GLLVM objects with different starting values or optimizers, for convenience, to ensure an optimal solution.
 #' 
 #' @param object an object of class 'gllvm'
+#' @param sd.errors should standard errors be returned as part of the best fitting model? Defaults to \code{TRUE}.
 #' @param starting.vals should the model be re-fitted with different starting values? Defaults to \code{TRUE}.
 #' @param optimizers should the model be re-fitted with different optimizers? Defaults to \code{TRUE}.
 #' @param return.best return only the best fitting object (\code{TRUE})? Or all fitted objects \code{FALSE}? 
@@ -23,45 +24,45 @@
 #'@export print.summary.gllvm 
 
 
-allFit.gllvm <- function(object, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, ...){
-  
+allFit.gllvm <- function(object, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
+ 
   fits <- list()
   suppressWarnings(
     {
   if(starting.vals&!optimizers){
-    fits[[1]] <- try(update(object, starting.val = "zero", ...),silent = TRUE)
-    fits[[2]] <- try(update(object, starting.val = "res", ...),silent = TRUE)
-    fits[[3]] <- try(update(object, starting.val = "res", n.init = 3, seed = NULL, ...),silent=TRUE)
-    fits[[4]] <- try(update(object, starting.val = "random"),silent=TRUE)
+    fits[[1]] <- try(update(object, starting.val = "zero", sd.errors = FALSE, ...),silent = TRUE)
+    fits[[2]] <- try(update(object, starting.val = "res", sd.errors = FALSE, ...),silent = TRUE)
+    fits[[3]] <- try(update(object, starting.val = "res", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
+    fits[[4]] <- try(update(object, starting.val = "random", sd.errors = FALSE, ...),silent=TRUE)
     if(inherits(fits[[1]], "try-error"))warning("Fit with starting.val=='zero' failed. \n")
     if(inherits(fits[[2]], "try-error"))warning("Fit with starting.val=='res' failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with starting.val=='res' and n.init = 3 failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with starting.val=='random' failed. \n")
   }
   if(optimizers&!starting.vals){
-    fits[[1]] <- try(update(object, optimizer = "optim", ...),silent=TRUE)
-    fits[[2]] <- try(update(object, optimizer = "nlminb", ...),silent=TRUE)
-    fits[[3]] <- try(update(object, optimizer = "nlm", ...),silent=TRUE)
+    fits[[1]] <- try(update(object, optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
+    fits[[2]] <- try(update(object, optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
+    fits[[3]] <- try(update(object, optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
     if(inherits(fits[[1]], "try-error"))warning("Fit with optimizer = 'optim' failed. \n")
     if(inherits(fits[[2]], "try-error"))warning("Fit with optimizer = 'nlminb' failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with optimizer = 'nlm' failed. \n")
   }
   if(optimizers&starting.vals){
     #optim
-      fits[[1]] <- try(update(object, starting.val = "zero", optimizer = "optim", ...),silent = TRUE)
-      fits[[2]] <- try(update(object, starting.val = "res", optimizer = "optim", ...),silent = TRUE)
-      fits[[3]] <- try(update(object, starting.val = "res", optimizer = "optim", n.init = 3, seed = NULL, ...),silent=TRUE)
-      fits[[4]] <- try(update(object, starting.val = "random", optimizer = "optim", ...),silent=TRUE)
+      fits[[1]] <- try(update(object, starting.val = "zero", optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[2]] <- try(update(object, starting.val = "res", optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[3]] <- try(update(object, starting.val = "res", optimizer = "optim", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
+      fits[[4]] <- try(update(object, starting.val = "random", optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
      #nlminb
-      fits[[5]] <- try(update(object, starting.val = "zero", optimizer = "nlminb", ...),silent = TRUE)
-      fits[[6]] <- try(update(object, starting.val = "res", optimizer = "nlminb", ...),silent = TRUE)
-      fits[[7]] <- try(update(object, starting.val = "res", optimizer = "nlminb", n.init = 3, seed = NULL, ...),silent=TRUE)
-      fits[[8]] <- try(update(object, starting.val = "random", optimizer = "nlminb", ...),silent=TRUE)
+      fits[[5]] <- try(update(object, starting.val = "zero", optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[6]] <- try(update(object, starting.val = "res", optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[7]] <- try(update(object, starting.val = "res", optimizer = "nlminb", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
+      fits[[8]] <- try(update(object, starting.val = "random", optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
      #nlm
-      fits[[9]] <- try(update(object, starting.val = "zero", optimizer = "nlm", ...),silent = TRUE)
-      fits[[10]] <- try(update(object, starting.val = "res", optimizer = "nlm", ...),silent = TRUE)
-      fits[[11]] <- try(update(object, starting.val = "res", optimizer = "nlm", n.init = 3, seed = NULL),silent=TRUE)
-      fits[[12]] <- try(update(object, starting.val = "random", optimizer = "nlm", ...),silent=TRUE)
+      fits[[9]] <- try(update(object, starting.val = "zero", optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[10]] <- try(update(object, starting.val = "res", optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[11]] <- try(update(object, starting.val = "res", optimizer = "nlm", sd.errors = FALSE, n.init = 3, seed = NULL),silent=TRUE)
+      fits[[12]] <- try(update(object, starting.val = "random", optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
       
       #optim
       if(inherits(fits[[1]], "try-error"))warning("Fit with starting.val=='zero' and optimizer = 'optim' failed. \n")
@@ -103,6 +104,14 @@ allFit.gllvm <- function(object, starting.vals = TRUE, optimizers = TRUE, return
     info  <- info[order(info$LL,decreasing = T),]
     cat("Best fit has log-likelihood:", paste(signif(info[1,2]),",", sep=""), "optimizer:", paste(info[1,3], ",", sep=""), "starting value: ", info[1,4])
   
+    if(sd.errors){
+      best.fit  <- fits[[which.max(unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}})))]]
+      SEs <- se.gllvm(object)
+      best.fit$Hess<-SEs$Hess 
+      best.fit$sd <- SEs$sd
+      best.fit$call$sd.errors <- TRUE
+      fits[[which.max(unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}})))]] <- best.fit
+    }
   #only return fit with best LL
   if(return.best&!return.table){
     fits[[which.max(unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}})))]]
