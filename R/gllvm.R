@@ -1066,7 +1066,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     out$convergence = fitg$convergence
     if(is.finite(out$logL)&TMB){
     if(!out$convergence) {
-      warning("The maximum number of iterations was reached, algorithm did not converge.")
+      warning("The algorithm did not converge, the maximum number of iterations might have been reached.")
       } else if(gradient.check && TMB){
         if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
