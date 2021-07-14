@@ -31,6 +31,12 @@
 
 allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
   fits <- list()
+  opts <- list(...)
+  if("n.init"%in%names(opts)){
+    n.init <- opts$n.init
+  }else{
+    n.init <- 1
+  }
   if(is.null(seed)&n.init == 1){
     seed <- sample(1:10000, 1)
   }
@@ -72,7 +78,7 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
       fits[[5]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
       fits[[6]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
       fits[[7]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, n.init = 3 , jitter.var = 0.2, ...),silent=TRUE)
-      fits[[8]] <- try(update(object, starting.val = "random", optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
+      fits[[8]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
      #nlm
       fits[[9]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
       fits[[10]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
@@ -115,8 +121,12 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
     
     #order by best fit
     info  <- info[order(info$LL,decreasing = T),]
+    if(return.best){
     cat("Best fit has log-likelihood:", paste(signif(info[1,2]),",", sep=""), "optimizer:", paste(info[1,3], ",", sep=""), "starting value: ", info[1,4])
-  
+    }else{
+      cat("Best fit", paste("(#",info[1,1], ")", sep="") ,"has log-likelihood:", paste(signif(info[1,2]),",", sep=""), "optimizer:", paste(info[1,3], ",", sep=""), "starting value: ", info[1,4])
+    }
+    
     if(sd.errors){
       best.fit  <- fits[[which.max(unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}})))]]
       SEs <- se.gllvm(object)
