@@ -6,6 +6,7 @@
 \usage{
 \method{allFit}{gllvm}(
   object,
+  seed = NULL,
   starting.vals = TRUE,
   optimizers = TRUE,
   return.best = TRUE,
@@ -15,7 +16,9 @@
 )
 }
 \arguments{
-\item{object}{an object of class 'gllvm'}
+\item{object}{an object of class 'gllvm'.}
+
+\item{seed}{seed to use for model fitting if n.init = 1.}
 
 \item{starting.vals}{should the model be re-fitted with different starting values? Defaults to \code{TRUE}.}
 
@@ -30,7 +33,9 @@
 \item{...}{additional arguments for a \code{\link{gllvm}} function call.}
 }
 \description{
-The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function re-fits GLLVM objects with different starting values or optimizers, for convenience, to ensure an optimal solution.
+The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function refits GLLVM objects with different starting values and optimizers, for convenience, to ensure an optimal solution. 
+
+Specifically, it implements some of the recommendations from Niku et al. 2019 with three different optimizers: 1) "zero", 2) "res" (without jitter), 3) "res3" (with jitter).
 }
 \examples{
 \dontrun{
@@ -41,6 +46,9 @@ y <- as.matrix(antTraits$abund)
 fit <- gllvm(y = y, family = poisson())
 bestFit <- allFit(fit)
 }
+}
+\references{
+Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. PLoS One, 14(5):1-20.
 }
 \seealso{
 \code{\link{gllvm}}.

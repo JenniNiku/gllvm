@@ -1,7 +1,10 @@
 #' @title Re-fit a GLLVM with different starting values or optimizers
-#' @description The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function re-fits GLLVM objects with different starting values or optimizers, for convenience, to ensure an optimal solution.
+#' @description The algorithm used is sensitive to the initial values, so that a single model fit might not always provide the best parameter estimates. Frequent re-fitting might be required to ensure the best solution has been found. This function refits GLLVM objects with different starting values and optimizers, for convenience, to ensure an optimal solution. 
 #' 
-#' @param object an object of class 'gllvm'
+#' Specifically, it implements some of the recommendations from Niku et al. 2019 with three different optimizers: 1) "zero", 2) "res" (without jitter), 3) "res3" (with jitter).
+#' 
+#' @param object an object of class 'gllvm'.
+#' @param seed seed to use for model fitting if n.init = 1.
 #' @param sd.errors should standard errors be returned as part of the best fitting model? Defaults to \code{TRUE}.
 #' @param starting.vals should the model be re-fitted with different starting values? Defaults to \code{TRUE}.
 #' @param optimizers should the model be re-fitted with different optimizers? Defaults to \code{TRUE}.
@@ -10,7 +13,9 @@
 #' @param ...	 additional arguments for a \code{\link{gllvm}} function call.
 #'
 #' @author Bert van der Veen
-#'@seealso  \code{\link{gllvm}}.
+#' @references 
+#' Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. PLoS One, 14(5):1-20.
+#' @seealso  \code{\link{gllvm}}.
 #' @examples
 #' \dontrun{
 #'## Load a dataset from the mvabund package
@@ -24,68 +29,77 @@
 #'@export print.summary.gllvm 
 
 
-allFit.gllvm <- function(object, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
+allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
   fits <- list()
-  suppressWarnings(
-    {
+  if(is.null(seed)&n.init == 1){
+    seed <- sample(1:10000, 1)
+  }
+
   if(starting.vals&!optimizers){
-    fits[[1]] <- try(update(object, starting.val = "zero", sd.errors = FALSE, ...),silent = TRUE)
-    fits[[2]] <- try(update(object, starting.val = "res", sd.errors = FALSE, ...),silent = TRUE)
-    fits[[3]] <- try(update(object, starting.val = "res", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
-    fits[[4]] <- try(update(object, starting.val = "random", sd.errors = FALSE, ...),silent=TRUE)
+    suppressWarnings(
+      {
+    fits[[1]] <- try(update(object, starting.val = "zero", seed = NULL, sd.errors = FALSE, ...),silent = TRUE)
+    fits[[2]] <- try(update(object, starting.val = "res", seed = seed, sd.errors = FALSE, ...),silent = TRUE)
+    fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, sd.errors = FALSE, n.init = 3, ...),silent=TRUE)
+    fits[[4]] <- try(update(object, starting.val = "random", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
+      })
     if(inherits(fits[[1]], "try-error"))warning("Fit with starting.val=='zero' failed. \n")
     if(inherits(fits[[2]], "try-error"))warning("Fit with starting.val=='res' failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with starting.val=='res' and n.init = 3 failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with starting.val=='random' failed. \n")
   }
   if(optimizers&!starting.vals){
-    fits[[1]] <- try(update(object, optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
-    fits[[2]] <- try(update(object, optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
-    fits[[3]] <- try(update(object, optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
+    suppressWarnings(
+      {
+    fits[[1]] <- try(update(object, optimizer = "optim", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
+    fits[[2]] <- try(update(object, optimizer = "nlminb", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
+    fits[[3]] <- try(update(object, optimizer = "nlm", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
+      })
     if(inherits(fits[[1]], "try-error"))warning("Fit with optimizer = 'optim' failed. \n")
     if(inherits(fits[[2]], "try-error"))warning("Fit with optimizer = 'nlminb' failed. \n")
     if(inherits(fits[[3]], "try-error"))warning("Fit with optimizer = 'nlm' failed. \n")
   }
   if(optimizers&starting.vals){
+    suppressWarnings(
+      {
     #optim
-      fits[[1]] <- try(update(object, starting.val = "zero", optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[2]] <- try(update(object, starting.val = "res", optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[3]] <- try(update(object, starting.val = "res", optimizer = "optim", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
-      fits[[4]] <- try(update(object, starting.val = "random", optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
+    #
+      fits[[1]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[2]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "optim", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...),silent=TRUE)
+      fits[[4]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
      #nlminb
-      fits[[5]] <- try(update(object, starting.val = "zero", optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[6]] <- try(update(object, starting.val = "res", optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[7]] <- try(update(object, starting.val = "res", optimizer = "nlminb", sd.errors = FALSE, n.init = 3, seed = NULL, ...),silent=TRUE)
+      fits[[5]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[6]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[7]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, n.init = 3 , jitter.var = 0.2, ...),silent=TRUE)
       fits[[8]] <- try(update(object, starting.val = "random", optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
      #nlm
-      fits[[9]] <- try(update(object, starting.val = "zero", optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[10]] <- try(update(object, starting.val = "res", optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[11]] <- try(update(object, starting.val = "res", optimizer = "nlm", sd.errors = FALSE, n.init = 3, seed = NULL),silent=TRUE)
-      fits[[12]] <- try(update(object, starting.val = "random", optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
-      
+      fits[[9]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[10]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[11]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlm", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...), silent=TRUE)
+      fits[[12]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
+      })
       #optim
-      if(inherits(fits[[1]], "try-error"))warning("Fit with starting.val=='zero' and optimizer = 'optim' failed. \n")
-      if(inherits(fits[[2]], "try-error"))warning("Fit with starting.val=='res' and optimizer = 'optim' failed. \n")
-      if(inherits(fits[[3]], "try-error"))warning("Fit with starting.val=='res', and n.init = 3, and optimizer = 'optim' failed. \n")
-      if(inherits(fits[[4]], "try-error"))warning("Fit with starting.val=='random' and optimizer = 'optim' failed \n")
+      if(inherits(fits[[1]], "try-error"))warning("Fit with 'zero' and optimizer = 'optim' failed. \n")
+      if(inherits(fits[[2]], "try-error"))warning("Fit with 'res' and optimizer = 'optim' failed. \n")
+      if(inherits(fits[[3]], "try-error"))warning("Fit with 'res3' and optimizer = 'optim' failed. \n")
+      if(inherits(fits[[4]], "try-error"))warning("Fit with 'random' and optimizer = 'optim' failed \n")
       
       #nlminb
-      if(inherits(fits[[5]], "try-error"))warning("Fit with starting.val=='zero' and optimizer = 'nlminb' failed. \n")
-      if(inherits(fits[[6]], "try-error"))warning("Fit with starting.val=='res' and optimizer = 'nlminb' failed. \n")
-      if(inherits(fits[[7]], "try-error"))warning("Fit with starting.val=='res', and n.init = 3, and optimizer = 'nlminb' failed. \n")
-      if(inherits(fits[[8]], "try-error"))warning("Fit with starting.val=='random' and optimizer = 'nlminb' failed \n")
+      if(inherits(fits[[5]], "try-error"))warning("Fit with 'zero' and optimizer = 'nlminb' failed. \n")
+      if(inherits(fits[[6]], "try-error"))warning("Fit with 'res' and optimizer = 'nlminb' failed. \n")
+      if(inherits(fits[[7]], "try-error"))warning("Fit with 'res3' and optimizer = 'nlminb' failed. \n")
+      if(inherits(fits[[8]], "try-error"))warning("Fit with 'random' and optimizer = 'nlminb' failed \n")
       
       #nlm
-      if(inherits(fits[[9]],"try-error"))warning("Fit with starting.val=='zero' and optimizer = 'nlm' failed. \n")
-      if(inherits(fits[[10]],"try-error"))warning("Fit with starting.val=='res' and optimizer = 'nlm' failed. \n")
-      if(inherits(fits[[11]],"try-error"))warning("Fit with starting.val=='res', and n.init = 3, and optimizer = 'nlm' failed. \n")
-      if(inherits(fits[[12]],"try-error"))warning("Fit with starting.val=='random' and optimizer = 'nlm' failed \n")
+      if(inherits(fits[[9]],"try-error"))warning("Fit with 'zero' and optimizer = 'nlm' failed. \n")
+      if(inherits(fits[[10]],"try-error"))warning("Fit with 'res' and optimizer = 'nlm' failed. \n")
+      if(inherits(fits[[11]],"try-error"))warning("Fit with 'res3' and optimizer = 'nlm' failed. \n")
+      if(inherits(fits[[12]],"try-error"))warning("Fit with 'random' and optimizer = 'nlm' failed \n")
       
     
   }
   
-}
-)
     LL <- unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}}))
     optimizers <- unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){x$optimizer}else{NA}}))
     starting.vals <- unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){x$starting.val}else{NA}}))
