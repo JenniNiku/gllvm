@@ -49,7 +49,7 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
       {
     fits[[1]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, sd.errors = FALSE, ...),silent = TRUE)
     fits[[2]] <- try(update(object, starting.val = "res", seed = seed, sd.errors = FALSE, ...),silent = TRUE)
-    fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, sd.errors = FALSE, n.init = 3, ...),silent=TRUE)
+    fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, sd.errors = FALSE, n.init = 3, jitter.var = 0.4, ...),silent=TRUE)
     fits[[4]] <- try(update(object, starting.val = "random", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
       })
     if(inherits(fits[[1]], "try-error"))warning("Fit with starting.val=='zero' failed. \n")
@@ -75,17 +75,17 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
     #
       fits[[1]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
       fits[[2]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "optim", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...),silent=TRUE)
+      fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "optim", sd.errors = FALSE, n.init = 3, jitter.var = 0.4, ...),silent=TRUE)
       fits[[4]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
      #nlminb
       fits[[5]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
       fits[[6]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[7]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, n.init = 3 , jitter.var = 0.2, ...),silent=TRUE)
+      fits[[7]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, n.init = 3 , jitter.var = 0.4, ...),silent=TRUE)
       fits[[8]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
      #nlm
       fits[[9]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
       fits[[10]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
-      fits[[11]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlm", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...), silent=TRUE)
+      fits[[11]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlm", sd.errors = FALSE, n.init = 3, jitter.var = 0.4, ...), silent=TRUE)
       fits[[12]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
       })
       #optim
