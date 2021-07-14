@@ -26,25 +26,28 @@
 #' bestFit <- allFit(fit)
 #'}
 #'@export
-#'@export print.summary.gllvm 
+#'@export allFit.gllvm 
 
 
 allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers = TRUE, return.best = TRUE, return.table = FALSE, sd.errors = TRUE, ...){
   fits <- list()
   opts <- list(...)
+  #these can create issues if not taken care of
+  object$call$n.init <- 1
+  object$call$seed <- NULL
+  n.init <- NULL
   if("n.init"%in%names(opts)){
     n.init <- opts$n.init
-  }else{
-    n.init <- 1
   }
-  if(is.null(seed)&n.init == 1){
-    seed <- sample(1:10000, 1)
+  
+  if(is.null(seed)&!is.null(n.init)){
+    seed <- sample(1:10000, n.init)
   }
 
   if(starting.vals&!optimizers){
     suppressWarnings(
       {
-    fits[[1]] <- try(update(object, starting.val = "zero", seed = NULL, sd.errors = FALSE, ...),silent = TRUE)
+    fits[[1]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, sd.errors = FALSE, ...),silent = TRUE)
     fits[[2]] <- try(update(object, starting.val = "res", seed = seed, sd.errors = FALSE, ...),silent = TRUE)
     fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, sd.errors = FALSE, n.init = 3, ...),silent=TRUE)
     fits[[4]] <- try(update(object, starting.val = "random", seed = seed, sd.errors = FALSE, ...),silent=TRUE)
@@ -70,17 +73,17 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
       {
     #optim
     #
-      fits[[1]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[1]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
       fits[[2]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent = TRUE)
       fits[[3]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "optim", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...),silent=TRUE)
       fits[[4]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "optim", sd.errors = FALSE, ...),silent=TRUE)
      #nlminb
-      fits[[5]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[5]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
       fits[[6]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent = TRUE)
       fits[[7]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlminb", sd.errors = FALSE, n.init = 3 , jitter.var = 0.2, ...),silent=TRUE)
       fits[[8]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlminb", sd.errors = FALSE, ...),silent=TRUE)
      #nlm
-      fits[[9]] <- try(update(object, starting.val = "zero", seed = NULL, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
+      fits[[9]] <- try(update(object, starting.val = "zero", n.init = 1, seed = NULL, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
       fits[[10]] <- try(update(object, starting.val = "res", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent = TRUE)
       fits[[11]] <- try(update(object, starting.val = "res", seed = NULL, optimizer = "nlm", sd.errors = FALSE, n.init = 3, jitter.var = 0.2, ...), silent=TRUE)
       fits[[12]] <- try(update(object, starting.val = "random", seed = seed, optimizer = "nlm", sd.errors = FALSE, ...),silent=TRUE)
@@ -102,8 +105,6 @@ allFit.gllvm <- function(object, seed = NULL, starting.vals = TRUE, optimizers =
       if(inherits(fits[[10]],"try-error"))warning("Fit with 'res' and optimizer = 'nlm' failed. \n")
       if(inherits(fits[[11]],"try-error"))warning("Fit with 'res3' and optimizer = 'nlm' failed. \n")
       if(inherits(fits[[12]],"try-error"))warning("Fit with 'random' and optimizer = 'nlm' failed \n")
-      
-    
   }
   
     LL <- unlist(lapply(fits,function(x){if(!inherits(x,"try-error")){logLik(x)}else{-Inf}}))
