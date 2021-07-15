@@ -843,22 +843,25 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     
     #Alternative for RRcoef is factor analysis of the predictors.
       RRmod <- lm(resi~0+lv.X)
-      
       beta <- t(coef(RRmod))
       betaSD=apply(beta,1,sd)
       beta=beta/betaSD
       qr.beta=qr(t(beta))
       R=t(qr.R(qr.beta))
-      R=R[,1:num.RR]/sqrt(num.RR*nrow(RRmod$coefficients))
+      R=R[,1:num.RR,drop=F]/sqrt(num.RR*nrow(RRmod$coefficients))
       Q=t(qr.Q(qr.beta))[1:num.RR,]
       RRcoef = Q*sqrt(num.RR*nrow(RRmod$coefficients))
       sgn=t(sign(diag(R)))
+      if(num.RR>1){
       RRgamma = R%*%diag(c(sgn))
       RRcoef = t(diag(c(sgn))%*%RRcoef)
+      }else{
+        RRgamma = R*c(sgn)
+        RRcoef = c(sgn)*RRcoef
+      }
       #transfer RRgamma diagonals to RRcoef
       RRcoef <- t(t(RRcoef)*diag(RRgamma))
       RRgamma<-t(t(RRgamma)/diag(RRgamma))
-      
       # qr.gam <- qr(coef(RRmod))
       # RRcoef <- qr.Q(qr.gam)[,1:num.RR]
       # RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
