@@ -10,7 +10,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{type}{type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "unconstrained". For models with constrained latent variables, defaults to "constrained". A third option is "scaled", which returns latent variables multiplied with scale parameters of the loadings.}
+\item{type}{type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "unconstrained". For models with constrained latent variables, defaults to "constrained". A third option is "scaled", which returns latent variables multiplied with scale parameter of the loadings. Alternatively, "LC" returns linear combination scores without residual error.}
 
 \item{...}{not used}
 }
