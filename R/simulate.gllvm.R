@@ -56,10 +56,10 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
   }
   else if(is.null(object$TR)){ 
-    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    Xnew <- object$X[rep(1:nRows,nsim),]; colnames(Xnew) <- colnames(object$X)
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   } else {
-    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    Xnew <- object$X[rep(1:nRows,nsim),]; colnames(Xnew) <- colnames(object$X)
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   }
   # generate new data
