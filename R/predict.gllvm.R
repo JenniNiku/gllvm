@@ -88,7 +88,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
   if(!is.null(object$X) && is.null(object$TR)) {
     B <- object$params$Xcoef
-    X.d <- Xnew <- object$X
+    if(is.null(newdata)){X.d <- Xnew <- object$X}else{X.d <- Xnew <- newdata}
     if(!is.null(newdata)) {
       if(is.null(object$call$formula)){
         n1 <- colnames(newdata)
@@ -107,7 +107,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       colnames(X.d) <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
     } else {
       X.d <- object$X.design
-      }
+    }
+
     eta <- eta + X.d %*% t(B)
   }
   
