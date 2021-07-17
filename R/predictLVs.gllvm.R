@@ -31,7 +31,7 @@
 predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...) 
 {
   # predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
-    if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
+  #  if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
   if(is.null(newX)==FALSE)
@@ -145,8 +145,12 @@ getPars = function(pars,objectTest,object)
   # replace other params with training values
   tpar[names(tpar)=="b"] = opar[names(opar)=="b"]
   tpar[names(tpar)=="B"] = opar[names(opar)=="B"]
+  tpar[names(tpar)=="b_lv"] = opar[names(opar)=="b_lv"]
   tpar[names(tpar)=="lambda"] = opar[names(opar)=="lambda"]
+  tpar[names(tpar)=="lambda2"] = opar[names(opar)=="lambda2"]
+  
   tpar[names(tpar)=="lg_phi"] = opar[names(opar)=="lg_phi"]
+  tpar[names(tpar)=="sigmaLV"] = opar[names(opar)=="sigmaLV"]
   tpar[names(tpar)=="log_sigma"] = opar[names(opar)=="log_sigma"]
   tpar[names(tpar)=="sigmaB"] = opar[names(opar)=="sigmaB"]
   if(length(tpar[names(tpar)=="sigmaB"]))   tpar[names(tpar)=="sigmaij"] = opar[names(opar)=="sigmaij"]
