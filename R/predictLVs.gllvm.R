@@ -37,8 +37,9 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
   if(is.null(newX)==FALSE)
     assign(as.character(object$call[3]),newX)
   objectTest=eval(object$call)
-  nlvr <- num.lv <- objectTest$num.lv+objectTest$num.lv.c #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
-
+  nlvr <- num.lv <- objectTest$num.lv #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
+  num.lv.c <- objectTest$num.lv.c
+  nlvr <- nlvr+num.lv.c
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
   objParam = objectTest$TMBfn$par[whichLVs]
