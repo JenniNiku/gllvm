@@ -374,17 +374,27 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       Ylength<-sum(abs(marg[3:4]))/2
 
       ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
-      for(i in 1:nrow(LVcoef)){
-        # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
-        tryCatch({arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i]);
-        text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)},
-        warning=function(w){print(paste("The effect for", row.names(LVcoef)[i],"was too small to plot an arrow."))}
-        )
+      
+      #double check if all arrows are long enough to draw
+      units = par(c('usr', 'pin'))
+      xi = with(units, pin[1L]/diff(usr[1:2]))
+      yi = with(units, pin[2L]/diff(usr[3:4]))
+      idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) <.001
+      if(any(idx)){
+        for(i in which(idx)){
+          cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow.")  
+        }
+        ends <- ends[!idx,]
+        LVcoef <- LVcoef[!idx,]
       }
+      
+        arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.2,lty=lty)
+        text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
+      
     }
    
   }
-}
+
 
 
 #'@export ordiplot
