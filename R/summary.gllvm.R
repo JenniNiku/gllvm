@@ -1,7 +1,7 @@
 #' @title Summarizing gllvm model fits
 #' @description A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
 #' 
-#' Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
+#' @details Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 #'
 #' @param object an object of class 'gllvm'
 #' @param x a summary object
@@ -11,7 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param theta option to return species scores in the ordination, defaults to \code{FALSE}
-#' @param ...	not used.
+#' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
 #'
@@ -39,7 +39,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   num.RR <- object$num.RR
   quadratic <- object$quadratic
   family <- object$family
-
+  
   M <- cbind(object$params$beta0, object$params$theta)
   sumry <- list()
   sumry$digits <- digits
@@ -59,10 +59,10 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   sumry$AIC <- crit$AIC
   sumry$AICc <- crit$AICc
   sumry$BIC <- crit$BIC
-
+  
   crit <-
     newnams <- c("Intercept")
-
+  
   if (num.lv > 0){
     if(quadratic != FALSE){
       if((num.lv.c+num.RR)==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""), paste("theta.LV", 1:num.lv, "^2" ,sep = ""))
@@ -70,7 +70,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     }
     if(quadratic == FALSE){
       if((num.lv.c+num.RR)==0)newnams <- c(newnams, paste("theta.LV", 1:num.lv, sep = ""))
-    if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""), paste("theta.LV", 1:num.lv, sep = ""))
+      if((num.lv.c+num.RR)>0)newnams <- c(newnams, paste("theta.CLV", 1:(num.lv.c+num.RR), sep = ""), paste("theta.LV", 1:num.lv, sep = ""))
     }
   }else if(num.lv==0&(num.lv.c+num.RR)>0){
     if(quadratic != FALSE){
@@ -115,13 +115,13 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     coef.table.constrained <- NULL
   }
-    
+  
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
   sumry$Call <- object$call
   sumry$family <- object$family
   sumry$Coefficients <- M
-
+  
   if (!is.null(object$TR)) {
     # if (!is.null(object$X)) {
     #   sumry$'Covariate coefficients' <- object$params$B
@@ -134,13 +134,13 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if (!is.null(object$params$row.params)) {
     sumry$'Row intercepts' <- object$params$row.params
   }
-
+  
   if (object$row.eff == "random") {
     object$params$sigma2 = object$params$sigma[1] ^ 2
     names(object$params$sigma2) = "sigma^2"
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
-
+  
   if (object$family == "negative.binomial") {
     sumry$'Dispersion parameters' <- object$params$phi
   }
@@ -157,7 +157,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     sumry$'Standard deviations' <- object$params$phi
   }
   if(!is.null(object$X)){
-  sumry$'Coef.tableX' <- coef.table
+    sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
     sumry$sigma.lv <- object$params$sigma.lv
@@ -197,15 +197,15 @@ print.summary.gllvm <- function (x, ...)
     cat("\nCoefficients predictors:\n")
     coefs <- x$Coef.tableX
     
-    printCoefmat(coefs, digits = x$digits, signif.stars = ifelse(!is.null(x$Coef.tableLV),F,x$signif.stars), 
+    printCoefmat(coefs, digits = x$digits, signif.stars = x$signif.stars, 
                  na.print = "NA")
   }
   if(x$theta){
-  if((x$num.lv+x$num.lv.c)>0){
-    cat("\nCoefficients LVs: \n")
-    
-    print(x$Coefficients[,-1,drop=F])
-  }
+    if((x$num.lv+x$num.lv.c)>0){
+      cat("\nCoefficients LVs: \n")
+      
+      print(x$Coefficients[,-1,drop=F])
+    }
   }
   
   if(!is.null(x$Coef.tableLV)){
@@ -216,37 +216,37 @@ print.summary.gllvm <- function (x, ...)
                  na.print = "NA")
   }
   if(x$spp.intercepts){
-  cat("\n Species Intercepts: \n")
-  print(zapsmall(x$Coefficients[,1],x$digits))
+    cat("\n Species Intercepts: \n")
+    print(zapsmall(x$Coefficients[,1],x$digits))
   }
   if(x$row.intercepts){
-  if(!is.null(x$`Row intercepts`)){
-    cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',x$digits), ":\n")
-    print(zapsmall(x$`Row intercepts`,x$digits))
-  }
+    if(!is.null(x$`Row intercepts`)){
+      cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',x$digits), ":\n")
+      print(zapsmall(x$`Row intercepts`,x$digits))
+    }
   }
   if(x$dispersion){
-  
-  if (x$family == "negative.binomial") {
-    phi <- x$'Dispersion parameters'
-  }
-  if (x$family == "gamma") {
-    phi <- x$'Shape parameters'
-  }
-  if (x$family == "tweedie") {
-    phi <- x$'Dispersion parameters'
-  }
-  if (x$family == "ZIP") {
-    phi <- x$'Zero inflation p'
-  }
-  if(x$family == "gaussian"){
-    phi <- x$'Standard deviations'
-  }
-  if(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian")){
-    names(phi) <- row.names(x$Coefficients)
-    cat("\n(Dispersion estimates for ", x$family, ":\n")
-    print(phi)
-  }
+    
+    if (x$family == "negative.binomial") {
+      phi <- x$'Dispersion parameters'
+    }
+    if (x$family == "gamma") {
+      phi <- x$'Shape parameters'
+    }
+    if (x$family == "tweedie") {
+      phi <- x$'Dispersion parameters'
+    }
+    if (x$family == "ZIP") {
+      phi <- x$'Zero inflation p'
+    }
+    if(x$family == "gaussian"){
+      phi <- x$'Standard deviations'
+    }
+    if(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian")){
+      names(phi) <- row.names(x$Coefficients)
+      cat("\n(Dispersion estimates for ", x$family, ":\n")
+      print(phi)
+    }
   }
   
   cat("\n")
