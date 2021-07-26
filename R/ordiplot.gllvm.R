@@ -141,7 +141,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     # do_svd <- svd(object$lvs)
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
-
+    
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     
@@ -177,8 +177,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     # }
     # 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(object$lvs^2)))%*%svd_rotmat_sites)
-    
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)  
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
@@ -201,7 +200,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }        
-          } else {
+        } else {
           
           sdb<-CMSEPf(object)$A
           if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
@@ -253,9 +252,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       plot(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
-             xlab = paste("Latent variable", which.lvs[1]), 
-             ylab = paste("Latent variable", which.lvs[2]),
-            main = main, type = "n", ... )
+        xlab = paste("Latent variable", which.lvs[1]), 
+        ylab = paste("Latent variable", which.lvs[2]),
+        main = main, type = "n", ... )
       
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
@@ -288,14 +287,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           }
         }
       }
-
+      
       if (!jitter){
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
           text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
         }
-    
+        
         spp.colors <- spp.colors[largest.lnorms][1:ind.spp]
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
@@ -329,13 +328,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         #scores_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,which.lvs,drop=F],1,all)],which.lvs,drop=F]
         scores_to_plot <- choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!all(x)),,drop=F]
         if(nrow(scores_to_plot)>0){
-        ends <- t(t(t(t(scores_to_plot)-origin)/sqrt((scores_to_plot[,1]-origin[1])^2+(scores_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*arrow.scale
-        for(i in 1:nrow(scores_to_plot)){
-          arrows(origin[1],origin[2],ends[i,1]+origin[1],ends[i,2]+origin[2],col=spp.colors[i], cex = cex.spp, length = 0.2)
-          text(x=ends[i,1]*(1+lab.dist)+origin[1],y=ends[i,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot)[i],col=spp.colors[i], cex = cex.spp)
+          ends <- t(t(t(t(scores_to_plot)-origin)/sqrt((scores_to_plot[,1]-origin[1])^2+(scores_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*arrow.scale
+          for(i in 1:nrow(scores_to_plot)){
+            arrows(origin[1],origin[2],ends[i,1]+origin[1],ends[i,2]+origin[2],col=spp.colors[i], cex = cex.spp, length = 0.2)
+            text(x=ends[i,1]*(1+lab.dist)+origin[1],y=ends[i,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot)[i],col=spp.colors[i], cex = cex.spp)
+          }
         }
-        }
-      # }
+        # }
       }
     }
     
@@ -343,7 +342,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
     if(num.lv==0&(num.lv.c+num.RR)>0){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
-
+      
       if(!is.logical(object$sd)&arrow.ci){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
@@ -369,23 +368,33 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       #account for variance of the predictors
       LVcoef <- LVcoef/apply(object$lv.X,2,sd)
       marg<-par("usr")
-    
+      
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
       Xlength<-sum(abs(marg[1:2]))/2
       Ylength<-sum(abs(marg[3:4]))/2
-
+      
       ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
-      for(i in 1:nrow(LVcoef)){
-        # arrows(x0=origin[1],y0=origin[2],x1=((LVcoef[i,1])/max(abs(LVcoef[,1])*Xlength*0.8)-origin[1]),y1=((LVcoef[i,2])/max(abs(LVcoef[,2])*Ylength*0.8)-origin[2]),col=col[i],lty=lty[i])
-        tryCatch({arrows(x0=origin[1],y0=origin[2],x1=ends[i,1]+origin[1],y1=ends[i,2]+origin[2],col=col[i],length=0.2,lty=lty[i]);
-        text(x=origin[1]+ends[i,1]*(1+lab.dist),y=origin[2]+ends[i,2]*(1+lab.dist),labels = row.names(LVcoef)[i],col=col[i], cex = cex.env)},
-        warning=function(w){print(paste("The effect for", row.names(LVcoef)[i],"was too small too plot an arrow."))}
-        )
+      
+      #double check if all arrows are long enough to draw
+      units = par(c('usr', 'pin'))
+      xi = with(units, pin[1L]/diff(usr[1:2]))
+      yi = with(units, pin[2L]/diff(usr[3:4]))
+      idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) <.0011
+      if(any(idx)){
+        for(i in which(idx)){
+          cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
+        }
+        ends <- ends[!idx,]
+        LVcoef <- LVcoef[!idx,]
       }
-    }
-   
+      
+      arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.2,lty=lty)
+      text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
+    
   }
+  
 }
+
 
 
 #'@export ordiplot
