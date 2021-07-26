@@ -69,7 +69,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       stop("Number of rows in newLV must equal to the number of rows in the response matrix, if environmental variables are included in the model and newX is not included.")   
     }
     
-  } 
+  }
+  if(is.null(newdata)&!is.null(newLV)){
+    n <- nrow(newLV)
+  }
   if(!is.null(object$X)){formula <- formula(terms(object))}else{formula<-NULL}
   
   if(object$row.eff != FALSE) {
@@ -103,7 +106,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
       formula <- formula(object$formula)
       xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
-      X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)"))])
+      X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")),drop=F])
       colnames(X.d) <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
     } else {
       X.d <- object$X.design
@@ -187,7 +190,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
 
   if(level==1){
-  if(is.null(newLV) && !is.null(newdata)){ 
+  if(is.null(newLV) && !is.null(newdata) & (object$num.lv+object$num.lv.c)>0){ 
     if(nrow(newdata) != nrow(object$y)) {
       
       stop("Level 1 predictions cannot be calculated for new X values if new latent variable values are not given. Change to 'level = 0' predictions.")
@@ -218,7 +221,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
 
     if((object$num.lv.c+object$num.RR)>0&!is.null(newdata)){lv.X <-  model.matrix(object$lv.formula,as.data.frame(newdata))[,-1,drop=F]}else{lv.X<-object$lv.X}
     theta <- object$params$theta[,1:(object$num.lv+(object$num.lv.c+object$num.RR))]
-      eta <- eta + lvs %*% t(theta)
+      
+    eta <- eta + lvs %*% t(theta)
       if((object$num.lv.c+object$num.RR)>0){
         eta <- eta + lv.X%*%object$params$LvXcoef%*%t(theta[,1:(object$num.lv.c+object$num.RR)])
       }
