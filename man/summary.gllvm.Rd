@@ -39,7 +39,8 @@
 }
 \description{
 A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
-
+}
+\details{
 Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.
 }
 \examples{

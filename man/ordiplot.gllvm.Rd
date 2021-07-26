@@ -22,7 +22,7 @@
   spp.colors = "blue",
   arrow.scale = 0.8,
   arrow.ci = TRUE,
-  spp.arrows = FALSE,
+  spp.arrows = NULL,
   cex.env = 0.7,
   lab.dist = 0.1,
   lwd.ellips = 0.5,
@@ -64,7 +64,7 @@
 
 \item{arrow.ci}{represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}}
 
-\item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE}}
+\item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.}
 
 \item{cex.env}{size of labels for arrows in constrianed ordination}
 
