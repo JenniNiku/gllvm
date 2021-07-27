@@ -1,4 +1,4 @@
---
+---
 title: 'How to use the quadratic response model'
 author: "Bert van der Veen"
 date: "`r Sys.Date()`"

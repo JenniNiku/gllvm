@@ -1,4 +1,4 @@
---
+---
 title: 'Model-based constrained ordination with latent variables'
 author: "Bert van der Veen"
 date: "`r Sys.Date()`"
