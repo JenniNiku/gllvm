@@ -31,14 +31,15 @@
 predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...) 
 {
   # predictLVs.gllvm <- function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, ...) 
-    if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
+  #  if(object$quadratic!=FALSE)stop("Quadratic model not yet implemented.")
   # create a gllvm object which refits the model using newX and newY:
   assign(as.character(object$call[2]),newY)
   if(is.null(newX)==FALSE)
     assign(as.character(object$call[3]),newX)
   objectTest=eval(object$call)
-  nlvr <- num.lv <- objectTest$num.lv+objectTest$num.lv.c #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
-
+  nlvr <- num.lv <- objectTest$num.lv #(objectTest$num.lv + (objectTest$row.eff=="random")*1)
+  num.lv.c <- objectTest$num.lv.c
+  nlvr <- nlvr+num.lv.c
   # now optimise for LV parameters, keeping all else constant:
   whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
   objParam = objectTest$TMBfn$par[whichLVs]
@@ -53,8 +54,8 @@ predictLVs.gllvm <- function (object, newX = NULL, newY=object$y, ...)
     colnames(lvs) <- paste("LV", 1:(objectTest$num.lv+objectTest$num.lv.c), sep="");
   } else if((objectTest$num.lv+objectTest$num.lv.c) > 1 && nlvr > (objectTest$num.lv+objectTest$num.lv.c)) {
     colnames(lvs) <- c("row", paste("LV", 1:(objectTest$num.lv+objectTest$num.lv.c), sep=""));
-    }
-
+  }
+  
   out <- list(lvs=lvs,logL=-optLVs$value)
   # and their sds: (assuming (object$method %in% c("VA", "EVA")))
   if((objectTest$num.lv+objectTest$num.lv.c)>0 && (object$method %in% c("VA", "EVA")))
@@ -118,7 +119,7 @@ objParamGrad = function(pars,objectTest,object)
   tpar = getPars(pars,objectTest,object)
   # compute new gradient function
   gr=objectTest$TMBfn$gr(tpar)
-    whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
+  whichLVs = names(objectTest$TMBfn$par)=="u" | names(objectTest$TMBfn$par)=="Au"
   return(gr[whichLVs])
 }
 
@@ -140,13 +141,17 @@ getPars = function(pars,objectTest,object)
   # replace LVs and their estimated se's with input values
   tpar[names(tpar)=="u"] = pars[names(pars)=="u"]
   # if((object$method %in% c("VA", "EVA"))) 
-    tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
+  tpar[names(tpar)=="Au"] = pars[names(pars)=="Au"]
   
   # replace other params with training values
   tpar[names(tpar)=="b"] = opar[names(opar)=="b"]
   tpar[names(tpar)=="B"] = opar[names(opar)=="B"]
+  tpar[names(tpar)=="b_lv"] = opar[names(opar)=="b_lv"]
   tpar[names(tpar)=="lambda"] = opar[names(opar)=="lambda"]
+  tpar[names(tpar)=="lambda2"] = opar[names(opar)=="lambda2"]
+  
   tpar[names(tpar)=="lg_phi"] = opar[names(opar)=="lg_phi"]
+  tpar[names(tpar)=="sigmaLV"] = opar[names(opar)=="sigmaLV"]
   tpar[names(tpar)=="log_sigma"] = opar[names(opar)=="log_sigma"]
   tpar[names(tpar)=="sigmaB"] = opar[names(opar)=="sigmaB"]
   if(length(tpar[names(tpar)=="sigmaB"]))   tpar[names(tpar)=="sigmaij"] = opar[names(opar)=="sigmaij"]
@@ -157,10 +162,10 @@ getPars = function(pars,objectTest,object)
 
 
 predictLogL.gllvm = function (object, newX = if(is.null(object$X)) NULL else object$X, newY=object$y, nRuns=1, ...) 
-# function to give predictive log-likelihood for new observations, using parameters from a fitted gllvm object.
-# Because TMB returns a sum of logL's, this function loops through the new dataset getting one prediction at a time
-# on order to return logLs separately for each new observation
-# these values are numerically unstable, try ramping up nRuns to get a better estimate
+  # function to give predictive log-likelihood for new observations, using parameters from a fitted gllvm object.
+  # Because TMB returns a sum of logL's, this function loops through the new dataset getting one prediction at a time
+  # on order to return logLs separately for each new observation
+  # these values are numerically unstable, try ramping up nRuns to get a better estimate
 {
   # ensure newX and newY are dataframes (potherwise error on subsetting to rows)
   newX = data.frame(newX)

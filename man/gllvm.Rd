@@ -33,8 +33,8 @@ gllvm(
   scale.X = TRUE,
   return.terms = TRUE,
   gradient.check = FALSE,
-  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 200, maxit
-    = 4000, trace = FALSE, optim.method = NULL),
+  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
+    maxit = 4000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured",
     diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
@@ -58,9 +58,9 @@ gllvm(
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.}
 
-\item{num.lv.c}{number of latent variables, d, in gllvm model to constrain. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects.}
+\item{num.lv.c}{number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.}
 
-\item{num.RR}{number of reduced rank dimensions for predictor variables.}
+\item{num.RR}{number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.}
 
 \item{family}{distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
 

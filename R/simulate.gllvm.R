@@ -46,8 +46,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   nRows = dim(object$lvs)[1]
   nCols = dim(object$params$theta)[1]
   if(conditional == FALSE){
-  # generate new latent variables
-  lvsNew = matrix(rnorm(nsim*nRows*(object$num.lv+object$num.lv.c)),ncol=(object$num.lv+object$num.lv.c))
+    # generate new latent variables
+    lvsNew = matrix(rnorm(nsim*nRows*(object$num.lv+object$num.lv.c)),ncol=(object$num.lv+object$num.lv.c))
   }else{
     lvsNew = object$lvs[rep(1:nRows,nsim),]
   }
@@ -56,10 +56,10 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
   }
   else if(is.null(object$TR)){ 
-    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    Xnew <- object$X[rep(1:nRows,nsim),]; colnames(Xnew) <- colnames(object$X)
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   } else {
-    Xnew <- as.matrix(object$X[rep(1:nRows,nsim),]); colnames(Xnew) <- colnames(object$X)
+    Xnew <- object$X[rep(1:nRows,nsim),]; colnames(Xnew) <- colnames(object$X)
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   }
   # generate new data
@@ -71,32 +71,32 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   if(object$family %in% c("gaussian", "gamma", "beta"))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
   if(object$family == "ordinal"){
-       if(object$zeta.struc=="species"){
-         sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-         for(j in 1:nCols){
-           k <- sort(unique(object$y[,j]))
-           for(i in 1:(nsim * nRows)){
-             sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
-           }
-         }
-         dimnames(prs)[[3]] <- colnames(object$y)
-         dimnames(prs)[[2]] <- 1:(nsim * nRows)
-         prs <- prs[1,,]
-       }else{
-         sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-         k <- sort(unique(c(object$y)))
-         for(j in 1:nCols){
-           for(i in 1:(nsim * nRows)){
-             sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
-           }
-         }
-         dimnames(prs)[[3]] <- colnames(object$y)
-         dimnames(prs)[[2]] <- 1:(nsim * nRows)
-         prs <- prs[1,,]
-       }
-     
-      
+    if(object$zeta.struc=="species"){
+      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+      for(j in 1:nCols){
+        k <- sort(unique(object$y[,j]))
+        for(i in 1:(nsim * nRows)){
+          sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+        }
+      }
+      dimnames(prs)[[3]] <- colnames(object$y)
+      dimnames(prs)[[2]] <- 1:(nsim * nRows)
+      prs <- prs[1,,]
+    }else{
+      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
+      k <- sort(unique(c(object$y)))
+      for(j in 1:nCols){
+        for(i in 1:(nsim * nRows)){
+          sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+        }
+      }
+      dimnames(prs)[[3]] <- colnames(object$y)
+      dimnames(prs)[[2]] <- 1:(nsim * nRows)
+      prs <- prs[1,,]
     }
+    
+    
+  }
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
