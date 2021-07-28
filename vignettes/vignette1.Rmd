@@ -310,7 +310,7 @@ In the previous section, environmental associations were studied by fitting sepa
 
 The fourth corner model can be fitted using the argument `TR` to include traits. The argument `formula` is used to specify the model. Random row effects are included using `row.eff = "random"` and the argument `randomX` is used to incorporate random slopes in the model. As the defined model is very complex, we use three starting points for the initial values of the latent variables via argument `n.init` in order to ensure that the maximum point is reached.
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, eval = FALSE}
 fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
                  formula = y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) +
                 (Bare.ground + Canopy.cover + Volume.lying.CWD) : (Pilosity + 
@@ -320,11 +320,14 @@ fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2,
 ```
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Canopy.cover`, `Pilosity3` with `Canopy.cover` have the strongest effects on ant abundances.
+```{r, echo=FALSE}
+load(file = "fit_4th.RData")
+```
 ```{r, fig.show='hold', out.width='49%'}
 library(lattice)
 coefplot(fit_4th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
 fourth <- fit_4th$fourth.corner
-a <- max( abs(fourth) )
+a <- 1.5
 colort <- colorRampPalette(c("blue", "white", "red"))
 plot.4th <- levelplot((as.matrix(fourth)), xlab = "Environmental Variables", 
                       ylab = "Species traits", col.regions = colort(100), cex.lab = 1.3, 
@@ -349,7 +352,7 @@ anova(fit_4th, fit_4th2)
 # Canopy.cover + Volume.lying.CWD):(Pilosity + Polymorphism + Webers.length) 
 # Resid.Df        D Df.diff     P.value
 # 1     1057  0.00000       0            
-# 2     1039 60.34953      18 1.79632e-06
+# 2     1039 62.44727      18 8.18224e-07
 ```
 
 
