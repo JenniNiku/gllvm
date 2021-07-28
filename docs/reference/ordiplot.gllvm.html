@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -105,6 +105,12 @@
     </li>
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
     </li>
   </ul>
 </li>
@@ -157,6 +163,11 @@
   symbols <span class='op'>=</span> <span class='cn'>FALSE</span>,
   cex.spp <span class='op'>=</span> <span class='fl'>0.7</span>,
   spp.colors <span class='op'>=</span> <span class='st'>"blue"</span>,
+  arrow.scale <span class='op'>=</span> <span class='fl'>0.8</span>,
+  arrow.ci <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  spp.arrows <span class='op'>=</span> <span class='cn'>NULL</span>,
+  cex.env <span class='op'>=</span> <span class='fl'>0.7</span>,
+  lab.dist <span class='op'>=</span> <span class='fl'>0.1</span>,
   lwd.ellips <span class='op'>=</span> <span class='fl'>0.5</span>,
   col.ellips <span class='op'>=</span> <span class='fl'>4</span>,
   lty.ellips <span class='op'>=</span> <span class='fl'>1</span>,
@@ -223,6 +234,26 @@
       <td><p>colors for sites, defaults to <code>"blue"</code></p></td>
     </tr>
     <tr>
+      <th>arrow.scale</th>
+      <td><p>positive value, to scale arrows</p></td>
+    </tr>
+    <tr>
+      <th>arrow.ci</th>
+      <td><p>represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to <code>TRUE</code></p></td>
+    </tr>
+    <tr>
+      <th>spp.arrows</th>
+      <td><p>plot species scores as arrows if outside of the range of the plot? Defaults to <code>FALSE</code> for linear response models and <code>TRUE</code> for quadratic response models.</p></td>
+    </tr>
+    <tr>
+      <th>cex.env</th>
+      <td><p>size of labels for arrows in constrianed ordination</p></td>
+    </tr>
+    <tr>
+      <th>lab.dist</th>
+      <td><p>distance between label and arrow heads. Value between 0 and 1</p></td>
+    </tr>
+    <tr>
       <th>lwd.ellips</th>
       <td><p>line width for prediction ellipses. See graphical parameter lwd.</p></td>
     </tr>
@@ -242,15 +273,27 @@
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Function constructs a scatter plot of two latent variables, i.e. an ordination plot. If only one latent
-variable is in the fitted model, latent variables are plotted against their corresponding row indices.
+    <p>Function constructs a scatter plot of two latent variables, i.e. an ordination plot. 
+Latent variables are re-rotated to their principal direction using singular value decomposition,
+so that the first plotted latent variable does not have to be the first latent variable in the model.
+If only one latent variable is in the fitted model, latent variables are plotted against their corresponding row indices.
 The latent variables are labeled using the row index of the response matrix y.</p>
 <p>Coefficients related to latent variables are plotted in the same figure with the latent
-variables if <code>biplot = TRUE</code>. They are labeled using the column names of y. The number
+variables if <code>biplot = TRUE</code>. They are labelled using the column names of y. The number
 of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 is used to control the relative scaling of the latent variables and their coefficients.
 If <code>alpha = 0.5</code>, the latent variables and their coefficients are on the same scale.
 For details for constructing a biplot, see Gabriel (1971).</p>
+<p>Latent variable scores are always scaled by their estimated standard deviations, for plotting.</p>
+<p>For a quadratic response model, species optima are plotted. Any species scores that are outside the range 
+of the predicted site scores are not directly plotted, but their main direction is indicated with arrows instead.
+This ensures that the plot remains on a reasonable scale.</p>
+<p>Effects of environmental variables in constrained ordination are indicated with arrows.
+If any of the arrows exceeds the range of the plot, arrows are scaled to 80<!-- % of the plot range, -->
+but so that the relative contribution of predictors is maintained.
+If standard errors are available in the provided model, the slopes of environmental variables
+for which the 95<!-- % confidence intervals do not include zero are shown as red, while others  -->
+are slightly less intensely coloured.</p>
     <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
 
     <p>- If error is occurred when using <code>ordiplot()</code>, try full name of the function <code>ordiplot.gllvm()</code> as functions named 'ordiplot' might be found in other packages as well.</p>

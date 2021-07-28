@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -105,6 +105,12 @@
     </li>
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
     </li>
   </ul>
 </li>
@@ -142,7 +148,19 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span>
+  <span class='va'>object</span>,
+  digits <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span><span class='op'>(</span><span class='fl'>3L</span>, <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"digits"</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>3L</span><span class='op'>)</span>,
+  signif.stars <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"show.signif.stars"</span><span class='op'>)</span>,
+  dispersion <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  spp.intercepts <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  row.intercepts <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  theta <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span>
+
+<span class='co'># S3 method for summary.gllvm</span>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -152,14 +170,45 @@
       <td><p>an object of class 'gllvm'</p></td>
     </tr>
     <tr>
+      <th>digits</th>
+      <td><p>the number of significant digits to use when printing</p></td>
+    </tr>
+    <tr>
+      <th>signif.stars</th>
+      <td><p>If <code>TRUE</code>, significance stars are printed for each coefficient, defaults to <code>TRUE</code></p></td>
+    </tr>
+    <tr>
+      <th>dispersion</th>
+      <td><p>option to return dispersion parameters, defaults to <code>FALSE</code></p></td>
+    </tr>
+    <tr>
+      <th>spp.intercepts</th>
+      <td><p>option to return species intercepts, defaults to <code>FALSE</code></p></td>
+    </tr>
+    <tr>
+      <th>row.intercepts</th>
+      <td><p>option to return row intercepts, defaults to <code>FALSE</code></p></td>
+    </tr>
+    <tr>
+      <th>theta</th>
+      <td><p>option to return species scores in the ordination, defaults to <code>FALSE</code></p></td>
+    </tr>
+    <tr>
       <th>...</th>
       <td><p>not used.</p></td>
     </tr>
+    <tr>
+      <th>x</th>
+      <td><p>a summary object</p></td>
+    </tr>
     </table>
 
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>Various options are available to include extra parameter estimates in the summary, which have been excluded by default, for readability.</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
-    <p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;</p>
+    <p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;, Bert van der Veen</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>

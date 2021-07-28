@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -65,6 +65,12 @@
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -95,7 +101,7 @@
       <h1 data-toc-skip>Introduction to gllvm Part 2: Species correlations</h1>
                         <h4 class="author">Jenni Niku</h4>
             
-            <h4 class="date">2021-04-26</h4>
+            <h4 class="date">2021-07-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/master/vignettes/vignette4.rmd"><code>vignettes/vignette4.rmd</code></a></small>
       <div class="hidden name"><code>vignette4.rmd</code></div>
@@ -114,7 +120,7 @@
 <li><p><strong>R</strong> package <strong>gllvm</strong> fits Generalized linear latent variable models (GLLVM) for multivariate data<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p></li>
 <li><p>Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.</p></li>
 <li>
-<p>Version 1.2.3 now available in</p>
+<p>The package available in</p>
 <ul>
 <li>GitHub: <a href="https://github.com/JenniNiku/gllvm" class="uri">https://github.com/JenniNiku/gllvm</a>
 </li>
@@ -134,9 +140,8 @@
 <p><span style="color:red"> <strong>gllvm</strong> package depends on R packages <strong>TMB</strong> and <strong>mvabund</strong>, try to install these first.</span></p>
 </details><ul>
 <li><p>GLLVMs are computationally intensive to fit due the integral in log-likelihood.</p></li>
-<li><p>Often such models have been fitted using MCMC approach, which is very time consuming.</p></li>
 <li><p><strong>gllvm</strong> package overcomes computational problems by applying closed form approximations to log-likelihood and using automatic differentiation in C++ to accelerate computation times (<strong>TMB</strong><a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>).</p></li>
-<li><p>Estimation is performed using either variational approximation (VA<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>) or Laplace approximation (LA<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>) method implemented via <strong>R</strong> package <strong>TMB</strong>.</p></li>
+<li><p>Estimation is performed using either variational approximation (VA<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>), extended variational approximation method (EVA<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>) or Laplace approximation (LA<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>) method implemented via <strong>R</strong> package <strong>TMB</strong>.</p></li>
 <li><p>VA method is faster and more accurate than LA, but not applicable for all distributions and link functions.</p></li>
 <li>
 <p>Using <strong>gllvm</strong> we can fit</p>
@@ -300,11 +305,11 @@
 <span class="co">## method: </span>
 <span class="co">## [1] "VA"</span>
 <span class="co">## </span>
-<span class="co">## log-likelihood:  -593.6746 </span>
+<span class="co">## log-likelihood:  -588.9188 </span>
 <span class="co">## Residual degrees of freedom:  217 </span>
-<span class="co">## AIC:  1425.349 </span>
-<span class="co">## AICc:  1557.571 </span>
-<span class="co">## BIC:  1583.882</span></code></pre></div>
+<span class="co">## AIC:  1415.838 </span>
+<span class="co">## AICc:  1548.06 </span>
+<span class="co">## BIC:  1574.37</span></code></pre></div>
 </div>
 <div id="model-selection" class="section level2">
 <h2 class="hasAnchor">
@@ -318,7 +323,7 @@
 <span class="va">fitx2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
 <span class="va">fitx3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span>
-<span class="co">## [1] 1393.764</span>
+<span class="co">## [1] 1393.837</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span>
 <span class="co">## [1] 1425.35</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span>
@@ -509,9 +514,9 @@ GLLVM with two latent variables can be used as a model-based approach to unconst
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span>
 <span class="co">## [1] 1449.428</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span>
-<span class="co">## [1] 1471.326</span>
+<span class="co">## [1] 1471.428</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span>
-<span class="co">## [1] 1491.326</span>
+<span class="co">## [1] 1491.428</span>
 <span class="co"># Or alternatively using formula:</span>
 <span class="va">fitx1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">spider</span><span class="op">$</span><span class="va">x</span>, formula <span class="op">=</span> <span class="op">~</span><span class="va">soil.dry</span> <span class="op">+</span> <span class="va">reflection</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
 <span class="va">fitx1</span>
@@ -535,80 +540,84 @@ Model with one latent variable gave the lowest AIC value.
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span>
 <span class="co">## $theta</span>
-<span class="co">##                [,1]</span>
-<span class="co">##  [1,]  8.535569e-01</span>
-<span class="co">##  [2,]  1.098356e+00</span>
-<span class="co">##  [3,]  3.764932e-01</span>
-<span class="co">##  [4,]  1.930420e+00</span>
-<span class="co">##  [5,] -1.502712e-07</span>
-<span class="co">##  [6,]  2.133274e+00</span>
-<span class="co">##  [7,]  3.392656e-01</span>
-<span class="co">##  [8,]  8.159857e-01</span>
-<span class="co">##  [9,]  2.190619e+00</span>
-<span class="co">## [10,]  2.158169e+00</span>
-<span class="co">## [11,]  8.244910e-01</span>
-<span class="co">## [12,]  1.494924e+00</span>
+<span class="co">##               [,1]</span>
+<span class="co">##  [1,] 1.000000e+00</span>
+<span class="co">##  [2,] 1.286605e+00</span>
+<span class="co">##  [3,] 4.412529e-01</span>
+<span class="co">##  [4,] 2.261293e+00</span>
+<span class="co">##  [5,] 2.939068e-06</span>
+<span class="co">##  [6,] 2.498839e+00</span>
+<span class="co">##  [7,] 3.973264e-01</span>
+<span class="co">##  [8,] 9.557628e-01</span>
+<span class="co">##  [9,] 2.565997e+00</span>
+<span class="co">## [10,] 2.528082e+00</span>
+<span class="co">## [11,] 9.657955e-01</span>
+<span class="co">## [12,] 1.751233e+00</span>
+<span class="co">## </span>
+<span class="co">## $sigma.lv</span>
+<span class="co">##       LV1 </span>
+<span class="co">## 0.8537603 </span>
 <span class="co">## </span>
 <span class="co">## $Intercept</span>
 <span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span>
-<span class="co">##  -3.008876  -7.407350   2.078125 -21.475628  -7.919794 -12.966581   4.567183 </span>
+<span class="co">##  -3.010189  -7.407511   2.075686 -21.477556  -7.920069 -12.966633   4.568621 </span>
 <span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span>
-<span class="co">##  -6.090664 -14.644552 -16.455557  -3.711509  -9.214326 </span>
+<span class="co">##  -6.089345 -14.644555 -16.456060  -3.711710  -9.215290 </span>
 <span class="co">## </span>
 <span class="co">## $Xcoef</span>
 <span class="co">##            soil.dry reflection</span>
-<span class="co">## Alopacce -0.3441821  1.5942095</span>
-<span class="co">## Alopcune  2.6112103  0.6246705</span>
-<span class="co">## Alopfabr -1.8669682  0.7467693</span>
-<span class="co">## Arctlute  6.3216568  0.8205872</span>
-<span class="co">## Arctperi -1.7566584  2.8891432</span>
-<span class="co">## Auloalbi  4.1814241  0.6831324</span>
-<span class="co">## Pardlugu -0.5451090 -1.2604485</span>
-<span class="co">## Pardmont  1.7923620  1.4690925</span>
-<span class="co">## Pardnigr  4.9042804  0.8601489</span>
-<span class="co">## Pardpull  5.3496672  1.2822729</span>
-<span class="co">## Trocterr  2.3357549  0.2234415</span>
-<span class="co">## Zoraspin  3.5552442  0.1197880</span>
+<span class="co">## Alopacce -0.3440220  1.5945014</span>
+<span class="co">## Alopcune  2.6112572  0.6247337</span>
+<span class="co">## Alopfabr -1.8665742  0.7472537</span>
+<span class="co">## Arctlute  6.3221691  0.8208350</span>
+<span class="co">## Arctperi -1.7566541  2.8892078</span>
+<span class="co">## Auloalbi  4.1814222  0.6832665</span>
+<span class="co">## Pardlugu -0.5455504 -1.2605752</span>
+<span class="co">## Pardmont  1.7920191  1.4689351</span>
+<span class="co">## Pardnigr  4.9042766  0.8602758</span>
+<span class="co">## Pardpull  5.3497957  1.2824181</span>
+<span class="co">## Trocterr  2.3358148  0.2234899</span>
+<span class="co">## Zoraspin  3.5555263  0.1198842</span>
 <span class="co">## </span>
 <span class="co">## $inv.phi</span>
 <span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span>
-<span class="co">## 9.380097e+00 1.699524e+00 1.577632e+00 1.064222e+00 4.006291e+06 1.511547e+00 </span>
+<span class="co">## 9.378806e+00 1.699441e+00 1.577534e+00 1.064283e+00 2.008511e+06 1.511538e+00 </span>
 <span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span>
-<span class="co">## 1.543656e+00 9.784626e-01 2.517824e+00 2.339449e+00 1.471106e+01 3.625310e+00 </span>
+<span class="co">## 1.543713e+00 9.784925e-01 2.517923e+00 2.339359e+00 1.470811e+01 3.625168e+00 </span>
 <span class="co">## </span>
 <span class="co">## $phi</span>
 <span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span>
-<span class="co">## 1.066087e-01 5.883999e-01 6.338615e-01 9.396537e-01 2.496074e-07 6.615739e-01 </span>
+<span class="co">## 1.066234e-01 5.884289e-01 6.339010e-01 9.395997e-01 4.978811e-07 6.615780e-01 </span>
 <span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span>
-<span class="co">## 6.478127e-01 1.022011e+00 3.971684e-01 4.274511e-01 6.797605e-02 2.758385e-01</span>
+<span class="co">## 6.477890e-01 1.021980e+00 3.971527e-01 4.274674e-01 6.798969e-02 2.758493e-01</span>
 <span class="co"># Coefficients for covariates are named as `Xcoef`</span>
 <span class="co"># Confidence intervals for these coefficients:</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/confint.html">confint</a></span><span class="op">(</span><span class="va">fitx1</span>, parm <span class="op">=</span> <span class="st">"Xcoef"</span><span class="op">)</span>
 <span class="co">##               cilow       ciup</span>
-<span class="co">## Xcoef1  -0.96107660  0.2727123</span>
-<span class="co">## Xcoef2   1.47918288  3.7432377</span>
-<span class="co">## Xcoef3  -2.84541856 -0.8885179</span>
-<span class="co">## Xcoef4   4.53262946  8.1106841</span>
-<span class="co">## Xcoef5  -2.87604815 -0.6372686</span>
-<span class="co">## Xcoef6   2.20095631  6.1618919</span>
-<span class="co">## Xcoef7  -1.63587532  0.5456574</span>
-<span class="co">## Xcoef8   0.78021106  2.8045129</span>
-<span class="co">## Xcoef9   3.22015048  6.5884104</span>
-<span class="co">## Xcoef10  3.55210812  7.1472262</span>
-<span class="co">## Xcoef11  1.77075707  2.9007527</span>
-<span class="co">## Xcoef12  2.22493763  4.8855508</span>
-<span class="co">## Xcoef13  0.97329661  2.2151224</span>
-<span class="co">## Xcoef14  0.18421180  1.0651292</span>
-<span class="co">## Xcoef15 -0.23907193  1.7326106</span>
-<span class="co">## Xcoef16 -0.03770688  1.6788812</span>
-<span class="co">## Xcoef17  1.63806567  4.1402207</span>
-<span class="co">## Xcoef18 -0.08006193  1.4463268</span>
-<span class="co">## Xcoef19 -1.73088431 -0.7900127</span>
-<span class="co">## Xcoef20  0.91526702  2.0229179</span>
-<span class="co">## Xcoef21  0.12662433  1.5936735</span>
-<span class="co">## Xcoef22  0.51477662  2.0497692</span>
-<span class="co">## Xcoef23 -0.04532531  0.4922083</span>
-<span class="co">## Xcoef24 -0.39365113  0.6332272</span>
+<span class="co">## Xcoef1  -1.02681425  0.3387702</span>
+<span class="co">## Xcoef2   1.34782765  3.8746867</span>
+<span class="co">## Xcoef3  -2.85481363 -0.8783348</span>
+<span class="co">## Xcoef4   2.24736524 10.3969729</span>
+<span class="co">## Xcoef5  -2.87605709 -0.6372511</span>
+<span class="co">## Xcoef6   1.79161345  6.5712310</span>
+<span class="co">## Xcoef7  -1.64607259  0.5549717</span>
+<span class="co">## Xcoef8   0.73327289  2.8507654</span>
+<span class="co">## Xcoef9   2.78593965  7.0226135</span>
+<span class="co">## Xcoef10  3.14374351  7.5558479</span>
+<span class="co">## Xcoef11  1.64622507  3.0254045</span>
+<span class="co">## Xcoef12  1.97734860  5.1337041</span>
+<span class="co">## Xcoef13  0.95841842  2.2305844</span>
+<span class="co">## Xcoef14  0.13820673  1.1112607</span>
+<span class="co">## Xcoef15 -0.24242136  1.7369288</span>
+<span class="co">## Xcoef16 -0.34239846  1.9840685</span>
+<span class="co">## Xcoef17  1.63810610  4.1403096</span>
+<span class="co">## Xcoef18 -0.18417592  1.5507088</span>
+<span class="co">## Xcoef19 -1.73565948 -0.7854910</span>
+<span class="co">## Xcoef20  0.89978242  2.0380879</span>
+<span class="co">## Xcoef21  0.01748325  1.7030684</span>
+<span class="co">## Xcoef22  0.40747765  2.1573585</span>
+<span class="co">## Xcoef23 -0.08587801  0.5328578</span>
+<span class="co">## Xcoef24 -0.46471895  0.7044874</span>
 <span class="co"># The first 12 intervals are for soil.dry and next 12 for reflection</span></code></pre></div>
 </details><details><p><summary><span style="color:red"> Problems? See hints:</span></summary></p>
 <p><span style="color:red"> I have problems in model fitting. My model converges to infinity or local maxima: </span> GLLVMs are complex models where starting values have a big role. Choosing a different starting value method (see argument <code>starting.val</code>) or use multiple runs and pick up the one giving highest log-likelihood value using argument <code>n.init</code>. More variation to the starting points can be added with <code>jitter.var</code>.</p>
@@ -728,7 +737,8 @@ Model with one latent variable gave the lowest AIC value.
 <li id="fn1"><p>Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R. 10. Methods in Ecology and Evolution: 2173–82<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
 <li id="fn2"><p>Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
 <li id="fn3"><p>Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
-<li id="fn4"><p>Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.<a href="#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal estimation of latent variable models using extended variational approximations, arXiv:2107.02627 .<a href="#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn5"><p>Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.<a href="#fnref5" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
   </div>

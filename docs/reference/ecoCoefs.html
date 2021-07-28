@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables. — optima • gllvm</title>
+<title>Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables. — ecoCoefs • gllvm</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables. — optima" />
-<meta property="og:description" content="Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the Delta method)." />
+<meta property="og:title" content="Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables. — ecoCoefs" />
+<meta property="og:description" content="Extracts species optima and tolerances, potentially with standard errors (derived with the Delta method)." />
 
 
 
@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -106,6 +106,12 @@
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -134,21 +140,18 @@
     <div class="page-header">
     <h1>Functions to extract ecological quantities of the latent variables from a GLLVM, if species are a quadratic function of the latent variables.</h1>
     <small class="dont-index">Source: <a href='https://github.com/JenniNiku/gllvm/blob/master/R/ecoCoefs.gllvm.R'><code>R/ecoCoefs.gllvm.R</code></a></small>
-    <div class="hidden name"><code>optima.Rd</code></div>
+    <div class="hidden name"><code>ecoCoefs.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Extracts species optima, tolerances or gradient lengths, potentially with standard errors (derived with the Delta method).</p>
+    <p>Extracts species optima and tolerances, potentially with standard errors (derived with the Delta method).</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
 <span class='fu'>optima</span><span class='op'>(</span><span class='va'>object</span>, sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span>
 
 <span class='co'># S3 method for gllvm</span>
-<span class='fu'>tolerances</span><span class='op'>(</span><span class='va'>object</span>, sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span>
-
-<span class='co'># S3 method for gllvm</span>
-<span class='fu'>gradient.length</span><span class='op'>(</span><span class='va'>object</span>, sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+<span class='fu'>tolerances</span><span class='op'>(</span><span class='va'>object</span>, sd.errors <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -167,6 +170,10 @@
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>Currently no separate method for calculating species maxima or gradient length are implemented.
+Gradient length can be inferred from the standard deviation of the latent variables, which is reported by <code><a href='summary.gllvm.html'>summary.gllvm</a></code>.</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Bert van der Veen</p>

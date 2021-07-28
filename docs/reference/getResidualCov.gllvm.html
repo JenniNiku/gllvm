@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -105,6 +105,12 @@
     </li>
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
     </li>
   </ul>
 </li>
@@ -142,7 +148,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>getResidualCov</span><span class='op'>(</span><span class='va'>object</span>, adjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span></pre>
+<span class='fu'>getResidualCov</span><span class='op'>(</span><span class='va'>object</span>, adjust <span class='op'>=</span> <span class='fl'>1</span>, site.index <span class='op'>=</span> <span class='cn'>NULL</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -155,18 +161,27 @@
       <th>adjust</th>
       <td><p>The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.</p></td>
     </tr>
+    <tr>
+      <th>site.index</th>
+      <td><p>A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>not used.</p></td>
+    </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>Function returns following components:</p>
 <dt>cov </dt><dd><p>residual covariance matrix</p></dd>
- <dt>trace </dt><dd><p>trace of the residual covariance matrix</p></dd>
- <dt>trace.q </dt><dd><p>trace of the residual covariance matrix per latent variable</p></dd>
+ <dt>trace </dt><dd><p>trace of the residual covariance matrix, the total variance explained</p></dd>
+ <dt>var.q </dt><dd><p>trace of the residual covariance matrix per latent variable, variance explained per latent variable</p></dd>
+ <dt>var.q2 </dt><dd><p>trace of the squared term of the residual covariance matrix per latent variable, for quadratic responses. Variance explained per latent variable by the quadratic term</p></dd>
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \(\Theta\Theta'\).</p>
+    <p>Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \(\Theta\Theta'\), and the dispersion parameter related to the distribution of choice, is applicable (e.g. in the case of negative-binomial distributed responses).</p>
 <p>When the responses are modelled using the negative binomial distribution, the residual variances for each species must be adjusted for overdispersion. The two possible adjustement terms are \(log(\phi_j + 1)\) (<code>adjust = 1</code>) and \(\psi^{(1)}(1/\phi_j)\) (<code>adjust = 2</code>), where \(\psi^{(1)}\) is the trigamma function.</p>
 <p>The negative binomial model can be written using different parametrizations. 
 The residual covariance with <code>adjust = 1</code> can be obtained using the lognormal-Poisson parametrization, that is,
@@ -174,12 +189,13 @@ $$Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),$$
 where \(\lambda_j \sim lognormal(-\sigma^2/2, \sigma^2)\) and \(\sigma^2 = log(\phi_j + 1)\) and \(log(\mu_{ij}) = \eta_{ij}\). Now \(E[Y_{ij}] = \mu_{ij}\) and variance \(V(\mu_{ij}) = \mu_{ij} + \mu_{ij}^2 (exp(\sigma^2) - 1) = \mu_{ij} + \mu_{ij}^2 \phi_j\), which are the same as for the NB distribution.
 Therefore, on linear predictor scale, we have the variance 
 $$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j) + \sigma^2 = \theta_j'\theta_j + log(\phi_j + 1).$$
-which leads to the residual covariance matrix \(\Theta \Theta' + \eqn{\Psi}\), where \(\Psi\) is the diagonal matrix with \(log(\phi_j + 1)\) as diagonal elements (<code>adjust = 1</code>).</p>
+which leads to the residual covariance matrix \(\Theta \Theta' + \Psi\), where \(\Psi\) is the diagonal matrix with \(log(\phi_j + 1)\) as diagonal elements (<code>adjust = 1</code>).</p>
 <p>Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
-$$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).$$
+$$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 $$
+$$ = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).$$
 which leads to the residual covariance matrix \(\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)\), where \(\Gamma_j\) holds the quadratic coefficients.
 Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.</p>
-<p>The residual covariance matrix with <code>adjust = 2</code> can be obtained by using Poisson-Gamma parametrization
+<p>The residual covariance matrix with <code>adjust = 2</code> can be obtained by using Poisson-Gamma parametri-zation
 $$Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),$$
 where \(\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)\) and \(\mu_{ij}\) is as above. The mean and the variance are of similar form as above and we have that
 $$V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = \theta_j'\theta_j + \psi^{(1)}(1/\phi_j),$$
@@ -187,7 +203,7 @@ where \(\psi^{(1)}\) is the trigamma function.</p>
 <p>In the case of binomial distribution, the adjustment terms (<code>adjust = 1</code>) are 1 for probit link and \(\pi^2/3\) for logit link.
 These are obtained by treating binomial model as latent variable model. Assume
 $$Y^*_{ij} = \eta_{ij} + e_{ij},$$
-where \(e_{ij} \sim N(0, 1)\) for probit model, and \(e_{ij} ~ logistic(0, 1)\) for logit model.
+where \(e_{ij} \sim N(0, 1)\) for probit model, and \(e_{ij} \sim logistic(0, 1)\) for logit model.
 Then binary response is defined as \(Y_{ij} = 1\), if \(Y^*_{ij} &gt; 0\) and 0 otherwise.
 Now we have that \(\mu_{ij} = P(Y_{ij} = 1) = P(Y^*_{ij} &gt; 0) = P(\eta_{ij} &gt; -e_{ij}) = P(e_{ij} &lt;= \eta_{ij})\) which leads to probit and logit models.
 On linear predictor scale we then have that
@@ -215,8 +231,8 @@ For the gaussian model, the residual covariance matrix is then \(\Theta\Theta' +
 <span class='va'>rescov</span><span class='op'>$</span><span class='va'>cov</span>
 <span class='co'># Trace of the covariance matrix</span>
 <span class='va'>rescov</span><span class='op'>$</span><span class='va'>trace</span>
-<span class='co'># Trace per latent variable</span>
-<span class='va'>rescov</span><span class='op'>$</span><span class='va'>trace.q</span>
+<span class='co'># Variance explained per latent variable</span>
+<span class='va'>rescov</span><span class='op'>$</span><span class='va'>var.q</span>
 <span class='op'>}</span>
 </div></pre>
   </div>
