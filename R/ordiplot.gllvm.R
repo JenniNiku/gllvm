@@ -353,8 +353,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
         }
         rotSD <- rotSD[,which.lvs]
-        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD[,which.lvs]
-        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*rotSD[,which.lvs]
+        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD
+        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*rotSD
         lty <- rep("solid",ncol(object$lv.X))
         col <- rep("red", ncol(object$lv.X))
         lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
