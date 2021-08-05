@@ -451,7 +451,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         if(num.lv.c>0){
           gamma.new <- params[,(ncol(params) - (num.lv.c+num.RR) + 1):(ncol(params)),drop=F];
           sig <- sign(diag(gamma.new[,1:num.lv.c,drop=F]));
-          sigma.lv <- diag(gamma.new[,1:num.lv.c,drop=F])
+          sigma.lv <- diag(gamma.new)
           params[,(ncol(params) - (num.lv.c+num.RR) + 1):(ncol(params))] <- t(t(gamma.new)/sigma.lv)
           index <- t(t(index)*sig)}}, silent = TRUE) 
     }else if(num.lv >0 & (num.lv.c+num.RR) >0){
