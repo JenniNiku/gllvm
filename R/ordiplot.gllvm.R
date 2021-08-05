@@ -328,7 +328,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         #scores_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,which.lvs,drop=F],1,all)],which.lvs,drop=F]
         scores_to_plot <- choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!all(x)),,drop=F]
         if(nrow(scores_to_plot)>0){
-          ends <- t(t(t(t(scores_to_plot)-origin)/sqrt((scores_to_plot[,1]-origin[1])^2+(scores_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*arrow.scale
+          ends <- t(t(t(t(scores_to_plot)-origin)/sqrt((scores_to_plot[,1]-origin[1])^2+(scores_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))
           for(i in 1:nrow(scores_to_plot)){
             arrows(origin[1],origin[2],ends[i,1]+origin[1],ends[i,2]+origin[2],col=spp.colors[i], cex = cex.spp, length = 0.2)
             text(x=ends[i,1]*(1+lab.dist)+origin[1],y=ends[i,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot)[i],col=spp.colors[i], cex = cex.spp)
