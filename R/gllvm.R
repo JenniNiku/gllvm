@@ -496,7 +496,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
               datayx <- list(X = X)
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
-            
+            colnames(lv.X)  <- gsub("X.","",colnames(lv.X))
+            lv.formula <- formula(paste("~", paste(colnames(lv.X), collapse = "+")))
             X <- NULL
           }
           
