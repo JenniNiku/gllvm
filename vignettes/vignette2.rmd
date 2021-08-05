@@ -252,6 +252,8 @@ references:
   - family: Warton
     given: D.I.
   publisher: Methods in Ecology and Evolution
+  volume: 10
+  page: 2173-2182
   type: article-journal
   issued:
     year: 2019

@@ -92,8 +92,8 @@ It is also possible to use the `quadratic` flag to fit a quadratic response mode
 
 ---
 references:
-- id: vanderVeen2021
-  title: Model-based constrained ordination with latent variables (in prep)
+- id: vanderVeen2021b
+  title: Model-based ordination with constrained latent variables (in prep)
   author: 
   - family: van der Veen
     given: B.
@@ -103,9 +103,9 @@ references:
     given: K.A.
   - family: O'Hara
     given: R.B.
-  publisher: 
-  volume: 
-  page: 
+  publisher: NA
+  volume: NA
+  page: NA
   type: article-journal
   issued:
     year: 2021

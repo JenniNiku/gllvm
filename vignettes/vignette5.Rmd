@@ -89,8 +89,8 @@ The standard deviation of the latent variables, presented in the summary informa
 
 ---
 references:
-- id: vanderVeen2021
-  title: Generalized linear latent variable models for multivariate count and biomass data in ecology.
+- id: vanderVeen2021a
+  title: Model-based ordination for species with unequal niche widths.
   author: 
   - family: van der Veen
     given: B.
@@ -103,8 +103,8 @@ references:
   - family: O'Hara
     given: R.B.
   publisher: Methods in Ecology and Evolution
-  volume: 
-  page: 
+  volume: 12
+  page: 1288-1300
   type: article-journal
   issued:
     year: 2021
