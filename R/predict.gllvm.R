@@ -210,12 +210,12 @@ predict.gllvm <- function (object, newX = NULL, newTR = NULL, newLV = NULL, type
           eta <- eta + lvs[(ncol(lvs)-object$num.lv+1):ncol(lvs)]^2 %*% t(theta2)
         }
         if ((object$num.lv.c + object$num.RR) > 0) {
+          theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
           theta2C <- abs(theta2[, 1:(object$num.lv.c + 
                                        object$num.RR), drop = F])
           lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
-          lvsT <- t(lvs)
           for (j in 1:p) {
-            eta[i, j] <- eta[, j] - lvs%*%diag(theta2C[j, ])%*%lvsT
+            eta[, j] <- eta[, j] - lvs^2%*%theta2C[j, ]
           }
         }
       }
