@@ -11,6 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param theta option to return species scores in the ordination, defaults to \code{FALSE}
+#' @param principal defaults to \code{FALSE}. In the absence of unconstrained latent variables, with \code{TRUE} rotates the summary of coefficients for constrained latent variables to the principal direction, so that it coincides with the ordiplot results. 
 #' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -28,7 +29,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, theta = FALSE,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, theta = FALSE, principal = FALSE,
                           ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
@@ -105,6 +106,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)) {
+    if(!principal){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
     
@@ -112,6 +114,36 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table.constrained <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    }else{
+      if(num.lv>0){
+        stop("Cannot rotate coefficients for constrained LVs to principal direction with unconstrained LVs in the model.")
+      }
+      if((num.lv.c+num.RR)>0){
+        type <- "constrained"
+      }else{
+        type <- "scaled"
+      }
+      lv <- getLV(object, type = type)
+      
+      do_svd <- svd(lv)
+      svd_rotmat_sites <- do_svd$v
+
+      LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
+      covB <- object$Hess$cov.mat.mod
+      colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
+      covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+      rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
+      for(i in 1:ncol(object$lv.X)){
+        rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
+      }
+      pars <- c(LVcoef)
+      se <- c(rotSD)
+      
+      zval <- pars/se
+      pvalue <- 2 * pnorm(-abs(zval))
+      coef.table.constrained <- cbind(pars, se, zval, pvalue)
+      dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    }
   }else{
     coef.table.constrained <- NULL
   }
