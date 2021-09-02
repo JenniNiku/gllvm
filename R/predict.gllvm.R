@@ -7,6 +7,7 @@
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
 #' @param level specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.
+#' @param offset specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
 #' @param ... not used.
 #'
 #' @details
@@ -53,7 +54,7 @@
 #'@export
 #'@export predict.gllvm
 
-predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, ...){
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
   r0 <- NULL
   # if(object$row.eff!=FALSE&&(object$num.lv>0|object$num.lv.c>0)&&ncol(newLV)==(object$num.lv+object$num.lv.c+1)){
   #   warning("First column of newLV taken to be row-intercepts. \n")
@@ -249,6 +250,18 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     eta <- eta + r0
   }else if(!is.null(r0)){
     eta <- eta+r0
+  }
+  
+  if(!is.null(object$offset)){
+    if(offset!=FALSE){
+      if(is.matrix(offset)){
+        if((NROW(offset) == NROW(eta))){
+          eta <- eta+object$offset
+        } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
+      } else if((NROW(object$offset) == NROW(eta))){
+        eta <- eta+object$offset
+        } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
+    }
   }
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
