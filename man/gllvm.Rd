@@ -35,8 +35,8 @@ gllvm(
   gradient.check = FALSE,
   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
     maxit = 4000, trace = FALSE, optim.method = NULL),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured",
-    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
+    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
@@ -143,13 +143,14 @@ An object of class "gllvm" includes the following components:
  \item{lvs }{latent variables}
  \item{params}{list of parameters
  \itemize{
-   \item{theta }{ coefficients related to latent variables}
+   \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
+   \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
    \item{beta0 }{ column specific intercepts}
    \item{Xcoef }{ coefficients related to environmental covariates X}
    \item{B }{ coefficients in fourth corner model}
    \item{row.params }{ row-specific intercepts}
-   \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma family}
+   \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
    }}
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}

@@ -12,6 +12,7 @@
   newLV = NULL,
   type = "link",
   level = 1,
+  offset = TRUE,
   ...
 )
 }
@@ -27,6 +28,8 @@
 \item{type}{the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternative \code{"response"} is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.}
 
 \item{level}{specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.}
+
+\item{offset}{specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.}
 
 \item{...}{not used.}
 }
