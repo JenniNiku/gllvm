@@ -346,7 +346,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   plot = FALSE, link = "probit", dist = 0, corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
     #change default behavior of num.lv.
@@ -387,6 +387,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         x$Lambda.struc = "unstructured"
       if (!("Ab.struct" %in% names(x))) 
         x$Ab.struct = "unstructured"
+      if (!("Ar.struc" %in% names(x))) 
+        x$Ar.struc = "unstructured"
       if (!("diag.iter" %in% names(x))) 
         x$diag.iter = 5
       if (!("Ab.diag.iter" %in% names(x))) 
@@ -423,7 +425,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
-    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
+    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start;
     
@@ -870,7 +872,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             Power = Power,
             diag.iter = diag.iter,
             Ab.diag.iter = Ab.diag.iter,
-            Ab.struct = Ab.struct,
+            Ab.struct = Ab.struct, Ar.struc = Ar.struc,
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
@@ -899,7 +901,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             num.RR = num.RR,
             family = family,
             method = method,
-            Lambda.struc = Lambda.struc,
+            Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             row.eff = row.eff,
             reltol = reltol,
             seed = seed,

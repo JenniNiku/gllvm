@@ -3,7 +3,7 @@
 ## Original author: Jenni Niku
 ##########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, num.RR = 0, family = "poisson",
-      method="VA",Lambda.struc="unstructured", row.eff = FALSE, reltol = 1e-8,
+      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =0,
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
@@ -52,7 +52,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     lv.X<-matrix(0)
   }
   formula1 <- formula
-  if(method=="VA"){ link="probit"}
+  if(method=="VA" && (family =="binomial")){ link="probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
     jitter.var.r <- jitter.var[2]
@@ -184,7 +184,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       if (row.eff != FALSE) {
         row.params <- fit$row.params
-        if(rstruc<2 && row.eff=="random") row.params <- row.params[1:nr]#rstruc
+        if(rstruc==0 && row.eff=="random") row.params <- row.params[1:nr]#rstruc
+        if(rstruc==1 && row.eff=="random") try(row.params <- (t(dr)%*%(row.params))/(dim(dr)[1]/dim(dr)[2]), silent = TRUE)#rstruc
         if (row.eff == "random") {
           sigma <- sd(row.params)#1;#
         }
@@ -267,7 +268,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       phis <- (colMeans(y == 0) * 0.98) + 0.01
       phis <- phis / (1 - phis)
     } # ZIP probability
-    if (family %in% c("gaussian", "gamma")) {
+    if (family %in% c("gaussian", "gamma", "beta")) {
       phis <- fit$phi
     }
     if(family=="ordinal"){
@@ -372,13 +373,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lg_Ar <- rep(log(Lambda.start[2]), n)
         }
       
-        if((rstruc == 0) && (nlvr>(num.lv+num.lv.c)) && (quadratic == FALSE)){
+        if((rstruc == 0) && (nlvr>(num.lv+num.lv.c)) && (quadratic == FALSE) & Ar.struc!="diagonal"){
           lg_Ar<-c(lg_Ar, rep(0, (num.lv+num.lv.c)*n))
         }
-        if(rstruc == 1 & (cstrucn %in% c(1,2,3)) & Lambda.struc!="diagonal"){
+        if(rstruc == 1 & (cstrucn %in% c(1,2,3)) & Ar.struc!="diagonal"){
           lg_Ar<-c(lg_Ar, rep(0, nr*(nr-1)/2))
         }
-        if(rstruc == 2){
+        if(rstruc == 2 & Ar.struc!="diagonal"){
           lg_Ar<-c(lg_Ar, rep(0, nr*times*(times-1)/2))
         }
       } else {lg_Ar <- 0}
@@ -480,7 +481,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$r0 = factor(rep(NA, length(r0)))
         map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
 
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta)
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list2,
@@ -513,7 +514,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
       
 #### Call makeADFun
 
@@ -743,7 +744,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$Au <- map.list2$Abb <- factor(NA)# map.list$lambda2 <- 
         # map.list2$b_lv <- factor(rep(NA,length(b.lv)))
 
-        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=0, lg_Ar =0, Abb=0, zeta=zeta)
+        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=0, lg_Ar =0, Abb=0, zeta=zeta)
 
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -813,7 +814,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(family == "ordinal"){
         data.list$method = 0
       }
-      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
 
       #### Call makeADFun
       objr <- TMB::MakeADFun(
@@ -853,7 +854,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
         if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])
         
-        parameter.list = list(r0=matrix(r0), b = b, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
+        parameter.list = list(r0=matrix(r0), b = b, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
 
         #### Call makeADFun
         objr <- TMB::MakeADFun(
@@ -891,7 +892,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         theta <- matrix(0,p,num.lv+(num.lv.c+num.RR))
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if((num.lv+num.lv.c)>0)sigma.lv <- abs(param[si])
+        if((num.lv+num.lv.c)>0) sigma.lv <- abs(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
           if(p>1) {
             theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
@@ -1327,7 +1328,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
       }
-      if((num.lv.c+num.lv)>0){se.sigma.lv <- se[1:(num.lv+num.lv.c)];se<-se[-c(1:(num.lv+num.lv.c))]}
+      if((num.lv.c+num.lv)>0){
+        se.sigma.lv <- se[1:(num.lv+num.lv.c)]; ##*out$params$sigma.lv; 
+        se<-se[-c(1:(num.lv+num.lv.c))]}
       if(num.lv > 0&(num.lv.c+num.RR)==0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");

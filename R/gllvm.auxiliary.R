@@ -494,7 +494,14 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   if((num.lv+num.lv.c) > 0) {
     out$sigma.lv <- abs(sigma.lv)[1:(num.lv+num.lv.c)]
     out$index <- index
+    out$mu<-out$mu+((out$index)%*%t(out$params[,(ncol(out$params) - (num.lv+num.lv.c) + 1):(ncol(out$params))]%*%diag(out$sigma.lv, length(out$sigma.lv), length(out$sigma.lv))))
+    if(family == "beta" && starting.val=="res"){
+      mumax<-apply(abs(out$mu),2,max)
+      if(any(mumax>5))
+        out$params[mumax>5,(ncol(out$params) - (num.lv+num.lv.c) + 1):(ncol(out$params))]<-out$params[mumax>5,(ncol(out$params) - (num.lv+num.lv.c) + 1):(ncol(out$params))]/mumax[mumax>5]*5
+    }
   }
+  
   if(family == "ordinal") out$zeta <- zeta
   options(warn = 0)
   if(row.eff!=FALSE) {
