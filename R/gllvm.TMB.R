@@ -121,13 +121,22 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   }
 
   ## Set initial values for model parameters (including dispersion prm) and latent variables
-  # If no seed is saimpled it is randomly drawn
+
+### Seeds
+  
+  # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
+  if((length(seed) >1) & (length(seed) < n.init)) {
+    stop("Seed length doesn't match with the number of initial starts.")
+  }
+  if(!is.null(seed) & (length(seed) ==1) & (length(seed) < n.init)) {
+    set.seed(seed)
+    seed <- sample(1:10000, n.init)
+  }
+  # If no seed is sampled it is randomly drawn
   if(is.null(seed)&starting.val!="zero"){
     seed <- sample(1:10000, n.init)
   }
-  # if(!is.null(seed)) {
-  #   set.seed(seed)
-  # }
+
 
   n.i <- 1
 
