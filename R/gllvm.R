@@ -167,13 +167,14 @@
 #'  \item{lvs }{latent variables}
 #'  \item{params}{list of parameters
 #'  \itemize{
-#'    \item{theta }{ coefficients related to latent variables}
+#'    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
+#'    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
 #'    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
 #'    \item{row.params }{ row-specific intercepts}
-#'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma family}
+#'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
 #'    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
 #'    }}
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
