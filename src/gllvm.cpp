@@ -122,6 +122,7 @@ Type objective_function<Type>::operator() ()
       
       if((random(0)>0) && (n == nr)){
         for (int d=1; d<nlvr; d++){
+          // Delta(d,d) = exp(sigmaLV(d-1)); //!!!
           Delta(d,d) = fabs(sigmaLV(d-1));
         }
         Delta(0,0) = 1;
@@ -134,6 +135,7 @@ Type objective_function<Type>::operator() ()
         }
       }else{
         for (int d=0; d<nlvr; d++){
+          // Delta(d,d) = exp(sigmaLV(d));
           Delta(d,d) = fabs(sigmaLV(d));
         }
       }
@@ -315,7 +317,7 @@ Type objective_function<Type>::operator() ()
             eta.col(j) = eta.col(j) + dr*r0;
           }
           for (int i=0; i<nr; i++) {//i<n //!!!
-            nll.array() -= 0.5*(1 + log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2) - log(sigma))/(n*p)*random(0);
+            nll.array() -= 0.5*(1 + log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2) - 2*log(sigma))/(n*p)*random(0);
           }
         } else {
           // group specific random row effects, which are correlated between groups
@@ -375,7 +377,7 @@ Type objective_function<Type>::operator() ()
           
           nll.array() -= 0.5*(nr-log(Sr.determinant()))/(n*p);
             // REPORT(Arm);
-            // REPORT(Sr);
+            REPORT(Sr);
         }
         
       } else if(rstruc == 2){
