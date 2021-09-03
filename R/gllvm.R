@@ -455,7 +455,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(!is.matrix(TR) && !is.data.frame(TR) ) 
         stop("TR must be a matrix or data.frame.")
     }
-    if(is.null(X)&is.null(data)&num.lv.c>0|num.RR>0&is.null(X)&is.null(data)){
+    #is.null(X)&is.null(data)&num.lv.c>0|
+    if((num.RR+num.lv.c)>0&is.null(X)&is.null(data)){
       stop("Cannot constrain latent variables without predictors. Please provide X, or set num.lv.c=0 or num.RR=0. \n")
     }
     
@@ -806,7 +807,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("CLV",1:num.lv.c, sep = "")
       if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
     }
-    if(num.lv.c>0){
+    if((num.RR+num.lv.c)>0){
     if(ncol(lv.X)<(num.lv.c+num.RR)){
       stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
     }

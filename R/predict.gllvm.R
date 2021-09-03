@@ -206,8 +206,9 @@ predict.gllvm <- function (object, newX = NULL, newTR = NULL, newLV = NULL, type
       }
       if (object$quadratic != FALSE) {
         if(object$num.lv>0){
-          theta2 <- object$params$theta[, -c(1:(object$num.lv.c + object$num.RR)), drop = F]
-          eta <- eta + lvs[(ncol(lvs)-object$num.lv+1):ncol(lvs)]^2 %*% t(theta2)
+          theta2 <- object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F]
+          theta2 <- theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F]
+          eta <- eta + lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs)]^2 %*% t(theta2)
         }
         if ((object$num.lv.c + object$num.RR) > 0) {
           theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
