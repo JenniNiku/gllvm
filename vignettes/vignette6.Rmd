@@ -46,7 +46,7 @@ For that, it is important to first understand what a constrained ordination is. 
 Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $K$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the `gllvm` R-package, the code to fit this model is:
 
 ```{r eval=FALSE}
-MGLM <- gllvm(Y,X=X,family="poisson")
+MGLM <- gllvm(Y,X=X,family="poisson", num.lv = 0)
 ```
 
 The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. RRR introduces a constraint on the species slopes matrix, namely on the number of independent columns in $\boldsymbol{\beta}_j$ (a column is not independent when it can be formulated as a linear combination of another). The reduced ranks are in community ecology referred to as ecological gradients, or can be understood as ordination axes. If we define a latent variable $\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X}_{i,lv} + \boldsymbol{\epsilon}_i$, for a $K\times d$ matrix of slopes, we can understand RRR as a regression of the latent variable or ecological gradient, except that the residual $\boldsymbol{\epsilon}_i$ is omitted, i.e. we assume that the ecological gradient can be represented perfectly by the predictor variables, so that the model becomes:
@@ -57,7 +57,7 @@ The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. RRR introduces
 Where $\boldsymbol{\gamma}_j$ is a set of reduced rank slopes for each species. This model can also be fitted in, e.g., the `VGAM` R-package. This parametrization is practically useful, as it drastically reduces the number of parameters compared to multivariate regression. The Rank can be determined by cross-validation, or alternatively, using information criteria. The code for this in the `gllvm` R-package, for an arbitrary choice of Rank 2, is:
 
 ```{r eval=FALSE}
-RRGLM <- gllvm(Y,X=X,family="poisson", num.RR=2)
+RRGLM <- gllvm(Y,X=X,family="poisson", num.RR = 2)
 ```
 
 The reduced rank slopes are available under `RRGLM$params$LvXcoef`. Note: in general to improve convergence, it is good practice to center and scale the predictor variables. Unlike in other R-packages, we can now formulate a RRR with residual (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the latter is how the residual can be understood). The code for this is:
