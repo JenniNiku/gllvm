@@ -47,7 +47,10 @@
 #'@export
 
 
-plot.gllvm <- function(x, which = 1:5, caption=c("Residuals vs linear predictors", "Normal Q-Q","Residuals vs row index", "Residuals vs column index","Scale-Location"), var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, envelope.col = c("blue","lightblue"), n.plot = NULL, ...) {
+plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predictors", "Normal Q-Q",
+                       "Residuals vs row", "Residuals vs column", "Scale-Location"), 
+                       var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, 
+                       envelope.col = c("blue","lightblue"), n.plot = NULL, ...) {
   n <- NROW(x$y)
   p <- NCOL(x$y)
   

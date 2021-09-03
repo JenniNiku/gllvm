@@ -5,7 +5,7 @@
 
 trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
-      Lambda.struc = "unstructured", Ab.struct = "unstructured", row.eff = FALSE, reltol = 1e-6, seed = NULL,
+      Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist =0,
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
@@ -50,7 +50,7 @@ trait.TMB <- function(
   y <- as.data.frame(y)
   formula1 <- formula
   beta0com0 = beta0com
-  if(method=="VA"){ link <- "probit"}
+  if(method=="VA" && (family =="binomial")){ link <- "probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
     jitter.var.r <- jitter.var[2]
@@ -185,8 +185,23 @@ trait.TMB <- function(
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   
   n.i <- 1;
-  if(n.init > 1) seed <- sample(1:10000, n.init)
-
+  
+### Seeds
+  
+  # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
+  if((length(seed) >1) & (length(seed) < n.init)) {
+    stop("Seed length doesn't match with the number of initial starts.")
+  }
+  if(!is.null(seed) & (length(seed) ==1) & (length(seed) < n.init)) {
+    set.seed(seed)
+    seed <- sample(1:10000, n.init)
+  }
+  # If no seed is sampled it is randomly drawn
+  if(is.null(seed)&starting.val!="zero"){
+    seed <- sample(1:10000, n.init)
+  }
+  # if(n.init > 1) seed <- sample(1:10000, n.init)
+  
   # n.init model fits
   while(n.i <= n.init){
 
@@ -242,7 +257,9 @@ trait.TMB <- function(
       row.params <- NULL;
       if(row.eff!=FALSE){
         row.params <- res$row.params
-        if(rstruc<2 && row.eff=="random") row.params <- row.params[1:nr] #rstruc
+        if(rstruc==0 && row.eff=="random") row.params <- row.params[1:nr]#rstruc
+        if(rstruc==1 && row.eff=="random") try(row.params <- (t(dr)%*%(row.params))/(dim(dr)[1]/dim(dr)[2]), silent = TRUE)#rstruc
+        # if(rstruc<2 && row.eff=="random") row.params <- row.params[1:nr] #rstruc
         if (row.eff == "random") {
           sigma <- sd(row.params);
         }
@@ -360,9 +377,9 @@ trait.TMB <- function(
       phis <- (colMeans(y == 0) * 0.98) + 0.01; 
       phis <- phis / (1 - phis)
       } # ZIP probability
-    # if (family %in% c("gaussian", "gamma")) {
-    #   phis <- res$phi
-    # }
+    if (family %in% c("gaussian", "gamma", "beta")) {
+      phis <- res$phi
+    }
     if(family=="ordinal"){
       K = max(y00)-min(y00)
       if(zeta.struc=="species"){
@@ -413,13 +430,13 @@ trait.TMB <- function(
         lg_Ar <- rep(log(Lambda.start[2]), n)
       }
       
-      if(rstruc == 0 && nlvr>num.lv && (quadratic == FALSE)){
+      if(rstruc == 0 && nlvr>num.lv && (quadratic == FALSE) & Ar.struc!="diagonal"){
         lg_Ar<-c(lg_Ar, rep(0, num.lv*n))
       }
-      if(rstruc == 1 & (cstrucn %in% c(1,2,3))){
+      if(rstruc == 1 & (cstrucn %in% c(1,2,3)) & Ar.struc!="diagonal"){
         lg_Ar<-c(lg_Ar, rep(0, nr*(nr-1)/2))
       }
-      if(rstruc == 2){
+      if(rstruc == 2 & Ar.struc!="diagonal"){
         lg_Ar<-c(lg_Ar, rep(0, nr*times*(times-1)/2))
       }
     } else {lg_Ar <- 0}
@@ -558,7 +575,7 @@ trait.TMB <- function(
       map.list2$Abb = factor(rep(NA, length(Abb)))
       map.list2$zeta = factor(rep(NA, length(zeta)))
 
-      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
         parameters = parameter.list, map = map.list2,
@@ -583,7 +600,7 @@ trait.TMB <- function(
 #### Call makeADFun
     
     if((method %in% c("VA", "EVA")) && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
-      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist), silent=!trace,
         parameters = parameter.list, map = map.list,
@@ -592,7 +609,7 @@ trait.TMB <- function(
     } else {
       Au=0; Abb=0; lg_Ar=0;
       map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
-      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta)
       data.list <- list(y = y, x = Xd,x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       if(family == "ordinal"){
         data.list$method = 0
@@ -792,7 +809,6 @@ trait.TMB <- function(
     ui<-names(param)=="u"
 
     if(num.lv > 0){
-      sigma.lv <- abs(param[si])
       lvs <- (matrix(param[ui],n,nlvr))
       sigma.lv <- abs(param[si])
       lvs <- (matrix(param[ui],n,num.lv))
@@ -1160,7 +1176,8 @@ trait.TMB <- function(
         }
         se.B <- se[1:length(B)]; se <- se[-(1:length(B))];
         if(num.lv>0) {
-          out$sd$sigma.lv <- se.sigma.lv <- se[1:num.lv];se<-se[-c(1:num.lv)]
+          out$sd$sigma.lv <- se.sigma.lv <- se[1:num.lv]; ##*out$params$sigma.lv;
+          se<-se[-c(1:num.lv)]
           names(out$sd$sigma.lv) <- paste("LV",1:num.lv,sep="");
           
           se.theta <- matrix(0,p,num.lv); se.theta[lower.tri(se.theta, diag = F)]<-se[1:(p * num.lv - sum(0:(num.lv)))];

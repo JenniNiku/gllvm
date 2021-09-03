@@ -31,7 +31,7 @@ knitr::opts_chunk$set(
 - Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.
 
 
-- Version 1.2.3 now available in
+- The package available in
    - GitHub: <https://github.com/JenniNiku/gllvm> 
    - CRAN: <https://cran.r-project.org/web/packages/gllvm/index.html>
 
@@ -53,11 +53,9 @@ devtools::install_github("JenniNiku/gllvm")
 
 - GLLVMs are computationally intensive to fit due the integral in log-likelihood.
 
-- Often such models have been fitted using MCMC approach, which is very time consuming.
-
 - **gllvm** package overcomes computational problems by applying closed form approximations to log-likelihood and using automatic differentiation in C++ to accelerate computation times (**TMB**^[Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21]).
 
-- Estimation is performed using either variational approximation (VA^[Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43]) or Laplace approximation (LA^[Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.]) method implemented via **R** package **TMB**.
+- Estimation is performed using either variational approximation (VA^[Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43]), extended variational approximation method (EVA^[Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal estimation of latent variable models using extended variational approximations, arXiv:2107.02627 .]) or Laplace approximation (LA^[Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.]) method implemented via **R** package **TMB**.
 
 - VA method is faster and more accurate than LA, but not applicable for all distributions and link functions.
 

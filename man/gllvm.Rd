@@ -35,8 +35,8 @@ gllvm(
   gradient.check = FALSE,
   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
     maxit = 4000, trace = FALSE, optim.method = NULL),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured",
-    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
+    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
@@ -62,7 +62,7 @@ gllvm(
 
 \item{num.RR}{number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.}
 
-\item{family}{distribution function for responses. Options are \code{poisson(link = "log")}, \code{"negative.binomial"} (with log link), \code{binomial(link = "probit")} (and also \code{binomial(link = "logit")} when \code{method = "LA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, \code{"gamma"} (with log link), \code{"exponential"} (with log link), Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
+\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
 
 \item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
 
@@ -128,7 +128,7 @@ gllvm(
   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
-  \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"}(default) and \code{"all"}.}
+  \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.}
 }}
 
@@ -143,13 +143,14 @@ An object of class "gllvm" includes the following components:
  \item{lvs }{latent variables}
  \item{params}{list of parameters
  \itemize{
-   \item{theta }{ coefficients related to latent variables}
+   \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
+   \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
    \item{beta0 }{ column specific intercepts}
    \item{Xcoef }{ coefficients related to environmental covariates X}
    \item{B }{ coefficients in fourth corner model}
    \item{row.params }{ row-specific intercepts}
-   \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma family}
+   \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
    }}
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
@@ -187,7 +188,7 @@ The latent variables can then be passed to the \code{start.lvs} argument inside 
 \subsection{Constrained ordination}{
 For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
 
-\deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
+\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
 where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
 the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
 }
@@ -292,9 +293,11 @@ plot(fitv0, mfrow = c(2,2))
 summary(fitv0)
 confint(fitv0)
 
-## Example 1a: Fit model with two constrained latent variables and with quadratic response model
+## Example 1a: Fit model with two constrained latent variables and with 
+# quadratic response model
 # We scale and centre the  predictors to improve convergence
-fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", num.lv.c=2, method="VA")
+fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", 
+              num.lv.c=2, method="VA")
 ordiplot(fity1, biplot = TRUE)
 
 # Using Laplace approximation: (this line may take about 30 sec to run)
@@ -304,8 +307,10 @@ ordiplot(fitl0)
 # Poisson family:
 fit.p <- gllvm(y, family = poisson(), method = "LA")
 ordiplot(fit.p)
-# Use poisson model as a starting parameters for ZIP-model, this line may take few minutes to run
-fit.z <- gllvm(y, family = "ZIP", method = "LA", control.start =list(start.fit = fit.p))
+# Use poisson model as a starting parameters for ZIP-model, this line 
+# may take few minutes to run
+fit.z <- gllvm(y, family = "ZIP", method = "LA", 
+              control.start = list(start.fit = fit.p))
 ordiplot(fit.z)
 
 
@@ -400,7 +405,7 @@ Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton, 
 Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }
 \seealso{
-\code{\link{coefplot.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{ordiplot.gllvm}}, \code{\link{plot.gllvm}}, \code{\link{residuals.gllvm}}, \code{\link{summary.gllvm}}.
+\code{\link{coefplot.gllvm}}, \code{\link{confint.gllvm}}, \code{\link{ordiplot.gllvm}}, \code{\link{plot.gllvm}}, \code{\link{summary.gllvm}}.
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen

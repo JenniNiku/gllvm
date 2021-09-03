@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -105,6 +105,12 @@
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
     </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -135,13 +141,27 @@
       <small>Source: <a href='https://github.com/JenniNiku/gllvm/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="version-130" class="section level1">
-<h1 class="page-header" data-toc-text="1.3.0">
-<a href="#version-130" class="anchor"></a>Version 1.3.0<small> Unreleased </small>
+    <div id="version-131" class="section level1">
+<h1 class="page-header" data-toc-text="1.3.1">
+<a href="#version-131" class="anchor"></a>Version 1.3.1<small> Unreleased </small>
 </h1>
 <div id="new-features" class="section level3">
 <h3 class="hasAnchor">
 <a href="#new-features" class="anchor"></a>New Features</h3>
+<ul>
+<li><p>Structured row parameters are implemented, including a possibility for between or within group correlations for random row effects.</p></li>
+<li><p>Constrained ordination model is implemented.</p></li>
+<li><p>NB and binomial (with probit and logit) response model implemented using extended variational approximation method.</p></li>
+</ul>
+</div>
+</div>
+    <div id="version-130" class="section level1">
+<h1 class="page-header" data-toc-text="1.3.0">
+<a href="#version-130" class="anchor"></a>Version 1.3.0<small> 2021-04-30 </small>
+</h1>
+<div id="new-features-1" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-features-1" class="anchor"></a>New Features</h3>
 <ul>
 <li><p>Quadratic latent variables allowed, that is term - u_i’D_j u_i can be included in the model using ‘quadratic = TRUE’. In addition, functions ‘optima()’, ‘tolerances()’ and ‘gradient.length()’ included.</p></li>
 <li><p>Beta response distribution implemented using Laplace approximation and extended variational approximation method.</p></li>

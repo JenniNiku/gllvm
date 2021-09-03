@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
       </span>
     </div>
 
@@ -105,6 +105,12 @@
     </li>
     <li>
       <a href="../articles/vignette4.html">Introduction to gllvm Part 2: Species correlations</a>
+    </li>
+    <li>
+      <a href="../articles/vignette5.html">How to use the quadratic response model</a>
+    </li>
+    <li>
+      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
     </li>
   </ul>
 </li>
@@ -142,7 +148,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for gllvm</span>
-<span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>object</span>, adjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span></pre>
+<span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>object</span>, adjust <span class='op'>=</span> <span class='fl'>1</span>, site.index <span class='op'>=</span> <span class='cn'>NULL</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -154,6 +160,14 @@
     <tr>
       <th>adjust</th>
       <td><p>The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.</p></td>
+    </tr>
+    <tr>
+      <th>site.index</th>
+      <td><p>A site index used used in the calculation of a GLLVM with quadratic response model, for which the residual correlations are calculated.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>not used</p></td>
     </tr>
     </table>
 
@@ -174,11 +188,11 @@
 </div><div class='output co'>#&gt; [1] -4242.667</div><div class='input'><span class='va'>cr</span> <span class='op'>&lt;-</span> <span class='fu'>getResidualCor</span><span class='op'>(</span><span class='va'>fit</span><span class='op'>)</span>
 <span class='va'>cr</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span>,<span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span><span class='op'>]</span>
 </div><div class='output co'>#&gt;             OTU_79    OTU_164    OTU_462     OTU_95    OTU_833
-#&gt; OTU_79   1.0000000  0.3893696  0.3428408 -0.7496213  0.9956260
-#&gt; OTU_164  0.3893696  1.0000000  0.9987499 -0.9015132  0.4737217
-#&gt; OTU_462  0.3428408  0.9987499  1.0000000 -0.8787543  0.4291073
-#&gt; OTU_95  -0.7496213 -0.9015132 -0.8787543  1.0000000 -0.8081796
-#&gt; OTU_833  0.9956260  0.4737217  0.4291073 -0.8081796  1.0000000</div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+#&gt; OTU_79   1.0000000  0.3889616  0.3424165 -0.7493783  0.9956140
+#&gt; OTU_164  0.3889616  1.0000000  0.9987494 -0.9014804  0.4734446
+#&gt; OTU_462  0.3424165  0.9987494  1.0000000 -0.8787139  0.4288151
+#&gt; OTU_95  -0.7493783 -0.9014804 -0.8787139  1.0000000 -0.8080390
+#&gt; OTU_833  0.9956140  0.4734446  0.4288151 -0.8080390  1.0000000</div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Load a dataset from the mvabund package</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>)</span>
 <span class='va'>y</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>antTraits</span><span class='op'>$</span><span class='va'>abund</span><span class='op'>)</span>

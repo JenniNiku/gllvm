@@ -12,6 +12,7 @@
   newLV = NULL,
   type = "link",
   level = 1,
+  offset = TRUE,
   ...
 )
 }
@@ -28,9 +29,9 @@
 
 \item{level}{specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.}
 
-\item{...}{not used.}
-
 \item{offset}{specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.}
+
+\item{...}{not used.}
 }
 \value{
 A matrix containing requested predictor types.

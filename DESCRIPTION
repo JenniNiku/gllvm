@@ -2,7 +2,7 @@ Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
 Version: 1.3.1
-Date: 2021-7-5
+Date: 2021-7-28
 Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.niku@jyu.fi"),
              person("Wesley", "Brooks", role = "aut"),
              person("Riki", "Herliansyah", role = "aut"),
@@ -13,7 +13,8 @@ Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
 Description: Analysis of multivariate data using generalized linear latent variable models (gllvm). 
       Estimation is performed using either Laplace approximation method or variational approximation method implemented via TMB (Kristensen et al., (2016), <doi:10.18637/jss.v070.i05>). 
-      For details see Niku et al. (2019a) <doi:10.1371/journal.pone.0216129> and Niku et al. (2019b) <doi:10.1111/2041-210X.13303>.
+      For details see Niku et al. (2019a) <doi:10.1371/journal.pone.0216129> and 
+      Niku et al. (2019b) <doi:10.1111/2041-210X.13303>.
 License: GPL-2
 Imports: MASS, Matrix, statmod, fishMod, mgcv
 Depends: R (>= 3.5.0), TMB, mvabund

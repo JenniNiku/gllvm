@@ -1,4 +1,4 @@
-Version 1.3.dev
+Version 1.3.1
 ==============
 
 ### New Features
@@ -8,6 +8,11 @@ Version 1.3.dev
 * Constrained ordination model is implemented.
 
 * NB and binomial (with probit and logit) response model implemented using extended variational approximation method.
+
+### Bug Fixes
+
+* Vignettes are removed from the CRAN version of the package, can be seen at the package's website only.
+
 
 Version 1.3.0
 ==============

@@ -54,9 +54,7 @@
 #'@export
 #'@export predict.gllvm
 
-predict.gllvm <- function (object, newX = NULL, newTR = NULL, newLV = NULL, type = "link", 
-                           level = 1, ...) 
-{
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
   r0 <- NULL
   newdata <- newX
   p <- ncol(object$y)
@@ -284,11 +282,20 @@ predict.gllvm <- function (object, newX = NULL, newTR = NULL, newLV = NULL, type
     r0 <- object$params$row.params
     eta <- eta + r0
   }
-  else if (!is.null(r0)) {
-    eta <- eta + r0
+
+  if(!is.null(object$offset)){
+    if(offset!=FALSE){
+      if(is.matrix(offset)){
+        if((NROW(offset) == NROW(eta))){
+          eta <- eta+object$offset
+        } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
+      } else if((NROW(object$offset) == NROW(eta))){
+        eta <- eta+object$offset
+        } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
+    }
   }
-  if (object$family %in% c("poisson", "negative.binomial", 
-                           "tweedie", "gamma", "exponential")) 
+  
+  if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
   if (object$family == "binomial" || object$family == 
       "beta") 

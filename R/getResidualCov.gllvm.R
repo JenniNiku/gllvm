@@ -26,11 +26,12 @@
 #' which leads to the residual covariance matrix \eqn{\Theta \Theta' + \Psi}, where \eqn{\Psi} is the diagonal matrix with \eqn{log(\phi_j + 1)} as diagonal elements (\code{adjust = 1}).
 #' 
 #' Or, for a GLLVM where species are a quadratic function of the latent variables, we instead have
-#' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).}
+#' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = V(u_i'\theta_j-u_i' D_j u_i) + \sigma^2 }
+#' \deqn{ = \theta_j'\theta_j + 2diag(D_j)'diag(D_j)log(\phi_j + 1).}
 #' which leads to the residual covariance matrix \eqn{\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)}, where \eqn{\Gamma_j} holds the quadratic coefficients.
 #' Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.
 #' 
-#' The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametrization
+#' The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametri-zation
 #' \deqn{Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),}
 #' where \eqn{\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)} and \eqn{\mu_{ij}} is as above. The mean and the variance are of similar form as above and we have that
 #' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = \theta_j'\theta_j + \psi^{(1)}(1/\phi_j),}

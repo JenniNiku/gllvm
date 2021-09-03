@@ -7,8 +7,8 @@
 \method{plot}{gllvm}(
   x,
   which = 1:5,
-  caption = c("Residuals vs linear predictors", "Normal Q-Q", "Residuals vs row index",
-    "Residuals vs column index", "Scale-Location"),
+  caption = c("Residuals vs linear predictors", "Normal Q-Q", "Residuals vs row",
+    "Residuals vs column", "Scale-Location"),
   var.colors = NULL,
   add.smooth = TRUE,
   envelopes = TRUE,
