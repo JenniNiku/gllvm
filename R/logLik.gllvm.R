@@ -45,7 +45,7 @@ logLik.gllvm <- function(object, ...)
   }
   
   attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))])
-  attributes(logL)$nobs <- dim(object$y)[1]
+  attributes(logL)$nobs <- prod(dim(object$y))
   class(logL) <- "logLik"
   return(logL)
 }

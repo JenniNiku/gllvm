@@ -515,7 +515,8 @@ Type objective_function<Type>::operator() ()
     e_eta.fill(0.0);
     //components for reduced rank regression terms
     if(num_RR>0){
-      //predictor coefficients RRR
+      //predictor coefficients RRR.  num_RR comes after num_lv_c
+      //Since later dimensions are more likely to have less residual variance
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
       eta += x_lv*b_lv3*RRgamma;
       
