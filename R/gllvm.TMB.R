@@ -1015,24 +1015,24 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
         if((num.lv+num.lv.c)>0)rownames(out$lvs) <- rownames(out$y);
-        if(num.lv>1&(num.lv.c+num.RR)==0) {
+        if(num.lv>0&(num.lv.c+num.RR)==0) {
           if(quadratic==FALSE){
             colnames(out$params$theta)<- paste("LV", 1:num.lv, sep="")
-            if((num.lv+num.lv.c)>0) colnames(out$lvs) <- paste("LV", 1:num.lv, sep="")};
+            colnames(out$lvs) <- paste("LV", 1:num.lv, sep="")};
           if(quadratic!=FALSE){
-            if((num.lv+num.lv.c)>0)colnames(out$lvs) <- paste("LV", 1:num.lv, sep="");
+            colnames(out$lvs) <- paste("LV", 1:num.lv, sep="");
             colnames(out$params$theta)<- c(paste("LV", 1:num.lv, sep=""),paste("LV", 1:num.lv, "^2",sep=""));
           }
         rownames(out$params$theta) <- colnames(out$y)
-        }else if((num.lv.c+num.RR)>1&num.lv==0) {
+        }else if((num.lv.c+num.RR)>0&num.lv==0) {
           if(quadratic==FALSE){
-            if((num.lv+num.lv.c)>0){
+            if(num.lv.c>0){
               colnames(out$lvs) <- paste("CLV", 1:num.lv.c, sep="")
             }
           colnames(out$params$theta) <- paste("CLV", 1:(num.lv.c+num.RR), sep="")
           }
           if(quadratic!=FALSE){
-            if((num.lv+num.lv.c)>0)colnames(out$lvs) <- paste("CLV", 1:num.lv.c, sep="");
+            if(num.lv.c>0)colnames(out$lvs) <- paste("CLV", 1:num.lv.c, sep="");
             colnames(out$params$theta)<- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("CLV", 1:(num.lv.c+num.RR), "^2",sep=""));
           }
           rownames(out$params$theta) <- colnames(out$y)

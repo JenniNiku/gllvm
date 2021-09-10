@@ -86,7 +86,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     newnams <- c("Intercept")
   
   if((num.lv+num.lv.c+num.RR)>0){
-    newnams <- c(newnams, colnames(object$params$theta[,1:(num.lv+num.lv.c+num.RR)]))
+    newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
   if (!is.logical(object$sd)&!is.null(object$X)&is.null(object$TR)) {
@@ -118,8 +118,8 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
-    coef.table.constrained <- cbind(pars, se, zval, pvalue)
-    dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    coef.table.constrained <<- cbind(pars, se, zval, pvalue)
+    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
       covB <- object$Hess$cov.mat.mod
