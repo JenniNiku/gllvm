@@ -1062,6 +1062,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             names(out$params$sigma.lv)<- c(paste("CLV", 1:num.lv.c, sep=""),paste("LV", 1:num.lv, sep=""))
           }else if(num.lv>0&num.lv.c==0){
             names(out$params$sigma.lv)<- paste("LV", 1:num.lv, sep="")
+          }else if(num.lv.c>0&num.lv==0){
+            names(out$params$sigma.lv)<- paste("LV", 1:num.lv.c, sep="")
           }
         }
       }
