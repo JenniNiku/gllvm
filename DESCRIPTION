@@ -7,9 +7,11 @@ Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.
              person("Wesley", "Brooks", role = "aut"),
              person("Riki", "Herliansyah", role = "aut"),
              person("Francis K.C.", "Hui", role = "aut"),
+             person("Pekka", "Korhonen", role = "aut"),
              person("Sara", "Taskinen", role = "aut"), 
-             person("David I.", "Warton", role = "aut"),
-             person("Bert", "van der Veen", role = "aut"))
+             person("Bert", "van der Veen", role = "aut"),
+             person("David I.", "Warton", role = "aut")
+             )
 Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
 Description: Analysis of multivariate data using generalized linear latent variable models (gllvm). 
       Estimation is performed using either Laplace approximation method or variational approximation method implemented via TMB (Kristensen et al., (2016), <doi:10.18637/jss.v070.i05>). 
