@@ -7,7 +7,7 @@ trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson",
       Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
-      link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist =0,
+      link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist = matrix(0),
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
       ,zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS") {
@@ -28,20 +28,21 @@ trait.TMB <- function(
     dr <- diag(n)
   }
   if(rstruc>0){#rstruc
+    dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
     if(rstruc==1){# group specific
       nr <- dim(dr)[2]
       if((cstrucn == 2)) {
-        if(is.null(dist) || length(dist)!=nr)
-          dist=1:nr
+        if(is.null(dist) || NROW(dist)!=nr)
+          dist=matrix(1:nr)
       }
     }
     if(rstruc==2) { # correlated within groups
       nr <- dim(dr)[2]
       times <- n/nr#dim(dr)[1]
       if((cstrucn == 2)) {
-        if(is.null(dist) || length(dist)!=times)
-          dist=1:times
+        if(is.null(dist) || NROW(dist)!=times)
+          dist=matrix(1:times)
       }
     }
   }

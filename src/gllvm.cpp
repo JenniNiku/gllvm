@@ -53,7 +53,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(rstruc); //Type for random rows. default = 0, when same as u:s. If 1, dr0 defines the structure. If 2, Points within groups has covariance struct defined by cstruc
   DATA_INTEGER(times); //number of time points
   DATA_INTEGER(cstruc); //correlation structure for row.params, 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm
-  DATA_VECTOR(dc); //coordinates for sites, used for exponentially decaying cov. struc
+  DATA_MATRIX(dc); //coordinates for sites, used for exponentially decaying cov. struc
   
   matrix<Type> dr = dr0.matrix();
   // REPORT(dr);
@@ -338,7 +338,7 @@ Type objective_function<Type>::operator() ()
             for (d=0;d<nr;d++) {
               Sr(d,d)=sigma*sigma;
               for (j=0;j<d;j++){
-                Sr(d,j)=sigma*exp(-(dc(d)-dc(j))/alf)*sigma;
+                Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
                 Sr(j,d)=Sr(d,j);
               }
             }
@@ -400,7 +400,7 @@ Type objective_function<Type>::operator() ()
           for (d=0;d<times;d++) {
             Sr(d,d)=sigma*sigma;
             for (j=0;j<d;j++){
-              Sr(d,j)=sigma*exp(-(dc(d)-dc(j))/alf)*sigma;
+              Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
               Sr(j,d)=Sr(d,j);
             }
           }
@@ -1033,7 +1033,7 @@ Type objective_function<Type>::operator() ()
             for (d=0;d<nr;d++) {
               Sr(d,d)=sigma*sigma;
               for (j=0;j<d;j++){
-                Sr(d,j)=sigma*exp(-(dc(d)-dc(j))/alf)*sigma;
+                Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
                 Sr(j,d)=Sr(d,j);
               }
             }
@@ -1073,7 +1073,7 @@ Type objective_function<Type>::operator() ()
           for (d=0;d<times;d++) {
             Sr(d,d)=sigma*sigma;
             for (j=0;j<d;j++){
-              Sr(d,j)=sigma*exp(-(dc(d)-dc(j))/alf)*sigma;
+              Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
               Sr(j,d)=Sr(d,j);
             }
           }

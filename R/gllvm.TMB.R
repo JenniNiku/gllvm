@@ -5,7 +5,7 @@
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, num.RR = 0, family = "poisson",
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
-      trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =0,
+      trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS") {
   if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
@@ -26,12 +26,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     dr <- diag(n)
   }
   if(rstruc>0){#rstruc
+    dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
     if(rstruc==1){# group specific
       nr <- dim(dr)[2]
       if((cstrucn == 2)) {
-        if(is.null(dist) || length(dist)!=nr)
-          dist=1:nr
+        if(is.null(dist) || NROW(dist)!=nr)
+          dist=matrix(1:nr)
       }
     }
     if(rstruc==2) { # correlated within groups
@@ -39,8 +40,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       nr <- dim(dr)[2]
       times <- n/nr#dim(dr)[1]
       if((cstrucn == 2)) {
-        if(is.null(dist) || length(dist)!=times)
-          dist=1:times
+        if(is.null(dist) || NROW(dist)!=times)
+          dist=matrix(1:times)
       }
     }
   }

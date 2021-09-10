@@ -26,7 +26,7 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
-  dist = 0,
+  dist = matrix(0),
   corWithin = FALSE,
   Power = 1.1,
   seed = NULL,
@@ -86,7 +86,7 @@ gllvm(
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
 
-\item{dist}{coordinates or time points used for row parameters correlation structure \code{corExp}.}
+\item{dist}{matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.}
 
 \item{corWithin}{logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.}
 
