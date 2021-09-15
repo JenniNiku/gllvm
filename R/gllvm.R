@@ -30,6 +30,7 @@
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
+#' @param disp.group vector of indices that dispersion parameters (in e.g., a negative-binomial distribution) should be assumed the same for. Defaults to NULL so that all species have their own dispersion parameter.
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -345,7 +346,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
-                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE,
+                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.group = NULL,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
@@ -355,8 +356,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
     num.lv <- 2
   }else if(is.null(num.lv)){num.lv<-0}
-  
-  
+
     constrOpt <- FALSE
     restrict <- 30
     term <- NULL
@@ -641,8 +641,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         }
       }
     }
-
-    
+ 
     #check for redundant predictors
     
     if(!is.null(lv.X)){
@@ -819,12 +818,29 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
     }
     }
+    if(!is.null(disp.group)&!TMB){
+      stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
+    }
+    #grouped overdispersion parameters
+    if(is.null(disp.group)){
+      disp.group <- 1:p
+    }else if(!is.null(disp.group)){
+      if(length(disp.group)!=p){
+        stop("disp.group must be a vector of same length as the number of species.")
+      }
+      if(diff(unique(sort(disp.group)))!=1){
+        stop("disp.group indices must be a sequence without gaps.")
+      }
+      if(min(disp.group)!=1&max(disp.group)!=length(unique(disp.group))){
+        stop("disp.group must start at 1 and end at length(unique(disp.group)).")
+      }
+    }
     n.i <- 1
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, lv.formula = lv.formula, formula = formula,
         method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group)
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
@@ -886,7 +902,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
+            disp.group = disp.group
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -930,13 +947,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
+            disp.group = disp.group
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
       }
+      out$disp.group <- disp.group
       out$seed <- fitg$seed
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn

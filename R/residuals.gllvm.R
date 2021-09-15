@@ -124,8 +124,8 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "negative.binomial") {
         phis <- object$params$phi + 1e-05
-        a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1 / phis[j])
-        b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1 / phis[j])
+        a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1 / phis[object$disp.group[j]])
+        b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1 / phis[object$disp.group[j]])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -133,8 +133,8 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "gaussian") {
         phis <- object$params$phi
-        a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
-        b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+        a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[object$disp.group[j]])
+        b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[object$disp.group[j]])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -142,8 +142,8 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
-        a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
-        b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+        a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[object$disp.group[j]], scale = mu[i, j]/phis[object$disp.group[j]])
+        b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[object$disp.group[j]], scale = mu[i, j]/phis[object$disp.group[j]])
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -184,10 +184,10 @@ residuals.gllvm <- function(object, ...) {
 
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
-        a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = object$Power);
+        a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[object$disp.group[j]], p = object$Power);
         if((as.vector(unlist(y[i, j])) - 1)<0)
           a<-0
-        b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = object$Power)
+        b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[object$disp.group[j]], p = object$Power)
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16

@@ -281,7 +281,7 @@ print.summary.gllvm <- function (x, ...)
       phi <- x$'Standard deviations'
     }
     if(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian")){
-      names(phi) <- row.names(x$Coefficients)
+      # names(phi) <- row.names(x$Coefficients)
       cat("\n(Dispersion estimates for ", x$family, ":\n")
       print(phi)
     }

@@ -7,7 +7,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
-      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS") {
+      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL) {
   if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
 
   if(!is.null(start.params)) starting.val <- "zero"
@@ -151,7 +151,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group)
+    if(starting.val!="zero")fit$phi <- unique(fit$phi)
     ## Set initial values
         sigma <- 1
     if (is.null(start.params)) {
@@ -275,7 +276,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       phis = (phis)
     }
     if (family == "ZIP") {
-      phis <- (colMeans(y == 0) * 0.98) + 0.01
+      if(length(unique(disp.group))!=p){
+      phis <- sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
+      }else{
+        phis <- (colMeans(y == 0) * 0.98) + 0.01  
+      }
       phis <- phis / (1 - phis)
     } # ZIP probability
     if (family %in% c("gaussian", "gamma", "beta")) {
@@ -322,7 +327,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     if(!is.null(phis)) { 
       phi <- phis 
     } else { 
-        phi <- rep(1, p); 
+        phi <- rep(1, length(unique(disp.group))); 
         fit$phi <- phi
     }
     
@@ -334,7 +339,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0
 #    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
-    if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,p))
+    if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,length(unique(disp.group))))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     
     randoml=c(0,0)
@@ -463,7 +468,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
   ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, disp_group = disp.group)
       
       # if(row.eff=="random"){
       #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -522,7 +527,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
     ## Set up data and parameters
       
-      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, disp_group = disp.group)
       
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
       
@@ -578,7 +583,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, disp_group = disp.group)
 
         parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta)
 
@@ -739,7 +744,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, disp_group = disp.group)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -779,7 +784,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           # fit$b.lv <- b.lv
         }
       }
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, disp_group = disp.group)
       
       if(family == "ordinal"){
         data.list$method = 0
@@ -1073,14 +1078,36 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
       
       if(family =="negative.binomial") {
-        out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
-        out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
+        out$params$inv.phi <- phis;
+        out$params$phi <- 1/phis;
+        if(length(unique(disp.group))==p){
+          names(out$params$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$params$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        names(out$params$inv.phi) <-  names(out$params$phi)
       }
       if(family %in% c("gaussian", "tweedie", "gamma","beta")) {
-        out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
+        out$params$phi <- phis;
+        if(length(unique(disp.group))==p){
+          names(out$params$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$params$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
       }
       if(family =="ZIP") {
-        out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
+        out$params$phi <- phis;
+        if(length(unique(disp.group))==p){
+          names(out$params$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$params$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
       }
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ 
@@ -1236,7 +1263,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(family=="ZIP") {
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
-        p0 <- p0+runif(p,0,0.001)
+        p0 <- p0+runif(length(unique(disp.group)),0,0.001)
         pars[p0i] <- p0
       }
       if((method %in% c("VA", "EVA"))){
@@ -1414,19 +1441,43 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(row.eff=="fixed") {out$sd$row.params <- se.row.params}
 
       if(family %in% c("negative.binomial")) {
-        se.lphis <- se[1:p];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
+        se.lphis <- se[1:length(unique(disp.group))];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
         out$sd$phi <- se.lphis*out$params$phi;
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("tweedie", "gaussian", "gamma", "beta")) {
-        se.lphis <- se[1:p];
+        se.lphis <- se[1:length(unique(disp.group))];
         out$sd$phi <- se.lphis*out$params$phi;
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("ZIP")) {
-        se.phis <- se[1:p];
+        se.phis <- se[1:length(unique(disp.group))];
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(row.eff=="random") {
         out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1));

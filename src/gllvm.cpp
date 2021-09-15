@@ -30,6 +30,8 @@ Type objective_function<Type>::operator() ()
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
+  DATA_IVECTOR(disp_group); // vector of indices for grouped nuisance parameters
+  disp_group = disp_group-1;
   PARAMETER_VECTOR(sigmaB); // sds for random slopes
   PARAMETER_VECTOR(sigmaij);// cov terms for random slopes covariance
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect) and 
@@ -691,13 +693,13 @@ Type objective_function<Type>::operator() ()
       if(quadratic<1){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+            nll(i,j) -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(disp_group(j)))*log(iphi(disp_group(j))+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(disp_group(j))) - iphi(disp_group(j))*cQ(i,j) + iphi(disp_group(j))*log(iphi(disp_group(j))) - lgamma(iphi(disp_group(j))) -lfactorial(y(i,j));
           }
         }  
       }else{
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll(i,j) -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
+            nll(i,j) -= -iphi(disp_group(j))*eta(i,j) -(y(i,j)+iphi(disp_group(j)))*log(1+iphi(disp_group(j))*e_eta(i,j))+ lgamma(y(i,j)+iphi(disp_group(j)))+ iphi(disp_group(j))*log(iphi(disp_group(j))) -lgamma(iphi(disp_group(j))) -lfactorial(y(i,j));
             //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
           }
         }
@@ -706,9 +708,9 @@ Type objective_function<Type>::operator() ()
     } else if ((family == 1) & (method>1)) { // NB EVA
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          // nll(i,j) -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));
-          nll(i,j) -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
-          nll(i,j) += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
+          // nll(i,j) -= lgamma(y(i,j)+iphi(disp_group(j))) - lgamma(iphi(disp_group(j))) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(disp_group(j))*log(iphi(disp_group(j)))-(y(i,j)+iphi(disp_group(j)))*log(exp(eta(i,j))+iphi(disp_group(j)));
+          nll(i,j) -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(disp_group(j)), 1);
+          nll(i,j) += (((iphi(disp_group(j))+y(i,j)) / (iphi(disp_group(j))+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(disp_group(j))+y(i,j))*pow(iphi(disp_group(j))+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
           
         }
       }
@@ -751,20 +753,20 @@ Type objective_function<Type>::operator() ()
     } else if(family==3) {//gaussian
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
+          nll(i,j) -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(disp_group(j))*iphi(disp_group(j))) - 0.5*(y(i,j)*y(i,j)/(iphi(disp_group(j))*iphi(disp_group(j))) + log(2*iphi(disp_group(j))*iphi(disp_group(j)))) - log(M_PI)/2;
         }
       }
     } else if(family==4) {//gamma
       if(quadratic<1){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));          
+            nll(i,j) -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(disp_group(j)) + log(y(i,j)*iphi(disp_group(j)))*iphi(disp_group(j)) - log(y(i,j)) -lgamma(iphi(disp_group(j)));          
           }
         }
       }else{
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
-            nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+            nll(i,j) -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(disp_group(j)) + log(y(i,j)*iphi(disp_group(j)))*iphi(disp_group(j)) - log(y(i,j)) -lgamma(iphi(disp_group(j)));
           }
         }
       }
@@ -774,12 +776,12 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         for (int j=0; j<p; j++) {
           // Tweedie log-likelihood:
-          nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), v, true);
+          nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)), iphi(disp_group(j)), v, true);
           if (y(i,j) == 0) {
             // Hessian-trace part:
-            nll(i,j) += (1/iphi(j)) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
+            nll(i,j) += (1/iphi(disp_group(j))) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
           } else if (y(i,j) > 0) {
-            nll(i,j) -= (1/iphi(j)) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
+            nll(i,j) -= (1/iphi(disp_group(j))) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
           }
         }
       }
@@ -903,9 +905,9 @@ Type objective_function<Type>::operator() ()
           }
           CppAD::vector<Type> a(2);
           CppAD::vector<Type> b(2);
-          a[0] = mu*iphi(j);
+          a[0] = mu*iphi(disp_group(j));
           a[1] = 1;
-          b[0] = (1-mu)*iphi(j);
+          b[0] = (1-mu)*iphi(disp_group(j));
           b[1] = 1;
           CppAD::vector<Type> aa = a;
           CppAD::vector<Type> bb = b;
@@ -917,8 +919,8 @@ Type objective_function<Type>::operator() ()
           Type trig_b = Type(atomic::D_lgamma(bb)[0]);
           //       
           nll(i,j) -= dbeta(squeeze(y(i,j)), Type(a[0]), Type(b[0]), 1);
-          nll(i,j) -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
-          nll(i,j) -= iphi(j) * mu_prime2 * (log(squeeze(y(i,j))) - log(1-squeeze(y(i,j)))) * cQ(i,j);
+          nll(i,j) -= ((-trig_a) * pow(iphi(disp_group(j))*mu_prime, 2) - dig_a * iphi(disp_group(j)) * mu_prime2 - trig_b * pow(iphi(disp_group(j))*mu_prime, 2) + dig_b * iphi(disp_group(j)) * mu_prime2) * cQ(i,j);
+          nll(i,j) -= iphi(disp_group(j)) * mu_prime2 * (log(squeeze(y(i,j))) - log(1-squeeze(y(i,j)))) * cQ(i,j);
           //       
         }
       }
@@ -1143,7 +1145,7 @@ Type objective_function<Type>::operator() ()
     } else if(family==1){//negative.binomial family
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll(i,j) -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+          nll(i,j) -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(disp_group(j))+mu(i,j))-iphi(disp_group(j))*log(1+mu(i,j)/iphi(disp_group(j))) + lgamma(y(i,j)+iphi(disp_group(j))) - lgamma(iphi(disp_group(j))) -lfactorial(y(i,j));
         }
       }} else if(family==2) {//binomial family
         for (int j=0; j<p;j++){
@@ -1156,26 +1158,26 @@ Type objective_function<Type>::operator() ()
       } else if(family==3){//gaussian family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll(i,j) -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
+            nll(i,j) -= dnorm(y(i,j), eta(i,j), iphi(disp_group(j)), true); 
           }
         }
       } else if(family==4){//gamma family
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll(i,j) -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
+            nll(i,j) -= dgamma(y(i,j), iphi(disp_group(j)), exp(eta(i,j))/iphi(disp_group(j)), true); 
           }
         }
       } else if(family==5){//tweedie familyF
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
+            nll(i,j) -= dtweedie(y(i,j), exp(eta(i,j)),iphi(disp_group(j)),extra(0), true); 
           }
         }
       } else if(family==6) {//zero-infl-poisson
         iphi=iphi/(1+iphi);
         for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            nll(i,j) -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
+            nll(i,j) -= dzipois(y(i,j), exp(eta(i,j)),iphi(disp_group(j)), true); 
           }
         }
       } else if(family==8) {// exponential family
@@ -1189,7 +1191,7 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
-            nll(i,j) -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(j)), Type((1-mu(i,j))*iphi(j)), 1);
+            nll(i,j) -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(disp_group(j))), Type((1-mu(i,j))*iphi(disp_group(j))), 1);
           }
         }
       }
