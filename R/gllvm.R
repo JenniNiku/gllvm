@@ -828,8 +828,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(length(disp.group)!=p){
         stop("disp.group must be a vector of same length as the number of species.")
       }
-      if(diff(unique(sort(disp.group)))!=1){
-        stop("disp.group indices must be a sequence without gaps.")
+      if(any(diff(unique(sort(disp.group)))!=1)){
+        stop("disp.group indices must form a sequence without gaps.")
       }
       if(min(disp.group)!=1&max(disp.group)!=length(unique(disp.group))){
         stop("disp.group must start at 1 and end at length(unique(disp.group)).")

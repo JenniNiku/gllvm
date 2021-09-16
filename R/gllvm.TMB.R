@@ -487,7 +487,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$Br = factor(rep(NA,length(Br)))
         #map.list2$lambda = factor(rep(NA, length(lambda)))
         map.list2$u = factor(rep(NA, length(u)))
-        map.list2$lg_phi = factor(rep(NA, length(phi)))
+        map.list2$lg_phi = factor(rep(NA, length(unique(disp.group))))
         map.list2$log_sigma = factor(rep(NA, length(sigma)))
         map.list2$sigmaB = factor(rep(NA,length(sigmaB)))
         map.list2$sigmaij = factor(rep(NA,length(sigmaij)))

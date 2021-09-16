@@ -476,7 +476,7 @@ trait.TMB <- function(
     
     map.list <- list()    
     #    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
-    if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,length(disp.group)))
+    if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,length(unique(disp.group))))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     
   ### family settings
