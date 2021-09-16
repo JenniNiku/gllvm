@@ -851,8 +851,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
     beta <- t(coef(RRmod))
+    if(ncol(beta)>1){
     betaSD=apply(beta,1,sd)
     beta=beta/betaSD
+    }
     qr.beta=qr(t(beta))
     R=t(qr.R(qr.beta))
     R=R[,1:num.RR,drop=F]/sqrt(num.RR*nrow(RRmod$coefficients))
