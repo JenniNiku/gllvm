@@ -10,7 +10,7 @@ trait.TMB <- function(
       link="logit",n.init=1,start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist = matrix(0),
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE
-      ,zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS") {
+      ,zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
   
@@ -242,7 +242,7 @@ trait.TMB <- function(
     #### Calculate starting values
 
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
-                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc)
+                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group)
 
     ## Set initial values
     
