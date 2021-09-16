@@ -129,8 +129,22 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   lv <- getLV(object, type = type)
   
   if ((num.lv+(num.lv.c+num.RR)) == 1) {
-    if(num.lv==1)plot(1:n, lv, ylab = "LV1", xlab = "Row index")
-    if((num.lv.c+num.RR)==1)plot(1:n, lv, ylab = "CLV1", xlab = "Row index")
+    if(num.lv==1){
+      plot(1:n, lv, ylab = "LV1", xlab = "Row index", type="n") 
+      if (symbols) {
+        points(lv, col = s.colors, ...)
+      } else {
+        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+      }
+    }
+    if((num.lv.c+num.RR)==1){
+      plot(1:n, lv, ylab = "CLV1", xlab = "Row index", type="n") 
+      if (symbols) {
+        points(lv, col = s.colors, ...)
+      } else {
+        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+      }
+    }    
   }
   
   if ((num.lv+(num.lv.c+num.RR)) > 1) {
