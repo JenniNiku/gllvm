@@ -56,11 +56,16 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     svd_rotmat_sites <- diag(num.lv.c+num.RR+num.lv)
   }
-  if(quadratic==FALSE){
-    M <- cbind(object$params$beta0, object$params$theta[,1:(num.lv.c+num.RR+num.lv)]%*%svd_rotmat_sites)  
+  if(num.lv|num.lv.c|num.RR>0){
+    if(quadratic==FALSE){
+      M <- cbind(object$params$beta0, object$params$theta[,1:(num.lv.c+num.RR+num.lv)]%*%svd_rotmat_sites)  
+    }else{
+      M <- cbind(object$params$beta0, optima(object,sd.errors=F)%*%svd_rotmat_sites)  
+    }  
   }else{
-    M <- cbind(object$params$beta0, optima(object,sd.errors=F)%*%svd_rotmat_sites)  
+    M <- cbind(object$params$beta0)
   }
+  
   
   sumry <- list()
   sumry$digits <- digits
