@@ -103,7 +103,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           mu <- cbind(rep(1,nrow(y)),X) %*% fit.mva$coefficients
           # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
-          fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))
+          fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))[disp.group]
         }
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
@@ -227,12 +227,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           B <- c(env,trait,inter)
         }
         params <- t(fit.mva$coefficients)
-        fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))
+        fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))[disp.group]
       }
       #params <- t(fit.mva$coef) #!!
     } else {
       fit.mva<-list()
-      fit.mva$phi <- rep(1, length(unique(disp.group)))
+      fit.mva$phi <- rep(1, p)
     }
   }
   
@@ -430,7 +430,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       index <- matrix(0,n,num.lv.c+num.lv)
     }
     
-    phi <- rep(1,length(unique(disp.group)))
+    phi <- rep(1,p)
     if((num.lv.c+num.RR)>0){
       b.lv <- matrix(0.1,nrow=ncol(lv.X),ncol=(num.lv.c+num.RR))
     }
@@ -551,10 +551,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           for (j in 1:p) {
             if (family == "tweedie") {
               phis <- phis + 1e-05
-              a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[disp.group[j]], p = Power);
+              a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
               if((as.vector(unlist(y[i, j])) - 1)<0)
                 a<-0
-              b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[disp.group[j]], p = Power)
+              b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
               u <- runif(n = 1, min = a, max = b)
               if(u==1) u=1-1e-16
               if(u==0) u=1e-16
@@ -568,8 +568,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             }
             if (family == "negative.binomial") {
               phis <- phis + 1e-05
-              a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[disp.group[j]])
-              b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[disp.group[j]])
+              a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+              b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
@@ -580,15 +580,15 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "gaussian") {
-              a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
-              b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
+              a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+              b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
               # ds.res[i, j] <- (y[i, j] - mu[i, j])/phis[j]
             }
             if (family == "gamma") {
-              a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
-              b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
+              a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+              b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
@@ -599,8 +599,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "beta") {
-              a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
-              b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
+              a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
@@ -749,10 +749,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       for (i in 1:n) {
         for (j in 1:p) {
           if (family == "tweedie") {
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[disp.group[j]], p = Power);
+            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[disp.group[j]], p = Power)
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
@@ -766,8 +766,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           }
           if (family == "negative.binomial") {
             phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[disp.group[j]])
-            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[disp.group[j]])
+            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -778,14 +778,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
-            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
+            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
-            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
+            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -796,8 +796,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
-            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
+            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -895,10 +895,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         for (j in 1:p) {
           if (family == "tweedie") {
             phis <- phis + 1e-05
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[disp.group[j]], p = Power);
+            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[disp.group[j]], p = Power)
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
@@ -912,8 +912,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           }
           if (family == "negative.binomial") {
             phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[disp.group[j]])
-            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[disp.group[j]])
+            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -924,14 +924,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
-            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
+            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[disp.group[j]])
-            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[disp.group[j]])
+            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -942,8 +942,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
-            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
+            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -1055,10 +1055,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         for (j in 1:p) {
           if (family == "tweedie") {
             phis <- phis + 1e-05
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[disp.group[j]], p = Power);
+            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[disp.group[j]], p = Power)
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
@@ -1072,8 +1072,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           }
           if (family == "negative.binomial") {
             phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[disp.group[j]])
-            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[disp.group[j]])
+            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
+            b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -1084,14 +1084,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
-            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[disp.group[j]])
+            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
-            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[disp.group[j]], scale = mu[i, j]/phis[disp.group[j]])
+            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -1102,8 +1102,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
-            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[disp.group[j]]*mu[i, j], shape2 = phis[disp.group[j]]*(1-mu[i, j]))
+            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
