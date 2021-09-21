@@ -154,25 +154,25 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       cal <- cal + length(object$params$sigmaB)
     }
     if(object$family == "negative.binomial"){
-      s <- dim(M)[1]
-      rnames[(cal + 1):s] <- paste("inv.phi", names(object$params$beta0), sep = ".")
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$inv.phi), sep = ".")
     }
     
     if(object$family == "tweedie"){
-      s <- dim(M)[1]
-      rnames[(cal + 1):s] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
+      s <-length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
     }
     if(object$family == "ZIP"){
-      s <- dim(M)[1]
-      rnames[(cal + 1):s] <- paste("p", names(object$params$p), sep = ".")
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("p", names(object$params$p), sep = ".")
     }
     if(object$family == "gaussian"){
-      s <- dim(M)[1]
-      rnames[(cal + 1):s] <- paste("Standard deviations phi", names(object$params$phi), sep = ".")
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("Standard deviations phi", names(object$params$phi), sep = ".")
     }
     if(object$family == "gamma"){
-      s <- dim(M)[1]
-      rnames[(cal + 1):s] <- paste("Shape phi", names(object$params$phi), sep = ".")
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("Shape phi", names(object$params$phi), sep = ".")
     }
     rownames(M) <- rnames
   } else {

@@ -21,8 +21,11 @@
   cex.spp = 0.7,
   spp.colors = "blue",
   arrow.scale = 0.8,
+  arrow.spp.scale = 0.8,
   arrow.ci = TRUE,
+  arrow.lty = "solid",
   spp.arrows = NULL,
+  spp.arrow.lty = "dashed",
   cex.env = 0.7,
   lab.dist = 0.1,
   lwd.ellips = 0.5,
@@ -62,9 +65,13 @@
 
 \item{arrow.scale}{positive value, to scale arrows}
 
+\item{arrow.spp.scale}{positive value, to scale arrows of species}
+
 \item{arrow.ci}{represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}}
 
-\item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.}
+\item{arrow.lty}{linetype for arrows in constrained}
+
+\item{spp.arrow.lty}{linetype for species arrows}
 
 \item{cex.env}{size of labels for arrows in constrianed ordination}
 
@@ -77,6 +84,8 @@
 \item{lty.ellips}{line type for prediction ellipses. See graphical parameter lty.}
 
 \item{...}{additional graphical arguments.}
+
+\item{spp.arrow}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.}
 }
 \description{
 Plots latent variables and their corresponding coefficients (biplot).

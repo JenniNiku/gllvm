@@ -75,7 +75,7 @@ Type objective_function<Type>::operator() ()
   // Set first row param to zero, if row effects are fixed
   if(random(0)<1){  r0(0,0) = 0;}
   int nlvr = num_lv+num_lv_c;
-
+  
   // if row params are in the same form as LVs, let's put them together
   if((random(0)>0) & (n == nr)){
     nlvr++;
@@ -95,7 +95,7 @@ Type objective_function<Type>::operator() ()
       u = r0;
     }
   }
-
+  
   matrix<Type> eta(n,p);
   eta.fill(0.0);
   matrix<Type> lam(n,p);
@@ -141,7 +141,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     //To create lambda as matrix upper triangle
-  // put LV loadings into a matrix
+    // put LV loadings into a matrix
     if (num_lv>0){
       int tri = 0;
       if((num_lv_c+num_RR)>0){
@@ -246,7 +246,7 @@ Type objective_function<Type>::operator() ()
     array<Type> A(nlvr,nlvr,n);
     A.fill(0.0);
     
-  // Set up variational covariance matrix for LVs 
+    // Set up variational covariance matrix for LVs 
     if(nlvr>0){
       // Include variational covs of row effects, if structure is same for both
       if(nlvr>(num_lv+num_lv_c)){
@@ -262,27 +262,27 @@ Type objective_function<Type>::operator() ()
       }
       
       
-    if((num_lv+num_lv_c)>0){
-      // log-Cholesky parametrization for A_i:s
-      for (int d=0; d<(num_lv+num_lv_c); d++){
-        for(int i=0; i<n; i++){
-          A(d+(nlvr-num_lv-num_lv_c),d+(nlvr-num_lv-num_lv_c),i)=exp(Au(d*n+i));
-          // A(d,d,i)=exp(Au(d*n+i));
+      if((num_lv+num_lv_c)>0){
+        // log-Cholesky parametrization for A_i:s
+        for (int d=0; d<(num_lv+num_lv_c); d++){
+          for(int i=0; i<n; i++){
+            A(d+(nlvr-num_lv-num_lv_c),d+(nlvr-num_lv-num_lv_c),i)=exp(Au(d*n+i));
+            // A(d,d,i)=exp(Au(d*n+i));
+          }
+        }
+        if(Au.size()>((num_lv+num_lv_c)*n)){
+          int k=0;
+          for (int c=0; c<(num_lv+num_lv_c); c++){
+            for (int r=c+1; r<(num_lv+num_lv_c); r++){
+              for(int i=0; i<n; i++){
+                A(r+(nlvr-num_lv-num_lv_c),c+(nlvr-num_lv-num_lv_c),i)=Au((num_lv+num_lv_c)*n+k*n+i);
+                // A(r,c,i)=Au(nlvr*n+k*n+i);
+                // A(c,r,i)=A(r,c,i);
+              }
+              k++;
+            }}
         }
       }
-      if(Au.size()>((num_lv+num_lv_c)*n)){
-        int k=0;
-        for (int c=0; c<(num_lv+num_lv_c); c++){
-          for (int r=c+1; r<(num_lv+num_lv_c); r++){
-            for(int i=0; i<n; i++){
-              A(r+(nlvr-num_lv-num_lv_c),c+(nlvr-num_lv-num_lv_c),i)=Au((num_lv+num_lv_c)*n+k*n+i);
-              // A(r,c,i)=Au(nlvr*n+k*n+i);
-              // A(c,r,i)=A(r,c,i);
-            }
-            k++;
-          }}
-      }
-    }
       //set VA covariances for random rows to zero for quadratic model
       if((quadratic>0)&&(nlvr>(num_lv+num_lv_c))){
         for(int i=0; i<n; i++){
@@ -293,7 +293,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-
+      
       // for(int i=0; i<n; i++){
       //   A.col(i) = Delta*A.col(i).matrix();
       // }
@@ -376,8 +376,8 @@ Type objective_function<Type>::operator() ()
           nll.array() -= 0.5*(log((Arm*Arm.transpose()).determinant()) - (Sr.inverse()*(Arm*Arm.transpose())).diagonal().sum()-(r0.transpose()*(Sr.inverse()*r0)).sum())/(n*p);// log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
           
           nll.array() -= 0.5*(nr-log(Sr.determinant()))/(n*p);
-            // REPORT(Arm);
-            REPORT(Sr);
+          // REPORT(Arm);
+          REPORT(Sr);
         }
         
       } else if(rstruc == 2){
@@ -510,7 +510,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-
+    
     matrix <Type> e_eta(n,p);
     e_eta.fill(0.0);
     //components for reduced rank regression terms
@@ -552,11 +552,11 @@ Type objective_function<Type>::operator() ()
     
     if(nlvr>0){
       //scale LVs with standard deviations, as well as the VA covariance matrices
-        u *= Delta;
-
-        for (int i=0; i<n; i++) {
-          A.col(i) = (Delta*A.col(i).matrix()).array(); 
-        }
+      u *= Delta;
+      
+      for (int i=0; i<n; i++) {
+        A.col(i) = (Delta*A.col(i).matrix()).array(); 
+      }
       
       //constrained ordination terms
       if(num_lv_c>0){
@@ -583,8 +583,8 @@ Type objective_function<Type>::operator() ()
       lam += u*newlam;
       
       if(quadratic < 1){
-
-      //Binomial, Gaussian, Ordinal
+        
+        //Binomial, Gaussian, Ordinal
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             cQ(i,j) += 0.5*((newlam.col(j)).transpose()*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()*newlam.col(j))).sum();
@@ -958,7 +958,7 @@ Type objective_function<Type>::operator() ()
         
       }
     }
-
+    
     // Laplace approximation
     
     // add offset to lin. predictor 
@@ -967,7 +967,7 @@ Type objective_function<Type>::operator() ()
       eta += r0*xr;
     }
     
-
+    
     // Include random slopes if random(1)>0
     if(random(1)>0){
       vector<Type> sdsv = exp(sigmaB);
@@ -1002,7 +1002,7 @@ Type objective_function<Type>::operator() ()
       
     }
     
-
+    
     // Structured Row/Site effects
     if(((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0)){
       int i,j,d;
@@ -1047,8 +1047,8 @@ Type objective_function<Type>::operator() ()
               }
             }
           }
-            MVNORM_t<Type> mvnorm(Sr);
-            nll.array() += mvnorm(r0.col(0))/(n*p);
+          MVNORM_t<Type> mvnorm(Sr);
+          nll.array() += mvnorm(r0.col(0))/(n*p);
         }
         
         for (int j=0; j<p;j++){

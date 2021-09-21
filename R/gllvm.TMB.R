@@ -7,7 +7,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
-      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS") {
+      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL) {
   if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
 
   if(!is.null(start.params)) starting.val <- "zero"
@@ -151,7 +151,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group)
+
     ## Set initial values
         sigma <- 1
     if (is.null(start.params)) {
@@ -275,7 +276,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       phis = (phis)
     }
     if (family == "ZIP") {
-      phis <- (colMeans(y == 0) * 0.98) + 0.01
+      if(length(unique(disp.group))!=p){
+      phis <- sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
+      phis <- phis[disp.group]
+      }else{
+        phis <- (colMeans(y == 0) * 0.98) + 0.01  
+      }
       phis <- phis / (1 - phis)
     } # ZIP probability
     if (family %in% c("gaussian", "gamma", "beta")) {
@@ -334,7 +340,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0
 #    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
-    if(family %in% c("poisson","binomial","ordinal","exponential")) map.list$lg_phi <- factor(rep(NA,p))
+    if(family %in% c("poisson","binomial","ordinal","exponential")){
+      map.list$lg_phi <- factor(rep(NA,p))
+    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "ZIP")){
+      map.list$lg_phi <- factor(disp.group)
+    }
     if(family != "ordinal") map.list$zeta <- factor(NA)
     
     randoml=c(0,0)
@@ -482,7 +492,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$Br = factor(rep(NA,length(Br)))
         #map.list2$lambda = factor(rep(NA, length(lambda)))
         map.list2$u = factor(rep(NA, length(u)))
-        map.list2$lg_phi = factor(rep(NA, length(phi)))
+        map.list2$lg_phi = factor(rep(NA, p))
         map.list2$log_sigma = factor(rep(NA, length(sigma)))
         map.list2$sigmaB = factor(rep(NA,length(sigmaB)))
         map.list2$sigmaij = factor(rep(NA,length(sigmaij)))
@@ -527,7 +537,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
       
 #### Call makeADFun
-
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
@@ -567,7 +576,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
         sigma.lv1 <- param1[nam=="sigmaLV"]
         u1 <- matrix(param1[nam=="u"],n,num.lv+num.lv.c)
-        if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
+        if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
         if(row.eff == "random"){
@@ -610,7 +619,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       param<-objr$env$last.par.best
       if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
-        phis <- exp(param[names(param)=="lg_phi"])
+        phis <- exp(param[names(param)=="lg_phi"])[disp.group]
       }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
@@ -862,7 +871,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         b.lv <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="b_lv"],ncol=num.RR,nrow=ncol(lv.X))
         b <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="b"],num.X+1,p)
 
-        if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])
+        if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])[disp.group]
         
         parameter.list = list(r0=matrix(r0), b = b, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
 
@@ -964,9 +973,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       new.loglik <- objr$env$value.best[1]
       
       if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma", "beta")) {
-        phis <- exp(param[names(param)=="lg_phi"])
+        phis <- exp(param[names(param)=="lg_phi"])[disp.group]
         if(family=="ZIP") {
-          lp0 <- param[names(param)=="lg_phi"]; out$lp0 <- lp0
+          lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
         }
       }
@@ -1073,14 +1082,29 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
       
       if(family =="negative.binomial") {
-        out$params$inv.phi <- phis; names(out$params$inv.phi) <- colnames(out$y);
-        out$params$phi <- 1/phis; names(out$params$phi) <- colnames(out$y);
+        out$params$inv.phi <- phis;
+        out$params$phi <- 1/phis;
+          names(out$params$phi) <- colnames(y);
+        if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- names(disp.group),silent=T)
+        }
+        names(out$params$inv.phi) <-  names(out$params$phi)
       }
       if(family %in% c("gaussian", "tweedie", "gamma","beta")) {
-        out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
+        out$params$phi <- phis;
+        names(out$params$phi) <- colnames(y);
+        if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- names(disp.group),silent=T)
+        }
       }
       if(family =="ZIP") {
-        out$params$phi <- phis; names(out$params$phi) <- colnames(out$y);
+        out$params$phi <- phis;
+        names(out$params$phi) <- colnames(y);
+        
+        if(!is.null(names(disp.group))){
+          try(names(out$params$phi) <- names(disp.group),silent=T)
+        }
+        
       }
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ 
@@ -1235,8 +1259,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       if(family=="ZIP") {
         p0i <- names(pars)=="lg_phi"
-        p0 <- pars[p0i]
-        p0 <- p0+runif(p,0,0.001)
+        p0 <- pars[p0i][disp.group]
+        p0 <- p0+runif(length(unique(disp.group)),0,0.001)[disp.group]
         pars[p0i] <- p0
       }
       if((method %in% c("VA", "EVA"))){
@@ -1414,19 +1438,36 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(row.eff=="fixed") {out$sd$row.params <- se.row.params}
 
       if(family %in% c("negative.binomial")) {
-        se.lphis <- se[1:p];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
+        se.lphis <- se[1:length(unique(disp.group))][disp.group];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
         out$sd$phi <- se.lphis*out$params$phi;
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        names(out$sd$phi) <- colnames(y);
+        
+        if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- names(disp.group),silent=T)
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("tweedie", "gaussian", "gamma", "beta")) {
-        se.lphis <- se[1:p];
+        se.lphis <- se[1:length(unique(disp.group))][disp.group];
         out$sd$phi <- se.lphis*out$params$phi;
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        names(out$sd$phi) <- colnames(y);
+         if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- names(disp.group),silent=T)
+        }
+        
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("ZIP")) {
-        se.phis <- se[1:p];
+        se.phis <- se[1:length(unique(disp.group))][disp.group];
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
-        names(out$sd$phi) <- colnames(y);  se <- se[-(1:p)]
+        names(out$sd$phi) <- colnames(y);
+        
+        if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- names(disp.group),silent=T)
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(row.eff=="random") {
         out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1));

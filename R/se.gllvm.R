@@ -42,6 +42,7 @@ se.gllvm <- function(object, ...){
   rstruc = object$rstruc
   family = object$family
   familyn <- objrFinal$env$data$family
+  disp.group <- object$disp.group
   out <- list()
   if (!is.null(object$TR)) {
     {
@@ -166,7 +167,7 @@ se.gllvm <- function(object, ...){
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }
         out$sd$sigma.lv  <- se.sigma.lv
-        names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:num.lv])
+        names(out$sd$sigma.lv) <- colnames(object$params$theta[,1:num.lv])
       }
 
       out$sd$beta0 <- se.beta0; 
@@ -175,20 +176,43 @@ se.gllvm <- function(object, ...){
       if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
       
       if(family %in% c("negative.binomial")) {
-        se.lphis <- se[1:p];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+        se.lphis <- se[1:length(unique(disp.group))];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
         out$sd$phi <- se.lphis*object$params$phi;
-        names(out$sd$inv.phi) <- names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("gaussian","tweedie","gamma", "beta")) {
-        se.lphis <- se[1:p];
+        se.lphis <- se[1:length(unique(disp.group))];
         out$sd$phi <- se.lphis*object$params$phi;
-        names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(family %in% c("ZIP")) {
-        lp0 <- objrFinal$par[names(objrFinal$par)=="lg_phi"]
-        se.phis <- se[1:p];
+        se.phis <- se[1:length(unique(disp.group))];
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
-        names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+        names(out$sd$inv.phi) <-  names(out$sd$phi)
+        se <- se[-(1:length(unique(disp.group)))]
       }
       if(!is.null(object$randomX)){
         nr <- ncol(xb)
@@ -402,7 +426,7 @@ se.gllvm <- function(object, ...){
     }
     if((num.lv+num.lv.c)>0){
       out$sd$sigma.lv  <- se.sigma.lv
-      names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c)])
+      names(out$sd$sigma.lv) <- colnames(object$params$theta[,1:(num.lv+num.lv.c)])
     }
     
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
@@ -413,20 +437,43 @@ se.gllvm <- function(object, ...){
     if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
     
     if(family %in% c("negative.binomial")) {
-      se.lphis <- se[1:p];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+      se.lphis <- se[1:length(unique(disp.group))];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
       out$sd$phi <- se.lphis*object$params$phi;
-      names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+      if(length(unique(disp.group))==p){
+        names(out$sd$phi) <- colnames(y);
+      }else if(!is.null(names(disp.group))){
+        try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+      }else{
+        names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+      }
+      names(out$sd$inv.phi) <-  names(out$sd$phi)
+      se <- se[-(1:length(unique(disp.group)))]
     }
-    if(family %in% c("tweedie", "gaussian", "gamma","beta")) {
-      se.lphis <- se[1:p];
+    if(family %in% c("gaussian","tweedie","gamma", "beta")) {
+      se.lphis <- se[1:length(unique(disp.group))];
       out$sd$phi <- se.lphis*object$params$phi;
-      names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+      if(length(unique(disp.group))==p){
+        names(out$sd$phi) <- colnames(y);
+      }else if(!is.null(names(disp.group))){
+        try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+      }else{
+        names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+      }
+      
+      se <- se[-(1:length(unique(disp.group)))]
     }
     if(family %in% c("ZIP")) {
-      lp0 <- objrFinal$par[names(objrFinal$par)=="lg_phi"]
-      se.phis <- se[1:p];
+      se.phis <- se[1:length(unique(disp.group))];
       out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
-      names(out$sd$phi) <- colnames(object$y);  se <- se[-(1:p)]
+      if(length(unique(disp.group))==p){
+        names(out$sd$phi) <- colnames(y);
+      }else if(!is.null(names(disp.group))){
+        try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+      }else{
+        names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+      }
+      names(out$sd$inv.phi) <-  names(out$sd$phi)
+      se <- se[-(1:length(unique(disp.group)))]
     }
     if(object$row.eff=="random") { 
       out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
