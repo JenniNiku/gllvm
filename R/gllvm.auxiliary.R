@@ -1069,7 +1069,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           }
           if (family == "poisson") {
             b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
-            a <- pmin(b,pois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
+            a <- pmin(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
