@@ -10,9 +10,10 @@
 #' @param jitter   if \code{TRUE}, jittering is applied on points.
 #' @param jitter.amount   numeric, positive value indicating an amount of jittering for each point, defaults to 0.2 (jitter range).
 #' @param s.colors colors for sites
+#' @param s.cex size of site labels
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param cex.spp size of species labels in biplot
-#' @param cex.env size of labels for arrows in constrianed ordination
+#' @param cex.env size of labels for arrows in constrained ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
 #' @param spp.arrow plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
 #' @param spp.arrow.lty linetype for species arrows
@@ -86,7 +87,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrow.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrow.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(is.null(spp.arrows)){
@@ -134,7 +135,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+        text(lv, label = 1:n, cex = s.cex, col = s.colors)
       }
     }
     if((num.lv.c+num.RR)==1){
@@ -142,7 +143,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+        text(lv, label = 1:n, cex = s.cex, col = s.colors)
       }
     }    
   }
@@ -249,7 +250,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
+          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
         }
       if (jitter)
         if (symbols) {
@@ -259,7 +260,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           text(
             (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
             (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-            label = 1:n, cex = 1.2, col = s.colors )
+            label = 1:n, cex = s.cex, col = s.colors )
         }
     }
     
@@ -309,7 +310,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
+          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
         }
 
         text(
@@ -325,7 +326,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           text(
             (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
             (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
-            label = 1:n, cex = 1.2, col = s.colors )
+            label = 1:n, cex = s.cex, col = s.colors )
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
@@ -392,13 +393,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       units = par(c('usr', 'pin'))
       xi = with(units, pin[1L]/diff(usr[1:2]))
       yi = with(units, pin[2L]/diff(usr[3:4]))
-      idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) <.0011
-      if(any(idx)){
-        for(i in which(idx)){
+      # idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) >.001
+      idx <-  apply(ends,1,function(x)if(all(abs(x)<0.001)){FALSE}else{TRUE})
+      if(any(!idx)){
+        for(i in which(!idx)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
         }
-        ends <- ends[!idx,]
-        LVcoef <- LVcoef[!idx,]
+        ends <- ends[idx,]
+        LVcoef <- LVcoef[idx,]
       }
       
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.2,lty=lty)
