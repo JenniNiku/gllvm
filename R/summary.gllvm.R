@@ -164,7 +164,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if (!is.null(object$params$row.params)) {
     sumry$'Row intercepts' <- object$params$row.params
   }
-  
+  sumry$rstruc <- object$rstruc
   if (object$row.eff == "random") {
     object$params$sigma2 = object$params$sigma[1] ^ 2
     names(object$params$sigma2) = "sigma^2"
@@ -293,5 +293,9 @@ print.summary.gllvm <- function (x, ...)
   }
   
   cat("\n")
+  if(x$rstruc>0){
+    warning("Unbalanced design detected, please interpret p-values with extreme caution. \n")
+  }
+  
   invisible(x)
 }
