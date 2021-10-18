@@ -17,7 +17,7 @@ In this example we demonstrate how to implement the quadratic response model in 
 
 We will use the hunting spider dataset as an example, which includes 12 species at 100 sites. It also includes measurements of the environment at 28 sites, though we will not use those here.
 
-```{r}
+```{r, message=F, warning=F}
 library(gllvm)
 data("spider")
 Y <- spider$abund
@@ -53,7 +53,7 @@ GLLVMs are sensitive to the starting values, and with a quadratic response model
 Now, we can use information criteria to determine which of the models fits the hunting spider data best.
 
 ```{r}
-AIC(ftEqTol,ftComTol,ftUneqTol)
+AICc(ftEqTol,ftComTol,ftUneqTol)
 ```
 The unequal tolerances model fits best, as measured by AICc. Species optima and tolerances, and their approximate standard errors, can be extracted:
 
@@ -65,7 +65,7 @@ optima(ftUneqTol)
 tolerances(ftUneqTol)
 ```
 
-The standard deviation of the latent variables can be printed using the $summary(.)$ function. Since latent variable models are scale invariant, this scale parameter is relative to the identifiability constraint (diagonal of the species scores matrix). It can be understood as a measure of gradient length, though for a measure that might be more comparable to DCA (i.e. on average unit variance species curves), see the reference below.
+The standard deviation of the latent variables can be printed using the $\text{summary}(.)$ function. Since latent variable models are scale invariant, this scale parameter is relative to the identifiability constraint (diagonal of the species scores matrix). It can be understood as a measure of gradient length, though for a measure that might be more comparable to DCA (i.e. on average unit variance species curves), see the reference below.
 
 The residual variation explained can be used to calculate residual correlations, or to partition variation, similar as in the vanilla GLLVM:
 ```{r}
@@ -77,7 +77,7 @@ getResidualCov(ftUneqTol)$var.q
 getResidualCov(ftUneqTol)$var.q2
 ```
 
-Finally, we can use the $ordiplot(.)$ function to visualize the species optima. However, since species optima can be quite large if they are unobserved, or if too little information is present in the data, creating a nice figure can be challenging. One attempt to improve readability of the species optima in a figure is to point an arrow in their general direction, if species optima are "unobserved": outside of the range of the predicted site scores.
+Finally, we can use the $\text{ordiplot}(.)$ function to visualize the species optima. However, since species optima can be quite large if they are unobserved, or if too little information is present in the data, creating a nice figure can be challenging. One attempt to improve readability of the species optima in a figure is to point an arrow in their general direction, if species optima are "unobserved": outside of the range of the predicted site scores.
 
 ```{r quad_plot}
 ordiplot(ftUneqTol, biplot=TRUE, spp.arrows = TRUE)
