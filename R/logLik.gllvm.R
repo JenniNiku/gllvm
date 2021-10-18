@@ -23,7 +23,6 @@ logLik.gllvm <- function(object, ...)
   logL <- object$logL
   if (!is.null(object$params$inv.phi)) {
     object$params$inv.phi <- NULL
-
   }
     if(object$family=="ordinal"){
       if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]
@@ -43,8 +42,10 @@ logLik.gllvm <- function(object, ...)
   if(object$num.lv>0|object$num.RR>0|object$num.lv.c>0){
     object$params$theta[object$params$theta==0|object$params$theta==1]<-NA  
   }
-  
   attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))])
+  if(length(unique(object$disp.group))<ncol(object$y)){
+    attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
+  }
   attributes(logL)$nobs <- prod(dim(object$y))
   class(logL) <- "logLik"
   return(logL)
