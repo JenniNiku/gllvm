@@ -30,7 +30,7 @@
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
-#' @param disp.group vector of indices for the grouping of dispersion parameters (in e.g., a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter.
+#' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables.
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -346,7 +346,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
-                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.group = NULL,
+                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
@@ -467,6 +467,41 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("Cannot constrain latent variables without predictors. Please provide X, or set num.lv.c=0 or num.RR=0. \n")
     }
     
+    if(!is.null(disp.formula)&!TMB){
+      stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
+    }
+    
+    if(!is.null(disp.group)&!TMB){
+      stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
+    }
+    if(is.null(disp.formula)){
+      disp.group <- 1:p
+    }else{
+      if(is.vector(disp.formula)){
+        #grouped overdispersion parameters
+        if(length(disp.formula)!=p){
+          stop("disp.formula must be a vector of same length as the number of species.")
+        }
+        if(any(diff(unique(sort(disp.formula)))!=1)){
+          stop("disp.formula indices must form a sequence without gaps.")
+        }
+        if(min(disp.formula)!=1&max(disp.formula)!=length(unique(disp.formula))){
+          stop("disp.formula must start at 1 and end at length(unique(disp.formula)).")
+        }
+      }else if(!is.null(y)){
+        if(all(all.vars(disp.formula)%in%row.names(y))){
+          disp.group <- as.factor(do.call(paste,list(c(t(y)[,all.vars(disp.formula)]))))
+          y <- y[!row.names(y)%in%all.vars(disp.formula),]
+          levels(disp.group) <- 1:length(levels(disp.group))
+          #check if row numbers are still sequential if so renumber
+          if(all(diff(as.numeric(row.names(y)))==1)){
+            row.names(y) <- 1:nrow(y)
+          }
+        }else{
+          stop("Grouping variable for dispersion need to be included as named rows in 'Y'")
+        }
+      }
+    }
     
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -818,23 +853,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
     }
     }
-    if(!is.null(disp.group)&!TMB){
-      stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
-    }
-    #grouped overdispersion parameters
-    if(is.null(disp.group)){
-      disp.group <- 1:p
-    }else if(!is.null(disp.group)){
-      if(length(disp.group)!=p){
-        stop("disp.group must be a vector of same length as the number of species.")
-      }
-      if(any(diff(unique(sort(disp.group)))!=1)){
-        stop("disp.group indices must form a sequence without gaps.")
-      }
-      if(min(disp.group)!=1&max(disp.group)!=length(unique(disp.group))){
-        stop("disp.group must start at 1 and end at length(unique(disp.group)).")
-      }
-    }
+ 
     n.i <- 1
 
 
