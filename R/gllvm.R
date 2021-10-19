@@ -30,7 +30,7 @@
 #' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
-#' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables.
+#' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
