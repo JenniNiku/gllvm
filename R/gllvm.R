@@ -474,21 +474,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if(!is.null(disp.group)&!TMB){
       stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
     }
-    if(is.null(disp.formula)){
-      disp.group <- 1:p
-    }else{
-      if(is.vector(disp.formula)){
-        #grouped overdispersion parameters
-        if(length(disp.formula)!=p){
-          stop("disp.formula must be a vector of same length as the number of species.")
-        }
-        if(any(diff(unique(sort(disp.formula)))!=1)){
-          stop("disp.formula indices must form a sequence without gaps.")
-        }
-        if(min(disp.formula)!=1&max(disp.formula)!=length(unique(disp.formula))){
-          stop("disp.formula must start at 1 and end at length(unique(disp.formula)).")
-        }
-      }else if(!is.null(y)){
+    if(!is.null(disp.formula)){
+      if(!is.vector(disp.formula)){
+      if(!is.null(y)){
         if(all(all.vars(disp.formula)%in%row.names(y))){
           disp.group <- as.factor(do.call(paste,list(c(t(y)[,all.vars(disp.formula)]))))
           y <- y[!row.names(y)%in%all.vars(disp.formula),]
@@ -500,6 +488,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         }else{
           stop("Grouping variable for dispersion need to be included as named rows in 'Y'")
         }
+      }
       }
     }
     
@@ -676,7 +665,26 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         }
       }
     }
- 
+    #If not empty but a vector..
+    if(!is.null(disp.formula)){
+      if(is.vector(disp.formula)){
+        #Defensive coding
+          if(length(disp.formula)!=p){
+            stop("disp.formula must be a vector of same length as the number of species.")
+          } 
+        if(any(diff(unique(sort(disp.formula)))!=1)){
+          stop("disp.formula indices must form a sequence without gaps.")
+        }
+        if(min(disp.formula)!=1&max(disp.formula)!=length(unique(disp.formula))){
+          stop("disp.formula must start at 1 and end at length(unique(disp.formula)).")
+        }
+        disp.group <- disp.formula
+      }
+    }else{
+      #if empty we default to the number of species
+      disp.group <- 1:p
+    }
+    
     #check for redundant predictors
     
     if(!is.null(lv.X)){
