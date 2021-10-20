@@ -569,6 +569,7 @@ Type objective_function<Type>::operator() ()
           b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         }  
         
+        
         eta += x_lv*b_lv2*newlam;
         //quadratic term for constrained ordination 
         if(quadratic>0){
@@ -989,10 +990,11 @@ Type objective_function<Type>::operator() ()
       u *= Delta;
       if(num_lv_c>0){
         if((random(0)>0) && (n == nr)){
-          b_lv2.middleCols(1,num_lv_c) = b_lv;
+          //first column are zeros in case of random intercept
+          b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
         }else{
-          b_lv2.leftCols(num_lv_c) = b_lv;
+          b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         }  
         eta += x_lv*b_lv2*newlam;
       }
