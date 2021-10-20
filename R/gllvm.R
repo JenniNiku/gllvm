@@ -471,7 +471,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
     }
     
-    if(!is.null(disp.group)&!TMB){
+    if(!is.null(disp.formula)&!TMB){
       stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
     }
     if(!is.null(disp.formula)){
