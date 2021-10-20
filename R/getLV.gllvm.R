@@ -12,19 +12,27 @@
 
 getLV.gllvm <- function(object, type = NULL, ...)
 {
+  if(!is.null(type)){
+    if(!type%in%c("unconstrained","constrained","scaled","LC")){
+    stop("Type should be one of: unconstrained, constrained, scaled or LV")
+    }
+    if(type=="constrained"&object$num.lv.c==0&object$num.RR==0){
+      stop("Cannot retrieve constrained latent variables for an unconstrained latent variable model.")
+    }else if(type=="scaled"&object$num.lv.c==0&object$num.lv==0){
+      stop("Cannot retrieve scaled latent variables for a model without scale parameter.")
+    }else if(type=="unconstrained"&object$num.lv.c==0&object$num.lv==0){
+      stop("Cannot retrieve unconstrained latent variables, for a model without latent effect.")
+    }
+  }
+  
   if(is.null(type)){
   if(object$num.lv.c==0&object$num.RR==0){
     type = "unconstrained"
   }else{
     type = "constrained"
   }
-  }else if(type=="constrained"&object$num.lv.c==0&object$num.RR==0){
-    stop("Cannot retrieve constrained latent variables for an unconstrained latent variable model.")
-  }else if(type=="scaled"&object$num.lv.c==0&object$num.lv==0){
-    stop("Cannot retrieve scaled latent variables for a model without scale parameter.")
-  }else if(type=="unconstrained"&object$num.lv.c==0&object$num.lv==0){
-    stop("Cannot retrieve unconstrained latent variables, for a model without latent effect.")
-  }
+  } 
+
   
   n <- nrow(object$y)
   if(type == "unconstrained"){
@@ -32,24 +40,25 @@ getLV.gllvm <- function(object, type = NULL, ...)
   }else if(type=="scaled"){
     lvs <- t(t(object$lvs)*object$params$sigma.lv)
   }else if(type=="constrained"){
-    if(object$num.RR==0){
       lvs <- t(t(object$lvs)*object$params$sigma.lv)
-    }else{
-      if(object$num.lv.c>0){
-        lvs<- cbind(t(t(object$lvs[,1:object$num.lv.c])*object$params$sigma.lv[1:object$num.lv.c]),matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs[,-c(1:object$num.lv.c)])*object$params$sigma.lv[1:object$num.lv]))
-      }else if(object$num.lv>0&object$num.lv.c==0){
-        lvs<- cbind(matrix(0,ncol=object$num.RR,nrow=n),t(t(object$lvs)*object$params$sigma.lv))
-      }else{
-        lvs <- matrix(0,ncol=object$num.RR,nrow=n)
-      }
-    }
+      lvs[,1:object$num.lv.c] <- lvs[,1:object$num.lv.c]+object$lv.X%*%object$params$LvXcoef[,1:object$num.lv.c,drop=F]
   }else if(type=="LC"){
     lvs <- object$lv.X%*%object$params$LvXcoef
   }
+  
+  if(type!="LC"){
+  if(object$num.RR>0&object$num.lv>0&object$num.lv.c>0){
+    lvs <- cbind(lvs[,1:object$num.lv.c,drop=F],object$lv.X%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F], lvs[,-c(1:object$num.lv.c),drop=F])
+  }else if(object$num.RR>0&object$num.lv>0&object$num.lv.c==0){
+    lvs <- cbind(object$lv.X%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F], lvs)
+  }else if(object$num.RR>0&object$num.lv==0&object$num.lv.c>0){
+    lvs <- cbind(lvs[,1:object$num.lv.c,drop=F],object$lv.X%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F])
+  }
+  }
+  
   if((object$num.lv.c+object$num.RR)>0){
-    lvs<-cbind(object$lv.X%*%object$params$LvXcoef+lvs[,1:(object$num.lv.c+object$num.RR)],lvs[,-c(1:(object$num.lv.c+object$num.RR))])
-    if((object$num.lv.c+object$num.RR)>0&object$num.lv>0)colnames(lvs)<-c(paste("CLV",1:(object$num.lv.c+object$num.RR),sep=""),paste("LV",1:object$num.lv,sep=""))
-    if((object$num.lv.c+object$num.RR)>0&object$num.lv==0)colnames(lvs)<-paste("CLV",1:(object$num.lv.c+object$num.RR),sep="")
+    if((object$num.lv.c+object$num.RR)>0&object$num.lv>0&type!="LC")colnames(lvs)<-c(paste("CLV",1:(object$num.lv.c+object$num.RR),sep=""),paste("LV",1:object$num.lv,sep=""))
+    if((object$num.lv.c+object$num.RR)>0&object$num.lv==0|type=="LC")colnames(lvs)<-paste("CLV",1:(object$num.lv.c+object$num.RR),sep="")
   }
   
   return(lvs)
