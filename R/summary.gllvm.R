@@ -12,6 +12,7 @@
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
 #' @param principal defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
+#' @param type to match "type" in \code{\link{ordiplot.gllvm}}
 #' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -29,7 +30,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE, type = NULL,
                           ...) {
 
   n <- NROW(object$y)
@@ -44,11 +45,6 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   
   #calculate rotation matrix
   if(principal){
-    if((num.lv.c+num.RR)>0){
-      type <- "constrained"
-    }else{
-      type <- "scaled"
-    }
     lv <- getLV(object, type = type)
     
     do_svd <- svd(lv)
