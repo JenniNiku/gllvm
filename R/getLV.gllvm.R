@@ -14,7 +14,7 @@ getLV.gllvm <- function(object, type = NULL, ...)
 {
   if(!is.null(type)){
     if(!type%in%c("unconstrained","constrained","scaled","LC")){
-    stop("Type should be one of: unconstrained, constrained, scaled or LV")
+    stop("Type should be one of: unconstrained, constrained, scaled or LC")
     }
     if(type=="constrained"&object$num.lv.c==0&object$num.RR==0){
       stop("Cannot retrieve constrained latent variables for an unconstrained latent variable model.")
@@ -29,7 +29,12 @@ getLV.gllvm <- function(object, type = NULL, ...)
   if(object$num.lv.c==0&object$num.RR==0){
     type = "unconstrained"
   }else{
-    type = "constrained"
+    if((object$num.lv.c+object$num.lv)>0){
+      type = "constrained"
+    }else{
+      type = "LC"
+    }
+    
   }
   } 
 
