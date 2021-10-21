@@ -86,10 +86,9 @@ residuals.gllvm <- function(object, ...) {
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
-  if((num.RR+num.lv.c)==0){
-    lvs <- getLV(object,type="scaled")
-  }else{
-    lvs <- getLV(object, type="constrained")
+  lvs <- getLV(object)
+  if(num.lv>0){
+  lvs[,grepl("^LV",colnames(mod2$lvs))] <- t(t(lvs[,grepl("^LV",colnames(object$lvs))])*object$params$sigma.lv[grepl("^LV",colnames(object$lvs))])
   }
   eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
   }
