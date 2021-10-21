@@ -27,10 +27,12 @@ getLV.gllvm <- function(object, type = NULL, ...)
     if(!type%in%c("residual","conditional","marginal")){
     stop("Type should be one of: residual, conditional, or marginal")
     }
-    if(type=="conditional"&object$num.lv.c==0&object$num.RR==0){
+    if(type=="conditional"&object$num.lv.c==0){
       stop("Cannot retrieve constrained latent variables for an unconstrained latent variable model.")
     }else if(type=="residual"&object$num.lv.c==0&object$num.lv==0){
       stop("Cannot retrieve residual latent variables for a model without latent effect.")
+    }else if(type=="marginal"&object$num.lv.c==0&object$num.RR==0){
+      stop("Cannot retrieve marginal latent variables with only residual effects.")
     }
   }
   
@@ -47,7 +49,6 @@ getLV.gllvm <- function(object, type = NULL, ...)
   }
   } 
 
-  
   n <- nrow(object$y)
   if(type == "residual"){
     lvs <- object$lvs
@@ -67,9 +68,10 @@ getLV.gllvm <- function(object, type = NULL, ...)
     lvs <- cbind(lvs[,1:object$num.lv.c,drop=F],object$lv.X%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F])
   }else if(object$num.lv.c>0&object$num.lv>0&type=="marginal"){
     lvs <- cbind(lvs, object$lvs[,-c(1:object$num.lv.c)])
+  }else if(type=="marginal"&object$num.lv.c==0&object$num.lv==0){
+    lvs <-object$lv.X%*%object$params$LvXcoef
   }
-  
-  
+
   if((object$num.lv.c+object$num.RR)>0){
     if((object$num.lv.c+object$num.RR)>0&object$num.lv>0)colnames(lvs)<-c(paste("CLV",1:(object$num.lv.c+object$num.RR),sep=""),paste("LV",1:object$num.lv,sep=""))
     if((object$num.lv.c+object$num.RR)>0&object$num.lv==0)colnames(lvs)<-paste("CLV",1:(object$num.lv.c+object$num.RR),sep="")
