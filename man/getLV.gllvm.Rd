@@ -10,7 +10,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{type}{type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "unconstrained". For models with constrained latent variables, defaults to "constrained". A third option is "scaled", which returns latent variables multiplied with scale parameter of the loadings. Alternatively, "LC" returns linear combination scores without residual error.}
+\item{type}{type of latent variable scores to retrieve from a gllvm object. For models with unconstrained latent variables, defaults to "residual". For models with constrained latent variables, defaults to conditional. Alternatively, "marginal" returns linear combination scores without residual error.}
 
 \item{...}{not used}
 }
@@ -19,17 +19,13 @@ Extract latent variables from gllvm object.
 }
 \details{
 Function retrieves the site scores for a GLLVM. Each type corresponds to a separate term of the model. For a GLLVM with unconstrained latent variables
-the default is "unconstrained". The type "scaled" returns site scores scaled with the diagonal of the species loadings.
+the default is "residual".
 
-For GLLVMs with constrained latent variables, "constrained" returns the complete site scores, due to both fixed- and latent effects,
+For GLLVMs with constrained latent variables, "conditional" returns the complete site scores, due to both fixed- and latent effects,
 where the latent effect is always scaled by the diagonal of the species loadings so that it can be small relative to the fixed-effects.
 
-Here, "scaled" returns the same as for a GLLVM with unconstrained latent variables, namely the latent effect scaled with the diagonal
-of the species loadings. Type "LC" (linear combination scores) returns the site scores only due to fixed-effects.
+Type "marginal"  returns linear combination scores, i.e. the site scores only due to fixed-effects.
 
-If both unconstrained and constrained latent variables are included in the model, type "LC" returns LC scores for constrained latent variables
-but "scaled" scores for unconstrained latent variables.
-}
-\seealso{
-\code{\link{getLV.gllvm}}.
+If both unconstrained and constrained latent variables are included in the model, type "marginal" returns LC scores for constrained latent variables
+but "residual" scores for unconstrained latent variables.
 }
