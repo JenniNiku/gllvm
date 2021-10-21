@@ -33,7 +33,7 @@ gllvm(
   scale.X = TRUE,
   return.terms = TRUE,
   gradient.check = FALSE,
-  disp.group = NULL,
+  disp.formula = NULL,
   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
     maxit = 4000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
@@ -101,7 +101,7 @@ gllvm(
 
 \item{gradient.check}{logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.}
 
-\item{disp.group}{vector of indices for the grouping of dispersion parameters (in e.g., a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter.}
+\item{disp.formula}{formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
 
 \item{control}{A list with the following arguments controlling the optimization:
 \itemize{

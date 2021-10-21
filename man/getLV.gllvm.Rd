@@ -17,3 +17,19 @@
 \description{
 Extract latent variables from gllvm object.
 }
+\details{
+Function retrieves the site scores for a GLLVM. Each type corresponds to a separate term of the model. For a GLLVM with unconstrained latent variables
+the default is "unconstrained". The type "scaled" returns site scores scaled with the diagonal of the species loadings.
+
+For GLLVMs with constrained latent variables, "constrained" returns the complete site scores, due to both fixed- and latent effects,
+where the latent effect is always scaled by the diagonal of the species loadings so that it can be small relative to the fixed-effects.
+
+Here, "scaled" returns the same as for a GLLVM with unconstrained latent variables, namely the latent effect scaled with the diagonal
+of the species loadings. Type "LC" (linear combination scores) returns the site scores only due to fixed-effects.
+
+If both unconstrained and constrained latent variables are included in the model, type "LC" returns LC scores for constrained latent variables
+but "scaled" scores for unconstrained latent variables.
+}
+\seealso{
+\code{\link{getLV.gllvm}}.
+}
