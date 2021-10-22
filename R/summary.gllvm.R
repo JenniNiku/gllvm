@@ -188,7 +188,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if((num.lv+num.lv.c)>0){
     if(principal){
       if(num.RR>0){
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RRS))]
+        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RR))]
       }else{
         object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)
       }
