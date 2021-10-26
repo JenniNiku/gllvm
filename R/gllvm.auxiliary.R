@@ -2040,9 +2040,13 @@ getFourthCorner<- function(object){
 
 
 # Calculates standard errors for random effects
-sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
+sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type = NULL){
   #For num.RR we treat the LV as zero
-  
+  if(!is.null(type)){
+  if(type=="marginal"){
+    ignore.u <- TRUE
+  }
+  }
   r <- obj$env$random
   par = obj$env$last.par.best
   
@@ -2063,12 +2067,22 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
   p <- ncol(obj$env$data$y)
   lv.X <- obj$env$data$x_lv
   
-  # sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
+  if((num.lv+num.lv.c)>0){
+    sigma.lv <- abs(obj$par[names(obj$par)=="sigmaLV"])  
+  }
+  
   diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv+num.RR,num.lv.c+num.lv+num.RR))
   
   
   if (ignore.u) {
     diag.term2 <- 0
+    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
+    if((num.lv.c+num.lv+radidx)==0)A<-Q
+    if((num.lv.c+num.RR)>0){
+      for(q in 1:(num.lv.c+num.RR)){
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
+      }
+    }
   } else {
     if((num.lv.c+num.lv+radidx)>0){
       f <- obj$env$f
@@ -2095,15 +2109,18 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
       if(num.RR>0)A <- rbind(A[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n+radidx)),])
     }
     
+    if(num.lv.c>0&num.lv>0){
+      sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+    }else if(num.lv>0&num.lv.c==0){
+      sigma.lv <- c(rep(1,num.RR),sigma.lv)
+    }else if(num.lv.c>0&num.lv==0){
+      sigma.lv <- c(sigma.lv,rep(1,num.RR))
+    }else{
+      sigma.lv <- rep(1,num.RR)
+    }
+    
     if(num.RR>0){
       row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
-      # if(num.lv.c>0){
-      #   sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
-      # }else if(num.lv>0){
-      #   sigma.lv <- c(rep(1,num.RR),sigma.lv)
-      # }else{
-      #   sigma.lv <- rep(1,num.RR)
-      # }
     }
     
     #Matrix Q for predictors
@@ -2114,10 +2131,27 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
         Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
       }
     }
-    diag.term2 <- (Q+A)%*%Vtheta%*%t(Q+A)
+    if(is.null(type)&(num.lv.c+num.RR)==0){
+      type <- "residual"
+    }else{
+      type <- "conditional"
+    }
+    if((num.lv+num.lv.c)>0){
+    if(type%in%c("conditional")){
+      S <- diag(rep(sigma.lv,each=n))
+      diag.term2 <- (Q+S%*%A)%*%Vtheta%*%t(Q+S%*%A)
+      
+      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+    }else if(type=="residual"){
+      diag.term2 <- (A)%*%Vtheta%*%t(A)
+      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+    }
     
+    }
   }
-  if((num.lv+num.lv.c+radidx)>0){diag.term1 <- Matrix::chol2inv(L)
+
+  if((num.lv+num.lv.c+radidx)>0&type!="marginal"){
+    diag.term1 <- Matrix::chol2inv(L)
   
   if(radidx>0&num.RR>0){
     diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
@@ -2132,7 +2166,16 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
     }
   }
   diag.term1 <- as.matrix(diag.term1)
-  }else{diag.term1<-0;colnames(diag.term2)<-rep("XB",n*num.RR)}
+  }else if(type=="marginal"|(num.lv.c+num.lv)==0){
+    diag.term2 <- Q%*%Vtheta%*%t(Q)
+    diag.term1<-0
+    colnames(diag.term2)<-rep("XB",n*(num.RR+num.lv.c))
+    }
+  if(type%in%c("conditional")){
+    S <- diag(rep(sigma.lv,each=n))
+    diag.term1 <- S%*%diag.term1%*%S
+    colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+  }
   covb <- diag.term1 + diag.term2
   row.names(covb)<-colnames(covb) <- colnames(diag.term2)
   out <- list()
@@ -2269,7 +2312,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
 #   CovABerr
 # }
 
-CMSEPf <- function(fit, return.covb = F){
+CMSEPf <- function(fit, return.covb = F, type = NULL){
   #for num.RR we are treating the LV as zero
   
   n<-nrow(fit$y)
@@ -2298,6 +2341,17 @@ CMSEPf <- function(fit, return.covb = F){
     D <- solve(D)
   }
   
+  sigma.lv <- fit$params$sigma.lv
+  
+  if(num.lv.c>0&num.lv>0){
+    sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+  }else if(num.lv>0&num.lv.c==0){
+    sigma.lv <- c(rep(1,num.RR),sigma.lv)
+  }else if(num.lv.c>0&num.lv==0){
+    sigma.lv <- c(sigma.lv,rep(1,num.RR))
+  }else{
+    sigma.lv <- rep(1,num.RR)
+  }
   
   if(prod(dim(D))!=0){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
@@ -2332,23 +2386,32 @@ CMSEPf <- function(fit, return.covb = F){
     if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
-    # if(num.lv.c>0){
-    #   fit$params$sigma.lv <- c(fit$params$sigma.lv[1:num.lv.c],rep(1,num.RR),fit$params$sigma.lv[-c(1:num.lv)])
-    # }else if(num.lv>0){
-    #   fit$params$sigma.lv <- c(rep(1,num.RR),fit$params$sigma.lv)
-    # }else{
-    #   fit$params$sigma.lv <- rep(1,num.RR)
-    # }
   }
   
   Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
   
   if((num.lv.c+num.RR)>0){
     for(q in 1:(num.lv.c+num.RR)){
-      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q]
+      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
   }
-  covb <- (Q+D%*%C)%*%(A)%*%(t(Q)+B%*%t(D))
+  if(is.null(type)&(num.lv.c+num.RR)==0){
+    type <- "residual"
+  }else{
+    type <- "conditional"
+  }
+  if(type=="conditional"){
+      S <- diag(rep(sigma.lv,each=n))
+      covb <- (Q+S%*%D%*%C)%*%(A)%*%(t(Q)+B%*%t(D)%*%S)  
+    }else if(type=="residual"){
+      covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+    }else if(type=="marginal"){
+      covb <- Q%*%(A)%*%t(Q)
+      
+    }
+    colnames(covb)<-row.names(covb)<-colnames(D)
+  
+ 
   
   #separate errors row-effects
   ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])
