@@ -207,8 +207,8 @@ residuals.gllvm <- function(object, ...) {
               }
             }
             probK <- c(0, probK)
-            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+            cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
             u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
             if (abs(u - 1) < 1e-05)
               u <- 1
@@ -224,8 +224,8 @@ residuals.gllvm <- function(object, ...) {
                 probK[k] <- pnorm(object$params$zeta[k] - eta.mat[i, j]) - pnorm(object$params$zeta[k - 1] - eta.mat[i, j])
               }
             probK <- c(0, probK)
-            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+            cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
             u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
             if (abs(u - 1) < 1e-05)
               u <- 1
