@@ -310,7 +310,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       zeta <- fit.mva$params$zeta
       resi <- NULL
       eta.mat <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
-      if(is.finite(fit.mva$logL)|is.na(fit.mva$logL)){
+      if(!is.finite(fit.mva$logL)|is.na(fit.mva$logL)){
         stop("Could not calculate starting values for ordinal model. Change starting values or zeta.struc, further simplify your model, or center and scale your predictors.")
       }
       
