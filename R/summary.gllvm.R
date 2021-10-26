@@ -141,6 +141,11 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     coef.table.constrained <- NULL
   }
+  if(!is.null(type)){
+    if(type=="residual"){
+      coef.table.constrained <- NULL
+    }
+  }
   
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
@@ -235,11 +240,11 @@ print.summary.gllvm <- function (x, ...)
                  na.print = "NA")
   }
   if(x$Lvcoefs){
-    if((x$num.lv+x$num.lv.c+num.RR)>0){
+    if((x$num.lv+x$num.lv.c+x$num.RR)>0){
       if(x$quadratic==F){
         cat("\nCoefficients LVs: \n")  
       }else{
-        cat("\nOptima coefficients LVs: \n")
+        cat("\nOptima LVs: \n")
       }
       
       

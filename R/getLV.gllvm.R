@@ -14,7 +14,7 @@
 #' 
 #' Type "marginal"  returns linear combination scores, i.e. the site scores only due to fixed-effects.
 #' 
-#' If both unconstrained and constrained latent variables are included in the model, type "marginal" returns LC scores for constrained latent variables
+#' If both unconstrained and constrained latent variables are included in the model, type "marginal" returns linear combination scores for constrained latent variables
 #' but "residual" scores for unconstrained latent variables.
 #'@aliases getLV getLV.gllvm
 #'@method getLV gllvm
