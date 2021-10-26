@@ -830,8 +830,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.a <- sum(probK[1:(y[i, j])])
-              cumsum.b <- min(cumsum.b,sum(probK[1:(y[i, j] + 2 - min(y))]))
+              cumsum.b <- sum(probK[1:(y[i,j]+1)])
+              cumsum.a <- min(cumsum.b,sum(probK[1:(y[i,j])]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
