@@ -306,6 +306,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     if(starting.val=="res"){
       if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
       if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter)
+      fit.mva<<-fit.mva
       params[,1:ncol(cbind(1,X))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
       zeta <- fit.mva$params$zeta
       resi <- NULL
@@ -617,8 +618,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                   for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
                 }
                 probK <- c(0,probK)
-                cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+                cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
                 u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
                 if (abs(u - 1) < 1e-05)
                   u <- 1
@@ -634,8 +635,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                   probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
                 }
                 probK <- c(0, probK)
-                cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+                cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
                 u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
                 if (abs(u - 1) < 1e-05)
                   u <- 1
@@ -813,8 +814,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -830,8 +831,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -959,8 +960,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -976,8 +977,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -1119,8 +1120,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -1136,8 +1137,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
