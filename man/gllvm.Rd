@@ -33,7 +33,7 @@ gllvm(
   scale.X = TRUE,
   return.terms = TRUE,
   gradient.check = FALSE,
-  disp.group = NULL,
+  disp.formula = NULL,
   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
     maxit = 4000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
@@ -101,7 +101,7 @@ gllvm(
 
 \item{gradient.check}{logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.}
 
-\item{disp.group}{vector of indices for the grouping of dispersion parameters (in e.g., a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter.}
+\item{disp.formula}{formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
 
 \item{control}{A list with the following arguments controlling the optimization:
 \itemize{
@@ -141,10 +141,25 @@ gllvm(
 An object of class "gllvm" includes the following components:
 
 
- \item{call }{function call}
- \item{logL }{log likelihood}
- \item{lvs }{latent variables}
- \item{params}{list of parameters
+ \item{call }{ function call}
+ \item{y}{ (n x m) matrix of responses.}
+ \item{X}{ matrix or data.frame of environmental covariates.}
+ \item{lv.X}{ matrix or data.frame of environmental covariates for latent variables.}
+ \item{TR}{ Trait matrix}
+ \item{formula}{ Formula for predictors}
+ \item{lv.formula}{ Formula of latent variables in constrained ordination}
+ \item{randomX }{ Formula for species specific random effects in fourth corner model}
+ \item{num.lv}{ Number of unconstrained latent variables}
+ \item{num.lv.c}{ Number of constrained latent variables with residual}
+ \item{num.RR}{ Number of constrained latent variables without residual}
+ \item{method}{ Method used for integration}
+ \item{family}{ Response distribution}
+ \item{row.eff}{ Type of row effect used}
+ \item{n.init}{ Number of model runs for best fit}
+ \item{disp.group}{ Groups for dispersion parameters}
+ \item{sd }{ List of standard errors}
+ \item{lvs }{ Latent variables}
+ \item{params}{ List of parameters
  \itemize{
    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
@@ -160,6 +175,19 @@ An object of class "gllvm" includes the following components:
  \item{sd }{ list of standard errors of parameters}
  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
  \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
+ \item{seed}{ Seed used for calculating starting values}
+ \item{TMBfn}{ TMB objective and derivative functions}
+ \item{logL }{ log likelihood}
+ \item{convergence }{ convergence code of optimizer}
+ \item{quadratic }{ flag for quadratic model}
+ \item{Hess }{ List holding matrices of second derivatives}
+ \item{beta0com }{ Flag for common intercept in fourth corner models}
+ \item{rstruc }{ Integer that indicates which type of row structure is included}
+ \item{cstruc }{ Correlation structure for row effects}
+ \item{dist }{ Matrix of coordinates or time points used for row effects}
+ \item{terms }{ Terms object for main predictors}
+ \item{start }{ starting values for model}
+ \item{optim.method }{ Optimization method when using 'optim'}
 }
 \description{
 Fits generalized linear latent variable model for multivariate data. The model can be fitted using Laplace approximation method or variational

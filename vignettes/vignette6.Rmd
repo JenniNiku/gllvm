@@ -37,7 +37,7 @@ X <- scale(X)
 ```
 which includes six predictor variables: "soil.dry": soil dry mass, "bare.sand": cover bare sand, "fallen.leaves": "cover of fallen leaves", "moss": cover moss, "herb.layer": cover of the herb layer, "reflection": "reflection of the soil surface with a cloudless sky". 
 
-For that, it is important to first understand what a constrained ordination is. Classical constrained ordination is statistically referred to as reduced rank regression (RRR). First, consider a multivariate Generalized Linear Model (GLM):
+For that, it is important to first understand what a constrained ordination is. We will consider constrained ordination statistically as reduced rank regression (RRR). First, consider a multivariate Generalized Linear Model (GLM):
 
 \begin{equation}
 \eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{\beta}_j.
@@ -60,7 +60,11 @@ Where $\boldsymbol{\gamma}_j$ is a set of reduced rank slopes for each species. 
 RRGLM <- gllvm(Y,X=X,family="poisson", num.RR = 2)
 ```
 
-The reduced rank slopes are available under `RRGLM$params$LvXcoef`. Note: in general to improve convergence, it is good practice to center and scale the predictor variables. Unlike in other R-packages, we can now formulate a RRR with residual (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the latter is how the residual can be understood). The code for this is:
+The reduced rank slopes (also known as canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`. 
+
+Note: in general to improve convergence, it is good practice to center and scale the predictor variables. 
+
+Unlike in other R-packages, we can now formulate a RRR with residual (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
 
 ```{r eval=FALSE}
 CGLLVM <- gllvm(Y,X=X,family="poisson", num.lv.c = 2)
@@ -93,7 +97,7 @@ It is also possible to use the `quadratic` flag to fit a quadratic response mode
 ---
 references:
 - id: vanderVeen2021b
-  title: Model-based ordination with constrained latent variables (in prep)
+  title: Model-based ordination with constrained latent variables
   author: 
   - family: van der Veen
     given: B.
@@ -103,9 +107,9 @@ references:
     given: K.A.
   - family: O'Hara
     given: R.B.
-  publisher: NA
-  volume: NA
-  page: NA
+  publisher: BioRxiv
+  volume: 1
+  page: 1-24
   type: article-journal
   issued:
     year: 2021

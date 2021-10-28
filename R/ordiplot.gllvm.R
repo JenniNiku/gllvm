@@ -10,12 +10,13 @@
 #' @param jitter   if \code{TRUE}, jittering is applied on points.
 #' @param jitter.amount   numeric, positive value indicating an amount of jittering for each point, defaults to 0.2 (jitter range).
 #' @param s.colors colors for sites
+#' @param s.cex size of site labels
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param cex.spp size of species labels in biplot
-#' @param cex.env size of labels for arrows in constrianed ordination
+#' @param cex.env size of labels for arrows in constrained ordination
 #' @param spp.colors colors for sites, defaults to \code{"blue"}
-#' @param spp.arrow plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
-#' @param spp.arrow.lty linetype for species arrows
+#' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
+#' @param spp.arrows.lty linetype for species arrows
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param arrow.scale positive value, to scale arrows
 #' @param arrow.spp.scale positive value, to scale arrows of species
@@ -26,6 +27,7 @@
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
 #' @param lwd.ellips line width for prediction ellipses. See graphical parameter lwd.
 #' @param col.ellips colors for prediction ellipses.
+#' @param type which type of ordination plot to construct. Options are "residual", "conditional", and "marginal". Defaults to "residual" for GLLVMs with unconstrained latent variables and "conditional" otherwise.
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -42,8 +44,6 @@
 #' If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.
 #' For details for constructing a biplot, see Gabriel (1971).
 #' 
-#' Latent variable scores are always scaled by their estimated standard deviations, for plotting.
-#' 
 #' For a quadratic response model, species optima are plotted. Any species scores that are outside the range 
 #' of the predicted site scores are not directly plotted, but their main direction is indicated with arrows instead.
 #' This ensures that the plot remains on a reasonable scale.
@@ -55,6 +55,13 @@
 #' for which the 95% confidence intervals do not include zero are shown as red, while others 
 #' are slightly less intensely coloured.
 #' 
+#' For constrained ordination, a conditional plot includes both fixed- and random-effects to 
+#' optimally represent species co-occurrence patterns, corresponding to "conditional" site scores in \code{\link{getLV.gllvm}}.
+#' Marginal corresponds to an ordination plot that excludes residual patterns (i.e. excluding the random-effect),
+#' so that it is only available with num.lv.c>0 or num.RR>0. A conditional plot requires num.lv.c>0. 
+#' The "residual" type corresponds to an ordination diagram of only residual patterns. 
+#' See \link{getLV.gllvm} for details.
+#' 
 #' 
 #' @note 
 #' - If error is occurred when using \code{ordiplot()}, try full name of the function \code{ordiplot.gllvm()} as functions named 'ordiplot' might be found in other packages as well.
@@ -62,8 +69,9 @@
 #' @references 
 #' Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58, 453-467.
 #' 
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Bert van der Veen
 #'
+#'@seealso  \code{\link{getLV.gllvm}}.
 #' @examples
 #' #'# Extract subset of the microbial data to be used as an example
 #'data(microbialdata)
@@ -86,7 +94,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrow.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(is.null(spp.arrows)){
@@ -96,6 +104,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       spp.arrows <- FALSE
     }
   }
+  # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
+  #      when they are too small")
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   n <- NROW(object$y)
@@ -120,12 +130,19 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   if (is.null(rownames(object$params$theta)))
     rownames(object$params$theta) = paste("V", 1:p)
   
-  if((num.lv.c+num.RR)>0){
-    type <- "constrained"
-  }else{
-    type <- "scaled"
+  if((num.lv.c+num.RR)==0&is.null(type)){
+    type <- "residual"
+  }else if(is.null(type)){
+      if(num.lv.c==0){
+        type <- "marginal"
+      }else{
+        type <- "conditional"  
+      }
   }
-  
+  if(!is.null(type)){
+    
+  }
+
   lv <- getLV(object, type = type)
   
   if ((num.lv+(num.lv.c+num.RR)) == 1) {
@@ -134,7 +151,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+        text(lv, label = 1:n, cex = s.cex, col = s.colors)
       }
     }
     if((num.lv.c+num.RR)==1){
@@ -142,18 +159,17 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = 1.2, col = s.colors)
+        text(lv, label = 1:n, cex = s.cex, col = s.colors)
       }
     }    
   }
   
-  if ((num.lv+(num.lv.c+num.RR)) > 1) {
-    if((num.lv.c+num.RR)>0){
-      do_svd <- svd(lv)
-    }else{
-      # This gives the right rotation for unconstrained ordination
-      do_svd <- svd(object$lvs)
-    }
+  if ((num.lv+num.lv.c+num.RR) > 1) {
+   #unconstrained ordination always gets unscaled LVs, for correct prediction intervals.
+    #prediction intervals don't yet account for the scaling of the residual term in 
+    #num.lv.c
+    do_svd <- svd(lv)
+
     # do_svd <- svd(lv)
     # do_svd <- svd(object$lvs)
     svd_rotmat_sites <- do_svd$v
@@ -194,7 +210,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     # }
     # 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object)^2)))%*%svd_rotmat_sites)  
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object,type = type)^2)))%*%svd_rotmat_sites)  
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
@@ -205,6 +221,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     
     if (!biplot) {
+      if(is.null(main)&!is.null(type)){
+        main <- paste("Ordination (type='", type, "')",sep="")
+      }
       plot(choose.lvs[, which.lvs],
            xlab = paste("Latent variable", which.lvs[1]), 
            ylab = paste("Latent variable", which.lvs[2]),
@@ -213,13 +232,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
+          if(type%in%c("conditional","marginal")|type=="residual"&num.lv.c>0){
+            object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
+          }
           for (i in 1:n) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }        
         } else {
           
-          sdb<-CMSEPf(object)$A
+          sdb<-CMSEPf(object, type = type)$A
           if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
             object$A<- object$A[,-1,-1]
           }
@@ -228,6 +250,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
             A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
           }else{A<-object$A}
+          if(type%in%c("conditional")){
+            if((num.lv.c+num.lv)==1){
+              A<-A*object$params$sigma.lv
+            }else{
+              for(i in 1:n){
+                A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
+              }  
+            }
+            
+          }
           object$A<-sdb+A
           
           r=0
@@ -249,7 +281,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
+          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
         }
       if (jitter)
         if (symbols) {
@@ -259,14 +291,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           text(
             (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
             (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-            label = 1:n, cex = 1.2, col = s.colors )
+            label = 1:n, cex = s.cex, col = s.colors )
         }
     }
     
     if (biplot) {
       if(quadratic==F)largest.lnorms <- order(apply(object$params$theta ^ 2, 1, sum), decreasing = TRUE)[1:ind.spp]
       if(quadratic!=F)largest.lnorms <- order(apply(object$params$theta[,1:((num.lv.c+num.RR)+num.lv)] ^ 2, 1, sum)+2*apply(object$params$theta[,-c(1:((num.lv.c+num.RR)+num.lv))] ^ 2, 1, sum) , decreasing = TRUE)[1:ind.spp]
-      
+      if(is.null(main)&!is.null(type)){
+        main <- paste("Ordination (type='", type, "')",sep="")
+      }
       plot(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
         xlab = paste("Latent variable", which.lvs[1]), 
@@ -276,13 +310,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
+          if(type%in%c("conditional","marginal")|type=="residual"&num.lv.c>0){
+            object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
+          }
           for (i in 1:n) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
+          sdb<-CMSEPf(object, type = type)$A
           
-          sdb<-CMSEPf(object)$A
           if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
             object$A<- object$A[,-1,-1]
           }
@@ -290,7 +327,22 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
             A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
           }else{A<-object$A}
-          object$A<-sdb+A
+
+          if(type%in%c("conditional")){
+            if((num.lv.c+num.lv)==1){
+              A<-A*object$params$sigma.lv
+            }else{
+              for(i in 1:n){
+                A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
+              }  
+            }
+          }
+          if(type!="marginal"){
+            object$A<-sdb+A 
+          }else{
+            object$A<-sdb
+          }
+          
           r=0
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
@@ -309,7 +361,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = 1.2, col = s.colors)
+          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
         }
 
         text(
@@ -325,7 +377,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           text(
             (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
             (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
-            label = 1:n, cex = 1.2, col = s.colors )
+            label = 1:n, cex = s.cex, col = s.colors )
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
@@ -340,20 +392,37 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         Xlength<-sum(abs(marg[1:2]))/2
         Ylength<-sum(abs(marg[3:4]))/2
         origin<- c(mean(marg[1:2]),mean(marg[3:4]))
+        
+        
         #scores_to_plot <- choose.lv.coefs[largest.lnorms[!apply(idx[largest.lnorms,which.lvs,drop=F],1,all)],which.lvs,drop=F]
         scores_to_plot <- choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs][apply(idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!all(x)),,drop=F]
         if(nrow(scores_to_plot)>0){
           ends <- t(t(t(t(scores_to_plot)-origin)/sqrt((scores_to_plot[,1]-origin[1])^2+(scores_to_plot[,2]-origin[2])^2)*min(Xlength,Ylength)))*arrow.spp.scale
-            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp, length = 0.2, lty=spp.arrow.lty)
+          
+          units = par(c('usr', 'pin'))
+          xi = with(units, pin[1L]/diff(usr[1:2]))
+          yi = with(units, pin[2L]/diff(usr[3:4]))
+          # idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) >.001
+          idx2 <-  apply(ends,1,function(x)if(all(abs(x)<0.001)){FALSE}else{TRUE})
+          if(any(!idx2)){
+            for(i in which(!idx2)){
+              cat("The effect for", paste(row.names(scores_to_plot)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
+            }
+            ends <- ends[idx2,]
+            scores_to_plot <- scores_to_plot[idx2,]
+          }
+          
+          if(nrow(ends)>0){
+            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], cex = cex.spp, length = 0.2, lty=spp.arrows.lty)
             text(x=ends[,1]*(1+lab.dist)+origin[1],y=ends[,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot),col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp)
+          }
         }
-        # }
       }
     }
     
     #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
     #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
-    if(num.lv==0&(num.lv.c+num.RR)>0){
+    if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
       if(!is.logical(object$sd)&arrow.ci){
@@ -392,18 +461,19 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       units = par(c('usr', 'pin'))
       xi = with(units, pin[1L]/diff(usr[1:2]))
       yi = with(units, pin[2L]/diff(usr[3:4]))
-      idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) <.0011
-      if(any(idx)){
-        for(i in which(idx)){
+      # idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) >.001
+      idx <-  apply(ends,1,function(x)if(all(abs(x)<0.001)){FALSE}else{TRUE})
+      if(any(!idx)){
+        for(i in which(!idx)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
         }
-        ends <- ends[!idx,]
-        LVcoef <- LVcoef[!idx,]
+        ends <- ends[idx,]
+        LVcoef <- LVcoef[idx,]
       }
-      
+      if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.2,lty=lty)
       text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
-    
+    }
   }
   
 }

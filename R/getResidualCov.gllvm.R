@@ -177,7 +177,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
     }  
   }else{
     if(object$num.lv.c>0){
-      if(any((ResCov.q+ResCov.q2)[1:num.lv.c]<0.01)){
+      if(any((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)){
         warning("The residual variance related to ",paste(colnames(object$lvs)[which((ResCov.q+ResCov.q2)[1:object$num.lv.c]<0.01)],collapse=", and ")," is very small. This might indicate that the latent variable is nearly perfectly represented by covariates alone. \n")
       }
     }  

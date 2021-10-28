@@ -86,10 +86,9 @@ residuals.gllvm <- function(object, ...) {
   if (object$row.eff != FALSE)
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
-  if((num.RR+num.lv.c)==0){
-    lvs <- getLV(object,type="scaled")
-  }else{
-    lvs <- getLV(object, type="constrained")
+  lvs <- getLV(object)
+  if(num.lv>0){
+  lvs[,grepl("^LV",colnames(mod2$lvs))] <- t(t(lvs[,grepl("^LV",colnames(object$lvs))])*object$params$sigma.lv[grepl("^LV",colnames(object$lvs))])
   }
   eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
   }
@@ -124,8 +123,9 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "negative.binomial") {
         phis <- object$params$phi + 1e-05
-        a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1 / phis[j])
         b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1 / phis[j])
+        a <- min(b,pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1 / phis[j]))
+        
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -133,8 +133,9 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "gaussian") {
         phis <- object$params$phi
-        a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
         b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+        a <- min(b,pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j]))
+        
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -142,8 +143,9 @@ residuals.gllvm <- function(object, ...) {
       }
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
-        a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
         b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+        a <- min(b,pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j]))
+        
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
@@ -205,8 +207,8 @@ residuals.gllvm <- function(object, ...) {
               }
             }
             probK <- c(0, probK)
-            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y[, j]))])
-            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+            cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
             u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
             if (abs(u - 1) < 1e-05)
               u <- 1
@@ -222,8 +224,8 @@ residuals.gllvm <- function(object, ...) {
                 probK[k] <- pnorm(object$params$zeta[k] - eta.mat[i, j]) - pnorm(object$params$zeta[k - 1] - eta.mat[i, j])
               }
             probK <- c(0, probK)
-            cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i, j])]))
+            cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+            cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
             u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
             if (abs(u - 1) < 1e-05)
               u <- 1

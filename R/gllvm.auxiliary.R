@@ -310,13 +310,15 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       zeta <- fit.mva$params$zeta
       resi <- NULL
       eta.mat <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
-      
+      if(!is.finite(fit.mva$logL)|is.na(fit.mva$logL)){
+        stop("Could not calculate starting values for ordinal model. Change starting values or zeta.struc, further simplify your model, or center and scale your predictors.")
+      }
       
     } else {
       for(j in 1:p) {
         y.fac <- factor(y[,j])
         if(length(levels(y.fac)) > 2) {
-          if(starting.val%in%c("zero","res") || (num.lv+num.lv.c)==0){
+          if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
             if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = "probit"),silent = TRUE)
             if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ X, method = "probit"),silent = TRUE)
           } else {
@@ -336,7 +338,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           }
         }
         if(length(levels(y.fac)) == 2) {
-          if(starting.val%in%c("zero","res") || (num.lv+num.lv.c)==0){
+          if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
             if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit")),silent = TRUE)
             if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X, family = binomial(link = "probit")),silent = TRUE)
           } else { # || (!is.null(TR) && NCOL(TR)>0) & is.null(TR)
@@ -517,6 +519,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   return(out)
 }
 
+
 FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta = NULL, zeta.struc = "species", phis = NULL, 
                     jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL, disp.group = NULL){
   n<-NROW(y); p <- NCOL(y)
@@ -547,60 +550,60 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         ds.res <- matrix(NA, n, p)
         rownames(ds.res) <- rownames(y)
         colnames(ds.res) <- colnames(y)
+        phis <- phis + 1e-05
+        
         for (i in 1:n) {
           for (j in 1:p) {
             if (family == "tweedie") {
-              phis <- phis + 1e-05
-              a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
+              b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
+              a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
               if((as.vector(unlist(y[i, j])) - 1)<0)
                 a<-0
-              b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
               u <- runif(n = 1, min = a, max = b)
               if(u==1) u=1-1e-16
               if(u==0) u=1e-16
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "poisson") {
-              a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
               b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+              a <- min(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "negative.binomial") {
-              phis <- phis + 1e-05
-              a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
               b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+              a <- min(b,pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "binomial") {
-              a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
               b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+              a <- min(b,pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "gaussian") {
-              a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
               b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+              a <- min(b,pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
               # ds.res[i, j] <- (y[i, j] - mu[i, j])/phis[j]
             }
             if (family == "gamma") {
-              a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
               b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+              a <- min(b,pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "exponential") {
-              a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
               b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+              a <- min(b,pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j]))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "beta") {
-              a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
               b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
               u <- runif(n = 1, min = a, max = b)
               ds.res[i, j] <- qnorm(u)
             }
@@ -614,8 +617,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                   for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
                 }
                 probK <- c(0,probK)
-                cumsum.b <- sum(probK[1:(y[i,j]+1)])
-                cumsum.a <- sum(probK[1:(y[i,j])])
+                cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
                 u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
                 if (abs(u - 1) < 1e-05)
                   u <- 1
@@ -631,8 +634,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                   probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
                 }
                 probK <- c(0, probK)
-                cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-                cumsum.a <- sum(probK[1:(y[i, j])])
+                cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+                cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
                 u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
                 if (abs(u - 1) < 1e-05)
                   u <- 1
@@ -749,55 +752,54 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       for (i in 1:n) {
         for (j in 1:p) {
           if (family == "tweedie") {
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
+            a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "poisson") {
-            a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
             b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+            a <- min(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "negative.binomial") {
-            phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
             b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+            a <- min(b,pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "binomial") {
-            a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
             b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+            a <- min(b,pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            a <- min(b,pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            a <- min(b,pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "exponential") {
-            a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
             b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            a <- min(b,pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
-          if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+          if (family == "beta") {h
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -811,8 +813,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i,j]+1)])
-              cumsum.a <- sum(probK[1:(y[i,j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -828,8 +830,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- sum(probK[1:(y[i, j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -891,59 +893,59 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       ds.res <- matrix(NA, n, p)
       rownames(ds.res) <- rownames(y)
       colnames(ds.res) <- colnames(y)
+      phis <- phis + 1e-05
+      
       for (i in 1:n) {
         for (j in 1:p) {
           if (family == "tweedie") {
-            phis <- phis + 1e-05
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
+            a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "poisson") {
-            a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
             b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+            a <- min(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "negative.binomial") {
-            phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
             b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+            a <- min(b,pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "binomial") {
-            a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
             b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+            a <- min(b,pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            a <- min(b,pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            a <- min(b,pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "exponential") {
-            a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
             b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            a <- min(b,pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -957,8 +959,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i,j]+1)])
-              cumsum.a <- sum(probK[1:(y[i,j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -974,8 +976,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- sum(probK[1:(y[i, j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -1051,59 +1053,59 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       ds.res <- matrix(NA, n, p)
       rownames(ds.res) <- rownames(y)
       colnames(ds.res) <- colnames(y)
+      phis <- phis + 1e-05
+      
       for (i in 1:n) {
         for (j in 1:p) {
           if (family == "tweedie") {
-            phis <- phis + 1e-05
-            a <- fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power);
+            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
+            a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
             if((as.vector(unlist(y[i, j])) - 1)<0)
               a<-0
-            b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             u <- runif(n = 1, min = a, max = b)
             if(u==1) u=1-1e-16
             if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "poisson") {
-            a <- ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j])
             b <- ppois(as.vector(unlist(y[i, j])), mu[i,j])
+            a <- pmin(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i,j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "negative.binomial") {
-            phis <- phis + 1e-05
-            a <- pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j])
             b <- pnbinom(as.vector(unlist(y[i, j])), mu = mu[i, j], size = 1/phis[j])
+            a <- min(b,pnbinom(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], size = 1/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "binomial") {
-            a <- pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j])
             b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
+            a <- min(b,pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gaussian") {
-            a <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
             b <- pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j])
+            a <- min(b,pnorm(as.vector(unlist(y[i, j])), mu[i, j], sd = phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "gamma") {
-            a <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
             b <- pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j])
+            a <- min(b,pgamma(as.vector(unlist(y[i, j])), shape = phis[j], scale = mu[i, j]/phis[j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "exponential") {
-            a <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
             b <- pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j])
+            a <- min(b,pexp(as.vector(unlist(y[i, j])), rate = 1/mu[i, j]))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "beta") {
-            a <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
@@ -1117,8 +1119,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 for(k in j.levels) { probK[k] <- pnorm(zeta[j,k] - mu[i,j]) - pnorm(zeta[j,k - 1] - mu[i,j]) }
               }
               probK <- c(0,probK)
-              cumsum.b <- sum(probK[1:(y[i,j]+1)])
-              cumsum.a <- sum(probK[1:(y[i,j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y[,j])==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -1134,8 +1136,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 probK[k] <- pnorm(zeta[k] - mu[i, j]) - pnorm(zeta[k - 1] - mu[i, j])
               }
               probK <- c(0, probK)
-              cumsum.b <- sum(probK[1:(y[i, j] + 2 - min(y))])
-              cumsum.a <- sum(probK[1:(y[i, j])])
+              cumsum.b <- sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0) + 1)])
+              cumsum.a <- min(cumsum.b, sum(probK[1:(y[i,j]+ifelse(min(y)==0,1,0))]))
               u <- runif(n = 1, min = cumsum.a, max = cumsum.b)
               if (abs(u - 1) < 1e-05)
                 u <- 1
@@ -1312,7 +1314,6 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }
   return(list(index = index, gamma = gamma, row.params =row.params, b.lv = cbind(b.lv,RRcoef)))
 }
-
 
 
 
@@ -2039,9 +2040,13 @@ getFourthCorner<- function(object){
 
 
 # Calculates standard errors for random effects
-sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
+sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type = NULL){
   #For num.RR we treat the LV as zero
-  
+  if(!is.null(type)){
+  if(type=="marginal"){
+    ignore.u <- TRUE
+  }
+  }
   r <- obj$env$random
   par = obj$env$last.par.best
   
@@ -2062,12 +2067,22 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
   p <- ncol(obj$env$data$y)
   lv.X <- obj$env$data$x_lv
   
-  # sigma.lv <- obj$par[names(obj$par)=="sigmaLV"]
+  if((num.lv+num.lv.c)>0){
+    sigma.lv <- abs(obj$par[names(obj$par)=="sigmaLV"])  
+  }
+  
   diag.cov.random <- array(0,dim=c(n,num.lv.c+num.lv+num.RR,num.lv.c+num.lv+num.RR))
   
   
   if (ignore.u) {
     diag.term2 <- 0
+    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
+    if((num.lv.c+num.lv+radidx)==0)A<-Q
+    if((num.lv.c+num.RR)>0){
+      for(q in 1:(num.lv.c+num.RR)){
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
+      }
+    }
   } else {
     if((num.lv.c+num.lv+radidx)>0){
       f <- obj$env$f
@@ -2094,15 +2109,18 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
       if(num.RR>0)A <- rbind(A[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n+radidx)),])
     }
     
+    if(num.lv.c>0&num.lv>0){
+      sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+    }else if(num.lv>0&num.lv.c==0){
+      sigma.lv <- c(rep(1,num.RR),sigma.lv)
+    }else if(num.lv.c>0&num.lv==0){
+      sigma.lv <- c(sigma.lv,rep(1,num.RR))
+    }else{
+      sigma.lv <- rep(1,num.RR)
+    }
+    
     if(num.RR>0){
       row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
-      # if(num.lv.c>0){
-      #   sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
-      # }else if(num.lv>0){
-      #   sigma.lv <- c(rep(1,num.RR),sigma.lv)
-      # }else{
-      #   sigma.lv <- rep(1,num.RR)
-      # }
     }
     
     #Matrix Q for predictors
@@ -2113,10 +2131,27 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
         Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
       }
     }
-    diag.term2 <- (Q+A)%*%Vtheta%*%t(Q+A)
+    if(is.null(type)&(num.lv.c+num.RR)==0){
+      type <- "residual"
+    }else{
+      type <- "conditional"
+    }
+    if((num.lv+num.lv.c)>0){
+    if(type%in%c("conditional")){
+      S <- diag(rep(sigma.lv,each=n))
+      diag.term2 <- (Q+S%*%A)%*%Vtheta%*%t(Q+S%*%A)
+      
+      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+    }else if(type=="residual"){
+      diag.term2 <- (A)%*%Vtheta%*%t(A)
+      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+    }
     
+    }
   }
-  if((num.lv+num.lv.c+radidx)>0){diag.term1 <- Matrix::chol2inv(L)
+
+  if((num.lv+num.lv.c+radidx)>0&type!="marginal"){
+    diag.term1 <- Matrix::chol2inv(L)
   
   if(radidx>0&num.RR>0){
     diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
@@ -2131,7 +2166,16 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE){
     }
   }
   diag.term1 <- as.matrix(diag.term1)
-  }else{diag.term1<-0;colnames(diag.term2)<-rep("XB",n*num.RR)}
+  }else if(type=="marginal"|(num.lv.c+num.lv)==0){
+    diag.term2 <- Q%*%Vtheta%*%t(Q)
+    diag.term1<-0
+    colnames(diag.term2)<-rep("XB",n*(num.RR+num.lv.c))
+    }
+  if(type%in%c("conditional")){
+    S <- diag(rep(sigma.lv,each=n))
+    diag.term1 <- S%*%diag.term1%*%S
+    colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+  }
   covb <- diag.term1 + diag.term2
   row.names(covb)<-colnames(covb) <- colnames(diag.term2)
   out <- list()
@@ -2268,7 +2312,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
 #   CovABerr
 # }
 
-CMSEPf <- function(fit, return.covb = F){
+CMSEPf <- function(fit, return.covb = F, type = NULL){
   #for num.RR we are treating the LV as zero
   
   n<-nrow(fit$y)
@@ -2297,6 +2341,17 @@ CMSEPf <- function(fit, return.covb = F){
     D <- solve(D)
   }
   
+  sigma.lv <- fit$params$sigma.lv
+  
+  if(num.lv.c>0&num.lv>0){
+    sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR),sigma.lv[-c(1:num.lv)])
+  }else if(num.lv>0&num.lv.c==0){
+    sigma.lv <- c(rep(1,num.RR),sigma.lv)
+  }else if(num.lv.c>0&num.lv==0){
+    sigma.lv <- c(sigma.lv,rep(1,num.RR))
+  }else{
+    sigma.lv <- rep(1,num.RR)
+  }
   
   if(prod(dim(D))!=0){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
@@ -2331,23 +2386,32 @@ CMSEPf <- function(fit, return.covb = F){
     if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
-    # if(num.lv.c>0){
-    #   fit$params$sigma.lv <- c(fit$params$sigma.lv[1:num.lv.c],rep(1,num.RR),fit$params$sigma.lv[-c(1:num.lv)])
-    # }else if(num.lv>0){
-    #   fit$params$sigma.lv <- c(rep(1,num.RR),fit$params$sigma.lv)
-    # }else{
-    #   fit$params$sigma.lv <- rep(1,num.RR)
-    # }
   }
   
   Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
   
   if((num.lv.c+num.RR)>0){
     for(q in 1:(num.lv.c+num.RR)){
-      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q]
+      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
   }
-  covb <- (Q+D%*%C)%*%(A)%*%(t(Q)+B%*%t(D))
+  if(is.null(type)&(num.lv.c+num.RR)==0){
+    type <- "residual"
+  }else{
+    type <- "conditional"
+  }
+  if(type=="conditional"){
+      S <- diag(rep(sigma.lv,each=n))
+      covb <- (Q+S%*%D%*%C)%*%(A)%*%(t(Q)+B%*%t(D)%*%S)  
+    }else if(type=="residual"){
+      covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
+    }else if(type=="marginal"){
+      covb <- Q%*%(A)%*%t(Q)
+      
+    }
+    colnames(covb)<-row.names(covb)<-colnames(D)
+  
+ 
   
   #separate errors row-effects
   ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])

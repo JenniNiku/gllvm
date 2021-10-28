@@ -12,6 +12,7 @@
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
 #' @param principal defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
+#' @param type to match "type" in \code{\link{ordiplot.gllvm}}
 #' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -29,7 +30,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE, type = NULL,
                           ...) {
 
   n <- NROW(object$y)
@@ -44,11 +45,6 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   
   #calculate rotation matrix
   if(principal){
-    if((num.lv.c+num.RR)>0){
-      type <- "constrained"
-    }else{
-      type <- "scaled"
-    }
     lv <- getLV(object, type = type)
     
     do_svd <- svd(lv)
@@ -145,6 +141,11 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     coef.table.constrained <- NULL
   }
+  if(!is.null(type)){
+    if(type=="residual"){
+      coef.table.constrained <- NULL
+    }
+  }
   
   colnames(M) <- newnams
   rownames(M) <- colnames(object$y)
@@ -164,7 +165,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if (!is.null(object$params$row.params)) {
     sumry$'Row intercepts' <- object$params$row.params
   }
-  
+  sumry$rstruc <- object$rstruc
   if (object$row.eff == "random") {
     object$params$sigma2 = object$params$sigma[1] ^ 2
     names(object$params$sigma2) = "sigma^2"
@@ -192,7 +193,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if((num.lv+num.lv.c)>0){
     if(principal){
       if(num.RR>0){
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RRS))]
+        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RR))]
       }else{
         object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)
       }
@@ -239,11 +240,11 @@ print.summary.gllvm <- function (x, ...)
                  na.print = "NA")
   }
   if(x$Lvcoefs){
-    if((x$num.lv+x$num.lv.c+num.RR)>0){
+    if((x$num.lv+x$num.lv.c+x$num.RR)>0){
       if(x$quadratic==F){
         cat("\nCoefficients LVs: \n")  
       }else{
-        cat("\nOptima coefficients LVs: \n")
+        cat("\nOptima LVs: \n")
       }
       
       
@@ -293,5 +294,9 @@ print.summary.gllvm <- function (x, ...)
   }
   
   cat("\n")
+  if(x$rstruc>0){
+    warning("Unbalanced design detected, please interpret p-values with extreme caution. \n")
+  }
+  
   invisible(x)
 }
