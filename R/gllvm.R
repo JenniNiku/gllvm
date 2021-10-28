@@ -639,8 +639,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       y <- abundances
       #
       X <- model.matrix(term, mf)
-      p<-NCOL(y)
-      n<-NROW(y)
       
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {
@@ -712,7 +710,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       }
     }else{
       #if empty we default to the number of species
-      disp.group <- 1:p
+      disp.group <- 1:NCOL(y)
     }
     
     #check for redundant predictors
