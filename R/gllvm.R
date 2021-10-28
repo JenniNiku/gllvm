@@ -639,6 +639,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       y <- abundances
       #
       X <- model.matrix(term, mf)
+      p<-NCOL(y)
+      n<-NROW(y)
       
       atr <- c(attr(X, "assign"))
       if (sum(atr) > 0) {

@@ -203,7 +203,7 @@ se.gllvm <- function(object, ...){
       }
       if(family %in% c("ZIP")) {
         se.phis <- se[1:length(unique(disp.group))];
-        out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
+        out$sd$phi <- se.phis*exp(object$lp0)/(1+exp(object$lp0))^2;#
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(y);
         }else if(!is.null(names(disp.group))){
@@ -464,7 +464,7 @@ se.gllvm <- function(object, ...){
     }
     if(family %in% c("ZIP")) {
       se.phis <- se[1:length(unique(disp.group))];
-      out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
+      out$sd$phi <- se.phis*exp(object$lp0)/(1+exp(object$lp0))^2;#
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(y);
       }else if(!is.null(names(disp.group))){

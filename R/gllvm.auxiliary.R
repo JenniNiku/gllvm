@@ -797,7 +797,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             u <- runif(n = 1, min = a, max = b)
             ds.res[i, j] <- qnorm(u)
           }
-          if (family == "beta") {h
+          if (family == "beta") {
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
