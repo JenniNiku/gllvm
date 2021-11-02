@@ -2395,11 +2395,13 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
       Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
   }
-  if(is.null(type)&(num.lv.c+num.RR)==0){
-    type <- "residual"
-  }else{
-    type <- "conditional"
-  }
+  if(is.null(type)){
+      if((num.lv.c+num.RR)==0){
+        type <- "residual"
+      }else{
+        type <- "conditional"
+      }
+    }
   if(type=="conditional"){
       S <- diag(rep(sigma.lv,each=n))
       covb <- (Q+S%*%D%*%C)%*%(A)%*%(t(Q)+B%*%t(D)%*%S)  

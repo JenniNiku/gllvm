@@ -232,7 +232,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
-          if(type%in%c("conditional","marginal")|type=="residual"&num.lv.c>0){
+          if((type%in%c("conditional","marginal"))|(type=="residual")&num.lv.c>0){
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
           }
           for (i in 1:n) {
@@ -242,6 +242,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           
           sdb<-CMSEPf(object, type = type)$A
+          
           if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
             object$A<- object$A[,-1,-1]
           }
@@ -318,6 +319,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
+
           sdb<-CMSEPf(object, type = type)$A
           
           if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
