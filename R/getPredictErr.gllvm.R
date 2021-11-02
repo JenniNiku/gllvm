@@ -45,16 +45,27 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
   }
   
   if((object$method %in% c("VA", "EVA"))){
+    if(object$row.eff == "random"){
+      if(is.null(object$Ar)){
+        if(dim(object$A)[3]>ncol(object$lvs)){
+          object$Ar<-object$A[,1,1]
+          object$A<-object$A[,-1,-1]
+        }
+      }
+    }
     if(CMSEP) {
       sdb <- CMSEPf(object)
       # sdb<-sdA(object)
-      if(num.RR>0){
+
+    if(num.RR>0){
       #variational covariances but add 0s for RRR
       A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
       A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
     }else{A<-object$A}
+      if(object$row.eff == "random"){
+        object$Ar<-sdb$Ar+object$Ar
+      }
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
-      if(object$row.eff == "random") object$Ar<-sdb$Ar+object$Ar
       # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
     }
       r=0
