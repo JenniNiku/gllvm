@@ -142,6 +142,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   if(!is.null(type)){
     
   }
+  # This must be done, otherwise the scale of the ordination is non informative if the scale of params$theta () differ drastically:
+  if(type == "residual"){
+    object$params$theta <- object$params$theta%*%diag(object$params$sigma.lv, nrow=length(object$params$sigma.lv))
+  }
 
   lv <- getLV(object, type = type)
   
