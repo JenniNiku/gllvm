@@ -104,8 +104,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       spp.arrows <- FALSE
     }
   }
-  # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
-  #      when they are too small")
+
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   n <- NROW(object$y)
