@@ -1222,9 +1222,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
       }
+      seed.best <- seed[n.i]
+      
     }
     
-    seed.best <- seed[n.i]
     n.i <- n.i+1;
   
     }

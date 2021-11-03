@@ -1071,8 +1071,8 @@ trait.TMB <- function(
         }
         out$Ab <- Ab
       }
-    }
-    seed.best <- seed[n.i]
+      seed.best <- seed[n.i]
+      }
     n.i <- n.i+1;
   }
 
