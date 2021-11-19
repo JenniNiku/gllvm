@@ -5,8 +5,8 @@
 #' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternative \code{"response"} is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
-#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used.
-#' @param level specification for how to predict. Level one attempts to use the predicted site scores from variational approximations of laplace approximation. Level 0 sets the latent variable to zero instead. Defaults to 1.
+#' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
+#' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
 #' @param offset specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
 #' @param ... not used.
 #'
@@ -68,6 +68,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   if (is.null(newdata) & !is.null(newLV)) {
     n <- nrow(newLV)
+    if(!is.null(object$X) || !is.null(object$lv.X)){
+      if((nrow(object$X)!=n) || (nrow(object$lv.X)!=n)) 
+        stop("Number of rows in 'newLV' must be the same as the number of rows in the data used for model fitting, if new X values for the corresponding units (in 'newLV') are not given.")
+    }
   }
   if (!is.null(object$X)) {
     formula <- formula(terms(object))
@@ -222,12 +226,29 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           if (nrow(newLV) != nrow(newdata)) 
             stop("Number of rows in newLV must equal to the number of rows in newX, if newX is included, otherwise same as number of rows in the response matrix.")
         }
-        lvs <- t(t(newLV) * object$params$sigma.lv)
+        
+        if (object$num.RR == 0) {
+          lvs <- t(t(newLV) * object$params$sigma.lv)
+        } else {
+          if (object$num.lv.c > 0) {
+            lvs <- cbind(t(t(newLV[, 1:object$num.lv.c]) * 
+                             object$params$sigma.lv[1:object$num.lv.c]), 
+                         matrix(0, ncol = object$num.RR, nrow = n), 
+                         t(t(newLV[, -c(1:object$num.lv.c)]) * 
+                             object$params$sigma.lv[1:object$num.lv]))
+          }
+          else if (object$num.lv > 0 & object$num.lv.c == 0) {
+            lvs <- cbind(matrix(0, ncol = object$num.RR, 
+                                nrow = n), t(t(newLV) * object$params$sigma.lv))
+          } else {
+            lvs <- matrix(0, ncol = object$num.RR, nrow = n)
+          }
+        }
+        
       } else {
         if (object$num.RR == 0) {
           lvs <- t(t(object$lvs) * object$params$sigma.lv)
-        }
-        else {
+        } else {
           if (object$num.lv.c > 0) {
             lvs <- cbind(t(t(object$lvs[, 1:object$num.lv.c]) * 
                              object$params$sigma.lv[1:object$num.lv.c]), 
@@ -246,23 +267,22 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         }
       }
       if ((object$num.lv.c + object$num.RR) > 0 & !is.null(newdata)) {
-        lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[, 
-                                                                        -1, drop = F]
+        lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
       } else {
         lv.X <- object$lv.X
       }
-      theta <- object$params$theta[, 1:(object$num.lv + 
-                                          (object$num.lv.c + object$num.RR))]
+      theta <- (object$params$theta[, 1:(object$num.lv + 
+                                          (object$num.lv.c + object$num.RR)), drop = F])
       eta <- eta + lvs %*% t(theta)
       if ((object$num.lv.c + object$num.RR) > 0) {
         eta <- eta + lv.X %*% object$params$LvXcoef %*% 
-          t(theta[, 1:(object$num.lv.c + object$num.RR)])
+          t((theta[, 1:(object$num.lv.c + object$num.RR), drop = F]))
       }
       if (object$quadratic != FALSE) {
         if(object$num.lv>0){
-          theta2 <- object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F]
-          theta2 <- theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F]
-          eta <- eta + lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs)]^2 %*% t(theta2)
+          theta2 <- (object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F])
+          theta2 <- (theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F])
+          eta <- eta + (lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs), drop = F])^2 %*% t(theta2)
         }
         if ((object$num.lv.c + object$num.RR) > 0) {
           theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
@@ -276,10 +296,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
     }
   }
-  if (object$row.eff %in% c("random", "fixed", 
-                            "TRUE") && nrow(eta) == length(object$params$row.params) & 
+  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && 
+      (nrow(eta) == length(object$params$row.params)) & 
       is.null(r0)) {
     r0 <- object$params$row.params
+    if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
     eta <- eta + r0
   }
 
