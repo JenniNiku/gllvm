@@ -69,7 +69,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if (is.null(newdata) & !is.null(newLV)) {
     n <- nrow(newLV)
     if(!is.null(object$X) || !is.null(object$lv.X)){
-      if((nrow(object$X)!=n) || (nrow(object$lv.X)!=n)) 
+      if((nrow(object$y)!=n)) 
         stop("Number of rows in 'newLV' must be the same as the number of rows in the data used for model fitting, if new X values for the corresponding units (in 'newLV') are not given.")
     }
   }
