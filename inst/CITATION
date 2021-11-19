@@ -5,11 +5,11 @@ vers <- paste("R package version", meta$Version)
 
 citEntry(entry="Manual",
          title = "gllvm: Generalized Linear Latent Variable Models",
-         author = personList(as.person("Jenni Niku"), as.person("Wesley Brooks"), as.person("Riki Herliansyah"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton"), as.person("Bert van der Veen")),
+         author = personList(as.person("Jenni Niku"), as.person("Wesley Brooks"), as.person("Riki Herliansyah"), as.person("Francis K. C. Hui"), as.person("Pekka Korhonen"), as.person("Sara Taskinen"), as.person("Bert van der Veen"), as.person("David I. Warton")),
          year = year,
          note = vers,
          textVersion =
-         paste("Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., Warton, D. I., and van der Veen, B. (",
+         paste("Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Korhonen, P., Taskinen, S., van der Veen, B., and Warton, D. I.  (",
                year,
                "). gllvm: Generalized Linear Latent Variable Models.",
                vers, ".", sep="")
