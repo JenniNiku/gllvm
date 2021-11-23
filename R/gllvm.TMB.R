@@ -942,13 +942,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li][1:sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))];
             theta[,((num.lv.c+num.RR)+1):ncol(theta)][lower.tri(theta[,((num.lv.c+num.RR)+1):ncol(theta),drop=F],diag=FALSE)] <- param[li][(sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))+1):length(param[li])];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
+              #first correct ordering of theta2 as num.RR is in the end
+              if(quadratic=="LV"){
+                partheta <- param[li2][c(1:num.lv.c,(num.lv+num.lv.c+1):(num.lv.c+num.lv+num.RR),(num.lv.c+1):(num.lv.c+num.lv))]
+              }else if(quadratic){
+                partheta <- param[li2][c(1:(num.lv.c*p),(num.lv*p+num.lv.c*p+1):(num.RR*p+num.lv.c*p+num.lv*p),(num.lv.c*p+1):(num.lv.c*p+num.lv*p))]
+              }
+              theta<-cbind(theta,matrix(-abs(partheta),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- param[li]
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              partheta <- param[li2][c(1:num.lv.c,(num.lv+num.lv.c+1):(num.lv.c+num.lv+num.RR),(num.lv.c+1):(num.lv.c+num.lv))]
+              theta <- c(param[li],-abs(partheta))}  
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!
@@ -1373,7 +1380,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(out$y)
         out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
-
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
           colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
@@ -1416,11 +1422,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * ((num.lv.c+num.RR)+num.lv))], p, (num.lv.c+num.RR)+num.lv, byrow = T)  
+          #re-order as the order in C++ is different, num_RR is last there
+          se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
           colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
           se <- se[-(1:((num.lv+(num.lv.c+num.RR))*p))]
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }else if(quadratic=="LV"){
           se.lambdas2 <- matrix(se[1:((num.lv.c+num.RR)+num.lv)], p, (num.lv.c+num.RR)+num.lv, byrow = T)
+          se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
           colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
           se <- se[-(1:((num.lv.c+num.RR)+num.lv))]
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
