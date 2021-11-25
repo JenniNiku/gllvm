@@ -103,7 +103,7 @@ Type objective_function<Type>::operator() ()
   }else if(random(2)>0 & num_RR>0){
     u.resize(n, num_RR);//should use resize instead and fill.(0.0)
     u.fill(0.0);
-    }
+  }
   
   matrix<Type> eta(n,p);
   eta.fill(0.0);
@@ -322,12 +322,12 @@ Type objective_function<Type>::operator() ()
       // }
       // // Add VA terms to logL
       if((nlvr-num_RR*random(2))>0){//don't do this if we have only num_RR with random slopes
-      for(int i=0; i<n; i++){
-        if(nlvr == (num_lv+num_lv_c+num_RR*random(2))) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
-        if(nlvr>(num_lv+num_lv_c+num_RR*random(2))) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
-        // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
-      }
-      nll.array() -= 0.5*(nlvr-num_RR*random(2) - log(Cu.determinant())*random(0))/p; //n*
+        for(int i=0; i<n; i++){
+          if(nlvr == (num_lv+num_lv_c+num_RR*random(2))) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
+          if(nlvr>(num_lv+num_lv_c+num_RR*random(2))) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
+          // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
+        }
+        nll.array() -= 0.5*(nlvr-num_RR*random(2) - log(Cu.determinant())*random(0))/p; //n*
       }
       //scale LVs with standard deviations, as well as the VA covariance matrices
       u *= Delta;
@@ -360,15 +360,15 @@ Type objective_function<Type>::operator() ()
         }
         //VA likelihood parts for random slopes
         for(int klv=0; klv<Klv; klv++){
-        nll.array() -= ((((vector <Type> (AB_lv.col(klv).matrix().diagonal())).log()).sum() - 0.5*((AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()).matrix()).trace()-0.5*(b_lv.row(klv)*(b_lv.row(klv).transpose())).sum()))/(n*p);// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+          nll.array() -= ((((vector <Type> (AB_lv.col(klv).matrix().diagonal())).log()).sum() - 0.5*((AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()).matrix()).trace()-0.5*(b_lv.row(klv)*(b_lv.row(klv).transpose())).sum()))/(n*p);// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
         }
         nll.array() -= 0.5*(num_lv_c+num_RR)/(n*p);//n*
-
+        
         //above we have q(zDelta) ~ N(aDelta, Delta A Delta)
         //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
         //in essence, q(XBsigmab_lv + eDelta) = N(uDelta + \sum \limits^K X_ik b_lv_k sigmab_lv, Delta A Delta + \sum \limits^K X_ik^2 sigmab_lv AB_lv_k sigmab_lv)
         //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
-
+        
         if(num_lv_c>0 && num_RR == 0){
           // matrix <Type> b_lv2 =  b_lv;//.leftCols(num_lv_c);
           u.leftCols(num_lv_c) += x_lv*b_lv*Sigmab_lv;
@@ -385,7 +385,7 @@ Type objective_function<Type>::operator() ()
             A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
           }
         }
-
+        
         if(num_RR>0 && num_lv_c == 0){
           // matrix <Type> b_lv3 =  b_lv;//.rightCols(num_RR);
           u.rightCols(num_RR) += x_lv*b_lv*Sigmab_lv;
@@ -398,7 +398,7 @@ Type objective_function<Type>::operator() ()
             for(int klv=0; klv<Klv; klv++){
               temp.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*Sigmab_lv*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()*Sigmab_lv;//cholesky of variance block for num_lv_c
             }
-
+            
             L.bottomRightCorner(num_RR,num_RR) =  (temp.bottomRightCorner(num_RR,num_RR)).llt().matrixL();//block diagonal structure so only need to re-do part of this matrix, the bottom right
             A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
           }
@@ -407,34 +407,34 @@ Type objective_function<Type>::operator() ()
         if(num_RR>0 && num_lv_c>0){
           matrix <Type> b_lv2 =  b_lv.leftCols(num_lv_c);
           matrix <Type> b_lv3 =  b_lv.rightCols(num_RR);
-
+          
           matrix<Type> temp(num_RR+num_lv_c,num_RR+num_lv_c);
           temp.fill(0.0);
           matrix <Type> L(nlvr,nlvr);
           L.fill(0.0);
-
+          
           u.leftCols(num_lv_c) += x_lv*b_lv2*Sigmab_lv.topLeftCorner(num_lv_c,num_lv_c);
           u.rightCols(num_RR) += x_lv*b_lv3*Sigmab_lv.bottomRightCorner(num_RR,num_RR);
           for(int i=0; i<n; i++){
             // A.col(i) *= A.col(i).transpose();
             for(int klv=0; klv<Klv; klv++){
-            temp +=  x_lv(i,klv)*x_lv(i,klv)*Sigmab_lv*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()*Sigmab_lv;//num_lv_c variance block
+              temp +=  x_lv(i,klv)*x_lv(i,klv)*Sigmab_lv*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()*Sigmab_lv;//num_lv_c variance block
             }
-
+            
             A.col(i).topLeftCorner(num_lv_c,num_lv_c) += temp.array().topLeftCorner(num_lv_c,num_lv_c);
             A.col(i).bottomRightCorner(num_RR,num_RR) += temp.array().bottomRightCorner(num_RR,num_RR);
-
+            
             A.col(i).bottomLeftCorner(num_RR,num_lv_c) += temp.array().bottomLeftCorner(num_RR,num_lv_c);
-
+            
             A.col(i).topRightCorner(num_RR,num_lv_c) += temp.array().topRightCorner(num_lv_c,num_RR);
-
+            
             L = (A.col(i).matrix()).llt().matrixL();
             A.col(i) = L.array();
           }
-
+          
         }
       }
-
+      
     }
     
     // Structured Row/Site effects
@@ -743,7 +743,8 @@ Type objective_function<Type>::operator() ()
           matrix <Type> v(nlvr,1);
           for (int i=0; i<n; i++) {
             Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-            matrix <Type> Q = atomic::matinv(Acov);
+            matrix <Type> Ql = (A.col(i).matrix()).inverse();
+            matrix <Type> Q = Ql*Ql.transpose();
             for (int j=0; j<p;j++){
               B = (2*D.col(j).matrix()+Q);
               if(num_lv_c==0&random(2)<1){
@@ -770,7 +771,8 @@ Type objective_function<Type>::operator() ()
           matrix <Type> v(nlvr,1);
           for (int i=0; i<n; i++) {
             Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-            matrix <Type> Q = atomic::matinv(Acov);
+            matrix <Type> Ql = (A.col(i).matrix()).inverse();
+            matrix <Type> Q = Ql*Ql.transpose();
             for (int j=0; j<p;j++){
               B = (-2*D.col(j).matrix()+Q);
               if(num_lv_c==0&random(2)<1){
@@ -1073,7 +1075,7 @@ Type objective_function<Type>::operator() ()
       for (int klv=0; klv<Klv; klv++) {
         nll.array() += mvnorm(b_lv.row(klv))/(n*p);
       }
-      }
+    }
     
     //For fixed-effects RRR with and without quadratic term
     if(num_RR>0){
