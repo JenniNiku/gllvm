@@ -36,6 +36,9 @@ logLik.gllvm <- function(object, ...)
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
   }
+  if(object$randomB){
+    object$params$LvXcoef <- NULL
+  }
   if(object$quadratic=="LV"){
     object$params$theta[-1,-c(1:(object$num.lv+object$num.lv.c))]<-NA
   }

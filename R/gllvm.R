@@ -17,6 +17,7 @@
 #' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param dist matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
+#' @param randomB either \code{FALSE}(default) or \code{TRUE}. If \code{TRUE} fits constrained ordination (i.e. those with num.lv.c or num.RR) with random slopes for the predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
@@ -171,6 +172,7 @@
 #'  \item{formula}{ Formula for predictors}
 #'  \item{lv.formula}{ Formula of latent variables in constrained ordination}
 #'  \item{randomX }{ Formula for species specific random effects in fourth corner model}
+#'  \item{randomB }{ Boolean flag for random slopes in constrained ordination}
 #'  \item{num.lv}{ Number of unconstrained latent variables}
 #'  \item{num.lv.c}{ Number of constrained latent variables with residual}
 #'  \item{num.RR}{ Number of constrained latent variables without residual}
@@ -185,7 +187,7 @@
 #'  \itemize{
 #'    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
 #'    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
-#'    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
+#'    \item{LvXcoef }{ Covariate coefficients (or predictions for random slopes) related to constrained latent variables}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
@@ -196,7 +198,7 @@
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
 #'  \item{sd }{ list of standard errors of parameters}
 #'  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
-#'  \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
+#'  \item{A, Ar, Ab_lv}{ covariance matrices for variational densities of latent variables, random row effects, and random slopes respectively}
 #'  \item{seed}{ Seed used for calculating starting values}
 #'  \item{TMBfn}{ TMB objective and derivative functions}
 #'  \item{logL }{ log likelihood}
@@ -371,7 +373,7 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
-                  offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
+                  offset = NULL, quadratic = FALSE, randomB = FALSE, sd.errors = TRUE, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
@@ -381,6 +383,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   ) {
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
+  if(randomB&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
+    stop("Constrained model with quadratic responses and random slopes not allowed with method 'LA'")
+  }
+  
+  
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
     num.lv <- 2
   }else if(is.null(num.lv)){num.lv<-0}
@@ -449,6 +456,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
+    
+    if(randomB&!control$TMB){
+      stop("Random slopes in constrained ordination only allows with TMB = TRUE.")
+    }
     
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
@@ -1001,6 +1012,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
+            randomB = randomB,
             optim.method=optim.method, 
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
             disp.group = disp.group
@@ -1015,7 +1027,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
-      
+      out$randomB = randomB
       if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
       # out$X <- fitg$X
@@ -1040,6 +1052,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if ((method %in% c("VA", "EVA"))) {
         out$A <- fitg$A
         out$Ar <- fitg$Ar
+        if(randomB){
+          out$Ab.lv <- fitg$Ab.lv
+        }
       }
       if (!is.null(randomX)) {
         out$corr <- fitg$corr
