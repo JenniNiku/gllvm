@@ -743,7 +743,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     }else{
       mu <- eta
     }
-    if(is.null(resi)){
+    if(num.lv.c>0|is.null(resi)){
       ds.res <- matrix(NA, n, p)
       rownames(ds.res) <- rownames(y)
       colnames(ds.res) <- colnames(y)
