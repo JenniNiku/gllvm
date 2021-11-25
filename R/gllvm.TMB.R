@@ -515,6 +515,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$sigmaLV = factor(rep(NA,length(sigma.lv)))
         map.list2$r0 = factor(rep(NA, length(r0)))
         map.list2$b_lv = factor(rep(NA, length(b.lv)))
+        map.list2$Ab_lv = factor(rep(NA, length(Ab_lv)))
         map.list2$sigmab_lv = factor(rep(NA, length(sigmab_lv)))
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
         map.list2$B = factor(rep(NA, 1))
@@ -529,7 +530,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$zeta = factor(rep(NA, length(zeta)))
         map.list2$r0 = factor(rep(NA, length(r0)))
         map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
-
+  
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv,sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -798,7 +799,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         # }
         map.list2 <- map.list 
         map.list2$log_sigma = factor(NA)
-        map.list2$Au <- map.list2$Abb <- factor(NA)# map.list$lambda2 <- 
+        map.list2$Au <- map.list2$Abb <- map.list2$Ab_lv <- factor(NA)# map.list$lambda2 <- 
         # map.list2$b_lv <- factor(rep(NA,length(b.lv)))
 
         parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=0, lg_Ar =0, Abb=0, zeta=zeta)
