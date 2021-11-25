@@ -431,7 +431,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
-      if(!is.logical(object$sd)&arrow.ci){
+      if(!is.logical(object$sd)&arrow.ci&!object$randomB){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
