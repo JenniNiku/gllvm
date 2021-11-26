@@ -8,7 +8,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, randomB = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL) {
-  if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
+  if((num.lv+num.lv.c)==0&row.eff!="random"&!randomB)diag.iter <-  0
 
   if(!is.null(start.params)) starting.val <- "zero"
   ignore.u=FALSE
@@ -151,7 +151,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, randomB = randomB)
 
     ## Set initial values
         sigma <- 1
@@ -172,6 +172,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = p)
         }else if(quadratic==FALSE){
           lambda2 <- 0
+        }
+        if(randomB){
+          sigmab_lv <- fit$sigmab_lv
         }
         
           if(num.lv>1&(num.lv.c+num.RR)==0){
@@ -355,7 +358,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
     if(randomB){
       randoml[3]<-1
-      sigmab_lv <- rep(0,num.lv.c+num.RR)
     }else{
       sigmab_lv <- 0
     }
@@ -494,9 +496,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         # if(row.eff != "fixed") map.list$r0 <- factor(rep(NA, length(r0)))
       }
       
-      if(quadratic == FALSE){
-        if(num.RR==0&quadratic==F)map.list$lambda2 = factor(NA)
-      }
+        if(quadratic==FALSE)map.list$lambda2 = factor(NA)
       
       
   ## generate starting values quadratic coefficients in some cases
@@ -588,8 +588,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
       
  ### Now diag.iter, improves the model fit sometimes
-      
-      if(diag.iter>0 && Lambda.struc=="unstructured" && nlvr>1 && !inherits(optr,"try-error")){
+      if(diag.iter>0 && Lambda.struc=="unstructured" && (nlvr+randoml[3]*num.RR)>1 && !inherits(optr,"try-error")){
         objr1 <- objr
         optr1 <- optr
         param1 <- optr$par
@@ -613,7 +612,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
 
         sigma.lv1 <- param1[nam=="sigmaLV"]
-        u1 <- matrix(param1[nam=="u"],n,num.lv+num.lv.c)
+        if((num.lv+num.lv.c)>0){u1 <- matrix(param1[nam=="u"],n,num.lv+num.lv.c)}else{u1<-u}
         if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
@@ -621,7 +620,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lg_Ar<- param1[nam=="lg_Ar"]
           log_sigma1 <- param1[nam=="log_sigma"]
           } else {log_sigma1 = 0}
-        Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), (num.lv+num.lv.c)*n)), rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*n))
+        if((num.lv+num.lv.c)>0){Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), (num.lv+num.lv.c)*n)), rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*n))}else{Au1<-Au}
         
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
@@ -868,7 +867,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       if(randomB){
         randoml[3] <- 1
-        sigmab_lv <- rep(0,num.lv.c+num.RR)
         randomp <- c(randomp, "b_lv")
       }else{
         sigmab_lv <- 0

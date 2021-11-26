@@ -126,7 +126,7 @@ Type objective_function<Type>::operator() ()
   
   if(random(2)>0){
     Sigmab_lv.fill(0.0);
-    Sigmab_lv.diagonal() = sigmab_lv*sigmab_lv;
+    Sigmab_lv.diagonal() = exp(sigmab_lv)*exp(sigmab_lv);
   }
   if(nlvr>0|num_RR>0){
     
@@ -221,7 +221,7 @@ Type objective_function<Type>::operator() ()
   if((method<1) | (method>1)){
     //quadratic coefficients for ordination
     //if random rows, add quadratic coefficients to q>0
-    if(quadratic>0){
+    if(quadratic>0 && (num_lv+num_lv_c)>0){
       if(nlvr>(num_lv+num_lv_c+num_RR*random(2))){
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
@@ -436,6 +436,7 @@ Type objective_function<Type>::operator() ()
           }
           
         }
+        REPORT(A);
       }
       
     }
@@ -684,42 +685,56 @@ Type objective_function<Type>::operator() ()
       }
     }else if(quadratic>0&random(2)>0){
       //slap D's at end for num_RR and random slopes
-      if(lambda2.cols()==1){
-        for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
-          D(d,d) = fabs(lambda2(d,0));
+      if(nlvr>(num_lv+num_lv_c+num_RR*random(2))){
+        if(lambda2.cols()==1){
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
+            }
+          } 
+        }else{
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
+            }
+          } 
         }
         
       }else{
-        for (int j=0; j<p;j++){
-          for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
-            D(d,d) = fabs(lambda2(d,j));
-          }
-          
+        if(lambda2.cols()==1){
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv+num_lv_c); q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+            }
+          } 
+        }else{
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv+num_lv_c); q<nlvr; q++){
+              D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+            }
+          } 
         }
       }
     }
     
-    
     if(nlvr>0){
       //constrained ordination terms
-      if(num_lv_c>0){
+      if(num_lv_c>0 && random(2)<1){
         //predictor coefficients for constrained ordination
         if((random(0)>0) && (n == nr)){
           //first column are zeros in case of random intercept
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
-        }else if(random(2)<1){
+        }else{
           b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         }  
         
-        if(random(2)<1){
           eta += x_lv*b_lv2*newlam;
           //quadratic term for constrained ordination 
           if(quadratic>0){
             for (int j=0; j<p;j++){
               for (int i=0; i<n; i++) {
                 eta(i,j) -=  x_lv.row(i)*b_lv2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-              }
             }
           }
         }
@@ -750,9 +765,9 @@ Type objective_function<Type>::operator() ()
             matrix <Type> Q = Ql*Ql.transpose();
             for (int j=0; j<p;j++){
               B = (2*D.col(j).matrix()+Q);
-              if(num_lv_c==0&random(2)<1){
+              if(random(2)>0|num_lv>0&num_lv_c==0){
                 v = (newlam.col(j)+Q*u.row(i).transpose());
-              }else if(random(2)>0&(num_lv_c+num_RR)>0){
+              }else if(random(2)<1){
                 //extra term for constrained ordination
                 v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
@@ -778,9 +793,9 @@ Type objective_function<Type>::operator() ()
             matrix <Type> Q = Ql*Ql.transpose();
             for (int j=0; j<p;j++){
               B = (-2*D.col(j).matrix()+Q);
-              if(num_lv_c==0&random(2)<1){
+              if(random(2)>0|num_lv>0&num_lv_c==0){
                 v = (-newlam.col(j)+Q*u.row(i).transpose());
-              }else if(random(2)>0&(num_lv_c+num_RR)>0){
+              }else if(random(2)<1){
                 //extra term for constrained ordination
                 v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
@@ -800,9 +815,9 @@ Type objective_function<Type>::operator() ()
           for (int i=0; i<n; i++) {
             Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
             for (int j=0; j<p;j++){
-              if(num_lv_c==0&random(2)<1){
+              if(random(2)>0|num_lv>0&num_lv_c==0){
                 cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
-              }else if(random(2)>0&(num_lv_c+num_RR)>0){
+              }else if(random(2)<1){
                 //extra terms for constrained ordination
                 cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*(u.row(i)).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
               }
