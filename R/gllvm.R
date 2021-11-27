@@ -17,7 +17,7 @@
 #' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param dist matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
-#' @param randomB either \code{FALSE}(default) or \code{TRUE}. If \code{TRUE} fits constrained ordination (i.e. those with num.lv.c or num.RR) with random slopes for the predictors.
+#' @param randomB either \code{FALSE}(default), "LV", "P", or "single". Fits constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
@@ -383,7 +383,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   ) {
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
-  if(randomB&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
+  if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
     stop("Constrained model with quadratic responses and random slopes not allowed with method 'LA'")
   }
   
@@ -457,7 +457,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
-    if(randomB&!control$TMB){
+    if(randomB!=FALSE&!control$TMB){
       stop("Random slopes in constrained ordination only allows with TMB = TRUE.")
     }
     
@@ -1052,7 +1052,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if ((method %in% c("VA", "EVA"))) {
         out$A <- fitg$A
         out$Ar <- fitg$Ar
-        if(randomB){
+        if(randomB!=FALSE){
           out$Ab.lv <- fitg$Ab.lv
         }
       }

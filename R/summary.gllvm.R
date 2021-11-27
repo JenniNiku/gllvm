@@ -113,7 +113,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)) {
-    if(!principal&!object$randomB|num.lv>0&(num.lv.c+num.RR)>0&!object$randomB){
+    if(!principal&(object$randomB!=FALSE)|num.lv>0&(num.lv.c+num.RR)>0&(object$randomB!=FALSE)){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
     

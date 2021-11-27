@@ -488,9 +488,27 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       b.lv[,1:num.lv.c]<-t(t(b.lv[,1:num.lv.c])*abs(sigma.lv[1:num.lv.c]))
     }
     out$b.lv <- b.lv
-    if(randomB){
-      out$sigmab_lv <- log(apply(b.lv,2,sd))
-      out$b.lv <- scale(b.lv,center = FALSE)
+    if(randomB!=FALSE){
+      if(starting.val!="zero"&randomB=="LV"){
+        out$b.lv <- scale(b.lv,center = FALSE)
+        out$sigmab_lv <- log(attr(scale(b.lv,center=F),"scaled:scale"))
+      }else if(starting.val=="zero"&randomB=="LV"){
+       out$sigmab_lv <- rep(0.01,num.lv.c+num.RR)
+      }else if(randomB=="P"&starting.val!="zero"&(num.lv.c+num.RR)>1){
+        out$sigmab_lv <- apply(mod$params$LvXcoef,1,sd)
+        out$b.lv <- t(scale(t(b.lv),center = FALSE))
+      }else if(randomB=="P"&starting.val=="zero"|randomB=="P"&(num.lv.c+num.RR)==1){
+        out$sigmab_lv <- rep(0.01,ncol(lv.X)) 
+      }else if(starting.val!="zero"&randomB=="single"){
+        out$sigmab_lv <- log(sd(b.lv))
+        out$b.lv <- b.lv/sd(b.lv)
+      }else if(starting.val=="zero"&randomB=="single"){
+        out$sigmab_lv <- 0.01
+      }
+      # else if(randomB=="all"){
+      #   out$sigmab_lv <- rep(0.01,ncol(lv.X)*(num.RR+num.lv.c))  
+      # }
+
     }
   }
   
@@ -857,7 +875,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
     beta <- t(coef(RRmod))
-    if(ncol(beta)>1&!randomB){
+    if(ncol(beta)>1&(randomB==FALSE)){
     betaSD=apply(beta,1,sd)
     beta=beta/betaSD
     }
