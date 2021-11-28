@@ -364,9 +364,12 @@ Type objective_function<Type>::operator() ()
         
         //scale LVs with standard deviations, as well as the VA covariance matrices
         u *= Delta;
-        
+        if(num_RR>0){
+          Delta.conservativeResize(nlvr+num_RR,nlvr+num_RR);
+          }
+
         for (int i=0; i<n; i++) {
-          A.col(i).topLeftCorner(nlvr,nlvr) = (Delta*A.col(i).topLeftCorner(nlvr,nlvr).matrix()).array(); 
+          A.col(i) = (Delta*A.col(i).matrix()).array(); 
         }
       }
       
