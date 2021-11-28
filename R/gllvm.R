@@ -386,7 +386,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
   if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
     stop("Constrained model with quadratic responses and random slopes not allowed with method 'LA'")
   }
-  
+  if(!randomB%in%c(FALSE,"single","P","LV")){
+    stop("RandomB should be one of 'single', 'P', or 'LV'")
+  }
   
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
     num.lv <- 2

@@ -495,7 +495,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       }else if(starting.val=="zero"&randomB=="LV"){
        out$sigmab_lv <- rep(0.01,num.lv.c+num.RR)
       }else if(randomB=="P"&starting.val!="zero"&(num.lv.c+num.RR)>1){
-        out$sigmab_lv <- apply(mod$params$LvXcoef,1,sd)
+        out$sigmab_lv <- log(apply(b.lv,1,sd))
         out$b.lv <- t(scale(t(b.lv),center = FALSE))
       }else if(randomB=="P"&starting.val=="zero"|randomB=="P"&(num.lv.c+num.RR)==1){
         out$sigmab_lv <- rep(0.01,ncol(lv.X)) 
