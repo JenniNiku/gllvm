@@ -240,7 +240,7 @@ Type objective_function<Type>::operator() ()
     
     //quadratic coefficients for ordination
     //if random rows, add quadratic coefficients to q>0
-    if((quadratic>0) && (num_lv+num_lv_c+num_RR*random(2))>0){
+    if((quadratic>0) && ((num_lv+num_lv_c+num_RR*random(2))>0)){
       if(nlvr>(num_lv+num_lv_c)){
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
@@ -376,7 +376,7 @@ Type objective_function<Type>::operator() ()
     }
     
     //random slopes for constr. ord.
-    if((random(2)>0) && (num_RR+num_lv_c)>0){
+    if((random(2)>0) && ((num_RR+num_lv_c)>0)){
       //resize A, u, D, and add RRGamma to newlam.
       //add columns to u on the right for num_RR with random slopes
       //resize u
@@ -506,7 +506,6 @@ Type objective_function<Type>::operator() ()
               L.block(1,1,num_lv_c,num_lv_c) += temp.topLeftCorner(num_lv_c,num_lv_c);
               L.bottomRightCorner(num_RR,num_RR) += temp.bottomRightCorner(num_RR,num_RR);
               
-              //how to do the next one..
               L.block(nlvr-num_RR,1,num_RR,num_lv_c) += temp.bottomLeftCorner(num_RR,num_lv_c);//should be bottom left corner
               L.block(1,nlvr-num_RR,num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);//should be top right corner
               
@@ -870,7 +869,7 @@ Type objective_function<Type>::operator() ()
               matrix <Type> Q = Ql*Ql.transpose();
               for (int j=0; j<p;j++){
                 B = (-2*D.col(j).matrix()+Q);
-                if((random(2)>0) || ((num_lv>0)&(num_lv_c==0)){
+                if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
                   v = (-newlam.col(j)+Q*u.row(i).transpose());
                 }else if(random(2)<1){
                   //extra term for constrained ordination
@@ -892,7 +891,7 @@ Type objective_function<Type>::operator() ()
             for (int i=0; i<n; i++) {
               Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
               for (int j=0; j<p;j++){
-                if((random(2)>0) || ((num_lv>0)&(num_lv_c==0)){
+                if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
                   cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
                 }else if(random(2)<1){
                   //extra terms for constrained ordination
