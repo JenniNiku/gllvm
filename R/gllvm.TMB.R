@@ -1379,7 +1379,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       incl[names(objrFinal$par)=="u"] <- FALSE;
       
       #slopes for reduced rank predictors
-      if((num.lv.c+num.RR)==0|(randomB==FALSE)){incl[names(objrFinal$par)=="b_lv"] <- FALSE}else if(randomB!=FALSE){
+      if((num.lv.c+num.RR)==0){
+        incld[names(objrFinal$par)=="b_lv"] <- incl[names(objrFinal$par)=="b_lv"] <- FALSE
+      }else if((num.lv.c+num.RR)>0&randomB==FALSE){
+        incl[names(objrFinal$par)=="b_lv"] <- TRUE
+      }else if((num.lv.c+num.RR>0)&randomB!=FALSE){
         incl[names(objrFinal$par)=="b_lv"] <- FALSE
         
         inclr[names(objrFinal$par)=="b_lv"] <- TRUE
