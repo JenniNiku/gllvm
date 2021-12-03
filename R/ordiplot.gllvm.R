@@ -143,8 +143,32 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
   }
   # This must be done, otherwise the scale of the ordination is non informative if the scale of params$theta () differ drastically:
-  if(type == "residual" && num.lv.c==0){
-    object$params$theta <- object$params$theta%*%diag(object$params$sigma.lv, nrow=length(object$params$sigma.lv))
+  if(type == "residual"|num.lv>0){
+    # First create an index for the columns with unconstrained LVs
+    which.scl <- NULL
+    if(num.lv>0){
+      which.scl <- (num.lv.c+num.RR+1):(num.lv.c+num.RR+num.lv)  
+    }
+    
+    if(quadratic!=FALSE){
+      which.scl <- c(which.scl, which.scl+num.lv.c+num.RR+num.lv)
+    }
+    # Add indices of constrained LVs if present
+    if(num.lv.c>0&type=="residual"){
+      which.scl <- c(which.scl, 1:num.lv.c)
+      if(quadratic!=FALSE){
+        which.scl <- c(which.scl, 1:num.lv.c+num.lv.c+num.RR+num.lv)
+      }
+    }
+    which.scl <- sort(which.scl)
+    # Do the scaling
+    if(quadratic==FALSE){
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl]%*%diag(object$params$sigma.lv)
+    }else{
+      sig <- diag(c(object$params$sigma.lv,object$params$sigma.lv^2))
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl,drop=F]%*%sig
+    }
+    
   }
 
   lv <- getLV(object, type = type)
