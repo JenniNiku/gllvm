@@ -2079,7 +2079,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   xb<- obj$env$data$xb
   
   random <- obj$env$data$random
-  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br"))
+  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br","b_lv"))
   
   if((num.lv+num.lv.c+radidx)>0){
     hessian.random <- obj$env$spHess(par, random = TRUE)
@@ -2122,13 +2122,13 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
       row.names(A) <- names(obj$env$last.par.best[r])
     }
     if(radidx==0){
-      if((num.lv.c)>0&num.RR>0){
+      if(num.lv.c>0&num.RR>0){
         A <- rbind(A[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n)),])
       }else if(num.lv>0&num.RR>0){
         A <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(A)),A)
       }
     }else{
-      if(num.RR>0)A <- rbind(A[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n+radidx)),])
+      if(num.RR>0&random[3]==0)A <- rbind(A[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(A)),A[-c(1:(num.lv.c*n+radidx)),])
     }
     
     if(num.lv.c>0&num.lv>0){
@@ -2141,14 +2141,14 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
       sigma.lv <- rep(1,num.RR)
     }
     
-    if(num.RR>0){
+    if(num.RR>0&random[3]==0){
       row.names(A)[row.names(A)==""] <- rep("XB",num.RR*n)
     }
     
     #Matrix Q for predictors
     Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
     if((num.lv.c+num.lv+radidx)==0)A<-Q
-    if((num.lv.c+num.RR)>0){
+    if((num.lv.c+num.RR)>0&random[3]==0){
       for(q in 1:(num.lv.c+num.RR)){
         Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
       }
@@ -2158,7 +2158,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     }else{
       type <- "conditional"
     }
-    if((num.lv+num.lv.c)>0){
+    if(random[3]>0)type<-"residual"
+    if((num.lv+num.lv.c)>0|any(random>0)){
     if(type%in%c("conditional")){
       S <- diag(rep(sigma.lv,each=n))
       diag.term2 <- (Q+S%*%A)%*%Vtheta%*%t(Q+S%*%A)
@@ -2175,10 +2176,10 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   if((num.lv+num.lv.c+radidx)>0&type!="marginal"){
     diag.term1 <- Matrix::chol2inv(L)
   
-  if(radidx>0&num.RR>0){
+  if(radidx>0&num.RR>0&random[3]==0){
     diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
     diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n+radidx))])
-  }else if(num.RR>0){
+  }else if(num.RR>0&random[3]==0){
     if(num.lv.c>0){
       diag.term1 <- rbind(diag.term1[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n)),])
       diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n))])
@@ -2210,7 +2211,12 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     CovRow <- matrix(ser0); 
     out$row <- CovRow
   }
-  
+  seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
+  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  if(random[3]>0){
+    covb_lvErr <- matrix(seb_lv,ncol=num.lv.c+num.RR)
+    out$Ab_lv <- covb_lvErr
+  }
   #separate errors AB
   seBr <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
   covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
@@ -2223,6 +2229,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$Ab <- CovABerr
   }
   if(!return.covb){
+    try({
     se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
     if((num.RR+num.lv+num.lv.c)>1){
       se <- aperm(se,c(3,2,1))
@@ -2232,6 +2239,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     if((num.RR+num.lv+num.lv.c)>0){
       out$A <- se
     }
+    },silent=T)
   }else{
     out  <- covb
   }
@@ -2342,10 +2350,12 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   num.lv <- fit$num.lv
   num.lv.c <- fit$num.lv.c
   num.RR <- fit$num.RR
+  randomB <- fit$randomB
   incla<-rep(FALSE, length(fit$Hess$incl))
   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
   if(!is.null(fit$randomX)) incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
   if((num.lv+num.lv.c)>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
+  if(randomB!=FALSE)incla[names(fit$TMBfn$par)%in%c("b_lv")] <- TRUE
   fit$Hess$incla <- incla
   
   A<- fit$Hess$cov.mat.mod  #
@@ -2359,7 +2369,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   if(!is.null(fit$randomX)){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
   }
-  if((num.lv+num.lv.c+radidx)>0){
+  if((num.lv+num.lv.c+radidx)>0|randomB!=FALSE){
     D <- solve(D)
   }
   
@@ -2381,7 +2391,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
       D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
-    }else if(num.RR>0){
+    }else if(num.RR>0&randomB==FALSE){
       D <- cbind(D[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n+radidx))])
       D <- rbind(D[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n+radidx)),])
       B <- cbind(B[,1:(num.lv.c*n+radidx)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n+radidx))])
@@ -2392,19 +2402,19 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
       D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
-    }else if(num.lv.c>0&num.RR>0){
+    }else if(num.lv.c>0&num.RR>0&randomB==FALSE){
       D <- cbind(D[,1:(num.lv.c*n)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n))])
       D <- rbind(D[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n)),])
       B <- cbind(B[,1:(num.lv.c*n)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n))])
       C <- t(B)
-    }else if(num.lv>0&num.RR>0){
+    }else if(num.lv>0&num.RR>0&randomB==FALSE){
       D <- cbind(matrix(0,nrow=nrow(D),ncol=num.RR*n),D)
       D <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(D)),D)
       B <- cbind(matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B)
       C <- t(B)
     }
   }
-  if(num.RR>0){
+  if(num.RR>0&randomB==FALSE){
     if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
@@ -2412,13 +2422,13 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   
   Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
   
-  if((num.lv.c+num.RR)>0){
+  if((num.lv.c+num.RR)>0&randomB==FALSE){
     for(q in 1:(num.lv.c+num.RR)){
       Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
   }
   if(is.null(type)){
-      if((num.lv.c+num.RR)==0){
+      if((num.lv.c+num.RR)==0|randomB!=FALSE){
         type <- "residual"
       }else{
         type <- "conditional"
@@ -2446,6 +2456,13 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     CovArerr <- matrix(ser0); 
     out$Ar <- CovArerr
   }
+  #separate errors b_lv
+    seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
+    covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  if(fit$randomB!=FALSE){
+   covb_lvErr <- matrix(seb_lv,ncol=num.lv.c+num.RR)
+   out$Ab_lv <- covb_lvErr
+  }
   
   #separate errors AB
   seAb <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
@@ -2460,6 +2477,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   }
   if(!return.covb){
     #re-order, select submatrices
+    try({
     se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
     if((num.RR+num.lv+num.lv.c)>1){
       se <- aperm(se,c(3,2,1))
@@ -2469,6 +2487,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     if((num.lv+num.lv.c+num.RR) > 0) {
       out$A <- se
     }
+    },silent=T)
   }else{
     out <- covb
   }

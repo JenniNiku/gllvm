@@ -1444,7 +1444,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             #   prediction.errors$row.params <- cov.lvs[,1,1]
             #   if(num.lv > 0) cov.lvs <- array(cov.lvs[,-1,-1], dim = c(n, num.lv, num.lv))
             # }
-            prediction.errors$lvs <- sd.random$A
+            if(num.lv>0|(num.lv.c+num.RR)>0&randomB==FALSE)prediction.errors$lvs <- sd.random$A
+            if(randomB!=FALSE){
+              prediction.errors$Ab.lv <- sd.random$Ab_lv
+              if((num.lv+num.lv.c)>0)prediction.errors$lvs <- sd.random$A
+            }
           }
           out$prediction.errors <- prediction.errors
         }
