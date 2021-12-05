@@ -1174,13 +1174,13 @@ trait.TMB <- function(
             prediction.errors <- list()
             
             if(row.eff=="random"){
-              prediction.errors$row.params <- sdrandom$row
+              prediction.errors$row.params <- sd.random$row
             }
             if(!is.null(randomX)){
-              prediction.errors$Br  <- sdrandom$Ab
+              prediction.errors$Br  <- sd.random$Ab
             }
             if(num.lv > 0){
-              prediction.errors$lvs <- sdrandom$A
+              prediction.errors$lvs <- sd.random$A
             }
             out$prediction.errors <- prediction.errors
           }
