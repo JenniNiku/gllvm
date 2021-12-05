@@ -514,7 +514,7 @@ trait.TMB <- function(
     
     # For Laplace method, specify random parameters to randomp
     randomp= NULL #c("u","r0,"Br")
-    randoml=c(0,0)
+    randoml=c(0,0,0)
     
 # Specify parameter.list, data.list and map.list
     # latent vars
