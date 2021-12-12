@@ -112,8 +112,8 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     coef.table <- NULL
   }
   
-  if (!is.logical(object$sd)&!is.null(object$lv.X)) {
-    if(!principal&(object$randomB!=FALSE)|num.lv>0&(num.lv.c+num.RR)>0&(object$randomB!=FALSE)){
+  if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
+    if(!principal|num.lv>0&(num.lv.c+num.RR)>0){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
     
@@ -193,9 +193,9 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if((num.lv+num.lv.c)>0){
     if(principal){
       if(num.RR>0){
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RR))]
+        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))])%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))]))
       }else{
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)
+        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
       }
       
     }
