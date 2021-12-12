@@ -416,7 +416,7 @@ Type objective_function<Type>::operator() ()
       }
       //VA likelihood parts for random slopes
       for(int klv=0; klv<Klv; klv++){
-        nll.array() -= ((((vector <Type> (AB_lv.col(klv).matrix().diagonal())).log()).sum() - 0.5*((Sigmab_lv.col(klv).matrix()).inverse()*(AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose()).matrix()).trace()-0.5*(b_lv.row(klv)*((Sigmab_lv.col(klv).matrix()).inverse()*b_lv.row(klv).transpose())).sum()))/(n*p);// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        nll.array() -= ((((vector <Type> (AB_lv.col(klv).matrix().diagonal())).log()).sum() - 0.5*((Sigmab_lv.col(klv).matrix()).inverse()*(AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose())).trace()-0.5*(b_lv.row(klv)*((Sigmab_lv.col(klv).matrix()).inverse()*b_lv.row(klv).transpose())).sum()))/(n*p);// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
         nll.array() -= 0.5*(num_lv_c+num_RR-((vector <Type> (Sigmab_lv.col(klv).matrix().diagonal())).log()).sum())/(n*p);
       }
       
@@ -461,18 +461,14 @@ Type objective_function<Type>::operator() ()
         if((num_RR>0) && (num_lv_c == 0)){
           // matrix <Type> b_lv3 =  b_lv;//.rightCols(num_RR);
           u.rightCols(num_RR) += x_lv*b_lv;
-          matrix<Type> temp(nlvr,nlvr);
-          temp.fill(0.0);
           matrix <Type> L(nlvr,nlvr);
-          L.fill(0.0);
           for(int i=0; i<n; i++){
-            temp = A.col(i).matrix();
+            L = A.col(i).matrix();
             for(int klv=0; klv<Klv; klv++){
-              temp.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//cholesky of variance block for num_lv_c
+              L.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//cholesky of variance block for num_lv_c
             }
             
-            temp.bottomRightCorner(num_RR,num_RR) =  (temp.bottomRightCorner(num_RR,num_RR)).llt().matrixL();//block diagonal structure so only need to re-do part of this matrix, the bottom right
-            L = temp;
+            L.bottomRightCorner(num_RR,num_RR) =  (L.bottomRightCorner(num_RR,num_RR)).llt().matrixL();//block diagonal structure so only need to re-do part of this matrix, the bottom right
             A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
           }
         }
@@ -515,8 +511,10 @@ Type objective_function<Type>::operator() ()
           }
           
         }
+        REPORT(u);
+        REPORT(A);
       }
-
+    
      // Structured Row/Site effects
       if(((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0)){
         // Group specific random row effects:
