@@ -242,34 +242,104 @@ Type objective_function<Type>::operator() ()
     //if random rows, add quadratic coefficients to q>0
     if((quadratic>0) && ((num_lv+num_lv_c+num_RR*random(2))>0)){
       if(nlvr>(num_lv+num_lv_c)){
+      if(num_lv_c>0){
         if(lambda2.cols()==1){
           for (int j=0; j<p; j++){
-            for (int q=1; q<(nlvr+(num_RR*random(2))); q++){
+            for (int q=1; q<(num_lv_c+1); q++){
               D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
-            for (int q=1; q<(nlvr+(num_RR*random(2))); q++){
+            for (int q=1; q<(num_lv_c+1); q++){
               D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
             }
           } 
         }
-        
-      }else{
+        }
+      if((num_RR*random(2))>0){
         if(lambda2.cols()==1){
+          //make sure that num_RR comes at the end..has to be
+          //like this due to the difference between fixed and random Bs
           for (int j=0; j<p; j++){
-            for (int q=0; q<(nlvr+(num_RR*random(2))); q++){
-              D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+            for (int q=(num_lv_c+1); q<(num_lv_c+1+num_RR); q++){
+              D(q+num_lv,q+num_lv,j) = fabs(lambda2(q-1,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
-            for (int q=0; q<(nlvr+(num_RR*random(2))); q++){
-              D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+            for (int q=(num_lv_c+1); q<(num_lv_c+1+num_RR); q++){
+              D(q+num_lv,q+num_lv,j) = fabs(lambda2(q-1,j)); //full quadratic model
             }
           } 
         }
+      }
+      if(num_lv>0){
+        if(lambda2.cols()==1){
+          //make sure that num_lv is taken from the middle even with num_RR
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv_c+1+(num_RR*random(2))); q<(num_lv_c+1+(num_RR*random(2))+num_lv); q++){
+              D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q-1,0)); //common tolerances model
+            }
+          } 
+        }else{
+          for (int j=0; j<p; j++){
+            for (int q=(num_lv_c+1+(num_RR*random(2))); q<(num_lv_c+1+(num_RR*random(2))+num_lv); q++){
+              D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q-1,j)); //full quadratic model
+            }
+          } 
+        }
+      }
+      }else{
+        if(nlvr>(num_lv+num_lv_c)){
+          if(num_lv_c>0){
+            if(lambda2.cols()==1){
+              for (int j=0; j<p; j++){
+                for (int q=0; q<num_lv_c; q++){
+                  D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+                }
+              } 
+            }else{
+              for (int j=0; j<p; j++){
+                for (int q=0; q<num_lv_c; q++){
+                  D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+                }
+              } 
+            }
+          }
+          if((num_RR*random(2))>0){
+            if(lambda2.cols()==1){
+              //make sure that num_RR comes at the end..has to be
+              //like this due to the difference between fixed and random Bs
+              for (int j=0; j<p; j++){
+                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
+                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,0)); //common tolerances model
+                }
+              } 
+            }else{
+              for (int j=0; j<p; j++){
+                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
+                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,j)); //full quadratic model
+                }
+              } 
+            }
+          }
+          if(num_lv>0){
+            if(lambda2.cols()==1){
+              //make sure that num_lv is taken from the middle even with num_RR
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv_c+(num_RR*random(2))); q<(num_lv_c+(num_RR*random(2))+num_lv); q++){
+                  D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q,0)); //common tolerances model
+                }
+              } 
+            }else{
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv_c+(num_RR*random(2))); q<(num_lv_c+(num_RR*random(2))+num_lv); q++){
+                  D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q,j)); //full quadratic model
+                }
+              } 
+            }
+          }
       }
     }
     
@@ -386,7 +456,7 @@ Type objective_function<Type>::operator() ()
         //resize and fill newlam, we don't use RRgamma further
         //easiest to do is paste RRgamma at the end of newlam.
         //this makes the order of newlam, A and u inconsistent with the R-code in the package
-        //nicer would be to have to sam order as in R, but this is easiest for now
+        //nicer would be to have to same order as in R, but this is easiest for now
         //potentially adjust in the future. D was already this order in C++.
         newlam.conservativeResize(nlvr,p);
         newlam.bottomRows(num_RR) = RRgamma;
@@ -729,14 +799,15 @@ Type objective_function<Type>::operator() ()
         matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
         eta += x_lv*b_lv3*RRgamma;
         
-        //quadratic terms for RRR
+        //quadratic terms for fixed-effects only RRR
+        //-num_lv to ensure that we pick num_RR from the middle
         if(quadratic>0){
           matrix <Type> D_RR(num_RR,num_RR);
           D_RR.fill(0.0);
           //quadratic coefficients for RRR
           if(lambda2.cols()==1){
-            for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
-              D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,0));
+            for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
+              D_RR(d-num_lv_c,d-num_lv_c) = fabs(lambda2(d,0));
             }
             for (int j=0; j<p;j++){
               for (int i=0; i<n; i++) {
@@ -746,8 +817,8 @@ Type objective_function<Type>::operator() ()
             
           }else{
             for (int j=0; j<p;j++){
-              for (int d=(num_lv+num_lv_c); d<(num_lv+num_lv_c+num_RR);d++){
-                D_RR(d-num_lv_c-num_lv,d-num_lv_c-num_lv) = fabs(lambda2(d,j));
+              for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
+                D_RR(d-num_lv_c,d-num_lv_c) = fabs(lambda2(d,j));
               }
               for (int i=0; i<n; i++) {
                 eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
@@ -759,17 +830,18 @@ Type objective_function<Type>::operator() ()
         }
       }else if((quadratic>0) && (random(2)>0)){
         //slap D's at end for num_RR and random slopes
+        //-num_lv to ensure that we pick num_RR from the middle
         if(nlvr>(num_lv+num_lv_c+(num_RR*random(2)))){
           if(lambda2.cols()==1){
             for (int j=0; j<p; j++){
               for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
-                D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
+                D(q,q,j) = fabs(lambda2(q-1-num_lv,0)); //common tolerances model
               }
             }
           }else{
             for (int j=0; j<p; j++){
               for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
-                D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
+                D(q,q,j) = fabs(lambda2(q-1-num_lv,j)); //full quadratic model
               }
             }
           }
@@ -778,13 +850,13 @@ Type objective_function<Type>::operator() ()
           if(lambda2.cols()==1){
             for (int j=0; j<p; j++){
               for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-                D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+                D(q,q,j) = fabs(lambda2(q-num_lv,0)); //common tolerances model
               }
             }
           }else{
             for (int j=0; j<p; j++){
               for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-                D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+                D(q,q,j) = fabs(lambda2(q-num_lv,j)); //full quadratic model
               }
             }
           }
