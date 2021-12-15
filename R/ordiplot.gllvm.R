@@ -114,6 +114,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   num.lv.c <- object$num.lv.c 
   num.RR <- object$num.RR
   quadratic <- object$quadratic
+  gr_par_list <- list(...)
+  # If both scales are not given, use MASS::eqscplot
+  if(("ylim" %in% names(gr_par_list)) & ("xlim" %in% names(gr_par_list))){
+    plotfun <- plot
+  } else {
+    plotfun <- MASS::eqscplot
+  }
+  
   if (!is.null(ind.spp)) {
     ind.spp <- min(c(p, ind.spp))
   } else {
@@ -197,11 +205,18 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #prediction intervals don't yet account for the scaling of the residual term in 
     #num.lv.c
     do_svd <- svd(lv)
-
     # do_svd <- svd(lv)
     # do_svd <- svd(object$lvs)
+    #ensure that rotation is the same even when we use different types of 
+    #scores
+    if(num.lv.c>0|(num.RR+num.lv)>0){
+    do_svd$v <- svd(getLV(object))$v
+    }
+    
     svd_rotmat_sites <- do_svd$v
     svd_rotmat_species <- do_svd$v
+    
+ 
     
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
@@ -252,7 +267,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(is.null(main)&!is.null(type)){
         main <- paste("Ordination (type='", type, "')",sep="")
       }
-      plot(choose.lvs[, which.lvs],
+        plotfun(choose.lvs[, which.lvs],
            xlab = paste("Latent variable", which.lvs[1]), 
            ylab = paste("Latent variable", which.lvs[2]),
            main = main , type = "n", ... )
@@ -260,7 +275,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
-          if((type%in%c("conditional","marginal"))|(type=="residual")&num.lv.c>0){
+          if((type%in%c("marginal","reisdual")&num.lv.c>0)){#have to recalculate prediction errors
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
           }
           for (i in 1:n) {
@@ -330,7 +345,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(is.null(main)&!is.null(type)){
         main <- paste("Ordination (type='", type, "')",sep="")
       }
-      plot(
+        plotfun(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
         xlab = paste("Latent variable", which.lvs[1]), 
         ylab = paste("Latent variable", which.lvs[2]),
@@ -339,7 +354,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
-          if(type%in%c("conditional","marginal")|type=="residual"&num.lv.c>0){
+          if(type%in%c("marginal","residual")&num.lv.c>0){#have to recalculate prediction errors
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
           }
           for (i in 1:n) {
@@ -443,7 +458,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           }
           
           if(nrow(ends)>0){
-            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], cex = cex.spp, length = 0.2, lty=spp.arrows.lty)
+            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], cex = cex.spp, length = 0.1, lty=spp.arrows.lty)
             text(x=ends[,1]*(1+lab.dist)+origin[1],y=ends[,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot),col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp)
           }
         }
@@ -501,7 +516,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         LVcoef <- LVcoef[idx,]
       }
       if(nrow(ends)>0){
-      arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.2,lty=lty)
+      arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.1,lty=lty)
       text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
     }
   }
