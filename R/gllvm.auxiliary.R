@@ -2457,12 +2457,12 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     out$Ar <- CovArerr
   }
   #separate errors b_lv
-    seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
-    covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   if(fit$randomB!=FALSE){
+    seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
    covb_lvErr <- matrix(seb_lv,ncol=num.lv.c+num.RR)
    out$Ab_lv <- covb_lvErr
   }
+    covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
   #separate errors AB
   seAb <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
