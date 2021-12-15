@@ -239,7 +239,13 @@ Type objective_function<Type>::operator() ()
   if((method<1) | (method>1)){
     
     //quadratic coefficients for ordination
-    //if random rows, add quadratic coefficients to q>0
+    //if random rows, add quadratic coefficients for num_RR to D otherwise
+    //they go into D_RR below
+    //The ordering here is num_lv_c-num_lv-num_RR so that the code works for
+    //fixed-effects B and random effects B
+    //The order we need to pick them from lambda2 is 
+    //num_lv_c-num_RR-num_lv however, to ensure everything on the R-side works
+    //like it should. So, things are messy but they work.
     if((quadratic>0) && ((num_lv+num_lv_c+num_RR*random(2))>0)){
       if(nlvr>(num_lv+num_lv_c)){
       if(num_lv_c>0){
@@ -278,14 +284,14 @@ Type objective_function<Type>::operator() ()
         if(lambda2.cols()==1){
           //make sure that num_lv is taken from the middle even with num_RR
           for (int j=0; j<p; j++){
-            for (int q=(num_lv_c+1+(num_RR*random(2))); q<(num_lv_c+1+(num_RR*random(2))+num_lv); q++){
-              D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q-1,0)); //common tolerances model
+            for (int q=(num_lv_c+1+num_RR); q<(num_lv_c+1+num_RR+num_lv); q++){
+              D(q-num_RR,q-num_RR,j) = fabs(lambda2(q-1,0)); //common tolerances model
             }
           } 
         }else{
           for (int j=0; j<p; j++){
-            for (int q=(num_lv_c+1+(num_RR*random(2))); q<(num_lv_c+1+(num_RR*random(2))+num_lv); q++){
-              D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q-1,j)); //full quadratic model
+            for (int q=(num_lv_c+1+num_RR); q<(num_lv_c+1+num_RR+num_lv); q++){
+              D(q-num_RR,q-num_RR,j) = fabs(lambda2(q-1,j)); //full quadratic model
             }
           } 
         }
@@ -328,19 +334,20 @@ Type objective_function<Type>::operator() ()
             if(lambda2.cols()==1){
               //make sure that num_lv is taken from the middle even with num_RR
               for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+(num_RR*random(2))); q<(num_lv_c+(num_RR*random(2))+num_lv); q++){
-                  D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q,0)); //common tolerances model
+                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
+                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,0)); //common tolerances model
                 }
               } 
             }else{
               for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+(num_RR*random(2))); q<(num_lv_c+(num_RR*random(2))+num_lv); q++){
-                  D(q-(num_RR*random(2)),q-(num_RR*random(2)),j) = fabs(lambda2(q,j)); //full quadratic model
+                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
+                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,j)); //full quadratic model
                 }
               } 
             }
           }
       }
+    }
     }
     
     // add offset
@@ -405,11 +412,9 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      // for(int i=0; i<n; i++){
-      //   A.col(i) = Delta*A.col(i).matrix();
-      // }
       // // Add VA terms to logL
       if(random(2)<1){
+        //Go this route if no random Bs
         for(int i=0; i<n; i++){
           if(nlvr == (num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()))/p;
           if(nlvr>(num_lv+num_lv_c)) nll.row(i).array() -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum())/p;
@@ -423,6 +428,7 @@ Type objective_function<Type>::operator() ()
           A.col(i) = (Delta*A.col(i).matrix()).array(); 
         }
       }else{
+        //Go this route with random Bs (since size of Cu and A.col(i) are then not the same)
         matrix <Type>Atemp(nlvr,nlvr);
         for(int i=0; i<n; i++){
           Atemp = A.col(i).matrix().topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
@@ -453,16 +459,17 @@ Type objective_function<Type>::operator() ()
       if(num_RR>0){
         nlvr += num_RR;
         u.conservativeResize(n, nlvr);
-        //resize and fill newlam, we don't use RRgamma further
-        //easiest to do is paste RRgamma at the end of newlam.
-        //this makes the order of newlam, A and u inconsistent with the R-code in the package
-        //nicer would be to have to same order as in R, but this is easiest for now
-        //potentially adjust in the future. D was already this order in C++.
+        //resize and fill newlam, we don't use RRgamma further with random Bs
+        //easiest to do is slap RRgamma at the end of newlam
+        //this makes the order of newlam, A, u, and D inconsistent with the R-side of things
+        //nicer would be to have to same order as in R, but that isn't possible since
+        //it requires going down the same route for fixed and random B
+        //which would only work with diagonal of 0s in A
+        //And that needs to be invertible for the quadratic case, so that is not possible
+        //potentially adjust in the future if I find out an alternative route.
         newlam.conservativeResize(nlvr,p);
         newlam.bottomRows(num_RR) = RRgamma;
       }
-      
-      
       
       // Variational covariance for random slopes
       // log-Cholesky parametrization for Ab_k:s
@@ -1512,4 +1519,4 @@ Type objective_function<Type>::operator() ()
     
     return nll.sum();
   }
-  
+
