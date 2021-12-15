@@ -114,6 +114,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   num.lv.c <- object$num.lv.c 
   num.RR <- object$num.RR
   quadratic <- object$quadratic
+  gr_par_list <- list(...)
+  # If both scales are not given, use MASS::eqscplot
+  if(("ylim" %in% names(gr_par_list)) & ("xlim" %in% names(gr_par_list))){
+    plotfun <- plot
+  } else {
+    plotfun <- MASS::eqscplot
+  }
+  
   if (!is.null(ind.spp)) {
     ind.spp <- min(c(p, ind.spp))
   } else {
@@ -143,8 +151,32 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
   }
   # This must be done, otherwise the scale of the ordination is non informative if the scale of params$theta () differ drastically:
-  if(type == "residual" && num.lv.c==0){
-    object$params$theta <- object$params$theta%*%diag(object$params$sigma.lv, nrow=length(object$params$sigma.lv))
+  if(type == "residual"|num.lv>0){
+    # First create an index for the columns with unconstrained LVs
+    which.scl <- NULL
+    if(num.lv>0){
+      which.scl <- (num.lv.c+num.RR+1):(num.lv.c+num.RR+num.lv)  
+    }
+    
+    if(quadratic!=FALSE){
+      which.scl <- c(which.scl, which.scl+num.lv.c+num.RR+num.lv)
+    }
+    # Add indices of constrained LVs if present
+    if(num.lv.c>0&type=="residual"){
+      which.scl <- c(which.scl, 1:num.lv.c)
+      if(quadratic!=FALSE){
+        which.scl <- c(which.scl, 1:num.lv.c+num.lv.c+num.RR+num.lv)
+      }
+    }
+    which.scl <- sort(which.scl)
+    # Do the scaling
+    if(quadratic==FALSE){
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl, drop=FALSE]%*%diag(object$params$sigma.lv, nrow = length(object$params$sigma.lv), ncol = length(object$params$sigma.lv))
+    }else{
+      sig <- diag(c(object$params$sigma.lv,object$params$sigma.lv^2))
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl,drop=FALSE]%*%sig
+    }
+    
   }
 
   lv <- getLV(object, type = type)
@@ -228,7 +260,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(is.null(main)&!is.null(type)){
         main <- paste("Ordination (type='", type, "')",sep="")
       }
-      plot(choose.lvs[, which.lvs],
+      plotfun(choose.lvs[, which.lvs],
            xlab = paste("Latent variable", which.lvs[1]), 
            ylab = paste("Latent variable", which.lvs[2]),
            main = main , type = "n", ... )
@@ -306,7 +338,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(is.null(main)&!is.null(type)){
         main <- paste("Ordination (type='", type, "')",sep="")
       }
-      plot(
+      plotfun(
         rbind(choose.lvs[, which.lvs], choose.lv.coefs[apply(idx,1,all), which.lvs]),
         xlab = paste("Latent variable", which.lvs[1]), 
         ylab = paste("Latent variable", which.lvs[2]),
