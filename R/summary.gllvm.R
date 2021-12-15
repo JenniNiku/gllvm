@@ -49,6 +49,9 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     
     do_svd <- svd(lv)
     svd_rotmat_sites <- do_svd$v
+    if(num.lv.c>0|(num.RR+num.lv)>0){
+      do_svd$v <- svd(getLV(object))$v
+    }
   }else{
     svd_rotmat_sites <- diag(num.lv.c+num.RR+num.lv)
   }
