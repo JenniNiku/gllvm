@@ -732,6 +732,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if((num.RR+num.lv.c)>ncol(lv.X)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
       }
+      if(num.RR>=ncol(lv.X)){
+        stop("num.RR must be lower than the number of predictors.")
+      }
       #check for redundant predictors
       QR<-qr(lv.X)
       if(QR$rank<ncol(lv.X)){
@@ -743,7 +746,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
           num.RR <- QR$rank
           warning("Setting num.RR to number of non-redunant predictors")
         }else if(num.RR>=ncol(lv.X)|num.lv.c>=ncol(lv.X)){
-          stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of predictor variables.")
+          stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of non-redundant predictor variables.")
         }
         lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
         lv.X<-lv.X[,QR$pivot[1:QR$rank],drop=F]
