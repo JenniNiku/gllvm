@@ -704,12 +704,12 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }
       if(n>p){
         index<-as.matrix(fa$scores)
-        gamma <- as.matrix(fa$loadings)
+        gamma <- as.matrix(fa$loadings)[1:p,,drop=F]
       }else{
         index<-as.matrix(fa$loadings)
-        gamma <- as.matrix(fa$scores)
+        gamma <- as.matrix(fa$scores[1:p,,drop=F])
       }
-      
+
       index.lm <- lm(index~0+lv.X)
       b.lv <- coef(index.lm)
       
