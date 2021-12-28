@@ -1184,6 +1184,8 @@ trait.TMB <- function(
             }
             out$prediction.errors <- prediction.errors
           }
+          out$Hess <- list(Hess.full=sdr, incla = NULL, incl=incl, incld=NULL, cov.mat.mod=covM)
+          
         } else {
           A.mat <- sdr[incl,incl] # a x a
           D.mat <- sdr[incld,incld] # d x d
