@@ -42,7 +42,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
   if(object$method == "LA"){
     if(num.lv>0|(num.lv.c)>0|num.RR>0&object$randomB==FALSE) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
     if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
-    if(object$randomB!=FALSE)out$b.lv <- sqrt(object$prediction.errors$Ab.lv)
+    if(object$randomB!=FALSE)out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
   }
   
   if((object$method %in% c("VA", "EVA"))){
@@ -85,7 +85,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
       }
       if(object$randomB!=FALSE){
         out$b.lv <- sdb$Ab_lv
-        out$b.lv <- sqrt(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,]))))
+        if(object$randomB=="P")out$b.lv <- sqrt(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,]))))
+        if(object$randomB=="LV")out$b.lv <- sqrt(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,])))
       }
   }
   if((num.lv+num.lv.c) > 1) out$lvs <- t(out$lvs)

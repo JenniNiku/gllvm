@@ -395,15 +395,22 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       # Variational covariances for random slopes of const. ord.
       if((num.RR+num.lv.c)>0&(randomB!=FALSE)){
+        if(randomB=="P"|randomB=="single"){
+          ab12 <- num.RR+num.lv.c
+          ab3 <- ncol(lv.X)
+        }else{
+          ab12 <- ncol(lv.X)
+          ab3 <- num.RR+num.lv.c
+        }
         if(is.null(start.params) || start.params$method=="LA"){
           if(Lambda.struc=="diagonal" || diag.iter>0){
-            Ab_lv <- log(rep(Lambda.start[1],(num.RR+num.lv.c)*ncol(lv.X))) #1/2, 1
+                Ab_lv <- log(rep(Lambda.start[1],ab12*ab3)) #1/2, 1
           } else{
-            Ab_lv <- c(log(rep(Lambda.start[1],(num.RR+num.lv.c)*n)),rep(0,(num.RR+num.lv.c)*((num.RR+num.lv.c)-1)/2*ncol(lv.X))) #1/2, 1
+            Ab_lv <- c(log(rep(Lambda.start[1],ab12*ab3)),rep(0,ab12*(ab12-1)/2*ab3)) #1/2, 1
           }
         } else {
           Au <- NULL
-          for(d in 1:(num.RR+num.lv.c)) {
+          for(d in 1:ab12) {
             if(start.params$Lambda.struc=="unstructured" || length(dim(start.params$Ab_lv))==3){
               Ab_lv <- c(Ab_lv,log(start.params$Ab_lv[,d,d]))
             } else {
@@ -411,7 +418,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             }
           }
           if(Lambda.struc!="diagonal" && diag.iter==0){
-            Ab_lv <- c(Ab_lv,rep(0,(num.RR+num.lv.c)*((num.RR+num.lv.c)-1)/2*ncol(lv.X)))
+            Ab_lv <- c(Ab_lv,rep(0,ab12*(ab12-1)/2*ab3))
           }
         }} else { Ab_lv <- 0}
       
@@ -597,7 +604,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
         if(randomB!=FALSE){
           sigmab_lv1 <- param1[nam=="sigmab_lv"]
-          Ab_lv1<- c(pmax(param1[nam=="Ab_lv"],rep(log(1e-6), (num.RR+num.lv.c)*ncol(lv.X))), rep(0,(num.RR+num.lv.c)*((num.RR+num.lv.c)-1)/2*ncol(lv.X)))
+          Ab_lv1<- c(pmax(param1[nam=="Ab_lv"],rep(log(1e-6), ab12*ab3)), rep(0,ab12*(ab12-1)/2*ab3))
           
         }else{
             sigmab_lv1<-0
@@ -1236,21 +1243,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         # For random slopes constr. ord.
         if((num.RR+num.lv.c)>0&(randomB!=FALSE)){
           param <- objr$env$last.par.best
-          AB_lv <- array(0, dim=c(ncol(lv.X), num.lv.c+num.RR, num.lv.c+num.RR))
+          AB_lv <- array(0, dim=c(ab3, ab12, ab12))
 
           Ab_lv <- param[names(param)=="Ab_lv"]
-            for (d in 1:(num.RR+num.lv.c)){
-              for(i in 1:ncol(lv.X)){
-                AB_lv[i,d, d] <- exp(Ab_lv[(d-1)*ncol(lv.X)+i]);
+            for (d in 1:ab12){
+              for(i in 1:ab3){
+                AB_lv[i,d, d] <- exp(Ab_lv[(d-1)*ab3+i]);
               }
             }
-            if(length(Ab_lv) > (num.RR+num.lv.c)*ncol(lv.X)){
+            if(length(Ab_lv) > ab12*ab3){
               k <- 0;
-              for (c1 in 1:(num.RR+num.lv.c)){
+              for (c1 in 1:ab12){
                 r <- c1 + 1;
-                while (r <= (num.RR+num.lv.c)){
-                  for(i in 1:ncol(lv.X)){
-                    AB_lv[i,r,c1] <- Ab_lv[(num.RR+num.lv.c)*ncol(lv.X)+k*ncol(lv.X)+i];
+                while (r <= ab12){
+                  for(i in 1:ab3){
+                    AB_lv[i,r,c1] <- Ab_lv[ab12*ab3+k*ab3+i];
                     # A[i,c1,r] <- A[i,r,c1];
                   }
                   k <- k+1; r <- r+1;
@@ -1258,7 +1265,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
                 }
               }
             }
-            for(i in 1:ncol(lv.X)){
+            for(i in 1:ab3){
               AB_lv[i,,] <- AB_lv[i,,]%*%t(AB_lv[i,,])
             }
             out$Ab.lv <- AB_lv
@@ -1458,6 +1465,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
         incla<-rep(FALSE, length(incl))
         incla[names(objrFinal$par)=="u"] <- TRUE
+        
         out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
 
       }
