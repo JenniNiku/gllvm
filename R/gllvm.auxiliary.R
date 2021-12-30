@@ -2599,7 +2599,5 @@ RRse <- function(object){
       }
     }
     betaSE<-sqrt(abs(betaSE))
-    object$params$Xcoef<-cbind(object$params$Xcoef,beta)
-    object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
     return(betaSE)
 }
