@@ -11,7 +11,7 @@
 #' @param xlim.list list of vectors with length of two to define the intervals for an x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals
 #' @param ...	additional graphical arguments.
 #'
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen, Bert van der Veen
 #'
 #' @examples
 #'# Extract subset of the microbial data to be used as an example
@@ -40,6 +40,10 @@
 #'TR <- antTraits$traits
 #'fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 #'coefplot(fitT)
+#'
+#'# Fit  gllvm model with environmental covariances and reduced rankk
+#'fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
+#'coefplot(fitRR)
 #'}
 #'@aliases coefplot coefplot.gllvm
 #'@export
@@ -56,7 +60,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   #Calculate standard errors of species-effects for reduced rank terms
   if(!is.null(object$lv.X)){
     beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$LvXcoef)
-    betaSE <- RRse(mod2)
+    betaSE <- RRse(object)
     object$params$Xcoef<-cbind(object$params$Xcoef,beta)
     object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
   }
