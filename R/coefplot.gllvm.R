@@ -50,9 +50,17 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
-  if (is.null(object$X))
+  if (is.null(object$X)&is.null(object$lv.X))
     stop("No X covariates in the model.")
-
+  
+  #Calculate standard errors of species-effects for reduced rank terms
+  if(!is.null(object$lv.X)){
+    beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$LvXcoef)
+    betaSE <- RRse(mod2)
+    object$params$Xcoef<-cbind(object$params$Xcoef,beta)
+    object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
+  }
+  
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
