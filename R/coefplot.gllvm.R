@@ -68,8 +68,8 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
-    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef])
-    cnames <- colnames(object$params$Xcoef)[which.Xcoef]
+    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=F])
+    cnames <- colnames(Xcoef)
     k <- length(cnames)
     labely <- rownames(Xcoef)
     m <- length(labely)
