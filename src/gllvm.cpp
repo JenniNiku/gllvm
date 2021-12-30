@@ -623,7 +623,7 @@ Type objective_function<Type>::operator() ()
           u.rightCols(num_RR) += x_lv*b_lv3;
         }
         //much easier, since we assume independence between LVs
-        matrix <Type> temp(nlvr,nlvr);
+        array <Type> temp(nlvr,nlvr,n);
         temp.fill(0.0);
         matrix <Type> L(nlvr,nlvr);
         L.fill(0.0);
@@ -632,24 +632,25 @@ Type objective_function<Type>::operator() ()
           if(num_lv_c>0){
             for(int i=0; i<n; i++){
               for(int q=0; q<num_lv_c; q++){
-                temp(q,q) = (x_lv.row(i)*(AB_lv.col(q).matrix()*AB_lv.col(q).matrix().transpose())*x_lv.row(i).transpose()).sum();
+                temp(q,q,i) = (x_lv.row(i)*(AB_lv.col(q).matrix()*AB_lv.col(q).matrix().transpose())*x_lv.row(i).transpose()).sum();
               }
             }
           }
           if(num_RR>0){
             for(int i=0; i<n; i++){
               for(int q=(num_lv_c+num_lv); q<(num_lv_c+num_lv+num_RR); q++){
-                temp(q,q) = (x_lv.row(i)*(AB_lv.col(q-num_lv).matrix()*AB_lv.col(q-num_lv).matrix().transpose())*x_lv.row(i).transpose()).sum();
+                temp(q,q,i) = (x_lv.row(i)*(AB_lv.col(q-num_lv).matrix()*AB_lv.col(q-num_lv).matrix().transpose())*x_lv.row(i).transpose()).sum();
               }
             }
           }
           for(int i=0; i<n; i++){
-            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp;
+            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp.col(i).matrix();
             L = L.llt().matrixL();
             A.col(i) = L.array();
           }
+          REPORT(temp);
         }else if(random(0)>1 && n == nr){//if row effects are included in u and A
-          matrix <Type> temp(nlvr,nlvr);
+          array <Type> temp(nlvr,nlvr,n);
           temp.fill(0.0);
           matrix <Type> L(nlvr,nlvr);
           L.fill(0.0);
@@ -666,23 +667,22 @@ Type objective_function<Type>::operator() ()
           if(num_lv_c>0){
             for(int i=0; i<n; i++){
               for(int q=1; q<(num_lv_c+1); q++){
-                temp(q,q) = (x_lv.row(i)*AB_lv.col(q-1).matrix()*AB_lv.col(q-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
+                temp(q,q,i) = (x_lv.row(i)*AB_lv.col(q-1).matrix()*AB_lv.col(q-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
               }
             }
           }
           if(num_RR>0){
             for(int i=0; i<n; i++){
               for(int q=(num_lv_c+num_lv+1); q<(num_lv_c+num_lv+num_RR+1); q++){
-                temp(q,q) = (x_lv.row(i)*AB_lv.col(q-num_lv-1).matrix()*AB_lv.col(q-num_lv-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
+                temp(q,q,i) = (x_lv.row(i)*AB_lv.col(q-num_lv-1).matrix()*AB_lv.col(q-num_lv-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
               }
             }
           }
           for(int i=0; i<n; i++){
-            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp;
+            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp.col(i).matrix();
             L = L.llt().matrixL();
             A.col(i) = L.array();
           }
-          
         }
       }
       REPORT(u);
