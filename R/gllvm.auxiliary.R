@@ -2545,7 +2545,7 @@ RRse <- function(object){
       warning("Cannot calculate confidence intervals for model with random slopes and reduced rank terms.")
     }
     if(object$quadratic!=FALSE){
-      warning("Coefplot for quadratic RRR not yet implemented.")
+      warning("Coefplot for quadratic coefficients not yet implemented.")
     }
     if(!is.list(object$sd)){
       stop("Cannot construct coefplot without standard errors in the model.")
