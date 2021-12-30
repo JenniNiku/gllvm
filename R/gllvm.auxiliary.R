@@ -2539,3 +2539,67 @@ mlm <- function(y, X = NULL, index = NULL){
   out$residuals <- residuals
   out
 }
+
+RRse <- function(object){
+    if(object$randomB!=FALSE){
+      warning("Cannot calculate confidence intervals for model with random slopes and reduced rank terms.")
+    }
+    if(object$quadratic!=FALSE){
+      warning("Coefplot for quadratic RRR not yet implemented.")
+    }
+    if(!is.list(object$sd)){
+      stop("Cannot construct coefplot without standard errors in the model.")
+    }
+    K <- ncol(object$lv.X)
+    d <- object$num.RR+object$num.lv.c
+    p <- ncol(object$y)
+    #still add RR or num.lv.c or something to predictor names
+    beta <- object$params$theta[,1:d,drop=F]%*%t(object$params$LvXcoef)
+    
+    betaSE<-matrix(0,ncol=K,nrow=ncol(object$y))
+    colnames(betaSE)<-colnames(object$lv.X)
+    row.names(betaSE)<-colnames(object$y)
+    
+    covMat <- object$Hess$cov.mat.mod
+    
+    colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par[object$Hess$incl])
+    covMat <- covMat[colnames(covMat)%in%c("b_lv","lambda"),colnames(covMat)%in%c("b_lv","lambda")]
+    
+    idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
+    
+    #add first row and column of zeros before b_lv, for first species
+    covMat <- rbind(covMat[1:(d*K),],0,covMat[-c(1:(d*K)),])
+    covMat <- cbind(covMat[,1:(d*K)],0,covMat[,-c(1:(d*K))])
+    
+    #add zeros where necessary
+    for(q in 1:length(idx)){
+      covMat <- rbind(covMat[1:(d*K+idx[q]-1),],0,covMat[(d*K+idx[q]):ncol(covMat),])
+      covMat <- cbind(covMat[,1:(d*K+idx[q]-1)],0,covMat[,(d*K+idx[q]):ncol(covMat)])
+    }
+    row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
+    
+    covB <-  covMat[colnames(covMat)=="b_lv",colnames(covMat)=="b_lv"]
+    covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda"]
+    covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv"]
+    #all ordered by LV, so LV11 LV12 LV13 etc
+    for(k in 1:K){
+      for(j in 1:p){
+        for(q in 1:d){
+          for(r in 1:d){
+            betaSE[j,k] <-  betaSE[j,k]+object$params$LvXcoef[k,q]*object$params$LvXcoef[k,r]*covL[(q-1)*p+j,(r-1)*p+j]+
+              object$params$LvXcoef[k,q]*object$params$theta[j,r]*covLB[(q-1)*p+j,(r-1)*K+k]+
+              object$params$LvXcoef[k,r]*object$params$theta[j,q]*covLB[(r-1)*p+j,(q-1)*K+k]+
+              object$params$theta[j,q]*object$params$theta[j,r]*covB[(r-1)*K+k,(q-1)*K+k]+
+              covB[(r-1)*K+k,(q-1)*K+k]*covL[(q-1)*p+j,(r-1)*p+j]+
+              covLB[(r-1)*p+j,(q-1)*K+k]*covLB[(q-1)*p+j,(r-1)*K+k]
+            
+          }
+        }
+        
+      }
+    }
+    betaSE<-sqrt(abs(betaSE))
+    object$params$Xcoef<-cbind(object$params$Xcoef,beta)
+    object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
+    return(betaSE)
+}
