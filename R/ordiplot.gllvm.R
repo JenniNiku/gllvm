@@ -512,8 +512,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         for(i in which(!idx)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
         }
-        ends <- ends[idx,]
-        LVcoef <- LVcoef[idx,]
+        ends <- ends[idx,,drop=F]
+        LVcoef <- LVcoef[idx,,drop=F]
       }
       if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.1,lty=lty)
