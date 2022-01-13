@@ -2065,9 +2065,9 @@ getFourthCorner<- function(object){
 sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type = NULL){
   #For num.RR we treat the LV as zero
   if(!is.null(type)){
-  if(type=="marginal"){
-    ignore.u <- TRUE
-  }
+    if(type=="marginal"){
+      ignore.u <- TRUE
+    }
   }
   r <- obj$env$random
   par = obj$env$last.par.best
@@ -2102,7 +2102,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0){
       for(q in 1:(num.lv.c+num.RR)){
-        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X)-(q-1)))+(q-1)*ncol(lv.X)-(q-1)*(q-2)/2]] <- lv.X[,1:ncol(lv.X)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
       }
     }
   } else {
@@ -2150,50 +2150,55 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0&random[3]==0){
       for(q in 1:(num.lv.c+num.RR)){
-        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:ncol(lv.X))+(ncol(lv.X)*(q-1))]] <- lv.X#/sigma.lv[q]
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X)-(q-1)))+(q-1)*ncol(lv.X)-(q-1)*(q-2)/2]] <- lv.X[,1:ncol(lv.X)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
       }
     }
-    if(is.null(type)&(num.lv.c+num.RR)==0){
+    if(is.null(type)&(num.lv.c+num.RR)==0 | random[3] >1){
       type <- "residual"
-    }else{
+    }else if(num.lv.c>0){
       type <- "conditional"
+    }else if(num.RR>0 & random[3]== 0 & (num.lv+num.lv.c+radidx)==0){
+      type <- "marginal"
     }
     if(random[3]>0)type<-"residual"
     if((num.lv+num.lv.c)>0|any(random>0)){
-    if(type%in%c("conditional")){
-      S <- diag(rep(sigma.lv,each=n))
-      diag.term2 <- (Q+S%*%A)%*%Vtheta%*%t(Q+S%*%A)
+      if(type%in%c("conditional")){
+        S <- diag(rep(sigma.lv,each=n))
+        diag.term2 <- (Q+S%*%A)%*%Vtheta%*%t(Q+S%*%A)
+        
+        colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+      }else if(type=="residual"){
+        diag.term2 <- (A)%*%Vtheta%*%t(A)
+        colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
+      }else if(type=="marginal"){
+        covb <- Q%*%(A)%*%t(Q)
+        
+      }
       
-      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
-    }else if(type=="residual"){
-      diag.term2 <- (A)%*%Vtheta%*%t(A)
-      colnames(diag.term2)<-row.names(diag.term2)<-row.names(A)
-    }
-    
     }
   }
-
+  
   if((num.lv+num.lv.c+radidx)>0&type!="marginal"){
     diag.term1 <- Matrix::chol2inv(L)
-  
-  if(radidx>0&num.RR>0&random[3]==0){
-    diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
-    diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n+radidx))])
-  }else if(num.RR>0&random[3]==0){
-    if(num.lv.c>0){
-      diag.term1 <- rbind(diag.term1[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n)),])
-      diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n))])
-    }else if(num.lv>0){
-      diag.term1 <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1)
-      diag.term1 <- cbind(matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1)
+    
+    if(radidx>0&num.RR>0&random[3]==0){
+      diag.term1 <- rbind(diag.term1[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n+radidx)),])
+      diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n+radidx))])
+    }else if(num.RR>0&random[3]==0){
+      if(num.lv.c>0){
+        diag.term1 <- rbind(diag.term1[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*n)),])
+        diag.term1 <- cbind(diag.term1[,1:(num.lv.c*n)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1[,-c(1:(num.lv.c*n))])
+      }else if(num.lv>0){
+        diag.term1 <- rbind(matrix(0,nrow=num.RR*n,ncol=ncol(diag.term1)),diag.term1)
+        diag.term1 <- cbind(matrix(0,nrow=nrow(diag.term1),ncol=num.RR*n),diag.term1)
+      }
     }
-  }
-  diag.term1 <- as.matrix(diag.term1)
+    diag.term1 <- as.matrix(diag.term1)
   }else if(type=="marginal"|(num.lv.c+num.lv)==0){
     diag.term2 <- Q%*%Vtheta%*%t(Q)
     diag.term1<-0
     colnames(diag.term2)<-rep("XB",n*(num.RR+num.lv.c))
-    }
+  }
   if(type%in%c("conditional")){
     S <- diag(rep(sigma.lv,each=n))
     diag.term1 <- S%*%diag.term1%*%S
@@ -2230,15 +2235,15 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   }
   if(!return.covb){
     try({
-    se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
-    if((num.RR+num.lv+num.lv.c)>1){
-      se <- aperm(se,c(3,2,1))
-    }else{
-      se <- as.matrix(se)
-    }
-    if((num.RR+num.lv+num.lv.c)>0){
-      out$A <- se
-    }
+      se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv+num.lv.c+num.RR),by=n),seq(i,n*(num.lv+num.lv.c+num.RR),by=n)],simplify=F))
+      if((num.RR+num.lv+num.lv.c)>1){
+        se <- aperm(se,c(3,2,1))
+      }else{
+        se <- as.matrix(se)
+      }
+      if((num.RR+num.lv+num.lv.c)>0){
+        out$A <- se
+      }
     },silent=T)
   }else{
     out  <- covb
