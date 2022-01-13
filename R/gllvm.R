@@ -386,6 +386,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
   if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
     stop("Constrained model with quadratic responses and random slopes not allowed with method 'LA'")
   }
+  
   if(!randomB%in%c(FALSE,"single","P","LV")){
     stop("RandomB should be one of 'single', 'P', or 'LV'")
   }
@@ -734,6 +735,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       }
       if(num.RR>=ncol(lv.X)){
         stop("num.RR must be lower than the number of predictors.")
+      }
+      if((num.RR+num.lv.c)>=p){
+        stop("num.RR and num.lv.c should be less than the number of species.")
       }
       #check for redundant predictors
       QR<-qr(lv.X)
