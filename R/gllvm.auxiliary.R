@@ -2153,14 +2153,14 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
         Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X)-(q-1)))+(q-1)*ncol(lv.X)-(q-1)*(q-2)/2]] <- lv.X[,1:ncol(lv.X)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
       }
     }
-    if(is.null(type)&(num.lv.c+num.RR)==0 | random[3] >1){
+    if(is.null(type)&(num.lv.c+num.RR)==0 | random[3] >0){
       type <- "residual"
     }else if(num.lv.c>0){
       type <- "conditional"
     }else if(num.RR>0 & random[3]== 0 & (num.lv+num.lv.c+radidx)==0){
       type <- "marginal"
     }
-    if(random[3]>0)type<-"residual"
+    
     if((num.lv+num.lv.c)>0|any(random>0)){
       if(type%in%c("conditional")){
         S <- diag(rep(sigma.lv,each=n))
@@ -2217,7 +2217,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$row <- CovRow
   }
   seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
-  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   if(random[3]>0){
     covb_lvErr <- matrix(seb_lv,ncol=num.lv.c+num.RR)
     out$Ab_lv <- covb_lvErr
@@ -2467,7 +2467,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
    covb_lvErr <- matrix(seb_lv,ncol=num.lv.c+num.RR)
    out$Ab_lv <- covb_lvErr
   }
-    covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+    if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
   #separate errors AB
   seAb <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
