@@ -1423,7 +1423,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(row.eff=="fixed"){ incl[1] <- FALSE }
       }
       
-      if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && row.eff!="random")){
+      if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && row.eff!="random" && randomB == FALSE)){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
         
