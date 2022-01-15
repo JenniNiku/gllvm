@@ -298,9 +298,16 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
               #no prediction errors for the residual
               object$prediction.errors$lvs[,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
             }
+            S <- diag(1:(num.lv.c+num.RR))
+            if(num.lv.c>0&type=="conditional"){
+              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
+            }
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]+ Q%*%covsB%*%t(Q)
+              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
+              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
           }
           for (i in 1:n) {
@@ -342,7 +349,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             if(num.RR>0){
             #variational covariances but add 0s for RRR
             A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-            A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+            if((num.lv+num.lv.c)>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
           }else{A<-object$A}
           if(type%in%c("conditional")){
             if((num.lv.c+num.lv)==1){
@@ -358,6 +365,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             #calculate covariance sfor randomB
             covsB <- CMSEPf(object, type = "residual",return.covb = T)
             covsB <- covsB[colnames(covsB)=="b_lv",colnames(covsB)=="b_lv"]
+            
             if(object$randomB=="P"|object$randomB=="single"){
               covsB <- covsB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
             }else if(object$randomB=="LV"){
@@ -374,7 +382,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S+ Q%*%covsB%*%t(Q)
+              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
+              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
             object$A <- A
             
@@ -456,7 +467,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S+ Q%*%covsB%*%t(Q)
+              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
+              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
           }
           for (i in 1:n) {
@@ -496,7 +510,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             if(num.RR>0){
               #variational covariances but add 0s for RRR
               A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-              A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+              if((num.lv+num.lv.c)>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
             }else{A<-object$A}
             if(type%in%c("conditional")){
               if((num.lv.c+num.lv)==1){
@@ -528,7 +542,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S+ Q%*%covsB%*%t(Q)
+              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
+              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
             object$A <- A
             
