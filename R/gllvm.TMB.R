@@ -223,10 +223,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }else if(quadratic == FALSE){
           lambda2 <- 0
         }
+        if(start.params$randomB!=FALSE && randomB !=FALSE){
+          sigmab_lv <- start.params$sigmaLvXcoef
+        }else if(randomB!=FALSE){
+          sigmab_lv <- fit$sigmab_lv
+        }
         if((start.params$num.lv.c+start.params$num.RR)==0){
           b.lv <- matrix(0)
         }else{
-          b.lv <- start.params$params$b.lv
+          b.lv <- start.params$params$LvXcoef
         }
         beta0 <- start.params$params$beta0 ## column intercepts
         betas <- NULL
@@ -237,7 +242,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if ((num.lv+(num.lv.c+num.RR)) > 0){
           sigma.lv <- start.params$params$sigma.lv
           lambdas <- start.params$params$theta
-          if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)]),] <- 0
+          lambdas<<-lambdas
+          if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)])] <- 0
           if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
           
         }
@@ -402,14 +408,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           ab12 <- ncol(lv.X)
           ab3 <- num.RR+num.lv.c
         }
-        if(is.null(start.params) || start.params$method=="LA"){
+        if(is.null(start.params) || start.params$method=="LA" || start.params$randomB==FALSE){
           if(Lambda.struc=="diagonal" || diag.iter>0){
                 Ab_lv <- log(rep(Lambda.start[1],ab12*ab3)) #1/2, 1
           } else{
             Ab_lv <- c(log(rep(Lambda.start[1],ab12*ab3)),rep(0,ab12*(ab12-1)/2*ab3)) #1/2, 1
           }
         } else {
-          Au <- NULL
+          Ab_lv <- NULL
           for(d in 1:ab12) {
             if(start.params$Lambda.struc=="unstructured" || length(dim(start.params$Ab_lv))==3){
               Ab_lv <- c(Ab_lv,log(start.params$Ab_lv[,d,d]))
