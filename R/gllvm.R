@@ -882,7 +882,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
 
     if (!is.null(start.fit)) {
-      if (class(start.fit) != "gllvm")
+      if (!all(class(start.fit) %in% c("gllvm","gllvm.quadratic")))
         stop("Only object of class 'gllvm' can be given as a starting parameters.")
 
       if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
