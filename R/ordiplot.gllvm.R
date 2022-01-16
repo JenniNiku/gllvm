@@ -20,7 +20,7 @@
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1
 #' @param arrow.scale positive value, to scale arrows
 #' @param arrow.spp.scale positive value, to scale arrows of species
-#' @param arrow.ci represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}
+#' @param arrow.ci represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}
 #' @param arrow.lty linetype for arrows in constrained
 #' @param predict.region logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.
 #' @param level level for prediction regions.
@@ -104,8 +104,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       spp.arrows <- FALSE
     }
   }
-  # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
-  #      when they are too small")
+  
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   n <- NROW(object$y)
@@ -633,10 +632,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
-      if(!is.logical(object$sd)&arrow.ci&(object$randomB==FALSE)){
+      if(!is.logical(object$sd)&arrow.ci){
+        if(object$randomB==FALSE){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+        }else{
+          covB <- getPredictErr(object)$b.lv
+        }
         rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
         #using svd_rotmat_sites instead of B so that uncertainty of the predictors is not affected by the scaling using alpha and sigma.lv
         for(i in 1:ncol(object$lv.X)){
