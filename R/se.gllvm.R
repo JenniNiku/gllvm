@@ -334,7 +334,7 @@ se.gllvm <- function(object, ...){
     
     
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random")){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE)){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       se <- try(sqrt(diag(abs(covM))))
       
