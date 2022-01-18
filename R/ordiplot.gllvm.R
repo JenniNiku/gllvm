@@ -170,10 +170,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     which.scl <- sort(which.scl)
     # Do the scaling
     if(quadratic==FALSE){
-      object$params$theta[,which.scl] <- object$params$theta[,which.scl]%*%diag(object$params$sigma.lv)
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl, drop=FALSE]%*%diag(object$params$sigma.lv, nrow = length(object$params$sigma.lv), ncol = length(object$params$sigma.lv))
     }else{
       sig <- diag(c(object$params$sigma.lv,object$params$sigma.lv^2))
-      object$params$theta[,which.scl] <- object$params$theta[,which.scl,drop=F]%*%sig
+      object$params$theta[,which.scl] <- object$params$theta[,which.scl,drop=FALSE]%*%sig
     }
     
   }
