@@ -18,6 +18,7 @@ gllvm(
   row.eff = FALSE,
   offset = NULL,
   quadratic = FALSE,
+  randomB = FALSE,
   sd.errors = TRUE,
   method = "VA",
   randomX = NULL,
@@ -70,6 +71,8 @@ gllvm(
 \item{offset}{vector or matrix of offset terms.}
 
 \item{quadratic}{either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.}
+
+\item{randomB}{either \code{FALSE}(default), "LV", "P", or "single". Fits constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.}
 
 \item{sd.errors}{logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.}
 
@@ -149,6 +152,7 @@ An object of class "gllvm" includes the following components:
  \item{formula}{ Formula for predictors}
  \item{lv.formula}{ Formula of latent variables in constrained ordination}
  \item{randomX }{ Formula for species specific random effects in fourth corner model}
+ \item{randomB }{ Boolean flag for random slopes in constrained ordination}
  \item{num.lv}{ Number of unconstrained latent variables}
  \item{num.lv.c}{ Number of constrained latent variables with residual}
  \item{num.RR}{ Number of constrained latent variables without residual}
@@ -163,7 +167,7 @@ An object of class "gllvm" includes the following components:
  \itemize{
    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
-   \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
+   \item{LvXcoef }{ Covariate coefficients (or predictions for random slopes) related to constrained latent variables}
    \item{beta0 }{ column specific intercepts}
    \item{Xcoef }{ coefficients related to environmental covariates X}
    \item{B }{ coefficients in fourth corner model}
@@ -174,7 +178,7 @@ An object of class "gllvm" includes the following components:
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
  \item{sd }{ list of standard errors of parameters}
  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
- \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
+ \item{A, Ar, Ab_lv}{ covariance matrices for variational densities of latent variables, random row effects, and random slopes respectively}
  \item{seed}{ Seed used for calculating starting values}
  \item{TMBfn}{ TMB objective and derivative functions}
  \item{logL }{ log likelihood}
@@ -216,12 +220,12 @@ For quadratic responses, it can be useful to provide the latent variables estima
 The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
 }
 
-\subsection{Constrained ordination}{
-For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
+\subsection{Ordination with predictors}{
+For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_lv} can be included to explain the latent variables:
 
-\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
-where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
-the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
+\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i})' D_j (B' x_{lv,i} + \epsilon_i) ,}
+where \eqn{z_i = B' x_{lv,i} + \epsilon_i} are latent variables informed by the predictors, but not constrained compared to unconstrained ordination as in methods such as CCA or RDA.
+Omitting the predictors results in an unconstrained ordinationm, and omitting \eqn{\epsilon_i} in the usual constrained ordination, which can also be fitted.
 }
 
 \subsection{Fourth corner model}{

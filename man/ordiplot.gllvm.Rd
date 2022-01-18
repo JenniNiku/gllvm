@@ -71,7 +71,7 @@
 
 \item{arrow.spp.scale}{positive value, to scale arrows of species}
 
-\item{arrow.ci}{represent statistical uncertainty for arrows in constrained ordinatioon using confidence interval? Defaults to \code{TRUE}}
+\item{arrow.ci}{represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}}
 
 \item{arrow.lty}{linetype for arrows in constrained}
 

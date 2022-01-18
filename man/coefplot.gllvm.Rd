@@ -11,6 +11,7 @@
   which.Xcoef = NULL,
   order = TRUE,
   cex.ylab = 0.5,
+  cex.xlab = 1.3,
   mfrow = NULL,
   mar = c(4, 6, 2, 1),
   xlim.list = NULL,
@@ -27,6 +28,8 @@
 \item{order}{logical, whether or not coefficients are ordered, defaults to \code{TRUE}.}
 
 \item{cex.ylab}{the magnification to be used for axis annotation relative to the current setting of cex.}
+
+\item{cex.xlab}{the magnification to be used for axis annotation.}
 
 \item{mfrow}{same as \code{mfrow} in \code{par}. If \code{NULL} (default) it is determined automatically.}
 
@@ -66,8 +69,12 @@ coefplot(fitx, which.Xcoef = 1:2)
 TR <- antTraits$traits
 fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 coefplot(fitT)
+
+# Fit  gllvm model with environmental covariances and reduced rankk
+fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
+coefplot(fitRR)
 }
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui, Sara Taskinen
+Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui, Sara Taskinen, Bert van der Veen
 }
