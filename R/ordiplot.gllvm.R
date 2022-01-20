@@ -639,6 +639,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
         }else{
           covB <- getPredictErr(object)$b.lv
+          
+          if(object$method=="LA"){
+            covB <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = "residual", return.covb=T)
+            covB <- covB[colnames(covB)=="b_lv",colnames(covB)=="b_lv"]
+          }else{
+            covB <- CMSEPf(object, type = "residual",return.covb = T)
+            covB <- covB[colnames(covB)=="b_lv",colnames(covB)=="b_lv"]
+          }
         }
         rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
         #using svd_rotmat_sites instead of B so that uncertainty of the predictors is not affected by the scaling using alpha and sigma.lv
