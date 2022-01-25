@@ -307,7 +307,6 @@ Type objective_function<Type>::operator() ()
           }
         }
       }else{
-        if(nlvr>(num_lv+num_lv_c)){
           if(num_lv_c>0){
             if(lambda2.cols()==1){
               for (int j=0; j<p; j++){
@@ -358,7 +357,6 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-    }
     
     // add offset
     eta += offset;
