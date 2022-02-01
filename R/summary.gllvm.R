@@ -229,7 +229,7 @@ print.summary.gllvm <- function (x, ...)
   cat("Informed LVs: ", x$num.lv.c, "\n")
   cat("Constrained LVs: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
-  if((x$num.lv.c)>0){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
+  if((x$num.lv.c)>0|x$quadratic!=F){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula,collapse=""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
@@ -249,7 +249,6 @@ print.summary.gllvm <- function (x, ...)
       }else{
         cat("\nOptima LVs: \n")
       }
-      
       
       print(x$Coefficients[,-1,drop=F])
     }

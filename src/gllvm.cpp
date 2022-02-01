@@ -120,7 +120,7 @@ Type objective_function<Type>::operator() ()
   //K*K*d or d*d*K
   int sbl12 = 0;
   int sbl3 = 0;
-  if(sigmab_lv.size()==Klv|sigmab_lv.size()==Type(1)){
+  if((sigmab_lv.size()==Klv)|(sigmab_lv.size()==Type(1))){
     sbl12 = num_lv_c + num_RR;
     sbl3 = Klv;
   }else if(sigmab_lv.size()==(num_lv_c+num_RR)){
@@ -540,7 +540,7 @@ Type objective_function<Type>::operator() ()
               L =  temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
               A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
             }
-          }else if(n == nr && random(0)>0){//if row effects are included in u and A
+          }else if((n == nr) && (random(0)>0)){//if row effects are included in u and A
             for(int i=0; i<n; i++){
               temp = A.col(i).matrix()*A.col(i).matrix().transpose();
               for(int klv=0; klv<Klv; klv++){
@@ -647,7 +647,7 @@ Type objective_function<Type>::operator() ()
             A.col(i) = L.array();
           }
           REPORT(temp);
-        }else if(random(0)>1 && n == nr){//if row effects are included in u and A
+        }else if((random(0)>1) && (n == nr)){//if row effects are included in u and A
           array <Type> temp(nlvr,nlvr,n);
           temp.fill(0.0);
           matrix <Type> L(nlvr,nlvr);
