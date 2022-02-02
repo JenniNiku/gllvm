@@ -411,7 +411,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           if(Lambda.struc=="diagonal" || diag.iter>0){
                 Ab_lv <- log(rep(Lambda.start[1],ab12*ab3)) #1/2, 1
           } else{
-            Ab_lv <- c(log(rep(Lambda.start[1],ab12*ab3)),rep(0,ab12*(ab12-1)/2*ab3)) #1/2, 1
+            Ab_lv <- c(log(rep(Lambda.start[1],ab12*ab3)),rep(0.01,ab12*(ab12-1)/2*ab3)) #1/2, 1
           }
         } else {
           Ab_lv <- NULL
@@ -423,7 +423,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             }
           }
           if(Lambda.struc!="diagonal" && diag.iter==0){
-            Ab_lv <- c(Ab_lv,rep(0,ab12*(ab12-1)/2*ab3))
+            Ab_lv <- c(Ab_lv,rep(0.01,ab12*(ab12-1)/2*ab3))
           }
         }} else { Ab_lv <- 0}
       
@@ -609,7 +609,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
         if(randomB!=FALSE){
           sigmab_lv1 <- param1[nam=="sigmab_lv"]
-          Ab_lv1<- c(pmax(param1[nam=="Ab_lv"],rep(log(1e-6), ab12*ab3)), rep(0,ab12*(ab12-1)/2*ab3))
+          Ab_lv1<- c(pmax(param1[nam=="Ab_lv"],rep(log(1e-6), ab12*ab3)), rep(0.01,ab12*(ab12-1)/2*ab3))
           
         }else{
             sigmab_lv1<-0
