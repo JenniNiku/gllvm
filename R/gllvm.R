@@ -490,7 +490,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     
     if((num.lv.c+num.RR)>0&method=="VA"&TMB==FALSE){
-      warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
+      warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
       control$TMB <- TRUE
     }
     if (class(family) == "family") {
@@ -746,13 +746,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       QR<-qr(lv.X)
       if(QR$rank<ncol(lv.X)){
         warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
-        if(num.lv.c>=ncol(lv.X)&num.RR==0){
+        if(num.lv.c>ncol(lv.X)&num.RR==0){
           num.lv.c <- QR$rank
           warning("Setting num.lv.c to number of non-redunant predictors")
-        }else if(num.RR>=ncol(lv.X)&num.lv.c==0){
+        }else if(num.RR>ncol(lv.X)&num.lv.c==0){
           num.RR <- QR$rank
           warning("Setting num.RR to number of non-redunant predictors")
-        }else if(num.RR>=ncol(lv.X)|num.lv.c>=ncol(lv.X)){
+        }
+        if(num.RR>ncol(lv.X)|num.lv.c>ncol(lv.X)){
           stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of non-redundant predictor variables.")
         }
         lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
@@ -867,9 +868,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
-    if(!is.null(TR)&num.lv.c>0){
-      stop("CGLLVM and traits not yet implemented together")
-    }
+    
     # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
     #   stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
     # }
@@ -906,11 +905,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(num.lv>0&num.lv.c==0)colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
       if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("CLV",1:num.lv.c, sep = "")
       if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
-    }
-    if((num.RR+num.lv.c)>0){
-    if(ncol(lv.X)<(num.lv.c+num.RR)){
-      stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
-    }
     }
  
     n.i <- 1
