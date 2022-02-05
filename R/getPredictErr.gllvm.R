@@ -88,8 +88,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
       }
       if(object$randomB!=FALSE){
         out$b.lv <- sdb$Ab_lv
-        if(object$randomB=="P")out$b.lv <- sqrt(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,]))))
-        if(object$randomB=="LV")out$b.lv <- sqrt(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,])))
+        if(object$randomB=="P")out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
+        if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
       }
   }
   if((num.lv+num.lv.c) > 1) out$lvs <- t(out$lvs)
