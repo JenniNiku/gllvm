@@ -51,6 +51,8 @@
 #'}
 #'@aliases predict predict.gllvm
 #'@method predict gllvm
+#'@import stats predict
+#'
 #'@export
 #'@export predict.gllvm
 
@@ -392,12 +394,4 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)
   return(out)
-}
-
-
-
-#' @export predict
-predict <- function(object, ...)
-{
-  UseMethod(generic = "predict")
 }
