@@ -26,7 +26,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sigmaLV);//SD for LV
   PARAMETER_VECTOR(lambda); // lv loadings
   PARAMETER_MATRIX(lambda2);// quadratic lv loadings
-  
+
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
@@ -56,6 +56,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(times); //number of time points
   DATA_INTEGER(cstruc); //correlation structure for row.params, 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm
   DATA_MATRIX(dc); //coordinates for sites, used for exponentially decaying cov. struc
+  DATA_SCALAR(b_tune);
+  DATA_UPDATE(b_tune);
   
   matrix<Type> dr = dr0.matrix();
   // REPORT(dr);
@@ -104,6 +106,21 @@ Type objective_function<Type>::operator() ()
   lam.fill(0.0);
   matrix<Type> Cu(nlvr,nlvr); 
   Cu.fill(0.0);
+  
+  matrix <Type> nll(n,p); // initial value of log-likelihood
+  nll.fill(0.0);
+  
+  if( random(2)<1 && (num_RR+num_lv_c)>0){
+  vector <Type> bNorm = b_lv.colwise().norm();
+  matrix <Type> Id(num_RR+num_lv_c,num_RR+num_lv_c);
+  Id.fill(0.0);
+  Id.diagonal().array() = 1;
+  //remove norm for penalty
+  b_lv *= (1/bNorm).matrix().asDiagonal();
+  nll.array() += b_tune*(b_lv.transpose()*b_lv - Id).squaredNorm();
+  //return norm
+  b_lv *= (bNorm).matrix().asDiagonal();
+  }
   
   matrix<Type> b_lv2(x_lv.cols(),nlvr);
   matrix <Type> Delta(nlvr,nlvr);
@@ -241,9 +258,7 @@ Type objective_function<Type>::operator() ()
   mu.fill(0.0);
   
   using namespace density;
-  
-  matrix <Type> nll(n,p); // initial value of log-likelihood
-  nll.fill(0.0);
+
   
   // Variational approximation
   if((method<1) | (method>1)){
@@ -1017,7 +1032,7 @@ Type objective_function<Type>::operator() ()
               if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
                 v = (newlam.col(j)+Q*u.row(i).transpose());
               }else if(random(2)<1){
-                //extra term for constrained ordination
+                //extra term for concurrent ordination
                 v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
               
@@ -1045,7 +1060,7 @@ Type objective_function<Type>::operator() ()
               if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
                 v = (-newlam.col(j)+Q*u.row(i).transpose());
               }else if(random(2)<1){
-                //extra term for constrained ordination
+                //extra term for concurrent ordination
                 v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
               }
               
@@ -1067,7 +1082,7 @@ Type objective_function<Type>::operator() ()
               if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
                 cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
               }else if(random(2)<1){
-                //extra terms for constrained ordination
+                //extra terms for concurrent ordination
                 cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*(u.row(i)).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
               }
               eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();

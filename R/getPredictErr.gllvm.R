@@ -37,13 +37,20 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
   if(!is.list(object$sd)){
     stop("Cannot calculate prediction errors without standard errors in the model.")
   }
+  
   n <- nrow(object$y)
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
+  
+  if((num.lv.c+num.lv)==0&object$randomB==FALSE&object$row.eff!="random"&is.null(object$randomX)){
+    stop("Cannot calculate prediction errors without random-effects in the model.")
+  }
+    
   out <- list()
+  
   if(object$method == "LA"){
-    if(num.lv>0|(num.lv.c)>0|num.RR>0&object$randomB==FALSE) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
+    if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
     if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
     if(object$randomB!=FALSE)out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
   }
@@ -61,31 +68,66 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
       sdb <- CMSEPf(object)
       # sdb<-sdA(object)
       
-      if(num.RR>0&object$randomB==FALSE){
+      if(num.RR>0){
         #variational covariances but add 0s for RRR
         A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
         A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
       }else if((num.lv.c+num.lv)>0){A<-object$A}
       if(object$row.eff == "random"){
-        object$Ar<-sdb$Ar+object$Ar
+        object$Ar<-sdb$Ar[,1]+object$Ar
       }
+      
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
+      if(num.RR>0&object$randomB!=FALSE){
+        if(object$randomB=="P"|object$randomB=="single"){
+          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+        }else if(object$randomB=="LV"){
+          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
+        }
+        
+        for(i in 1:n){
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+          temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+          temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+          A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
+        }
+        object$A <- A
+        
+      }
       # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
-    }else if(!CMSEP&(num.RR+num.lv.c)>0&object$randomB!=FALSE){
+    }else if(!CMSEP&(num.RR+num.lv.c)>0){
       sdb <- list(Ab_lv = 0)
+      
+      if(num.RR>0&object$randomB!=FALSE){
+        if(object$randomB=="P"|object$randomB=="single"){
+          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+        }else if(object$randomB=="LV"){
+          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
+        }
+        
+        for(i in 1:n){
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+          temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
+          # temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+          A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
+        }
+        object$A <- A
+        
+      }
     }
     r=0
     if(object$row.eff=="random"){
       # r=1
       out$row.effects <- sqrt(object$Ar)
     }
-    if(length(dim(object$A))==2&(num.lv+num.lv.c)>0){
+
+    if(length(dim(object$A))==2&(num.lv+num.lv.c+num.RR)>0){
       out$lvs <- sqrt(object$A[,1:(num.lv+num.lv.c+num.RR)+r])
-    } else if((num.lv+num.lv.c)>0){
+    } else if((num.lv+num.lv.c+num.RR)>0){
       if((num.lv+num.lv.c+num.RR) ==1) {
-        out$lvs <- sqrt(as.matrix(object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]))
+        out$lvs <- sqrt(abs(as.matrix(object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r])))
       } else {
-        out$lvs <- sqrt(apply((object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]),1,diag))
+        out$lvs <- sqrt(abs(apply((object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]),1,diag)))
       }
     }
     if(object$randomB!=FALSE){
@@ -94,7 +136,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, ...)
       if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
   }
-  if((num.lv+num.lv.c) > 1) out$lvs <- t(out$lvs)
+  if((num.lv+num.lv.c+num.RR) > 1) out$lvs <- t(out$lvs)
   
   return(out)
 }

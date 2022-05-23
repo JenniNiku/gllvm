@@ -41,6 +41,7 @@
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 #'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
+#'  \item{\emph{b.tune}: }{ modifier for the tuning parameter of the penalty that induces orthogonality constraint on the reduced rank slopes in concurrent and constrained oridnation. Defaults to 1, so that the penaly is \deqn{\sqrt{n*p}||B'B-I_d||_F^2 (where \deqn{||.||_F^2} is the squared frobenius norm)}.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
@@ -377,7 +378,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
+                  control = list(reltol = 1e-8, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL, b.tune = 1), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
@@ -391,7 +392,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
   }
   
   if(!randomB%in%c(FALSE,"single","P","LV")){
-    stop("RandomB should be one of 'single', 'P', or 'LV'")
+    stop("RandomB should be one of FALSE, 'single', 'P', or 'LV'")
   }
   
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
@@ -422,6 +423,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         x$maxit = 4000
       if (!("trace" %in% names(x))) 
         x$trace = FALSE
+      if(!("b.tune" %in% names(x)))
+        x$b.tune = 1
       x
     }
     fill_control.va = function(x){
@@ -470,7 +473,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
     # }
-    reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
+    reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; b.tune = control$b.tune;
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start;
@@ -736,9 +739,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if((num.RR+num.lv.c)>ncol(lv.X)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
       }
-      if(num.RR>=ncol(lv.X)){
-        stop("num.RR must be lower than the number of predictors.")
-      }
       if((num.RR+num.lv.c)>=p){
         stop("num.RR and num.lv.c should be less than the number of species.")
       }
@@ -888,6 +888,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         stop("Starting parameters can be given only for count data.")
 
     }
+    # RRR with num.lv is a special (weird) case
+    # where unconstrained LVs are not uncorrelated with predictors
+    # better inform the user this might be a bad idea
+    if(!is.null(lv.X)){
+      if((num.RR+num.lv.c)>0&num.lv>0&(num.RR+num.lv.c)<ncol(lv.X)){
+        warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. \n")
+      }
+    }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
 
@@ -912,7 +920,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, lv.formula = lv.formula, formula = formula,
         method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, b.tune = b.tune)
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
@@ -1021,7 +1029,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             randomB = randomB,
             optim.method=optim.method, 
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
-            disp.group = disp.group
+            disp.group = disp.group,
+            b.tune = b.tune
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula

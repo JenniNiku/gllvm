@@ -63,13 +63,13 @@ se.gllvm <- function(object, ...){
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
       
       # Variational params not included for incl
-      incl[names(objrFinal$par)=="Abb"] <- FALSE;
-      if((num.lv.c+num.RR)==0){incl[names(objrFinal$par)=="b_lv"] <- FALSE}
+
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
       
       # Terms that are not included in TMBtrait for constrained ordination
-      incld[names(objrFinal$par)=="Ab_lv"] <- incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
-      incld[names(objrFinal$par)=="sigmab_lv"] <- incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE;
+      incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE;
+      incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
       incl[names(objrFinal$par)=="Au"] <- FALSE;
@@ -294,10 +294,12 @@ se.gllvm <- function(object, ...){
     
     #slopes for reduced rank predictors
     if((num.lv.c+num.RR)==0){
-      incld[names(objrFinal$par)=="b_lv"] <- incl[names(objrFinal$par)=="b_lv"] <- FALSE
-    }else if((num.lv.c+num.RR)>0&object$randomB==FALSE){
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
+      incl[names(objrFinal$par)=="b_lv"] <- FALSE
+    }else if((num.lv.c+num.RR)>0&randomB==FALSE){
       incl[names(objrFinal$par)=="b_lv"] <- TRUE
-    }else if((num.lv.c+num.RR>0)&object$randomB!=FALSE){
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
+    }else if((num.lv.c+num.RR>0)&randomB!=FALSE){
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       inclr[names(objrFinal$par)=="b_lv"] <- TRUE
@@ -355,6 +357,9 @@ se.gllvm <- function(object, ...){
           
           prediction.errors$lvs <- cov.lvs
           #sd.random <- sd.random[-(1:(n*num.lv))]
+          if(randomB!=FALSE){
+            prediction.errors$Ab.lv <- sd.random$Ab_lv
+          }
         }
         out$prediction.errors <- prediction.errors
       }

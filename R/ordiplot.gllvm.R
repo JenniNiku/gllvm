@@ -140,47 +140,55 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   if((num.lv.c+num.RR)==0&is.null(type)){
     type <- "residual"
   }else if(is.null(type)){
-      if(num.lv.c==0){
+      if(num.lv.c==0&num.RR>0){
         type <- "marginal"
-      }else{
+      }else if(num.lv.c>0){
         type <- "conditional"  
       }
   }
-  if(!is.null(type)){
-    
-  }
+  
   # This must be done, otherwise the scale of the ordination is non informative if the scale of params$theta () differ drastically:
   if(type == "residual"|num.lv>0){
     # First create an index for the columns with unconstrained LVs
-    which.scl <- NULL
-    if(num.lv>0){
-      which.scl <- (num.lv.c+num.RR+1):(num.lv.c+num.RR+num.lv)  
-    }
-    
-    if(quadratic!=FALSE){
-      which.scl <- c(which.scl, which.scl+num.lv.c+num.RR+num.lv)
-    }
-    # Add indices of constrained LVs if present
+    sigma.lv <- NULL
     if(num.lv.c>0&type=="residual"){
-      which.scl <- c(which.scl, 1:num.lv.c)
+      # to have similar scaling to unconstrained LVs
+      sigma.lv <- object$params$sigma.lv[1:num.lv.c]
+    }else if(num.lv.c>0){
+      #here the LVs get scaled with sigma.lv not theta
+      sigma.lv <- c(sigma.lv, rep(1,num.lv.c))
+    }
+    # constrained LVs never have a scale parameter so always get 1
+      sigma.lv <- c(sigma.lv, rep(1,num.RR))
+      
+      # unconstrained LVs always get their species parameters scaled, never LVs
+    if(num.lv>0){
+      sigma.lv <- c(sigma.lv, object$params$sigma.lv[(num.lv.c+1):(num.lv.c+num.lv)])
+    }
+      # scaling for quadratic coefficients
       if(quadratic!=FALSE){
-        which.scl <- c(which.scl, 1:num.lv.c+num.lv.c+num.RR+num.lv)
+        sigma.lv <- c(sigma.lv, sigma.lv^2)
       }
-    }
-    which.scl <- sort(which.scl)
-    # Do the scaling
-    if(quadratic==FALSE){
-      object$params$theta[,which.scl] <- object$params$theta[,which.scl, drop=FALSE]%*%diag(object$params$sigma.lv, nrow = length(object$params$sigma.lv), ncol = length(object$params$sigma.lv))
-    }else{
-      sig <- diag(c(object$params$sigma.lv,object$params$sigma.lv^2))
-      object$params$theta[,which.scl] <- object$params$theta[,which.scl,drop=FALSE]%*%sig
-    }
+
+      # Do the scaling
+      sigma.lv <- diag(sigma.lv)
+      object$params$theta <- object$params$theta%*%sigma.lv
     
+      #remove unconstrained LVs species loadings if type=="marginal"
+    if(type=="marginal"&num.lv>0){
+      if(quadratic!=FALSE)object$params$theta <- object$params$theta[,-c( (num.lv.c+num.RR+1):(num.lv.c+num.RR+num.lv) +num.RR+num.lv.c+num.lv),drop=F]
+      object$params$theta <- object$params$theta[,-c( (num.lv.c+num.RR+1):(num.lv.c+num.RR+num.lv) ),drop=F]
+    }
+      #remove constrined LVs species loadings if type=="residual"
+    if(type=="residual"&num.RR>0){
+      if(quadratic!=FALSE)object$params$theta <- object$params$theta[,-c( (num.lv.c+1):(num.lv.c+num.RR) +num.RR+num.lv.c+num.lv),drop=F]
+      object$params$theta <- object$params$theta[,-c((num.lv.c+1):(num.lv.c+num.RR) ),drop=F]
+    }
   }
 
   lv <- getLV(object, type = type)
   
-  if ((num.lv+(num.lv.c+num.RR)) == 1) {
+  if ((num.lv+(num.lv.c+num.RR)) == 1|ncol(lv) == 1) {
     if(num.lv==1){
       plot(1:n, lv, ylab = "LV1", xlab = "Row index", type="n") 
       if (symbols) {
@@ -199,7 +207,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }    
   }
   
-  if ((num.lv+num.lv.c+num.RR) > 1) {
+  if ((num.lv+num.lv.c+num.RR) > 1 & ncol(lv) > 1) {
    #unconstrained ordination always gets unscaled LVs, for correct prediction intervals.
     #prediction intervals don't yet account for the scaling of the residual term in 
     #num.lv.c
@@ -208,8 +216,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     # do_svd <- svd(object$lvs)
     #ensure that rotation is the same even when we use different types of 
     #scores
-    if(num.lv.c>0|(num.RR+num.lv)>0){
-    do_svd$v <- svd(getLV(object))$v
+    if(type!="residual"){
+    do_svd$v <- svd(getLV(object, type = type))$v
     }
     
     svd_rotmat_sites <- do_svd$v
@@ -260,7 +268,10 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #     nrow = n, ncol = num.lv, byrow = TRUE )
     # choose.lv.coefs <- do.svd$v * matrix(do.svd$d[1:num.lv] ^ (1 - alpha),
     #     nrow = p, ncol = num.lv, byrow = TRUE )
-    
+    # if(type=="conditional" & num.RR>0 & (num.lv+num.lv.c)==0){
+    #   type <- "marginal"
+    #   warning("still need to adjust this, not clean.")
+    # }
     
     if (!biplot) {
       if(is.null(main)&!is.null(type)){
@@ -274,40 +285,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (predict.region) {
         if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
         if (object$method == "LA") {
-          if(object$randomB==FALSE|(num.lv.c+num.RR)==0|object$randomB!=FALSE&type=="residual"){
-            
-          if((type%in%c("marginal","residual")&num.lv.c>0)){#have to recalculate prediction errors
+          if((type%in%c("marginal","residual")&(num.lv.c+num.RR)>0)){#have to recalculate prediction errors
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
-          }
-          }else{
-            pred.lvs <-  array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
-            if(num.lv.c>0){
-              pred.lvs[,1:num.lv.c,1:num.lv.c] <- object$prediction.errors$lvs[,1:num.lv.c,1:num.lv.c]
-            }
-            if(num.lv>0){
-             pred.lvs[,(num.lv.c+num.RR+1):dim(pred.lvs)[2],(num.lv.c+num.RR+1):dim(pred.lvs)[3]] <- object$prediction.errors$lvs[,(num.lv.c+num.RR+1):(num.lv.c+num.RR),(num.lv.c+num.RR+1):(num.lv.c+num.RR)]
-            }
-            object$prediction.errors$lvs <- pred.lvs
-            
-            #calculate covariances for randomB
-            
-            covsB <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = "residual", return.covb=T)
-            covsB <- covsB[colnames(covsB)=="b_lv",colnames(covsB)=="b_lv"]
-            if(type=="marginal"){
-              #no prediction errors for the residual
-              object$prediction.errors$lvs[,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
-            }
-            S <- diag(1:(num.lv.c+num.RR))
-            if(num.lv.c>0&type=="conditional"){
-              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            }
-            for(i in 1:n){
-              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
-              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
-            }
           }
           for (i in 1:n) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
@@ -318,85 +297,50 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             object$A<- object$A[,-1,-1]
           }
           
-          if(object$randomB==FALSE|(num.lv.c+num.RR)==0|object$randomB!=FALSE&type=="residual"){
           sdb<-CMSEPf(object, type = type)$A
     
-          if(num.RR>0){
+          #If not marginal add variational covariances
+          if(type!="residual"){
             #variational covariances but add 0s for RRR
-            A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-            A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+            A <- array(0,dim=c(n,(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)),(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))))
+            if(type!="marginal"&num.RR>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+            if(type!="marginal"&num.RR==0) A <- object$A
           }else{A<-object$A}
-          if(type%in%c("conditional")){
-            if((num.lv.c+num.lv)==1){
-              A<-A*object$params$sigma.lv
-            }else{
-              for(i in 1:n){
-                A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-              }  
-            }
+          #If conditional scale variational covariances for concurrent ordination by sigma
+          if(type=="conditional" & num.lv.c>0){
+            S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
+            diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
+            for(i in 1:n){
+              A[i,,]<-S%*%A[i,,]%*%S
+            }  
             
           }
-          if(type!="marginal"){
             object$A<-sdb+A 
-          }else{
-            object$A<-sdb
-          }
-          
-          }else{
-            sdb<-CMSEPf(object, type = "residual")$A
-            
-            if(num.RR>0){
-            #variational covariances but add 0s for RRR
-            A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-            if((num.lv+num.lv.c)>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
-          }else{A<-object$A}
-          if(type%in%c("conditional")){
-            if((num.lv.c+num.lv)==1){
-              A<-A*object$params$sigma.lv
-            }else{
-              for(i in 1:n){
-                A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-              }  
-            }
-            
-            A<-sdb+A
-          }
-            #calculate covariance sfor randomB
-            covsB <- CMSEPf(object, type = "residual",return.covb = T)
-            covsB <- covsB[colnames(covsB)=="b_lv",colnames(covsB)=="b_lv"]
-            
+            if((num.RR+num.lv.c)>0&object$randomB!=FALSE&type!="residual"){
+              A <- object$A
             if(object$randomB=="P"|object$randomB=="single"){
-              covsB <- covsB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+              covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
             }else if(object$randomB=="LV"){
-              covsB <- covsB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
+              covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
             }
-            
-            if(type=="marginal"){
-              #no prediction errors for the residual
-              A[,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
-            }
-            S <- diag(1:(num.lv.c+num.RR))
-            if(num.lv.c>0&type=="conditional"){
-              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            }
+  
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
               temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
               temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
               A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
-            object$A <- A
+              object$A <- A
+              
+            }
             
-          }
-          
           r=0
           for (i in 1:n) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
               covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
               # covm <- diag(object$A[i,which.lvs+r]);
             } else {
-              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.RR+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
+              covm <- (t(B)%*%object$A[i,1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))+r,1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))+r]%*%B)[which.lvs,which.lvs];
               # covm <- object$A[i,which.lvs+r,which.lvs+r];
             }
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.RR+num.lv.c)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
@@ -435,134 +379,72 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         ylab = paste("Latent variable", which.lvs[2]),
         main = main, type = "n", ... )
       
-      if (predict.region) {
-        if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
-        if (object$method == "LA") {
-          if(object$randomB==FALSE|(num.lv.c+num.RR)==0|object$randomB!=FALSE&type=="residual"){
-          if(type%in%c("marginal","residual")&num.lv.c>0){#have to recalculate prediction errors
-            object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
-          }
-          }else{
-            pred.lvs <-  array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
-            if(num.lv.c>0){
-              pred.lvs[,1:num.lv.c,1:num.lv.c] <- object$prediction.errors$lvs[,1:num.lv.c,1:num.lv.c]
+        if (predict.region) {
+          if(length(col.ellips)!=n){ col.ellips =rep(col.ellips,n)}
+          if (object$method == "LA") {
+            if((type%in%c("marginal","residual")&(num.lv.c+num.RR)>0)){#have to recalculate prediction errors
+              object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
             }
-            if(num.lv>0){
-              pred.lvs[,(num.lv.c+num.RR+1):dim(pred.lvs)[2],(num.lv.c+num.RR+1):dim(pred.lvs)[3]] <- object$prediction.errors$lvs[,(num.lv.c+num.RR+1):(num.lv.c+num.RR),(num.lv.c+num.RR+1):(num.lv.c+num.RR)]
+            for (i in 1:n) {
+              covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }        
+          } else {
+            if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
+              object$A<- object$A[,-1,-1]
             }
-            object$prediction.errors$lvs <- pred.lvs
             
-            #calculate covariance sfor randomB
-            covsB <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = "residual", return.covb=T)
-            covsB <- covsB[colnames(covsB)=="b_lv",colnames(covsB)=="b_lv"]
+            sdb<-CMSEPf(object, type = type)$A
             
-            if(type=="marginal"){
-              #no prediction errors for the residual
-              object$prediction.errors$lvs[,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
-            }
-            S <- diag(1:(num.lv.c+num.RR))
-            if(num.lv.c>0&type=="conditional"){
-              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            }
-            for(i in 1:n){
-              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
-              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
-              object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- object$prediction.errors$lvs[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
-            }
-          }
-          for (i in 1:n) {
-            covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
-          }
-        } else {
-          if(object$row.eff=="random" && dim(object$A)[2]>dim(object$lvs)[2]){
-            object$A<- object$A[,-1,-1]
-          }
-          
-          if(object$randomB==FALSE|(num.lv.c+num.RR)==0|object$randomB!=FALSE&type=="residual"){
-          sdb<-CMSEPf(object, type = type)$A
-          
-          if(num.RR>0){
-            A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-            A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
-          }else{A<-object$A}
-
-          if(type%in%c("conditional")){
-            if((num.lv.c+num.lv)==1){
-              A<-A*object$params$sigma.lv
-            }else{
-              for(i in 1:n){
-                A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-              }  
-            }
-          }
-          if(type!="marginal"){
-            object$A<-sdb+A 
-          }else{
-            object$A<-sdb
-          }
-          }else{
-            sdb<-CMSEPf(object, type = "residual")$A
-            
-            if(num.RR>0){
+            #If not marginal add variational covariances
+            if(type!="residual"){
               #variational covariances but add 0s for RRR
-              A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-              if((num.lv+num.lv.c)>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+              A <- array(0,dim=c(n,(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)),(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))))
+              if(type!="marginal"&num.RR>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+              if(type!="marginal"&num.RR==0) A <- object$A
             }else{A<-object$A}
-            if(type%in%c("conditional")){
-              if((num.lv.c+num.lv)==1){
-                A<-A*object$params$sigma.lv
-              }else{
-                for(i in 1:n){
-                  A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-                }  
-              }
+            #If conditional scale variational covariances for concurrent ordination by sigma
+            if(type=="conditional" & num.lv.c>0){
+              S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
+              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
+              warning("check d=1 case")
+              for(i in 1:n){
+                A[i,,]<-S%*%A[i,,]%*%S
+              }  
               
-              A<-sdb+A
-            }
-            #calculate covariance sfor randomB
-            covsB <- CMSEPf(object, type = "residual",return.covb = T)
-            covsB <- covsB[colnames(covsB)=="b_lv",colnames(covsB)=="b_lv"]
-            if(object$randomB=="P"|object$randomB=="single"){
-              covsB <- covsB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
-            }else if(object$randomB=="LV"){
-              covsB <- covsB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
             }
             
-            if(type=="marginal"){
-              #no prediction errors for the residual
-              A[,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- array(0,dim = c(n,num.lv.c+num.RR,num.lv.c+num.RR))
+            object$A<-sdb+A 
+            if((num.RR+num.lv.c)>0&object$randomB!=FALSE&type!="residual"){
+              A <- object$A
+            if(object$randomB=="P"|object$randomB=="single"){
+              covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+            }else if(object$randomB=="LV"){
+              covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
             }
-            S <- diag(1:(num.lv.c+num.RR))
-            if(num.lv.c>0&type=="conditional"){
-              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            }
+            
             for(i in 1:n){
               Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
-              A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- S%*%A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)]%*%S
               temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
               temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
               A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
-            object$A <- A
-            
-          }
-          
-          r=0
-          for (i in 1:n) {
-            if(!object$TMB && object$Lambda.struc == "diagonal"){
-              covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
-              # covm <- diag(object$A[i,which.lvs+r]);
-            } else {
-              covm <- (t(B)%*%object$A[i,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.RR+num.lv.c)+r]%*%B)[which.lvs,which.lvs];
-              # covm <- object$A[i,which.lvs+r,which.lvs+r];
+              object$A <- A
             }
-            ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.RR+num.lv.c)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            
+            r=0
+            for (i in 1:n) {
+              if(!object$TMB && object$Lambda.struc == "diagonal"){
+                covm <- (t(B)%*%diag(object$A[i,1:num.lv+r])%*%B)[which.lvs,which.lvs];
+                # covm <- diag(object$A[i,which.lvs+r]);
+              } else {
+                covm <- (t(B)%*%object$A[i,1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))+r,1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))+r]%*%B)[which.lvs,which.lvs];
+                # covm <- object$A[i,which.lvs+r,which.lvs+r];
+              }
+              ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.RR+num.lv.c)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
+            }
           }
         }
-      }
       
       if (!jitter){
         if (symbols) {
@@ -629,7 +511,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
     #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
-    if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"){
+    #still add special clause for num.RR=ncol(lv.X) & num.lv>0, since then LVs are uncorrelated with predictors and we can add arrows anyway
+    if(num.lv==0&(num.lv.c+num.RR)>0|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
       if(!is.logical(object$sd)&arrow.ci){
@@ -638,14 +521,19 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
         }else{
-          covB <- getPredictErr(object)$b.lv
-          
           if(object$method=="LA"){
             covB <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = "residual", return.covb=T)
             covB <- covB[colnames(covB)=="b_lv",colnames(covB)=="b_lv"]
           }else{
             covB <- CMSEPf(object, type = "residual",return.covb = T)
             covB <- covB[colnames(covB)=="b_lv",colnames(covB)=="b_lv"]
+            
+            if(object$randomB=="P"|object$randomB=="single"){
+              covB <- covB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+            }else if(object$randomB=="LV"){
+              covB <- covB + as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
+            }
+            
           }
         }
         rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
@@ -692,7 +580,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.1,lty=lty)
       text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
-    }
+    }else{warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
   }
   
 }
