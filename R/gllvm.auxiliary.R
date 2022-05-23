@@ -1973,10 +1973,10 @@ nd2 <- function(x0, f, m = NULL, D.accur = 2, ...) {
 calc.quad <- function(lambda,theta,Lambda.struc) {
   if(Lambda.struc == "diagonal") out <- 0.5 * (lambda) %*% t(theta^2)
   if(Lambda.struc == "unstructured") {
-    if(class(lambda) == "array") { n <- dim(lambda)[1]; num.lv <- dim(lambda)[2] }
-    if(class(lambda) == "matrix") { num.lv <- dim(lambda)[2]; n <- 1 }
-    if(class(theta) == "matrix") { p <- dim(theta)[1] }
-    if(class(theta) == "numeric") { p <- 1; theta <- matrix(theta,1) }
+    if(inherits(lambda,"array")) { n <- dim(lambda)[1]; num.lv <- dim(lambda)[2] }
+    if(inherits(lambda,"matrix")) { num.lv <- dim(lambda)[2]; n <- 1 }
+    if(inherits(theta,"matrix")) { p <- dim(theta)[1] }
+    if(inherits(theta,"numeric")) { p <- 1; theta <- matrix(theta,1) }
     
     out <- matrix(NA,n,p)
     

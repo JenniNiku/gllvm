@@ -487,7 +487,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.fit$num.lv){
       stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
     }
-    if(all(class(start.fit)=="gllvm")&quadratic!=FALSE){
+    if(!inherits(start.fit,"gllvm.quadratic")&quadratic!=FALSE){
       stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
     }
     }
@@ -496,7 +496,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
       control$TMB <- TRUE
     }
-    if (class(family) == "family") {
+    if (inherits(family,"family")) {
       link <- family$link
       family <- family$family
     }  
@@ -881,7 +881,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
 
     if (!is.null(start.fit)) {
-      if (!all(class(start.fit) %in% c("gllvm","gllvm.quadratic")))
+      if (!inherits(start.fit,"gllvm"))
         stop("Only object of class 'gllvm' can be given as a starting parameters.")
 
       if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
