@@ -35,8 +35,8 @@ gllvm(
   return.terms = TRUE,
   gradient.check = FALSE,
   disp.formula = NULL,
-  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
-    maxit = 4000, trace = FALSE, optim.method = NULL),
+  control = list(reltol = 1e-08, TMB = TRUE, optimizer = "optim", max.iter = 2000,
+    maxit = 4000, trace = FALSE, optim.method = NULL, b.tune = 1),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
     = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
@@ -115,6 +115,7 @@ gllvm(
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
+ \item{\emph{b.tune}: }{ modifier for the tuning parameter of the penalty that induces orthogonality constraint on the reduced rank slopes in concurrent and constrained oridnation. Defaults to 1, so that the penaly is \deqn{\sqrt{n*p}||B'B-I_d||_F^2 (where \deqn{||.||_F^2} is the squared frobenius norm)}.}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:

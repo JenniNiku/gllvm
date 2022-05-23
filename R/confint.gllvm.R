@@ -19,7 +19,12 @@
 #'# 95 % confidence intervals for coefficients of X variables
 #'confint(fit, level = 0.95, parm = "Xcoef")
 #'}
+#'@aliases confint confint.gllvm
+#'@method confint gllvm
+#'@importFrom stats confint
+#'
 #'@export
+#'@export confint.gllvm
 
 confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   if(is.logical(object$sd)) stop("Standard errors for parameters haven't been calculated, so confidence intervals can not be calculated.");

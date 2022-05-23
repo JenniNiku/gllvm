@@ -16,8 +16,13 @@
 #'# log-Likelihood:
 #'logLik(fit)
 #'}
+#'@aliases logLik logLik.gllvm
+#'@method logLik gllvm
+#'@importFrom stats logLik
+#'
 #'@export
-
+#'@export logLik.gllvm
+#'
 logLik.gllvm <- function(object, ...)
 {
   logL <- object$logL

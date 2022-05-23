@@ -296,10 +296,10 @@ se.gllvm <- function(object, ...){
     if((num.lv.c+num.RR)==0){
       incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
-    }else if((num.lv.c+num.RR)>0&randomB==FALSE){
+    }else if((num.lv.c+num.RR)>0&object$randomB==FALSE){
       incl[names(objrFinal$par)=="b_lv"] <- TRUE
       incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
-    }else if((num.lv.c+num.RR>0)&randomB!=FALSE){
+    }else if((num.lv.c+num.RR>0)&object$randomB!=FALSE){
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       inclr[names(objrFinal$par)=="b_lv"] <- TRUE
@@ -357,7 +357,7 @@ se.gllvm <- function(object, ...){
           
           prediction.errors$lvs <- cov.lvs
           #sd.random <- sd.random[-(1:(n*num.lv))]
-          if(randomB!=FALSE){
+          if(object$randomB!=FALSE){
             prediction.errors$Ab.lv <- sd.random$Ab_lv
           }
         }

@@ -5,10 +5,12 @@
 \alias{vcov}
 \title{Returns variance-covariance matrix of coefficients in a GLLVM.}
 \usage{
-\method{vcov}{gllvm}(object)
+\method{vcov}{gllvm}(object, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
+
+\item{...}{not used.}
 }
 \description{
 Returns the variance-covariance matrix of the parameters from a GLLVM. If the variance-covariance matrix was not calculated after model fitting, this function will have to calculate the variance-covariance matrix, which may be computational intensive for a large number of species and/or sites.

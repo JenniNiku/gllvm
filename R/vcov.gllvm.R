@@ -3,17 +3,20 @@
 #'
 #'
 #' @param object   an object of class 'gllvm'.
-#'
+#' @param ...	not used.
 #' @details
 #' Calculates the variance-covariance matrix of a GLLVM object using \code{\link{se.gllvm}}, which may be computational intensive with many parameters.The parameters might have unintuitive names. Fixed-effects coefficients are labled "b", and are ordered per species as: 1) intercepts 2) fixed-effects slopes. Coefficients of the latent variables are labled "lambda" (linear coefficients) or "lambda2".
 #'
 #' @author Bert van der Veen
 #' 
 #'@aliases vcov vcov.gllvm
+#'@method vcov gllvm
+#'@importFrom stats vcov
+#'
 #'@export
 #'@export vcov.gllvm
 
-vcov.gllvm <- function(object){
+vcov.gllvm <- function(object, ...){
   if(is.null(object$sd)){
     cat("Standard errors not present in model, calculating...")
     object$Hess<-se.gllvm(object)$Hess
@@ -21,11 +24,5 @@ vcov.gllvm <- function(object){
   V <- object$Hess$cov.mat.mod
   colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])
   return(V)
-}
-
-#'@export vcov
-vcov <- function(object)
-{
-  UseMethod(generic = "vcov")
 }
 
