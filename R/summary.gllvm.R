@@ -104,7 +104,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     pars <- c(object$params$B)
     se <- c(object$sd$B)
     nX <- dim(object$X)[2]
-    cnx <- rep(colnames(object$X.design), each = p)
+    cnx <- rep(colnames(object$X.design), each = ifelse(!is.null(object$TR),1,p))
     rnc <- rep(rownames(object$params$Xcoef), nX)
     newnam <- paste(cnx, rnc, sep = ":")
     zval <- pars/se
