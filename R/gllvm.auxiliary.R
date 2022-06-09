@@ -2156,7 +2156,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     }
     
     #Matrix Q for predictors
-    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(Vtheta)[1])    
+    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(random[3]==0,1,0))*n+radidx,ncol=dim(Vtheta)[1])    
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0&random[3]==0){
       for(q in 1:(num.lv.c+num.RR)){
@@ -2250,7 +2250,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
       
       #add error for Bs if random
       if((num.RR+num.lv.c)>0&type!="residual"&random[3]>0){
-        if((num.lv+num.lv.c)>0){
+        if((num.lv+num.lv.c+num.RR)>0){
           se2 <- array(0,dim=c(n,num.lv.c+num.RR+num.lv*ifelse(type=="marginal",0,1),num.lv.c+num.RR+num.lv*ifelse(type=="marginal",0,1)))
           if(type=="conditional"&(num.lv+num.lv.c)>0&num.RR>0){
             se2[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- se #0s for RRR
@@ -2466,7 +2466,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
   }
-  Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
+  Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n+radidx,ncol=dim(A)[1])
   
   if((num.lv.c+num.RR)>0&randomB==FALSE){
     for(q in 1:(num.lv.c+num.RR)){
@@ -2529,7 +2529,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
 
       #add error for Bs if random
       if((num.RR+num.lv.c)>0&type!="residual"&randomB!=FALSE){
-        if((num.lv+num.lv.c)>0){
+        if((num.lv+num.lv.c+num.RR)>0){
           se2 <- array(0,dim=c(n,num.lv.c+num.RR+num.lv*ifelse(type=="marginal",0,1),num.lv.c+num.RR+num.lv*ifelse(type=="marginal",0,1)))
           if(type=="conditional"&(num.lv+num.lv.c)>0&num.RR>0){
           se2[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- se #0s for RRR

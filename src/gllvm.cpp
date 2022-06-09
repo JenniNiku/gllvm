@@ -110,7 +110,7 @@ Type objective_function<Type>::operator() ()
   matrix <Type> nll(n,p); // initial value of log-likelihood
   nll.fill(0.0);
   
-  if( random(2)<1 && (num_RR+num_lv_c)>0){
+  if(random(2)<1 && (num_RR+num_lv_c)>0){
   vector <Type> bNorm = b_lv.colwise().norm();
   matrix <Type> Id(num_RR+num_lv_c,num_RR+num_lv_c);
   Id.fill(0.0);

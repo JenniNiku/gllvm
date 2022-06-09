@@ -1352,7 +1352,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   # }
   
   #set orthogonality penalty to zero, just in case
-  if((num.RR+num.lv.c)>0){
+  if((num.RR+num.lv.c)>0&randomB==FALSE){
     # remove orthogonality penalty from LL
     b.lv2 <- sweep(out$params$LvXcoef,2,apply(out$params$LvXcoef,2,function(x)sqrt(sum(x^2))),"/")
     out$logL <- out$logL + b.tune*n*p*norm(t(b.lv2)%*%b.lv2 - diag(num.RR+num.lv.c), "F")^2
