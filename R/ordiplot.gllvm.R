@@ -580,7 +580,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.1,lty=lty)
       text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
-    }else{warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
+    }else if(num.lv>0&(num.lv.c+num.RR)>0){warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
   }
   
 }
