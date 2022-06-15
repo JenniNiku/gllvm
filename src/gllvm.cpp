@@ -1635,22 +1635,5 @@ Type objective_function<Type>::operator() ()
       }
   }
 
-  //SD for optima and tolerances
-  if(quadratic>0){
-    matrix<Type> opt(p,num_lv+num_lv_c+num_RR);
-  if(lambda2.cols()>1){
-    opt = (newlam.array()/(-2*lambda2.array())).matrix().transpose(); 
-  }
-  // }else{
-  //   opt = newlam;
-  //   opt.colwise() *= 1/(-2*(lambda2.row(0))).array();
-  // }
-  // 
-  matrix<Type> tol = (2*lambda2).array().pow(-0.5);
-  ADREPORT(opt);
-  ADREPORT(tol);
-  }
-  
   return nll;
 }
-
