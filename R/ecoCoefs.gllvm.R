@@ -95,7 +95,7 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       #covariance of optima per lv per species
       #1/2 scalar here because, optima is a function of two parameters
       cov.mat.optima <- cov.mat.lincoef+cov.mat.quadcoef+2*diag.cov.mat.coef
-      opt.sd <- matrix(sqrt(1/2*abs(diag(cov.mat.optima))),ncol=(num.lv+num.lv.c),nrow=p)
+      opt.sd <- matrix(sqrt(abs(diag(cov.mat.optima))),ncol=(num.lv+num.lv.c),nrow=p)
     }
    
       if((num.lv+num.lv.c)>1){
