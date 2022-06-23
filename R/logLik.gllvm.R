@@ -26,6 +26,7 @@
 logLik.gllvm <- function(object, ...)
 {
   logL <- object$logL
+  if(is.finite(logL)){
   if (!is.null(object$params$inv.phi)) {
     object$params$inv.phi <- NULL
   }
@@ -58,6 +59,7 @@ logLik.gllvm <- function(object, ...)
     attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
   }
   attributes(logL)$nobs <- prod(dim(object$y))
+  }
   class(logL) <- "logLik"
   return(logL)
 }
