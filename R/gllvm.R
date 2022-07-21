@@ -1212,7 +1212,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       # out$convergence should usually catch this (status code 5 in nloptr, maxeval was reached), but sometimes doesn't.
       if((num.RR+num.lv.c)>1 && out$convergence && randomB==FALSE){
         BB <- t(out$params$LvXcoef)%*%out$params$LvXcoef
-        if(any(abs(unique(BB[col(BB)!=row(BB)]))>=1e-2)) warning("Canonical coefficients are not orthogonal, refit the model with a different set of starting values, fit with a different optimizer, ot change the optimization criteria for e.g. 'reltol.c'.")
+        if(any(abs(unique(BB[col(BB)!=row(BB)]))>=1e-2)) warning("Canonical coefficients are not orthogonal, refit the model with a different set of starting values, fit with a different optimizer, or change the optimization criteria for e.g. 'reltol.c'.")
 
       }
     }
