@@ -56,9 +56,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(times); //number of time points
   DATA_INTEGER(cstruc); //correlation structure for row.params, 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm
   DATA_MATRIX(dc); //coordinates for sites, used for exponentially decaying cov. struc
-  DATA_SCALAR(b_tune);
-  DATA_UPDATE(b_tune);
-  
+
   matrix<Type> dr = dr0.matrix();
   // REPORT(dr);
   int Klv = x_lv.cols();
@@ -108,19 +106,7 @@ Type objective_function<Type>::operator() ()
   Cu.fill(0.0);
   
   Type nll = 0; // initial value of log-likelihood
-  
-  if(random(2)<1 && (num_RR+num_lv_c)>0){
-  vector <Type> bNorm = b_lv.colwise().norm();
-  matrix <Type> Id(num_RR+num_lv_c,num_RR+num_lv_c);
-  Id.fill(0.0);
-  Id.diagonal().array() = 1;
-  //remove norm for penalty
-  b_lv *= (1/bNorm).matrix().asDiagonal();
-  nll += (b_tune*(b_lv.transpose()*b_lv - Id).squaredNorm())*p*n;
-  //return norm
-  b_lv *= (bNorm).matrix().asDiagonal();
-  }
-  
+
   matrix<Type> b_lv2(x_lv.cols(),nlvr);
   matrix <Type> Delta(nlvr,nlvr);
   b_lv2.fill(0.0);

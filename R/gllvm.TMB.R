@@ -3,11 +3,11 @@
 ## Original author: Jenni Niku
 ##########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, num.RR = 0, family = "poisson",
-      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8,
+      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8, reltol.c = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
-      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, randomB = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, b.tune = 1) {
+      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, randomB = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL) {
   if((num.lv+num.lv.c)==0&row.eff!="random"&(randomB==FALSE))diag.iter <-  0
 
   if(!is.null(start.params)) starting.val <- "zero"
@@ -513,7 +513,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
   ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, b_tune = b.tune)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       # if(row.eff=="random"){
       #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -549,6 +549,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         parameters = parameter.list, map = map.list2,
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
+      
+      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -558,6 +560,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
+      }else{
+        if(optimizer == "alabama"){
+          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+        }else{
+          local_opts <- list( "algorithm" = optim.method,
+                              "xtol_rel" = reltol,
+                              "maxeval" = maxit,
+                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+          
+          opts <- list( "algorithm" = optimizer,
+                        "xtol_rel" = reltol,
+                        "maxeval" = maxit,
+                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                        "local_opts" = local_opts)
+          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+          if(!inherits(optr,"try-error")){
+            optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+            #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+            optr$par <- objr$env$last.par.best;names(objr$env$last.par.best) = names(optr$par) = names(objr$par);   
+            if(optr$status<0){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }else if(inherits(optr,"try-error")){
+            optr[1] <- optr$message
+            class(optr) <- "try-error"
+          }
+        }
+       
+      }
+      
       if(!inherits(optr,"try-error")){
         lambda <- optr$par[names(optr$par)=="lambda"]
         
@@ -574,7 +607,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
     ## Set up data and parameters
       
-      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, b_tune = b.tune)
+      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
       
@@ -586,7 +619,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         DLL = "gllvm")##GLLVM
 
 #### Fit model 
-      
+      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
@@ -595,6 +628,36 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+      }
+      }else{
+        if(optimizer == "alabama"){
+          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+        }else{
+          local_opts <- list( "algorithm" = optim.method,
+                              "xtol_rel" = reltol,
+                              "maxeval" = maxit,
+                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+          
+          opts <- list( "algorithm" = optimizer,
+                        "xtol_rel" = reltol,
+                        "maxeval" = maxit,
+                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                        "local_opts" = local_opts)
+          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+          if(!inherits(optr,"try-error")){
+            optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+            #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+            optr$par <- objr$env$last.par.best;names(objr$env$last.par.best) = names(optr$par) = names(objr$par);   
+            if(optr$status<0){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }else if(inherits(optr,"try-error")){
+            optr[1] <- optr$message
+            class(optr) <- "try-error"
+          }
+        }
+        
       }
       if(inherits(optr,"try-error")) warning(optr[1]);
 
@@ -636,7 +699,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, b_tune = b.tune)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
 
         parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta)
 
@@ -646,6 +709,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")
 
+        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
@@ -655,12 +719,42 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           else
             timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
-        if(optimizer=="nlminb"){
+        }else{
+          if(optimizer == "alabama"){
+            timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          }else{
+            local_opts <- list( "algorithm" = optim.method,
+                                "xtol_rel" = reltol,
+                                "maxeval" = maxit,
+                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+            
+            opts <- list( "algorithm" = optimizer,
+                          "xtol_rel" = reltol,
+                          "maxeval" = maxit,
+                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                          "local_opts" = local_opts)
+            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+            if(!inherits(optr,"try-error")){
+              optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+              #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+              optr$par <- objr$env$last.par.best; names(objr$env$last.par.best) = names(optr$par) = names(objr$par);   
+              if(optr$status<0){
+                optr[1] <- optr$message
+                class(optr) <- "try-error"
+              }
+            }else if(inherits(optr,"try-error")){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }
+          
+        }
+        if(optimizer%in%c("nlminb","NLOPT_LD_AUGLAG","NLTOPT_LD_SLSQP")){
           if(inherits(optr, "try-error") || is.nan(optr$objective) || is.na(optr$objective)|| is.infinite(optr$objective) || optr$objective < 0){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
-        }else if(optimizer=="optim"){
+        }else if(optimizer%in%c("optim","alabama")){
           if(inherits(optr, "try-error") || is.nan(optr$value) || is.na(optr$value)|| is.infinite(optr$value) || optr$value < 0){optr=optr1; objr=objr1; Lambda.struc="diagonal"}
         }
-
+        if(inherits(optr,"try-error")) warning(optr[1]);
       }
 
       
@@ -798,7 +892,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, b_tune = b.tune)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -821,6 +915,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")##GLLVM
 
+        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
@@ -830,6 +925,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           else
             timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
+        }else{
+          if(optimizer == "alabama"){
+            timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          }else{
+            local_opts <- list( "algorithm" = optim.method,
+                                "xtol_rel" = reltol,
+                                "maxeval" = maxit,
+                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+            
+            opts <- list( "algorithm" = optimizer,
+                          "xtol_rel" = reltol,
+                          "maxeval" = maxit,
+                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                          "local_opts" = local_opts)
+            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+            if(!inherits(optr,"try-error")){
+              optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+              #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+              optr$par <- objr$env$last.par.best[!objr$env$lrandom()]; names(objr$env$last.par.best) <- rep(objr$env$parNameOrder,unlist(lapply(objr$env$parameters,length))); names(optr$par) = names(objr$par);   
+              if(optr$status<0){
+                optr[1] <- optr$message
+                class(optr) <- "try-error"
+              }
+            }else if(inherits(optr,"try-error")){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }
+          
+        }
+        
         if(!inherits(optr,"try-error")){
           # lambda <- optr$par[names(optr$par)=="lambda"]
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"],ncol=num.RR,nrow=p,byrow=T)
@@ -839,7 +965,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           # fit$b.lv <- b.lv
         }
       }
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, b_tune = b.tune)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
       
       if(family == "ordinal"){
         data.list$method = 0
@@ -906,7 +1032,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       #   low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
       #   timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
       # }
-      if(optimizer=="nlminb") {
+      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
+        if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
       if(optimizer=="optim") {
@@ -915,6 +1042,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
+      }else{
+        if(optimizer == "alabama"){
+          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+        }else{
+          local_opts <- list( "algorithm" = optim.method,
+                              "xtol_rel" = reltol,
+                              "maxeval" = maxit,
+                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+          
+          opts <- list( "algorithm" = optimizer,
+                        "xtol_rel" = reltol,
+                        "maxeval" = maxit,
+                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                        "local_opts" = local_opts)
+          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+          if(!inherits(optr,"try-error")){
+            optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+            #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+            optr$par <- objr$env$last.par.best[!objr$env$lrandom()]; names(objr$env$last.par.best) <- rep(objr$env$parNameOrder,unlist(lapply(objr$env$parameters,length))); names(optr$par) = names(objr$par);   
+            if(optr$status<0){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }else if(inherits(optr,"try-error")){
+            optr[1] <- optr$message
+            class(optr) <- "try-error"
+          }
+        }
+        
+      }
+      
       if(inherits(optr,"try-error")) warning(optr[1]);
       
       
@@ -939,6 +1097,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
           random = randomp, DLL = "gllvm")
 
+        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
@@ -948,6 +1107,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           else
             timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
+        }else{
+          if(optimizer == "alabama"){
+          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          }else{
+            local_opts <- list( "algorithm" = optim.method,
+                                "xtol_rel" = reltol,
+                                "maxeval" = maxit,
+                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+            
+            opts <- list( "algorithm" = optimizer,
+                          "xtol_rel" = reltol,
+                          "maxeval" = maxit,
+                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                          "local_opts" = local_opts)
+            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+            if(!inherits(optr,"try-error")){
+              optr$convergence <- as.integer(optr$status<0&optr$status!=5)
+              #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
+              optr$par <- objr$env$last.par.best; names(objr$env$last.par.best) <- rep(objr$env$parNameOrder,unlist(lapply(objr$env$parameters,length))); names(optr$par) = names(objr$par);   
+              if(optr$status<0){
+                optr[1] <- optr$message
+                class(optr) <- "try-error"
+              }
+            }else if(inherits(optr,"try-error")){
+              optr[1] <- optr$message
+              class(optr) <- "try-error"
+            }
+          }
+          
+        }
+        
         if(inherits(optr,"try-error")) warning(optr[1]);
         
       }
@@ -1350,15 +1540,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   #     out$logL <- out$logL - n*p*log(pi)/2
   #   }
   # }
-  
-  #set orthogonality penalty to zero, just in case
-  if((num.RR+num.lv.c)>0&randomB==FALSE){
-    # remove orthogonality penalty from LL
-    b.lv2 <- sweep(out$params$LvXcoef,2,apply(out$params$LvXcoef,2,function(x)sqrt(sum(x^2))),"/")
-    out$logL <- out$logL + b.tune*n*p*norm(t(b.lv2)%*%b.lv2 - diag(num.RR+num.lv.c), "F")^2
-    # set orthogonality penalty to zero for correct standard errors
-    objrFinal$env$data$b_tune = 0
-  }
   
 #### Try to calculate sd errors
   

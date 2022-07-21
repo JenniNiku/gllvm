@@ -745,7 +745,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group)
+    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "auglag")
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
@@ -2663,4 +2663,76 @@ RRse <- function(object){
     }
     betaSE<-sqrt(abs(betaSE))
     return(betaSE)
+}
+
+#functions for optimization with equality constraints using alabama
+#constraint
+eval_eq_c <- function(x, obj, ...){ #alabama requires a ... argument
+  B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
+  con<-NULL
+  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  nc <- d*(d-1)/2# number of constraints
+  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  con <- colSums(B[,combs[1,],drop=F]*B[,combs[2,],drop=F])
+  return(con)
+}
+#jacobian
+eval_eq_j <- function(x, obj, ...){
+  B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
+  jacob <- NULL
+
+  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  nc <- d*(d-1)/2#number of constraints
+ 
+  #LV constraint combinations
+  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  
+  #Build jacobian
+  jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
+  #Indices
+  idx.i <- rep(1:nc,each=nrow(B))
+  idx.j <- nrow(B)*(rep(combs[1,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  #d(constraint)/d(b1)
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[2,]])
+  
+  idx.j <- nrow(B)*(rep(combs[2,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  #d(constraint)/d(b2)
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[1,]])
+  #padd with zeros for all unrelated parameters
+  jacob <- cbind(matrix(0,nrow=nc,ncol=which(names(obj$par)=="b_lv")[1]-1),jacob.B,matrix(0,nrow=nc,ncol=length(x)-tail(which(names(obj$par)=="b_lv"),1)))
+  return(jacob)
+}
+
+
+#functions for optimization with equality constraints using nloptr
+eval_f<-function(x, obj = NULL){
+  #nloptr requires to return likelihood and gradient simultaneously
+  return(list("objective" = obj$fn(x),
+              "gradient" = obj$gr(x)))
+}
+
+eval_g_eq <- function(x, obj = NULL){
+  B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
+  jacob <- NULL
+  con<-NULL
+  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  nc <- d*(d-1)/2#number of constraints
+  
+  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  con <- colSums(B[,combs[1,],drop=F]*B[,combs[2,],drop=F])
+  jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
+  
+  idx.i <- rep(1:nc,each=nrow(B))
+  idx.j <- nrow(B)*(rep(combs[1,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[2,]])
+  
+  idx.j <- nrow(B)*(rep(combs[2,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[1,]])
+  jacob <- cbind(matrix(0,nrow=nc,ncol=which(names(obj$par)=="b_lv")[1]-1),jacob.B,matrix(0,nrow=nc,ncol=length(x)-tail(which(names(obj$par)=="b_lv"),1)))
+  
+  #nloptr requires to return constraint and jacobian simultaneously
+  res <- list("constraints" = con,"jacobian" = jacob)
+  return(res)
 }

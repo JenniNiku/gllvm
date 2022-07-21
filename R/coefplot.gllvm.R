@@ -66,6 +66,9 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
   }
   
+  #save initial mfrow setting
+  par.old <- par(no.readonly=T)
+  
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
@@ -141,6 +144,8 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       axis( 2, at = At.y, labels = names(Xc), las = 1, cex.axis = cex.ylab)
 
   }
+  # return mfrow to original setting
+  suppressWarnings(par(par.old))
 }
 
 #'@export
