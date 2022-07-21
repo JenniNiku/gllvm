@@ -1081,7 +1081,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       out$params <- fitg$params
       if (sd.errors) {
         out$sd <- fitg$sd
-        if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
+        if(!is.null(fitg$sd)&(num.lv.c+num.lv)>0|!is.null(fitg$sd)&row.eff=="random")
           if(!is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
