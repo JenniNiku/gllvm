@@ -512,7 +512,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
     #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
     #still add special clause for num.RR=ncol(lv.X) & num.lv>0, since then LVs are uncorrelated with predictors and we can add arrows anyway
-    if(num.lv==0&(num.lv.c+num.RR)>0|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal"){
+    if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
       if(!is.logical(object$sd)&arrow.ci){
