@@ -883,6 +883,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     R=t(qr.R(qr.beta))[,1:num.RR,drop=F]
     # R=R[,1:num.RR,drop=F]/sqrt(num.RR*nrow(RRmod$coefficients))
     Q=t(qr.Q(qr.beta))[1:num.RR,,drop=F]
+    
+    # To ensure we do not start off at a point that fully satisfies the constraints
+    # Especially optimizer="alabama" seems to not like that
+    mat <- matrix(0,ncol=num.RR,nrow=num.RR)
+    mat[upper.tri(mat)]<- 0.1
+    diag(mat) <- 1
+    Q <- (mat%*%Q)
+    
     # RRcoef = Q*sqrt(num.RR*nrow(RRmod$coefficients))
     RRcoef <- Q
     sgn=t(sign(diag(R)))
