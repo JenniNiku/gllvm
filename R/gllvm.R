@@ -487,12 +487,24 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     # Change to NLOPT algorithm names
     if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
   }
+  # cannot use alabama or nloptr without num.lv.c or num.RR for now
+    if((num.lv.c+num.RR)==0 && optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+      warning("Selected optimizer not available for this model. Using optim instead.")
+      control$optimizer <- "optim"
+      if(family!="tweedie")control$optim.metod <- "BFGS"
+      if(family=="tweedie")optim.method <- "L-BFGS-B"
+    }
     
   if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
   }
-
+  if(family=="tweedie" & (num.lv.c+num.RR)>0){
+    warning("Due to memory issues only optimizer 'alabama' with 'optim.method='L-BFGS-B' can be used with Tweedie.")
+    control$optimizer <- "alabama"
+    control$optim.method <- "L-BFGS-B"
+  }
+    
     # Check if local solver for nloptr augmented lagranian algorithm is one of the defined options
     if((num.RR+num.lv.c)>1 && randomB == FALSE && control$optimizer == "nloptr(agl)"){
       if(!control$optim.method%in%c("NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND", "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA"))control$optim.method <- "NLOPT_LD_TNEWTON_PRECOND"
