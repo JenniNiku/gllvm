@@ -562,7 +562,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       }else{
         if(optimizer == "alabama"){
-          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          if(!optim.method%in%c("L-BFGS-B","nlminb")){
+            control.optim <- list(maxit=maxit, reltol = reltol.c)
+          }else if(optim.method == "L-BFGS-B"){
+            control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+          }else if(optim.method == "nlminb"){
+            control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+          }
+          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
         }else{
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
@@ -631,7 +638,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       }else{
         if(optimizer == "alabama"){
-          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          if(!optim.method%in%c("L-BFGS-B","nlminb")){
+            control.optim <- list(maxit=maxit, reltol = reltol.c)
+          }else if(optim.method == "L-BFGS-B"){
+            control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+          }else if(optim.method == "nlminb"){
+            control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+          }
+          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
         }else{
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
@@ -721,7 +735,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         }else{
           if(optimizer == "alabama"){
-            timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+              if(!optim.method%in%c("L-BFGS-B","nlminb")){
+                control.optim <- list(maxit=maxit, reltol = reltol.c)
+              }else if(optim.method == "L-BFGS-B"){
+                control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+              }else if(optim.method == "nlminb"){
+                control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+              }
+              suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
           }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
@@ -927,7 +948,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         }else{
           if(optimizer == "alabama"){
-            timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+            if(!optim.method%in%c("L-BFGS-B","nlminb")){
+              control.optim <- list(maxit=maxit, reltol = reltol.c)
+            }else if(optim.method == "L-BFGS-B"){
+              control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+            }else if(optim.method == "nlminb"){
+              control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+            }
+            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
           }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
@@ -1044,7 +1072,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       }else{
         if(optimizer == "alabama"){
-          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+          if(!optim.method%in%c("L-BFGS-B","nlminb")){
+            control.optim <- list(maxit=maxit, reltol = reltol.c)
+          }else if(optim.method == "L-BFGS-B"){
+            control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+          }else if(optim.method == "nlminb"){
+            control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+          }
+          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
         }else{
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
@@ -1109,7 +1144,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         }else{
           if(optimizer == "alabama"){
-          timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=list(maxit=maxit, reltol = reltol.c), control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE))
+            if(!optim.method%in%c("L-BFGS-B","nlminb")){
+              control.optim <- list(maxit=maxit, reltol = reltol.c)
+            }else if(optim.method == "L-BFGS-B"){
+              control.optim <- list(maxit=maxit, factr = 1/reltol.c)
+            }else if(optim.method == "nlminb"){
+              control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
+            }
+            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
           }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
