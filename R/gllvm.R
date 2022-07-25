@@ -418,9 +418,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
         x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","nloptr(agl)")
+        if((num.lv.c+num.RR)>0 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
-        if((num.RR+num.lv.c)>1 && randomB == FALSE && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
+        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
         }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
@@ -499,7 +500,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
   }
-  if(family=="tweedie" & (num.lv.c+num.RR)>0){
+  if(family=="tweedie" && (num.lv.c+num.RR)>0 && control$optimizer != "alabama"){
     warning("Due to memory issues only optimizer 'alabama' with 'optim.method='L-BFGS-B' can be used with Tweedie.")
     control$optimizer <- "alabama"
     control$optim.method <- "L-BFGS-B"
