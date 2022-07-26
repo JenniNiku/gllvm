@@ -21,7 +21,7 @@ load(file = "ftCGLLVM.RData")
 
 Until recently, the `gllvm` R-package only supported unconstrained ordination. When including predictor variables, the interpretation of the ordination would shift to a residual ordination, conditional on the predictors.
 
-However, if the number of predictor variables is large and so is the number of species, including predictors can result in a very large number of parameters to estimate. For data of ecological communities, which can be quite sparse, this is not always a reasonable model to fit. As alternative, ecologists have performed constrained ordination for decades, with methods such as Canonical Correspondence Analysis, or Redundancy Analysis.
+However, if the number of predictor variables is large and so is the number of species, including predictors can result in a very large number of parameters to estimate. For data of ecological communities, which can be quite sparse, this is not always a reasonable model to fit. As alternative, ecologists have performed constrained ordination for decades, with methods such as Canonical Correspondence Analysis, or Redundancy Analysis. Alternatively, these methods can be viewed as determining "gradients" (a.k.a. latent variables) as a linear combination of the predictor variables. 
 
 In this vignette, we demonstrate how to include predictors directly in an ordination with the `gllvm` R-package. We start by loading the hunting spider dataset:
 
@@ -44,12 +44,12 @@ Let us first consider what constrained ordination actually is. We will do that b
 \eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{\beta}_j.
 \end{equation}
 
-Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $K$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the `gllvm` R-package, the code to fit this model is:
+Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $p$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the `gllvm` R-package, the code to fit this model is:
 
 ```{r eval=FALSE}
-MGLM <- gllvm(Y,X=X,family="poisson", num.lv = 0)
+MGLM <- gllvm(Y, X = X, family = "poisson", num.lv = 0)
 ```
-where we set the number of unconstrained latent variables to zero, as it defaults to two. The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $K$. Constrained ordination introduces a constraint on the species slopes matrix, namely on the number of independent columns in $\boldsymbol{\beta}_j$ (a column is not independent when it can be formulated as a linear combination of another). The reduced ranks are in community ecology referred to as ecological gradients, or can be understood as ordination axes. If we define a latent variable $\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X}_{i,lv} + \boldsymbol{\epsilon}_i$, for a $K\times d$ matrix of slopes, we can understand constrained ordination as a regression of the latent variable or ecological gradient, except that the residual $\boldsymbol{\epsilon}_i$ is omitted, i.e. we assume that the ecological gradient can be represented perfectly by the predictor variables, so that the model becomes:
+where we set the number of unconstrained latent variables to zero, as it defaults to two. The "rank" of $\boldsymbol{X}_i^\top\boldsymbol{\beta}_j$ is $p$. Constrained ordination introduces a constraint on the species slopes matrix, namely on the number of independent columns in $\boldsymbol{\beta}_j$ (a column is not independent when it can be formulated as a linear combination of another). The reduced ranks are in community ecology referred to as ecological gradients, but can also be understood as ordination axes or latent variables. If we define a latent variable $\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X}_{i,lv} + \boldsymbol{\epsilon}_i$, for a $p\times d$ matrix of slopes, we can understand constrained ordination as a regression of the latent variable or ecological gradient, except that the residual $\boldsymbol{\epsilon}_i$ is omitted, i.e. we assume that the ecological gradient can be represented perfectly by the predictor variables, so that the model becomes:
 \begin{equation}
 \eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{B}\boldsymbol{\gamma}_j.
 \end{equation}
@@ -57,35 +57,39 @@ where we set the number of unconstrained latent variables to zero, as it default
 Where $\boldsymbol{B}$ is a $d \times K$ matrix of slopes per predictor and latent variable, and $\boldsymbol{\gamma}_j$ is a set of slopes for each species per latent variable. This parametrization is practically useful, as it drastically reduces the number of parameters compared to multivariate regression. The rank, number of latent variables or ordination axes, can be determined by cross-validation, or alternatively by using information criteria. The code for this in the `gllvm` R-package, for an arbitrary choice of two latent variables, is:
 
 ```{r eval=FALSE}
-RRGLM <- gllvm(Y,X=X,family="poisson", num.RR = 2)
+RRGLM <- gllvm(Y, X = X, family = "poisson", num.RR = 2)
 ```
 
-The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`. 
+The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`. To fit a constrained ordination we make use of additional optimization routines from the \texttt{alabama} and \texttt{nloptr} R-packages. This is necessary, because without the constraint that the predictor slopes are orthogonal the model is *unidentifiable*. It might thus happen, that after fitting the model a warning pops-up along the lines of *predictor slopes are not orthogonal*, in which case you will have to re-fit the model with a different optimization routine (`optimizer='alabama'`) or starting values (`starting.values='zero'`) in order to get the constraints on the canonical coefficients to better converge.
 
 Note: in general to improve convergence, it is good practice to center and scale the predictor variables. 
 
 ### Random slopes
 
-Generally, constrained ordination can have dfficulty in estimating the predictor slopes, for example due to co-linearity between the predictors. One way to solve this, is using regularisation. Regularisation adds a penalty to the objective function, as to shrink parameter estimates closer to zero that are unimportant. A convenient way to add this penalty, is by formulating a random slopes model. In `gllvm` this is done with the following syntax:
+Generally, constrained ordination can have difficulty in estimating the predictor slopes, for example due to co-linearity between the predictors. One way to solve this, is using regularisation. Regularisation adds a penalty to the objective function, as to shrink parameter estimates closer to zero that are unimportant. A convenient way to add this penalty, is by formulating a random slopes model. In `gllvm` this is done with the following syntax:
 
 ```{r eval=FALSE}
-RRGLMb1 <- gllvm(Y,X=X,family="poisson", num.RR = 2, randomB="LV")
-RRGLMb1 <- gllvm(Y,X=X,family="poisson", num.RR = 2, randomB="P")
+RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "LV")
+RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "P")
 ```
-where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates.
+where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
+
+Note: when using a random-effects formulation, there are no confidence intervals available for the canonical coefficients anymore (though also see the function `getPredictErr(.)`). This is because the variance of estimators tends to be on the low side with regularisation.
 
 ## Concurrent ordination
 
-Unlike in other R-packages, we can now formulate a ordination where also the residual is included for the latent variabeles (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
+Unlike in other R-packages, we can now formulate a ordination where additional random-effects are included that act like LV-level residuals (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
 
 ```{r eval=FALSE}
-CGLLVM <- gllvm(Y,X=X,family="poisson", num.lv.c = 2)
+CGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2)
 ```
 
-where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). It is also possible to combine those arguments with full-rank predictors. If combining concurrent ordination with full-rank predictors, the formula interface has to be used:
+where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). It is also possible to combine those arguments with full-rank predictor effects. To combinie concurrent ordination with full-rank predictor effects you need to use the formula interface:
 
 ```{r eval=FALSE}
-PCGLLVM <- gllvm(Y,X=X,family="poisson", num.lv.c = 2, lv.formula = ~bare.sand+fallen.leaves+moss+herb.layer+reflection, formula = ~soil.dry)
+PCGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2, 
+                 lv.formula = ~bare.sand + fallen.leaves + moss+herb.layer + reflection, 
+                 formula = ~soil.dry)
 ```
 where `lv.formula` is the formula for the ordination with predictors (concurrent or constrained), and `X.formula` is the formula which tells the model which predictors should be modelled in full-rank. Note, that those two formulas cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. In essence, this performs a partial concurrent ordination. Constrained ordination should not include an (additional) intercept as it can be re-parameterized into a model with only $\beta_{0j}$.
 
@@ -98,9 +102,9 @@ summary(CGLLVM)
 Finally, we can use all the other tools in the \texttt{gllvm} R-package for inference, such as creating an ordination diagram with arrows:
 
 ```{r}
-ordiplot(CGLLVM, biplot=TRUE)
+ordiplot(CGLLVM, biplot = TRUE)
 ```
-Arrows that show as less intense red (pink), are predictors of which the confidence interval for the slope includes zero, for at least one of the two plotted dimensions. There are various arguments inlcuded in the function to improve readability of the figure, have a look at its documentation. The arrows are always proportional to the size of the plot, so that the predictor with the largest slope estimate is the largest arrow. If the predictors have no effect, the slopes $\boldsymbol{B}$ will be close to zero.
+Arrows that show as less intense red (pink), are predictors of which the confidence interval for the slope includes zero, for at least one of the two plotted dimensions. There are various arguments included in the function to improve readability of the figure, have a look at its documentation. The arrows are always proportional to the size of the plot, so that the predictor with the largest slope estimate is the largest arrow. If the predictors have no effect, the slopes $\boldsymbol{B}$ will be close to zero.
 
 It is also possible to use the `quadratic` flag to fit a quadratic response model though we will not demonstrate that here, or to partition variance per latent variable and for specific predictors.
 
