@@ -750,6 +750,13 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
     
+    # To ensure we do not start off at a point that fully satisfies the constraints
+    # Especially optimizer="alabama" seems to not like that
+    mat <- matrix(0,ncol=num.RR+num.lv.c,nrow=num.RR+num.lv.c)
+    mat[upper.tri(mat)]<- 0.1
+    diag(mat) <- 1
+    b.lv <- b.lv%*%mat
+    
     eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
     if(num.lv>0){
       gamma.c <- gamma
