@@ -590,9 +590,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
               optr[1] <- optr$message
               class(optr) <- "try-error"
             }
-          }else if(inherits(optr,"try-error")){
-            optr[1] <- optr$message
-            class(optr) <- "try-error"
           }
         }
        
@@ -666,9 +663,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
               optr[1] <- optr$message
               class(optr) <- "try-error"
             }
-          }else if(inherits(optr,"try-error")){
-            optr[1] <- optr$message
-            class(optr) <- "try-error"
           }
         }
         
@@ -763,9 +757,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
                 optr[1] <- optr$message
                 class(optr) <- "try-error"
               }
-            }else if(inherits(optr,"try-error")){
-              optr[1] <- optr$message
-              class(optr) <- "try-error"
             }
           }
           
@@ -976,9 +967,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
                 optr[1] <- optr$message
                 class(optr) <- "try-error"
               }
-            }else if(inherits(optr,"try-error")){
-              optr[1] <- optr$message
-              class(optr) <- "try-error"
             }
           }
           
@@ -1100,9 +1088,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
               optr[1] <- optr$message
               class(optr) <- "try-error"
             }
-          }else if(inherits(optr,"try-error")){
-            optr[1] <- optr$message
-            class(optr) <- "try-error"
           }
         }
         
@@ -1172,9 +1157,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
                 optr[1] <- optr$message
                 class(optr) <- "try-error"
               }
-            }else if(inherits(optr,"try-error")){
-              optr[1] <- optr$message
-              class(optr) <- "try-error"
             }
           }
           
