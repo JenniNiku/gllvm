@@ -602,7 +602,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = 1)
         }else if(quadratic==TRUE){
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
-          
         }   
       }
     
@@ -1554,7 +1553,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
   out$convergence <- optrFinal$convergence == 0
-  out$quadratic <- quadratic
   out$logL <- -out$logL
   
   # if((method %in% c("VA", "EVA"))){ # These have been moved to gllvm.cpp

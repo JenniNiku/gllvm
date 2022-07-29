@@ -538,7 +538,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     
     if((num.lv.c+num.RR)>0&method=="VA"&TMB==FALSE){
-      warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
+      warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE.\n")
       control$TMB <- TRUE
     }
     if (inherits(family,"family")) {
@@ -1234,10 +1234,26 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     if(is.null(out$sd)){
       out$sd <- FALSE
     }
-    if(TMB){
-    out$quadratic <- fitg$quadratic
+    if(TMB && !isFALSE(quadratic)){
+    # check if quadratic coefs have converged or have stuck to "LV"
+    if(quadratic){
+      if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
+        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
+      out$quadratic <- "LV"        
+      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+        warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
+        out$quadratic <- quadratic
+      }else{
+        out$quadratic <- TRUE
+      }
+    }else if(quadratic == "LV"){
+      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+        warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
+      }
+      out$quadratic <- quadratic
+    }
     }else{
-      out$quadratic <- F
+      out$quadratic <- FALSE
     }
     if(!TMB&family=="ordinal"){
       out$zeta.struc <- "species"
