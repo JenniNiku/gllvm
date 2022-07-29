@@ -753,7 +753,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
     mat <- matrix(0,ncol=num.RR+num.lv.c,nrow=num.RR+num.lv.c)
-    mat[upper.tri(mat)]<- 0.1
+    mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
     b.lv <- b.lv%*%mat
     
@@ -882,10 +882,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
     beta <- t(coef(RRmod))
-    if(ncol(beta)>1&(randomB==FALSE)){
-    betaSD=apply(beta,1,sd)
-    beta=beta/betaSD
-    }
+    # if(ncol(beta)>1&(randomB==FALSE)){
+    # betaSD=apply(beta,1,sd)
+    # beta=beta/betaSD
+    # }
     qr.beta=qr(t(beta))
     R=t(qr.R(qr.beta))[,1:num.RR,drop=F]
     # R=R[,1:num.RR,drop=F]/sqrt(num.RR*nrow(RRmod$coefficients))
@@ -894,7 +894,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
     mat <- matrix(0,ncol=num.RR,nrow=num.RR)
-    mat[upper.tri(mat)]<- 0.1
+    mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
     Q <- (mat%*%Q)
     
