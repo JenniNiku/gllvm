@@ -37,7 +37,7 @@
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
 #'  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
 #'  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
-#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}, \code{nloptr(agl)} (default) or \code{nloptr(sqp)}.}
+#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
@@ -380,7 +380,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","nloptr(agl)"), max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
+                  control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
                   ) {
@@ -417,7 +417,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
-        x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","nloptr(agl)")
+        x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama")
         if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
