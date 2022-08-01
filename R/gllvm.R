@@ -1236,7 +1236,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     }
     if(TMB && !isFALSE(quadratic)){
     # check if quadratic coefs have converged or have stuck to "LV"
-    if(quadratic){
+    if(isTRUE(quadratic)){
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
         warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
       out$quadratic <- "LV"        
