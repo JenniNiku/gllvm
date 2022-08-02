@@ -295,10 +295,5 @@ print.summary.gllvm <- function (x, ...)
     }
   }
   
-  cat("\n")
-  if(x$rstruc>0){
-    warning("Unbalanced design detected, please interpret p-values with extreme caution. \n")
-  }
-  
   invisible(x)
 }
