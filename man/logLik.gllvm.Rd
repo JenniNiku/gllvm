@@ -2,6 +2,7 @@
 % Please edit documentation in R/logLik.gllvm.R
 \name{logLik.gllvm}
 \alias{logLik.gllvm}
+\alias{logLik}
 \title{Log-likelihood of gllvm}
 \usage{
 \method{logLik}{gllvm}(object, ...)

@@ -19,12 +19,13 @@ Extract latent variables from gllvm object.
 }
 \details{
 Function retrieves the site scores for a GLLVM. Each type corresponds to a separate term of the model. For a GLLVM with unconstrained latent variables
-the default is "residual".
+the default is "residual". "Residual" scores represent the error term in concurrent ordination, and are not available for constrained ordination.
 
-For GLLVMs with constrained latent variables, "conditional" returns the complete site scores, due to both fixed- and latent effects,
-where the latent effect is always scaled by the diagonal of the species loadings so that it can be small relative to the fixed-effects.
+For GLLVMs with informed latent variables, "conditional" returns the complete site scores, due to both fixed- and latent effects,
+where the latent effect is always scaled by the diagonal of the species loadings so that it can be small relative to the fixed-effects. "Conditional"
+here means conditional on the random-effect i.e. the residual.
 
-Type "marginal"  returns linear combination scores, i.e. the site scores only due to fixed-effects.
+Type "marginal"  returns linear combination scores, i.e. the site scores only due to fixed-effects. These are available for constrained and concurrent ordination.
 
 If both unconstrained and constrained latent variables are included in the model, type "marginal" returns linear combination scores for constrained latent variables
 but "residual" scores for unconstrained latent variables.

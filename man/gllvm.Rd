@@ -18,6 +18,7 @@ gllvm(
   row.eff = FALSE,
   offset = NULL,
   quadratic = FALSE,
+  randomB = FALSE,
   sd.errors = TRUE,
   method = "VA",
   randomX = NULL,
@@ -34,10 +35,11 @@ gllvm(
   return.terms = TRUE,
   gradient.check = FALSE,
   disp.formula = NULL,
-  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
-    maxit = 4000, trace = FALSE, optim.method = NULL),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
-    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
+  control = list(reltol = 1e-08, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
+    + num.lv.c) == 0 | randomB != FALSE, "optim", "nloptr(agl)"), max.iter = 2000, maxit
+    = 4000, trace = FALSE, optim.method = NULL),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc =
+    "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
@@ -70,6 +72,8 @@ gllvm(
 \item{offset}{vector or matrix of offset terms.}
 
 \item{quadratic}{either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.}
+
+\item{randomB}{either \code{FALSE}(default), "LV", "P", or "single". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.}
 
 \item{sd.errors}{logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.}
 
@@ -106,12 +110,13 @@ gllvm(
 \item{control}{A list with the following arguments controlling the optimization:
 \itemize{
  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
+ \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
- \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.}
+ \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}, \code{nloptr(agl)} (default) or \code{nloptr(sqp)}.}
  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
- \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
+ \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with num.RR>0 or num.lv.c>0. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA" are available.}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
@@ -147,11 +152,12 @@ An object of class "gllvm" includes the following components:
  \item{lv.X}{ matrix or data.frame of environmental covariates for latent variables.}
  \item{TR}{ Trait matrix}
  \item{formula}{ Formula for predictors}
- \item{lv.formula}{ Formula of latent variables in constrained ordination}
+ \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
  \item{randomX }{ Formula for species specific random effects in fourth corner model}
+ \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination}
  \item{num.lv}{ Number of unconstrained latent variables}
- \item{num.lv.c}{ Number of constrained latent variables with residual}
- \item{num.RR}{ Number of constrained latent variables without residual}
+ \item{num.lv.c}{ Number of latent variables in concurrent ordination}
+ \item{num.RR}{ Number of latent variables in constrained ordination}
  \item{method}{ Method used for integration}
  \item{family}{ Response distribution}
  \item{row.eff}{ Type of row effect used}
@@ -163,7 +169,7 @@ An object of class "gllvm" includes the following components:
  \itemize{
    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
-   \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
+   \item{LvXcoef }{ Predictor coefficients (or predictions for random slopes) related to latent variables, i.e. canonical coefficients}
    \item{beta0 }{ column specific intercepts}
    \item{Xcoef }{ coefficients related to environmental covariates X}
    \item{B }{ coefficients in fourth corner model}
@@ -174,7 +180,7 @@ An object of class "gllvm" includes the following components:
  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
  \item{sd }{ list of standard errors of parameters}
  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
- \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
+ \item{A, Ar, Ab_lv}{ covariance matrices for variational densities of latent variables, random row effects, and random slopes respectively}
  \item{seed}{ Seed used for calculating starting values}
  \item{TMBfn}{ TMB objective and derivative functions}
  \item{logL }{ log likelihood}
@@ -187,7 +193,7 @@ An object of class "gllvm" includes the following components:
  \item{dist }{ Matrix of coordinates or time points used for row effects}
  \item{terms }{ Terms object for main predictors}
  \item{start }{ starting values for model}
- \item{optim.method }{ Optimization method when using 'optim'}
+ \item{optim.method }{ Optimization method when using 'optim', 'alabama', or 'nloptr'}
 }
 \description{
 Fits generalized linear latent variable model for multivariate data. The model can be fitted using Laplace approximation method or variational
@@ -216,12 +222,12 @@ For quadratic responses, it can be useful to provide the latent variables estima
 The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
 }
 
-\subsection{Constrained ordination}{
-For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
+\subsection{Ordination with predictors}{
+For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_lv} can be included to explain the latent variables:
 
-\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
-where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
-the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
+\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i})' D_j (B' x_{lv,i} + \epsilon_i) ,}
+where \eqn{z_i = B' x_{lv,i} + \epsilon_i} are latent variables informed by the predictors, but not constrained compared to unconstrained ordination as in methods such as CCA or RDA.
+Omitting the predictors results in an unconstrained ordination, and omitting \eqn{\epsilon_i} in the usual constrained ordination, which can also be fitted.
 }
 
 \subsection{Fourth corner model}{
@@ -281,7 +287,7 @@ With ordinal family response classes must start from 0 or 1.
   
   \item{For non-negative  continuous data \code{family = "exponential"}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}^2}.}
   
-  \item{For non-negative continuous or biomass data\code{family = "tweedie"}}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
+  \item{For non-negative continuous or biomass data \code{family = "tweedie"}}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
 
   \item{For ordinal data \code{family = "ordinal"}:}{ Cumulative probit model, see Hui et.al. (2016).}
   
@@ -324,7 +330,7 @@ plot(fitv0, mfrow = c(2,2))
 summary(fitv0)
 confint(fitv0)
 
-## Example 1a: Fit model with two constrained latent variables and with 
+## Example 1a: Fit concurrent ordination model with two latent variables and with 
 # quadratic response model
 # We scale and centre the  predictors to improve convergence
 fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", 

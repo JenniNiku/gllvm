@@ -49,6 +49,9 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     
     do_svd <- svd(lv)
     svd_rotmat_sites <- do_svd$v
+    if(num.lv.c>0|(num.RR+num.lv)>0){
+      do_svd$v <- svd(getLV(object))$v
+    }
   }else{
     svd_rotmat_sites <- diag(num.lv.c+num.RR+num.lv)
   }
@@ -101,7 +104,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     pars <- c(object$params$B)
     se <- c(object$sd$B)
     nX <- dim(object$X)[2]
-    cnx <- rep(colnames(object$X.design), each = p)
+    cnx <- rep(colnames(object$X.design), each = ifelse(!is.null(object$TR),1,p))
     rnc <- rep(rownames(object$params$Xcoef), nX)
     newnam <- paste(cnx, rnc, sep = ":")
     zval <- pars/se
@@ -112,7 +115,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     coef.table <- NULL
   }
   
-  if (!is.logical(object$sd)&!is.null(object$lv.X)) {
+  if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
     if(!principal|num.lv>0&(num.lv.c+num.RR)>0){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
@@ -193,9 +196,9 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   if((num.lv+num.lv.c)>0){
     if(principal){
       if(num.RR>0){
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)[-c((num.lv.c+1):(num.lv.c+num.RR))]
+        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))])%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))]))
       }else{
-        object$params$sigma.lv <- object$params$sigma.lv*diag(svd_rotmat_sites)
+        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
       }
       
     }
@@ -223,10 +226,10 @@ print.summary.gllvm <- function (x, ...)
   
   cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", zapsmall(x$`log-likelihood`, x$digits), "df: ", x$df, "\n\n")
   
-  cat("Constrained LVs: ", x$num.lv.c, "\n")
-  cat("Reduced Ranks: ", x$num.RR,"\n")
+  cat("Informed LVs: ", x$num.lv.c, "\n")
+  cat("Constrained LVs: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
-  if((x$num.lv+x$num.lv.c)>0){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
+  if((x$num.lv.c)>0|x$quadratic!=F){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula,collapse=""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
@@ -246,7 +249,6 @@ print.summary.gllvm <- function (x, ...)
       }else{
         cat("\nOptima LVs: \n")
       }
-      
       
       print(x$Coefficients[,-1,drop=F])
     }
@@ -291,11 +293,6 @@ print.summary.gllvm <- function (x, ...)
       cat("\n(Dispersion estimates for ", x$family, ":\n")
       print(phi)
     }
-  }
-  
-  cat("\n")
-  if(x$rstruc>0){
-    warning("Unbalanced design detected, please interpret p-values with extreme caution. \n")
   }
   
   invisible(x)
