@@ -28,8 +28,9 @@ The original publication of Canonical Correspondence Analysis used \code{log} an
 }
 
 \references{
-Smeenk-Enserink, N., & Van der Aart, P. J. M. (1974). Correlations between distributions of hunting spiders (\emph{Lycosidae}, \emph{Ctenidae}) and environmental characteristics in a dune area. Netherlands Journal of Zoology, 25(1), 1-45.
+ter Braak, C.J.F. and Smilauer, P.  (1998).  CANOCO reference manual and user's guide to CANOCO for Windows: software for canonical community ordination (version 4). Microcomputer Power, New York, New York, USA.
 ter Braak, C.J.F. (1986). Canonical correspondence analysis: a new eigenvector technique for multivariate direct gradient analysis. Ecology, 67(5), 1167-1179.
+Van der Aart, P. J. M. and Smeenk-Enserink, N. (1975). Correlations between distributions of hunting spiders (\emph{Lycosidae}, \emph{Ctenidae}) and environmental characteristics in a dune area. Netherlands Journal of Zoology, 25(1), 1-45.
 }
 
 \examples{
