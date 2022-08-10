@@ -1,3 +1,36 @@
+
+Version 1.3.2
+==============
+
+### New Features
+* Ordination with predictors (num.RR,num.lv.c) is now implemented with constrained optimization routines (alabama,nloptr) as long as the canonical coefficients are treated as fixed-effects. This follows from the necessary identifability constraints. 
+
+* The reduced-rank approximated predictor slopes of a multivariate regression can now be plotted (with confidence intervals) using coefplot. Not available yet for quadratic effects.
+
+* Separate Checks are put in place to check if the constraints on the canonical coefficients (orthogonality of the columns) have converged.
+
+* Separate checks are put in place to double-check convergence of quadratic coefficients in an ordination, if applicable
+
+* Canonical coefficients in ordination with predictors (num.RR,num.lv.c) can now be treated as random-effects using the 'randomB' argument. For the moment, all need to be either random or fixed, no mixing. Prediction intervals can be retrieved with the getPredictErr function.
+
+* An extended version of the spider dataset has been made available
+
+* Added an option to magnify the x-axis labels in coefplot
+
+
+### Bug Fixes
+* The order of the quadratic coefficients was  wrong when num.RR, num.lv, and num.lv.c were all used in the same model.
+
+*  Fixed a bug in the calculation of starting values for constrained ordination (num.RR) where the residuals were not re-calculated if num.lv.c>0
+
+*  Fixed a bug in coefplot for when only one predictor was included in the model
+
+*  Fixed a bug that would prevent using a gllvm with quadratic response model as starting values for another model
+
+* Changed import/export of various functions as requested in github issue #65
+
+* Various minor tweaks to the summary function
+
 Version 1.3.1
 ==============
 
