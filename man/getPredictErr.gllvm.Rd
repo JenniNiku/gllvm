@@ -5,12 +5,14 @@
 \alias{getPredictErr}
 \title{Extract prediction errors for latent variables from gllvm object}
 \usage{
-\method{getPredictErr}{gllvm}(object, CMSEP = TRUE, ...)
+\method{getPredictErr}{gllvm}(object, CMSEP = TRUE, cov = FALSE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{CMSEP}{logical, if \code{TRUE} conditional mean squared errors for predictions are calculated. If \code{FALSE}, prediction errors are based on covariances of the variational distributions for \code{method ="VA"}.}
+\item{CMSEP}{logical, if \code{TRUE} conditional mean squared errors for predictions are calculated. If \code{FALSE}, prediction errors are based on covariances of the variational distributions for \code{method ="VA"} and \code{method ="EVA"}.}
+
+\item{cov}{if \code{TRUE}, return as covariances/variances of predictions. Otherwise \code{FALSE} (default) return as standard errors of predictions.}
 
 \item{...}{not used}
 }

@@ -10,15 +10,19 @@ gllvm(
   TR = NULL,
   data = NULL,
   formula = NULL,
-  lv.formula = NULL,
+  family,
   num.lv = NULL,
   num.lv.c = 0,
   num.RR = 0,
-  family,
-  row.eff = FALSE,
-  offset = NULL,
+  lv.formula = NULL,
+  lvCor = NULL,
+  Xgr = NULL,
+  dist = matrix(0),
+  corWithin = FALSE,
   quadratic = FALSE,
+  row.eff = FALSE,
   sd.errors = TRUE,
+  offset = NULL,
   method = "VA",
   randomX = NULL,
   dependent.row = FALSE,
@@ -26,8 +30,6 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
-  dist = matrix(0),
-  corWithin = FALSE,
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -37,10 +39,13 @@ gllvm(
   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000,
     maxit = 4000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
-    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3)),
+    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3),
+    NN = 3),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
+  setMap = NULL,
+  Dthreshold = 0,
   ...
 )
 }
@@ -55,23 +60,31 @@ gllvm(
 
 \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).}
 
-\item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
+\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
 
-\item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.}
+\item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.}
 
 \item{num.lv.c}{number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.}
 
 \item{num.RR}{number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.}
 
-\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
+\item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
+\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'Xgr'. Works at the moment only with unconstrained ordination without quadratic term.}
 
-\item{offset}{vector or matrix of offset terms.}
+\item{Xgr}{grouping variables for correlation structure of the latent variables and row effects.}
+
+\item{dist}{matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.}
+
+\item{corWithin}{logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.}
 
 \item{quadratic}{either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.}
 
+\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
+
 \item{sd.errors}{logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.}
+
+\item{offset}{vector or matrix of offset terms.}
 
 \item{method}{model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.}
 
@@ -86,10 +99,6 @@ gllvm(
 \item{plot}{logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
-
-\item{dist}{matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.}
-
-\item{corWithin}{logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.}
 
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.}
 
@@ -120,7 +129,8 @@ gllvm(
  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
- \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.}
+ \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
+ \item{\emph{NN}: }{ Number of nearest neighbours for NN variational covariance. Defaults to ...}
 }}
 
 \item{control.start}{A list with the following arguments controlling the starting values:
