@@ -22,8 +22,22 @@ Counts of hunting spiders in a dune area in the Netherlands, measured with 100 d
 Species names have been abbreviated, corresponding to: 
 Alopacce = \emph{Alopecosa accentuata}, Alopcune = \emph{Alopecosa cuneata}, Alopfabr = \emph{Alopecosa fabrilis}, Arctlute = \emph{Arctosa lutetiana}, Arctperi = \emph{Arctosa perita}, Auloalbi = \emph{Alonia albimana}, Pardlugu = \emph{Pardosa lugubris}, Pardmont = \emph{Pardosa monticola}, Pardnigr = \emph{Pardosa nigriceps}, Pardpull = \emph{Pardosa pullata}, Trocterr = \emph{Trochosa terricola}, Zoraspin = \emph{Zora spinimana}.
 
-Enviromental measurements were taken at 28 of the 100 pitfall traps measuring soil properties(Water content: "conWate", Humus content: "conHumu", Acidity (pH-KCl)), vegetation (percentage bare sand, cover on the ground by leaves and twigs, cover by mosses and lichens, cover by the herb and grass layer (including maximum height, minimum height, cover by \emph{Calamagrostis epigejos}, cover by \emph{Carex arenaria}, cover by \emph{Festuca ovina}, cover by \emph{Corynephorus canescens}, cover by \emph{Urtica dioica}, cover by \emph{Moehringia trinervia}), cover by the shrub layer (minimum and maximum height, and cover by \emph{Ligustrum vulgare}), cover by the tree layer (including maximum height, cover by \emph{Populus tremula} or \emph{Crataegus monogyna})), and light properties (lux at equal grey sky, lux at cloudless sky, lux by reflection of the soil surface)
+Enviromental measurements were taken at 28 of the 100 pitfall traps measuring soil properties(Water content: "conWate", Humus content: "conHumu", Acidity (pH-KCl)), vegetation ("BareSand": percentage bare sand, "FallTwig": cover on the ground by leaves and twigs, "CovMoss": cover by mosses and lichens, "CovHerb": cover by the herb and grass layer (including maximum height, minimum height, "CovCala": cover by \emph{Calamagrostis epigejos}, cover by \emph{Carex arenaria}, "CovFest": cover by \emph{Festuca ovina}, "CovCory": cover by \emph{Corynephorus canescens}, "CovUrti": cover by \emph{Urtica dioica}, "CovMoeh": cover by \emph{Moehringia trinervia}), "CovShru": cover by the shrub layer (minimum and maximum height, and "CovLigu": cover by \emph{Ligustrum vulgare}), "CovTree": cover by the tree layer (including maximum height, cover by \emph{Populus tremula} or \emph{Crataegus monogyna})), and light properties ("LuxGrey": lux at equal grey sky, "LuxSun": lux at cloudless sky, "LuxRef": lux by reflection of the soil surface)
+
+The original publication of Canonical Correspondence Analysis used \code{log} and \code{log1p} transformations of the predictors "ConWate", "BareSand", "FallTwig",  "CovMoss", "CovHerb", "LuxRef".
 }
+
 \references{
 Smeenk-Enserink, N., & Van der Aart, P. J. M. (1974). Correlations between distributions of hunting spiders (\emph{Lycosidae}, \emph{Ctenidae}) and environmental characteristics in a dune area. Netherlands Journal of Zoology, 25(1), 1-45.
+ter Braak, C.J.F. (1986). Canonical correspondence analysis: a new eigenvector technique for multivariate direct gradient analysis. Ecology, 67(5), 1167-1179.
+}
+
+\examples{
+data(eSpider)
+Y <- eSpider$abund[eSpider$nonNA, ]
+X <- eSpider$X[eSpider$nonNA, ]
+model <- gllvm(y = Y, X = X, 
+    lv.formula = ~log(ConWate) + log1p(BareSand) + log1p(FallTwig) + log1p(CovMoss) + log1p(CovHerb) + log(LuxRef),
+    num.RR = 2, 
+    family = "poisson")
 }
