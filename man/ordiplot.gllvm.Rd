@@ -33,6 +33,7 @@
   col.ellips = 4,
   lty.ellips = 1,
   type = NULL,
+  rotate = TRUE,
   ...
 )
 }
@@ -49,7 +50,7 @@
 
 \item{which.lvs}{indices of two latent variables to be plotted if number of the latent variables is more than 2. A vector with length of two. Defaults to \code{c(1,2)}.}
 
-\item{predict.region}{logical, if \code{TRUE} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}.}
+\item{predict.region}{if \code{TRUE} or \code{"sites"} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}. EXTENSION UNDER DEVELOPMENT: if \code{"species"} uncertainty estimate regions for the estimated latent variable loadings are plotted. Works only if \code{biplot = TRUE}.}
 
 \item{level}{level for prediction regions.}
 
@@ -90,6 +91,8 @@
 \item{lty.ellips}{line type for prediction ellipses. See graphical parameter lty.}
 
 \item{type}{which type of ordination plot to construct. Options are "residual", "conditional", and "marginal". Defaults to "residual" for GLLVMs with unconstrained latent variables and "conditional" otherwise.}
+
+\item{rotate}{logical, if \code{TRUE} (default) latent variables are re-rotated to their principal direction using singular value decomposition}
 
 \item{...}{additional graphical arguments.}
 }
