@@ -56,7 +56,21 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
-    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef])
+    if(object$family=="betaH"){
+      betaHX <- object$params$betaH[,colnames(object$params$betaH) %in% colnames(object$params$Xcoef), drop=FALSE]
+      betaHX <- betaHX[, which.Xcoef, drop=FALSE]
+      rownames(betaHX) <- paste("betaH",rownames(betaHX), sep = ":")
+      sdbetaHX <- object$sd$betaH[,colnames(object$params$betaH) %in% colnames(object$params$Xcoef), drop=FALSE]
+      sdbetaHX <- sdbetaHX[, which.Xcoef, drop=FALSE]
+      Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
+      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
+      Xcoef<-rbind(Xcoef,betaHX)
+      sdXcoef <-rbind(sdXcoef,sdbetaHX)
+      
+    } else {
+      Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
+      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
+    }
     cnames <- colnames(object$params$Xcoef)[which.Xcoef]
     k <- length(cnames)
     labely <- rownames(Xcoef)
@@ -71,7 +85,6 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       par(mar = mar)
     for (i in 1:k) {
       Xc <- Xcoef[, i]
-      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
       lower <- Xc - 1.96 * sdXcoef[, i]
       upper <- Xc + 1.96 * sdXcoef[, i]
       if(order) Xc <- sort(Xc)
@@ -95,8 +108,20 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     }
   } else{
     Xcoef <- object$params$B
-
     xnames <- names(object$params$B)
+    sdXcoef <- object$sd$B
+    if(object$family=="betaH"){
+      if(is.null(which.Xcoef)){
+        Xcoef <- c(Xcoef,object$params$betaH)
+        xnames <- c(xnames,paste("beta",names(object$params$betaH),sep = ":"))
+        names(Xcoef)<-xnames
+        sdXcoef <- c(sdXcoef,object$sd$betaH)
+      } else {
+        Xcoef <- c(unlist(object$params[which.Xcoef]))
+        xnames <- names(Xcoef)
+        sdXcoef <- c(unlist(object$sd[which.Xcoef]))
+      }
+    }
     m <- length(xnames)
     k <- 1
     if (is.null(mfrow))
@@ -104,7 +129,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
 
     par(mfrow = mfrow, mar = mar)
     Xc <- Xcoef
-    sdXcoef <- object$sd$B
+    
     lower <- Xc - 1.96 * sdXcoef
     upper <- Xc + 1.96 * sdXcoef
     if(order) Xc <- sort(Xc)

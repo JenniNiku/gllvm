@@ -7,11 +7,13 @@
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).
-#' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
-#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 0.
+#' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
+#' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.
 #' @param num.lv.c  number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
-#' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).
+#' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
+#' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'Xgr'. Works at the moment only with unconstrained ordination without quadratic term.
+#' @param Xgr grouping variables for correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
 #' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
@@ -47,7 +49,8 @@
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
-#'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.2.}
+#'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
+#'  \item{\emph{NN}: }{ Number of nearest neighbours for NN variational covariance. Defaults to ...}
 #' }
 #' @param control.start A list with the following arguments controlling the starting values:
 #' \itemize{
@@ -369,15 +372,16 @@
 #'@importFrom mgcv gam predict.gam
 
 
-gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
-                  num.lv = NULL, num.lv.c = 0, num.RR = 0, family, row.eff = FALSE,
-                  offset = NULL, quadratic = FALSE, sd.errors = TRUE, method = "VA",
+gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
+                  num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
+                  lvCor = NULL, Xgr=NULL, dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
+                  row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA",
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, link = "probit", dist = matrix(0), corWithin = FALSE,
+                  plot = FALSE, link = "probit", 
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3)),
-                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), ...
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, Dthreshold=0, ...
                   ) {
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
@@ -424,6 +428,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         x$Ab.diag.iter = 0
       if (!("Lambda.start" %in% names(x))) 
         x$Lambda.start = c(0.3, 0.3, 0.3)
+      if (!("NN" %in% names(x)))
+        x$NN = 3   
       x
     }
     fill_control.start = function(x){
@@ -454,7 +460,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
-    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start
+    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start;
     
@@ -758,30 +764,90 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
         if(any(colnames(data) %in% grps)){
           xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
           colnames(xgrps) <- grps
-          X<-cbind(X,xgrps)
+          Xgr<-cbind(Xgr, xgrps)
           }
-      }
-      
-      if(is.null(bar.f)) {
-        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
-      } else if(!all(grps %in% colnames(X))) {
-        stop("Grouping variable need to be included in 'X'")
-      } else if(!all(order(X[,(colnames(X) %in% grps)])==c(1:n)) && (corWithin)) {
-        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
-      } else {
-        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
-        mf <- model.frame(subbars1(row.eff),data=X)
-        dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
-        if(corWithin){ rstruc=2} else { rstruc=1}
+      } else if(all(grps %in% colnames(X))) {
+        if (!is.null(Xgr)){ 
+          Xgr=cbind(Xgr, X)
+        } else {
+          Xgr=X
+        }
         xnames<-colnames(X)[!(colnames(X) %in% grps)]
         X <- as.data.frame(X[,!(colnames(X) %in% grps)])
         colnames(X)<-xnames
         if(ncol(X)==0) X<-NULL
+      } else if(is.null(Xgr)){
+        stop("Grouping variable need to be included in 'Xgr'")
+      }
+      
+      if(is.null(bar.f)) {
+        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
+        # } else if(!all(grps %in% colnames(X))) {
+        # stop("Grouping variable need to be included in 'X'")
+      } else if(!all(order(Xgr[,(colnames(Xgr) %in% grps)])==c(1:n)) && (corWithin)) {
+        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+      } else {
+        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
+        mf <- model.frame(subbars1(row.eff),data=Xgr)
+        dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
+        if(corWithin){ rstruc=2} else { rstruc=1}
       }
       cstruc = corstruc(row.eff)[1]
       if(cstruc == "diag" & rstruc==2) {rstruc=0; dr=NULL}
       row.eff = "random"
     }
+    
+    if(inherits(lvCor,"formula")) {
+      bar.lv <- findbars1(lvCor) # list with 3 terms
+      grps <- unlist(lapply(bar.lv,function(x) as.character(x[[3]])))
+      if(all(grps %in% colnames(X))) {
+        Xgr=X
+        xnames<-colnames(X)[!(colnames(X) %in% grps)]
+        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
+        colnames(X)<-xnames
+        if(ncol(X)==0) X<-NULL
+      } else if(is.null(Xgr)){
+        stop("Grouping variable need to be included in 'Xgr'")
+      }
+      if(!is.null(data)) {
+        if(any(colnames(data) %in% grps)){
+          xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
+          colnames(xgrps) <- grps
+          X<-cbind(X,xgrps)
+        }
+      }
+      
+      if(is.null(bar.lv)) {
+        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
+        # } else if(!all(grps %in% colnames(X))) {
+        # stop("Grouping variable need to be included in 'X'")
+      } else if(!all(order(Xgr[,(colnames(Xgr) %in% grps)])==c(1:n)) && (corWithin)) {
+        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+      } else {
+        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
+        mf <- model.frame(subbars1(lvCor),data=Xgr)
+        dr <- t(as.matrix(mkReTrms1(bar.lv,mf)$Zt))
+      }
+      cstruc = corstruc(lvCor)[1]
+      num.lv.cor = num.lv
+      # Have to set this to diagonal to avoid too many parameters:
+      # Lambda.struc = "diagonal"
+    } else {
+      num.lv.cor = 0
+    }
+    if(Lambda.struc %in% c("NN","NN_unstructured") & num.lv.cor>0){
+      NN<-t(apply(as.matrix(dist(dist, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
+      i1<-rep(1:nrow(NN), each=ncol(NN))
+      i2<-c(t(NN))
+      indM<-cbind(i1,i2)
+      indM[i1<i2,1]<- i2[i1<i2]
+      indM[i1<i2,2]<- i1[i1<i2]
+      # indM[,1]>indM[,2]
+      indM<-indM[order(indM[,2]),]
+      indM<-indM[order(indM[,1]),]
+      dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]))!=0)
+      NN<-indM[dupl,]
+    } else {NN=matrix(0)}
     
     if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
 
@@ -862,8 +928,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if (class(start.fit) != "gllvm")
         stop("Only object of class 'gllvm' can be given as a starting parameters.")
 
-      if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
-        stop("Starting parameters can be given only for count data.")
+      # if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
+      #   stop("Starting parameters can be given only for count data.")
 
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
@@ -893,9 +959,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
     n.i <- 1
 
 
-    out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, lv.formula = lv.formula, formula = formula,
-        method = method, family = family, row.eff = row.eff, rstruc =rstruc, cstruc = cstruc, dist=dist, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group)
+    out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
+        method = method, family = family, row.eff = row.eff, rstruc =rstruc, corP=list(cstruc = cstruc, corWithin=corWithin, Astruc=0), dist=dist, randomX = randomX, n.init = n.init,
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN)
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
@@ -924,6 +990,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             # lv.formula = lv.formula,
             num.lv = num.lv,
             # num.lv.c = num.lv.c,
+            num.lv.cor=num.lv.cor,
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
@@ -957,7 +1024,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         out$X <- fitg$X
@@ -974,6 +1041,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             num.lv = num.lv,
             num.lv.c = num.lv.c,
             num.RR = num.RR,
+            num.lv.cor=num.lv.cor,
             family = family,
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
@@ -1002,7 +1070,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         if(is.null(formula)) {
@@ -1040,6 +1108,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if ((method %in% c("VA", "EVA"))) {
         out$A <- fitg$A
         out$Ar <- fitg$Ar
+        out$AQ <- fitg$AQ
       }
       if (!is.null(randomX)) {
         out$corr <- fitg$corr

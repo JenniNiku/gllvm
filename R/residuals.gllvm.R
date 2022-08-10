@@ -87,6 +87,7 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
   if (num.lv > 0|num.lv.c>0|num.RR>0){
   lvs <- getLV(object)
+  if(nrow(lvs)!=n) lvs = object$TMBfn$env$data$dr0%*%lvs # !!!
   if(num.lv>0){
   lvs[,grepl("^LV",colnames(object$lvs))] <- t(t(lvs[,grepl("^LV",colnames(object$lvs))])*object$params$sigma.lv[grepl("^LV",colnames(object$lvs))])
   }

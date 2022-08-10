@@ -2,27 +2,28 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NULL, num.lv = 2, num.lv.c = 0, num.RR = 0, family = "poisson",
+gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
+      num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithin = TRUE,
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
-      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL) {
-  if((num.lv+num.lv.c)==0&row.eff!="random")diag.iter <-  0
+      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL, Dthreshold=0) {
+  if((num.lv+num.lv.c)==0&row.eff!="random") diag.iter <-  0
 
   if(!is.null(start.params)) starting.val <- "zero"
-  ignore.u=FALSE
-  n <- nr <- dim(y)[1]
+  ignore.u <- FALSE
+  n <- nr <- nu <- dim(y)[1]
   p <- dim(y)[2]
-  times = 1
+  times <- 1
   objrFinal <- optrFinal <- NULL
 
-  cstrucn = switch(cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3)
+  cstrucn = switch(cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   
   # Structure for row effects
   model = 0
   xr = NULL
-  if(rstruc==0){ # No structure
+  if(rstruc==0 & num.lv.cor==0){ # No structure
     dr <- diag(n)
   }
   if(rstruc>0){#rstruc
@@ -30,7 +31,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
     if(rstruc==1){# group specific
       nr <- dim(dr)[2]
-      if((cstrucn == 2)) {
+      if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=nr)
           dist=matrix(1:nr)
       }
@@ -39,13 +40,59 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(is.null(dr)) stop("Define structure for row params if 'rstruc == 2'.")
       nr <- dim(dr)[2]
       times <- n/nr#dim(dr)[1]
-      if((cstrucn == 2)) {
+      if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=times)
           dist=matrix(1:times)
       }
     }
+    if(nr==1) Ar.struc = "diagonal"
   }
-
+  Astruc = 0;
+  scaledc = 0;
+  rho.lv =NULL
+  if(num.lv.cor > 0){#rstruc
+    dist<-as.matrix(dist)
+    if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
+    # LVs correlated within groups
+    if(is.null(dr)) stop("Define structure for row params if 'rstruc == 2'.")
+    nu <- dim(dr)[2]
+    times <- n/nu#dim(dr)[1]
+    if((cstrucn == 2) | (cstrucn == 4)) {
+      if(corWithin){
+          if(is.null(dist))
+            dist=matrix(1:times)
+          if(NROW(dist)!=times)
+            stop("Number of rows in 'dist' should be same as maximum number of units within groups when corWithin = TRUE")
+        } else {
+          if(is.null(dist))
+            dist=matrix(1:nu)
+          if(NROW(dist)!=nu)
+            stop("Number of rows in 'dist' should be same as maximum number of groups when corWithin = FALSE")
+        }
+      AD1<-pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
+      md<-min(dist(as.matrix(dist)%*%diag(1/(AD1)), diag = FALSE))/2
+      if(md>5) AD1=AD1*md
+      scaledc<-log(AD1)
+      if(!is.null(setMap$scaledc)) {
+        if( (length(setMap$scaledc)!= NCOL(dist))) stop("setMap$scaledc must be a numeric vector and have length that is same as the number of columns in 'dist'.")
+      }
+      # scaledc<-rep(log(1),ncol(dist))
+    }
+    sigma_lvc<- matrix(rep(0, num.lv.cor))
+    if(Lambda.struc == "unstructured") {Astruc=1}
+    if(Lambda.struc == "NN") {Astruc=2}
+    if(Lambda.struc %in% c("diag_unstructured","NN_unstructured","unstructured_unstructured")) {
+      if(num.lv.cor>1){
+        if(Lambda.struc == "unstructured_unstructured") {Astruc=3; }#Lambda.struc = "unstructured"}
+        if(Lambda.struc == "NN_unstructured" && num.lv.cor>0) {Astruc=4; Lambda.struc = "NN"}
+        if(Lambda.struc == "diag_unstructured" && num.lv.cor>0) {Astruc=5; Lambda.struc = "diagonal"}
+      } else {
+        if(Lambda.struc == "unstructured_unstructured") {Astruc=1; }#Lambda.struc = "unstructured"}
+        if(Lambda.struc == "NN_unstructured" && num.lv.cor>0) {Astruc=2; Lambda.struc = "NN"}
+        if(Lambda.struc == "diag_unstructured" && num.lv.cor>0) {Astruc=0; Lambda.struc = "diagonal"}
+      }
+      }
+  }
 
   tr <- NULL
   y <- as.matrix(y)
@@ -151,7 +198,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group)
+    fit <- start.values.gllvm.TMB(y = y, X = X, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method)
 
     ## Set initial values
         sigma <- 1
@@ -189,6 +236,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           fit$params <- fit$params
         }
         
+        if(num.lv.cor>0){ # In correlation model, sigmas are just diagonal values, not scale parameters
+          lambdas <- lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv))
+          sigma_lvc<- rep(0, num.lv.cor);
+          if((cstrucn == 2) | (cstrucn == 4)) {
+            AD1<-pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1); 
+            scaledc<-log(AD1)
+          }
+        }
+        if(family == "betaH"){ # Own loadings for beta distr in hurdle model
+          thetaH <- t(lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv)))
+        }
       }
 
       row.params <- NULL
@@ -238,6 +296,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
           
         }
+
           
         row.params <- NULL
         if (start.params$row.eff != FALSE) {
@@ -252,6 +311,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if ((num.lv+num.lv.c) > 0) {
           sigma.lv <- start.params$params$sigma.lv
           lvs <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
+        }
+        if(num.lv.cor>0){ # In correlation model, sigmas are just diagonal values, not scale parameters
+          lambdas <- lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv))
+          sigma.lv=(diag(lambdas))
+          if(is.numeric(start.params$params$scaledc)) scaledc[1: min(length(start.params$params$scaledc),ncol(dist))] <- log(start.params$params$scaledc[1: min(length(start.params$params$scaledc),ncol(dist))])
+          if(is.numeric(start.params$params$rho.lv)) rho.lv = (start.params$params$rho.lv)
         }
       } else {
         stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other.")
@@ -284,7 +349,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       phis <- phis / (1 - phis)
     } # ZIP probability
-    if (family %in% c("gaussian", "gamma", "beta")) {
+    if (family %in% c("gaussian", "gamma", "beta", "betaH")) {
       phis <- fit$phi
     }
     if(family=="ordinal"){
@@ -325,12 +390,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     if((num.lv+num.lv.c)==0){
       sigma.lv <- 0
     }
-    if(!is.null(phis)) { 
+    if(!is.null(phis)) {
       phi <- phis 
     } else { 
         phi <- rep(1, p); 
         fit$phi <- phi
     }
+    
     
     q <- num.lv+(num.lv.c+num.RR)
 
@@ -339,13 +405,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     map.list <- list()    
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0
-#    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
+   if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
     if(family %in% c("poisson","binomial","ordinal","exponential")){
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "ZIP")){
+    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "ZIP")){
       map.list$lg_phi <- factor(disp.group)
     }
     if(family != "ordinal") map.list$zeta <- factor(NA)
+    if((num.lv.c+num.RR)==0){
+      map.list$b_lv = factor(rep(NA, length(b.lv)))
+    }
     
     randoml=c(0,0)
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
@@ -354,19 +423,56 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
     if(row.eff == "random" && rstruc ==0){ nlvr<-num.lv+num.lv.c+1 } else {nlvr=num.lv+num.lv.c}
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
     if(!is.null(X)){Xd <- cbind(1,X)} else {Xd <- matrix(1,n)}
-    extra <- 0
+    extra <- c(0,0,0)
     
     optr<-NULL
     timeo<-NULL
     se <- NULL
 
+    if(num.lv.cor>0 & cstrucn>0){
+      sigma_lvc<- matrix(rep(0, num.lv.cor))
+      if(cstruc=="corExp"){
+        if(is.null(rho.lv)) {
+          rho.lv=rep(0, num.lv.cor) 
+        } else if(length(rho.lv)==num.lv.cor) {
+          rho.lv=c(log(rho.lv))
+        }
+        sigma_lvc<- matrix(rho.lv)
+        # sigma_lvc<- matrix(rep(log(sd(dist)), num.lv.cor))
+      } else if(cstruc=="corMatern"){
+        if(is.null(rho.lv)) {
+          rho.lv=rep(c(0,log(1.5)), each=num.lv.cor) 
+        } else if(length(rho.lv)==num.lv.cor) {
+          rho.lv=c(log(rho.lv))
+        }
+        sigma_lvc<- matrix(rho.lv,nrow = num.lv.cor)
+      } else {
+        map.list$scaledc = factor(rep(NA, length(scaledc)))
+      }
+      if(!is.null(setMap$scaledc)){ if((length(setMap$scaledc)==ncol(dist))) map.list$scaledc = factor(setMap$scaledc)}
+      if(!is.null(Dthreshold)) extra[3] <- Dthreshold
+      
+      if(cstrucn %in% c(2,4)){
+        iv<-1:length(sigma_lvc); 
+        if(!is.null(setMap$sigma_lvc)){
+          if((length(setMap$sigma_lvc)==length(sigma_lvc))) 
+            iv = (setMap$sigma_lvc)
+          map.list$sigma_lvc = factor(iv)
+        }
+      }
+    } else {
+      sigma_lvc <- matrix(0)
+      map.list$sigma_lvc = factor(NA) 
+      map.list$scaledc = factor(NA) 
+    }
+    
    ### VA method, used only if there is some random effects/LVs in the model
     
     if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random"))){
       # Variational covariances for latent variables
       if((num.lv+num.lv.c)>0){
-        if(is.null(start.params) || start.params$method=="LA"){
-          if(Lambda.struc=="diagonal" || diag.iter>0){
+        if(is.null(start.params) || start.params$method=="LA" || num.lv.cor>0){
+          if(Lambda.struc=="diagonal" || (Lambda.struc=="NN") || diag.iter>0){
             Au <- log(rep(Lambda.start[1],(num.lv+num.lv.c)*n)) #1/2, 1
           } else{
             Au <- c(log(rep(Lambda.start[1],(num.lv+num.lv.c)*n)),rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*n)) #1/2, 1
@@ -393,10 +499,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lg_Ar <- rep(log(Lambda.start[2]), n)
         }
       
-        if((rstruc == 0) && (nlvr>(num.lv+num.lv.c)) && (quadratic == FALSE) & Ar.struc!="diagonal"){
+        if((rstruc == 0) && (nlvr>(num.lv+num.lv.c)) && (num.lv.cor==0) & (quadratic == FALSE) & Ar.struc!="diagonal"){
           lg_Ar<-c(lg_Ar, rep(0, (num.lv+num.lv.c)*n))
         }
-        if(rstruc == 1 & (cstrucn %in% c(1,2,3)) & Ar.struc!="diagonal"){
+        if(rstruc == 1 & (cstrucn %in% c(1,2,3,4)) & Ar.struc!="diagonal"){
           lg_Ar<-c(lg_Ar, rep(0, nr*(nr-1)/2))
         }
         if(rstruc == 2 & Ar.struc!="diagonal"){
@@ -425,19 +531,39 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       
     ### family settings
-      extra <- 0
+      extra[1] <- 0
       if(family == "poisson") { familyn <- 0}
       if(family == "negative.binomial") { familyn <- 1}
-      if(family == "binomial") { familyn <- 2}
+      if(family == "binomial") { 
+        familyn <- 2
+        if(link=="probit") extra[1]=1
+      }
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
-      if(family == "tweedie"){ familyn=5; extra=Power}
+      if(family == "tweedie"){ familyn=5; extra[1]=Power}
       if(family == "ordinal") {familyn=7}
       if(family == "exponential") {familyn=8}
       if(family == "beta"){ 
         familyn=9
-        if(link=="probit") extra=1
-      }      
+        if(link=="probit") extra[1]=1
+      }
+      # if(family == "betaH"){ # Not used for VA atm
+      #   familyn = 10
+      #   bH <- rbind(a,b)
+      #   if(num.lv>0) {
+      #     mapLH<-factor(1:length(thetaH))
+      #     mapLH[lower.tri(thetaH)] <- NA
+      #     map.list$thetaH <- factor(mapLH)
+      #   } else {
+      #     thetaH<- matrix(0); 
+      #     map.list$thetaH = factor(NA)
+      #   }
+      # } else {
+        thetaH<- matrix(0)
+        map.list$thetaH = factor(NA)
+        bH <- matrix(0)
+        map.list$bH = factor(NA)
+      # }
 
       # Set up parameter.list, data.list and map.list
       # latent vars
@@ -451,14 +577,82 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list$u = factor(NA) 
         map.list$Au = factor(NA) 
       }
+        
+      if(num.lv.cor>0){
+        if(corWithin) {
+          if(diag.iter>0){
+            if(Astruc>=3){
+              Au <- c(Au[1:(n)])
+              AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+              Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            }
+          } else {
+          if(Lambda.struc == "unstructured" && Astruc==1) {
+            Au <- c(Au[1:(n*num.lv.cor)], rep(0,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
+          } else if(Lambda.struc == "NN" && Astruc==2){
+            Au <- c(Au[1:(n*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor*nu) )
+          } else if(Astruc==3) {
+            Au <- c(Au[1:(n)], rep(0,sum(lower.tri(matrix(0,n,n)))) )
+            AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+            Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+          } else if(Astruc==4) {
+            Au <- c(Au[1:(n)], rep(0,nrow(NN)*nu) )
+            AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+            Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+          } else if(Astruc==5) {
+            Au <- c(Au[1:(n)])
+            AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+            Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+          }}
+        } else {
+          # u <- as.matrix(u[1:nu,])
+          u=as.matrix(t(dr)%*%lvs/colSums(dr))[1:nu,]
+          if(diag.iter>0){
+            if(Astruc<3){
+              Au <- c(Au[1:(nu*num.lv.cor)])
+            } else {
+              Au <- c(Au[1:(nu)])
+              AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+              Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            }
+          } else {
+            if(Lambda.struc == "unstructured" && Astruc==1 & cstrucn==0 & diag.iter==0){
+              Au <- c(Au[1:(nu*num.lv.cor)], rep(0, nu*num.lv.cor*(num.lv.cor-1)/2))
+            } else  if(Astruc==2){
+              Au <- c(Au[1:(nu*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor) )
+            } else  if(Astruc==3){
+              Au <- c(Au[1:(nu)], rep(0,sum(lower.tri(matrix(0,nu,nu)))) )
+              AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+              Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            } else  if(Astruc==4){
+              Au <- c(Au[1:(nu)], rep(0,nrow(NN)) )
+              AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+              Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            } else  if(Astruc==5){
+              Au <- c(Au[1:(nu)] )
+              AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
+              Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            }
+          }
+        }
+        # u <- u*0.5
+        lambda <- lambda*0.5
+        sigma.lv <- log(sigma.lv*0.5)
+        Au = Au + 1e-3
+      }
+
+      if(num.RR==0 && num.lv.c==0) map.list$b_lv = factor(NA)
       
     ## Row effect settings
       if(row.eff=="random"){
         if(dependent.row&quadratic==F|dependent.row&starting.val=="zero") 
           sigma<-c(log(sigma), rep(0, num.lv+num.lv.c))
-        if((rstruc %in% 1:2) & (cstrucn %in% c(1,2,3))) {
+        if((rstruc %in% 1:2) & (cstrucn %in% c(1,2,3,4))) {
           sigma = c(log(sigma[1]),0)
-          }
+        }
+        if(cstruc=="corMatern"){
+          sigma<- c(sigma,log(1.5))
+        }
       } else {
         sigma=0
         map.list$log_sigma <- factor(NA)
@@ -467,13 +661,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       
       if(quadratic == FALSE){
-        if(num.RR==0&quadratic==F)map.list$lambda2 = factor(NA)
+        if(num.RR==0&quadratic==F) map.list$lambda2 = factor(NA)
       }
       
       
   ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       
       # if(row.eff=="random"){
       #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -500,8 +694,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list2$zeta = factor(rep(NA, length(zeta)))
         map.list2$r0 = factor(rep(NA, length(r0)))
         map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
+        map.list2$scaledc = factor(rep(NA, length(scaledc)))
+        
 
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta)
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, sigma_lvc=sigma_lvc, Au=Au, lg_Ar =lg_Ar, Abb=0, scaledc=scaledc, zeta=zeta)
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list2,
@@ -532,9 +728,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
     ## Set up data and parameters
       
-      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist,Astruc=Astruc, NN = NN)
       
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, sigma_lvc=sigma_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, scaledc=scaledc, zeta=zeta)
       
 #### Call makeADFun
       objr <- TMB::MakeADFun(
@@ -559,12 +755,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
  ### Now diag.iter, improves the model fit sometimes
       
-      if(diag.iter>0 && Lambda.struc=="unstructured" && nlvr>1 && !inherits(optr,"try-error")){
+      if((diag.iter>0) && !(Lambda.struc %in% c("diagonal", "diag_unstructured")) && (nlvr>1) && !inherits(optr,"try-error")){
         objr1 <- objr
         optr1 <- optr
         param1 <- optr$par
         nam <- names(param1)
-        r1 <- matrix(param1[nam=="r0"])
+        if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
         if((num.lv.c+num.RR)>0){b.lv1 <- matrix(param1[nam=="b_lv"],ncol(lv.X),(num.lv.c+num.RR))}else{b.lv1<-matrix(0)}
         lambda1 <- param1[nam=="lambda"]
@@ -575,7 +771,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
 
         sigma.lv1 <- param1[nam=="sigmaLV"]
-        u1 <- matrix(param1[nam=="u"],n,num.lv+num.lv.c)
+        u1 <- matrix(param1[nam=="u"],nrow(u),num.lv+num.lv.c)
         if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
@@ -583,13 +779,51 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           lg_Ar<- param1[nam=="lg_Ar"]
           log_sigma1 <- param1[nam=="log_sigma"]
           } else {log_sigma1 = 0}
-        Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), (num.lv+num.lv.c)*n)), rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*n))
+
+        if(num.lv.cor>0){
+          Au1<- c(param1[nam=="Au"])
+          if(corWithin) {
+            if(Lambda.struc == "unstructured" && Astruc==1) {
+              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
+            } else if(Lambda.struc == "NN" && Astruc==2){
+              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor*nu) )
+            } else if(Astruc==3) {
+              Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,sum(lower.tri(matrix(0,n,n)))), Au1[-(1:n)])
+            } else if(Astruc==4) {
+              Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,nrow(NN)*nu), Au1[-(1:n)])
+            }
+          } else {
+            if(Lambda.struc == "unstructured" && Astruc==1 & cstrucn==0){
+              Au1 <- c(pmax(Au1[1:(nu*num.lv.cor)],log(1e-2)), rep(1e-3, nu*num.lv.cor*(num.lv.cor-1)/2))
+            } else  if(Astruc==2){
+              Au1 <- c(pmax(Au1[1:(nu*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor) )
+            } else  if(Astruc==3){
+              Au1 <- c(log(exp(Au1[1:(nu)])+1e-2), rep(1e-3,sum(lower.tri(matrix(0,nu,nu)))), Au1[-(1:nu)])
+            } else  if(Astruc==4){
+              Au1 <- c(log(exp(Au1[1:(nu)])+1e-2), rep(1e-3,nrow(NN)), Au1[-(1:nu)])
+            }
+          }
+          if(cstrucn>0){
+            if(cstrucn %in% c(2,4)){ #cstruc=="corExp" || cstruc=="corMatern"
+              scaledc = param1[nam=="scaledc"]
+              if(!is.null(map.list$scaledc)){ scaledc=scaledc[map.list$scaledc]; scaledc[is.na(scaledc)]=0}
+              if(!is.null(Dthreshold)) extra[3] <- Dthreshold
+              if(num.lv.cor>1){ sigma_lvc <- matrix((param1[nam=="sigma_lvc"])[map.list$sigma_lvc],nrow(sigma_lvc),ncol(sigma_lvc)); sigma_lvc[is.na(sigma_lvc)]=0 } #sigma_lvc[-1]<- param1[nam=="sigma_lvc"]
+            } else {
+              sigma_lvc[1:length(sigma_lvc)]<- param1[nam=="sigma_lvc"]
+            }
+          }
+        } else {
+          Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), (num.lv+num.lv.c)*nrow(u1))), rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*nrow(u1)))
+        }
+        
+        
         
         if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
 
-        parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1,Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta)
+        parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = b.lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1, sigma_lvc=sigma_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=0, scaledc=scaledc, zeta=zeta)
 
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -618,7 +852,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 #### Extract estimated values
       
       param<-objr$env$last.par.best
-      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta")) {
+      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
       }
       if(family == "ordinal"){
@@ -654,7 +888,35 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       li2 <- names(param)=="lambda2"
       ui <- names(param)=="u"
 
-      if((num.lv+num.lv.c+num.RR) > 0){
+      if(num.lv.cor > 0){ # Correlated latent variables
+        if(corWithin){
+          lvs<-(matrix(param[ui],n,num.lv.cor))
+        } else {
+          lvs = matrix(param[ui],nu,num.lv.cor)
+          rownames(lvs) =colnames(dr)
+          # lvs = dr%*%matrix(param[ui],nu,num.lv.cor)
+        }
+        theta <- matrix(0,p,num.lv.cor)
+        sigma.lv <- exp(param[si])
+        if(num.lv.cor>1){
+          diag(theta)<-sigma.lv 
+        } else if(num.lv.cor==1) {
+          theta[1,1]<-sigma.lv[1]
+        }
+        sigma.lv = rep(1, num.lv.cor)
+        
+        if(p>1) {
+          theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
+        } else {
+          theta <- param[li]
+        }
+        sigma_lvc = param[names(param)=="sigma_lvc"]
+        if((cstrucn %in% c(1,3))) rho.lv<- param[names(param)=="sigma_lvc"] / sqrt(1.0 + param[names(param)=="sigma_lvc"]^2);
+        if((cstrucn %in% c(2,4))) {
+          rho.lv<- exp(param[names(param)=="sigma_lvc"]);
+          scaledc<- exp(param[names(param)=="scaledc"]);
+        }
+      } else if((num.lv+num.lv.c+num.RR) > 0){
         if((num.lv+num.lv.c)>0)lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
         theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
@@ -708,7 +970,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(row.eff=="random"){
           sigma<-exp(param[names(param)=="log_sigma"])[1]
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
-          if((rstruc ==2 | (rstruc == 1)) & (cstrucn == 2)) rho<- exp(param[names(param)=="log_sigma"][2]);
+          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
+            rho<- exp(param[names(param)=="log_sigma"][-1]);
+            # scaledc<- exp(param[names(param)=="scaledc"]);
+          }
           if(num.lv>0 && dependent.row && rstruc==0) sigma <- c(sigma,(param[names(param)=="log_sigma"])[-1])
         }
       }
@@ -716,7 +981,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       beta0 <- betaM[,1]
       if(!is.null(X)) betas <- betaM[,-1]
       if((num.lv.c+num.RR)>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),(num.lv.c+num.RR))
-      
+      # if(family %in% "betaH"){
+      #   bHi <- names(param)=="bH"
+      #   betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
+      # }
       new.loglik <- objr$env$value.best[1]
 
     }
@@ -728,42 +996,61 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
 ### Family settings
   
-      extra=0
+      extra[1]=0
       if(family == "poisson") {familyn=0}
       if(family == "negative.binomial") {familyn=1}
       if(family == "binomial") {
         familyn=2;
-        if(link=="probit") extra=1
+        if(link=="probit") extra[1]=1
       }
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
-      if(family == "tweedie"){ familyn=5; extra=Power}
+      if(family == "tweedie"){ familyn=5; extra[1]=Power}
       if(family == "ZIP"){ familyn=6;}
       if(family == "ordinal"){ familyn=7}
       if(family == "exponential"){ familyn=8}
       if(family == "beta"){ 
         familyn=9
-        if(link=="probit") extra=1
+        if(link=="probit") extra[1]=1
+      }
+      if(family == "betaH"){
+        familyn = 10
+        if(link=="probit") extra[1]=1
+        
+        bH <- rbind(a,b)
+        if(num.lv>0) {
+          mapLH<-factor(1:length(thetaH))
+          mapLH[lower.tri(thetaH)] <- NA
+          map.list$thetaH <- factor(mapLH)
+        } else {
+          thetaH<- matrix(0); 
+          map.list$thetaH = factor(NA)
+        }
+      } else {
+        thetaH<- matrix(0)
+        map.list$thetaH = factor(NA)
+        bH <- matrix(0)
+        map.list$bH = factor(NA)
       }
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
-        #     #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
+        #     #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, B = matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=Au, lg_Ar=lg_Ar,Abb=0, scaledc=scaledc, zeta=zeta)
         # } else {
         #   sigma = 0 
         #   map.list$log_sigma = factor(NA)
-        #   #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), B = matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=0,Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta)
+        #   #parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, B = matrix(0), Br=Br,lambda = lambda, u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=0,Au=Au, lg_Ar=lg_Ar,Abb=0, scaledc=scaledc, zeta=zeta)
         # }
         map.list2 <- map.list 
         map.list2$log_sigma = factor(NA)
         map.list2$Au <- map.list2$Abb <- factor(NA)# map.list$lambda2 <- 
         # map.list2$b_lv <- factor(rep(NA,length(b.lv)))
 
-        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,Au=0, lg_Ar =0, Abb=0, zeta=zeta)
+        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,sigma_lvc=sigma_lvc, Au=0, lg_Ar =0, Abb=0, scaledc=scaledc, zeta=zeta)
 
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -789,7 +1076,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           # fit$b.lv <- b.lv
         }
       }
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       
       if(family == "ordinal"){
         data.list$method = 0
@@ -797,7 +1084,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       randomp <- "u"
       map.list$Au <- map.list$lg_Ar <- map.list$Abb
-      if(quadratic==FALSE)map.list$lambda2 <- factor(NA)
+      if(quadratic==FALSE) map.list$lambda2 <- factor(NA)
       
       randomp <- NULL
       # latent vars
@@ -812,6 +1099,24 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         map.list$u = factor(NA) 
       }
       
+      if(num.lv.cor>0 & (!corWithin)){
+        u <- as.matrix(u[1:nu,])
+      }
+      # if(num.lv.cor>0 & cstrucn>0){
+      #   sigma_lvc<- matrix(rep(0, num.lv.cor))
+      #   if(cstruc=="corMatern"){
+      #     sigma_lvc<- matrix(rep(c(0,log(1.5)), each=num.lv.cor))
+      #   } else if(cstruc=="corExp"){
+      #     sigma_lvc<- matrix(rep(0, num.lv.cor))
+      #   } else {
+      #     map.list$scaledc = factor(rep(NA, length(scaledc)))
+      #   }
+      # } else {
+      #   sigma_lvc <- matrix(0)
+      #   map.list$sigma_lvc = factor(NA) 
+      #   map.list$scaledc = factor(NA) 
+      # }
+      
       # Row parameter settings
       if(row.eff=="random"){
         randoml[1] <- 1
@@ -819,8 +1124,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         
         if(dependent.row && (rstruc == 0)) 
           sigma<-c(log(sigma[1]), rep(0, num.lv+num.lv.c))
-        if((rstruc %in% 1:2) & (cstrucn %in% c(1,2,3))) {
+        if((rstruc %in% 1:2) & (cstrucn %in% c(1,2,3,4))) {
           sigma = c(log(sigma[1]),0)
+        }
+        if(cstruc=="corMatern"){
+          sigma<- c(sigma,log(1.5))
         }
       } else {
         sigma=0
@@ -834,7 +1142,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(family == "ordinal"){
         data.list$method = 0
       }
-      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
+      parameter.list = list(r0=matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), sigma_lvc=sigma_lvc, Au=0, lg_Ar=0, Abb=0, scaledc=scaledc, zeta=zeta)
 
       #### Call makeADFun
       objr <- TMB::MakeADFun(
@@ -874,7 +1182,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
         if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])[disp.group]
         
-        parameter.list = list(r0=matrix(r0), b = b, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), Au=0, lg_Ar=0, Abb=0, zeta=zeta)
+        parameter.list = list(r0=matrix(r0), b = b, bH=bH, b_lv = b.lv,B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), sigma_lvc=sigma_lvc, Au=0, lg_Ar=0, Abb=0, scaledc=scaledc, zeta=zeta)
 
         #### Call makeADFun
         objr <- TMB::MakeADFun(
@@ -907,7 +1215,36 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       li2 <- names(param)=="lambda2"
       si <- names(param) == "sigmaLV"
       ui <- names(param)=="u"
-      if((num.lv+num.lv.c+num.RR) > 0){
+      
+      if(num.lv.cor > 0){
+        if((num.lv.cor)>0 & corWithin){
+          lvs<-(matrix(param[ui],n,num.lv.cor))
+        } else{ 
+          lvs = matrix(param[ui],nu,num.lv.cor)
+          rownames(lvs) =colnames(dr)
+          # lvs = dr%*%matrix(param[ui],nu,num.lv.cor)
+        }
+        theta <- matrix(0,p,num.lv.cor)
+        sigma.lv <- exp(param[si])
+        if(num.lv.cor>1){
+          diag(theta)<-sigma.lv 
+        } else if(num.lv.cor==1) {
+          theta[1,1]<-sigma.lv[1]
+        }
+        sigma.lv = rep(1, num.lv.cor)
+        
+        if(p>1) {
+          theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
+        } else {
+          theta <- param[li]
+        }
+        sigma_lvc = as.matrix(param[names(param)=="sigma_lvc"])
+        if((cstrucn %in% c(1,3))) rho.lv<- param[names(param)=="sigma_lvc"] / sqrt(1.0 + param[names(param)=="sigma_lvc"]^2);
+        if((cstrucn %in% c(2,4))) {
+          rho.lv<- exp(param[names(param)=="sigma_lvc"]);
+          scaledc<- exp(param[names(param)=="scaledc"]);
+        }
+      } else if((num.lv+num.lv.c+num.RR) > 0){
         if((num.lv.c+num.lv)>0)lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
         theta <- matrix(0,p,num.lv+(num.lv.c+num.RR))
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
@@ -961,7 +1298,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(row.eff=="random"){
           sigma<-exp(param[names(param)=="log_sigma"])[1]
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
-          if((rstruc ==2 | (rstruc == 1)) & (cstrucn == 2)) rho<- exp(param[names(param)=="log_sigma"][2]);
+          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
+            rho<- exp(param[names(param)=="log_sigma"][-1]);
+            # scaledc<- exp(param[names(param)=="scaledc"]);
+            }
           if((num.lv+num.lv.c)>0 && dependent.row && rstruc==0) sigma <- c(sigma, (param[names(param)=="log_sigma"])[-1])
         }
       }
@@ -973,14 +1313,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       
       new.loglik <- objr$env$value.best[1]
       
-      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma", "beta")) {
+      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma", "beta", "betaH")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
         if(family=="ZIP") {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
         }
       }
-      
+      if(family %in% "betaH"){
+        bHi <- names(param)=="bH"
+        betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
+        if(num.lv>0) {
+          thetaH[!is.na(map.list$thetaH)] <- param[names(param)=="thetaH"]
+        }
+      }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
         if(zeta.struc=="species"){
@@ -1017,14 +1363,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if((num.lv+(num.lv.c+num.RR)) > 0) {
         if((num.lv+num.lv.c)>0)out$lvs <- lvs
         out$params$theta <- theta
-        if((num.lv+num.lv.c)>0)out$params$sigma.lv  <- sigma.lv
+        if((num.lv+num.lv.c)>0) out$params$sigma.lv  <- sigma.lv
         if((num.lv.c+num.RR)>0){
           out$params$LvXcoef <- b.lv
           colnames(out$params$LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
           row.names(out$params$LvXcoef) <- colnames(lv.X)
         }
         
-        if((num.lv+num.lv.c)>0)rownames(out$lvs) <- rownames(out$y);
+        if((num.lv+num.lv.c)>0 & (nrow(out$lvs)==nrow(out$y))) rownames(out$lvs) <- rownames(out$y);
         if(num.lv>0&(num.lv.c+num.RR)==0) {
           if(quadratic==FALSE){
             colnames(out$params$theta)<- paste("LV", 1:num.lv, sep="")
@@ -1078,10 +1424,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
       }
       names(beta0) <- colnames(out$y); out$params$beta0 <- beta0;
-      if(!is.null(X)){betas <- matrix(betas,ncol=ncol(X)); out$params$Xcoef <- betas;
-      rownames(out$params$Xcoef) <- colnames(out$y); colnames(out$params$Xcoef) <- colnames(X); }
+      if(!is.null(X)){
+        betas <- matrix(betas,ncol=ncol(X)); out$params$Xcoef <- betas;
+        rownames(out$params$Xcoef) <- colnames(out$y); colnames(out$params$Xcoef) <- colnames(X); 
+      }
 
-      
+      if(family %in% "betaH"){
+        out$params$betaH <- betaH;
+        rownames(out$params$betaH) <- colnames(out$y); 
+        colnames(out$params$betaH) <- paste("c", 1:ncol(betaH))
+        # colnames(out$params$betaH)[1] <- "Intercept"; 
+        if(!is.null(X)){ colnames(out$params$betaH) <- c("Intercept",colnames(X)); }
+        if(num.lv>0) {
+          out$params$thetaH <- thetaH
+        }      
+      }
       if(family =="negative.binomial") {
         out$params$inv.phi <- phis;
         out$params$phi <- 1/phis;
@@ -1091,7 +1448,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         names(out$params$inv.phi) <-  names(out$params$phi)
       }
-      if(family %in% c("gaussian", "tweedie", "gamma","beta")) {
+      if(family %in% c("gaussian", "tweedie", "gamma","beta", "betaH")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
         if(!is.null(names(disp.group))){
@@ -1111,13 +1468,23 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         if(row.eff=="random"){ 
           out$params$sigma=sigma; 
           names(out$params$sigma)="sigma"
-          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3))) out$params$rho <- rho
+          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))) out$params$rho <- rho
           if((num.lv+num.lv.c)>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:(num.lv+num.lv.c)), sep = "")
         }
         out$params$row.params <- row.params; 
         if(length(row.params) == n) names(out$params$row.params) <- rownames(out$y)
         if((length(row.params) == ncol(dr)) && (rstruc==1)) try(names(out$params$row.params) <- colnames(dr), silent = TRUE)
       }
+      if(num.lv.cor>0 & cstrucn>0){
+        out$params$rho.lv <- rho.lv; 
+        if(cstrucn %in% c(2,4)){ 
+          out$params$scaledc=scaledc
+          if(length(out$params$rho.lv)>0) names(out$params$rho.lv) <- paste("rho.lv",1:length(out$params$rho.lv), sep = "") #[!is.na(map.list$sigma_lvc)]
+        } else {
+          names(out$params$rho.lv) <- paste("rho.lv",1:num.lv.cor, sep = "") 
+        }
+      }
+
       if(family %in% c("binomial", "beta")) out$link <- link;
       if(family == "tweedie") out$Power <- Power;
       if(family=="ordinal"){
@@ -1130,7 +1497,164 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 ## Collect VA covariances
       if((method %in% c("VA", "EVA"))){
         param <- objr$env$last.par.best
-        if(nlvr>0){
+        
+        if(num.lv.cor>0 && !corWithin){
+          Au <- param[names(param)=="Au"]
+          AQ <- NULL
+          
+          if(cstrucn==0){
+            A <- array(0, dim=c(nu, num.lv.cor, num.lv.cor))
+            for (d in 1:(num.lv.cor)){
+              for(i in 1:nu){
+                A[i,d,d] <- exp(Au[(d-1)*nu+i]);
+              }
+            }
+            if(Astruc>0 & (length(Au)>((num.lv.cor)*nu))){ # var cov Unstructured
+              k=0;
+              for (d in  1:num.lv.cor){
+                r=d+1
+                while (r <= num.lv.cor){
+                  for(i in 1:nu){
+                    A[i,r,d]=Au[nu*num.lv.cor+k*nu+i];
+                  }
+                  k=k+1; r=r+1
+                }}
+            }
+            
+            for(i in 1:nu){
+              A[i,,] <- A[i,,]%*%t(A[i,,])
+            }
+          } else {
+            # A <- array(0, dim=c(nu, nu, num.lv.cor))
+            if(Astruc<3){
+              nMax<- num.lv.cor
+            } else {
+              nMax<- 1
+            }
+            A <- array(0, dim=c(nu, nu, nMax))
+            Alvm <- objr$report()$Alvm
+            
+            
+            for (d in 1:nMax) {
+              # for (i in 1:nu){
+              #   A[i,i,d]=exp(Au[(d-1)*nu+i]);
+              # }
+              # if(Astruc>0 & length(Au)>(nu*nMax)){
+              #   k=0;
+              #   if(Astruc %in% c(1,3)){ # var cov struct unstructured
+              #     for (i in  1:nu){
+              #       r=i+1
+              #       while (r <= nu){
+              #         A[r,i,d]=Au[nu*nMax+k*nMax+d];
+              #         k=k+1; r=r+1;
+              #       }
+              #     }
+              #   } else if(Astruc %in% c(2,4)) { # var cov struct NN
+              #     arank = nrow(NN);
+              #     for (r in (1:arank)){
+              #       A[NN[r,1],NN[r,2],d]=Au[nu*nMax+k*nMax+d];
+              #       k=k+1;
+              #     }
+              #   }
+              # 
+              # }
+              if(Astruc %in% c(3,4)){
+                A[,,d] <- Alvm #%*%t(Alvm)
+              } else {
+                A[,,d] <- Alvm[,,d]%*%t(Alvm[,,d])
+              }
+            }
+            if(Astruc %in% c(3,4)){
+              AQ <- matrix(0,num.lv.cor,num.lv.cor)
+              # for (d in 1:num.lv.cor){
+              #   AQ[d,d]=exp(Au[(nu+k)]);
+              #   k=k+1;
+              #   r=d+1
+              #   while (r <= num.lv.cor){
+              #     AQ[r,d]=Au[(nu+k)];
+              #     k=k+1; r=r+1
+              #   }
+              # }
+              AQ <- objr$report()$AQ
+              # AQ<-AQ%*%t(AQ)
+            }
+            
+            # for(d in 1:nMax){ #num.lv.cor
+            #   A[,,d] <- A[,,d]%*%t(A[,,d])
+            # }
+          }
+          out$A <- A
+          out$AQ <- AQ
+          
+        } else if(num.lv.cor>0 && corWithin){
+          Au <- param[names(param)=="Au"]
+          # A <- array(0, dim=c(times*nu,times*nu,num.lv.cor))
+          if(Astruc<3){ 
+            nMax<- num.lv.cor
+          } else {
+            nMax<- 1
+          }
+          A <- array(0, dim=c(times*nu, times*nu, nMax))
+          Alvm <- objr$report()$Alvm
+          
+          AQ <- NULL
+          
+          for (q in 1:nMax) {
+            # for (i in  1:nu){
+            #   for (r in (1:times)){
+            #     A[(i-1)*times+r,(i-1)*times+r,q]=exp(Au[(q-1)*n+(i-1)*times+r]);
+            #   }
+            # }
+            # if(Astruc>0){#var cov
+            #   k=0;
+            #   if(Astruc %in% c(1,3)){ # var cov struct unstructured
+            #     for(i in 1:nu){
+            #       for (d in 1:times){
+            #         r=d+1
+            #         while (r<=(times)){
+            #           A[(i-1)*times+r,(i-1)*times+d,q]=Au[nu*times*nMax+k*nMax+q];
+            #           k=k+1; r=r+1
+            #         }
+            #       }
+            #     }
+            #   } else if(Astruc %in% c(2,4)) { # var cov struct NN
+            #     arank = nrow(NN);
+            #     for(i in 1:nu){
+            #       for (r in (1:arank)){
+            #         A[(i-1)*times+NN[r,1],(i-1)*times+NN[r,2],q]=Au[nu*times*nMax+k*nMax+q];
+            #         k=k+1;
+            #       }
+            #     }
+            #   }
+            # }
+            # A[,,q] <- A[,,q]%*%t(A[,,q])
+            if(Astruc %in% c(3,4)){
+              A[,,q] <- Alvm%*%t(Alvm)
+            } else {
+              A[,,q] <- Alvm[,,q]%*%t(Alvm[,,q])
+            }
+          }
+          
+          if(Astruc %in% c(3,4)){
+            AQ <- matrix(0,num.lv.cor,num.lv.cor)
+            # for (d in 1:num.lv.cor){
+            #   AQ[d,d]=exp(Au[(nu*times+k+1)]);
+            #   k=k+1;
+            #   r=d+1
+            #   while (r <= num.lv.cor){
+            #     AQ[r,d]=Au[(nu*times+k+1)];
+            #     k=k+1; r=r+1
+            #   }
+            # }
+            AQ <- objr$report()$AQ
+            AQ<-AQ%*%t(AQ)
+          }
+          
+          
+          out$AQ <- AQ
+          out$A <- A
+          
+        } else if(nlvr>0){
           param <- objr$env$last.par.best
           A <- array(0, dim=c(n, nlvr, nlvr))
           if(nlvr>(num.lv+num.lv.c)){
@@ -1316,7 +1840,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && row.eff!="random")){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         se <- try(sqrt(diag(abs(covM))))
-        
+        trpred<-try({
         if(((num.lv+num.lv.c+num.RR) > 0 || row.eff == "random")&& method == "LA") {
           sd.random <- sdrandom(objrFinal, covM, incl,ignore.u = ignore.u)
           prediction.errors <- list()
@@ -1336,9 +1860,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
             # }
             prediction.errors$lvs <- sd.random$A
           }
+          
           out$prediction.errors <- prediction.errors
         }
-        
+        }, silent = TRUE)
+        if(inherits(trpred, "try-error")) { cat("Prediction errors for latent variables could not be calculated.\n") }
         out$Hess <- list(Hess.full=sdr, incla = NULL, incl=incl, incld=NULL, cov.mat.mod=covM)
         
       } else {
@@ -1355,9 +1881,19 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
       }
 
-      if(row.eff == "fixed") { se.row.params <- c(0,se[1:(n-1)]); names(se.row.params) <- rownames(out$y); se <- se[-(1:(n-1))] }
-      sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
-
+      if(row.eff == "fixed") {
+        se.row.params <- c(0,se[1:(n-1)]); 
+        names(se.row.params) <- rownames(out$y); se <- se[-(1:(n-1))] 
+        }
+      sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  
+      se <- se[-(1:((num.X+1)*p))]
+      
+      if(family %in% "betaH"){
+        out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
+        rownames(out$sd$betaH) <- rownames(out$params$betaH); 
+        colnames(out$sd$betaH) <- colnames(out$params$betaH)
+      }
+      
       if((num.lv.c+num.RR)>0){
         se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=(num.lv.c+num.RR),nrow=ncol(lv.X))
         se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
@@ -1367,7 +1903,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
       }
       if((num.lv.c+num.lv)>0){
         se.sigma.lv <- se[1:(num.lv+num.lv.c)]; ##*out$params$sigma.lv; 
-        se<-se[-c(1:(num.lv+num.lv.c))]}
+        se<-se[-c(1:(num.lv+num.lv.c))]
+        }
       if(num.lv > 0&(num.lv.c+num.RR)==0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
@@ -1427,9 +1964,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
       }
+      if(num.lv>0 & family == "betaH"){
+        se.thetaH <- matrix(0,num.lv,p); 
+        se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
+        se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
+        out$sd$se.thetaH <- se.thetaH
+      }
+      
       if((num.lv+num.lv.c)>0){
         out$sd$sigma.lv  <- se.sigma.lv
         names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+(num.lv.c))])
+      }
+      # For correlated LVs:
+      if(num.lv.cor>0){
+        diag(out$sd$theta) <- c(out$sd$sigma.lv)
       }
       out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(out$y);
       if(!is.null(X)){
@@ -1449,7 +1997,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         names(out$sd$inv.phi) <-  names(out$sd$phi)
         se <- se[-(1:length(unique(disp.group)))]
       }
-      if(family %in% c("tweedie", "gaussian", "gamma", "beta")) {
+      if(family %in% c("tweedie", "gaussian", "gamma", "beta", "betaH")) {
         se.lphis <- se[1:length(unique(disp.group))][disp.group];
         out$sd$phi <- se.lphis*out$params$phi;
         names(out$sd$phi) <- colnames(y);
@@ -1475,8 +2023,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         se=se[-(1:length(out$sd$sigma))]
         names(out$sd$sigma) <- "sigma"
         if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-out$params$rho^2)^1.5; se = se[-1]}#*sqrt(1-out$params$rho^2)
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn ==2)) {out$sd$rho <- se[1]*out$params$rho; se = se[-1]}
-        }
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*out$params$rho; se = se[-1]}
+      }
+      if(num.lv.cor>0 & cstrucn>0){ 
+        if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*(1-out$params$rho.lv^2)^1.5; se = se[-(1:length(out$params$rho.lv))]}
+        if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*out$params$rho.lv; se = se[-(1:length(out$params$rho.lv))]}
+        names(out$sd$rho.lv) <- names(out$params$rho.lv)
+        if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(out$params$scaledc))]*out$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+      }
       if(family %in% c("ordinal")){
         se.zetanew <- se.zetas <- se;
         if(zeta.struc == "species"){
@@ -1501,7 +2055,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
           names(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
 
         }
-         }
+      }
 
     }}, silent=T)
   if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated, due to singular fit.\n") }

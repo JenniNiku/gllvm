@@ -9,6 +9,8 @@ corstruc<-function (term)
       return("corExp")
     } else if(c(term) == "corCS"){
       return("corCS")
+    } else if(c(term) == "corMatern"){
+      return("corMatern")
     } else {return("diag")}
   if (length(term) == 2) {
     if(c(term[[1]]) %in% c("corAR1")){
@@ -18,6 +20,8 @@ corstruc<-function (term)
       return("corExp")
     } else if(c(term[[1]]) == "corCS"){
       return("corCS")
+    } else if(c(term[[1]]) == "corMatern"){
+      return("corMatern")
     } else if(term[[1]] == "("){return("diag")}
     else return(corstruc(term[[2]])) #term[[2]] <- corstruc(term[[2]])
     
@@ -85,7 +89,7 @@ subbars1<-function (term)
   if (is.name(term) || !is.language(term)) 
     return(term)
   if (length(term) == 2) {
-    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp"))
+    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp", "corMatern"))
       term <- subbars1(term[[2]])
     else term[[2]] <- subbars1(term[[2]])
     return(term)

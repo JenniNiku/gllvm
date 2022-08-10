@@ -219,6 +219,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     if (object$num.lv > 0 | (object$num.lv.c + object$num.RR) > 
         0) {
+      
+      if(!is.null(object$lvs)){
+        if(nrow(object$lvs)!=n) object$lvs = object$TMBfn$env$data$dr0%*%object$lvs # !!!
+      }
+      
       if (!is.null(newLV)) {
         if (ncol(newLV) != (object$num.lv + object$num.lv.c)) 
           stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
@@ -296,12 +301,17 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
     }
   }
-  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && 
-      (nrow(eta) == length(object$params$row.params)) & 
-      is.null(r0)) {
+  
+  
+  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0)) {
+    if(!is.null(object$params$row.params)){
+      if(length(object$params$row.params)!=n) object$params$row.params = c(object$TMBfn$env$data$dr0%*%object$params$row.params) # !!!
+    }
+    if(nrow(eta) == length(object$params$row.params)){
     r0 <- object$params$row.params
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
     eta <- eta + r0
+    }
   }
 
   if(!is.null(object$offset)){
