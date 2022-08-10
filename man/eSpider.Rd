@@ -1,24 +1,21 @@
 \name{eSpider}
 \docType{data}
-\alias{spider}
+\alias{eSpider}
 \title{Hunting spider data}
 \description{
 Extended dataset of counts of hunting spiders in a dune area in the Netherlands, measured at 100 pitfall traps.
 }
 \usage{
-data(spider)
+data(eSpider)
 }
 \format{
 \describe{
-\item{abund}{A data frame with abundances of 12 hunting spider species measured at 100 sites.
-}
-\item{X}{A matrix of 26 predictor variables at 28 of the 100 sites.
-}
-\item{nonNA}{An vector of indices indicating at which sites the predictor variables were measured.
-}
+\item{abund}{A data frame with abundances of 12 hunting spider species measured at 100 sites.}
+\item{X}{A matrix of 26 predictor variables at 28 of the 100 sites.}
+\item{nonNA}{An vector of indices indicating at which sites the predictor variables were measured.}
 }
 
-}}
+}
 \description{
 Counts of hunting spiders in a dune area in the Netherlands, measured with 100 different pitfall traps. This dataset was published with permission from the CANOCO FORTRAN package (version 4 or higher) example datasets.
 
