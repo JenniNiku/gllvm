@@ -7,9 +7,9 @@ Version 1.3.2
 
 * The reduced-rank approximated predictor slopes of a multivariate regression can now be plotted (with confidence intervals) using coefplot. Not available yet for quadratic effects.
 
-* Separate Checks are put in place to check if the constraints on the canonical coefficients (orthogonality of the columns) have converged.
+* Separate checks are put in place to warn users if the constraints on the canonical coefficients (orthogonality of the columns) have not converged.
 
-* Separate checks are put in place to double-check convergence of quadratic coefficients in an ordination, if applicable
+* Separate checks are put in place to warn users if the coefficients of a quadratic model have not converged
 
 * Canonical coefficients in ordination with predictors (num.RR,num.lv.c) can now be treated as random-effects using the 'randomB' argument. For the moment, all need to be either random or fixed, no mixing. Prediction intervals can be retrieved with the getPredictErr function.
 
