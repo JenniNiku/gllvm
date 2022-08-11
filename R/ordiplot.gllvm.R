@@ -106,7 +106,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
   }
   
-  # object$num.lvcor=0 # Under development
+  object$num.lvcor=0 # For now. Under development
   # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
   #      when they are too small")
   
