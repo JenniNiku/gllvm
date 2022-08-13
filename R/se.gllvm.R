@@ -67,10 +67,14 @@ se.gllvm <- function(object, ...){
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
       
       # Variational params not included for incl
-      incl[names(objrFinal$par)=="Abb"] <- FALSE;
-      if((num.lv.c+num.RR)==0){incl[names(objrFinal$par)=="b_lv"] <- FALSE}
-      if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
 
+      if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
+      
+      # Terms that are not included in TMBtrait for constrained ordination
+      incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE;
+      incl[names(objrFinal$par)=="b_lv"] <- FALSE
+      
       incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
       incl[names(objrFinal$par)=="Au"] <- FALSE;
       incl[names(objrFinal$par)=="u"] <- FALSE; 
@@ -319,6 +323,24 @@ se.gllvm <- function(object, ...){
     incl[names(objrFinal$par)=="Au"] <- FALSE;
     incl[names(objrFinal$par)=="u"] <- FALSE;
     
+    #slopes for reduced rank predictors
+    if((num.lv.c+num.RR)==0){
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
+      incl[names(objrFinal$par)=="b_lv"] <- FALSE
+    }else if((num.lv.c+num.RR)>0&object$randomB==FALSE){
+      incl[names(objrFinal$par)=="b_lv"] <- TRUE
+      incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
+    }else if((num.lv.c+num.RR>0)&object$randomB!=FALSE){
+      incl[names(objrFinal$par)=="b_lv"] <- FALSE
+      
+      inclr[names(objrFinal$par)=="b_lv"] <- TRUE
+      incld[names(objrFinal$par)=="b_lv"] <- TRUE
+      
+      incld[names(objrFinal$par)=="Ab_lv"] <- TRUE
+      
+      incl[names(objrFinal$par)=="sigmab_lv"] <- TRUE
+    }
+    
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
     if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
@@ -345,7 +367,7 @@ se.gllvm <- function(object, ...){
     
     
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random")){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE)){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       se <- try(sqrt(diag(abs(covM))))
       trpred<-try({
@@ -366,6 +388,9 @@ se.gllvm <- function(object, ...){
           
           prediction.errors$lvs <- cov.lvs
           #sd.random <- sd.random[-(1:(n*num.lv))]
+          if(object$randomB!=FALSE){
+            prediction.errors$Ab.lv <- sd.random$Ab_lv
+          }
         }
         out$prediction.errors <- prediction.errors
       }
@@ -396,6 +421,14 @@ se.gllvm <- function(object, ...){
     sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  
     se <- se[-(1:((num.X+1)*p))]
     
+    if((num.lv.c+num.RR)>0&object$randomB==FALSE){
+    se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
+    se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
+    colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
+    row.names(se.LvXcoef) <- colnames(lv.X)
+    out$sd$LvXcoef <- se.LvXcoef
+    }
+
     if(family %in% "betaH"){
       out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
       rownames(out$sd$betaH) <- rownames(object$params$betaH); 
@@ -459,11 +492,14 @@ se.gllvm <- function(object, ...){
       
       if(quadratic==TRUE){
         se.lambdas2 <- matrix(se[1:(p * ((num.lv.c+num.RR)+num.lv))], p, (num.lv.c+num.RR)+num.lv, byrow = T)  
+        #re-order as the order in C++ is different, num_RR is last there
+        se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
         se <- se[-(1:((num.lv+(num.lv.c+num.RR))*p))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }else if(quadratic=="LV"){
         se.lambdas2 <- matrix(se[1:((num.lv.c+num.RR)+num.lv)], p, (num.lv.c+num.RR)+num.lv, byrow = T)
+        se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
         se <- se[-(1:((num.lv.c+num.RR)+num.lv))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
@@ -528,6 +564,15 @@ se.gllvm <- function(object, ...){
       }
       names(out$sd$inv.phi) <-  names(out$sd$phi)
       se <- se[-(1:length(unique(disp.group)))]
+    }
+    if((object$randomB!=FALSE)&(num.lv.c+num.RR)>0){
+      se.lsigmab.lv <-  se[1:length(object$paramssigmaLvXcoef)];
+      se <-  se[-c(1:length(object$params$sigmaLvXcoef))]
+      out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
+      if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
+      if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X)
+      # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
+      if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$row.eff=="random") { 
       out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 

@@ -2,6 +2,7 @@
 % Please edit documentation in R/confint.gllvm.R
 \name{confint.gllvm}
 \alias{confint.gllvm}
+\alias{confint}
 \title{Confidence intervals for model parameters}
 \usage{
 \method{confint}{gllvm}(object, parm = NULL, level = 0.95, ...)

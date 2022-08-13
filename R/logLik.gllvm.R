@@ -16,11 +16,17 @@
 #'# log-Likelihood:
 #'logLik(fit)
 #'}
+#'@aliases logLik logLik.gllvm
+#'@method logLik gllvm
+#'@importFrom stats logLik
+#'
 #'@export
-
+#'@export logLik.gllvm
+#'
 logLik.gllvm <- function(object, ...)
 {
   logL <- object$logL
+  if(is.finite(logL)){
   if (!is.null(object$params$inv.phi)) {
     object$params$inv.phi <- NULL
   }
@@ -36,6 +42,12 @@ logLik.gllvm <- function(object, ...)
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
   }
+  if(object$randomB!=FALSE){
+    object$params$LvXcoef <- NULL
+  }else if(object$randomB==F&(object$num.RR+object$num.lv.c)>0){
+    #correct nr. df. given orthogonality constraints
+    object$params$LvXcoef[upper.tri(object$params$LvXcoef)] <- NA
+  }
   if(object$quadratic=="LV"){
     object$params$theta[-1,-c(1:(object$num.lv+object$num.lv.c))]<-NA
   }
@@ -47,6 +59,7 @@ logLik.gllvm <- function(object, ...)
     attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
   }
   attributes(logL)$nobs <- prod(dim(object$y))
+  }
   class(logL) <- "logLik"
   return(logL)
 }

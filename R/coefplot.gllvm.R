@@ -6,12 +6,13 @@
 #' @param which.Xcoef vector indicating which covariate coefficients will be plotted. Can be vector of covariate names or numbers. Default is \code{NULL} when all covariate coefficients are plotted.
 #' @param order logical, whether or not coefficients are ordered, defaults to \code{TRUE}.
 #' @param cex.ylab the magnification to be used for axis annotation relative to the current setting of cex.
+#' @param cex.xlab the magnification to be used for axis annotation.
 #' @param mfrow same as \code{mfrow} in \code{par}. If \code{NULL} (default) it is determined automatically.
 #' @param mar vector of length 4, which defines the margin sizes: \code{c(bottom, left, top, right)}. Defaults to \code{c(4,5,2,1)}.
 #' @param xlim.list list of vectors with length of two to define the intervals for an x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals
 #' @param ...	additional graphical arguments.
 #'
-#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen
+#' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Francis K.C. Hui, Sara Taskinen, Bert van der Veen
 #'
 #' @examples
 #'# Extract subset of the microbial data to be used as an example
@@ -40,18 +41,30 @@
 #'TR <- antTraits$traits
 #'fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 #'coefplot(fitT)
+#'
+#'# Fit  gllvm model with environmental covariances and reduced rankk
+#'fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
+#'coefplot(fitRR)
 #'}
 #'@aliases coefplot coefplot.gllvm
 #'@export
 #'@export coefplot.gllvm
-coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = TRUE, cex.ylab = 0.5, mfrow = NULL, mar = c(4,6,2,1), xlim.list = NULL, ...)
+coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = TRUE, cex.ylab = 0.5, cex.xlab = 1.3, mfrow = NULL, mar = c(4,6,2,1), xlim.list = NULL, ...)
 {
 
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
-  if (is.null(object$X))
+  if (is.null(object$X)&is.null(object$lv.X))
     stop("No X covariates in the model.")
+  
+  #Calculate standard errors of species-effects for reduced rank terms
+  if(!is.null(object$lv.X)){
+    beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$LvXcoef)
+    betaSE <- RRse(object)
+    object$params$Xcoef<-cbind(object$params$Xcoef,beta)
+    object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
+  }
 
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
@@ -71,7 +84,10 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
       sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
     }
-    cnames <- colnames(object$params$Xcoef)[which.Xcoef]
+    # cnames <- colnames(object$params$Xcoef)[which.Xcoef]
+    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=F])
+    cnames <- colnames(Xcoef)
+
     k <- length(cnames)
     labely <- rownames(Xcoef)
     m <- length(labely)
@@ -96,9 +112,9 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
 
       At.y <- seq(1, m)
       if (!is.null(xlim.list[[i]])) {
-        plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = cnames[i], xlim = xlim.list[[i]], pch = "x", cex.lab = 1.3, ... )
+        plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = cnames[i], xlim = xlim.list[[i]], pch = "x", cex.lab = cex.xlab, ... )
       } else {
-        plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = cnames[i], xlim = c(min(lower), max(upper)), pch = "x", cex.lab = 1.3, ... )
+        plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = cnames[i], xlim = c(min(lower), max(upper)), pch = "x", cex.lab = cex.xlab, ... )
       }
 
       segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
@@ -143,9 +159,9 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     if (!is.null(xlim.list)) {
       if (is.list(xlim.list))
         xlim.list <- xlim.list[[1]]
-      plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = "Coefficients", xlim = xlim.list, pch = "x", cex.lab = 1.3, ... )
+      plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = "Coefficients", xlim = xlim.list, pch = "x", cex.lab = cex.xlab, ... )
     } else {
-      plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = "Coefficients", xlim = c(min(lower), max(upper)), pch = "x", cex.lab = 1.3, ...)
+      plot( x = Xc, y = At.y, yaxt = "n", ylab = "", col = col.seq, xlab = "Coefficients", xlim = c(min(lower), max(upper)), pch = "x", cex.lab = cex.xlab, ...)
     }
     segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
     abline(v = 0, lty = 1)

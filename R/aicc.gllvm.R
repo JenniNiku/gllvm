@@ -43,7 +43,7 @@ nobs.gllvm <- function(object, ...){
 }
 
 #'@method nobs gllvm
-#'@export nobs
+#'@importFrom stats nobs
 nobs <- function(object, ...)
 {
   UseMethod(generic = "nobs")

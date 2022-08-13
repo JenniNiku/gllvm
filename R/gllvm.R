@@ -19,6 +19,7 @@
 #' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param dist matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
+#' @param randomB either \code{FALSE}(default), "LV", "P", or "single". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
@@ -36,12 +37,13 @@
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
+#'  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
 #'  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
-#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.}
+#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
-#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use.}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with num.RR>0 or num.lv.c>0. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA" are available.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
@@ -88,12 +90,12 @@
 #'The latent variables can then be passed to the \code{start.lvs} argument inside the \code{control.start} list, which in many cases gives good results. 
 #'}
 #'
-#' \subsection{Constrained ordination}{
-#'For GLLVMs with both linear and quadratic response model, the latent variable can be constrained to a series of covariates \eqn{x_lv}:
+#' \subsection{Ordination with predictors}{
+#'For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_lv} can be included to explain the latent variables:
 #'
-#'\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (z_i+X_lv\beta_lv)' \gamma_j - (z_i+X_lv\beta_lv)' D_j (z_i+X_lv\beta_lv) + u_i'\theta_j - u_i' D_j u_i ,}
-#'where \eqn{z_i+X_lv\beta_lv} are constrained latent variables, which account for variation that can be explained by some covariates \eqn{X_lv} after accounting for
-#'the effects of covariates included in the fixed-effects part of the model \eqn{X}, and  \eqn{u_i} are unconstrained latent variables that account for any remaining residual variation.
+#'\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i})' D_j (B' x_{lv,i} + \epsilon_i) ,}
+#'where \eqn{z_i = B' x_{lv,i} + \epsilon_i} are latent variables informed by the predictors, but not constrained compared to unconstrained ordination as in methods such as CCA or RDA.
+#' Omitting the predictors results in an unconstrained ordination, and omitting \eqn{\epsilon_i} in the usual constrained ordination, which can also be fitted.
 #'}
 #'
 #' \subsection{Fourth corner model}{
@@ -153,7 +155,7 @@
 #'   
 #'   \item{For non-negative  continuous data \code{family = "exponential"}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}^2}.}
 #'   
-#'   \item{For non-negative continuous or biomass data\code{family = "tweedie"}}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
+#'   \item{For non-negative continuous or biomass data \code{family = "tweedie"}}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
 #'
 #'   \item{For ordinal data \code{family = "ordinal"}:}{ Cumulative probit model, see Hui et.al. (2016).}
 #'   
@@ -172,11 +174,12 @@
 #'  \item{lv.X}{ matrix or data.frame of environmental covariates for latent variables.}
 #'  \item{TR}{ Trait matrix}
 #'  \item{formula}{ Formula for predictors}
-#'  \item{lv.formula}{ Formula of latent variables in constrained ordination}
+#'  \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
 #'  \item{randomX }{ Formula for species specific random effects in fourth corner model}
+#'  \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination}
 #'  \item{num.lv}{ Number of unconstrained latent variables}
-#'  \item{num.lv.c}{ Number of constrained latent variables with residual}
-#'  \item{num.RR}{ Number of constrained latent variables without residual}
+#'  \item{num.lv.c}{ Number of latent variables in concurrent ordination}
+#'  \item{num.RR}{ Number of latent variables in constrained ordination}
 #'  \item{method}{ Method used for integration}
 #'  \item{family}{ Response distribution}
 #'  \item{row.eff}{ Type of row effect used}
@@ -188,7 +191,7 @@
 #'  \itemize{
 #'    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
 #'    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
-#'    \item{LvXcoef }{ Covariate coefficients related to constrained latent variables}
+#'    \item{LvXcoef }{ Predictor coefficients (or predictions for random slopes) related to latent variables, i.e. canonical coefficients}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
@@ -199,7 +202,7 @@
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
 #'  \item{sd }{ list of standard errors of parameters}
 #'  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
-#'  \item{A, Ar }{ covariance matrices for variational densities of latent variables and variances for random row effects}
+#'  \item{A, Ar, Ab_lv}{ covariance matrices for variational densities of latent variables, random row effects, and random slopes respectively}
 #'  \item{seed}{ Seed used for calculating starting values}
 #'  \item{TMBfn}{ TMB objective and derivative functions}
 #'  \item{logL }{ log likelihood}
@@ -212,7 +215,7 @@
 #'  \item{dist }{ Matrix of coordinates or time points used for row effects}
 #'  \item{terms }{ Terms object for main predictors}
 #'  \item{start }{ starting values for model}
-#'  \item{optim.method }{ Optimization method when using 'optim'}
+#'  \item{optim.method }{ Optimization method when using 'optim', 'alabama', or 'nloptr'}
 #'  
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Pekka Korhonen, Sara Taskinen, Bert van der Veen, David I. Warton
 #' @references
@@ -267,7 +270,7 @@
 #'summary(fitv0)
 #'confint(fitv0)
 #'
-#'## Example 1a: Fit model with two constrained latent variables and with 
+#'## Example 1a: Fit concurrent ordination model with two latent variables and with 
 #'# quadratic response model
 #'# We scale and centre the  predictors to improve convergence
 #'fity1 <- gllvm(y, X = scale(X), family = "negative.binomial", 
@@ -370,21 +373,34 @@
 #'@importFrom MASS ginv polr
 #'@importFrom MASS mvrnorm
 #'@importFrom mgcv gam predict.gam
+#'@importFrom nloptr nloptr
+#'@importFrom alabama auglag
 
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
                   lvCor = NULL, Xgr=NULL, dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
-                  row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA",
+                  row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", 
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-10, TMB = TRUE, optimizer = "optim", max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
+                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, Dthreshold=0, ...
                   ) {
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
+  if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
+    stop("Model with quadratic responses and random slopes not allowed with method 'LA'")
+  }
+  if((num.RR+num.lv.c)==0){
+    randomB <- FALSE
+  }
+
+  if(!randomB%in%c(FALSE,"single","P","LV")){
+    stop("RandomB should be one of FALSE, 'single', 'P', or 'LV'")
+  }
+  
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
     num.lv <- 2
   }else if(is.null(num.lv)){num.lv<-0}
@@ -400,12 +416,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
         x$reltol = 1e-8
+      if (!("reltol.c" %in% names(x))) 
+        x$reltol.c = 1e-8
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
-        x$optimizer = "optim"
-      if (!("optim.method" %in% names(x))) {
-        if(family == "tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
+        x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama")
+        if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
+      if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
+        if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
+        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
         }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
@@ -415,6 +435,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$trace = FALSE
       x
     }
+    
     fill_control.va = function(x){
       if (!("Lambda.struc" %in% names(x))) 
         x$Lambda.struc = "unstructured"
@@ -451,15 +472,59 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$start.struc = "LV"
       x
     }
-   
+
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
+  #some checks for optimizer
+    
+  # Cannot use nloptr or alabama with randomB
+  if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+    warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
+    control$optimizer <- 'optim'
+    if(family != "tweedie") {control$optim.method <- 'BFGS'}else{control$optim.method <- 'L-BFGS-B'}
+    
+  }
+    
+  # Define valid optimization routines
+  if(!control$optimizer%in%c("optim","nlminb","alabama","nloptr(sqp)","nloptr(agl)")){
+    stop("Optimizer must be one of 'optim', 'nlminb', 'alabama', 'nloptr(sqp)' or 'nloptr(agl)'.")
+  }else if(control$optimizer%in%c("nloptr(sqp)","nloptr(agl)")){
+    # Change to NLOPT algorithm names
+    if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
+  }
+  # cannot use alabama or nloptr without num.lv.c or num.RR for now
+    if((num.lv.c+num.RR)==0 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+      warning("Selected optimizer not available for this model. Using optim instead.")
+      control$optimizer <- "optim"
+      if(family!="tweedie")control$optim.metod <- "BFGS"
+      if(family=="tweedie")optim.method <- "L-BFGS-B"
+    }
+    
+  if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
+    warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
+    control$optimizer <- "nloptr(agl)"
+  }
+  if(family=="tweedie" && (num.lv.c+num.RR)>1 && control$optimizer != "alabama"){
+    warning("Due to memory issues only optimizer 'alabama' with 'optim.method='L-BFGS-B' can be used with Tweedie.")
+    control$optimizer <- "alabama"
+    control$optim.method <- "L-BFGS-B"
+  }
+    
+    # Check if local solver for nloptr augmented lagranian algorithm is one of the defined options
+    if((num.RR+num.lv.c)>1 && randomB == FALSE && control$optimizer == "nloptr(agl)"){
+      if(!control$optim.method%in%c("NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND", "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA"))control$optim.method <- "NLOPT_LD_TNEWTON_PRECOND"
+    }
+    
+    if(randomB!=FALSE&!control$TMB){
+      stop("Random slopes in ordination only allows with TMB = TRUE.")
+    }
+    
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
     # }
-    reltol = control$reltol; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
+    reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start;
@@ -473,20 +538,20 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(start.fit$num.lv.c!=num.lv.c&start.fit$num.lv!=start.fit$num.lv){
       stop("Cannot use gllvm with different num.lv and num.lv.c as starting values.")
     }
-    if(all(class(start.fit)=="gllvm")&quadratic!=FALSE){
+    if(!inherits(start.fit,"gllvm.quadratic")&quadratic!=FALSE){
       stop("Cannot use gllvm with linear responses as starting fit for gllvm with quadratic responses.")
     }
     }
     
     if((num.lv.c+num.RR)>0&method=="VA"&TMB==FALSE){
-      warning("Constrained ordination only implemented with TMB. Setting TMB to TRUE./n")
+      warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE.\n")
       control$TMB <- TRUE
     }
-    if (class(family) == "family") {
+    if (inherits(family,"family")) {
       link <- family$link
       family <- family$family
     }  
-    if(is.null(optim.method)) optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
+    if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -505,9 +570,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
     }
     
-    if(!is.null(disp.formula)&!TMB){
-      stop("Grouped dispersion parameters not allowed with TMB = FALSE.")
-    }
     if(!is.null(disp.formula)){
       if(!is.vector(disp.formula)){
       if(!is.null(y)){
@@ -725,18 +787,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if((num.RR+num.lv.c)>ncol(lv.X)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
       }
+      if((num.RR+num.lv.c)>=p){
+        stop("num.RR and num.lv.c should be less than the number of species.")
+      }
       #check for redundant predictors
       QR<-qr(lv.X)
       if(QR$rank<ncol(lv.X)){
         warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
-        if(num.lv.c>=ncol(lv.X)&num.RR==0){
+        if(num.lv.c>ncol(lv.X)&num.RR==0){
           num.lv.c <- QR$rank
           warning("Setting num.lv.c to number of non-redunant predictors")
-        }else if(num.RR>=ncol(lv.X)&num.lv.c==0){
+        }else if(num.RR>ncol(lv.X)&num.lv.c==0){
           num.RR <- QR$rank
           warning("Setting num.RR to number of non-redunant predictors")
-        }else if(num.RR>=ncol(lv.X)|num.lv.c>=ncol(lv.X)){
-          stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of predictor variables.")
+        }
+        if(num.RR>ncol(lv.X)|num.lv.c>ncol(lv.X)){
+          stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of non-redundant predictor variables.")
         }
         lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
         lv.X<-lv.X[,QR$pivot[1:QR$rank],drop=F]
@@ -874,7 +940,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       method <- "VA"
     }
     if (method == "LA" && quadratic != FALSE && (num.lv+num.lv.c)>0){
-      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA is instead. \n")
+      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA instead. \n")
       method <- "VA"
     }
     if (method == "VA" && quadratic != FALSE && TMB == FALSE){
@@ -910,9 +976,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       TMB <- TRUE
       cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
     }
-    if(!is.null(TR)&num.lv.c>0){
-      stop("CGLLVM and traits not yet implemented together")
-    }
+    
     # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
     #   stop("Ordinal model with species-common cut-offs without latent variables not yet implemented. Use `TMB = FALSE` and `zeta.struc = `species` instead.")
     # }
@@ -925,12 +989,20 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
 
     if (!is.null(start.fit)) {
-      if (class(start.fit) != "gllvm")
+      if (!inherits(start.fit,"gllvm"))
         stop("Only object of class 'gllvm' can be given as a starting parameters.")
 
       # if (!(family %in% c("poisson", "negative.binomial", "ZIP")))
       #   stop("Starting parameters can be given only for count data.")
 
+    }
+    # RRR with num.lv is a special (weird) case
+    # where unconstrained LVs are not uncorrelated with predictors
+    # better inform the user this might be a bad idea
+    if(!is.null(lv.X)){
+      if((num.RR+num.lv.c)>0&num.lv>0&(num.RR+num.lv.c)<ncol(lv.X)){
+        warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. \n")
+      }
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
@@ -949,11 +1021,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(num.lv>0&num.lv.c==0)colnames(start.lvs) <-  paste("LV",1:num.lv, sep = "")
       if(num.lv==0&num.lv.c>0)colnames(start.lvs) <-  paste("CLV",1:num.lv.c, sep = "")
       if(num.lv>0&num.lv.c>0)colnames(start.lvs) <-  c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
-    }
-    if((num.RR+num.lv.c)>0){
-    if(ncol(lv.X)<(num.lv.c+num.RR)){
-      stop("The number of constrained latent variables can't be more than the number of predictor variables used to constrain \n.")
-    }
     }
  
     n.i <- 1
@@ -995,6 +1062,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
             reltol = reltol,
+            # reltol.c = reltol.c,
             seed = seed,
             maxit = maxit,
             max.iter=max.iter,
@@ -1047,6 +1115,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             row.eff = row.eff,
             reltol = reltol,
+            reltol.c = reltol.c,
             seed = seed,
             maxit = maxit,
             max.iter=max.iter,
@@ -1069,6 +1138,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             jitter.var = jitter.var,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
+            randomB = randomB,
             optim.method=optim.method, 
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, Dthreshold=Dthreshold,
             disp.group = disp.group
@@ -1083,7 +1153,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
-      
+      out$randomB = randomB
       if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
       # out$X <- fitg$X
@@ -1092,7 +1162,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$params <- fitg$params
       if (sd.errors) {
         out$sd <- fitg$sd
-        if(!is.null(fitg$sd)&(num.lv+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
+        if(!is.null(fitg$sd)&(num.lv.c+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
           if(!is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
@@ -1109,6 +1179,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         out$A <- fitg$A
         out$Ar <- fitg$Ar
         out$AQ <- fitg$AQ
+        if(randomB!=FALSE){
+          out$Ab.lv <- fitg$Ab.lv
+        }
       }
       if (!is.null(randomX)) {
         out$corr <- fitg$corr
@@ -1217,15 +1290,39 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       } else if(gradient.check && TMB){
         if(any(abs(c(out$TMBfn$gr(out$TMBfn$par)))> 0.05)) warning("Algorithm converged with large gradients (>0.05). Stricter convergence criterion (reltol) might help. \n")
       }
+      # check if constraints on Bs hold, otherwise indicates lack of convergence
+      # out$convergence should usually catch this (status code 5 in nloptr, maxeval was reached), but sometimes doesn't.
+      if((num.RR+num.lv.c)>1 && out$convergence && randomB==FALSE){
+        BB <- t(out$params$LvXcoef)%*%out$params$LvXcoef
+        if(any(abs(unique(BB[col(BB)!=row(BB)]))>=1e-2)) warning("Canonical coefficients are not orthogonal, refit the model with a different set of starting values, fit with a different optimizer, or change the optimization criteria for e.g. 'reltol.c'.")
+
+      }
     }
+
 
     if(is.null(out$sd)){
       out$sd <- FALSE
     }
-    if(TMB){
-    out$quadratic <- fitg$quadratic
+    if(TMB && !isFALSE(quadratic)){
+    # check if quadratic coefs have converged or have stuck to "LV"
+    if(isTRUE(quadratic)){
+      if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
+        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
+      out$quadratic <- "LV"        
+      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+        warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
+        out$quadratic <- quadratic
+      }else{
+        out$quadratic <- TRUE
+      }
+    }else if(quadratic == "LV"){
+      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+        warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
+      }
+      out$quadratic <- quadratic
+    }
     }else{
-      out$quadratic <- F
+      out$quadratic <- FALSE
     }
     if(!TMB&family=="ordinal"){
       out$zeta.struc <- "species"
