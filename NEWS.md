@@ -3,7 +3,7 @@ Version 1.3.2
 ==============
 
 ### New Features
-* Ordination with predictors (num.RR,num.lv.c) is now implemented with constrained optimization routines (alabama,nloptr) as long as the canonical coefficients are treated as fixed-effects. This follows from the necessary identifability constraints. 
+* Ordination with predictors (num.RR,num.lv.c) is now implemented with constrained optimization routines (alabama,nloptr) as long as the canonical coefficients are treated as fixed-effects. This follows from the necessary identifiability constraints. 
 
 * The reduced-rank approximated predictor slopes of a multivariate regression can now be plotted (with confidence intervals) using coefplot. Not available yet for quadratic effects.
 
