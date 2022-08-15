@@ -114,7 +114,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   a <- jitter.amount
   Nlv <- n <- NROW(object$y)
   
-  try(Nlv <- NROW(object$lvs), silent = TRUE)
+  if(!is.null(object$lvs)) try(Nlv <- NROW(object$lvs), silent = TRUE)
   
   p <- NCOL(object$y)
   num.lv <- object$num.lv

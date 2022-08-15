@@ -57,6 +57,8 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
 
   if (is.null(object$X)&is.null(object$lv.X))
     stop("No X covariates in the model.")
+  if(is.null(object$X) && !isFALSE(object$randomB))
+    stop("No predictor effects to plot in the model.")
   
   #Calculate standard errors of species-effects for reduced rank terms
   if(!is.null(object$lv.X)){

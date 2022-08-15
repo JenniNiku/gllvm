@@ -318,6 +318,7 @@ se.gllvm <- function(object, ...){
     incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
     
     # Variational params not included for incl
+    incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
     incl[names(objrFinal$par)=="Abb"]=FALSE;
     incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
     incl[names(objrFinal$par)=="Au"] <- FALSE;
@@ -341,6 +342,7 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="sigmab_lv"] <- TRUE
     }
     
+    #loadings for quadratic models
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
     if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
@@ -352,6 +354,7 @@ se.gllvm <- function(object, ...){
     } else {
       if(num.RR==0)incl[names(objrFinal$par)=="lambda"] <- FALSE;
       if(num.RR==0)incl[names(objrFinal$par)=="lambda2"] <- FALSE;
+      incl[names(objrFinal$par)=="sigmaLV"] <- FALSE;
     }
 
     if(object$row.eff=="random") {
@@ -421,30 +424,26 @@ se.gllvm <- function(object, ...){
     sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  
     se <- se[-(1:((num.X+1)*p))]
     
-    if((num.lv.c+num.RR)>0&object$randomB==FALSE){
-    se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
-    se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
-    colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
-    row.names(se.LvXcoef) <- colnames(lv.X)
-    out$sd$LvXcoef <- se.LvXcoef
-    }
-
+    
     if(family %in% "betaH"){
       out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
       rownames(out$sd$betaH) <- rownames(object$params$betaH); 
       colnames(out$sd$betaH) <- colnames(object$params$betaH)
     }
-    if((num.lv.c+num.RR)>0){
+
+    if((num.lv.c+num.RR)>0&object$randomB==FALSE){
       se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
       se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
       colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
       row.names(se.LvXcoef) <- colnames(lv.X)
       out$sd$LvXcoef <- se.LvXcoef
     }
+
     if((num.lv.c+num.lv)>0){
       se.sigma.lv <- se[1:(num.lv+num.lv.c)];
       se<-se[-c(1:(num.lv+num.lv.c))]
     }
+    
     if(num.lv > 0&(num.lv.c+num.RR)==0) {
       se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
       colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
@@ -505,16 +504,19 @@ se.gllvm <- function(object, ...){
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }
     }
+    
     if(num.lv>0 & family == "betaH"){
       se.thetaH <- matrix(0,num.lv,p); 
       se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
       se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
       out$sd$se.thetaH <- se.thetaH
     }
+    
     if((num.lv+num.lv.c)>0){
       out$sd$sigma.lv  <- se.sigma.lv
       names(out$sd$sigma.lv) <- colnames(object$params$theta[,1:(num.lv+num.lv.c)])
     }
+    
     # For correlated LVs:
     if(num.lv.cor>0){
       diag(out$sd$theta) <- c(out$sd$sigma.lv)

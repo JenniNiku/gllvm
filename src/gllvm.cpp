@@ -112,7 +112,7 @@ Type objective_function<Type>::operator() ()
     DistM.fill(0.0);
     for (int d=0;d<dc.rows();d++) {
       for (int j=0;j<d;j++){
-        DistM(d,j)=sqrt( ((dc.row(d)-dc.row(j))*DiSc*(dc.row(d)-dc.row(j)).transpose()).sum() ) + extra(2);
+        DistM(d,j)=sqrt( ((dc.row(d)-dc.row(j))*DiSc*(dc.row(d)-dc.row(j)).transpose()).sum() ); // + extra(2);
     //     DistM(j,d)=DistM(d,j);
       }
     }

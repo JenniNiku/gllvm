@@ -8,7 +8,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE,
-      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL, Dthreshold=0) {
+      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL) { 
+  # , Dthreshold=0
   # If there is no random effects/LVs set diag iter to zero:
   if(((num.lv+num.lv.c)==0) & (row.eff!="random") & (randomB==FALSE)) diag.iter <-  0
 
@@ -465,7 +466,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         map.list$scaledc = factor(rep(NA, length(scaledc)))
       }
       if(!is.null(setMap$scaledc)){ if((length(setMap$scaledc)==ncol(dist))) map.list$scaledc = factor(setMap$scaledc)}
-      if(!is.null(Dthreshold)) extra[3] <- Dthreshold
+      # if(!is.null(Dthreshold)) extra[3] <- Dthreshold
       
       if(cstrucn %in% c(2,4)){
         iv<-1:length(sigma_lvc); 
@@ -533,7 +534,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(Lambda.struc!="diagonal" && diag.iter==0){
             Ab_lv <- c(Ab_lv,rep(0.01,ab12*(ab12-1)/2*ab3))
           }
-        }} else { Ab_lv <- 0}
+        }} else { Ab_lv <- 0; map.list$Ab_lv = factor(NA)}
       
       # Variational covariances for  random rows
       if(row.eff == "random"){
@@ -932,7 +933,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             if(cstrucn %in% c(2,4)){ #cstruc=="corExp" || cstruc=="corMatern"
               scaledc = param1[nam=="scaledc"]
               if(!is.null(map.list$scaledc)){ scaledc=scaledc[map.list$scaledc]; scaledc[is.na(scaledc)]=0}
-              if(!is.null(Dthreshold)) extra[3] <- Dthreshold
+              # if(!is.null(Dthreshold)) extra[3] <- Dthreshold
               if(num.lv.cor>1){ sigma_lvc <- matrix((param1[nam=="sigma_lvc"])[map.list$sigma_lvc],nrow(sigma_lvc),ncol(sigma_lvc)); sigma_lvc[is.na(sigma_lvc)]=0 } #sigma_lvc[-1]<- param1[nam=="sigma_lvc"]
             } else {
               sigma_lvc[1:length(sigma_lvc)]<- param1[nam=="sigma_lvc"]
@@ -1657,7 +1658,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }
         }
         
-        if((num.lv+num.lv.c)>0 & (nrow(out$lvs)==nrow(out$y))) rownames(out$lvs) <- rownames(out$y);
+        if((num.lv+num.lv.c)>0 & !is.null(out$lvs)) if((nrow(out$lvs)==nrow(out$y))) rownames(out$lvs) <- rownames(out$y);
         if(num.lv>0&(num.lv.c+num.RR)==0) {
           if(quadratic==FALSE){
             colnames(out$params$theta)<- paste("LV", 1:num.lv, sep="")
@@ -2240,10 +2241,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         row.names(se.LvXcoef) <- colnames(lv.X)
         out$sd$LvXcoef <- se.LvXcoef
       }
+      
       if((num.lv.c+num.lv)>0){
         se.sigma.lv <- se[1:(num.lv+num.lv.c)]; ##*out$params$sigma.lv; 
         se<-se[-c(1:(num.lv+num.lv.c))]
-        }
+      }
+      
       if(num.lv > 0&(num.lv.c+num.RR)==0) {
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
@@ -2303,6 +2306,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         
       }
+      
       if(num.lv>0 & family == "betaH"){
         se.thetaH <- matrix(0,num.lv,p); 
         se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];

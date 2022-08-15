@@ -386,8 +386,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, Dthreshold=0, ...
+                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, ...
                   ) {
+  # Dthreshold=0,
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
   if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
@@ -412,6 +413,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     datayx <- NULL
     if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
     pp.pars <- list(...)
+    
+    if (inherits(family,"family")) {
+      link <- family$link
+      family <- family$family
+    }
     
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
@@ -547,10 +553,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE.\n")
       control$TMB <- TRUE
     }
-    if (inherits(family,"family")) {
-      link <- family$link
-      family <- family$family
-    }  
+    # if (inherits(family,"family")) {
+    #   link <- family$link
+    #   family <- family$family
+    # }  
     if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
@@ -1092,7 +1098,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, Dthreshold=Dthreshold,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         out$X <- fitg$X
@@ -1140,7 +1146,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, Dthreshold=Dthreshold,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         if(is.null(formula)) {

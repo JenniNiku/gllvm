@@ -47,7 +47,6 @@ gllvm(
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
   setMap = NULL,
-  Dthreshold = 0,
   ...
 )
 }

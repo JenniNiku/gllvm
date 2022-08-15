@@ -2520,12 +2520,12 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     colnames(D)[colnames(D)==""]<-"XB"
     row.names(D)<-colnames(D)
   }
-  Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n+radidx,ncol=dim(A)[1])
   
   if(num.lv.cor>0)
     Q <- matrix(0,nrow=sum(names(fit$TMBfn$par)%in%c("u"))+radidx,ncol=dim(A)[1])
   else
-    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
+    Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n+radidx,ncol=dim(A)[1])
+    # Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
   
 
   if((num.lv.c+num.RR)>0&randomB==FALSE){
