@@ -16,7 +16,7 @@ gllvm(
   num.RR = 0,
   lv.formula = NULL,
   lvCor = NULL,
-  Xgr = NULL,
+  studyDesign = NULL,
   dist = matrix(0),
   corWithin = FALSE,
   quadratic = FALSE,
@@ -71,9 +71,9 @@ gllvm(
 
 \item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'Xgr'. Works at the moment only with unconstrained ordination without quadratic term.}
+\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.}
 
-\item{Xgr}{grouping variables for correlation structure of the latent variables and row effects.}
+\item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 
 \item{dist}{matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.}
 

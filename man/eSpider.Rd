@@ -18,7 +18,7 @@ data(spider)
 }
 }
 
-}}
+}
 \description{
 Counts of hunting spiders in a dune area in the Netherlands, measured with 100 different pitfall traps. This dataset was published with permission from the CANOCO FORTRAN package (version 4 or higher) example datasets.
 
