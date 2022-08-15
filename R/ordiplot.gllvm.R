@@ -107,14 +107,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }
   
   object$num.lvcor=0 # For now. Under development
-  # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
-  #      when they are too small")
-  
+
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
   Nlv <- n <- NROW(object$y)
   
-  try(Nlv <- NROW(object$lvs), silent = TRUE)
+  if(object$num.lv+object$num.lv.c+object$num.lvcor)try(Nlv <- NROW(object$lvs), silent = TRUE)
   
   p <- NCOL(object$y)
   num.lv <- object$num.lv
@@ -233,9 +231,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       svd_rotmat_sites <- diag(ncol(lv))
       svd_rotmat_species <- diag(ncol(lv))
     }    
-
-    
- 
     
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
@@ -270,6 +265,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
     choose.lv.coefs <- scaled_cw_species%*%svd_rotmat_species
+    
     # 
     # if(spp.arrows){
     #   idx <- choose.lv.coefs>matrix(apply(choose.lvs,2,min),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)&choose.lv.coefs<matrix(apply(choose.lvs,2,max),ncol=ncol(choose.lv.coefs),nrow=nrow(choose.lv.coefs),byrow=T)
