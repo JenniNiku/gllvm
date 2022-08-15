@@ -30,6 +30,7 @@ load(file = "ftXi.RData")
 load(file = "ftXph.RData")
 load(file = "ftX.RData")
 load(file = "ftNULL.RData")
+ftXi$randomB<-ftXph$randomB<-ftX$randomB<-ftNULL$randomB<-FALSE
 ftXi$y<-ftXph$y<-ftX$y<-ftNULL$y<-Ysoil
 ftXi$num.RR <- ftXi$num.lv.c <- ftXph$num.RR <- ftXph$num.lv.c <- 0
 ftX$num.RR <- ftX$num.lv.c <- 0
@@ -259,8 +260,6 @@ references:
   - family: Warton
     given: D.I.
   publisher: Methods in Ecology and Evolution
-  volume: 10
-  page: 2173-2182
   type: article-journal
   issued:
     year: 2019
