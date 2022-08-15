@@ -1657,7 +1657,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }
         }
         
-        if((num.lv+num.lv.c)>0 & (nrow(out$lvs)==nrow(out$y))) rownames(out$lvs) <- rownames(out$y);
+        if((num.lv+num.lv.c)>0 ){if((nrow(out$lvs)==nrow(out$y))) rownames(out$lvs) <- rownames(out$y)};
         if(num.lv>0&(num.lv.c+num.RR)==0) {
           if(quadratic==FALSE){
             colnames(out$params$theta)<- paste("LV", 1:num.lv, sep="")
