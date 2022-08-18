@@ -59,7 +59,12 @@ Where $\boldsymbol{B}$ is a $d \times K$ matrix of slopes per predictor and late
 ```{r eval=FALSE}
 RRGLM <- gllvm(Y, X = X, family = "poisson", num.RR = 2)
 ```
-
+```{r eval=F, echo=F}
+# the models are parameterized as (reduced) qr decomposition on the link scale
+# which is, pending convergence and sign differences, easy to demonstrate
+RRGLM <- update(RRGLM, num.RR = 6,starting.val="zero", reltol.c= 1e-15)
+round(sweep(RRGLM$params$LvXcoef,2,apply(RRGLM$params$LvXcoef,2,function(x)sqrt(sum(x^2))),"/"),5)==round(sweep(qr.Q(qr(RRGLM$params$LvXcoef%*%t(RRGLM$params$theta))),2,sign(diag(qr.R(qr(RRGLM$params$LvXcoef%*%t(RRGLM$params$theta))))),"*"),5)
+```
 The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`. To fit a constrained ordination we make use of additional optimization routines from the \texttt{alabama} and \texttt{nloptr} R-packages. This is necessary, because without the constraint that the predictor slopes are orthogonal the model is *unidentifiable*. It might thus happen, that after fitting the model a warning pops-up along the lines of *predictor slopes are not orthogonal*, in which case you will have to re-fit the model with a different optimization routine (`optimizer='alabama'`) or starting values (`starting.values='zero'`) in order to get the constraints on the canonical coefficients to better converge.
 
 Note: in general to improve convergence, it is good practice to center and scale the predictor variables. 

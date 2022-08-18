@@ -748,18 +748,21 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    start.fit <- gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method=method)
+
+  start.fit <- suppressWarnings(gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method))
+
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
+    if((num.RR+num.lv.c)>1){
     mat <- matrix(0,ncol=num.RR+num.lv.c,nrow=num.RR+num.lv.c)
     mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
     b.lv <- b.lv%*%mat
-    
+    }
     eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
     if(num.lv>0){
       gamma.c <- gamma
@@ -896,10 +899,12 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
+    if((num.RR+num.lv.c)>1){
     mat <- matrix(0,ncol=num.RR,nrow=num.RR)
     mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
     Q <- (mat%*%Q)
+    }
     
     # RRcoef = Q*sqrt(num.RR*nrow(RRmod$coefficients))
     RRcoef <- Q
