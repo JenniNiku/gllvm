@@ -194,13 +194,12 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
+    
+    #add zeros for num.rr
+    object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(0,num.RR), if(num.lv>0)object$params$sigma.lv[-c(1:(num.lv.c+num.RR))])
+    
     if(principal){
-      if(num.RR>0){
-        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))])%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))]))
-      }else{
-        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
-      }
-      
+      object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
     }
     sumry$sigma.lv <- object$params$sigma.lv
   }
@@ -229,7 +228,12 @@ print.summary.gllvm <- function (x, ...)
   cat("Informed LVs: ", x$num.lv.c, "\n")
   cat("Constrained LVs: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
-  if((x$num.lv.c)>0|x$quadratic!=F){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
+  
+  #this scenario we don't want the SD from num.lv as it is meaningless
+  if(x$num.lv>0&(x$num.RR+x$num.lv.c)>0 & isFALSE(x$quadratic))x$sigma.lv <- x$sigma.lv[1:(x$num.lv.c+x$num.RR)]
+  
+  #only print SD from LV if model is quadratic or if (hybrid) concurrent
+  if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula,collapse=""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
