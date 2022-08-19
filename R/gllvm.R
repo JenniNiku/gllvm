@@ -511,7 +511,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
   }
   # cannot use alabama or nloptr without num.lv.c or num.RR for now
-    if((num.lv.c+num.RR)==0 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+    if((num.lv.c+num.RR)<=1 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
       warning("Selected optimizer not available for this model. Using optim instead.")
       control$optimizer <- "optim"
       if(family!="tweedie")control$optim.metod <- "BFGS"
