@@ -153,14 +153,12 @@ Type objective_function<Type>::operator() ()
   matrix <Type> Delta(nlvr,nlvr);
   b_lv2.fill(0.0);
   Delta.fill(0.0);
-  // int cd = 0;
-  // if( (quadratic>0) && (method!=1)){ cd += num_RR;}
-  // //as close to dynamically resizing an array as I can get
-  // array<Type> D(nlvr+cd,nlvr+cd,p);
+
   array<Type> D(nlvr,nlvr,p);
   if( (quadratic>0) && (method!=1)){
     array<Type> D(nlvr+num_RR,nlvr+num_RR,p);
   }
+
   D.fill(0.0);
   
   matrix<Type> newlam(nlvr,p);
@@ -433,7 +431,7 @@ Type objective_function<Type>::operator() ()
     
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
-    // array<Type> A(nlvr+num_RR*random(2),nlvr+num_RR*random(2),n);
+
     array<Type> A(nlvr,nlvr,n);
     if(random(2)>0 && num_RR>0){
       array<Type> A(nlvr+num_RR,nlvr+num_RR,n);
