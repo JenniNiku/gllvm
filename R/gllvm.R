@@ -417,7 +417,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
-        x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama")
+        x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")
         if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
@@ -1240,14 +1240,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
         warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
       out$quadratic <- "LV"        
-      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
         out$quadratic <- quadratic
       }else{
         out$quadratic <- TRUE
       }
     }else if(quadratic == "LV"){
-      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
       }
       out$quadratic <- quadratic
