@@ -123,7 +123,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table.constrained <- cbind(pars, se, zval, pvalue)
-    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
       covB <- object$Hess$cov.mat.mod
