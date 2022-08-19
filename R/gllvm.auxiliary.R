@@ -745,16 +745,16 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    if((num.lv.c+num.RR)>1)start.fit <- suppressWarnings(gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama"))
-    if((num.lv.c+num.RR)<=1)start.fit <- suppressWarnings(gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "optim"))
+    if(num.lv.c>1)start.fit <- suppressWarnings(gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama"))
+    if(num.lv.c<=1)start.fit <- suppressWarnings(gllvm.TMB(y,lv.X=lv.X,num.lv=0,num.lv.c=num.lv.c,family=family,starting.val="zero",row.eff=row.eff,sd.errors=F,zeta.struc=zeta.struc, offset = eta, disp.group = disp.group, optimizer = "optim"))
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
     b.lv <- start.fit$params$LvXcoef
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
-    if((num.RR+num.lv.c)>1){
-    mat <- matrix(0,ncol=num.RR+num.lv.c,nrow=num.RR+num.lv.c)
+    if(num.lv.c>1){
+    mat <- matrix(0,ncol=num.lv.c,nrow=num.lv.c)
     mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
     b.lv <- b.lv%*%mat
@@ -895,7 +895,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
-    if((num.RR+num.lv.c)>1){
+    if(num.RR>1){
     mat <- matrix(0,ncol=num.RR,nrow=num.RR)
     mat[upper.tri(mat)]<- 0.01
     diag(mat) <- 1
