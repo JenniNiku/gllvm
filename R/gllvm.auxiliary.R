@@ -2701,16 +2701,18 @@ RRse <- function(object){
     colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par[object$Hess$incl])
     covMat <- covMat[colnames(covMat)%in%c("b_lv","lambda"),colnames(covMat)%in%c("b_lv","lambda")]
     
-    idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
-    
     #add first row and column of zeros before b_lv, for first species
     covMat <- rbind(covMat[1:(d*K),],0,covMat[-c(1:(d*K)),])
     covMat <- cbind(covMat[,1:(d*K)],0,covMat[,-c(1:(d*K))])
+    
+    if(d>1){
+      idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
     
     #add zeros where necessary
     for(q in 1:length(idx)){
       covMat <- rbind(covMat[1:(d*K+idx[q]-1),],0,covMat[(d*K+idx[q]):ncol(covMat),])
       covMat <- cbind(covMat[,1:(d*K+idx[q]-1)],0,covMat[,(d*K+idx[q]):ncol(covMat)])
+    }
     }
     row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
     
