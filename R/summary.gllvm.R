@@ -11,7 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
-#' @param principal defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
+#' @param rotate defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
 #' @param type to match "type" in \code{\link{ordiplot.gllvm}}
 #' @param ...	 not used.
 #'
@@ -30,7 +30,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE, type = NULL,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, rotate = FALSE, type = NULL,
                           ...) {
 
   n <- NROW(object$y)
@@ -44,7 +44,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   family <- object$family
   
   #calculate rotation matrix
-  if(principal){
+  if(rotate && (num.lv+num.lv.c+num.RR)>1){
     lv <- getLV(object, type = type)
     
     do_svd <- svd(lv)
@@ -55,7 +55,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     svd_rotmat_sites <- diag(num.lv.c+num.RR+num.lv)
   }
-  if(num.lv|num.lv.c|num.RR>0){
+  if((num.RR+num.lv+num.lv.c)>0 && Lvcoefs){
     if(quadratic==FALSE){
       M <- cbind(object$params$beta0, object$params$theta[,1:(num.lv.c+num.RR+num.lv)]%*%svd_rotmat_sites)  
     }else{
@@ -116,7 +116,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
-    if(!principal|num.lv>0&(num.lv.c+num.RR)>0){
+    if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
     
@@ -198,7 +198,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     #add zeros for num.rr
     object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(0,num.RR), if(num.lv>0)object$params$sigma.lv[-c(1:(num.lv.c+num.RR))])
     
-    if(principal){
+    if(rotate){
       object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
     }
     sumry$sigma.lv <- object$params$sigma.lv
