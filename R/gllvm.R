@@ -493,7 +493,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv
       warning("Selected optimizer not available for this model. Using optim instead.")
       control$optimizer <- "optim"
       if(family!="tweedie")control$optim.metod <- "BFGS"
-      if(family=="tweedie")optim.method <- "L-BFGS-B"
+      if(family=="tweedie")control$optim.method <- "L-BFGS-B"
     }
     
   if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
