@@ -439,14 +439,11 @@ se.gllvm <- function(object, ...){
       
       if(quadratic==TRUE){
         se.lambdas2 <- matrix(se[1:(p * ((num.lv.c+num.RR)+num.lv))], p, (num.lv.c+num.RR)+num.lv, byrow = T)  
-        #re-order as the order in C++ is different, num_RR is last there
-        se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
         se <- se[-(1:((num.lv+(num.lv.c+num.RR))*p))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }else if(quadratic=="LV"){
         se.lambdas2 <- matrix(se[1:((num.lv.c+num.RR)+num.lv)], p, (num.lv.c+num.RR)+num.lv, byrow = T)
-        se.lambdas2 <- se.lambdas2[,c(1:num.lv.c,(num.lv.c+num.lv+1):ncol(se.lambdas2),(num.lv.c+1):(num.lv+num.lv.c))]
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
         se <- se[-(1:((num.lv.c+num.RR)+num.lv))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
