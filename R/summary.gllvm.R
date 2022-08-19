@@ -89,7 +89,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   crit <-
     newnams <- c("Intercept")
   
-  if((num.lv+num.lv.c+num.RR)>0){
+  if((num.lv+num.lv.c+num.RR)>0 && Lvcoefs){
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
