@@ -410,7 +410,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             if(type=="conditional" & num.lv.c>0){
               S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
               diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-              warning("check d=1 case")
+              
               for(i in 1:n){
                 A[i,,]<-S%*%A[i,,]%*%S
               }  
