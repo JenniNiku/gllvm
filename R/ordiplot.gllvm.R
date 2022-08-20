@@ -471,17 +471,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           } 
           
             #If conditional scale variational covariances for concurrent ordination by sigma
-          if(type=="conditional" & num.lv.c>0){
-            S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
-            diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            warning("check d=1 case")
-            # if((num.lv.c+num.lv)==1){
-            #   A<-A*object$params$sigma.lv
-            # }else{
-            for(i in 1:Nlv){
-              A[i,,]<-S%*%A[i,,]%*%S
-              # A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-            }
+            if(type=="conditional" & num.lv.c>0){
+              S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
+              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
+              
+              for(i in 1:Nlv){
+                A[i,,]<-S%*%A[i,,]%*%S
+              }  
             }
             
             object$A<-sdb+A 
