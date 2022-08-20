@@ -123,7 +123,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
   ## Set initial values for model parameters (including dispersion prm) and latent variables
 
-### Seeds
+  ### Seeds
   
   # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
   if((length(seed) >1) & (length(seed) < n.init)) {
@@ -140,7 +140,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
 
 
   n.i <- 1
-
+  if(starting.val!="zero"){seed.best <- seed[n.i]}else{seed.best <- NULL}
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, family = family, X.design = X, method = method, zeta.struc = zeta.struc)
   #if (n.init > 1)
 
@@ -1536,9 +1536,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, lv.formula = NUL
         }
         
       }
+      seed.best <- seed[n.i]
     }
     
-    seed.best <- seed[n.i]
     n.i <- n.i+1;
   
     }
