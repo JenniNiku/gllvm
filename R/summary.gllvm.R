@@ -105,8 +105,13 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     se <- c(object$sd$B)
     nX <- dim(object$X)[2]
     cnx <- rep(colnames(object$X.design), each = ifelse(!is.null(object$TR),1,p))
+    
+    if(!is.null(object$params$Xcoef)){
     rnc <- rep(rownames(object$params$Xcoef), nX)
     newnam <- paste(cnx, rnc, sep = ":")
+    }else if(!is.null(object$X.design)){
+      newnam <- colnames(object$X.design)
+    }
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
