@@ -194,7 +194,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = s.cex, col = s.colors)
+        if(is.null(row.names(lv))){
+          text(lv, label = 1:n, cex = s.cex, col = s.colors)
+        }else{
+          text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
+        }
+        
       }
     }
     if((num.lv.c+num.RR)==1){
@@ -202,8 +207,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:n, cex = s.cex, col = s.colors)
-      }
+        if(is.null(row.names(lv))){
+          text(lv, label = 1:n, cex = s.cex, col = s.colors)
+        }else{
+          text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
+        }      
+        }
     }    
   }
   
@@ -356,17 +365,28 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
+          if(is.null(row.names(lv))){
+            text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
+          }else{
+            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
+          }
         }
       if (jitter)
         if (symbols) {
           points(choose.lvs[, which.lvs][, 1] + runif(n,-a,a), choose.lvs[, which.lvs][, 2] + runif(n,-a,a), col =
                    s.colors, ...)
         } else {
-          text(
-            (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
-            (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-            label = 1:n, cex = s.cex, col = s.colors )
+          if(is.null(row.names(lv))){
+            text(
+              (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
+              label = 1:n, cex = s.cex, col = s.colors )          
+            }else{
+                text(
+                  (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
+                  (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
+                  label = row.names(lv), cex = s.cex, col = s.colors )          
+                }
         }
     }
     
@@ -453,8 +473,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
-        }
+          if(is.null(row.names(lv))){
+            text(choose.lvs[, which.lvs], label = 1:n, cex = s.cex, col = s.colors)
+          }else{
+            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
+          }        
+          }
 
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
@@ -466,10 +490,17 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           points(choose.lvs[, which.lvs[1]] + runif(n,-a,a), (choose.lvs[, which.lvs[2]] + runif(n,-a,a)), col =
                    s.colors, ...)
         } else {
-          text(
-            (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
-            (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
-            label = 1:n, cex = s.cex, col = s.colors )
+          if(is.null(row.names(lv))){
+            text(
+              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
+              label = 1:n, cex = s.cex, col = s.colors )
+          }else{
+            text(
+              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
+              label = row.names(lv), cex = s.cex, col = s.colors )
+          }          
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
