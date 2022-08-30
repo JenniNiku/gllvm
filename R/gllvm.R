@@ -372,6 +372,7 @@
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
 #'@importFrom alabama auglag
+#'@importFrom utils combn tail
 
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, lv.formula = NULL,
