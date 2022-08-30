@@ -385,6 +385,7 @@
 #'
 
 
+
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
                   lvCor = NULL, studyDesign=NULL,dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
