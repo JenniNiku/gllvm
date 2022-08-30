@@ -16,7 +16,7 @@ data(eSpider)
 }
 
 }
-\description{
+\details{
 Counts of hunting spiders in a dune area in the Netherlands, measured with 100 different pitfall traps. This dataset was published with permission from the CANOCO FORTRAN package (version 4 or higher) example datasets.
 
 Species names have been abbreviated, corresponding to: 
@@ -38,7 +38,8 @@ data(eSpider)
 Y <- eSpider$abund[eSpider$nonNA, ]
 X <- eSpider$X[eSpider$nonNA, ]
 model <- gllvm(y = Y, X = X, 
-    lv.formula = ~log(ConWate) + log1p(BareSand) + log1p(FallTwig) + log1p(CovMoss) + log1p(CovHerb) + log(LuxRef),
+    lv.formula = ~log(ConWate) + log1p(BareSand) + log1p(FallTwig) + 
+    log1p(CovMoss) + log1p(CovHerb) + log(LuxRef),
     num.RR = 2, 
     family = "poisson")
 }
