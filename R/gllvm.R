@@ -489,6 +489,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       x
     }
 
+    if (inherits(family,"family")) {
+      link <- family$link
+      family <- family$family
+    }  
+    
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
@@ -566,10 +571,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE.\n")
       control$TMB <- TRUE
     }
+
     # if (inherits(family,"family")) {
     #   link <- family$link
     #   family <- family$family
     # }  
+
     if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
