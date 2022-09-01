@@ -34,19 +34,9 @@ AICc <- function(object, ...)
   UseMethod(generic = "AICc")
 }
 
-
 #'@rdname AICc
 #'@export
 nobs.gllvm <- function(object, ...){
   n <- prod(dim(object$y))
   return(n)
 }
-
-#'@method nobs gllvm
-#'@importFrom stats nobs
-nobs <- function(object, ...)
-{
-  UseMethod(generic = "nobs")
-}
-
-
