@@ -42,7 +42,7 @@
 #'fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
 #'coefplot(fitT)
 #'
-#'# Fit  gllvm model with environmental covariances and reduced rankk
+#'# Fit  gllvm model with environmental covariances and reduced rank
 #'fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
 #'coefplot(fitRR)
 #'}
