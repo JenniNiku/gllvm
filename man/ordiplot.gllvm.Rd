@@ -92,7 +92,7 @@
 
 \item{type}{which type of ordination plot to construct. Options are "residual", "conditional", and "marginal". Defaults to "residual" for GLLVMs with unconstrained latent variables and "conditional" otherwise.}
 
-\item{rotate}{logical, if \code{TRUE} (default) latent variables are re-rotated to their principal direction using singular value decomposition}
+\item{rotate}{logical, if \code{TRUE} (default) latent variables are rotated to their principal direction using singular value decomposition}
 
 \item{...}{additional graphical arguments.}
 }

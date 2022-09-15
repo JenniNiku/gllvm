@@ -27,7 +27,7 @@
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
 #' @param lwd.ellips line width for prediction ellipses. See graphical parameter lwd.
 #' @param col.ellips colors for prediction ellipses.
-#' @param rotate logical, if \code{TRUE} (default) latent variables are re-rotated to their principal direction using singular value decomposition
+#' @param rotate logical, if \code{TRUE} (default) latent variables are rotated to their principal direction using singular value decomposition
 #' @param type which type of ordination plot to construct. Options are "residual", "conditional", and "marginal". Defaults to "residual" for GLLVMs with unconstrained latent variables and "conditional" otherwise.
 #' @param ...	additional graphical arguments.
 #'
@@ -202,7 +202,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
+        if(is.null(row.names(lv))){
+          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors) #text(lv, label = 1:n, cex = s.cex, col = s.colors)
+        }else{
+          text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
+        }
+        
       }
     }
     if((num.lv.c+num.RR)==1){
@@ -210,7 +215,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (symbols) {
         points(lv, col = s.colors, ...)
       } else {
-        text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
+        if(is.null(row.names(lv))){
+          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors) #text(lv, label = 1:n, cex = s.cex, col = s.colors)
+        }else{
+          text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
+        } 
+        
       }
     }    
   }

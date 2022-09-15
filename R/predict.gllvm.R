@@ -51,7 +51,6 @@
 #'}
 #'@aliases predict predict.gllvm
 #'@method predict gllvm
-#'@importFrom stats predict
 #'
 #'@export
 #'@export predict.gllvm
