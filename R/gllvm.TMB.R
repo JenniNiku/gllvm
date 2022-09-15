@@ -28,6 +28,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   if(rstruc==0 & num.lv.cor==0){ # No structure
     dr <- diag(n)
   }
+  
+  Astruc = 0;
+  scaledc = 0;
+  rho.lv =NULL
   if(rstruc>0){#rstruc
     dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
@@ -36,6 +40,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=nr)
           dist=matrix(1:nr)
+        if(NROW(dist)!=nr)
+          stop("Number of rows in 'dist' should be same as maximum number of groups when corWithin = FALSE")
       }
     }
     if(rstruc==2) { # correlated within groups
@@ -45,13 +51,27 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=times)
           dist=matrix(1:times)
+        if(NROW(dist)!=times)
+          stop("Number of rows in 'dist' should be same as maximum number of units within groups when corWithin = TRUE")
+        
+      }
+    }
+    if((cstrucn == 2) | (cstrucn == 4)) {
+      AD1 = pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
+      md = min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
+      if(md>5) AD1 = AD1*md
+      scaledc = log(AD1)
+      if(!is.null(setMap$scaledc)) {
+        if( (length(setMap$scaledc)!= NCOL(dist))) stop("setMap$scaledc must be a numeric vector and have length that is same as the number of columns in 'dist'.")
+        scaledc[is.na(setMap$scaledc)]=0
+      }
+      if(NCOL(dist)==1) {
+        scaledc = scaledc*0
+        setMap$scaledc = factor(rep(NA, length(scaledc)))
       }
     }
     if(nr==1) Ar.struc = "diagonal"
   }
-  Astruc = 0;
-  scaledc = 0;
-  rho.lv =NULL
   if(num.lv.cor > 0){#rstruc
     dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
@@ -72,11 +92,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             stop("Number of rows in 'dist' should be same as maximum number of groups when corWithin = FALSE")
         }
       AD1<-pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
-      md<-min(dist(as.matrix(dist)%*%diag(1/(AD1)), diag = FALSE))/2
+      md<-min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
       if(md>5) AD1=AD1*md
       scaledc<-log(AD1)
       if(!is.null(setMap$scaledc)) {
         if( (length(setMap$scaledc)!= NCOL(dist))) stop("setMap$scaledc must be a numeric vector and have length that is same as the number of columns in 'dist'.")
+        scaledc[is.na(setMap$scaledc)]=0
+      }
+      if(NCOL(dist)==1) {
+        scaledc = scaledc*0
+        setMap$scaledc = factor(rep(NA, length(scaledc)))
       }
       # scaledc<-rep(log(1),ncol(dist))
     }
@@ -413,9 +438,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 ## map.list defines parameters which are not estimated in this model
     
     map.list <- list()    
+    if(is.list(setMap)) map.list <- setMap
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0; Ab_lv = 0;
-   if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
+    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
+    if(randomB==FALSE){
+      map.list$sigmab_lv <- factor(NA)
+    }
     
     if(family %in% c("poisson","binomial","ordinal","exponential")){
       map.list$lg_phi <- factor(rep(NA,p))
@@ -479,7 +508,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     } else {
       sigma_lvc <- matrix(0)
       map.list$sigma_lvc = factor(NA) 
-      map.list$scaledc = factor(NA) 
+      if((cstruc %in% c("corExp","corMatern")) & (rstruc>0)){
+        if(!is.null(setMap$scaledc)){ if((length(setMap$scaledc)==ncol(dist))) map.list$scaledc = factor(setMap$scaledc)}
+      } else {
+        map.list$scaledc = factor(NA) 
+      }
     }
     
    ### VA method, used only if there is some random effects/LVs in the model
@@ -1132,7 +1165,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
             rho<- exp(param[names(param)=="log_sigma"][-1]);
-            # scaledc<- exp(param[names(param)=="scaledc"]);
+            scaledc<- exp(param[names(param)=="scaledc"]);
           }
           if(num.lv>0 && dependent.row && rstruc==0) sigma <- c(sigma,(param[names(param)=="log_sigma"])[-1])
         }
@@ -1576,7 +1609,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
             rho<- exp(param[names(param)=="log_sigma"][-1]);
-            # scaledc<- exp(param[names(param)=="scaledc"]);
+            scaledc<- exp(param[names(param)=="scaledc"]);
             }
           if((num.lv+num.lv.c)>0 && dependent.row && rstruc==0) sigma <- c(sigma, (param[names(param)=="log_sigma"])[-1])
         }
@@ -1756,7 +1789,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(row.eff=="random"){ 
           out$params$sigma=sigma; 
           names(out$params$sigma)="sigma"
-          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))) out$params$rho <- rho
+          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))){ 
+            out$params$rho <- rho
+            if(cstrucn %in% c(2,4)){ out$params$scaledc=scaledc}
+          }
           if((num.lv+num.lv.c)>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:(num.lv+num.lv.c)), sep = "")
         }
         out$params$row.params <- row.params; 
@@ -2375,15 +2411,19 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         out$sd$sigma <- se[1:length(out$params$sigma)]*c(out$params$sigma[1],rep(1,length(out$params$sigma)-1));
         se=se[-(1:length(out$sd$sigma))]
         names(out$sd$sigma) <- "sigma"
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-out$params$rho^2)^1.5; se = se[-1]}#*sqrt(1-out$params$rho^2)
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*out$params$rho; se = se[-1]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-out$params$rho^2)^1.5; if(length(out$params$rho)) se = se[-(1:length(out$params$rho))]}#*sqrt(1-out$params$rho^2)
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*out$params$rho; if(length(out$params$rho)) se = se[-(1:length(out$params$rho))]}
       }
       if(num.lv.cor>0 & cstrucn>0){ 
         if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*(1-out$params$rho.lv^2)^1.5; se = se[-(1:length(out$params$rho.lv))]}
         if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*out$params$rho.lv; se = se[-(1:length(out$params$rho.lv))]}
         names(out$sd$rho.lv) <- names(out$params$rho.lv)
+        # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(out$params$scaledc))]*out$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+      }
+      if(((num.lv.cor>0) | ((row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){ 
         if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(out$params$scaledc))]*out$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
       }
+      
       if(family %in% c("ordinal")){
         se.zetanew <- se.zetas <- se;
         if(zeta.struc == "species"){

@@ -12,7 +12,7 @@
 #' @param num.lv.c  number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
 #' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
-#' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
+#' @param lvCor (Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
@@ -34,6 +34,7 @@
 #' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
 #' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.
+#' @param setMap UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed
 #' @param control A list with the following arguments controlling the optimization:
 #' \itemize{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -250,6 +251,11 @@
 #'coefplot(fit)
 #'
 #' \donttest{
+#'# Inclusion of structured random row effect
+#'sDesign<-data.frame(Site = microbialdata$Xenv$Site)
+#'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(), 
+#'             studyDesign=sDesign, row.eff=~(1|Site))
+#'
 #'## Load a dataset from the mvabund package
 #'library(mvabund)
 #'data(antTraits)
@@ -368,18 +374,20 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
 #'@importFrom grDevices rainbow hcl
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat predict
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr
 #'@importFrom MASS mvrnorm
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
 #'@importFrom alabama auglag
+#'@importFrom utils combn tail
+#'
 
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
-                  lvCor = NULL, studyDesign=NULL, dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
+                  lvCor = NULL, studyDesign=NULL,dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
                   row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", 
@@ -389,6 +397,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
+  if(!is.null(lvCor)) stop("'lvCor' is under development, not to be used at the moment.")
+  
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
   if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
@@ -832,7 +842,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(inherits(row.eff,"formula")) {
       bar.f <- findbars1(row.eff) # list with 3 terms
       grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
-      if(!is.null(data)) {
+      if(is.null(studyDesign)){
+        if(!is.null(data)) {
         if(any(colnames(data) %in% grps)){
           xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
           colnames(xgrps) <- grps
@@ -850,6 +861,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(ncol(X)==0) X<-NULL
       } else if(is.null(studyDesign)){
         stop("Grouping variable need to be included in 'studyDesign'")
+      }
       }
       
       if(is.null(bar.f)) {
@@ -872,7 +884,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(inherits(lvCor,"formula")) {
       bar.lv <- findbars1(lvCor) # list with 3 terms
       grps <- unlist(lapply(bar.lv,function(x) as.character(x[[3]])))
-      if(all(grps %in% colnames(X))) {
+      if(is.null(studyDesign)){
+        if(all(grps %in% colnames(X))) {
         studyDesign=X
         xnames<-colnames(X)[!(colnames(X) %in% grps)]
         X <- as.data.frame(X[,!(colnames(X) %in% grps)])
@@ -880,6 +893,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(ncol(X)==0) X<-NULL
       } else if(is.null(studyDesign)){
         stop("Grouping variable need to be included in 'studyDesign'")
+      }
       }
       if(!is.null(data)) {
         if(any(colnames(data) %in% grps)){
@@ -1006,7 +1020,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # where unconstrained LVs are not uncorrelated with predictors
     # better inform the user this might be a bad idea
     if(!is.null(lv.X)){
-      if((num.RR+num.lv.c)>0&num.lv>0&(num.RR+num.lv.c)<ncol(lv.X)){
+      if((num.RR+num.lv.c)>0&(num.lv>0)&((num.RR+num.lv.c)<ncol(lv.X))){
         warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. \n")
       }
     }
@@ -1315,14 +1329,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
         warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
       out$quadratic <- "LV"        
-      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+      }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
         out$quadratic <- quadratic
       }else{
         out$quadratic <- TRUE
       }
     }else if(quadratic == "LV"){
-      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.values == "zero"){
+      if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
       }
       out$quadratic <- quadratic

@@ -37,12 +37,12 @@ gllvm(
   return.terms = TRUE,
   gradient.check = FALSE,
   disp.formula = NULL,
-  control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer =
-    ifelse((num.RR + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter =
-    2000, maxit = 4000, trace = FALSE, optim.method = NULL),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc
-    = "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3),
-    NN = 3),
+  control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
+    + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 2000, maxit =
+    4000, trace = FALSE, optim.method = NULL),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc =
+    "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN
+    = 3),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
     "LV"),
@@ -71,7 +71,7 @@ gllvm(
 
 \item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.}
+\item{lvCor}{(Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.}
 
 \item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 
@@ -148,6 +148,8 @@ gllvm(
   \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.}
 }}
+
+\item{setMap}{UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed}
 
 \item{...}{Not used.}
 }
@@ -319,6 +321,11 @@ ordiplot(fit)
 coefplot(fit)
 
 \donttest{
+# Inclusion of structured random row effect
+sDesign<-data.frame(Site = microbialdata$Xenv$Site)
+fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(), 
+            studyDesign=sDesign, row.eff=~(1|Site))
+
 ## Load a dataset from the mvabund package
 library(mvabund)
 data(antTraits)

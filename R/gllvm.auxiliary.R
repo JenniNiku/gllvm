@@ -2332,7 +2332,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
 }
 
 
-start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link=NULL) {
+start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link=NULL, method="VA") {
   y <- as.matrix(y)
   Xb <- as.matrix(Xb)
   n <- NROW(y)
@@ -2342,7 +2342,7 @@ start.values.randomX <- function(y, Xb, family, starting.val, Power = NULL, link
     if(starting.val %in% c("res", "random")){
       if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP")){
         if(family == "ZIP") family <- "poisson"
-        f1 <- gllvm.TMB(y=y, X=Xb, family = family, num.lv=0, starting.val = "zero", link =link, method=method)
+        f1 <- gllvm.TMB(y=y, X=Xb, family = family, num.lv=0, starting.val = "zero", link =link) #, method=method
         coefs0 <- as.matrix(scale((f1$params$Xcoef), scale = FALSE))
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)

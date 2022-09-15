@@ -255,8 +255,8 @@ se.gllvm <- function(object, ...){
         out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
         names(out$sd$sigma) <- "sigma"; 
         se=se[-(1:(length(object$params$sigma)))] 
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; se = se[-1]}
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; se = se[-1]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
       }
       if(num.lv.cor>0 & cstrucn>0){
         if(length(object$params$rho.lv)>0){
@@ -264,7 +264,10 @@ se.gllvm <- function(object, ...){
           if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*object$params$rho.lv; se = se[-(1:length(object$params$rho.lv))]}
           names(out$sd$rho.lv) <- names(object$params$rho.lv)
         }
-        if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(object$params$scaledc))]}
+        # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+      }
+      if(((num.lv.cor>0) | ((object$row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){
+        if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
       }
       if(family %in% c("ordinal")){
         y <- object$y
@@ -580,8 +583,8 @@ se.gllvm <- function(object, ...){
       out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
       se=se[-(1:length(out$sd$sigma))] 
       names(out$sd$sigma) <- "sigma" 
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; se = se[-1]}
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; se = se[-1]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
     }
     if(num.lv.cor>0 & cstrucn>0){ 
       if(length(object$params$rho.lv)>0){
@@ -589,7 +592,10 @@ se.gllvm <- function(object, ...){
         if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*object$params$rho.lv; se = se[-(1:length(object$params$rho.lv))]}
         names(out$sd$rho.lv) <- names(object$params$rho.lv)
       }
-      if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(object$params$scaledc))]}
+      # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+    }
+    if(((num.lv.cor>0) | ((object$row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){ 
+      if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
     }
     if(family %in% c("ordinal")){
       y <- object$y

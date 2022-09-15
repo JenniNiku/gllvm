@@ -27,6 +27,8 @@ trait.TMB <- function(
   if(rstruc==0 & num.lv.cor==0){ # No structure
     dr <- diag(n)
   }
+  Astruc = 0;
+  scaledc = 0;
   if(rstruc>0){#rstruc
     dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
@@ -35,6 +37,8 @@ trait.TMB <- function(
       if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=nr)
           dist=matrix(1:nr)
+        if(NROW(dist)!=nr)
+          stop("Number of rows in 'dist' should be same as maximum number of groups when corWithin = FALSE")
       }
     }
     if(rstruc==2) { # correlated within groups
@@ -44,12 +48,27 @@ trait.TMB <- function(
       if((cstrucn == 2) | (cstrucn == 4)) {
         if(is.null(dist) || NROW(dist)!=times)
           dist=matrix(1:times)
+        if(NROW(dist)!=times)
+          stop("Number of rows in 'dist' should be same as maximum number of units within groups when corWithin = TRUE")
+        
+      }
+    }
+    if((cstrucn == 2) | (cstrucn == 4)) {
+      AD1<-pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
+      md<-min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
+      if(md>5) AD1=AD1*md
+      scaledc<-log(AD1)
+      if(!is.null(setMap$scaledc)) {
+        if( (length(setMap$scaledc)!= NCOL(dist))) stop("setMap$scaledc must be a numeric vector and have length that is same as the number of columns in 'dist'.")
+        scaledc[is.na(setMap$scaledc)]=0
+      }
+      if(NCOL(dist)==1) {
+        scaledc = scaledc*0
+        setMap$scaledc = factor(rep(NA, length(scaledc)))
       }
     }
     if(nr==1) Ar.struc = "diagonal"
   }
-  Astruc = 0;
-  scaledc = 0;
   if(num.lv.cor > 0){#rstruc
     dist<-as.matrix(dist)
     if(is.null(dr)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
@@ -73,6 +92,11 @@ trait.TMB <- function(
       scaledc<-log(AD1)
       if(!is.null(setMap$scaledc)) {
         if((length(setMap$scaledc)!= NCOL(dist))) stop("setMap$scaledc must be a numeric vector and have length that is same as the number of columns in 'dist'.")
+        scaledc[is.na(setMap$scaledc)]=0
+      }
+      if(NCOL(dist)==1) {
+        scaledc = scaledc*0
+        setMap$scaledc = factor(rep(NA, length(scaledc)))
       }
       # scaledc<-rep(log(1),ncol(dist))
     }
@@ -340,7 +364,7 @@ trait.TMB <- function(
         theta[upper.tri(theta)] <- 0
         if(Lambda.struc == "unstructured") {
           lambda <- array(NA,dim=c(n,num.lv,num.lv))
-          for(i in 1:n) { lambda[i,,] <- diag(rep(1,num.lv)) }
+          for(i in 1:n) { lambda[i,,] <- diag(rep(1,num.lv),num.lv) }
         }
         if(Lambda.struc == "diagonal") {
           lambda <- matrix(1,n,num.lv)
@@ -538,6 +562,7 @@ trait.TMB <- function(
 ## map.list defines parameters which are not estimated in this model
     
     map.list <- list()    
+    if(is.list(setMap)) map.list <- setMap
     # thetaH = matrix(0)
     # map.list$thetaH = factor(NA)
     # map.list$bH <- factor(NA) # not used
@@ -719,7 +744,11 @@ trait.TMB <- function(
     } else {
       sigma_lvc <- matrix(0)
       map.list$sigma_lvc = factor(NA) 
-      map.list$scaledc = factor(NA) 
+      if((cstruc %in% c("corExp","corMatern")) & (rstruc>0)){
+        if(!is.null(setMap$scaledc)){ if((length(setMap$scaledc)==ncol(dist))) map.list$scaledc = factor(setMap$scaledc)}
+      } else {
+        map.list$scaledc = factor(NA) 
+      }
     }
 
     ## Row effect settings
@@ -1105,6 +1134,7 @@ trait.TMB <- function(
         if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
         if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
           rho<- exp(param[names(param)=="log_sigma"][-1]);
+          scaledc<- exp(param[names(param)=="scaledc"]);
         }
         if(num.lv>0 && dependent.row && rstruc==0) sigma <- c(sigma, (param[names(param)=="log_sigma"])[-1])
       }
@@ -1115,7 +1145,7 @@ trait.TMB <- function(
       Sri <- names(param)=="sigmaB"
       L <- diag(ncol(xb))
       if(ncol(xb)>1){
-        sigmaB <- diag(exp(param[Sri]))
+        sigmaB <- diag(exp(param[Sri]), length(param[Sri]))
         Srij <- names(param)=="sigmaij"
         Sr <- param[Srij]
         L[upper.tri(L)] <- Sr
@@ -1178,7 +1208,10 @@ trait.TMB <- function(
         if(row.eff=="random"){  
           out$params$sigma <- sigma; 
           names(out$params$sigma) <- "sigma"
-          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))) out$params$rho <- rho
+          if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))){
+            out$params$rho <- rho
+            if(cstrucn %in% c(2,4)){ out$params$scaledc=scaledc}
+          }
           if(num.lv>0 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
           }
         out$params$row.params <- row.params; 
@@ -1692,6 +1725,9 @@ trait.TMB <- function(
           if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:num.lv.cor)]*(1-out$params$rho.lv^2)^1.5; se = se[-(1:num.lv.cor)]}
           if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*out$params$rho.lv; se = se[-(1:length(out$params$rho.lv))]}
           names(out$sd$rho.lv) <- names(out$params$rho.lv)
+          # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(out$params$scaledc))]*out$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+        }
+        if(((num.lv.cor>0) | ((row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){ 
           if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(out$params$scaledc))]*out$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
         }
 
