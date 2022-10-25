@@ -16,6 +16,8 @@ Version 1.3.2
 
 * Added an option to magnify the x-axis labels in coefplot
 
+* Site names present as row labels in the response data are now shown in the ordination plot
+
 
 ### Bug Fixes
 * The order of the quadratic coefficients was  wrong when num.RR, num.lv, and num.lv.c were all used in the same model.
