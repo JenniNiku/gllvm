@@ -110,7 +110,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         }
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, randomB = randomB)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, randomB = randomB, method = method)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0){
@@ -178,7 +178,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB, method = method)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0)
@@ -358,7 +358,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       if((num.lv+num.lv.c+num.RR)>0){
-        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR= num.RR, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB)
+        lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR= num.RR, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB, method = method)
         gamma<-lastart$gamma
         index<-lastart$index
         params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
@@ -546,7 +546,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
 
 
 FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta = NULL, zeta.struc = "species", phis = NULL, 
-                    jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL, disp.group = NULL, randomB = FALSE){
+                    jitter.var = 0, resi = NULL, row.eff = FALSE, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL, disp.group = NULL, randomB = FALSE, method = "VA"){
   n<-NROW(y); p <- NCOL(y)
   row.params <- NULL # !!!!
   b.lv <- NULL
