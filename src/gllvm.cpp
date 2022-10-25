@@ -154,13 +154,15 @@ Type objective_function<Type>::operator() ()
   b_lv2.fill(0.0);
   Delta.fill(0.0);
 
-  array<Type> D(nlvr,nlvr,p);
+  array<Type> D;
   if( (quadratic>0) && (method!=1)){
-    array<Type> D(nlvr+num_RR,nlvr+num_RR,p);
+    D = array<Type> (nlvr+num_RR,nlvr+num_RR,p);
+    D.fill(0.0);
+  }else if(quadratic>0){
+    D = array<Type> (nlvr,nlvr,p);
+    D.fill(0.0);
   }
 
-  D.fill(0.0);
-  
   matrix<Type> newlam(nlvr,p);
   matrix<Type> RRgamma(num_RR,p);
   //K*K*d or d*d*K
@@ -432,11 +434,14 @@ Type objective_function<Type>::operator() ()
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
 
-    array<Type> A(nlvr,nlvr,n);
-    if(random(2)>0 && num_RR>0){
-      array<Type> A(nlvr+num_RR,nlvr+num_RR,n);
+    array<Type> A;
+    if( (random(2)>0) && (num_RR!=0)){
+      A = array<Type> (nlvr+num_RR,nlvr+num_RR,n);
+      A.fill(0.0);
+    }else{
+      A = array<Type> (nlvr,nlvr,n);//plus one because just trying
+      A.fill(0.0);
     }
-    A.fill(0.0);
     
     // Set up variational covariance matrix for LVs 
     if(nlvr>0){
@@ -478,7 +483,8 @@ Type objective_function<Type>::operator() ()
       }
       
       //set VA covariances for random rows to zero for quadratic model
-      if((quadratic>0)&&(nlvr>(num_lv+num_lv_c))){
+      //but not with quadratic model. constrained LVs, and row-eff.
+      if((quadratic>0)&&(nlvr>(num_lv+num_lv_c))&&((num_lv+num_lv_c+num_RR*random(2))>0)){
         for(int i=0; i<n; i++){
           for (int d=0; d<nlvr; d++){
             if(d!=0){
@@ -1583,7 +1589,8 @@ Type objective_function<Type>::operator() ()
       }
       lam += u*newlam;
       
-      if(quadratic < 1){
+      // also takes this route if there are quadratic constrained LVs with random row-effect
+      if(quadratic < 1 || nlvr==1 && random(2)<0 && num_RR>0){
         
         //Binomial, Gaussian, Ordinal
         for (int i=0; i<n; i++) {
@@ -1593,8 +1600,8 @@ Type objective_function<Type>::operator() ()
         }
         eta += lam;
       }
-      
-      if(quadratic>0){
+      // do not take this route not with quadratic model, constrained LVs and random row-effects.
+      if(quadratic>0 && nlvr > 0 && (num_lv+num_lv_c)>0 || quadratic>0 && random(2) > 0){
         matrix <Type> Acov(nlvr,nlvr);
         //quadratic model approximation
         //Poisson
@@ -1676,7 +1683,7 @@ Type objective_function<Type>::operator() ()
     // REPORT(cQ);
     
     if(family==0){//poisson
-      if(quadratic<1){
+      if(quadratic<1 || quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
@@ -1691,7 +1698,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     } else if((family == 1) & (method<1)){//NB VA
-      if(quadratic<1){
+      if(quadratic<1 || quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             // nll -= Type(gllvm::dnegbinva(y(i,j), eta(i,j), iphi(j), cQ(i,j)));
@@ -1764,7 +1771,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     } else if(family==4) {//gamma
-      if(quadratic<1){
+      if(quadratic<1 || quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
@@ -1872,7 +1879,7 @@ Type objective_function<Type>::operator() ()
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
     } else if(family==8) {// exp dist
-      if(quadratic<1){
+      if(quadratic<1 || quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0){
         for (int i=0; i<n; i++) {
           for (int j=0; j<p;j++){
             nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
