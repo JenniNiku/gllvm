@@ -2100,7 +2100,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   num.lv <- obj$env$data$num_lv
   num.lv.c <- obj$env$data$num_lv_c
   num.RR <- obj$env$data$num_RR
-  nu<-nrow(obj$env$parameters$u)
+  nu<-nrow(obj$env$data$y)
   
   xb<- obj$env$data$xb
   
