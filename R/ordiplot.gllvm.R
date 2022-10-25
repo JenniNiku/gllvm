@@ -98,6 +98,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
                            jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
+  if(isFALSE(object$sd) & !isFALSE(predict.region)){
+    warning("No standard errors present in model. Seting predict.region to FALSE.\n")
+    predict.region <- FALSE
+  }
+  
   if(is.null(spp.arrows)){
     if(object$quadratic!=FALSE){
       spp.arrows <- TRUE
@@ -325,7 +330,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>dim(object$lvs)[2]) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           
@@ -453,7 +458,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>dim(object$lvs)[2]) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           
