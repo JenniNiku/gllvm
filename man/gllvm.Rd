@@ -93,13 +93,13 @@ gllvm(
 
 \item{randomX}{formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.}
 
-\item{dependent.row}{logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.}
+\item{dependent.row}{logical. Whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.}
 
-\item{beta0com}{logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.}
+\item{beta0com}{logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.}
 
-\item{zeta.struc}{Structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".}
+\item{zeta.struc}{structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".}
 
-\item{plot}{logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
+\item{plot}{logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
 
@@ -107,15 +107,15 @@ gllvm(
 
 \item{seed}{a single seed value, defaults to \code{NULL}.}
 
-\item{scale.X}{if \code{TRUE}, covariates are scaled when fourth corner model is fitted.}
+\item{scale.X}{logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.}
 
-\item{return.terms}{logical, if \code{TRUE} 'terms' object is returned.}
+\item{return.terms}{logical. If \code{TRUE} 'terms' object is returned.}
 
-\item{gradient.check}{logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.}
+\item{gradient.check}{logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.}
 
 \item{disp.formula}{formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
 
-\item{control}{A list with the following arguments controlling the optimization:
+\item{control}{a list with the following arguments controlling the optimization:
 \itemize{
  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
@@ -124,7 +124,7 @@ gllvm(
  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
- \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with num.RR>0 or num.lv.c>0. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA" are available.}
+ \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
@@ -144,9 +144,9 @@ gllvm(
   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
-  \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
-  \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
-  \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.}
+  \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
+  \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
+  \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
 }}
 
 \item{setMap}{UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed}

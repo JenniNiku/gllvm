@@ -25,14 +25,14 @@
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
 #' @param seed a single seed value, defaults to \code{NULL}.
-#' @param plot  logical, if \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
-#' @param zeta.struc Structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
+#' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
+#' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
-#' @param dependent.row logical, whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.
-#' @param beta0com logical, if \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
-#' @param scale.X if \code{TRUE}, covariates are scaled when fourth corner model is fitted.
-#' @param return.terms logical, if \code{TRUE} 'terms' object is returned.
-#' @param gradient.check logical, if \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
+#' @param dependent.row logical. Whether or not random row effects are correlated (dependent) with the latent variables. Defaults to \code{FALSE} when correlation terms are not included.
+#' @param beta0com logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
+#' @param scale.X logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.
+#' @param return.terms logical. If \code{TRUE} 'terms' object is returned.
+#' @param gradient.check logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
 #' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.
 #' @param setMap UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed
 #' @param control A list with the following arguments controlling the optimization:
@@ -44,7 +44,7 @@
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 200.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
-#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with num.RR>0 or num.lv.c>0. Defaults to \code{"BFGS"}, and \code{"L-BFGS-B"} to Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA" are available.}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
@@ -62,9 +62,9 @@
 #'   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
 #'   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
-#'   \item{\emph{randomX.start}: }{ Starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
-#'   \item{\emph{start.struc}: }{ Starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
-#'   \item{\emph{quad.start}: }{ Starting values for quadratic coefficients. Defaults to 0.01.}
+#'   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
+#'   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
+#'   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
 #' }
 #' @param ... Not used.
 #'
@@ -374,15 +374,15 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
 #'@importFrom grDevices rainbow hcl
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov p.adjust princomp as.formula residuals.lm coef printCoefmat predict
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict
 #'@importFrom Matrix bdiag chol2inv diag
-#'@importFrom MASS ginv polr
-#'@importFrom MASS mvrnorm
+#'@importFrom MASS ginv polr mvrnorm
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
 #'@importFrom alabama auglag
 #'@importFrom utils combn tail
 #'
+
 
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
@@ -437,7 +437,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
-        x$optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama")
+        x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")
         if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
@@ -489,6 +489,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       x
     }
 
+    if (inherits(family,"family")) {
+      link <- family$link
+      family <- family$family
+    }  
+    
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
@@ -502,8 +507,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(family != "tweedie") {control$optim.method <- 'BFGS'}else{control$optim.method <- 'L-BFGS-B'}
     
   }
-    
+  
   # Define valid optimization routines
+    if(control$optimizer=="optim" && !control$optim.method%in%c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")){
+      stop("Invalid optim.method '", control$optim.method,"'")
+    }
   if(!control$optimizer%in%c("optim","nlminb","alabama","nloptr(sqp)","nloptr(agl)")){
     stop("Optimizer must be one of 'optim', 'nlminb', 'alabama', 'nloptr(sqp)' or 'nloptr(agl)'.")
   }else if(control$optimizer%in%c("nloptr(sqp)","nloptr(agl)")){
@@ -511,11 +519,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
   }
   # cannot use alabama or nloptr without num.lv.c or num.RR for now
-    if((num.lv.c+num.RR)==0 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+    if((num.lv.c+num.RR)<=1 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
       warning("Selected optimizer not available for this model. Using optim instead.")
       control$optimizer <- "optim"
       if(family!="tweedie")control$optim.metod <- "BFGS"
-      if(family=="tweedie")optim.method <- "L-BFGS-B"
+      if(family=="tweedie")control$optim.method <- "L-BFGS-B"
     }
     
   if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
@@ -563,10 +571,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       warning("Concurrent and constrained ordination only implemented with TMB. Setting TMB to TRUE.\n")
       control$TMB <- TRUE
     }
+
     # if (inherits(family,"family")) {
     #   link <- family$link
     #   family <- family$family
     # }  
+
     if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){

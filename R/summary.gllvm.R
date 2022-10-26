@@ -11,7 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
-#' @param principal defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
+#' @param rotate defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
 #' @param type to match "type" in \code{\link{ordiplot.gllvm}}
 #' @param ...	 not used.
 #'
@@ -30,7 +30,7 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, principal = FALSE, type = NULL,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, rotate = FALSE, type = NULL,
                           ...) {
 
   n <- NROW(object$y)
@@ -44,7 +44,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   family <- object$family
   
   #calculate rotation matrix
-  if(principal){
+  if(rotate && (num.lv+num.lv.c+num.RR)>1){
     lv <- getLV(object, type = type)
     
     do_svd <- svd(lv)
@@ -55,7 +55,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }else{
     svd_rotmat_sites <- diag(num.lv.c+num.RR+num.lv)
   }
-  if(num.lv|num.lv.c|num.RR>0){
+  if((num.RR+num.lv+num.lv.c)>0 && Lvcoefs){
     if(quadratic==FALSE){
       M <- cbind(object$params$beta0, object$params$theta[,1:(num.lv.c+num.RR+num.lv)]%*%svd_rotmat_sites)  
     }else{
@@ -89,7 +89,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   crit <-
     newnams <- c("Intercept")
   
-  if((num.lv+num.lv.c+num.RR)>0){
+  if((num.lv+num.lv.c+num.RR)>0 && Lvcoefs){
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
@@ -105,8 +105,13 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     se <- c(object$sd$B)
     nX <- dim(object$X)[2]
     cnx <- rep(colnames(object$X.design), each = ifelse(!is.null(object$TR),1,p))
+    
+    if(!is.null(object$params$Xcoef)){
     rnc <- rep(rownames(object$params$Xcoef), nX)
     newnam <- paste(cnx, rnc, sep = ":")
+    }else if(!is.null(object$X.design)){
+      newnam <- colnames(object$X.design)
+    }
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
@@ -116,14 +121,14 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
-    if(!principal|num.lv>0&(num.lv.c+num.RR)>0){
+    if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
     pars <- c(object$params$LvXcoef)
     se <- c(object$sd$LvXcoef)
     
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table.constrained <- cbind(pars, se, zval, pvalue)
-    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
       covB <- object$Hess$cov.mat.mod
@@ -194,13 +199,12 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
-    if(principal){
-      if(num.RR>0){
-        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))])%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites[-c((num.lv.c+1):(num.lv.c+num.RR))]))
-      }else{
-        object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
-      }
-      
+    
+    #add zeros for num.rr
+    object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(0,num.RR), if(num.lv>0)object$params$sigma.lv[-c(1:(num.lv.c+num.RR))])
+    
+    if(rotate){
+      object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
     }
     sumry$sigma.lv <- object$params$sigma.lv
   }
@@ -229,7 +233,12 @@ print.summary.gllvm <- function (x, ...)
   cat("Informed LVs: ", x$num.lv.c, "\n")
   cat("Constrained LVs: ", x$num.RR,"\n")
   cat("Unconstrained LVs: ", x$num.lv, "\n")
-  if((x$num.lv.c)>0|x$quadratic!=F){cat("Standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
+  
+  #this scenario we don't want the SD from num.lv as it is meaningless
+  if(x$num.lv>0&(x$num.RR+x$num.lv.c)>0 & isFALSE(x$quadratic))x$sigma.lv <- x$sigma.lv[1:(x$num.lv.c+x$num.RR)]
+  
+  #only print SD from LV if model is quadratic or if (hybrid) concurrent
+  if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula,collapse=""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")

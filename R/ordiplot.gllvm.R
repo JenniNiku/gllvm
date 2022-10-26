@@ -98,6 +98,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
                            jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
+  if(isFALSE(object$sd) & !isFALSE(predict.region)){
+    warning("No standard errors present in model. Seting predict.region to FALSE.\n")
+    predict.region <- FALSE
+  }
+  
   if(is.null(spp.arrows)){
     if(object$quadratic!=FALSE){
       spp.arrows <- TRUE
@@ -203,7 +208,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         points(lv, col = s.colors, ...)
       } else {
         if(is.null(row.names(lv))){
-          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors) #text(lv, label = 1:n, cex = s.cex, col = s.colors)
+          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
         }else{
           text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
         }
@@ -216,12 +221,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         points(lv, col = s.colors, ...)
       } else {
         if(is.null(row.names(lv))){
-          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors) #text(lv, label = 1:n, cex = s.cex, col = s.colors)
+          text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
         }else{
           text(lv, label = row.names(lv), cex = s.cex, col = s.colors)
-        } 
-        
-      }
+        }      
+        }
     }    
   }
   
@@ -252,9 +256,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     #A check if species scores are within the range of the LV
     ##If spp.arrows=TRUE plots those that are not in range as arrows
-    if(spp.arrows){
+    if(spp.arrows && biplot){
       lvth <- max(abs(choose.lvs))
       idx <- choose.lv.coefs>(-lvth)&choose.lv.coefs<lvth
+      if(!all(apply(idx,2,any))){
+        stop(paste("For", colnames(idx)[!apply(idx,2,any)], "all optima seem to be outside the observed range of the LV. Please reconsider your model, or set  `spp.arrows = FALSE` ."))
+      }
     }else{
       idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     }
@@ -323,7 +330,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>dim(object$lvs)[2]) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           
@@ -399,17 +406,28 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
+          if(is.null(row.names(lv))){
+            text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
+          }else{
+            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
+          }
         }
       if (jitter)
         if (symbols) {
           points(choose.lvs[, which.lvs][, 1] + runif(Nlv,-a,a), choose.lvs[, which.lvs][, 2] + runif(Nlv,-a,a), col =
                    s.colors, ...)
         } else {
-          text(
-            (choose.lvs[, which.lvs][, 1] + runif(Nlv,-a,a)),
-            (choose.lvs[, which.lvs][, 2] + runif(Nlv,-a,a)),
-            label = 1:Nlv, cex = s.cex, col = s.colors )
+          if(is.null(row.names(lv))){
+            text(
+              (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
+              label = 1:Nlv, cex = s.cex, col = s.colors )          
+            }else{
+                text(
+                  (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
+                  (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
+                  label = row.names(lv), cex = s.cex, col = s.colors )          
+                }
         }
     }
     
@@ -440,7 +458,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>dim(object$lvs)[2]) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           
@@ -468,17 +486,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           } 
           
             #If conditional scale variational covariances for concurrent ordination by sigma
-          if(type=="conditional" & num.lv.c>0){
-            S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
-            diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
-            warning("check d=1 case")
-            # if((num.lv.c+num.lv)==1){
-            #   A<-A*object$params$sigma.lv
-            # }else{
-            for(i in 1:Nlv){
-              A[i,,]<-S%*%A[i,,]%*%S
-              # A[i,,]<-diag(object$params$sigma.lv)%*%A[i,,]%*%diag(object$params$sigma.lv)
-            }
+            if(type=="conditional" & num.lv.c>0){
+              S <- diag(1:(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)))
+              diag(S)[1:num.lv.c] <- object$params$sigma.lv[1:num.lv.c]
+              
+              for(i in 1:Nlv){
+                A[i,,]<-S%*%A[i,,]%*%S
+              }  
             }
             
             object$A<-sdb+A 
@@ -534,9 +548,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (symbols) {
           points(choose.lvs[, which.lvs], col = s.colors, ...)
         } else {
-          text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
-        }
-
+          if(is.null(row.names(lv))){
+            text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
+          }else{
+            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
+          }        
+          }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
           label = rownames(object$params$theta)[largest.lnorms[1:ind.spp]][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))],
@@ -547,10 +564,17 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           points(choose.lvs[, which.lvs[1]] + runif(Nlv,-a,a), (choose.lvs[, which.lvs[2]] + runif(Nlv,-a,a)), col =
                    s.colors, ...)
         } else {
-          text(
-            (choose.lvs[, which.lvs[1]] + runif(Nlv,-a,a)),
-            (choose.lvs[, which.lvs[2]] + runif(Nlv,-a,a)),
-            label = 1:Nlv, cex = s.cex, col = s.colors )
+          if(is.null(row.names(lv))){
+            text(
+              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
+              label = 1:Nlv, cex = s.cex, col = s.colors )
+          }else{
+            text(
+              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
+              label = row.names(lv), cex = s.cex, col = s.colors )
+          }          
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),

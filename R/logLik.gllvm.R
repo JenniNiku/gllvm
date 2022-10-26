@@ -49,7 +49,7 @@ logLik.gllvm <- function(object, ...)
     object$params$LvXcoef[upper.tri(object$params$LvXcoef)] <- NA
   }
   if(object$quadratic=="LV"){
-    object$params$theta[-1,-c(1:(object$num.lv+object$num.lv.c))]<-NA
+    object$params$theta[-1,-c(1:(object$num.lv+object$num.RR+object$num.lv.c))]<-NA
   }
   if(object$num.lv>0|object$num.RR>0|object$num.lv.c>0){
     object$params$theta[object$params$theta==0|object$params$theta==1]<-NA  
