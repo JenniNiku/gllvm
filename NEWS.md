@@ -1,3 +1,13 @@
+Version 1.3.3
+==============
+
+### Bug Fixes
+* Memory allocation problem in development version fixed
+
+* Diagonal elements of loading matrix 'theta' fixed for fourth corner model
+
+* Bug in 'predict' for random slopes fixed, occurred when new x-covariate values were given
+
 Version 1.3.2
 ==============
 

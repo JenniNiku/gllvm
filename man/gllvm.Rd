@@ -115,7 +115,7 @@ gllvm(
 
 \item{disp.formula}{formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
 
-\item{control}{a list with the following arguments controlling the optimization:
+\item{control}{A list with the following arguments controlling the optimization:
 \itemize{
  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  

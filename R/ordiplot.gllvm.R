@@ -532,7 +532,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if(length(col.ellips)!=p){ col.ellips2 =rep(col.ellips[1],p)}
         # col.ellips2=rep("grey",p)
         
-        covMload<-object$sd$theta%*%(diag(object$params$sigma.lv)^2); #diag(covMT)=1
+        covMload<-object$sd$theta%*%(diag(object$params$sigma.lv)); #diag(covMT)=1
         diag(covMload)<-object$sd$sigma.lv
         covMload <- array(apply(covMload^2, 1, diag), dim = c(ncol(object$sd$theta),ncol(object$sd$theta),nrow(object$sd$theta)))
         

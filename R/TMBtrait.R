@@ -574,6 +574,8 @@ trait.TMB <- function(
       map.list$lg_phi <- factor(disp.group)
     }
     if(family != "ordinal") map.list$zeta <- factor(NA)
+    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
+    
 
     extra <- c(0,1,0)
     
@@ -878,7 +880,7 @@ trait.TMB <- function(
       optr1 <- optr
       param1 <- optr$par
       nam <- names(param1)
-      r1 <- matrix(param1[nam=="r0"])
+      if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
       b1 <- rbind(param1[nam=="b"])
       B1 <- matrix(param1[nam=="B"])
       sigma.lv1 <- param1[nam=="sigmaLV"]
@@ -983,7 +985,7 @@ trait.TMB <- function(
       optr1 <- optr
       param1 <- optr$par
       nam <- names(param1)
-      r1 <- matrix(param1[nam=="r0"])
+      if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
       b1 <- rbind(param1[nam=="b"])
       B1 <- matrix(param1[nam=="B"])
       sigma.lv1 <- param1[nam=="sigmaLV"]
@@ -1113,10 +1115,11 @@ trait.TMB <- function(
         scaledc<- exp(param[names(param)=="scaledc"]);
       }
     } else if(num.lv > 0){
-      lvs <- (matrix(param[ui],n,nlvr))
       sigma.lv <- abs(param[si])
       lvs <- (matrix(param[ui],n,num.lv))
       theta <- matrix(0,p,num.lv)
+      diag(theta)<-1
+      
       if(p>1) {
         theta[lower.tri(theta,diag=F)] <- param[li];
         if(quadratic!=FALSE){

@@ -193,7 +193,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if (!is.null(newdata)) {
         tr <- try(X.xr <- as.matrix(model.matrix(object$randomX, 
                                                  data = yXT)), silent = TRUE)
-        if (inherits(tr, "try-error")) {
+        if (inherits(tr, "try-error") | (fit$randomX=="~.")) {
           X.xr <- as.matrix(yXT[, colnames(object$Xrandom)])
           colnames(X.xr) <- colnames(object$Xrandom)
         }
@@ -203,8 +203,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                       c("(Intercept)"))])
         if (NCOL(xr) == 1) 
           colnames(xr) <- rnam
-      }
-      else {
+      } else {
         xr <- object$Xrandom
       }
       eta <- eta + matrix(xr %*% object$params$Br, n, p)
