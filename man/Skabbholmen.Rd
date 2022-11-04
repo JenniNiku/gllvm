@@ -24,8 +24,11 @@ This dataset was published with permission from the CANOCO FORTRAN package examp
 
 \references{
 ter Braak, C.J.F. and Smilauer, P.  (1998).  CANOCO reference manual and user's guide to CANOCO for Windows: software for canonical community ordination (version 4). Microcomputer Power, New York, New York, USA.
+
 Jongman, E., & Jongman, S. R. R. (1995). Data analysis in community and landscape ecology. Cambridge university press.
+
 ter Braak, C.J.F. (1987). The analysis of vegetation-environment relationships by canonical correspondence analysis. Vegetatio, 69(1), 69-77.
+
 Cramer, W. & Hytteborn, H. (1987). The separation of fluctuation and long-term change in vegetation dynamics of a rising seashore. Vegetatio, 69, 157–167.
 }
 \examples{
