@@ -45,7 +45,7 @@ gllvm(
     = 3),
   control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit =
     NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01, start.struc =
-    "LV"),
+    "LV", scalmax = 10, MaternKappa = 1.5),
   setMap = NULL,
   ...
 )
@@ -147,6 +147,8 @@ gllvm(
   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
+  \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
+  \item{\emph{scalmax}: }{ Sets starting value for the range/scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the coordinates between 0-10.}
 }}
 
 \item{setMap}{UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed}

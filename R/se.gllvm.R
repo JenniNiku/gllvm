@@ -115,6 +115,7 @@ se.gllvm <- function(object, ...){
  
       if(method=="LA" || (num.lv==0 && (object$row.eff!="random" && is.null(object$randomX)))){
         covM <- try(MASS::ginv(sdr[incl,incl]))
+        if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- try(sqrt(diag(abs(covM))))
         
         trpred<-try({
@@ -143,6 +144,7 @@ se.gllvm <- function(object, ...){
         D.mat <- sdr[incld,incld] # d x d
         B.mat <- sdr[incl,incld] # a x d
         cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
+        if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- sqrt(diag(abs(cov.mat.mod)))
         
         incla<-rep(FALSE, length(incl))
@@ -193,9 +195,9 @@ se.gllvm <- function(object, ...){
         
       }
       # For correlated LVs:
-      if(num.lv.cor>0){
-        diag(out$sd$theta) <- c(out$sd$sigma.lv)
-      }
+      # if(num.lv.cor>0){
+      #   diag(out$sd$theta) <- c(out$sd$sigma.lv)
+      # }
       out$sd$beta0 <- se.beta0; 
       if(!object$beta0com){ names(out$sd$beta0)  <-  colnames(object$y);}
       out$sd$B <- se.B; 
@@ -266,9 +268,7 @@ se.gllvm <- function(object, ...){
         }
         # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
       }
-      if(((num.lv.cor>0) | ((object$row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){
-        if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
-      }
+
       if(family %in% c("ordinal")){
         y <- object$y
         K = max(y)-min(y)
@@ -375,6 +375,7 @@ se.gllvm <- function(object, ...){
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE)){
       covM <- try(MASS::ginv(sdr[incl,incl]))
+      if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
       trpred<-try({
       if((num.lv+num.lv.c) > 0 || object$row.eff == "random"){
@@ -410,13 +411,15 @@ se.gllvm <- function(object, ...){
       A.mat <- sdr[incl, incl] # a x a
       D.mat <- sdr[incld, incld] # d x d
       B.mat <- sdr[incl, incld] # a x d
-      cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T)
+      
+      cov.mat.mod <- try({MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))})
+      if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- sqrt(diag(abs(cov.mat.mod)))
       
       incla<-rep(FALSE, length(incl))
       incla[names(objrFinal$par)=="u"] <- TRUE
       out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
-      
+
     }
     
     num.X <- 0; if(!is.null(object$X)) num.X <- dim(object$X.design)[2]
@@ -518,9 +521,9 @@ se.gllvm <- function(object, ...){
     }
     
     # For correlated LVs:
-    if(num.lv.cor>0){
-      diag(out$sd$theta) <- c(out$sd$sigma.lv)
-    }
+    # if(num.lv.cor>0){
+    #   diag(out$sd$theta) <- c(out$sd$sigma.lv)
+    # }
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
     if(!is.null(object$X)){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));
@@ -589,11 +592,8 @@ se.gllvm <- function(object, ...){
         if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*object$params$rho.lv; se = se[-(1:length(object$params$rho.lv))]}
         names(out$sd$rho.lv) <- names(object$params$rho.lv)
       }
-      # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
     }
-    if(((num.lv.cor>0) | ((object$row.eff=="random") & ((rstruc ==2) | (rstruc == 1)))) & (cstrucn>0)){ 
-      if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
-    }
+
     if(family %in% c("ordinal")){
       y <- object$y
       K = max(y)-min(y)

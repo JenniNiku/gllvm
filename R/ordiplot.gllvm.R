@@ -111,7 +111,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
   }
   
-  object$num.lvcor=0 # For now. Under development
+  # object$num.lvcor=0 # For now. Under development
   # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
   #      when they are too small")
   
@@ -184,7 +184,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
 
       # Do the scaling
-      sigma.lv <- diag(sigma.lv)
+      sigma.lv <- diag(sigma.lv, length(sigma.lv))
       object$params$theta <- object$params$theta%*%sigma.lv
     
       #remove unconstrained LVs species loadings if type=="marginal"
@@ -282,7 +282,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     # Under development, need to be adjusted for more complex cases
     Bload<-(svd_rotmat_species)
-    Bload<-diag((bothnorms^(1-alpha))/sqrt(colSums(choose.lv.coefs^2)))%*%Bload
+    Bload<-diag((bothnorms^(1-alpha))/sqrt(colSums(choose.lv.coefs^2)), length(bothnorms))%*%Bload
     #
     
     choose.lvs <- scaled_cw_sites%*%svd_rotmat_sites
@@ -294,7 +294,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     # }
     # 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object,type = type)^2)))%*%svd_rotmat_sites)  
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object,type = type)^2)), length(bothnorms))%*%svd_rotmat_sites)  
     
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
@@ -532,7 +532,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if(length(col.ellips)!=p){ col.ellips2 =rep(col.ellips[1],p)}
         # col.ellips2=rep("grey",p)
         
-        covMload<-object$sd$theta%*%(diag(object$params$sigma.lv)); #diag(covMT)=1
+        covMload<-object$sd$theta%*%( diag(object$params$sigma.lv, length(object$params$sigma.lv)) ); #diag(covMT)=1
         diag(covMload)<-object$sd$sigma.lv
         covMload <- array(apply(covMload^2, 1, diag), dim = c(ncol(object$sd$theta),ncol(object$sd$theta),nrow(object$sd$theta)))
         

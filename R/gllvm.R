@@ -65,6 +65,8 @@
 #'   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
 #'   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
 #'   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
+#'   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
+#'   \item{\emph{scalmax}: }{ Sets starting value for the range/scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the coordinates between 0-10.}
 #' }
 #' @param ... Not used.
 #'
@@ -394,10 +396,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 2000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV"), setMap=NULL, ...
+                  control.start = list(starting.val = "res", n.init = 1, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
-  if(!is.null(lvCor)) stop("'lvCor' is under development, not to be used at the moment.")
+  if(!is.null(lvCor)) warning("'lvCor' is under development, so all properties may not work properly.")
   
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
@@ -486,6 +488,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$quad.start = 0.01
       if (!("start.struc" %in% names(x))) 
         x$start.struc = "LV"
+      if (!("scalmax" %in% names(x))) 
+        x$scalmax = 10
+      if (!("MaternKappa" %in% names(x))) 
+        x$MaternKappa = 1.5
       x
     }
 
@@ -551,7 +557,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start;
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start;scalmax=control.start$scalmax; MaternKappa=control.start$MaternKappa
     
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
@@ -931,7 +937,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     } else {
       num.lv.cor = 0
     }
-    if(Lambda.struc %in% c("NN","NN_unstructured") & num.lv.cor>0){
+    if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
       NN<-t(apply(as.matrix(dist(dist, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
       i1<-rep(1:nrow(NN), each=ncol(NN))
       i2<-c(t(NN))
@@ -1122,7 +1128,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, #Dthreshold=Dthreshold,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            scalmax = scalmax, MaternKappa = MaternKappa,
+            setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         out$X <- fitg$X
@@ -1170,7 +1178,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, setMap=setMap, #Dthreshold=Dthreshold,
+            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            scalmax = scalmax, MaternKappa = MaternKappa,
+            setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )
         if(is.null(formula)) {

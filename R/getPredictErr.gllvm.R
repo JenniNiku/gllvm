@@ -72,7 +72,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         #variational covariances but add 0s for RRR
         A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
         A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
-      } else if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diag_unstructured","NN_unstructured","unstructured_unstructured"))) {
+      } else if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) {
           A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
           for (i in 1:dim(A)[1]) {
             A[i,,]<-A[i,,]*object$AQ
@@ -82,6 +82,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         for (i in 1:object$num.lvcor) {
           A[,i,i]<- diag(object$A[,,i])
         }
+        if(object$num.lvcor==1) A <- A[,1,1]
       }else if((num.lv.c+num.lv)>0){A<-object$A}
       
       if(object$row.eff == "random"){
