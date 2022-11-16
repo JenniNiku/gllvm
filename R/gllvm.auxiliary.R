@@ -9,7 +9,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
   num.X <- 0; Xdesign = NULL
   if(!is.null(X)){ 
-    if(!is.null(formula)){
+    if(!is.null(formula) & is.null(TR)){
       Xdesign <- model.matrix(formula, as.data.frame(X))
       Xdesign <- Xdesign[, !(colnames(Xdesign) %in% "(Intercept)"), drop=FALSE]
     } else {
