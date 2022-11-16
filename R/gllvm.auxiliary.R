@@ -7,7 +7,16 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   if(!is.null(seed)) set.seed(seed)
   N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
   num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
-  num.X <- 0; if(!is.null(X)) num.X <- dim(X)[2]
+  num.X <- 0; Xdesign = NULL
+  if(!is.null(X)){ 
+    if(!is.null(formula)){
+      Xdesign <- model.matrix(formula, X)
+      Xdesign <- Xdesign[, !(colnames(Xdesign) %in% "(Intercept)"), drop=FALSE]
+    } else {
+      Xdesign <- X
+    }
+    num.X <- dim(Xdesign)[2] 
+  }
   Br <- sigmaB <- sigmaij <- NULL
   mu<-NULL
   if(method=="LA")
@@ -100,10 +109,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
         } else {
-          if(!is.null(X)) fit.mva <- mlm(y, X = X)
+          if(!is.null(X)) fit.mva <- mlm(y, X = Xdesign)
           if(is.null(X)) fit.mva <- mlm(y)
           
-          mu <- cbind(rep(1,nrow(y)),X) %*% fit.mva$coefficients
+          mu <- cbind(rep(1,nrow(y)),Xdesign) %*% fit.mva$coefficients
           # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
           coef <- t(fit.mva$coef)
           fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))[disp.group]
@@ -228,9 +237,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         
       } else {
         if(is.null(TR)){
-          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- mlm(y, X = X, index = index)
+          if(!is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- mlm(y, X = Xdesign, index = index)
           if(is.null(X) & (num.lv+num.lv.c) > 0) fit.mva <- mlm(y, index = index)
-          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- mlm(y, X = X)
+          if(!is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- mlm(y, X = Xdesign)
           if(is.null(X) & (num.lv+num.lv.c) == 0) fit.mva <- mlm(y)
         } else {
           if((num.lv+num.lv.c) > 0) fit.mva <- mlm(y, index = index)
@@ -303,7 +312,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   if(family == "ordinal") {
     max.levels <- length(unique(c(y)))
-    params <- matrix(0,p,ncol(cbind(1,X))+(num.lv+num.lv.c+num.RR))
+    params <- matrix(0,p,ncol(cbind(1,Xdesign))+(num.lv+num.lv.c+num.RR))
     env <- rep(0,num.X)
     trait <- rep(0,num.T)
     inter <- rep(0, num.T * num.X)
@@ -320,7 +329,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     if(starting.val=="res"){
       if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, formula = formula, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, method=method)
       if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, zeta.struc=zeta.struc, maxit=maxit,max.iter=max.iter, method=method)
-      params[,1:ncol(cbind(1,X))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
+      params[,1:ncol(cbind(fit.mva$params$beta0,fit.mva$params$Xcoef))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
       zeta <- fit.mva$params$zeta
       resi <- NULL
       eta.mat <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
@@ -334,10 +343,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         if(length(levels(y.fac)) > 2) {
           if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
             if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = "probit"),silent = TRUE)
-            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ X, method = "probit"),silent = TRUE)
+            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ Xdesign, method = "probit"),silent = TRUE)
           } else {
             if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = "probit"),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ X+index, method = "probit"),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ Xdesign+index, method = "probit"),silent = TRUE)
           }
           if(starting.val=="random"){
             params[j,] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
@@ -354,10 +363,10 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         if(length(levels(y.fac)) == 2) {
           if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
             if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit")),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X, family = binomial(link = "probit")),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign, family = binomial(link = "probit")),silent = TRUE)
           } else { # || (!is.null(TR) && NCOL(TR)>0) & is.null(TR)
             if(is.null(X)) try(cw.fit <- glm(y.fac ~ index, family = binomial(link = "probit")),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ X+index, family = binomial(link = "probit")),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign+index, family = binomial(link = "probit")),silent = TRUE)
           }
           params[j,1:length(cw.fit$coef)] <- cw.fit$coef
         }
@@ -366,7 +375,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     if(starting.val%in%c("res") && (num.lv+num.lv.c+num.RR)>0){
       
       eta.mat <- matrix(params[,1],n,p,byrow=TRUE)
-      if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (X %*% matrix(params[,2:(1+num.X)],num.X,p))
+      if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + (Xdesign %*% matrix(params[,2:(1+num.X)],num.X,p))
       mu <- eta.mat
       if((num.lv+num.lv.c+num.RR)>0){
         lastart <- FAstart(eta.mat, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR= num.RR, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB, method = method)
