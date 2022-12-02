@@ -6,7 +6,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithin = TRUE, randomB = FALSE, 
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8, reltol.c = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
-      trace=FALSE,link="logit",n.init=1,restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
+      trace=FALSE,link="logit",n.init=1,n.init.max = n.init + 10, restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL) { 
   # , Dthreshold=0
@@ -1668,8 +1668,23 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 #### Check if model fit succeeded/improved on this iteration n.i
     out$start <- fit
     
-    if(((n.i==1 || out$logL > (new.loglik))  && is.finite(new.loglik)) && !inherits(optr, "try-error")){
-      objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;
+    # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
+    if(n.i>1){
+      gr1<-objrFinal$gr()
+      gr1<-gr1/length(gr1)
+      gr2<-objr$gr()
+      gr2<-gr2/length(gr2)
+    }else{
+      n.i.i <- 0
+    }
+    
+    if(n.i.i>n.init.max){
+      n.i <- n.init
+      warning("n.init.max reached.")
+    }
+    
+    if((n.i==1 || (!is.nan(norm(gr2)) && (isTRUE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && out$logL > (new.loglik)) || norm(gr2)<norm(gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+      objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;n.i.i<-0;
       out$start <- fit
       out$logL <- new.loglik
       if((num.lv+(num.lv.c+num.RR)) > 0) {
