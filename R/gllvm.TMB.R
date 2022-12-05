@@ -1669,14 +1669,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     out$start <- fit
     
     # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
-    
     if(n.i>1){
-      gr1<-objrFinal$gr()
-      gr1<-gr1/length(gr1)
-      gr2<-objr$gr()
-      gr2<-gr2/length(gr2)
+      gr1 <- objrFinal$gr()
+      gr1 <- gr1/length(gr1)
+      norm.gr1 <- norm(gr1)
+      gr2 <- objr$gr()
+      gr2 <- gr2/length(gr2)
+      norm.gr2 <- norm(gr2)
       n.i.i <- n.i.i +1
-      grad.test <- all.equal(norm(gr1),norm(gr2),tolerance=1, scale=1)
+      grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
+      grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
       }else{
       n.i.i <- 0
     }
@@ -1686,7 +1688,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (!is.nan(norm(gr2)) && ((isTRUE(grad.test) && out$logL > (new.loglik)) || (!isTRUE(grad.test) && norm(gr2)<norm(gr1)))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if((n.i==1 || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;n.i.i<-0;
       out$start <- fit
       out$logL <- new.loglik
