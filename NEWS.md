@@ -1,6 +1,9 @@
 Version 1.3.3
 ==============
 
+### New Features
+* The n.init option has been improved, so that it stops if no improved fit has been found after n.init.max (defaults to 10) iterations.
+
 ### Bug Fixes
 * Memory allocation problem in development version fixed
 
