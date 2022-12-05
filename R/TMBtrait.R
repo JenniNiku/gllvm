@@ -1200,16 +1200,17 @@ trait.TMB <- function(
       gr1<-gr1/length(gr1)
       gr2<-objr$gr()
       gr2<-gr2/length(gr2)
+      n.i.i <- n.i.i + 1
     }else{
       n.i.i <- 0
     }
     
     if(n.i.i>n.init.max){
-      n.i <- n.init
-      warning("n.init.max reached.")
+      n.init <- n.i
+      warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (!is.nan(norm(gr2)) && (isTRUE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && out$logL > (new.loglik)) || norm(gr2)<norm(gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if((n.i==1 || (!is.nan(norm(gr2)) && (isTRUE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && out$logL > (new.loglik)) || isFALSE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && norm(gr2)<norm(gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;n.i.i<-0;
       out$logL <- new.loglik
       if(num.lv > 0) {

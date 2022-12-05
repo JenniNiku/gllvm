@@ -1082,7 +1082,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
     if (TMB) {
-      trace = FALSE
+      # trace = FALSE
       if (row.eff == TRUE)
         row.eff <- "fixed"
       if (!is.null(TR)) {
