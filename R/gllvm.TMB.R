@@ -6,7 +6,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithin = TRUE, randomB = FALSE, 
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8, reltol.c = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
-      trace=FALSE,link="logit",n.init=1,n.init.max = n.init + 10, restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
+      trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL) { 
   # , Dthreshold=0
@@ -228,7 +228,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
   # n.init model fits
   while(n.i <= n.init){
-    
+
     if(n.init > 1 && trace)
       cat("Initial run ", n.i, "\n")
 
@@ -1670,20 +1670,25 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     
     # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
     if(n.i>1){
-      gr1<-objrFinal$gr()
-      gr1<-gr1/length(gr1)
-      gr2<-objr$gr()
-      gr2<-gr2/length(gr2)
-    }else{
+      gr1 <- objrFinal$gr()
+      gr1 <- gr1/length(gr1)
+      norm.gr1 <- norm(gr1)
+      gr2 <- objr$gr()
+      gr2 <- gr2/length(gr2)
+      norm.gr2 <- norm(gr2)
+      n.i.i <- n.i.i +1
+      grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
+      grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
+      }else{
       n.i.i <- 0
     }
-    
+
     if(n.i.i>n.init.max){
-      n.i <- n.init
-      warning("n.init.max reached.")
+      n.init <- n.i
+      warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (!is.nan(norm(gr2)) && (isTRUE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && out$logL > (new.loglik)) || norm(gr2)<norm(gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if((n.i==1 || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;n.i.i<-0;
       out$start <- fit
       out$logL <- new.loglik

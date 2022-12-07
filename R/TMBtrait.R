@@ -7,7 +7,7 @@ trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson", num.lv.cor=0, corWithin = TRUE,
       Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
-      link="logit",n.init=1,n.init.max = n.init + 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist = matrix(0),  scalmax=10, MaternKappa = 1.5,
+      link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist = matrix(0),  scalmax=10, MaternKappa = 1.5,
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE,
       zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL) {
@@ -1196,20 +1196,25 @@ trait.TMB <- function(
 #### Check if model fit succeeded/improved on this iteration n.i
     # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
     if(n.i>1){
-      gr1<-objrFinal$gr()
-      gr1<-gr1/length(gr1)
-      gr2<-objr$gr()
-      gr2<-gr2/length(gr2)
+      gr1 <- objrFinal$gr()
+      gr1 <- gr1/length(gr1)
+      norm.gr1 <- norm(gr1)
+      gr2 <- objr$gr()
+      gr2 <- gr2/length(gr2)
+      norm.gr2 <- norm(gr2)
+      n.i.i <- n.i.i +1
+      grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
+      grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
     }else{
       n.i.i <- 0
     }
     
     if(n.i.i>n.init.max){
-      n.i <- n.init
-      warning("n.init.max reached.")
+      n.init <- n.i
+      warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (!is.nan(norm(gr2)) && (isTRUE(all.equal(norm(gr1),norm(gr2),tolerance=1)) && out$logL > (new.loglik)) || norm(gr2)<norm(gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if((n.i==1 || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;n.i.i<-0;
       out$logL <- new.loglik
       if(num.lv > 0) {
