@@ -648,7 +648,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               datayx <- list(X = X)
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
-            
+            if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
             X <-  X[,all.vars(row.eff),drop=F]
           }else{
             lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
@@ -658,6 +658,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               datayx <- list(X = X)
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
             colnames(lv.X)  <- gsub("X.","",colnames(lv.X))
             lv.formula <- formula(paste("~", paste(colnames(lv.X), collapse = "+")))
             X <- NULL
