@@ -810,7 +810,7 @@ Type objective_function<Type>::operator() ()
         nll -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() - 0.5*(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-0.5*(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()));// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       }
       eta += xb*Br;
-      nll -= 0.5*(l - log(S.determinant())*random(1));//n*
+      nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
     }
     
     
