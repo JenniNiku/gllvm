@@ -12,10 +12,10 @@
 #' @param num.lv.c  number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
 #' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
-#' @param lvCor (Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable need to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
+#' @param lvCor (Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
-#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, grouping variable need to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
+#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentielly decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
 #' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param dist matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
@@ -616,7 +616,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             row.names(y) <- 1:nrow(y)
           }
         }else{
-          stop("Grouping variable for dispersion need to be included as named rows in 'Y'")
+          stop("Grouping variable for dispersion needs to be included as named rows in 'Y'")
         }
       }
       }
@@ -648,7 +648,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               datayx <- list(X = X)
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
-            
+            if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
             X <-  X[,all.vars(row.eff),drop=F]
           }else{
             lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
@@ -658,6 +658,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               datayx <- list(X = X)
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
             colnames(lv.X)  <- gsub("X.","",colnames(lv.X))
             lv.formula <- formula(paste("~", paste(colnames(lv.X), collapse = "+")))
             X <- NULL
@@ -878,7 +879,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(X)<-xnames
         if(ncol(X)==0) X<-NULL
       } else if(is.null(studyDesign)){
-        stop("Grouping variable need to be included in 'studyDesign'")
+        stop("Grouping variable needs to be included in 'studyDesign'")
       }
       }
       
@@ -887,7 +888,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # } else if(!all(grps %in% colnames(X))) {
         # stop("Grouping variable need to be included in 'X'")
       } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
-        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+        stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       } else {
         if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(row.eff),data=studyDesign)
@@ -910,7 +911,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(X)<-xnames
         if(ncol(X)==0) X<-NULL
       } else if(is.null(studyDesign)){
-        stop("Grouping variable need to be included in 'studyDesign'")
+        stop("Grouping variable needs to be included in 'studyDesign'")
       }
       }
       if(!is.null(data)) {
@@ -926,7 +927,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # } else if(!all(grps %in% colnames(X))) {
         # stop("Grouping variable need to be included in 'X'")
       } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
-        stop("Data (response matrix Y and covariates X) need to be grouped according the grouping variable: '",grps,"'")
+        stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       } else {
         if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(lvCor),data=studyDesign)

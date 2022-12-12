@@ -189,18 +189,18 @@ ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 1.6
 
 Environmental variables can be included in the model, whether to study their effects on assemblages, or to study patterns of species co-occurrence after controlling for environmental variables. We illustrate here this model by including three environmental variables `Bare.ground`, `Canopy.cover` and `Volume.lying.CWD` to the model. Similarly to previous example, we can use residual analysis and information criterias to study which distribution offers the most suitable mean-variance relationship for the responses, and how many latent variables are needed.
 ```{r, eval = FALSE, warning = FALSE}
-criterias <- NULL
+criteria <- NULL
 for(i in 1:5){
   fiti <- gllvm(y, X, family = "negative.binomial", num.lv = i, sd.errors = FALSE,
                 formula = ~ Bare.ground + Canopy.cover + Volume.lying.CWD, seed = 1234)
-  criterias[i + 1] <- summary(fiti)$AICc
-  names(criterias)[i + 1] = i
+  criteria[i + 1] <- summary(fiti)$AICc
+  names(criteria)[i + 1] = i
 }
 ```
 
 ```{r, eval = FALSE, warning = FALSE}
 # Compare AICc values
-criterias
+criteria
 #>        1        2        3        4        5 
 #> 3399.419 3398.121 3357.129 3353.483 3354.003
 ```
