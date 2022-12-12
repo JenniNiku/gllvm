@@ -193,8 +193,8 @@ criterias <- NULL
 for(i in 1:5){
   fiti <- gllvm(y, X, family = "negative.binomial", num.lv = i, sd.errors = FALSE,
                 formula = ~ Bare.ground + Canopy.cover + Volume.lying.CWD, seed = 1234)
-  criterias[i + 1] <- summary(fiti)$AICc
-  names(criterias)[i + 1] = i
+  criterias[i] <- summary(fiti)$AICc
+  names(criterias)[i] = i
 }
 ```
 
@@ -202,13 +202,13 @@ for(i in 1:5){
 # Compare AICc values
 criterias
 #>        1        2        3        4        5 
-#> 3399.419 3398.121 3357.129 3353.483 3354.003
+#> 4163.565 4215.446 4311.091 4462.069 4612.805
 ```
 
-Based on these tools a model with NB distributed responses and 4 latent variables was chosen.
+Based on these tools a model with NB distributed responses and 1 latent variable was chosen.
 
 ```{r, warning = FALSE}
-fit_env <- gllvm(y, X, family = "negative.binomial", num.lv = 4,
+fit_env <- gllvm(y, X, family = "negative.binomial", num.lv = 1,
                  formula = ~ Bare.ground + Canopy.cover +
                    Volume.lying.CWD, seed = 1234)
 ```
@@ -221,11 +221,11 @@ coefplot(fit_env, cex.ylab = 0.7, mar = c(4, 9, 2, 1),
 
 In the resulting plot above most of the 95\% confidence intervals include zero, indicating that the majority of the species do not exhibit evidence of a strong association between environment and species abundance. This may be due to a lack of information in the data, as much as being due to a lack of environmental association after accounting for potential residual species covariation. 
 
-Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix:
+Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix. Also, species ordering according to the effects size is optional.
 ```{r, fig.show='hold', out.width='49%'}
 rownames(fit_env$params$Xcoef) <- paste("spp", 1:ncol(fit_env$y), sep = "")
 coefplot(fit_env, cex.ylab = 0.7, xlim.list = list(NULL, NULL, c(-4, 4)), 
-         mfrow=c(1,1))
+         order = FALSE, mfrow=c(1,1))
 ```
 
 ```{r, echo=FALSE}
@@ -266,13 +266,13 @@ corrplot(cr[order.single(cr), order.single(cr)], diag = FALSE, type = "lower",
 Group of squares coloured in dark blue in correlation plot indicate clusters of species that are positively correlated with each other, after controlling for (co)variation in species explained by environmental terms in `fit_env` (which had linear terms for `Bare.ground`, `Shrub.cover` and `Volumn.lying.CWD`). There are also two group of squares coloured in red, indicating negative correlation between pairs of species. The effect of the environmental variables on the between species correlations can be seen by comparing the residual correlation matrix (above) to the correlation matrix given by the model without environmental variables (below). 
 
 ```{r, warning=FALSE}
-# Fit GLLVM without environmental variables and 3 latent variables:
-fit4lv <- gllvm(y, family = "negative.binomial", num.lv = 4, seed = 1234)
+# Fit GLLVM without environmental variables and 1 latent variable:
+fit1lv <- gllvm(y, family = "negative.binomial", num.lv = 1, seed = 1234)
 ```
 
 ```{r, fig.show='hold', warning=FALSE}
 # Correlation matrix
-cr0 <- getResidualCor(fit4lv)
+cr0 <- getResidualCor(fit1lv)
 corrplot(cr0[order.single(cr0), order.single(cr0)], diag = FALSE, type = "lower", 
          method = "square", tl.cex = 0.5, tl.srt = 45, tl.col = "red")
 ```
@@ -292,11 +292,11 @@ ordiplot(fit_env2, biplot = TRUE, ind.spp = 15, jitter = TRUE, cex.spp = 1,
 
 In both biplots we can see that species 23 (Monomorium.rothsteini), 24 (Monomorium.sydneyense), 28 (Nylanderia.sp..A) and 41 (Tetramorium.sp..A) are close to each other. This can also be seen in the correlation plots as their between species correlations are highly positive.
 
-The `getResidualCov` function can be used to quantify the amount of variation in the data that can be explained by environmental variables. Specifically, if we use the trace of the residual covariance matrix $\boldsymbol\Sigma$ as a measure of unexplained variation, then we can compare this quantity before and after environmental variables are included in the model. The ratio of traces suggests that environmental variables explain approximately 19\% of the (co)variation in ant species abundances.
+The `getResidualCov` function can be used to quantify the amount of variation in the data that can be explained by environmental variables. Specifically, if we use the trace of the residual covariance matrix $\boldsymbol\Sigma$ as a measure of unexplained variation, then we can compare this quantity before and after environmental variables are included in the model. The ratio of traces suggests that environmental variables explain approximately 40\% of the (co)variation in ant species abundances.
 
 ```{r}
 rcov <- getResidualCov(fit_env, adjust = 0)
-rcov0 <- getResidualCov(fit4lv, adjust = 0)
+rcov0 <- getResidualCov(fit1lv, adjust = 0)
 rcov0$trace; rcov$trace
 1 - rcov$trace / rcov0$trace
 ```
@@ -311,7 +311,7 @@ In the previous section, environmental associations were studied by fitting sepa
 The fourth corner model can be fitted using the argument `TR` to include traits. The argument `formula` is used to specify the model. Random row effects are included using `row.eff = "random"` and the argument `randomX` is used to incorporate random slopes in the model. As the defined model is very complex, we use three starting points for the initial values of the latent variables via argument `n.init` in order to ensure that the maximum point is reached.
 
 ```{r, warning=FALSE, eval = FALSE}
-fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
+fit_1th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
                  formula = y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) +
                 (Bare.ground + Canopy.cover + Volume.lying.CWD) : (Pilosity + 
                 Polymorphism + Webers.length), seed = 123,
@@ -321,12 +321,12 @@ fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2,
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Canopy.cover`, `Pilosity3` with `Canopy.cover` have the strongest effects on ant abundances.
 ```{r, echo=FALSE, warning = TRUE}
-load(file = "fit_4th.RData")
+load(file = "fit_1th.RData")
 ```
 ```{r, fig.show='hold', out.width='49%', warning = TRUE}
 library(lattice)
-coefplot(fit_4th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
-fourth <- fit_4th$fourth.corner
+coefplot(fit_1th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
+fourth <- fit_1th$fourth.corner
 a <- 1.5
 colort <- colorRampPalette(c("blue", "white", "red"))
 plot.4th <- levelplot((as.matrix(fourth)), xlab = "Environmental Variables", 

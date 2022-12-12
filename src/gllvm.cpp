@@ -778,6 +778,7 @@ Type objective_function<Type>::operator() ()
       sds.fill(0.0);
       sds.diagonal() = exp(sigmaB);
       matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+      // REPORT(S);
       
       // Variational covariance for random slopes
       // log-Cholesky parametrization for A_bj:s
