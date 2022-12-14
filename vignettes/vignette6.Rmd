@@ -4,7 +4,7 @@ author: "Bert van der Veen"
 date: "`r Sys.Date()`"
 output:  rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Model-based constrained ordination with latent variables}
+  %\VignetteIndexEntry{Ordination with predictors}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,7 +23,7 @@ Until recently, the `gllvm` R-package only supported unconstrained ordination. W
 
 However, if the number of predictor variables is large and so is the number of species, including predictors can result in a very large number of parameters to estimate. For data of ecological communities, which can be quite sparse, this is not always a reasonable model to fit. As alternative, ecologists have performed constrained ordination for decades, with methods such as Canonical Correspondence Analysis, or Redundancy Analysis. Alternatively, these methods can be viewed as determining "gradients" (a.k.a. latent variables) as a linear combination of the predictor variables. 
 
-In this vignette, we demonstrate how to include predictors directly in an ordination with the `gllvm` R-package. We start by loading the hunting spider dataset:
+In this vignette, we demonstrate how to include predictors directly in an ordination with the `gllvm` R-package. Methods are explained with details in @vanderVeen2021b. We start by loading the hunting spider dataset:
 
 ```{r data, eval=FALSE}
 library(gllvm)
@@ -40,9 +40,9 @@ which includes six predictor variables: "soil.dry": soil dry mass, "bare.sand": 
 ## Constrained ordination
 Let us first consider what constrained ordination actually is. We will do that by first shortly explaining reduced rank regression (RRR). First, consider the model:
 
-\begin{equation}
+$$
 \eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{\beta}_j.
-\end{equation}
+$$
 
 Here, $\boldsymbol{\beta}_j$ are the slopes that represent a species responses to $p$ predictor variables at site $i$, $\boldsymbol{X}_i$. In the `gllvm` R-package, the code to fit this model is:
 
@@ -89,7 +89,7 @@ Unlike in other R-packages, we can now formulate a ordination where additional r
 CGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2)
 ```
 
-where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). It is also possible to combine those arguments with full-rank predictor effects. To combinie concurrent ordination with full-rank predictor effects you need to use the formula interface:
+where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). It is also possible to combine those arguments with full-rank predictor effects. To combine concurrent ordination with full-rank predictor effects you need to use the formula interface:
 
 ```{r eval=FALSE}
 PCGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2, 
@@ -118,7 +118,7 @@ It is also possible to use the `quadratic` flag to fit a quadratic response mode
 ---
 references:
 - id: vanderVeen2021b
-  title: Model-based ordination with constrained latent variables
+  title: Concurrent ordination - simultaneous unconstrained and constrained latent variable modelling
   author: 
   - family: van der Veen
     given: B.
@@ -128,11 +128,11 @@ references:
     given: K.A.
   - family: O'Hara
     given: R.B.
-  publisher: BioRxiv
-  volume: 1
-  page: 1-24
+  publisher: Methods in Ecology and Evolution
+  volume: 00
+  page: 1-13
   type: article-journal
   issued:
-    year: 2021
+    year: 2022
 
 ---
