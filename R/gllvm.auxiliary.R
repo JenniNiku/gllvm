@@ -505,10 +505,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     params[params > uppout] <- uppout
   }
   
-  out$params <- params
+  out$params = params
   if((num.lv.c+num.RR)>0){
     if(num.lv.c>0){
-      b.lv[,1:num.lv.c]<-t(t(b.lv[,1:num.lv.c])*abs(sigma.lv[1:num.lv.c]))
+      if(!is.matrix(b.lv)) b.lv = as.matrix(b.lv)
+      b.lv[,1:num.lv.c] = t(t(b.lv[,1:num.lv.c])*abs(sigma.lv[1:num.lv.c]))
     }
     out$b.lv <- b.lv
     if(randomB!=FALSE){
@@ -1296,7 +1297,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         index[,(num.lv.c+1):ncol(index)] <- t(t(index[,(num.lv.c+1):ncol(index)])*sig2)
       }
     } else {
-      if(num.lv.c>0&num.lv.c==0|num.lv>0&num.lv==0){
+      if((num.lv.c>0&num.lv==0)|(num.lv>0&num.lv.c==0)){
         sig <- sign(diag(gamma))
         if(num.lv.c>0)b.lv <- t(t(b.lv)*sig)
         gamma <- t(t(gamma)*sig)
@@ -1339,6 +1340,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       if(num.lv==0|num.lv.c==0){
         sdi <- sqrt(diag(cov(index)))
         sdt <- sqrt(diag(cov(gamma)))
+        if( any(is.na(c(sdi,sdt)))|any(c(sdi,sdt)==0) ) { sdi<-rep(1,length(sdi)); sdt<-rep(1,length(sdt)) }
         indexscale <- diag(x = 1/sdi, nrow = length(sdi))
         index <- index%*%indexscale
         gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
@@ -1353,6 +1355,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         
         sdi <- sqrt(diag(cov(index[,(num.lv.c+1):ncol(index),drop=F])))
         sdt <- sqrt(diag(cov(gamma[,(num.lv.c+1):ncol(index),drop=F])))
+        if( any(is.na(c(sdi,sdt)))|any(c(sdi,sdt)==0) ) { sdi<-rep(1,length(sdi)); sdt<-rep(1,length(sdt)) }
         indexscale <- diag(x = 1/sdi, nrow = length(sdi))
         index[,(num.lv.c+1):ncol(index)] <- index[,(num.lv.c+1):ncol(index),drop=F]%*%indexscale
         gammascale <- diag(x = 0.8/sdt, nrow = length(sdi))
