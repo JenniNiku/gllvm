@@ -36,26 +36,27 @@ ftXi$num.RR <- ftXi$num.lv.c <- ftXph$num.RR <- ftXph$num.lv.c <- 0
 ftX$num.RR <- ftX$num.lv.c <- 0
 ftNULL$num.RR <- ftNULL$num.lv.c <- 0
 ftXi$quadratic<-ftXph$quadratic<-ftX$quadratic<-ftNULL$quadratic<-FALSE
+#ftXi$num.lvcor<-ftXph$num.lvcor<-ftX$num.lvcor<-ftNULL$num.lvcor<-0
 ftNULL$TMBfn$env$data$dr0=model.matrix(~Site-1, Xenv)
 ```
 
 
 Let's take a look at the means and variances of the species counts:
 ```{r fig.height=4, fig.width=8}
-par(mfrow = c(1, 2))
-plot(apply(Ysoil,2, mean), main = "Species means")
-plot(apply(Ysoil,2, var), log = "y", main = "Species variances")
+meanY <- apply(Ysoil,2, mean)
+varY <- apply(Ysoil,2, var)
+plot(log(meanY),varY, log = "y", main = "Species mean-variance relationship")
 ```
-As it can be seen there is a lot of variation in species' means and variances.
+As species variances increases while mean increases, it is a clear indication of the overdispersion in the data.
 
 In order to study if the effect of environmental variables is seen in an unconstrained ordination plot, we first consider a GLLVM with two latent variables and no predictors, and constructed an ordination plot based on the predicted latent variables.
-For count data we consider here the negative binomial (NB) distribution. We also include random effects for sites in order to account for the differences in site totals. This can be done by defining the structure for random row effects in an argument `row.eff` and including a data frame with 'Site' variable to an argument 'X'. Note that in the examples we consider below we don't necessarily need standard errors for the parameters for this specific model so we define `sd.errors = FALSE` in the function call. When needed, standard errors can also be calculated afterwards using function `se`.
+For count data with overdispersion we consider here the negative binomial (NB) distribution. We also include random effects for sites in order to account for the differences in site totals. This can be done by defining the structure for random row effects in an argument `row.eff` and including a data frame with 'Site' variable as factor to an argument 'studyDesign'. Note that in the examples we consider below we don't necessarily need standard errors for the parameters for this specific model so we define `sd.errors = FALSE` in the function call. When needed, standard errors can also be calculated afterwards using function `se`.
 
 ```{r}
-Site<-data.frame(Site=Xenv$Site)
+sDesign<-data.frame(Site=Xenv$Site)
 ```
 ```{r, eval = FALSE}
-ftNULL <- gllvm(Ysoil, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2, sd.errors = FALSE)
+ftNULL <- gllvm(Ysoil, studyDesign = sDesign, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2, sd.errors = FALSE)
 ```
 The print of the model object:
 
@@ -63,7 +64,7 @@ The print of the model object:
 ftNULL
 ```
 
-Using the residual diagnostic plot we check that the chosen NB distribution is suitable for the data at hand. The Dunn-Smyth residuals given by the NB model are normally distributed around zero, thus supporting the choice. Using argument `n.plot` we can choose a number of randomly selected species to be plotted in order to make any patterns in the residual plots more apparent. This can be useful argument when data is high-dimensional.
+Using the residual diagnostic plot we can check that the chosen NB distribution is suitable for the data at hand. The Dunn-Smyth residuals given by the NB model are normally distributed around zero, thus supporting the choice. Using argument `n.plot` we can choose a number of randomly selected species to be plotted in order to make any patterns in the residual plots more apparent. This can be useful argument when data is high-dimensional.
 
 ```{r fig.height=4, fig.width=8}
 par(mfrow = c(1, 2))
@@ -112,8 +113,8 @@ A clear gradient in the pH values of sites is observed, whereas there is less ev
 # Sampling locations of the eight sampling sites:
 locaSites<-c(3,3,1,1,2,2,2,1)
 plot(ftNULL$params$row.params, xlab = "site", col = locaSites, pch = locaSites, 
-     main = "Site effects", ylab = "Site effect", xaxt = 'n', ylim = c(-1,1))
-axis(1, at=1:8, labels=levels(Site$Site))
+     main = "Site effects", ylab = "Site effect", xaxt = 'n', ylim = c(-1,1.5))
+axis(1, at=1:8, labels=levels(sDesign$Site))
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), 
        col = c(1, 2, 3), bty = "n")
 ```
@@ -134,10 +135,10 @@ In order to study if pH value alone is capable of explaining the variation in sp
 
 ```{r}
 # Scale environmental variables
-Xsoils <- cbind(scale(Xenv[, 1:3]),Site)
+Xsoils <- scale(Xenv[, 1:3])
 ```
 ```{r, eval = FALSE}
-ftXph <- gllvm(Ysoil, Xsoils, formula = ~pH, family = "negative.binomial", 
+ftXph <- gllvm(Ysoil, X = Xsoils, studyDesign = sDesign, formula = ~pH, family = "negative.binomial", 
                row.eff = ~(1|Site), num.lv = 2)
 ```
 ```{r}
@@ -161,7 +162,7 @@ legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 Next we include all environmental variables as explanatory variables in the GLLVM.
 
 ```{r, eval = FALSE}
-ftX <- gllvm(Ysoil, Xsoils, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2)
+ftX <- gllvm(Ysoil, X = Xsoils, studyDesign = sDesign, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2)
 ```
 ```{r}
 ftX
@@ -186,7 +187,7 @@ To account for this we add the sampling location as a categorical covariate into
 ```{r, eval = FALSE}
 Xenv <- data.frame(Xsoils, Region = factor(Xenv$Region),
                    Soiltype = factor(Xenv$Soiltype))
-ftXi <- gllvm(Ysoil, Xenv, formula = ~ SOM + pH + Phosp + Region, 
+ftXi <- gllvm(Ysoil, X = Xenv, studyDesign = sDesign, formula = ~ SOM + pH + Phosp + Region, 
               family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2,
               sd.errors = FALSE)
 ```
