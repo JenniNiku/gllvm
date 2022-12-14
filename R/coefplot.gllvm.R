@@ -62,7 +62,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
 
   #Calculate standard errors of species-effects for reduced rank terms
   if(!is.null(object$lv.X) && isFALSE(object$randomB)){
-    beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$LvXcoef)
+    beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR), drop=FALSE]%*%t(object$params$LvXcoef)
     betaSE <- RRse(object)
     object$params$Xcoef<-cbind(object$params$Xcoef,beta)
     object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
@@ -78,16 +78,16 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       sdbetaHX <- object$sd$betaH[,colnames(object$params$betaH) %in% colnames(object$params$Xcoef), drop=FALSE]
       sdbetaHX <- sdbetaHX[, which.Xcoef, drop=FALSE]
       Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
-      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
+      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef, drop=FALSE])
       Xcoef<-rbind(Xcoef,betaHX)
       sdXcoef <-rbind(sdXcoef,sdbetaHX)
       
     } else {
       Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
-      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef])
+      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef, drop=FALSE])
     }
     # cnames <- colnames(object$params$Xcoef)[which.Xcoef]
-    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=F])
+    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=FALSE])
     cnames <- colnames(Xcoef)
 
     k <- length(cnames)
@@ -103,6 +103,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       par(mar = mar)
     for (i in 1:k) {
       Xc <- Xcoef[, i]
+      if(nrow(Xcoef)<2) names(Xc) <- rownames(Xcoef)
       lower <- Xc - 1.96 * sdXcoef[, i]
       upper <- Xc + 1.96 * sdXcoef[, i]
       if(order) Xc <- sort(Xc)
