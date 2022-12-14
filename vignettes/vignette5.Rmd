@@ -83,7 +83,7 @@ Finally, we can use the $\text{ordiplot}(.)$ function to visualize the species o
 ordiplot(ftUneqTol, biplot=TRUE, spp.arrows = TRUE)
 ```
 
-The standard deviation of the latent variables, presented in the summary information of the model, can serve as a measure of gradient length. This measure is different to that presented in @vanderVeen2021, and not directly comparable to e.g. the output of axis length by Detrended Correspondence Analysis (DCA).
+The standard deviation of the latent variables, presented in the summary information of the model, can serve as a measure of gradient length. This measure is different to that presented in @vanderVeen2021a, and not directly comparable to e.g. the output of axis length by Detrended Correspondence Analysis (DCA).
 
 # References
 
