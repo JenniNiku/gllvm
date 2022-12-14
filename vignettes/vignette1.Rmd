@@ -213,19 +213,17 @@ fit_env <- gllvm(y, X, family = "negative.binomial", num.lv = 1,
                    Volume.lying.CWD, seed = 1234)
 ```
 
-The estimated coefficients for predictors and their confidence intervals can be plotted using the `coefplot` function, in order to study the nature of effects of environmental variables on species. Function `coefplot` plots the point estimates (ticks) for coefficients of the environmental variables and their 95\% confidence intervals (lines) for the `fit_env` model, with those colored in grey (black) denoting intervals (not) containing zero.  The x-axis of the coefficient plot of the third variable is truncated due to very wide confidence interval for one of the coefficients using an argument `xlim.list` below.
+The estimated coefficients for predictors and their confidence intervals can be plotted using the `coefplot` function, in order to study the nature of effects of environmental variables on species. Function `coefplot` plots the point estimates (ticks) for coefficients of the environmental variables and their 95\% confidence intervals (lines) for the `fit_env` model, with those colored in grey (black) denoting intervals (not) containing zero.
 ```{r, fig.show='hold', out.width='49%'}
-coefplot(fit_env, cex.ylab = 0.7, mar = c(4, 9, 2, 1), 
-         xlim.list = list(NULL, NULL, c(-4, 4)), mfrow=c(1,1))
+coefplot(fit_env, cex.ylab = 0.7, mar = c(4, 9, 2, 1), mfrow=c(1,1))
 ```
 
-In the resulting plot above most of the 95\% confidence intervals include zero, indicating that the majority of the species do not exhibit evidence of a strong association between environment and species abundance. This may be due to a lack of information in the data, as much as being due to a lack of environmental association after accounting for potential residual species covariation. 
+In the resulting plot above most of the 95\% confidence intervals include zero, indicating that the majority of the species do not exhibit evidence of a strong association between environment and species abundance. This may be due to a lack of information in the data, as much as being due to a lack of environmental association after accounting for potential residual species covariation. The extreme effect sizes of covariates `Canopy.cover` and `Volume.lying.CWD` are explained by the fact that species `Myrmecia.pilosula.complex` and `Ochetellus.glaber` were observed only in sites where percent canopy cover was zero and species `Cardiocondyla.nuda.atalanta` was observed mainly on sites where estimated volume of Coarse Woody Debris was zero and only once in other sites. Due such lack of variation the effects sizes tend to become extreme.
 
-Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix. Also, species ordering according to the effects size is optional.
+Similarly to the biplot, the species names in the coefficient plot can also be changed by changing the row names in the coefficient matrix. Species ordering according to the effects' sizes is optional with logical argument `order`.
 ```{r, fig.show='hold', out.width='49%'}
 rownames(fit_env$params$Xcoef) <- paste("spp", 1:ncol(fit_env$y), sep = "")
-coefplot(fit_env, cex.ylab = 0.7, xlim.list = list(NULL, NULL, c(-4, 4)), 
-         order = FALSE, mfrow=c(1,1))
+coefplot(fit_env, cex.ylab = 0.7, order = FALSE, mfrow=c(1,1))
 ```
 
 ```{r, echo=FALSE}
@@ -235,16 +233,15 @@ rownames(fit_env$params$Xcoef) <- colnames(fit_env$y)
 Alternatively, model-selection on covariates, latent variables or both can be performed by dredging, using the MuMIn package. Though especially for large datasets with many covariates and latent variables, this can take a while to run.
 ```{r, eval = FALSE, warning = FALSE}
 library(MuMIn)
-fit_table <- dredge(fiti,varying=list(num.lv=1:5), rank="AIC")
+fit_table <- dredge(fiti,varying=list(num.lv=1:5), rank="AICc")
 subset(fit_table, delta<2)
-# Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Shrub.cover + Volume.lying.CWD, 
-#     num.lv = i, family = "negative.binomial", sd.errors = FALSE, 
+# Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Canopy.cover +  Volume.lying.CWD, 
+#     family = "negative.binomial", num.lv = i, sd.errors = FALSE, 
 #     seed = 1234)
 # ---
 # Model selection table 
-#    (Int) Bar.grn Shr.cvr Vlm.lyn.CWD num.lv  df    logLik   AICc delta weight
-# 39     +       +       +           +      4 363 -1793.923 3522.6  0.00   0.52
-# 38     +       +       +           +      3 325 -1794.337 3522.8  0.16   0.48
+#    (Int) Cnp.cvr num.lv  df    logLik   AICc delta weight
+# 11     +       +      1 164 -1839.914 4058.6     0      1
 # Models ranked by AICc(x) 
 ```
 
@@ -263,7 +260,7 @@ corrplot(cr[order.single(cr), order.single(cr)], diag = FALSE, type = "lower",
          method = "square", tl.cex = 0.5, tl.srt = 45, tl.col = "red")
 ```
 
-Group of squares coloured in dark blue in correlation plot indicate clusters of species that are positively correlated with each other, after controlling for (co)variation in species explained by environmental terms in `fit_env` (which had linear terms for `Bare.ground`, `Shrub.cover` and `Volumn.lying.CWD`). There are also two group of squares coloured in red, indicating negative correlation between pairs of species. The effect of the environmental variables on the between species correlations can be seen by comparing the residual correlation matrix (above) to the correlation matrix given by the model without environmental variables (below). 
+Group of squares coloured in dark blue in correlation plot indicate clusters of species that are positively correlated with each other, after controlling for (co)variation in species explained by environmental terms in `fit_env` (which had linear terms for `Bare.ground`, `Canopy.cover` and `Volumn.lying.CWD`). There are also group of squares coloured in red, indicating negative correlation between pairs of species. The effect of the environmental variables on the between species correlations can be seen by comparing the residual correlation matrix (above) to the correlation matrix given by the model without environmental variables (below). 
 
 ```{r, warning=FALSE}
 # Fit GLLVM without environmental variables and 1 latent variable:
@@ -311,7 +308,7 @@ In the previous section, environmental associations were studied by fitting sepa
 The fourth corner model can be fitted using the argument `TR` to include traits. The argument `formula` is used to specify the model. Random row effects are included using `row.eff = "random"` and the argument `randomX` is used to incorporate random slopes in the model. As the defined model is very complex, we use three starting points for the initial values of the latent variables via argument `n.init` in order to ensure that the maximum point is reached.
 
 ```{r, warning=FALSE, eval = FALSE}
-fit_1th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
+fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 1, 
                  formula = y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) +
                 (Bare.ground + Canopy.cover + Volume.lying.CWD) : (Pilosity + 
                 Polymorphism + Webers.length), seed = 123,
@@ -321,12 +318,12 @@ fit_1th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2,
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Canopy.cover`, `Pilosity3` with `Canopy.cover` have the strongest effects on ant abundances.
 ```{r, echo=FALSE, warning = TRUE}
-load(file = "fit_1th.RData")
+load(file = "fit_4th.RData")
 ```
 ```{r, fig.show='hold', out.width='49%', warning = TRUE}
 library(lattice)
-coefplot(fit_1th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
-fourth <- fit_1th$fourth.corner
+coefplot(fit_4th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
+fourth <- fit_4th$fourth.corner
 a <- 1.5
 colort <- colorRampPalette(c("blue", "white", "red"))
 plot.4th <- levelplot((as.matrix(fourth)), xlab = "Environmental Variables", 
@@ -339,9 +336,9 @@ plot.4th
 
 A key point of departure in the `gllvm` package, as compared to alternative ways to fit GLLVMs, is that by using a maximum likelihood framework, likelihood-based machinery becomes available for inference. A particular example is likelihood ratio testing, available via the `anova` function when comparing nested models. It should be noted however that such tests can only be expected to maintain (close to) valid Type I error rates when the number of parameters involved in the model is small (they rely on large-$N$-small-$m$ asymptotics).
 
-In the previous example, trait-environment interactions seem to be relatively small and most of the confidence intervals include zero values. Using a likelihood ratio test we can test if the traits vary with environment. Below, the model without traits is fitted and the likelihood ratio test comparing this model to the previous one is performed. Based on the output when applying the `anova` function, the $p$ value suggests that the simpler model without interactions is more appropriate. Notice that in order to separate the model with only main effects for environmental variables from the one which has species specific coefficients for environmental variables, we include `TR` matrix to the function call.
+In the previous example, trait-environment interactions seem to be relatively small and most of the confidence intervals include zero values. Using a likelihood ratio test we can test if the traits vary with environment. Below, the model without traits is fitted and the likelihood ratio test comparing this model to the previous one is performed. Based on the output when applying the `anova` function, the $p$ value suggests that the fourth corner model with interactions is more appropriate. Notice that in order to separate the model with only main effects for environmental variables from the one which has species specific coefficients for environmental variables, we include `TR` matrix to the function call.
 ```{r, warning=FALSE, eval=FALSE}
-fit_4th2 <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 2, 
+fit_4th2 <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 1, 
         formula = y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD), seed = 123,
                  row.eff = "random", control.start =list(n.init = 3, jitter.var = 0.01),
                  randomX = ~ Bare.ground + Canopy.cover + Volume.lying.CWD)
@@ -351,8 +348,8 @@ anova(fit_4th, fit_4th2)
 # Model  2 :  y ~ (Bare.ground + Canopy.cover + Volume.lying.CWD) + (Bare.ground + 
 # Canopy.cover + Volume.lying.CWD):(Pilosity + Polymorphism + Webers.length) 
 # Resid.Df        D Df.diff     P.value
-# 1     1057  0.00000       0            
-# 2     1039 62.44727      18 8.18224e-07
+# 1     1097  0.00000       0            
+# 2     1079 61.26473      18 1.27598e-06
 ```
 
 
