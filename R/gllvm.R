@@ -674,8 +674,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.formula <- y ~ NULL
         } else if(is.null(formula)&!is.null(lv.formula)){
           if(inherits(row.eff,"formula")){
-            datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
-            X <-  X[,all.vars(row.eff),drop=F]
+            if(any(colnames(X)==all.vars(row.eff))){
+              datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
+              X <-  X[,all.vars(row.eff),drop=F]
+            } else {
+              datayx <- data.frame(y, X)
+            }
           }else{
             datayx <- data.frame(y, X)
             X <- NULL
@@ -959,9 +963,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(any(colSums(y)==0))
       warning("There are responses full of zeros. \n");
 
-    if(row.eff %in% c("fixed", "random", TRUE)){
-      if(p<2)
-        stop("There must be at least two responses in order to include row effects. \n");
+    if(row.eff %in% c("fixed", "random", TRUE) ){
+      if((p<2) & (rstruc == 0))
+        stop("There must be at least two responses in order to include unstructured row effects. \n");
       if(any(rowSums(y)==0))
         warning("There are rows full of zeros in y. \n");
       }
@@ -1003,8 +1007,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # if (method == "EVA"){
     #   method = "VA"
     # }
-    if (p < 3 && !is.null(TR)) {
-      stop("Fourth corner model can not be fitted with less than three response variables.\n")
+    if (p < 2 && !is.null(TR)) {
+      stop("Fourth corner model can not be fitted with less than tvo response variables.\n")
     }
     if (row.eff == "random" && !TMB) {
       cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
