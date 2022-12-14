@@ -125,7 +125,7 @@ Fitting basic GLLVM $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\t
 library(mvabund)
 data("spider")
 library(gllvm)
-fitnb <- gllvm(y = spider$abund, family = "negative.binomial")
+fitnb <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
 ```
 
@@ -146,8 +146,8 @@ plot(fitnb, which = 1:2)
 - For example, compare distributions or choose suitable number of latent variables.
 
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
-fitp <- gllvm(y = spider$abund, family = poisson())
-fitnb <- gllvm(y = spider$abund, family = "negative.binomial")
+fitp <- gllvm(y = spider$abund, family = poisson(), num.lv = 2)
+fitnb <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)
 AIC(fitp)
 AIC(fitnb)
 ```
@@ -167,7 +167,7 @@ data("spider")
 # ?spider
 ```
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 1. Print the data and covariates and draw a boxplot of the data. </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -188,15 +188,15 @@ boxplot(spider$abund)
 ?gllvm
 ```
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may also differ slightly.</span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data
-fitp <- gllvm(y=spider$abund, family = poisson())
+fitp <- gllvm(y=spider$abund, family = poisson(), num.lv = 2)
 fitp
-fitnb <- gllvm(y=spider$abund, family = "negative.binomial")
+fitnb <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
 ```
 Based on AIC, NB distribution suits better. How about residual analysis:
@@ -209,9 +209,9 @@ plot(fitnb)
 
 You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
 ```{r, eval = FALSE, echo=TRUE, warning=FALSE}
-fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA")
-fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA")
-fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA")
+fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA", num.lv = 2)
+fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA", num.lv = 2)
+fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA", num.lv = 2)
 AIC(fitLAp)
 AIC(fitLAnb)
 AIC(fitLAzip)
@@ -224,7 +224,7 @@ AIC(fitLAzip)
 
 <span style="color:blue"> E3. Explore the fitted model. Where are the estimates for parameters? What about predicted latent variables? Standard errors?</span>
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 3. Lets explore the fitted model: </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -241,7 +241,7 @@ fitnb$sd
 
 <span style="color:blue"> E4. Fit model with different numbers of latent variables.</span>
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 4. Default number of latent variables is 2. Let's try 1 and 3 latent variables as well: </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -261,11 +261,11 @@ getLV(fitnb3)
 
 <span style="color:blue"> E5. Include environmental variables to the GLLVM and explore the model fit. </span>
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 5. Environmental variables can be included with an argument `X`: </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
-fitnbx <- gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", seed = 123)
+fitnbx <- gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", seed = 123, num.lv = 2)
 fitnbx
 coef(fitnbx)
 # confidence intervals for parameters:
