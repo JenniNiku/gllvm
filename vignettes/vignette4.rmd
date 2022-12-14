@@ -125,7 +125,7 @@ Fit GLLVM with environmental variables $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 library(gllvm)
 data("spider")
-fitx <- gllvm(y = spider$abund, X=spider$x, family = "negative.binomial")
+fitx <- gllvm(y = spider$abund, X=spider$x, family = "negative.binomial", num.lv = 2)
 fitx
 ```
 
@@ -162,7 +162,7 @@ data("spider")
 # ?spider
 ```
 
-<details><summary><span style="color:red"> show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> Package **mvabund** is loaded with **gllvm** so just load with a function `data()`. </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -182,15 +182,15 @@ boxplot(spider$abund)
 ?gllvm
 ```
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may</span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data
-fitp <- gllvm(y=spider$abund, family = poisson())
+fitp <- gllvm(y=spider$abund, family = poisson(), num.lv = 2)
 fitp
-fitnb <- gllvm(y=spider$abund, family = "negative.binomial")
+fitnb <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
 ```
 Based on AIC, NB distribution suits better. How about residual analysis:
@@ -204,9 +204,9 @@ plot(fitnb, which = 1:2)
 
 You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
 ```{r, eval = FALSE, echo=TRUE, warning=FALSE}
-fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA")
-fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA")
-fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA")
+fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA", num.lv = 2)
+fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA", num.lv = 2)
+fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA", num.lv = 2)
 AIC(fitLAp)
 AIC(fitLAnb)
 AIC(fitLAzip)
@@ -217,7 +217,7 @@ GLLVM with two latent variables can be used as a model-based approach to unconst
 
 <span style="color:blue"> E3. Fit GLLVM with environmental variables `soil.dry` and `reflection` to the data with suitable number of latent variables. </span>
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> We can extract the two columns from the environmental variable matrix or define the model using formula. </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -240,7 +240,7 @@ Model with one latent variable gave the lowest AIC value.
 
 <span style="color:blue"> E4. Explore the model fit. Find the coefficients for environmental covariates. </span>
 
-<details><summary><span style="color:red"> Show me the answers. </span></summary>
+<details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> Estimated parameters can be obtained with `coef()` function. Confidence intervals for parameters are obtained with `confint()`. </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -274,7 +274,7 @@ The results may not be exactly the same as in the answers, as the initial values
 - Let's consider first the correlation matrix based on a model without predictors:
 $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$
 ```{r, eval = TRUE, echo=TRUE, fig.width=4.5}
-fitnb <- gllvm(spider$abund, family = "negative.binomial")
+fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 ```
 - The correlation matrix based on such model does not take into account the environmental conditions driving species abundances at sites, and reflects only what has been observed.
 
@@ -284,7 +284,7 @@ fitnb <- gllvm(spider$abund, family = "negative.binomial")
 
 - The biplot can be produced using a function `ordiplot()` with an argument `biplot = TRUE`:
 ```{r, eval = FALSE, echo=TRUE, fig.width=4.5}
-fitnb <- gllvm(spider$abund, family = "negative.binomial")
+fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 ordiplot(fitnb, biplot = TRUE)
 abline(h = 0, v = 0, lty=2)
 ```
@@ -296,7 +296,7 @@ abline(h = 0, v = 0, lty=2)
 
 - Correlations can be visualized more precisely using `corrplot()` function:
 ```{r, eval = TRUE, echo=TRUE, fig.height=5}
-fitnb <- gllvm(spider$abund, family = "negative.binomial")
+fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 cr <- getResidualCor(fitnb)
 library(corrplot);
 corrplot(cr, diag = FALSE, type = "lower", method = "square", tl.srt = 25)
