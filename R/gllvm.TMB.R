@@ -1120,7 +1120,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(p>1) {
           theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
         } else {
-          theta <- param[li]
+          theta <- as.matrix(1)
         }
         rho_lvc = param[names(param)=="rho_lvc"]
         if((cstrucn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
@@ -1143,9 +1143,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }
         } else {
           if(quadratic==FALSE){
-            theta <- param[li]
+            theta <- as.matrix(1)
           }else{
-            theta <- c(param[li],-abs(param[li2]))}  
+            theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }else if(num.lv==0&(num.lv.c+num.RR)>0){
           if(p>1) {
@@ -1155,9 +1155,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }
           } else {
             if(quadratic==FALSE){
-              theta <- param[li]
+              theta <- as.matrix(1)
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }else if(num.lv>0&(num.lv.c+num.RR)>0){
           if(p>1) {
@@ -1168,9 +1168,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }
           } else {
             if(quadratic==FALSE){
-              theta <- param[li]
+              theta <- as.matrix(1)
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!
@@ -1543,7 +1543,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(p>1) {
           theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
         } else {
-          theta <- param[li]
+          theta <- as.matrix(1)
         }
         rho_lvc = as.matrix(param[names(param)=="rho_lvc"])
         if((cstrucn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
@@ -1566,9 +1566,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }
           } else {
             if(quadratic==FALSE){
-              theta <- param[li]
+              theta <- as.matrix(1)
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }else if(num.lv==0&(num.lv.c+num.RR)>0){
           if(p>1) {
@@ -1578,9 +1578,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }
           } else {
             if(quadratic==FALSE){
-              theta <- param[li]
+              theta <- as.matrix(1)
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }else if(num.lv>0&(num.lv.c+num.RR)>0){
           if(p>1) {
@@ -1591,9 +1591,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }
           } else {
             if(quadratic==FALSE){
-              theta <- param[li]
+              theta <- as.matrix(1)
             }else{
-              theta <- c(param[li],-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-abs(param[li2]))}  
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!

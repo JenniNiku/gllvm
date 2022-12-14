@@ -1117,7 +1117,7 @@ trait.TMB <- function(
       if(p>1) {
         theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
       } else {
-        theta <- param[li]
+        theta <- as.matrix(1)
       }
       rho_lvc = param[names(param)=="rho_lvc"]
       if((cstrucn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
@@ -1136,7 +1136,7 @@ trait.TMB <- function(
         if(quadratic!=FALSE){
           theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
         }
-      } else {theta <- c(param[li],-abs(param[li2]))}
+      } else {theta <- c(as.matrix(1),-abs(param[li2]))}
       # diag(theta) <- exp(diag(theta))#!!!
     }
       
