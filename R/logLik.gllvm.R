@@ -25,6 +25,8 @@
 #'
 logLik.gllvm <- function(object, ...)
 {
+  if(is.null(object$randomB)) object$randomB = FALSE
+  if(is.null(object$num.lvcor)) object$num.lvcor = 0
   logL <- object$logL
   if(is.finite(logL)){
   if (!is.null(object$params$inv.phi)) {

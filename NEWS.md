@@ -1,6 +1,10 @@
 Version 1.3.3
 ==============
 
+### New Features
+* The n.init option has been improved, so that it stops if no improved fit has been found after n.init.max (defaults to 10) iterations.
+* Row names from the data now carry over to the site scores, so that they can be displayed in ordiplot
+
 ### Bug Fixes
 * Memory allocation problem in development version fixed
 
