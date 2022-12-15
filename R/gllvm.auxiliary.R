@@ -2733,8 +2733,8 @@ RRse <- function(object){
     covMat <- covMat[colnames(covMat)%in%c("b_lv","lambda"),colnames(covMat)%in%c("b_lv","lambda")]
     
     #add first row and column of zeros before b_lv, for first species
-    covMat <- rbind(covMat[1:(d*K),],0,covMat[-c(1:(d*K)),])
-    covMat <- cbind(covMat[,1:(d*K)],0,covMat[,-c(1:(d*K))])
+    covMat <- rbind(covMat[1:(d*K),, drop=FALSE],0,covMat[-c(1:(d*K)),, drop=FALSE])
+    covMat <- cbind(covMat[,1:(d*K), drop=FALSE],0,covMat[,-c(1:(d*K)), drop=FALSE])
     
     if(d>1){
       idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
@@ -2747,9 +2747,9 @@ RRse <- function(object){
     }
     row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
     
-    covB <-  covMat[colnames(covMat)=="b_lv",colnames(covMat)=="b_lv"]
-    covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda"]
-    covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv"]
+    covB <-  covMat[colnames(covMat)=="b_lv",colnames(covMat)=="b_lv", drop=FALSE]
+    covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda", drop=FALSE]
+    covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv", drop=FALSE]
     #all ordered by LV, so LV11 LV12 LV13 etc
     for(k in 1:K){
       for(j in 1:p){

@@ -123,7 +123,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       cal <- cal+num.lv+num.lv.c
     }
     if((num.lv.c+num.RR)>0&object$randomB==FALSE){
-      rnames[-c(1:cal)][1:(ncol(object$lv.X)*(num.lv.c+num.RR))] <- paste(rep(colnames(object$lv.X),2),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
+      rnames[-c(1:cal)][1:(ncol(object$lv.X)*(num.lv.c+num.RR))] <- paste(colnames(object$lv.X),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X)),sep=".")
       cal<-cal + ncol(object$lv.X)*(num.lv.c+num.RR)
     }
     

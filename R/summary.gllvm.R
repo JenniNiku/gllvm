@@ -133,7 +133,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
       covB <- object$Hess$cov.mat.mod
       colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
-      covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+      covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv", drop=FALSE]
       rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
       for(i in 1:ncol(object$lv.X)){
         rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))

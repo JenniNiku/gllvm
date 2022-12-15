@@ -83,7 +83,10 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           A[,i,i]<- diag(object$A[,,i])
         }
         if(object$num.lvcor==1) A <- A[,1,1]
-      }else if((num.lv.c+num.lv)>0){A<-object$A}
+      }else if((num.lv.c+num.lv)>0){
+        A<-object$A
+        if((num.lv.c+num.lv)==1) A <- A[,1,1]
+      }
       
       if(object$row.eff == "random"){
         object$Ar<-sdb$Ar[,1]+object$Ar

@@ -88,6 +88,7 @@ se.gllvm <- function(object, ...){
       if(num.lv>0) {
         incld[names(objrFinal$par)=="Au"] <- TRUE
         incld[names(objrFinal$par)=="u"] <- TRUE
+      } else {
         incl[names(objrFinal$par)=="lambda2"] <- FALSE;
         incl[names(objrFinal$par)=="lambda"] <- FALSE;
       }
@@ -171,7 +172,8 @@ se.gllvm <- function(object, ...){
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(out$y)
-        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
+        out$sd$theta <- se.lambdas; 
+        if((p * num.lv - sum(0:num.lv))>0) se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
         
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
@@ -240,7 +242,6 @@ se.gllvm <- function(object, ...){
         }else{
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
-        names(out$sd$inv.phi) <-  names(out$sd$phi)
         se <- se[-(1:length(unique(disp.group)))]
       }
       if(!is.null(object$randomX)){
@@ -454,7 +455,8 @@ se.gllvm <- function(object, ...){
       se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
       colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
       rownames(se.lambdas) <- colnames(object$y)
-      out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
+      out$sd$theta <- se.lambdas; 
+      if((p * num.lv - sum(0:num.lv))>0) se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
       
       if(quadratic==TRUE){
         se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
@@ -490,7 +492,7 @@ se.gllvm <- function(object, ...){
       se.lambdas[,1:(num.lv.c+num.RR)][lower.tri(se.lambdas[,1:(num.lv.c+num.RR),drop=F], diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
       se <- se[-c(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
       se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas)][lower.tri(se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
-      se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
+      if((p * num.lv - sum(0:num.lv))>0) se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
       colnames(se.lambdas) <- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("LV", 1:num.lv, sep=""));
       rownames(se.lambdas) <- colnames(out$y)
       out$sd$theta <- se.lambdas;
@@ -567,7 +569,6 @@ se.gllvm <- function(object, ...){
       }else{
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
-      names(out$sd$inv.phi) <-  names(out$sd$phi)
       se <- se[-(1:length(unique(disp.group)))]
     }
     if((object$randomB!=FALSE)&(num.lv.c+num.RR)>0){

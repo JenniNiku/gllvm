@@ -446,9 +446,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     q <- num.lv+(num.lv.c+num.RR)
 
 ## map.list defines parameters which are not estimated in this model
-    
+
     map.list <- list()    
-    if(is.list(setMap)) map.list <- setMap
+    if(is.list(setMap)) {
+      map.list <- setMap
+    }
     map.list$B <- map.list$Br <- map.list$sigmaB <- map.list$sigmaij <- map.list$Abb <- factor(NA)
     xb<-Br<-matrix(0); sigmaB=diag(1);sigmaij=0; lg_Ar=0; Abb=0; Ab_lv = 0;
     if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
@@ -1206,7 +1208,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 ## Laplace method / nlvr==0
     if(method=="LA" || (nlvr==0 && (method %in% c("VA", "EVA")) && row.eff!="random" && (randomB==FALSE))){
       if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
-      
 ### Family settings
   
       extra[1]=0
@@ -1325,6 +1326,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       randomp <- "u"
       map.list$Au <- map.list$lg_Ar <- map.list$Abb
+      map.list$Ab_lv = factor(NA)
       if(quadratic==FALSE) map.list$lambda2 <- factor(NA)
       
       randomp <- NULL
@@ -2309,7 +2311,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(out$y)
-        out$sd$theta <- se.lambdas; se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
+        out$sd$theta <- se.lambdas; 
+        if((p * num.lv - sum(0:num.lv))>0) se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
         if(quadratic==TRUE){
           se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
           colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
@@ -2345,7 +2348,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         se.lambdas[,1:(num.lv.c+num.RR)][lower.tri(se.lambdas[,1:(num.lv.c+num.RR),drop=F], diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
         se <- se[-c(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
         se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas)][lower.tri(se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
-        se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
+        if((p * num.lv - sum(0:num.lv))>0) se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
         colnames(se.lambdas) <- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("LV", 1:num.lv, sep=""));
         rownames(se.lambdas) <- colnames(out$y)
         out$sd$theta <- se.lambdas;
@@ -2412,7 +2415,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(!is.null(names(disp.group))){
           try(names(out$sd$phi) <- names(disp.group),silent=T)
         }
-        names(out$sd$inv.phi) <-  names(out$sd$phi)
         se <- se[-(1:length(unique(disp.group)))]
       }
       if((randomB!=FALSE)&(num.lv.c+num.RR)>0){

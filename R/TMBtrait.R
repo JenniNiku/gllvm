@@ -1676,7 +1676,8 @@ trait.TMB <- function(
           se.theta <- matrix(0,p,num.lv); se.theta[lower.tri(se.theta, diag = F)]<-se[1:(p * num.lv - sum(0:(num.lv)))];
           colnames(se.theta) <- paste("LV", 1:num.lv, sep="");
           rownames(se.theta) <- colnames(out$y)
-          out$sd$theta <- se.theta; se <- se[-(1:(p * num.lv - sum(0:(num.lv))))];
+          out$sd$theta <- se.theta; 
+          if((p * num.lv - sum(0:(num.lv)))>0) se <- se[-(1:(p * num.lv - sum(0:(num.lv))))];
           # diag(out$sd$theta) <- diag(out$sd$theta)*diag(out$params$theta) !!!
           if(quadratic==TRUE){
             se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
@@ -1730,7 +1731,6 @@ trait.TMB <- function(
           if(!is.null(names(disp.group))){
             try(names(out$sd$phi) <- names(disp.group),silent=T)
           }
-          names(out$sd$inv.phi) <-  names(out$sd$phi)
           se <- se[-(1:length(unique(disp.group)))]
         }
         if(!is.null(randomX)){
