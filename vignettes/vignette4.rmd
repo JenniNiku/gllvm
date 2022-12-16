@@ -33,7 +33,7 @@ knitr::opts_chunk$set(
 
 - The package available in
    - GitHub: <https://github.com/JenniNiku/gllvm> 
-   - CRAN: <https://cran.r-project.org/web/packages/gllvm/index.html>
+   - CRAN: <https://CRAN.R-project.org/package=gllvm>
 
 - Package installation:
 ```{r, eval = FALSE, echo=TRUE, warning=FALSE}
