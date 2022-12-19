@@ -32,12 +32,13 @@ ter Braak, C.J.F. (1987). The analysis of vegetation-environment relationships b
 Cramer, W. & Hytteborn, H. (1987). The separation of fluctuation and long-term change in vegetation dynamics of a rising seashore. Vegetatio, 69, 157–167.
 }
 \examples{
-data(Skabbholmen)
-Y <- Skabbholmen$Y
-X <- Skabbholmen$X
-model <- gllvm(y = Y, X = X, 
-    num.RR = 2, 
-    family = "ordinal",
-    zeta.struc="common",
-    row.eff=~(1|transectID))
+# Uncomment the example
+#data(Skabbholmen)
+#Y <- Skabbholmen$Y
+#X <- Skabbholmen$X
+#model <- gllvm(y = Y, X = X, 
+#    num.RR = 2, 
+#    family = "ordinal",
+#    zeta.struc="common",
+#    row.eff=~(1|transectID))
 }
