@@ -107,7 +107,7 @@ If only one latent variable is in the fitted model, latent variables are plotted
 The latent variables are labeled using the row index of the response matrix y.
 
 Coefficients related to latent variables are plotted in the same figure with the latent
-variables if \code{biplot = TRUE}. They are labelled using the column names of y. The number
+variables if \code{biplot = TRUE}. They are labeled using the column names of y. The number
 of latent variable coefficients to be plotted can be controlled by ind.spp. An argument alpha
 is used to control the relative scaling of the latent variables and their coefficients.
 If \code{alpha = 0.5}, the latent variables and their coefficients are on the same scale.

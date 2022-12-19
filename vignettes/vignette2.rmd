@@ -167,7 +167,7 @@ ftX <- gllvm(Ysoil, X = Xsoils, studyDesign = sDesign, family = "negative.binomi
 ```{r}
 ftX
 ```
-The information criterias for the model with all covariates were worse than for the model with only pH as a covariate.
+The information criteria for the model with all covariates were worse than for the model with only pH as a covariate.
 Below, point estimates with 95% confidence intervals below indicate that pH value is the main covariate affecting the species composition. 
 
 ```{r fig.height=10, fig.width=7}

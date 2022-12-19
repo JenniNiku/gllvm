@@ -142,7 +142,7 @@ plot(fitnb, which = 1:2)
 
 ## Model selection
 
-- Information criterias can be used for model selection.
+- Information criteria can be used for model selection.
 - For example, compare distributions or choose suitable number of latent variables.
 
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
@@ -190,7 +190,7 @@ boxplot(spider$abund)
 
 <details><summary><span style="color:red"> Show the answers. </span></summary>
 
-<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
+<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criteria. Let's try just with a Poisson and NB.</span> 
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may also differ slightly.</span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data

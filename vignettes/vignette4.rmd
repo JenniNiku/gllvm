@@ -65,7 +65,7 @@ devtools::install_github("JenniNiku/gllvm")
   - Fourth corner models with latent variables for studying environmental-trait interactions
   - GLLVM without latent variables fits basic multivariate GLMs
 
-- Additional tools: residuals, information criterias, confidence intervals, visualization.
+- Additional tools: residuals, information criteria, confidence intervals, visualization.
 
 
 ## Distributions
@@ -131,7 +131,7 @@ fitx
 
 ## Model selection
 
-- Number of latent variables is not necessarily clear beforehand when goal is not primarily in ordination, so information criterias can be used for model selection. For example, using Akaike information criterion:
+- Number of latent variables is not necessarily clear beforehand when goal is not primarily in ordination, so information criteria can be used for model selection. For example, using Akaike information criterion:
 
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 X=spider$x
@@ -184,7 +184,7 @@ boxplot(spider$abund)
 
 <details><summary><span style="color:red"> Show the answers. </span></summary>
 
-<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let's try just with a Poisson and NB.</span> 
+<span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criteria. Let's try just with a Poisson and NB.</span> 
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may</span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data

@@ -15,9 +15,9 @@
 #' @details 
 #' Residual covariance matrix, storing information on species co-occurrence that is not explained by the environmental variables (if included), is calculated using the matrix of latent variables loadings, that is, \eqn{\Theta\Theta'}, and the dispersion parameter related to the distribution of choice, is applicable (e.g. in the case of negative-binomial distributed responses).
 #' 
-#' When the responses are modelled using the negative binomial distribution, the residual variances for each species must be adjusted for overdispersion. The two possible adjustement terms are \eqn{log(\phi_j + 1)} (\code{adjust = 1}) and \eqn{\psi^{(1)}(1/\phi_j)} (\code{adjust = 2}), where \eqn{\psi^{(1)}} is the trigamma function.
+#' When the responses are modelled using the negative binomial distribution, the residual variances for each species must be adjusted for overdispersion. The two possible adjustment terms are \eqn{log(\phi_j + 1)} (\code{adjust = 1}) and \eqn{\psi^{(1)}(1/\phi_j)} (\code{adjust = 2}), where \eqn{\psi^{(1)}} is the trigamma function.
 #' 
-#' The negative binomial model can be written using different parametrizations. 
+#' The negative binomial model can be written using different parameterizations. 
 #' The residual covariance with \code{adjust = 1} can be obtained using the lognormal-Poisson parametrization, that is,
 #' \deqn{Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),}
 #' where \eqn{\lambda_j \sim lognormal(-\sigma^2/2, \sigma^2)} and \eqn{\sigma^2 = log(\phi_j + 1)} and \eqn{log(\mu_{ij}) = \eta_{ij}}. Now \eqn{E[Y_{ij}] = \mu_{ij}} and variance \eqn{V(\mu_{ij}) = \mu_{ij} + \mu_{ij}^2 (exp(\sigma^2) - 1) = \mu_{ij} + \mu_{ij}^2 \phi_j}, which are the same as for the NB distribution.

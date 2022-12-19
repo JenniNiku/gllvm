@@ -22,9 +22,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-This document illustrates the main features and functionality of the **gllvm** package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data. The functionality of the package is desrcibed in detail in  @Niku2019.
+This document illustrates the main features and functionality of the **gllvm** package, developed for the analysis of multivariate abundance data. Examples are provided in order to show how generalized linear latent variable models (GLLVM) can be applied to data. The functionality of the package is described in detail in  @Niku2019.
 
-Multivariate abundance data, consisting of observations of multiple interacting species from a set of samples, are often collected in ecological studies to characterise a community or assemblage of organisms. The term "abundance" is taken here to mean counts, presence-absence records, biomass data or any other measure of the extent to which a species may be present at a site.
+Multivariate abundance data, consisting of observations of multiple interacting species from a set of samples, are often collected in ecological studies to characterize a community or assemblage of organisms. The term "abundance" is taken here to mean counts, presence-absence records, biomass data or any other measure of the extent to which a species may be present at a site.
 
 GLLVM extends the basic generalized linear model to multivariate data using a factor analytic approach, *i.e.* incorporating a small number of latent variables for each site accompanied by species specific factor loadings to model correlations between responses. These latent variables have a natural interpretation as ordination axes, but with additional capacity, *e.g.* predicting new values, controlling for known environmental variables, using standard model selection tools to choose number of ordination axes.
 
@@ -42,14 +42,14 @@ $$g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i (\boldsy
 
 where $\boldsymbol\beta_e$ is a vector of main effects for environmental covariates, and $\boldsymbol\beta_I$ are the fourth corner coefficients. A main effect for traits is not included, because main effects on abundance across species are absorbed by the intercept term $\beta_{0j}$. This model assumes that inter-specific variation in response to covariates is mediated by species and random slopes, which reduces the number of parameters related to covariates.
 
-A difficulty fitting the GLLVM is that the $\boldsymbol{u}_i$'s are unobserved and we must integrate over their possible values. Specifically, the log-likelihood function we wish to maximise has the form
+A difficulty fitting the GLLVM is that the $\boldsymbol{u}_i$'s are unobserved and we must integrate over their possible values. Specifically, the log-likelihood function we wish to maximize has the form
 $$l(\boldsymbol\Psi)=\sum_{i=1}^n \log(f(y_{ij},\boldsymbol\Psi))=\sum_{i=1}^n \log\left(\int_{{\rm I\!R}^{d}} \prod_{j=1}^m f(y_{ij}|\boldsymbol u_i;\boldsymbol\Psi) f(\boldsymbol{u}_i) d\boldsymbol{u}_i,\right),$$
 
 where $\boldsymbol\psi$ includes all model parameters. In this expression we have assumed abundances are independent across sites and any correlation across responses is captured by the latent variables $\boldsymbol u_i$. Thus conditional on $\boldsymbol u_i$, the $y_{ij}$ are independent of each other within sites.
 
 The **gllvm** package overcomes these computational problems using three key innovations:
 
-* Maximising an approximation to the log-likelihood that is (almost completely) closed form. We provide two ways to do this -- using Gaussian variational approximations for overdispersed counts, binary and ordinal responses, or using Laplace approximations for other exponential family distributions when a fully closed form variational approximation cannot be obtained *e.g.* biomass data can be modelled by the Tweedie distribution.
+* maximizing an approximation to the log-likelihood that is (almost completely) closed form. We provide two ways to do this -- using Gaussian variational approximations for overdispersed counts, binary and ordinal responses, or using Laplace approximations for other exponential family distributions when a fully closed form variational approximation cannot be obtained *e.g.* biomass data can be modelled by the Tweedie distribution.
 
 * Parameter estimation makes use of automatic differentiation software in C++ to accelerate computation times, via the interface provided by the R package TMB.
 
@@ -91,7 +91,7 @@ gllvm(y, X, family = "negative.binomial")
 gllvm(y, X, TR, family = "negative.binomial")
 ```
 
-An alternative way is to use the long format via `data` argument along with `formula`. Notice that `formula` can also be used for model specification when data is given in wide format. In the following lines the ant data is reorganised to  a long format.
+An alternative way is to use the long format via `data` argument along with `formula`. Notice that `formula` can also be used for model specification when data is given in wide format. In the following lines the ant data is re-organised to  a long format.
 ```{r}
 yX <- reshape(data.frame(cbind(y, X)), direction = "long", varying =
                 colnames(y), v.names = "y", timevar = "sp")
@@ -149,7 +149,7 @@ fit_ord
 ```
 As a model-based ordination method, GLLVMs offer tools for the model checking in contrast to the classical algorithm-based ordination methods such as nMDS. For example, the default printout above includes information criteria, which all suggest that the NB distribution is a better choice than the Poisson distribution for modelling the response.
 
-In addition to information criterias, we can use residual plots for diagnosing model fit. As a default, `plot` function utilizes `residual` fuction to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument `which` one can define which plots will be produced. 
+In addition to information criteria, we can use residual plots for diagnosing model fit. As a default, `plot` function utilizes `residual` function to calculate Dunn-Smyth residuals, also known as randomized quantile residuals, and then prints five residual diagnostic plots, including a plot of residuals against linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale-location plot. With an argument `which` one can define which plots will be produced. 
 
 The residual diagnostics below for the Poisson model shows some overdispersion in residuals, in particular, a telltale fan-shape in the plot of residuals against fitted values. These issues are largely resolved in the NB model. Note that the latent variables in the model provide some capacity to account for overdispersion, so overdispersed counts do not always require us to move beyond the Poisson distribution, although there is clear evidence of such a need in this example. 
 
@@ -187,20 +187,20 @@ ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, xlim = c(-3, 3), ylim = c(-2, 1.6
 
 ## Model with environmental variables
 
-Environmental variables can be included in the model, whether to study their effects on assemblages, or to study patterns of species co-occurrence after controlling for environmental variables. We illustrate here this model by including three environmental variables `Bare.ground`, `Canopy.cover` and `Volume.lying.CWD` to the model. Similarly to previous example, we can use residual analysis and information criterias to study which distribution offers the most suitable mean-variance relationship for the responses, and how many latent variables are needed.
+Environmental variables can be included in the model, whether to study their effects on assemblages, or to study patterns of species co-occurrence after controlling for environmental variables. We illustrate here this model by including three environmental variables `Bare.ground`, `Canopy.cover` and `Volume.lying.CWD` to the model. Similarly to previous example, we can use residual analysis and information criteria to study which distribution offers the most suitable mean-variance relationship for the responses, and how many latent variables are needed.
 ```{r, eval = FALSE, warning = FALSE}
-criterias <- NULL
+criteria <- NULL
 for(i in 1:5){
   fiti <- gllvm(y, X, family = "negative.binomial", num.lv = i, sd.errors = FALSE,
                 formula = ~ Bare.ground + Canopy.cover + Volume.lying.CWD, seed = 1234)
-  criterias[i] <- summary(fiti)$AICc
-  names(criterias)[i] = i
+  criteria[i] <- summary(fiti)$AICc
+  names(criteria)[i] = i
 }
 ```
 
 ```{r, eval = FALSE, warning = FALSE}
 # Compare AICc values
-criterias
+criteria
 #>        1        2        3        4        5 
 #> 4163.565 4215.446 4311.091 4462.069 4612.805
 ```

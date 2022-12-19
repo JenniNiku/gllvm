@@ -3,7 +3,7 @@
 \alias{Skabbholmen}
 \title{Skabbholmen island data}
 \description{
-Dataset of ordinal observations of plants, on the island Skabbolmen in the Stocholm archipelago. Includes 65 unique sites and 70 species, surveyed in two different years.
+Dataset of ordinal observations of plants, on the island Skabbholmen in the Stocholm archipelago. Includes 65 unique sites and 70 species, surveyed in two different years.
 }
 \usage{
 data(Skabbholmen)

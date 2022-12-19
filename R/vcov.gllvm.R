@@ -5,7 +5,7 @@
 #' @param object   an object of class 'gllvm'.
 #' @param ...	not used.
 #' @details
-#' Calculates the variance-covariance matrix of a GLLVM object using \code{\link{se.gllvm}}, which may be computational intensive with many parameters.The parameters might have unintuitive names. Fixed-effects coefficients are labled "b", and are ordered per species as: 1) intercepts 2) fixed-effects slopes. Coefficients of the latent variables are labled "lambda" (linear coefficients) or "lambda2".
+#' Calculates the variance-covariance matrix of a GLLVM object using \code{\link{se.gllvm}}, which may be computational intensive with many parameters.The parameters might have unintuitive names. Fixed-effects coefficients are labeled "b", and are ordered per species as: 1) intercepts 2) fixed-effects slopes. Coefficients of the latent variables are labled "lambda" (linear coefficients) or "lambda2".
 #'
 #' @author Bert van der Veen
 #' 
