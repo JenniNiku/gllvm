@@ -30,7 +30,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(lambda); // lv loadings
   PARAMETER_MATRIX(lambda2);// quadratic lv loadings
   PARAMETER_MATRIX(thetaH);// hurdle model lv loadings
-
+  
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
@@ -66,7 +66,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(Astruc); //Structure of the variational covariance, 0=diagonal, 1=RR, (2=sparse cholesky not implemented yet)
   DATA_IMATRIX(NN); //nearest neighbours,
   
-
+  
   matrix<Type> dr = dr0.matrix();
   // REPORT(dr);
   int Klv = x_lv.cols();
@@ -128,10 +128,10 @@ Type objective_function<Type>::operator() ()
     if((num_lv+num_lv_c)>0){
       u.conservativeResize(u.rows(), u.cols()+1);
       // for (int i=0; i<n; i++){
-        for (int q=(num_lv+num_lv_c); q>0; q--){
-          // u(i,q) = u(i,q-1);
-          u.col(q) = u.col(q-1);
-        }
+      for (int q=(num_lv+num_lv_c); q>0; q--){
+        // u(i,q) = u(i,q-1);
+        u.col(q) = u.col(q-1);
+      }
       // }
       
       for (int i=0; i<n; i++){
@@ -150,12 +150,12 @@ Type objective_function<Type>::operator() ()
   Cu.fill(0.0);
   
   Type nll = 0; // initial value of log-likelihood
-
+  
   matrix<Type> b_lv2(x_lv.cols(),nlvr);
   matrix <Type> Delta(nlvr,nlvr);
   b_lv2.fill(0.0);
   Delta.fill(0.0);
-
+  
   array<Type> D;
   if( (quadratic>0) && (method!=1)){
     D = array<Type> (nlvr+num_RR,nlvr+num_RR,p);
@@ -164,7 +164,7 @@ Type objective_function<Type>::operator() ()
     D = array<Type> (nlvr,nlvr,p);
     D.fill(0.0);
   }
-
+  
   matrix<Type> newlam(nlvr,p);
   matrix<Type> RRgamma(num_RR,p);
   //K*K*d or d*d*K
@@ -287,7 +287,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   }
-
+  
   // Loadings for correlated latent variables //CorLV
   matrix<Type> newlamCor(num_corlv,p);
   // matrix <Type> Delta_clv(num_corlv,num_corlv);
@@ -318,7 +318,7 @@ Type objective_function<Type>::operator() ()
   using namespace density;
   using namespace gllvm;
   
-
+  
   // Variational approximation
   if((method<1) | (method>1)){
     
@@ -381,56 +381,56 @@ Type objective_function<Type>::operator() ()
           }
         }
       }else{
-          if(num_lv_c>0){
-            if(lambda2.cols()==1){
-              for (int j=0; j<p; j++){
-                for (int q=0; q<num_lv_c; q++){
-                  D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
-                }
-              } 
-            }else{
-              for (int j=0; j<p; j++){
-                for (int q=0; q<num_lv_c; q++){
-                  D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
-                }
-              } 
-            }
+        if(num_lv_c>0){
+          if(lambda2.cols()==1){
+            for (int j=0; j<p; j++){
+              for (int q=0; q<num_lv_c; q++){
+                D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+              }
+            } 
+          }else{
+            for (int j=0; j<p; j++){
+              for (int q=0; q<num_lv_c; q++){
+                D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+              }
+            } 
           }
-          if((num_RR*random(2))>0){
-            if(lambda2.cols()==1){
-              //make sure that num_RR comes at the end..has to be
-              //like this due to the difference between fixed and random Bs
-              for (int j=0; j<p; j++){
-                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
-                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,0)); //common tolerances model
-                }
-              } 
-            }else{
-              for (int j=0; j<p; j++){
-                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
-                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,j)); //full quadratic model
-                }
-              } 
-            }
+        }
+        if((num_RR*random(2))>0){
+          if(lambda2.cols()==1){
+            //make sure that num_RR comes at the end..has to be
+            //like this due to the difference between fixed and random Bs
+            for (int j=0; j<p; j++){
+              for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
+                D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,0)); //common tolerances model
+              }
+            } 
+          }else{
+            for (int j=0; j<p; j++){
+              for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
+                D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,j)); //full quadratic model
+              }
+            } 
           }
-          if(num_lv>0){
-            if(lambda2.cols()==1){
-              //make sure that num_lv is taken from the middle even with num_RR
-              for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
-                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,0)); //common tolerances model
-                }
-              } 
-            }else{
-              for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
-                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,j)); //full quadratic model
-                }
-              } 
-            }
+        }
+        if(num_lv>0){
+          if(lambda2.cols()==1){
+            //make sure that num_lv is taken from the middle even with num_RR
+            for (int j=0; j<p; j++){
+              for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
+                D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,0)); //common tolerances model
+              }
+            } 
+          }else{
+            for (int j=0; j<p; j++){
+              for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
+                D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,j)); //full quadratic model
+              }
+            } 
           }
         }
       }
+    }
     
     // add offset
     eta += offset;
@@ -441,7 +441,7 @@ Type objective_function<Type>::operator() ()
     
     matrix<Type> cQ(n,p);
     cQ.fill(0.0);
-
+    
     array<Type> A;
     if( (random(2)>0) && (num_RR!=0)){
       A = array<Type> (nlvr+num_RR,nlvr+num_RR,n);
@@ -533,6 +533,10 @@ Type objective_function<Type>::operator() ()
         u *= Delta;
         if(num_RR>0){
           Delta.conservativeResize(nlvr+num_RR,nlvr+num_RR);
+          for(int d=nlvr; d<(nlvr+num_RR); d++){
+            Delta.col(d).fill(0.0);
+            Delta.row(d).fill(0.0);
+          } 
         }
         
         for (int i=0; i<n; i++) {
@@ -541,15 +545,18 @@ Type objective_function<Type>::operator() ()
       }
       
     }
-
+    
     //random slopes for constr. ord.
     if((random(2)>0) && ((num_RR+num_lv_c)>0)){
       //resize A, u, D, and add RRGamma to newlam.
       //add columns to u on the right for num_RR with random slopes
       //resize u
       if(num_RR>0){
-        nlvr += num_RR;
-        u.conservativeResize(n, nlvr);
+        u.conservativeResize(n, nlvr + num_RR); 
+        for(int d=nlvr; d<(nlvr+num_RR); d++){
+          u.col(d).fill(0.0);
+        }
+        
         //resize and fill newlam, we don't use RRgamma further with random Bs
         //easiest to do is slap RRgamma at the end of newlam
         //this makes the order of newlam, A, u, and D inconsistent with the R-side of things
@@ -558,7 +565,11 @@ Type objective_function<Type>::operator() ()
         //which would only work with diagonal of 0s in A
         //And that needs to be invertible for the quadratic case, so that is not possible
         //potentially adjust in the future if I find out an alternative route.
-        newlam.conservativeResize(nlvr,p);
+        newlam.conservativeResize(nlvr+num_RR,p);
+        for(int d=nlvr; d<(nlvr+num_RR); d++){
+          newlam.col(d).fill(0.0);
+        }
+        nlvr += num_RR;
         newlam.bottomRows(num_RR) = RRgamma;
       }
       
@@ -639,6 +650,7 @@ Type objective_function<Type>::operator() ()
           // matrix <Type> b_lv3 =  b_lv;//.rightCols(num_RR);
           u.rightCols(num_RR) += x_lv*b_lv;
           matrix <Type> L(nlvr,nlvr);
+          L.fill(0.0);
           for(int i=0; i<n; i++){
             L = A.col(i).matrix();
             for(int klv=0; klv<Klv; klv++){
@@ -771,7 +783,7 @@ Type objective_function<Type>::operator() ()
       REPORT(AB_lv);
     }
     
-
+    
     // Include random slopes if random(1)>0
     if(random(1)>0){
       matrix<Type> sds(l,l);
@@ -918,7 +930,7 @@ Type objective_function<Type>::operator() ()
         } else {
           // group specific random row effects, which are correlated between groups
           int j,d,r;
-
+          
           matrix<Type> Sr(nr,nr);
           if(cstruc==1){// AR1 covariance
             Sr = gllvm::corAR1(sigma, log_sigma(1), nr);
@@ -938,13 +950,13 @@ Type objective_function<Type>::operator() ()
               //   Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), nr, DistM);
             }
           }
-
+          
           // Variational covariance for row effects
           matrix<Type> Arm(nr,nr);
           for (d=0; d<(nr); d++){
             Arm(d,d)=Ar(d);
           }
-
+          
           if((lg_Ar.size()>nr) & (Astruc>0)){ // unstructured Var.cov
             int k=0;
             for (d=0; d<(nr); d++){
@@ -953,24 +965,24 @@ Type objective_function<Type>::operator() ()
                 k++;
               }}
           }
-
+          
           for (j=0; j<p;j++){
             cQ.col(j) = cQ.col(j) + 0.5*(dr*(Arm*Arm.transpose()).diagonal().matrix());
             eta.col(j) = eta.col(j) + dr*r0;
           }
-
+          
           nll -= 0.5*(log((Arm*Arm.transpose()).determinant()) - (atomic::matinv(Sr)*(Arm*Arm.transpose())).diagonal().sum()-(r0.transpose()*(atomic::matinv(Sr)*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
-
+          
           nll -= 0.5*(nr-log(Sr.determinant()));
           // REPORT(Arm);
           // REPORT(Sr);
         }
-
+        
       } else if(rstruc == 2){
         // site specific random row effects, which are correlated within groups
         int i,j,d,r;
         matrix<Type> Sr(times,times);
-
+        
         // Define covariance matrix
         if(cstruc==1){// AR1 covariance
           Sr = gllvm::corAR1(sigma, log_sigma(1), times);
@@ -990,7 +1002,7 @@ Type objective_function<Type>::operator() ()
             // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), times, DistM);
           }
         }
-
+        
         // Variational covariance for row effects
         array<Type> Arm(times,times,nr);
         for(i=0; i<nr; i++){
@@ -1009,7 +1021,7 @@ Type objective_function<Type>::operator() ()
               k++;
             }}
         }
-
+        
         for (j=0; j<p;j++){
           for (i=0; i<nr; i++) {
             for (d=0; d<(times); d++){
@@ -1638,16 +1650,16 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           for (int j=0; j<p; j++) {
             // nll -= gllvm::dbinom_logit_eva(y(i,j), eta(i,j), cQ(i,j));
-
+            
             Type mu = 0.0;
             Type mu_prime = 0.0;
-
+            
             CppAD::vector<Type> z(4);
             z[0] = eta(i,j);
             z[1] = 0;
             z[2] = 1/(1+exp(-z[0]));
             z[3] = exp(z[0])/(exp(z[0])+1);
-
+            
             mu = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
             mu_prime = mu * (1-mu);
             nll -= y(i,j) * eta(i,j) + log(1-mu);
@@ -2159,7 +2171,7 @@ Type objective_function<Type>::operator() ()
       // gllvm.TMB.R
       if(family==10){
         etaH += x*bH;
-        }
+      }
       eta += x*b;
       for (int j=0; j<p; j++){
         for(int i=0; i<n; i++){
@@ -2254,7 +2266,7 @@ Type objective_function<Type>::operator() ()
             } else {
               etaH(i,j) = pnorm(etaH(i,j));
               mu(i,j) = pnorm(eta(i,j));
-              }
+            }
             if (y(i,j) == 0) {
               nll -= log(1-mu(i,j));
             } else{
@@ -2266,6 +2278,6 @@ Type objective_function<Type>::operator() ()
         // REPORT(etaH);
       }
   }
-
+  
   return nll;
 }
