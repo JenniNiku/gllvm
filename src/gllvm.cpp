@@ -520,6 +520,7 @@ Type objective_function<Type>::operator() ()
       }else{
         //Go this route with random Bs (since size of Cu and A.col(i) are then not the same)
         matrix <Type>Atemp(nlvr,nlvr);
+        Atemp.fill(0.0);
         for(int i=0; i<n; i++){
           Atemp = A.col(i).matrix().topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
           if(nlvr == (num_lv+num_lv_c)) nll -= (((vector <Type> (Atemp.diagonal())).log()).sum() - 0.5*((Atemp*Atemp.transpose()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()));
