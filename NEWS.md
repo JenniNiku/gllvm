@@ -1,3 +1,9 @@
+Version 1.4.1
+==============
+
+### Bug Fixes
+* Valgrind error fixed
+
 Version 1.4.0
 ==============
 
