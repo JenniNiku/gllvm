@@ -356,6 +356,11 @@ fity1 <- gllvm(y, X = scale(X), family = "negative.binomial",
               num.lv.c=2, method="VA")
 ordiplot(fity1, biplot = TRUE)
 
+#'## Example 1b: Fit constrained ordination model with two latent variables and with 
+# random canonical coefficients
+fity2 <- gllvm(y, X = scale(X), family = "negative.binomial", 
+              num.RR=2, randomB="LV", method="VA")
+              
 # Using Laplace approximation: (this line may take about 30 sec to run)
 fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 ordiplot(fitl0)

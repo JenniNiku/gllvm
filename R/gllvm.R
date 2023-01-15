@@ -377,7 +377,8 @@
 #'}
 #' @export
 #'
-#'@useDynLib gllvm, .registration = TRUE
+#'@useDynLib gllvmVA
+#'@useDynLib gllvmLA
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
@@ -1361,7 +1362,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # check if quadratic coefs have converged or have stuck to "LV"
     if(isTRUE(quadratic)){
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
-        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
+        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with `start.struc='all'`, or with different starting values.\n")
       out$quadratic <- "LV"        
       }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
