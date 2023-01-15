@@ -306,10 +306,6 @@ Type objective_function<Type>::operator() ()
   
   matrix<Type> mu(n,p);
   
-  using namespace density;
-  using namespace gllvm;
-  
-  
     // Variational approximation
     //quadratic coefficients for ordination
     //if random rows, add quadratic coefficients for num_RR to D otherwise
@@ -784,7 +780,7 @@ Type objective_function<Type>::operator() ()
       matrix<Type> sds(l,l);
       sds.setZero();
       sds.diagonal() = exp(sigmaB);
-      matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+      matrix<Type> S=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
 
       // Variational covariance for random slopes
       // log-Cholesky parametrization for A_bj:s
@@ -854,7 +850,7 @@ Type objective_function<Type>::operator() ()
       //quadratic terms for fixed-effects only RRR
       //-num_lv to ensure that we pick num_RR from the middle
       if(quadratic>0){
-        Eigen::DiagonalMatrix<Type,Dynamic> D_RR(num_RR);
+        Eigen::DiagonalMatrix<Type,Eigen::Dynamic> D_RR(num_RR);
         D_RR.setZero();
         
         //quadratic coefficients for RRR
@@ -1631,7 +1627,6 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    
     if(family==0){//poisson
       if((quadratic < 1) || ( (quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0) )){
         for (int i=0; i<n; i++) {

@@ -1,6 +1,6 @@
 #include <TMB.hpp>
 #include "distrib.h"
-#define TMB_LIB_INIT R_init_gllvmLA"
+#define TMB_LIB_INIT R_init_gllvmLA
 
 //--------------------------------------------------------
 //GLLVM
@@ -301,8 +301,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> mu(n,p);
   
   using namespace density;
-  using namespace gllvm;
-  
+
   if(random(2)>0){
       // REPORT(Sigmab_lv); //!!!!
       //MVNORM_t<Type> mvnorm(Sigmab_lv);
