@@ -161,43 +161,26 @@ Type objective_function<Type>::operator() ()
     sbl12 = Klv;
     sbl3 = num_lv_c + num_RR;
   }
-  vector<matrix<Type>> Sigmab_lv;
-  
+  vector<matrix<Type>> Sigmab_lv(sbl3);
   if(random(2)>0){
-    vector<matrix<Type>> Sigmab_lv(sbl3);
     sigmab_lv = exp(sigmab_lv);
     sigmab_lv *= sigmab_lv;
     
-    if(sigmab_lv.size()==(num_lv_c+num_RR)){//randomB=="LV", Sigma_q = sigma_q I_klv
+    if(sigmab_lv.size()>Type(1)){//Sigma_q = sigma_q I_klv
       Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
-      for (int q=0; q<(num_RR+num_lv_c); q++){
+      Sigmab_lvtemp.setZero();
+      for (int q=0; q<sbl3; q++){
         Sigmab_lv(q) = Sigmab_lvtemp;
         Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
       }
-    }else if(sigmab_lv.size()==Klv){//randomB=="P", Sigma_klv = sigma_klv I_d
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
-      for (int klv=0; klv<Klv; klv++){
-        Sigmab_lv(klv) = Sigmab_lvtemp;
-        Sigmab_lv(klv).diagonal().array() = sigmab_lv(klv);
-      }
     }else if(sigmab_lv.size()==Type(1)){
       Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
+      Sigmab_lvtemp.setZero();
       for (int klv=0; klv<Klv; klv++){
         Sigmab_lv(klv) = Sigmab_lvtemp;
         Sigmab_lv(klv).diagonal().array() = sigmab_lv(0);
       }
     }
-    // else if(sigmab_lv.size()==((num_RR+num_lv_c)*Klv)){//probably a bad idea
-    //   for (int klv=0; klv<Klv; klv++){
-    //     matrix <Type> temp = Sigmab_lv.col(klv).matrix();
-    //     for (int d=0; d<num_RR; d++){
-    //       temp(d,d) = sigmab_lv(d+klv*(num_RR+num_lv_c));
-    //       //        temp.diagoanl() = sigmab_lv(Eigen::seq(klv*(num_RR+num_lv_c),klv*(num_RR+num_lv_c)+(num_RR+num_lv_c)-1));//doesnt work..
-    //       
-    //     }
-    //     Sigmab_lv.col(klv) = temp.array();
-    //   }
-    // }
   }
   
   if((nlvr>0)||(num_RR>0)){
@@ -345,6 +328,7 @@ Type objective_function<Type>::operator() ()
           
         }else{
           for (int j=0; j<p;j++){
+            D_RR.setZero();
             for (int d=0; d<num_RR;d++){
               D_RR.diagonal()(d) = fabs(lambda2(d,j));
             }
