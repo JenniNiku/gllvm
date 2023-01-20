@@ -167,14 +167,14 @@ Type objective_function<Type>::operator() ()
     sigmab_lv *= sigmab_lv;
     
     if(sigmab_lv.size()>Type(1)){//Sigma_q = sigma_q I_klv
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
+      matrix <Type> Sigmab_lvtemp(sbl12,sbl12);
       Sigmab_lvtemp.setZero();
       for (int q=0; q<sbl3; q++){
         Sigmab_lv(q) = Sigmab_lvtemp;
         Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
       }
     }else if(sigmab_lv.size()==Type(1)){
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
+      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
       Sigmab_lvtemp.setZero();
       for (int klv=0; klv<Klv; klv++){
         Sigmab_lv(klv) = Sigmab_lvtemp;
@@ -314,7 +314,7 @@ Type objective_function<Type>::operator() ()
       matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
       eta += x_lv*b_lv3*RRgamma;
       if(quadratic>0){
-        Eigen::DiagonalMatrix<Type,Dynamic> D_RR(num_RR);
+        matrix<Type> D_RR(num_RR,num_RR);
         D_RR.setZero();
         if(lambda2.cols()==1){
           for (int d=0; d<num_RR;d++){

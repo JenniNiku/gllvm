@@ -167,20 +167,20 @@ Type objective_function<Type>::operator() ()
     sbl3 = num_lv_c + num_RR;
   }
   
-  vector<Eigen::DiagonalMatrix<Type,Eigen::Dynamic>> Sigmab_lv(sbl3);
+  vector<matrix<Type>> Sigmab_lv(sbl3);
   if(random(2)>0){
     sigmab_lv = exp(sigmab_lv);
     sigmab_lv *= sigmab_lv;
     
     if(sigmab_lv.size()>Type(1)){//Sigma_q = sigma_q I_klv
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
+      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
       Sigmab_lvtemp.setZero();
       for (int q=0; q<sbl3; q++){
         Sigmab_lv(q) = Sigmab_lvtemp;
         Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
       }
     }else if(sigmab_lv.size()==Type(1)){
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Sigmab_lvtemp(sbl12);
+      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
       Sigmab_lvtemp.setZero();
       for (int klv=0; klv<Klv; klv++){
         Sigmab_lv(klv) = Sigmab_lvtemp;
@@ -681,7 +681,7 @@ Type objective_function<Type>::operator() ()
     //quadratic terms for fixed-effects only RRR
     //-num_lv to ensure that we pick num_RR from the middle
     if(quadratic>0){
-      Eigen::DiagonalMatrix<Type,Eigen::Dynamic> D_RR(num_RR);
+      matrix<Type> D_RR(num_RR,num_RR);
       D_RR.setZero();
 
       //quadratic coefficients for RRR
@@ -1328,9 +1328,9 @@ Type objective_function<Type>::operator() ()
       eta += lam;
     }
     
-    if((quadratic>0) && (nlvr>0) || (quadratic>0) && (num_RR>0)){
+    if(((quadratic>0) && (nlvr>0)) || ((quadratic>0) && (num_RR>0))){
 
-      vector< Eigen::DiagonalMatrix<Type,Eigen::Dynamic>> D(p);
+      vector< matrix<Type>> D(p);
 
       //quadratic coefficients for ordination
       //if random rows, add quadratic coefficients for num_RR to D otherwise
@@ -1341,7 +1341,7 @@ Type objective_function<Type>::operator() ()
       //num_lv_c-num_RR-num_lv however, to ensure everything on the R-side works
       if(((num_lv+num_lv_c+num_RR*random(2))>0)){
 
-        Eigen::DiagonalMatrix<Type,Eigen::Dynamic> Dmat(nlvr);
+        matrix <Type> Dmat(nlvr,nlvr);
         Dmat.setZero();
         for (int j=0; j<p; j++){
           D(j) = Dmat;
