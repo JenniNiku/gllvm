@@ -19,6 +19,15 @@
 #'
 #' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
+#'@examples
+#'data(spider)
+#'mod <- gllvm(spider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
+#'# Calculate standard errors after fitting
+#'sdErr <- se(mod)
+#'# Store the standard errors in the right place
+#'mod$sd <-sdErr$sd
+#'# Store the Hessian in the right place
+#'mod$Hess <- sdErr$Hess
 #'@aliases se se.gllvm
 #'@method se gllvm
 #'@export
