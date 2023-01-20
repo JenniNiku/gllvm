@@ -377,7 +377,6 @@ Type objective_function<Type>::operator() ()
       for(int i=0; i<n; i++){
         Atemp.noalias() = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
         Adiag = Atemp.diagonal();
-        Adiag.log().sum();
         if(nlvr == (num_lv+num_lv_c)) nll -= (Adiag.log()).sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
         if(nlvr>(num_lv+num_lv_c)) {
           nll -= (Adiag.log()).sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
