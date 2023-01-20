@@ -167,7 +167,7 @@ Type objective_function<Type>::operator() ()
     sbl3 = num_lv_c + num_RR;
   }
   
-  vector<matrix<Type>> Sigmab_lv(sbl3);
+  vector<Eigen::DiagonalMatrix<Type,Eigen::Dynamic>> Sigmab_lv(sbl3);
   if(random(2)>0){
     sigmab_lv = exp(sigmab_lv);
     sigmab_lv *= sigmab_lv;
@@ -300,6 +300,7 @@ Type objective_function<Type>::operator() ()
   
   matrix<Type> cQ(n,p);
   cQ.setZero();
+
   vector<matrix<Type>> A(n);
   
   if( (random(2)>0) && (num_RR>0)){
@@ -365,17 +366,16 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    
-    // // Add VA terms to logL
+      // Add VA terms to logL
       //Go this route if no random Bs
       matrix <Type> Atemp(nlvr,nlvr);
       vector <Type> Adiag(nlvr);
       matrix <Type> CuI;
       if(nlvr>(num_lv+num_lv_c)){
-        CuI.noalias() = Cu.inverse();//for small matrices use .inverse rather than atomic::matinv
+        CuI = Cu.inverse();//for small matrices use .inverse rather than atomic::matinv
       }
       for(int i=0; i<n; i++){
-        Atemp.noalias() = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
+        Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
         Adiag = Atemp.diagonal();
         if(nlvr == (num_lv+num_lv_c)) nll -= (Adiag.log()).sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
         if(nlvr>(num_lv+num_lv_c)) {
@@ -420,7 +420,7 @@ Type objective_function<Type>::operator() ()
         newlam.row(d).fill(0.0);
       }
       nlvr += num_RR;
-      newlam.bottomRows(num_RR).noalias() = RRgamma;
+      newlam.bottomRows(num_RR) = RRgamma;
     }
     
     // Variational covariance for random slopes
@@ -460,7 +460,6 @@ Type objective_function<Type>::operator() ()
     //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
     //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
     //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
-    
     if(sbl3 == Klv){//variance per predictor
       if((num_lv_c>0) && (num_RR == 0)){
         if((random(0)>0) && (n == nr)){
@@ -477,21 +476,21 @@ Type objective_function<Type>::operator() ()
             temp.setZero();
             temp = A(i)*A(i).transpose();
             for(int klv=0; klv<Klv; klv++){
-              temp.topLeftCorner(num_lv_c,num_lv_c).noalias() += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+              temp.topLeftCorner(num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
             }
             L = temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-            A(i).noalias() = L;//have to recompute cholesky of covariance due to summation
+            A(i) = L;//have to recompute cholesky of covariance due to summation
           }
         }else if((n == nr) && (random(0)>0)){//if row effects are included in u and A
           for(int i=0; i<n; i++){
             L.setZero();
             temp.setZero();
-            temp.noalias() = A(i)*A(i).transpose();
+            temp = A(i)*A(i).transpose();
             for(int klv=0; klv<Klv; klv++){
-              temp.block(1,1,num_lv_c,num_lv_c).noalias() += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+              temp.block(1,1,num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
             }
             L =  temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-            A(i).noalias() = L;//have to recompute cholesky of covariance due to summation
+            A(i) = L;//have to recompute cholesky of covariance due to summation
           }
         }
       }else if((num_RR>0) && (num_lv_c == 0)){
@@ -502,12 +501,12 @@ Type objective_function<Type>::operator() ()
         for(int i=0; i<n; i++){
           L.setZero();
           temp.setZero();
-          L.noalias() = A(i)*A(i).transpose();
+          L = A(i)*A(i).transpose();
           for(int klv=0; klv<Klv; klv++){
-            L.bottomRightCorner(num_RR,num_RR).noalias() += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+            L.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
           }
           temp = L.llt().matrixL();
-          A(i).noalias() = temp;//have to recompute cholesky of covariance due to summation
+          A(i) = temp;//have to recompute cholesky of covariance due to summation
         }
       }
       
@@ -526,9 +525,9 @@ Type objective_function<Type>::operator() ()
         for(int i=0; i<n; i++){
           L.setZero();
           temp.setZero();
-          L.noalias() = A(i)*A(i).transpose();
+          L = A(i)*A(i).transpose();
           for(int klv=0; klv<Klv; klv++){
-            temp.noalias() +=  x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//num_lv_c variance block
+            temp +=  x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//num_lv_c variance block
           }
           
           if((random(0)==0) || (n != nr)){
@@ -578,7 +577,7 @@ Type objective_function<Type>::operator() ()
             }
           }
           L = (A(i)*A(i).transpose() + temp).llt().matrixL();
-          A(i).noalias() = L;
+          A(i) = L;
         }
         
       }else if((random(0)>1) && (n == nr)){//if row effects are included in u and A
@@ -603,7 +602,7 @@ Type objective_function<Type>::operator() ()
             }
           }
           L = (A(i)*A(i).transpose() + temp).llt().matrixL();
-          A(i).noalias() = L;
+          A(i) = L;
         }
       }
     }
@@ -677,7 +676,7 @@ Type objective_function<Type>::operator() ()
   if((num_RR>0) && (random(2)<1)){
     //predictor coefficients RRR.  num_RR comes after num_lv_c
     //Since later dimensions are more likely to have less residual variance
-    eta.noalias() += x_lv*b_lv.rightCols(num_RR)*RRgamma;
+    eta += x_lv*b_lv.rightCols(num_RR)*RRgamma;
     
     //quadratic terms for fixed-effects only RRR
     //-num_lv to ensure that we pick num_RR from the middle
@@ -692,7 +691,7 @@ Type objective_function<Type>::operator() ()
         }
         // for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          eta.row(i).array() -=  (x_lv.row(i)*b_lv.rightCols(num_RR)*D_RR*(x_lv.row(i)*b_lv.rightCols(num_RR)).transpose()).array();
+          eta.row(i).array() -=  (x_lv.row(i)*b_lv.rightCols(num_RR)*D_RR*(x_lv.row(i)*b_lv.rightCols(num_RR)).transpose()).value();
           }
         // }
       }else{
@@ -1331,7 +1330,7 @@ Type objective_function<Type>::operator() ()
     
     if((quadratic>0) && (nlvr>0) || (quadratic>0) && (num_RR>0)){
 
-      vector<matrix<Type>> D(p);
+      vector< Eigen::DiagonalMatrix<Type,Eigen::Dynamic>> D(p);
 
       //quadratic coefficients for ordination
       //if random rows, add quadratic coefficients for num_RR to D otherwise
@@ -1484,16 +1483,16 @@ Type objective_function<Type>::operator() ()
           matrix <Type> Id(nlvr,nlvr);
           Id.setZero();Id.diagonal().fill(1.0);
           for (int i=0; i<n; i++) {
-            Acov.noalias() = A(i)*A(i).transpose();
+            Acov = A(i)*A(i).transpose();
             for (int j=0; j<p;j++){
               Cinv.setZero();
               Binv.setZero();
               BiQ.setZero();
               //does not follow calculation from van der Veen et al. 2021
               //but prevents Acov^-1 via woodbury matrix identity
-              Cinv.noalias() = (Id - 2*sign*Acov*D(j)).llt().solve(Id);//needs to be like this as it forces p.d. for Q-D with family>0
-              Binv.noalias() = Acov+2*sign*Cinv*Acov*D(j)*Acov;
-              BiQ.noalias() = Id+2*sign*Cinv*D(j)*Acov;//Q*Binv
+              Cinv = (Id - 2*sign*Acov*D(j)).llt().solve(Id);//needs to be like this as it forces p.d. for Q-D with family>0
+              Binv = Acov+2*sign*Cinv*Acov*D(j)*Acov;
+              BiQ = Id+2*sign*Cinv*D(j)*Acov;//Q*Binv
               //this calculation prevents having to explicitly invert A*A^t, or having to invert A(i).
                vBinvv = (newlam.col(j).transpose()*Acov*newlam.col(j)-2*sign*newlam.col(j).transpose()*u.row(i).transpose()+
                2*newlam.col(j).transpose()*Cinv*Acov*D(j)*(sign*Acov*newlam.col(j)-2*u.row(i).transpose())+2*sign*u.row(i)*D(j)*Cinv*u.row(i).transpose()).value();

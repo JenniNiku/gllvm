@@ -320,12 +320,10 @@ Type objective_function<Type>::operator() ()
           for (int d=0; d<num_RR;d++){
             D_RR.diagonal()(d) = fabs(lambda2(d,0));
           }
-          for (int j=0; j<p;j++){
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
-            }
+           for (int i=0; i<n; i++) {
+            eta.row(i).array() -=  (x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose()).value();
           }
-          
+
         }else{
           for (int j=0; j<p;j++){
             D_RR.setZero();
