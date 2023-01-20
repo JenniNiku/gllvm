@@ -452,8 +452,8 @@ Type objective_function<Type>::operator() ()
     for(int klv=0; klv<sbl3; klv++){
       AB_lvDiag = AB_lv(klv).diagonal();
       Sigmab_lvDiag = Sigmab_lv(klv).diagonal();
-      if(sbl3==(num_lv_c+num_RR)) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).inverse()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).inverse()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      if(sbl3==Klv) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).inverse()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).inverse()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      if(sbl3==(num_lv_c+num_RR)) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      if(sbl3==Klv) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
       nll -= 0.5*(sbl12-(Sigmab_lvDiag.log()).sum());
     }
     
