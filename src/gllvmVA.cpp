@@ -469,44 +469,43 @@ Type objective_function<Type>::operator() ()
         }
         
         matrix<Type> temp(nlvr,nlvr);
-        matrix <Type> L(nlvr,nlvr);
+        //matrix <Type> L(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+        
         if((random(0) == 0) || (n != nr)){
           for(int i=0; i<n; i++){
-            L.setZero();
             temp.setZero();
             temp = A(i)*A(i).transpose();
             for(int klv=0; klv<Klv; klv++){
               temp.topLeftCorner(num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
             }
-            L = temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-            A(i) = L;//have to recompute cholesky of covariance due to summation
+            L.compute(temp);//have to recompute cholesky of covariance due to summation
+            A(i) = L.matrixL();//can't do only a part due to potential covariance with num_lv
           }
         }else if((n == nr) && (random(0)>0)){//if row effects are included in u and A
           for(int i=0; i<n; i++){
-            L.setZero();
             temp.setZero();
             temp = A(i)*A(i).transpose();
             for(int klv=0; klv<Klv; klv++){
               temp.block(1,1,num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
             }
-            L =  temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-            A(i) = L;//have to recompute cholesky of covariance due to summation
+            L.compute(temp);//have to recompute cholesky of covariance due to summation
+            A(i) = L.matrixL();//can't do only a part due to potential covariance with num_lv
           }
         }
       }else if((num_RR>0) && (num_lv_c == 0)){
         u.rightCols(num_RR) += x_lv*b_lv;
-        matrix <Type> L(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
         matrix<Type> temp(nlvr,nlvr);
         
         for(int i=0; i<n; i++){
-          L.setZero();
           temp.setZero();
-          L = A(i)*A(i).transpose();
+          temp = A(i)*A(i).transpose();
           for(int klv=0; klv<Klv; klv++){
-            L.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+          temp.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
           }
-          temp = L.llt().matrixL();
-          A(i) = temp;//have to recompute cholesky of covariance due to summation
+          L.compute(temp);
+          A(i) = L.matrixL();//have to recompute cholesky of covariance due to summation
         }
       }
       
@@ -514,7 +513,7 @@ Type objective_function<Type>::operator() ()
       if((num_RR>0) && (num_lv_c>0)){
         matrix<Type> temp(num_RR+num_lv_c,num_RR+num_lv_c);
         matrix <Type> L(nlvr,nlvr);
-
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L2;
         if((random(0)>0) && (n == nr)){
           u.middleCols(1, num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
         }else{
@@ -523,7 +522,6 @@ Type objective_function<Type>::operator() ()
         u.rightCols(num_RR) += x_lv*b_lv.rightCols(num_RR);
         
         for(int i=0; i<n; i++){
-          L.setZero();
           temp.setZero();
           L = A(i)*A(i).transpose();
           for(int klv=0; klv<Klv; klv++){
@@ -545,7 +543,8 @@ Type objective_function<Type>::operator() ()
             L.block(1,nlvr-num_RR,num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);//should be top right corner
             
           }
-          A(i) = L.llt().matrixL();
+          L2.compute(L);
+          A(i) = L2.matrixL();
         }
         
       }
@@ -555,7 +554,7 @@ Type objective_function<Type>::operator() ()
       }
       //much easier, since we assume independence between LVs
       matrix<Type> temp(nlvr,nlvr);
-      matrix <Type> L(nlvr,nlvr);
+      Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
       
       if((random(0)<1) || (n != nr)){
         if(num_lv_c>0){
@@ -564,7 +563,6 @@ Type objective_function<Type>::operator() ()
         
         for(int i=0; i<n; i++){
           temp.setZero();
-          L.setZero();
           if(num_lv_c>0){
             for(int q=0; q<num_lv_c; q++){
               temp(q,q) = (x_lv.row(i)*AB_lv(q)*AB_lv(q).transpose()*x_lv.row(i).transpose()).sum();
@@ -576,13 +574,14 @@ Type objective_function<Type>::operator() ()
               temp(q,q) = (x_lv.row(i)*AB_lv(q-num_lv)*AB_lv(q-num_lv).transpose()*x_lv.row(i).transpose()).sum();
             }
           }
-          L = (A(i)*A(i).transpose() + temp).llt().matrixL();
-          A(i) = L;
+          temp += A(i)*A(i).transpose();
+          L.compute(temp);
+          A(i) = L.matrixL();
         }
         
       }else if((random(0)>1) && (n == nr)){//if row effects are included in u and A
         matrix<Type> temp(nlvr,nlvr);
-        matrix <Type> L(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
         
         if(num_lv_c>0){
           u.middleCols(1, num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
@@ -590,7 +589,6 @@ Type objective_function<Type>::operator() ()
         
         for(int i=0; i<n; i++){
           temp.setZero();
-          L.setZero();
           for(int q=1; q<(num_lv_c+1); q++){
             if(num_lv_c>0){
               temp(q,q) = (x_lv.row(i)*AB_lv(q-1)*AB_lv(q-1).transpose()*x_lv.row(i).transpose()).sum();
@@ -601,8 +599,9 @@ Type objective_function<Type>::operator() ()
               temp(q,q) = (x_lv.row(i)*AB_lv(q-num_lv-1)*AB_lv(q-num_lv-1).transpose()*x_lv.row(i).transpose()).sum();
             }
           }
-          L = (A(i)*A(i).transpose() + temp).llt().matrixL();
-          A(i) = L;
+          temp += A(i)*A(i).transpose();
+          L.compute(temp);
+          A(i) = L.matrixL();
         }
       }
     }
@@ -1482,6 +1481,7 @@ Type objective_function<Type>::operator() ()
           matrix <Type> BiQ(n,p);
           matrix <Type> Id(nlvr,nlvr);
           Id.setZero();Id.diagonal().fill(1.0);
+          Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
           for (int i=0; i<n; i++) {
             Acov = A(i)*A(i).transpose();
             for (int j=0; j<p;j++){
@@ -1490,7 +1490,8 @@ Type objective_function<Type>::operator() ()
               BiQ.setZero();
               //does not follow calculation from van der Veen et al. 2021
               //but prevents Acov^-1 via woodbury matrix identity
-              Cinv = (Id - 2*sign*Acov*D(j)).llt().solve(Id);//needs to be like this as it forces p.d. for Q-D with family>0
+              L.compute(Id - 2*sign*Acov*D(j));
+              Cinv = L.solve(Id);//needs to be like this as it forces p.d. for Q-D with family>0
               Binv = Acov+2*sign*Cinv*Acov*D(j)*Acov;
               BiQ = Id+2*sign*Cinv*D(j)*Acov;//Q*Binv
               //this calculation prevents having to explicitly invert A*A^t, or having to invert A(i).
