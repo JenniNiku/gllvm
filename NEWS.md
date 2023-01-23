@@ -1,3 +1,11 @@
+Version 1.4.1
+* VA and LA separated into two C++ files
+* Bugfix in random slopes for constr. and concr. ordination
+* Computational stability of random slopes for constr. and concr. ordination significantly improved
+* Bugfix for quadratic model
+* Computational stability of quadratic model significantly improved
+* Added example for se.gllvm
+
 Version 1.4.0
 ==============
 
