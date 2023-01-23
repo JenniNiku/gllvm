@@ -1282,7 +1282,7 @@ Type objective_function<Type>::operator() ()
     }
   }
   
-  matrix <Type> e_eta(n,p);
+  matrix <Type> e_eta;
   
   if(nlvr>0){
     matrix<Type> b_lv2(x_lv.cols(),nlvr);
