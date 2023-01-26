@@ -1,10 +1,13 @@
 Version 1.4.1
 * VA and LA separated into two C++ files
-* Bugfix in random slopes for constr. and concr. ordination
 * Computational stability of random slopes for constr. and concr. ordination significantly improved
-* Bugfix for quadratic model
 * Computational stability of quadratic model significantly improved
+* Unstructured VA covariance matrix for quadratic models with random intercepts
 * Added example for se.gllvm
+
+## Bug Fixes
+* Bugfix in random slopes for concr. ordination with LV-specific variances and random row intercepts
+* Bugfix for quadratic model with Poisson, NB, gamma, or exponential responses
 
 Version 1.4.0
 ==============
