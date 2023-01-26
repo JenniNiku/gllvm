@@ -354,18 +354,7 @@ Type objective_function<Type>::operator() ()
           }}
       }
     }
-    
-    //set VA covariances for random rows to zero for quadratic model
-    //but not with quadratic model. constrained LVs, and row-eff.
-    if((quadratic>0)&&(nlvr>(num_lv+num_lv_c))&&((num_lv+num_lv_c+num_RR*random(2))>0)){
-      for(int i=0; i<n; i++){
-        for (int d=0; d<nlvr; d++){
-          if(d!=0){
-            A(i)(d,0) = 0.0;
-          }
-        }
-      }
-    }
+   
       // Add VA terms to logL
       //Go this route if no random Bs
       matrix <Type> Atemp(nlvr,nlvr);
@@ -377,9 +366,9 @@ Type objective_function<Type>::operator() ()
       for(int i=0; i<n; i++){
         Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
         Adiag = Atemp.diagonal();
-        if(nlvr == (num_lv+num_lv_c)) nll -= (Adiag.log()).sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
+        if(nlvr == (num_lv+num_lv_c)) nll -= Adiag.abs().log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
         if(nlvr>(num_lv+num_lv_c)) {
-          nll -= (Adiag.log()).sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
+          nll -= Adiag.abs().log().sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
         }
 
         // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
@@ -452,9 +441,9 @@ Type objective_function<Type>::operator() ()
     for(int klv=0; klv<sbl3; klv++){
       AB_lvDiag = AB_lv(klv).diagonal();
       Sigmab_lvDiag = Sigmab_lv(klv).diagonal();
-      if(sbl3==(num_lv_c+num_RR)) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      if(sbl3==Klv) nll -= ((AB_lvDiag.log()).sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      nll -= 0.5*(sbl12-(Sigmab_lvDiag.log()).sum());
+      if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      if(sbl3==Klv) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      nll -= 0.5*(sbl12-Sigmab_lvDiag.abs().log().sum());
     }
     
     //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
@@ -649,7 +638,7 @@ Type objective_function<Type>::operator() ()
         cQ(i,j) += 0.5*((xb.row(i))*Ab(j)*Ab(j).transpose()*xb.row(i).transpose()).sum();
       }
       AbDiag = Ab(j).diagonal();
-      nll -= ((AbDiag.log()).sum() - 0.5*(SI*Ab(j)*Ab(j).transpose()).trace()-0.5*(Br.col(j).transpose()*SI*Br.col(j)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      nll -= (AbDiag.log().abs().sum() - 0.5*(SI*Ab(j)*Ab(j).transpose()).trace()-0.5*(Br.col(j).transpose()*SI*Br.col(j)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
     }
     eta += xb*Br;
     nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
@@ -769,7 +758,7 @@ Type objective_function<Type>::operator() ()
         }
         ArmDiag = Arm.diagonal();
         SRI = atomic::matinv(Sr);
-        nll -= (ArmDiag.log()).sum()- 0.5*((SRI*(Arm*Arm.transpose())).trace()-(r0.transpose()*(SRI*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
+        nll -= ArmDiag.log().abs().sum()- 0.5*((SRI*(Arm*Arm.transpose())).trace()-(r0.transpose()*(SRI*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
         
         nll -= 0.5*(nr-log(Sr.determinant()));
       }
@@ -1384,13 +1373,13 @@ Type objective_function<Type>::operator() ()
               //make sure that num_lv is taken from the middle even with num_RR
               for (int j=0; j<p; j++){
                 for (int q=(num_lv_c+1+num_RR*random(2)); q<nlvr; q++){
-                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,j)); //full quadratic model
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,0)); //full quadratic model
                 }
               }
             }else{
               for (int j=0; j<p; j++){
                 for (int q=(num_lv_c+1+num_RR*random(2)); q<nlvr; q++){
-                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,0)); //full quadratic model
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,j)); //full quadratic model
                 }
               }
             }
@@ -1445,9 +1434,7 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
-
       }
-      e_eta.setZero();
       
       if((num_lv_c>0) && (random(2)<1)){
         //quadratic term for constrained ordination
@@ -1461,10 +1448,11 @@ Type objective_function<Type>::operator() ()
        // do not take this route not with quadratic model, (fixed-effect) constrained LVs and random row-effects.
         if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
         //quadratic model approximation
-        //Poisson
-        e_eta = matrix <Type> (n,p);
+      
         //Poisson, NB, gamma, exponential
         if((family==0)||(family==1)||(family==4)||(family==8)){
+          e_eta = matrix <Type> (n,p);
+          
           int sign;
           //sign controls whether it's Poisson or other
           if((family>0)){
@@ -1472,67 +1460,69 @@ Type objective_function<Type>::operator() ()
           }else{
             sign = -1;
           }
+          
           matrix<Type> Binv(nlvr,nlvr);
           matrix<Type> Cinv(nlvr,nlvr);
           matrix<Type> Acov(nlvr,nlvr);
-          vector<Type> AcholDiag(nlvr);
-          Type detC;
+          Type logdetC;
           Type vBinvv;
-          matrix <Type> BiQ(n,p);
+          matrix <Type> BiQ(nlvr,nlvr);
+          matrix <Type> BiQL(nlvr,nlvr);
           matrix <Type> Id(nlvr,nlvr);
           Id.setZero();Id.diagonal().fill(1.0);
-          Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+          //this implementation does not follow calculation from van der Veen et al. 2021
+          //but prevents Acov^-1 via woodbury matrix identity
+          //see https://math.stackexchange.com/questions/17776/inverse-of-the-sum-of-matrices
           for (int i=0; i<n; i++) {
             Acov = A(i)*A(i).transpose();
             for (int j=0; j<p;j++){
               Cinv.setZero();
               Binv.setZero();
               BiQ.setZero();
-              //does not follow calculation from van der Veen et al. 2021
-              //but prevents Acov^-1 via woodbury matrix identity
-              L.compute(Id - 2*sign*Acov*D(j));
-              Cinv = L.solve(Id);//needs to be like this as it forces p.d. for Q-D with family>0
+              ///these terms are separated from the rest, they apply also to cases with random row intercepts
+              vBinvv = (newlam.col(j).transpose()*Acov*newlam.col(j)-2*sign*u.row(i)*newlam.col(j)).value();
+              Cinv = (Id - 2*sign*Acov*D(j)).inverse();
               Binv = Acov+2*sign*Cinv*Acov*D(j)*Acov;
-              BiQ = Id+2*sign*Cinv*D(j)*Acov;//Q*Binv
-              //this calculation prevents having to explicitly invert A*A^t, or having to invert A(i).
-               vBinvv = (newlam.col(j).transpose()*Acov*newlam.col(j)-2*sign*newlam.col(j).transpose()*u.row(i).transpose()+
-               2*newlam.col(j).transpose()*Cinv*Acov*D(j)*(sign*Acov*newlam.col(j)-2*u.row(i).transpose())+2*sign*u.row(i)*D(j)*Cinv*u.row(i).transpose()).value();
+              BiQ = Id+2*sign*D(j)*Cinv*Acov;//Q*Binv
 
+              //the calculation generally prevents having to explicitly invert A*A^t, or having to invert A(i).
+               vBinvv += (2*newlam.col(j).transpose()*Cinv*Acov*D(j)*(sign*Acov*newlam.col(j)-2*u.row(i).transpose())+2*sign*u.row(i)*D(j)*Cinv*u.row(i).transpose()).value();
+               
+              //extra term for concurrent ordination
               if((random(2)<1) && (num_lv_c>0)){
-                //last term is extra for concurrent ordination
-                vBinvv += -4*(newlam.col(j).transpose()*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()+4*sign*u.row(i)*BiQ*D(j)*(x_lv.row(i)*b_lv2).transpose()+4*x_lv.row(i)*b_lv2*D(j)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
+                vBinvv += (-4*x_lv.row(i)*b_lv2*D(j)*Binv*newlam.col(j)+4*sign*u.row(i)*BiQ*D(j)*(x_lv.row(i)*b_lv2).transpose()+4*x_lv.row(i)*b_lv2*D(j)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
               }
-
-              //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB)
-              detC = atomic::logdet(BiQ);
-              //detC = atomic::logdet(BiQ);
-              e_eta(i,j) = exp(-sign*(eta(i,j) + cQ(i,j)) + 0.5*(vBinvv+detC));
-
+              
+              //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
+              BiQL = BiQ.llt().matrixL();
+              logdetC = BiQL.diagonal().array().abs().log().sum();
+              e_eta(i,j) = exp(-sign*(eta(i,j) + cQ(i,j)) + 0.5*(vBinvv)+logdetC);
+              
             }
           }
         }
 
         // Binomial, Gaussian, Ordinal
         if((family==2)||(family==3)||(family==7)){
-          matrix<Type> v(nlvr,1);
+          matrix <Type> Acov(nlvr,nlvr);
           for (int i=0; i<n; i++) {
+            Acov = A(i)*A(i).transpose();
             for (int j=0; j<p;j++){
-              cQ(i,j) += (D(j)*A(i)*A(i).transpose()*D(j)*A(i)*A(i).transpose()).trace();
-              v = 0.5*newlam.col(j) - D(j)*u.row(i).transpose();
-                if((random(2)<1) && (num_lv_c>0)){
+              cQ(i,j) += (0.5*newlam.col(j).transpose()*Acov*newlam.col(j)).value();
+              cQ(i,j) += (D(j)*Acov*D(j)*Acov).trace() +2*(u.row(i)*D(j)*Acov*D(j)*u.row(i).transpose()).value() - 2*(u.row(i)*D(j)*Acov*newlam.col(j)).value();
+              if(num_lv_c>0 && random(2)<1){
                 //extra terms for concurrent ordination
-                v -= 2*D(j)*(x_lv.row(i)*b_lv2).transpose();
+                cQ(i,j) += (2*x_lv.row(i)*b_lv2*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose() -2*x_lv.row(i)*b_lv2*D(j)*Acov*newlam.col(j)+4*u.row(i)*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
               }
-              cQ(i,j) += 2*(v.transpose()*A(i)*A(i).transpose()*v).sum();
-
-            }
           }
         }
+        }
+
         for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
+        for (int j=0; j<p;j++){
         eta(i,j) += lam(i,j) - (u.row(i)*D(j)*u.row(i).transpose()).sum() - (D(j)*A(i)*A(i).transpose()).trace();
         if((num_lv_c>0) && (random(2)<1)){
-          eta(i,j) -= 2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose();
+        eta(i,j) -= 2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose();
         }
         }
         }
