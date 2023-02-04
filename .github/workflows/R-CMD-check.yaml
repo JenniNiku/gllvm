@@ -23,6 +23,7 @@ jobs:
      strategy:
       fail-fast: false
       matrix:
+        r-version: ['3.5.0', '4.1.1']
         config:
           - {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
