@@ -20,12 +20,19 @@ permissions:
 jobs:
   build:
     runs-on: macos-latest
-    strategy:
+     strategy:
+      fail-fast: false
       matrix:
-        r-version: ['3.6.3', '4.1.1']
+        config:
+          - {os: macOS-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'oldrel-1'}
 
     steps:
       - uses: actions/checkout@v3
+      - uses: r-lib/actions/setup-pandoc@v1
       - name: Set up R ${{ matrix.r-version }}
         uses: r-lib/actions/setup-r@f57f1301a053485946083d7a45022b278929a78a
         with:
