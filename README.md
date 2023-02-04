@@ -23,4 +23,5 @@ or introductions for using `gllvm` for [ordination](https://jenniniku.github.io/
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/BertvanderVeen/gllvm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/BertvanderVeen/gllvm/actions/workflows/R-CMD-check.yaml)
 [![CRAN status](https://www.r-pkg.org/badges/version/gllvm)](https://CRAN.R-project.org/package=gllvm)
+[![Codecov test coverage](https://codecov.io/gh/JenniNiku/gllvm/branch/master/graph/badge.svg)](https://app.codecov.io/gh/JenniNiku/gllvm?branch=master)
 <!-- badges: end -->
