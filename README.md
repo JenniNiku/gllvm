@@ -20,3 +20,7 @@ For getting started with `gllvm` we recommend to read vignette [Analysing multiv
 or introductions for using `gllvm` for [ordination](https://jenniniku.github.io/gllvm/articles/vignette3.html) and for [analysing species correlations](https://jenniniku.github.io/gllvm/articles/vignette4.html).
 
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/BertvanderVeen/gllvm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/BertvanderVeen/gllvm/actions/workflows/R-CMD-check.yaml)
+[![CRAN status](https://www.r-pkg.org/badges/version/gllvm)](https://CRAN.R-project.org/package=gllvm)
+<!-- badges: end -->
