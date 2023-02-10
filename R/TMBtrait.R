@@ -642,6 +642,7 @@ trait.TMB <- function(
       map.list$lambda = factor(NA)
       map.list$lambda2 = factor(NA)
       map.list$u = factor(NA) 
+      map.list$Au = factor(NA) 
     }
     
     if((num.lv.cor>0) & (method %in% c("VA", "EVA"))){
@@ -782,11 +783,11 @@ trait.TMB <- function(
     } else {
       sigma=0
       map.list$log_sigma <- factor(NA)
-      
+      map.list$lg_Ar <- factor(NA)
       # if(row.eff != "fixed") map.list$r0 <- factor(NA, length(r0))
     }
     map.list$sigmab_lv = factor(NA)
-    
+    map.list$Ab_lv = factor(NA)
     # Random slopes
     if(!is.null(randomX)){
       randoml[2]=1
@@ -797,6 +798,7 @@ trait.TMB <- function(
       map.list$Br = factor(NA)
       map.list$sigmaB = factor(NA)
       map.list$sigmaij = factor(NA)
+      map.list$Abb = factor(NA)
     }
     if(quadratic==FALSE){
       map.list$lambda2 <- factor(NA)
@@ -827,7 +829,7 @@ trait.TMB <- function(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN), silent=!trace,
         parameters = parameter.list, map = map.list2,
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
-        DLL = "gllvmVA")
+        DLL = "gllvm")
       
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
@@ -847,25 +849,28 @@ trait.TMB <- function(
 #### Call makeADFun
     
     if((method %in% c("VA", "EVA")) && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
-      if(num.lv==0)map.list$Au = factor(NA); if(row.eff != "random") map.list$lg_Ar <- factor(NA);map.list$Ab_lv = factor(NA); if(is.null(randomX)) map.list$Abb = factor(NA)
       parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH,  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta) #, scaledc=scaledc
       
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN), silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = maxit),
-        DLL = "gllvmVA")
+        DLL = "gllvm")
       
     } else {
-      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = sigma.lv, u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, zeta=zeta) #, scaledc=scaledc 
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, family=familyn,extra=extra,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, NN = NN)
-      
+      Au=0; Abb=0; lg_Ar=0;
+      map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
+      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta) #, scaledc=scaledc
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
+      if(family == "ordinal"){
+        data.list$method = 0
+      }
       
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
-        random = randomp, DLL = "gllvmLA")
+        random = randomp, DLL = "gllvm")
     }
 
 #### Fit model 
@@ -971,7 +976,7 @@ trait.TMB <- function(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = 1000),
-        DLL = "gllvmVA")
+        DLL = "gllvm")
 
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
@@ -1028,7 +1033,7 @@ trait.TMB <- function(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,maxit = 1000),
-        DLL = "gllvmVA")
+        DLL = "gllvm")
       
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
@@ -1191,9 +1196,15 @@ trait.TMB <- function(
 #### Check if model fit succeeded/improved on this iteration n.i
     # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
     if(n.i>1){
-      gr1 <- objrFinal$gr()
-      gr1 <- gr1/length(gr1)
-      norm.gr1 <- norm(gr1)
+      if(!is.null(objrFinal)){
+        gr1 <- objrFinal$gr()
+        gr1 <- gr1/length(gr1)
+        norm.gr1 <- norm(gr1)
+      }else{
+        gr1 <- NaN
+        norm.gr1 <- NaN
+      }
+      
       gr2 <- objr$gr()
       gr2 <- gr2/length(gr2)
       norm.gr2 <- norm(gr2)
@@ -1203,13 +1214,12 @@ trait.TMB <- function(
     }else{
       n.i.i <- 0
     }
-    
     if(n.i.i>n.init.max){
       n.init <- n.i
       warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;n.i.i<-0;
       out$logL <- new.loglik
       if(num.lv > 0) {

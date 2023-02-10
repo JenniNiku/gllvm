@@ -377,8 +377,7 @@
 #'}
 #' @export
 #'
-#'@useDynLib gllvmVA
-#'@useDynLib gllvmLA
+#'@useDynLib gllvm, .registration = TRUE
 #'@importFrom TMB MakeADFun
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
