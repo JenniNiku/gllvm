@@ -763,8 +763,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       gamma <- matrix(1,p,num.lv.c)
       gamma[upper.tri(gamma)]=0
       index <- matrix(0,n,num.lv.c)
-      eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
     }
+    eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
   }else if(num.lv.c>0&num.lv>0){
     if(family!="ordinal"){
       zeta.struc<-"species"
@@ -791,8 +791,9 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       index.c <- index
     }
   }
-  if(num.RR>0){
-    #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
+  # generate starting values for num.RR when num.lv.c or num.lv are also in the model
+  if((num.RR>0 & num.lv.c> 0) | (num.RR>0 & num.lv>0)){
+    # Need to recalculate residual, in case we have added something to the linear predictor (e.g., num.lv.c)
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta")) {
@@ -904,9 +905,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       ds.res <- resi
     }
     resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-  }
-  if(num.RR>0){
-    
+
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
     beta <- t(coef(RRmod))

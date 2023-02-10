@@ -811,51 +811,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvmVA")##GLLVM
       
-      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
       }
-      if(optimizer=="optim") {
-        if(optim.method != "BFGS")
+      if(optimizer=="optim" || !(optimizer %in%c("optim","nlminb") )) {
+        if(optimizer == "optim" && optim.method != "BFGS")
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
-      }else{
-        if(optimizer == "alabama"){
-          if(!optim.method%in%c("L-BFGS-B","nlminb")){
-            control.optim <- list(maxit=maxit, reltol = reltol.c)
-          }else if(optim.method == "L-BFGS-B"){
-            control.optim <- list(maxit=maxit, factr = 1/reltol.c)
-          }else if(optim.method == "nlminb"){
-            control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
-          }
-          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
-        }else{
-          local_opts <- list( "algorithm" = optim.method,
-                              "xtol_rel" = reltol,
-                              "maxeval" = maxit,
-                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
-          
-          opts <- list( "algorithm" = optimizer,
-                        "xtol_rel" = reltol,
-                        "maxeval" = maxit,
-                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
-                        "local_opts" = local_opts)
-          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
-          if(!inherits(optr,"try-error")){
-            optr$convergence <- as.integer(optr$status<0&optr$status!=5)
-            #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
-            optr$par <- objr$env$last.par.best;names(objr$env$last.par.best) = names(optr$par) = names(objr$par);   
-            if(optr$status<0){
-              optr[1] <- optr$message
-              class(optr) <- "try-error"
-            }
-          }
-        }
-       
-      }
-      
+  
       if(!inherits(optr,"try-error")){
         lambda <- optr$par[names(optr$par)=="lambda"]
         
@@ -865,7 +830,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
         }   
       }
-    
       }
     
 
