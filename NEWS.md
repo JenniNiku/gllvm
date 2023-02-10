@@ -8,6 +8,7 @@ Version 1.4.1
 ## Bug Fixes
 * Bugfix in random slopes for concr. ordination with LV-specific variances and random row intercepts
 * Bugfix for quadratic model with Poisson, NB, gamma, or exponential responses
+* Bugfix in starting values for constrained and concurrent quadratic model
 
 Version 1.4.0
 ==============
