@@ -820,15 +820,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         else
           timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
       }
-  
+    
       if(!inherits(optr,"try-error")){
-        lambda <- optr$par[names(optr$par)=="lambda"]
-        
+        try({
+        lamba <- optr$par[names(optr$par)=="lambda"]
+
         if(start.struc=="LV"|quadratic=="LV"){
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = 1)
         }else if(quadratic==TRUE){
           lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
-        }   
+        }
+        },silent=T)
       }
       }
     
@@ -1229,54 +1231,19 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvmLA")##GLLVM
 
-        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
-        if(optimizer=="optim") {
-          if(optim.method != "BFGS")
+        if(optimizer=="optim" | !(optimizer %in% c("optim","nlminb"))) {
+          if( optimizer == "optim" && optim.method != "BFGS")
             timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
           else
             timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
         }
-        }else{
-          if(optimizer == "alabama"){
-            if(!optim.method%in%c("L-BFGS-B","nlminb")){
-              control.optim <- list(maxit=maxit, reltol = reltol.c)
-            }else if(optim.method == "L-BFGS-B"){
-              control.optim <- list(maxit=maxit, factr = 1/reltol.c)
-            }else if(optim.method == "nlminb"){
-              control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
-            }
-            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
-          }else{
-            local_opts <- list( "algorithm" = optim.method,
-                                "xtol_rel" = reltol,
-                                "maxeval" = maxit,
-                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
-            
-            opts <- list( "algorithm" = optimizer,
-                          "xtol_rel" = reltol,
-                          "maxeval" = maxit,
-                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
-                          "local_opts" = local_opts)
-            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
-            if(!inherits(optr,"try-error")){
-              optr$convergence <- as.integer(optr$status<0&optr$status!=5)
-              #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
-              optr$par <- objr$env$last.par.best[!objr$env$lrandom()]; names(objr$env$last.par.best) <- rep(objr$env$parNameOrder,unlist(lapply(objr$env$parameters,length))); names(optr$par) = names(objr$par);   
-              if(optr$status<0){
-                optr[1] <- optr$message
-                class(optr) <- "try-error"
-              }
-            }
-          }
-          
-        }
-        
+
         if(!inherits(optr,"try-error")){
           # lambda <- optr$par[names(optr$par)=="lambda"]
-          lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"],ncol=num.RR,nrow=p,byrow=T)
+          try({lambda2 <- matrix(optr$par[names(optr$par)=="lambda2"],ncol=num.RR,nrow=p,byrow=T)},silent=T)
           # b.lv <- matrix(objr$par[names(objr$par)=="b_lv"],ncol=num.RR)
           # fit$params[,2:(1+num.RR)][lower.tri(fit$params[,2:(1+num.RR)],diag=F)] <- lambda
           fit$params[,(ncol(fit$params)-num.RR+1):ncol(fit$params)] <- lambda2
@@ -1643,7 +1610,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       warning("n.init.max reached after ", n.i, " iterations.")
     }
     
-    if((n.i==1 || (is.nan(norm.gr1) && !is.nan(norm(gr2))) || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1)))  && is.finite(new.loglik) && !inherits(optr, "try-error"))){
+    if((n.i==1 || (is.nan(norm.gr1) && !is.nan(norm(gr2))) || (!is.nan(norm(gr2)) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1)))  && is.finite(new.loglik)) && !inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;n.i.i<-0;
       out$start <- fit
       out$logL <- new.loglik
