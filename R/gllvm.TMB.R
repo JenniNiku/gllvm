@@ -154,12 +154,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     max.levels <- apply(y,2,function(x) length(min(x):max(x)))
     if(any(max.levels == 1)&zeta.struc=="species" || all(max.levels == 2)&zeta.struc=="species")
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
-    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species")
-      stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species or use zeta.struc = `common` ")
-    if(!all(min(y)==apply(y,2,min))&zeta.struc=="species")
-      stop("For ordinal data and zeta.struc=`species` all species must have the same minimum category. Please reclassify per species or use zeta.struc = `common`.")
+    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species"){
+      warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'")
+      zeta.struc = "common"
+    }
+      
+    if(!all(min(y)==apply(y,2,min))&zeta.struc=="species"){
+      stop("For ordinal data and zeta.struc=`species` all species must have the same minimum category.Setting 'zeta.struc = `common`'.")
+      zeta.struc = "common"
+    }
     if(any(diff(sort(unique(c(y))))!=1)&zeta.struc=="common")
-      stop("Can't fit ordinal model if there are missing classes. Please reclassify.")
+      stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
   }
 
   # Define design matrix for covariates
@@ -1060,6 +1065,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         
         zetas<-zetanew
         out$y<-y00
+        out$zeta.struc = zeta.struc
       }
       if((num.lv.c+num.RR)>0){
         bi.lv <- names(param)=="b_lv"

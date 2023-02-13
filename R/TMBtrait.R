@@ -238,14 +238,19 @@ trait.TMB <- function(
     y00<-y
     if(min(y)==0){ y=y+1}
     max.levels <- apply(y,2,function(x) length(min(x):max(x)))
-    if(any(max.levels == 1) || all(max.levels == 2))
+    if(any(max.levels == 1)&zeta.struc=="species" || all(max.levels == 2)&zeta.struc=="species")
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
+    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species"){
+      warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'")
+      zeta.struc = "common"
+    }
     
-    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species")
-      stop("Can't fit ordinal model if there are species with missing classes. Please reclassify per species or use zeta.struc = `common` ")
-    
+    if(!all(min(y)==apply(y,2,min))&zeta.struc=="species"){
+      stop("For ordinal data and zeta.struc=`species` all species must have the same minimum category.Setting 'zeta.struc = `common`'.")
+      zeta.struc = "common"
+    }
     if(any(diff(sort(unique(c(y))))!=1)&zeta.struc=="common")
-      stop("Can't fit ordinal model if there are missing classes. Please reclassify.")
+      stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
   }
   if(is.null(rownames(y))) rownames(y) <- paste("Row",1:n,sep="")
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
@@ -1786,6 +1791,7 @@ trait.TMB <- function(
             names(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
 
           }
+          out$zeta.struc = zeta.struc
         }
 
 

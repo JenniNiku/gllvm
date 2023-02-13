@@ -1380,6 +1380,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     if(!TMB&family=="ordinal"){
       out$zeta.struc <- "species"
+    }else if(TMB & family == "ordinal"){
+      out$zeta.struc = fitg$zeta.struc
     }
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
