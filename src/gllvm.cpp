@@ -98,10 +98,10 @@ Type objective_function<Type>::operator() ()
   }
   
   // Distance matrix calculated from the coordinates
-  matrix<Type> DiSc(dc.cols(),dc.cols());
-  matrix<Type> dc_scaled(dc.rows(),dc.cols());
+  matrix<Type> DiSc(dc.cols(),dc.cols()); DiSc.fill(0.0);
+  matrix<Type> dc_scaled(dc.rows(),dc.cols()); dc_scaled.fill(0.0);
   // matrix<Type> DistM(dc.rows(),dc.rows());
-  // if(((num_corlv>0) || (((random(0)>0) && (nlvr==(num_lv+num_lv_c))) && (rstruc>0))) && ((cstruc==2) || (cstruc>3))){
+  // if(((num_corlv>0) || (((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0))) & ((cstruc==2) || (cstruc>3))){
   //   matrix<Type> DiSc(dc.cols(),dc.cols());
   //   DiSc.setZero();
   // 
@@ -161,7 +161,7 @@ Type objective_function<Type>::operator() ()
   //K*K*d or d*d*K
   int sbl12 = 0;
   int sbl3 = 0;
-  if((sigmab_lv.size()==Klv)||(sigmab_lv.size()==Type(1))){
+  if((sigmab_lv.size()==Klv) || (sigmab_lv.size()==Type(1))){
     sbl12 = num_lv_c + num_RR;
     sbl3 = Klv;
   }else if(sigmab_lv.size()==(num_lv_c+num_RR)){
@@ -190,7 +190,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   }
-  
+
   if((nlvr>0)||(num_RR>0)){
     
     if(nlvr>0){
@@ -291,7 +291,7 @@ Type objective_function<Type>::operator() ()
   
   matrix<Type> mu(n,p);
   
-  // Variational approximation
+
   // Variational approximation
   if((method<1) || (method>1)){
   // add offset
@@ -333,7 +333,6 @@ Type objective_function<Type>::operator() ()
           }}
       }
     }
-    
     
     if((num_lv+num_lv_c)>0){
       // log-Cholesky parametrization for A_i:s
@@ -607,6 +606,7 @@ Type objective_function<Type>::operator() ()
     sds.diagonal() = exp(sigmaB);
     matrix<Type> S=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
     
+
     // Variational covariance for random slopes
     // log-Cholesky parametrization for A_bj:s
     vector<matrix<Type>> Ab(p);
@@ -869,7 +869,6 @@ Type objective_function<Type>::operator() ()
               k++;
             }}
         }
-        
         
         for (d=0; d<nu; d++) {
           nll -= log(Alvm(d).determinant()) + 0.5*( - (Alvm(d)*Alvm(d).transpose()).trace() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
@@ -1438,7 +1437,6 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-      
       if((num_lv_c>0) && (random(2)<1)){
         //quadratic term for constrained ordination
         for (int j=0; j<p;j++){
@@ -1504,7 +1502,6 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
-        
         // Binomial, Gaussian, Ordinal
         if((family==2)||(family==3)||(family==7)){
           matrix <Type> Acov(nlvr,nlvr);
@@ -2047,9 +2044,8 @@ Type objective_function<Type>::operator() ()
         }
         REPORT(Slv);
       } else {
-        
+       
         matrix<Type> Slv(nu,nu);
-        
         for(int q=0; q<num_corlv; q++){
           // site specific LVs, which are correlated between groups
           Slv.setZero();
@@ -2072,12 +2068,11 @@ Type objective_function<Type>::operator() ()
               // Slv = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
             }
           }
-          
+
           MVNORM_t<Type> mvnormS1(Slv);
           nll += mvnormS1(ucopy.col(q));
-          
         }
-        REPORT(Slv);
+        // REPORT(Slv);
       }
     } else {
       
@@ -2113,7 +2108,6 @@ Type objective_function<Type>::operator() ()
         
         for (i=0; i<nu; i++) {
           nll += mvnormS2(ucopy.block(i*times,q,times,1));
-          
         }
         
       }

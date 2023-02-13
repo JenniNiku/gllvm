@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,23 +33,17 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -69,7 +65,7 @@
       <a href="../articles/vignette5.html">How to use the quadratic response model</a>
     </li>
     <li>
-      <a href="../articles/vignette6.html">Model-based constrained ordination with latent variables</a>
+      <a href="../articles/vignette6.html">Ordination with predictors</a>
     </li>
   </ul>
 </li>
@@ -79,8 +75,8 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/JenniNiku/gllvm/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+  <a href="https://github.com/JenniNiku/gllvm/" class="external-link">
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -94,70 +90,87 @@
 
       
 
-      </header><script src="vignette3_files/accessible-code-block-0.0.1/empty-anchor.js"></script><link href="vignette3_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
-<script src="vignette3_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
+      </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Introduction to gllvm Part 1: Ordination</h1>
-                        <h4 class="author">Jenni Niku</h4>
+                        <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 class="date">2021-07-28</h4>
+            <h4 data-toc-skip class="date">2023-01-06</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/master/vignettes/vignette3.rmd"><code>vignettes/vignette3.rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette3.rmd" class="external-link"><code>vignettes/vignette3.rmd</code></a></small>
       <div class="hidden name"><code>vignette3.rmd</code></div>
 
     </div>
 
     
     
-<div id="introduction-to-gllvm" class="section level1">
-<h1 class="hasAnchor">
-<a href="#introduction-to-gllvm" class="anchor"></a>Introduction to gllvm</h1>
-<div id="r-package-gllvm" class="section level2">
-<h2 class="hasAnchor">
-<a href="#r-package-gllvm" class="anchor"></a>R package gllvm</h2>
+<div class="section level2">
+<h2 id="introduction-to-gllvm">Introduction to gllvm<a class="anchor" aria-label="anchor" href="#introduction-to-gllvm"></a>
+</h2>
+<div class="section level3">
+<h3 id="r-package-gllvm">R package gllvm<a class="anchor" aria-label="anchor" href="#r-package-gllvm"></a>
+</h3>
 <ul>
-<li><p><strong>R</strong> package <strong>gllvm</strong> fits Generalized linear latent variable models (GLLVM) for multivariate data<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p></li>
-<li><p>Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.</p></li>
+<li><p><strong>R</strong> package <strong>gllvm</strong> fits
+Generalized linear latent variable models (GLLVM) for multivariate
+data<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p></li>
+<li><p>Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S.
+Taskinen, D.I. Warton, B. van der Veen.</p></li>
 <li>
 <p>The package available in</p>
 <ul>
-<li>GitHub: <a href="https://github.com/JenniNiku/gllvm" class="uri">https://github.com/JenniNiku/gllvm</a>
+<li>GitHub: <a href="https://github.com/JenniNiku/gllvm" class="external-link uri">https://github.com/JenniNiku/gllvm</a>
 </li>
-<li>CRAN: <a href="https://cran.r-project.org/web/packages/gllvm/index.html" class="uri">https://cran.r-project.org/web/packages/gllvm/index.html</a>
+<li>CRAN: <a href="https://CRAN.R-project.org/package=gllvm" class="external-link uri">https://CRAN.R-project.org/package=gllvm</a>
 </li>
 </ul>
 </li>
 <li><p>Package installation:</p></li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># From CRAN</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="va">gllvm</span><span class="op">)</span>
-<span class="co"># OR</span>
-<span class="co"># From GitHub using devtools package's function install_github</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"JenniNiku/gllvm"</span><span class="op">)</span></code></pre></div>
-<details><p><summary><span style="color:red"> Problems? </span></summary></p>
-<p><span style="color:red"> <strong>gllvm</strong> package depends on R packages <strong>TMB</strong> and <strong>mvabund</strong>, try to install these first.</span></p>
+<code class="sourceCode R"><span><span class="co"># From CRAN</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="va">gllvm</span><span class="op">)</span></span>
+<span><span class="co"># OR</span></span>
+<span><span class="co"># From GitHub using devtools package's function install_github</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"JenniNiku/gllvm"</span><span class="op">)</span></span></code></pre></div>
+<details><summary><span style="color:red"> Problems? </span>
+</summary><p><span style="color:red"> <strong>gllvm</strong> package depends on R
+packages <strong>TMB</strong> and <strong>mvabund</strong>, try to
+install these first.</span></p>
 </details><ul>
-<li><p>GLLVMs are computationally intensive to fit due the integral in log-likelihood.</p></li>
-<li><p><strong>gllvm</strong> package overcomes computational problems by applying closed form approximations to log-likelihood and using automatic differentiation in C++ to accelerate computation times (<strong>TMB</strong><a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>).</p></li>
-<li><p>Estimation is performed using either variational approximation (VA<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>), extended variational approximation method (EVA<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>) or Laplace approximation (LA<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>) method implemented via <strong>R</strong> package <strong>TMB</strong>.</p></li>
-<li><p>VA method is faster and more accurate than LA, but not applicable for all distributions and link functions.</p></li>
+<li><p>GLLVMs are computationally intensive to fit due the integral in
+log-likelihood.</p></li>
+<li><p><strong>gllvm</strong> package overcomes computational problems
+by applying closed form approximations to log-likelihood and using
+automatic differentiation in C++ to accelerate computation times
+(<strong>TMB</strong><a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>).</p></li>
+<li><p>Estimation is performed using either variational approximation
+(VA<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>),
+extended variational approximation method (EVA<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>) or Laplace
+approximation (LA<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>) method implemented via <strong>R</strong>
+package <strong>TMB</strong>.</p></li>
+<li><p>VA method is faster and more accurate than LA, but not applicable
+for all distributions and link functions.</p></li>
 <li>
 <p>Using <strong>gllvm</strong> we can fit</p>
 <ul>
-<li>GLLVM without covariates gives model-based ordination and biplots</li>
-<li>GLLVM with environmental covariates for studying factors explaining species abundance</li>
-<li>Fourth corner models with latent variables for studying environmental-trait interactions</li>
+<li>GLLVM without covariates gives model-based ordination and
+biplots</li>
+<li>GLLVM with environmental covariates for studying factors explaining
+species abundance</li>
+<li>Fourth corner models with latent variables for studying
+environmental-trait interactions</li>
 <li>GLLVM without latent variables fits basic multivariate GLMs</li>
 </ul>
 </li>
-<li><p>Additional tools: model checking, model selection, inference, visualization.</p></li>
+<li><p>Additional tools: model checking, model selection, inference,
+visualization.</p></li>
 </ul>
 </div>
-<div id="distributions" class="section level2">
-<h2 class="hasAnchor">
-<a href="#distributions" class="anchor"></a>Distributions</h2>
+<div class="section level3">
+<h3 id="distributions">Distributions<a class="anchor" aria-label="anchor" href="#distributions"></a>
+</h3>
 <table class="table">
 <thead><tr class="header">
 <th>Response</th>
@@ -235,13 +248,15 @@
 </tbody>
 </table>
 </div>
-<div id="data-input" class="section level2">
-<h2 class="hasAnchor">
-<a href="#data-input" class="anchor"></a>Data input</h2>
-<p>Main function of the <strong>gllvm</strong> package is <code><a href="../reference/gllvm.html">gllvm()</a></code>, which can be used to fit GLLVMs for multivariate data with the most important arguments listed in the following:</p>
+<div class="section level3">
+<h3 id="data-input">Data input<a class="anchor" aria-label="anchor" href="#data-input"></a>
+</h3>
+<p>Main function of the <strong>gllvm</strong> package is
+<code><a href="../reference/gllvm.html">gllvm()</a></code>, which can be used to fit GLLVMs for multivariate
+data with the most important arguments listed in the following:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="cn">NULL</span>, X <span class="op">=</span> <span class="cn">NULL</span>, TR <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">family</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, 
- formula <span class="op">=</span> <span class="cn">NULL</span>, method <span class="op">=</span> <span class="st">"VA"</span>, row.eff <span class="op">=</span> <span class="cn">FALSE</span>, n.init<span class="op">=</span><span class="fl">1</span>, starting.val <span class="op">=</span><span class="st">"res"</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="cn">NULL</span>, X <span class="op">=</span> <span class="cn">NULL</span>, TR <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">family</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, </span>
+<span> formula <span class="op">=</span> <span class="cn">NULL</span>, method <span class="op">=</span> <span class="st">"VA"</span>, row.eff <span class="op">=</span> <span class="cn">FALSE</span>, n.init<span class="op">=</span><span class="fl">1</span>, starting.val <span class="op">=</span><span class="st">"res"</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>y: matrix of abundances</li>
 <li>X: matrix or data.frame of environmental variables</li>
@@ -254,23 +269,24 @@
 <li>starting.val: starting value method</li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm">gllvm</a></span><span class="op">)</span>
-<span class="co">## Loading required package: TMB</span>
-<span class="co">## Loading required package: mvabund</span>
-<span class="co">## </span>
-<span class="co">## Attaching package: 'gllvm'</span>
-<span class="co">## The following object is masked from 'package:mvabund':</span>
-<span class="co">## </span>
-<span class="co">##     coefplot</span>
-<span class="co">## The following objects are masked from 'package:stats':</span>
-<span class="co">## </span>
-<span class="co">##     nobs, predict, simulate, vcov</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm" class="external-link">gllvm</a></span><span class="op">)</span></span>
+<span><span class="co">## Loading required package: TMB</span></span>
+<span><span class="co">## Loading required package: mvabund</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Attaching package: 'gllvm'</span></span>
+<span><span class="co">## The following object is masked from 'package:mvabund':</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">##     coefplot</span></span>
+<span><span class="co">## The following object is masked from 'package:stats':</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">##     simulate</span></span></code></pre></div>
 </div>
-<div id="example-spiders" class="section level2">
-<h2 class="hasAnchor">
-<a href="#example-spiders" class="anchor"></a>Example: Spiders</h2>
+<div class="section level3">
+<h3 id="example-spiders">Example: Spiders<a class="anchor" aria-label="anchor" href="#example-spiders"></a>
+</h3>
 <ul>
-<li>Abundances of 12 hunting spider species measured as a count at 28 sites<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>.</li>
+<li>Abundances of 12 hunting spider species measured as a count at 28
+sites<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>.</li>
 <li>Six environmental variables measured at each site.
 <ul>
 <li>
@@ -284,727 +300,818 @@
 <li>
 <code>herb.layer</code>: cover of herb layer</li>
 <li>
-<code>reflection</code>: reflection of the soil surface with a cloudless sky</li>
+<code>reflection</code>: reflection of the soil surface with a
+cloudless sky</li>
 </ul>
 </li>
 </ul>
 </div>
-<div id="data-fitting" class="section level2">
-<h2 class="hasAnchor">
-<a href="#data-fitting" class="anchor"></a>Data fitting</h2>
-<p>Fitting basic GLLVM <span class="math inline">\(g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span> with <strong>gllvm</strong>:</p>
+<div class="section level3">
+<h3 id="data-fitting">Data fitting<a class="anchor" aria-label="anchor" href="#data-fitting"></a>
+</h3>
+<p>Fitting basic GLLVM <span class="math inline">\(g(E(y_{ij})) =
+\beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span> with
+<strong>gllvm</strong>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va">mvabund</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"spider"</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm">gllvm</a></span><span class="op">)</span>
-<span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span>
-<span class="va">fitnb</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, family = "negative.binomial")</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -733.6806 </span>
-<span class="co">## Residual degrees of freedom:  289 </span>
-<span class="co">## AIC:  1561.361 </span>
-<span class="co">## AICc:  1577.028 </span>
-<span class="co">## BIC:  1623.975</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">mvabund</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"spider"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm" class="external-link">gllvm</a></span><span class="op">)</span></span>
+<span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitnb</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -733.6806 </span></span>
+<span><span class="co">## Residual degrees of freedom:  289 </span></span>
+<span><span class="co">## AIC:  1561.361 </span></span>
+<span><span class="co">## AICc:  1577.028 </span></span>
+<span><span class="co">## BIC:  1740.765</span></span></code></pre></div>
 </div>
-<div id="residual-analysis" class="section level2">
-<h2 class="hasAnchor">
-<a href="#residual-analysis" class="anchor"></a>Residual analysis</h2>
+<div class="section level3">
+<h3 id="residual-analysis">Residual analysis<a class="anchor" aria-label="anchor" href="#residual-analysis"></a>
+</h3>
 <ul>
-<li><p>Residual analysis can be used to assess the appropriateness of the fitted model (eg. in terms of mean-variance relationship).</p></li>
-<li><p>Randomized quantile/Dunn-Smyth residuals<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a> are used in the package, as they provide standard normal distributed residuals, even for discrete responses, in the case of a proper model.</p></li>
+<li><p>Residual analysis can be used to assess the appropriateness of
+the fitted model (eg. in terms of mean-variance relationship).</p></li>
+<li><p>Randomized quantile/Dunn-Smyth residuals<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a> are used in the
+package, as they provide standard normal distributed residuals, even for
+discrete responses, in the case of a proper model.</p></li>
 </ul>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/graphics/par.html">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/pkg/mvabund/man/mvabund-internal.html">plot</a></span><span class="op">(</span><span class="va">fitnb</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitnb</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-5-1.png" width="768" style="display: block; margin: auto;"></p>
 </div>
-<div id="model-selection" class="section level2">
-<h2 class="hasAnchor">
-<a href="#model-selection" class="anchor"></a>Model selection</h2>
+<div class="section level3">
+<h3 id="model-selection">Model selection<a class="anchor" aria-label="anchor" href="#model-selection"></a>
+</h3>
 <ul>
-<li>Information criterias can be used for model selection.</li>
-<li>For example, compare distributions or choose suitable number of latent variables.</li>
+<li>Information criteria can be used for model selection.</li>
+<li>For example, compare distributions or choose suitable number of
+latent variables.</li>
 </ul>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>
-<span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitp</span><span class="op">)</span>
-<span class="co">## [1] 1761.655</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span>
-<span class="co">## [1] 1561.361</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">fitp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitp</span><span class="op">)</span></span>
+<span><span class="co">## [1] 1761.655</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></span>
+<span><span class="co">## [1] 1561.361</span></span></code></pre></div>
 </div>
 </div>
-<div id="exercises" class="section level1">
-<h1 class="hasAnchor">
-<a href="#exercises" class="anchor"></a>Exercises</h1>
-<p>Try to do these exercises for the next 10 minutes, as many as time is enough for.</p>
-<p><span style="color:blue"> E1. Load spider data from <strong>mvabund</strong> package and take a look at the dataset. </span></p>
+<div class="section level2">
+<h2 id="exercises">Exercises<a class="anchor" aria-label="anchor" href="#exercises"></a>
+</h2>
+<p>Try to do these exercises for the next 10 minutes, as many as time is
+enough for.</p>
+<p><span style="color:blue"> E1. Load spider data from
+<strong>mvabund</strong> package and take a look at the dataset.
+</span></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm">gllvm</a></span><span class="op">)</span>
-<span class="co">#Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"spider"</span><span class="op">)</span>
-<span class="co"># more info: </span>
-<span class="co"># ?spider</span></code></pre></div>
-<details><p><summary><span style="color:red"> Show me the answers. </span></summary></p>
-<p><span style="color:red"> 1. Print the data and covariates and draw a boxplot of the data. </span></p>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm" class="external-link">gllvm</a></span><span class="op">)</span></span>
+<span><span class="co">#Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"spider"</span><span class="op">)</span></span>
+<span><span class="co"># more info: </span></span>
+<span><span class="co"># ?spider</span></span></code></pre></div>
+<details><summary><span style="color:red"> Show the answers. </span>
+</summary><p><span style="color:red"> 1. Print the data and covariates and draw a
+boxplot of the data. </span></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># response matrix:</span>
-<span class="va">spider</span><span class="op">$</span><span class="va">abund</span>
-<span class="co">##    Alopacce Alopcune Alopfabr Arctlute Arctperi Auloalbi Pardlugu Pardmont</span>
-<span class="co">## 1        25       10        0        0        0        4        0       60</span>
-<span class="co">## 2         0        2        0        0        0       30        1        1</span>
-<span class="co">## 3        15       20        2        2        0        9        1       29</span>
-<span class="co">## 4         2        6        0        1        0       24        1        7</span>
-<span class="co">## 5         1       20        0        2        0        9        1        2</span>
-<span class="co">## 6         0        6        0        6        0        6        0       11</span>
-<span class="co">## 7         2        7        0       12        0       16        1       30</span>
-<span class="co">## 8         0       11        0        0        0        7       55        2</span>
-<span class="co">## 9         1        1        0        0        0        0        0       26</span>
-<span class="co">## 10        3        0        1        0        0        0        0       22</span>
-<span class="co">## 11       15        1        2        0        0        1        0       95</span>
-<span class="co">## 12       16       13        0        0        0        0        0       96</span>
-<span class="co">## 13        3       43        1        2        0       18        1       24</span>
-<span class="co">## 14        0        2        0        1        0        4        3       14</span>
-<span class="co">## 15        0        0        0        0        0        0        6        0</span>
-<span class="co">## 16        0        3        0        0        0        0        6        0</span>
-<span class="co">## 17        0        0        0        0        0        0        2        0</span>
-<span class="co">## 18        0        1        0        0        0        0        5        0</span>
-<span class="co">## 19        0        1        0        0        0        0       12        0</span>
-<span class="co">## 20        0        2        0        0        0        0       13        0</span>
-<span class="co">## 21        0        1        0        0        0        0       16        1</span>
-<span class="co">## 22        7        0       16        0        4        0        0        2</span>
-<span class="co">## 23       17        0       15        0        7        0        2        6</span>
-<span class="co">## 24       11        0       20        0        5        0        0        3</span>
-<span class="co">## 25        9        1        9        0        0        2        1       11</span>
-<span class="co">## 26        3        0        6        0       18        0        0        0</span>
-<span class="co">## 27       29        0       11        0        4        0        0        1</span>
-<span class="co">## 28       15        0       14        0        1        0        0        6</span>
-<span class="co">##    Pardnigr Pardpull Trocterr Zoraspin</span>
-<span class="co">## 1        12       45       57        4</span>
-<span class="co">## 2        15       37       65        9</span>
-<span class="co">## 3        18       45       66        1</span>
-<span class="co">## 4        29       94       86       25</span>
-<span class="co">## 5       135       76       91       17</span>
-<span class="co">## 6        27       24       63       34</span>
-<span class="co">## 7        89      105      118       16</span>
-<span class="co">## 8         2        1       30        3</span>
-<span class="co">## 9         1        1        2        0</span>
-<span class="co">## 10        0        0        1        0</span>
-<span class="co">## 11        0        1        4        0</span>
-<span class="co">## 12        1        8       13        0</span>
-<span class="co">## 13       53       72       97       22</span>
-<span class="co">## 14       15       72       94       32</span>
-<span class="co">## 15        0        0       25        3</span>
-<span class="co">## 16        2        0       28        4</span>
-<span class="co">## 17        0        0       23        2</span>
-<span class="co">## 18        0        0       25        0</span>
-<span class="co">## 19        1        0       22        3</span>
-<span class="co">## 20        0        0       22        2</span>
-<span class="co">## 21        0        1       18        2</span>
-<span class="co">## 22        0        0        1        0</span>
-<span class="co">## 23        0        0        1        0</span>
-<span class="co">## 24        0        0        0        0</span>
-<span class="co">## 25        6        0       16        6</span>
-<span class="co">## 26        0        0        1        0</span>
-<span class="co">## 27        0        0        0        0</span>
-<span class="co">## 28        0        0        2        0</span>
-<span class="co"># Environmental variables</span>
-<span class="va">spider</span><span class="op">$</span><span class="va">x</span>
-<span class="co">##       soil.dry bare.sand fallen.leaves   moss herb.layer reflection</span>
-<span class="co">##  [1,]   2.3321    0.0000        0.0000 3.0445     4.4543     3.9120</span>
-<span class="co">##  [2,]   3.0493    0.0000        1.7918 1.0986     4.5643     1.6094</span>
-<span class="co">##  [3,]   2.5572    0.0000        0.0000 2.3979     4.6052     3.6889</span>
-<span class="co">##  [4,]   2.6741    0.0000        0.0000 2.3979     4.6151     2.9957</span>
-<span class="co">##  [5,]   3.0155    0.0000        0.0000 0.0000     4.6151     2.3026</span>
-<span class="co">##  [6,]   3.3810    2.3979        3.4340 2.3979     3.4340     0.6931</span>
-<span class="co">##  [7,]   3.1781    0.0000        0.0000 0.6931     4.6151     2.3026</span>
-<span class="co">##  [8,]   2.6247    0.0000        4.2627 1.0986     3.4340     0.6931</span>
-<span class="co">##  [9,]   2.4849    0.0000        0.0000 4.3307     3.2581     3.4012</span>
-<span class="co">## [10,]   2.1972    3.9318        0.0000 3.4340     3.0445     3.6889</span>
-<span class="co">## [11,]   2.2192    0.0000        0.0000 4.1109     3.7136     3.6889</span>
-<span class="co">## [12,]   2.2925    0.0000        0.0000 3.8286     4.0254     3.6889</span>
-<span class="co">## [13,]   3.5175    1.7918        1.7918 0.6931     4.5109     3.4012</span>
-<span class="co">## [14,]   3.0865    0.0000        0.0000 1.7918     4.5643     1.0986</span>
-<span class="co">## [15,]   3.2696    0.0000        4.3944 0.6931     3.0445     0.6931</span>
-<span class="co">## [16,]   3.0301    0.0000        4.6052 0.6931     0.6931     0.0000</span>
-<span class="co">## [17,]   3.3322    0.0000        4.4543 0.6931     3.0445     1.0986</span>
-<span class="co">## [18,]   3.1224    0.0000        4.3944 0.0000     3.0445     1.0986</span>
-<span class="co">## [19,]   2.9232    0.0000        4.5109 1.6094     1.6094     0.0000</span>
-<span class="co">## [20,]   3.1091    0.0000        4.5951 0.6931     0.6931     0.0000</span>
-<span class="co">## [21,]   2.9755    0.0000        4.5643 0.6931     1.7918     0.0000</span>
-<span class="co">## [22,]   1.2528    3.2581        0.0000 4.3307     0.6931     3.9120</span>
-<span class="co">## [23,]   1.1939    3.0445        0.0000 4.0254     3.2581     4.0943</span>
-<span class="co">## [24,]   1.6487    3.2581        0.0000 4.0254     3.0445     4.0073</span>
-<span class="co">## [25,]   1.8245    3.5835        0.0000 1.0986     4.1109     2.3026</span>
-<span class="co">## [26,]   0.9933    4.5109        0.0000 1.7918     1.7918     4.3820</span>
-<span class="co">## [27,]   0.9555    2.3979        0.0000 3.8286     3.4340     3.6889</span>
-<span class="co">## [28,]   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889</span>
-<span class="co"># Plot data using boxplot:</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/boxplot.html">boxplot</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># response matrix:</span></span>
+<span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span></span>
+<span><span class="co">##    Alopacce Alopcune Alopfabr Arctlute Arctperi Auloalbi Pardlugu Pardmont</span></span>
+<span><span class="co">## 1        25       10        0        0        0        4        0       60</span></span>
+<span><span class="co">## 2         0        2        0        0        0       30        1        1</span></span>
+<span><span class="co">## 3        15       20        2        2        0        9        1       29</span></span>
+<span><span class="co">## 4         2        6        0        1        0       24        1        7</span></span>
+<span><span class="co">## 5         1       20        0        2        0        9        1        2</span></span>
+<span><span class="co">## 6         0        6        0        6        0        6        0       11</span></span>
+<span><span class="co">## 7         2        7        0       12        0       16        1       30</span></span>
+<span><span class="co">## 8         0       11        0        0        0        7       55        2</span></span>
+<span><span class="co">## 9         1        1        0        0        0        0        0       26</span></span>
+<span><span class="co">## 10        3        0        1        0        0        0        0       22</span></span>
+<span><span class="co">## 11       15        1        2        0        0        1        0       95</span></span>
+<span><span class="co">## 12       16       13        0        0        0        0        0       96</span></span>
+<span><span class="co">## 13        3       43        1        2        0       18        1       24</span></span>
+<span><span class="co">## 14        0        2        0        1        0        4        3       14</span></span>
+<span><span class="co">## 15        0        0        0        0        0        0        6        0</span></span>
+<span><span class="co">## 16        0        3        0        0        0        0        6        0</span></span>
+<span><span class="co">## 17        0        0        0        0        0        0        2        0</span></span>
+<span><span class="co">## 18        0        1        0        0        0        0        5        0</span></span>
+<span><span class="co">## 19        0        1        0        0        0        0       12        0</span></span>
+<span><span class="co">## 20        0        2        0        0        0        0       13        0</span></span>
+<span><span class="co">## 21        0        1        0        0        0        0       16        1</span></span>
+<span><span class="co">## 22        7        0       16        0        4        0        0        2</span></span>
+<span><span class="co">## 23       17        0       15        0        7        0        2        6</span></span>
+<span><span class="co">## 24       11        0       20        0        5        0        0        3</span></span>
+<span><span class="co">## 25        9        1        9        0        0        2        1       11</span></span>
+<span><span class="co">## 26        3        0        6        0       18        0        0        0</span></span>
+<span><span class="co">## 27       29        0       11        0        4        0        0        1</span></span>
+<span><span class="co">## 28       15        0       14        0        1        0        0        6</span></span>
+<span><span class="co">##    Pardnigr Pardpull Trocterr Zoraspin</span></span>
+<span><span class="co">## 1        12       45       57        4</span></span>
+<span><span class="co">## 2        15       37       65        9</span></span>
+<span><span class="co">## 3        18       45       66        1</span></span>
+<span><span class="co">## 4        29       94       86       25</span></span>
+<span><span class="co">## 5       135       76       91       17</span></span>
+<span><span class="co">## 6        27       24       63       34</span></span>
+<span><span class="co">## 7        89      105      118       16</span></span>
+<span><span class="co">## 8         2        1       30        3</span></span>
+<span><span class="co">## 9         1        1        2        0</span></span>
+<span><span class="co">## 10        0        0        1        0</span></span>
+<span><span class="co">## 11        0        1        4        0</span></span>
+<span><span class="co">## 12        1        8       13        0</span></span>
+<span><span class="co">## 13       53       72       97       22</span></span>
+<span><span class="co">## 14       15       72       94       32</span></span>
+<span><span class="co">## 15        0        0       25        3</span></span>
+<span><span class="co">## 16        2        0       28        4</span></span>
+<span><span class="co">## 17        0        0       23        2</span></span>
+<span><span class="co">## 18        0        0       25        0</span></span>
+<span><span class="co">## 19        1        0       22        3</span></span>
+<span><span class="co">## 20        0        0       22        2</span></span>
+<span><span class="co">## 21        0        1       18        2</span></span>
+<span><span class="co">## 22        0        0        1        0</span></span>
+<span><span class="co">## 23        0        0        1        0</span></span>
+<span><span class="co">## 24        0        0        0        0</span></span>
+<span><span class="co">## 25        6        0       16        6</span></span>
+<span><span class="co">## 26        0        0        1        0</span></span>
+<span><span class="co">## 27        0        0        0        0</span></span>
+<span><span class="co">## 28        0        0        2        0</span></span>
+<span><span class="co"># Environmental variables</span></span>
+<span><span class="va">spider</span><span class="op">$</span><span class="va">x</span></span>
+<span><span class="co">##       soil.dry bare.sand fallen.leaves   moss herb.layer reflection</span></span>
+<span><span class="co">##  [1,]   2.3321    0.0000        0.0000 3.0445     4.4543     3.9120</span></span>
+<span><span class="co">##  [2,]   3.0493    0.0000        1.7918 1.0986     4.5643     1.6094</span></span>
+<span><span class="co">##  [3,]   2.5572    0.0000        0.0000 2.3979     4.6052     3.6889</span></span>
+<span><span class="co">##  [4,]   2.6741    0.0000        0.0000 2.3979     4.6151     2.9957</span></span>
+<span><span class="co">##  [5,]   3.0155    0.0000        0.0000 0.0000     4.6151     2.3026</span></span>
+<span><span class="co">##  [6,]   3.3810    2.3979        3.4340 2.3979     3.4340     0.6931</span></span>
+<span><span class="co">##  [7,]   3.1781    0.0000        0.0000 0.6931     4.6151     2.3026</span></span>
+<span><span class="co">##  [8,]   2.6247    0.0000        4.2627 1.0986     3.4340     0.6931</span></span>
+<span><span class="co">##  [9,]   2.4849    0.0000        0.0000 4.3307     3.2581     3.4012</span></span>
+<span><span class="co">## [10,]   2.1972    3.9318        0.0000 3.4340     3.0445     3.6889</span></span>
+<span><span class="co">## [11,]   2.2192    0.0000        0.0000 4.1109     3.7136     3.6889</span></span>
+<span><span class="co">## [12,]   2.2925    0.0000        0.0000 3.8286     4.0254     3.6889</span></span>
+<span><span class="co">## [13,]   3.5175    1.7918        1.7918 0.6931     4.5109     3.4012</span></span>
+<span><span class="co">## [14,]   3.0865    0.0000        0.0000 1.7918     4.5643     1.0986</span></span>
+<span><span class="co">## [15,]   3.2696    0.0000        4.3944 0.6931     3.0445     0.6931</span></span>
+<span><span class="co">## [16,]   3.0301    0.0000        4.6052 0.6931     0.6931     0.0000</span></span>
+<span><span class="co">## [17,]   3.3322    0.0000        4.4543 0.6931     3.0445     1.0986</span></span>
+<span><span class="co">## [18,]   3.1224    0.0000        4.3944 0.0000     3.0445     1.0986</span></span>
+<span><span class="co">## [19,]   2.9232    0.0000        4.5109 1.6094     1.6094     0.0000</span></span>
+<span><span class="co">## [20,]   3.1091    0.0000        4.5951 0.6931     0.6931     0.0000</span></span>
+<span><span class="co">## [21,]   2.9755    0.0000        4.5643 0.6931     1.7918     0.0000</span></span>
+<span><span class="co">## [22,]   1.2528    3.2581        0.0000 4.3307     0.6931     3.9120</span></span>
+<span><span class="co">## [23,]   1.1939    3.0445        0.0000 4.0254     3.2581     4.0943</span></span>
+<span><span class="co">## [24,]   1.6487    3.2581        0.0000 4.0254     3.0445     4.0073</span></span>
+<span><span class="co">## [25,]   1.8245    3.5835        0.0000 1.0986     4.1109     2.3026</span></span>
+<span><span class="co">## [26,]   0.9933    4.5109        0.0000 1.7918     1.7918     4.3820</span></span>
+<span><span class="co">## [27,]   0.9555    2.3979        0.0000 3.8286     3.4340     3.6889</span></span>
+<span><span class="co">## [28,]   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889</span></span>
+<span><span class="co"># Plot data using boxplot:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">boxplot</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-8-1.png" width="480" style="display: block; margin: auto;"></p>
-</details><p><span style="color:blue"> E2. Fit GLLVM to spider data with a suitable distribution. Data consists of counts of spider species.</span></p>
+</details><p><span style="color:blue"> E2. Fit GLLVM to spider data with a
+suitable distribution. Data consists of counts of spider
+species.</span></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Take a look at the function documentation for help: </span>
-<span class="op">?</span><span class="va">gllvm</span></code></pre></div>
-<details><p><summary><span style="color:red"> Show me the answers. </span></summary></p>
-<p><span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criterias. Let’s try just with a Poisson and NB.</span> <span style="color:red"> <strong>NOTE THAT</strong> the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may also differ slightly.</span></p>
+<code class="sourceCode R"><span><span class="co"># Take a look at the function documentation for help: </span></span>
+<span><span class="op">?</span><span class="va">gllvm</span></span></code></pre></div>
+<details><summary><span style="color:red"> Show the answers. </span>
+</summary><p><span style="color:red"> 2. Response variables in spider data are
+counts, so Poisson, negative binomial and zero inflated Poisson are
+possible. However, ZIP is implemented only with Laplace method, so it
+need to be noticed, that if models are fitted with different methods
+they can not be compared with information criteria. Let’s try just with
+a Poisson and NB.</span> <span style="color:red"> <strong>NOTE
+THAT</strong> the results may not be exactly the same as below, as the
+initial values for each model fit are slightly different, so the results
+may also differ slightly.</span></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Fit a GLLVM to data</span>
-<span class="va">fitp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>
-<span class="va">fitp</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, family = poisson())</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "poisson"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -845.8277 </span>
-<span class="co">## Residual degrees of freedom:  301 </span>
-<span class="co">## AIC:  1761.655 </span>
-<span class="co">## AICc:  1770.055 </span>
-<span class="co">## BIC:  1808.283</span>
-<span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span>
-<span class="va">fitnb</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, family = "negative.binomial")</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -733.6806 </span>
-<span class="co">## Residual degrees of freedom:  289 </span>
-<span class="co">## AIC:  1561.361 </span>
-<span class="co">## AICc:  1577.028 </span>
-<span class="co">## BIC:  1623.975</span></code></pre></div>
-<p>Based on AIC, NB distribution suits better. How about residual analysis: <span style="color:red"> <strong>NOTE THAT</strong> The package uses randomized quantile residuals so each time you plot the residuals, they look a little different.</span></p>
+<code class="sourceCode R"><span><span class="co"># Fit a GLLVM to data</span></span>
+<span><span class="va">fitp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitp</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = poisson(), num.lv = 2)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "poisson"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -845.8277 </span></span>
+<span><span class="co">## Residual degrees of freedom:  301 </span></span>
+<span><span class="co">## AIC:  1761.655 </span></span>
+<span><span class="co">## AICc:  1770.055 </span></span>
+<span><span class="co">## BIC:  1895.254</span></span>
+<span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitnb</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -733.6806 </span></span>
+<span><span class="co">## Residual degrees of freedom:  289 </span></span>
+<span><span class="co">## AIC:  1561.361 </span></span>
+<span><span class="co">## AICc:  1577.028 </span></span>
+<span><span class="co">## BIC:  1740.765</span></span></code></pre></div>
+<p>Based on AIC, NB distribution suits better. How about residual
+analysis: <span style="color:red"> <strong>NOTE THAT</strong> The
+package uses randomized quantile residuals so each time you plot the
+residuals, they look a little different.</span></p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Fit a GLLVM to data</span>
-<span class="fu"><a href="https://rdrr.io/pkg/mvabund/man/mvabund-internal.html">plot</a></span><span class="op">(</span><span class="va">fitp</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Fit a GLLVM to data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitp</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-11-1.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-2.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-3.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-4.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-5.png" width="480" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/pkg/mvabund/man/mvabund-internal.html">plot</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-11-6.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-7.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-8.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-9.png" width="480" style="display: block; margin: auto;"><img src="vignette3_files/figure-html/unnamed-chunk-11-10.png" width="480" style="display: block; margin: auto;"></p>
-<p>You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:</p>
+<p>You could do these comparisons with Laplace method as well, using the
+code below, and it would give the same conclusion that NB distribution
+suits best:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitLAp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">poisson</a></span><span class="op">(</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"LA"</span><span class="op">)</span>
-<span class="va">fitLAnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, method <span class="op">=</span> <span class="st">"LA"</span><span class="op">)</span>
-<span class="va">fitLAzip</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"ZIP"</span>, method <span class="op">=</span> <span class="st">"LA"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitLAp</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitLAnb</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/AIC.html">AIC</a></span><span class="op">(</span><span class="va">fitLAzip</span><span class="op">)</span></code></pre></div>
-</details><p><span style="color:blue"> E3. Explore the fitted model. Where are the estimates for parameters? What about predicted latent variables? Standard errors?</span></p>
-<details><p><summary><span style="color:red"> Show me the answers. </span></summary></p>
-<p><span style="color:red"> 3. Lets explore the fitted model: </span></p>
+<code class="sourceCode R"><span><span class="va">fitLAp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"LA"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitLAnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, method <span class="op">=</span> <span class="st">"LA"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitLAzip</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"ZIP"</span>, method <span class="op">=</span> <span class="st">"LA"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitLAp</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitLAnb</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitLAzip</span><span class="op">)</span></span></code></pre></div>
+</details><p><span style="color:blue"> E3. Explore the fitted model. Where are the
+estimates for parameters? What about predicted latent variables?
+Standard errors?</span></p>
+<details><summary><span style="color:red"> Show the answers. </span>
+</summary><p><span style="color:red"> 3. Lets explore the fitted model:
+</span></p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Parameters:</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span>
-<span class="co">## $theta</span>
-<span class="co">##                 LV1         LV2</span>
-<span class="co">## Alopacce  1.0000000  0.00000000</span>
-<span class="co">## Alopcune -0.2631467  1.00000000</span>
-<span class="co">## Alopfabr  0.9015779 -0.48406032</span>
-<span class="co">## Arctlute -0.7036255  2.03029523</span>
-<span class="co">## Arctperi  0.5939606 -1.58945033</span>
-<span class="co">## Auloalbi -0.6526990  1.53309945</span>
-<span class="co">## Pardlugu -0.8886185 -0.02804052</span>
-<span class="co">## Pardmont  0.7498083  0.58844320</span>
-<span class="co">## Pardnigr -0.5748828  1.78024800</span>
-<span class="co">## Pardpull -0.4147008  1.94807769</span>
-<span class="co">## Trocterr -0.4694632  0.78799068</span>
-<span class="co">## Zoraspin -0.6964329  1.15696857</span>
-<span class="co">## </span>
-<span class="co">## $sigma.lv</span>
-<span class="co">##      LV1      LV2 </span>
-<span class="co">## 1.803172 1.829258 </span>
-<span class="co">## </span>
-<span class="co">## $Intercept</span>
-<span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span>
-<span class="co">##  0.7740376  0.5515002 -0.1420859 -3.5925856 -3.3660300 -0.7311104  0.3187531 </span>
-<span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span>
-<span class="co">##  1.6247852 -0.2755510 -0.1350650  2.6556997  0.2459376 </span>
-<span class="co">## </span>
-<span class="co">## $inv.phi</span>
-<span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span>
-<span class="co">##  1.3062150  1.4686321  0.7051269  0.8975835  2.3318796  1.5391961  1.1528903 </span>
-<span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span>
-<span class="co">##  1.6178793  2.5410742  2.1962637 12.9779219  2.5728353 </span>
-<span class="co">## </span>
-<span class="co">## $phi</span>
-<span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span>
-<span class="co">## 0.76557077 0.68090572 1.41818438 1.11410253 0.42883860 0.64968977 0.86738525 </span>
-<span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span>
-<span class="co">## 0.61809309 0.39353436 0.45531872 0.07705394 0.38867626</span>
-<span class="co"># Where are the predicted latent variable values? just fitp$lvs or</span>
-<span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span>
-<span class="co">##               LV1          LV2</span>
-<span class="co">## Row1   0.92852295  1.270514416</span>
-<span class="co">## Row2  -0.68267655  0.793797989</span>
-<span class="co">## Row3   0.67620406  1.274444115</span>
-<span class="co">## Row4  -0.24718172  1.149837200</span>
-<span class="co">## Row5  -0.36105828  1.217222539</span>
-<span class="co">## Row6  -0.35233419  1.008674498</span>
-<span class="co">## Row7   0.02923041  1.426051792</span>
-<span class="co">## Row8  -1.52131113 -0.070723918</span>
-<span class="co">## Row9   0.91073383  0.001223507</span>
-<span class="co">## Row10  1.03735952 -0.493619954</span>
-<span class="co">## Row11  1.48874665  0.303008216</span>
-<span class="co">## Row12  1.32412244  0.807363479</span>
-<span class="co">## Row13  0.11539427  1.356624051</span>
-<span class="co">## Row14 -0.43680034  1.014588342</span>
-<span class="co">## Row15 -1.31925318 -0.544685728</span>
-<span class="co">## Row16 -1.17464473 -0.242696718</span>
-<span class="co">## Row17 -1.11252047 -0.512801437</span>
-<span class="co">## Row18 -1.15895679 -0.542973151</span>
-<span class="co">## Row19 -1.34065463 -0.502786270</span>
-<span class="co">## Row20 -1.36733582 -0.592091903</span>
-<span class="co">## Row21 -1.13971516 -0.475642319</span>
-<span class="co">## Row22  0.76440466 -1.345950160</span>
-<span class="co">## Row23  0.92078806 -1.380628888</span>
-<span class="co">## Row24  0.97904465 -1.395245956</span>
-<span class="co">## Row25  0.63124795  0.576822420</span>
-<span class="co">## Row26  0.27411148 -1.964089752</span>
-<span class="co">## Row27  1.11557339 -1.309376059</span>
-<span class="co">## Row28  1.01882377 -0.825802849</span>
-<span class="co"># Standard errors for parameters:</span>
-<span class="va">fitnb</span><span class="op">$</span><span class="va">sd</span>
-<span class="co">## $theta</span>
-<span class="co">##                LV1       LV2</span>
-<span class="co">## Alopacce 0.0000000 0.0000000</span>
-<span class="co">## Alopcune 0.2736345 0.0000000</span>
-<span class="co">## Alopfabr 0.3301736 0.2043809</span>
-<span class="co">## Arctlute 0.6749186 0.7848587</span>
-<span class="co">## Arctperi 0.4757480 0.5592111</span>
-<span class="co">## Auloalbi 0.4407962 0.3892404</span>
-<span class="co">## Pardlugu 0.2275835 0.2005406</span>
-<span class="co">## Pardmont 0.2196752 0.1816343</span>
-<span class="co">## Pardnigr 0.4734996 0.3799003</span>
-<span class="co">## Pardpull 0.4966306 0.4106195</span>
-<span class="co">## Trocterr 0.2098740 0.1568623</span>
-<span class="co">## Zoraspin 0.3480424 0.2796451</span>
-<span class="co">## </span>
-<span class="co">## $sigma.lv</span>
-<span class="co">##       LV1       LV2 </span>
-<span class="co">## 0.4163208 0.4257394 </span>
-<span class="co">## </span>
-<span class="co">## $beta0</span>
-<span class="co">##  Alopacce  Alopcune  Alopfabr  Arctlute  Arctperi  Auloalbi  Pardlugu  Pardmont </span>
-<span class="co">## 0.4518412 0.4630159 0.5478085 1.7103834 1.4646015 0.7892939 0.4391385 0.3996809 </span>
-<span class="co">##  Pardnigr  Pardpull  Trocterr  Zoraspin </span>
-<span class="co">## 0.7870384 0.8340577 0.3339017 0.5830953 </span>
-<span class="co">## </span>
-<span class="co">## $inv.phi</span>
-<span class="co">##  Alopacce  Alopcune  Alopfabr  Arctlute  Arctperi  Auloalbi  Pardlugu  Pardmont </span>
-<span class="co">## 0.6025155 0.6025936 0.3957361 0.5787035 1.8042530 0.8383858 0.5810623 0.7756757 </span>
-<span class="co">##  Pardnigr  Pardpull  Trocterr  Zoraspin </span>
-<span class="co">## 1.3150227 1.2472695 6.8923695 1.2850962 </span>
-<span class="co">## </span>
-<span class="co">## $phi</span>
-<span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span>
-<span class="co">## 0.35313348 0.27938205 0.79592296 0.71830097 0.33180673 0.35387997 0.43716639 </span>
-<span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span>
-<span class="co">## 0.29633844 0.20365664 0.25857784 0.04092213 0.19413850</span></code></pre></div>
-</details><p><span style="color:blue"> E4. Fit model with different numbers of latent variables.</span></p>
-<details><p><summary><span style="color:red"> Show me the answers. </span></summary></p>
-<p><span style="color:red"> 4. Default number of latent variables is 2. Let’s try 1 and 3 latent variables as well: </span></p>
+<code class="sourceCode R"><span><span class="co"># Parameters:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></span>
+<span><span class="co">## $theta</span></span>
+<span><span class="co">##                 LV1         LV2</span></span>
+<span><span class="co">## Alopacce  1.0000000  0.00000000</span></span>
+<span><span class="co">## Alopcune -0.2631329  1.00000000</span></span>
+<span><span class="co">## Alopfabr  0.9015666 -0.48406607</span></span>
+<span><span class="co">## Arctlute -0.7036434  2.03038993</span></span>
+<span><span class="co">## Arctperi  0.5939361 -1.58944337</span></span>
+<span><span class="co">## Auloalbi -0.6526860  1.53312574</span></span>
+<span><span class="co">## Pardlugu -0.8886135 -0.02803537</span></span>
+<span><span class="co">## Pardmont  0.7498057  0.58843575</span></span>
+<span><span class="co">## Pardnigr -0.5748622  1.78026173</span></span>
+<span><span class="co">## Pardpull -0.4146758  1.94808361</span></span>
+<span><span class="co">## Trocterr -0.4694501  0.78799360</span></span>
+<span><span class="co">## Zoraspin -0.6964157  1.15697362</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $sigma.lv</span></span>
+<span><span class="co">##      LV1      LV2 </span></span>
+<span><span class="co">## 1.803188 1.829260 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $Intercept</span></span>
+<span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
+<span><span class="co">##  0.7740319  0.5514660 -0.1420725 -3.5928715 -3.3659561 -0.7312116  0.3187321 </span></span>
+<span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
+<span><span class="co">##  1.6247690 -0.2756445 -0.1351444  2.6556685  0.2458895 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $inv.phi</span></span>
+<span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
+<span><span class="co">##  1.3061924  1.4686621  0.7051448  0.8975809  2.3318827  1.5391786  1.1528640 </span></span>
+<span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
+<span><span class="co">##  1.6178967  2.5411060  2.1962392 12.9778870  2.5728353 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $phi</span></span>
+<span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
+<span><span class="co">## 0.76558398 0.68089181 1.41814834 1.11410573 0.42883803 0.64969720 0.86740499 </span></span>
+<span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
+<span><span class="co">## 0.61808642 0.39352944 0.45532381 0.07705415 0.38867626</span></span>
+<span><span class="co"># Where are the predicted latent variable values? just fitp$lvs or</span></span>
+<span><span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></span>
+<span><span class="co">##               LV1         LV2</span></span>
+<span><span class="co">## Row1   0.92852787  1.27052322</span></span>
+<span><span class="co">## Row2  -0.68266289  0.79382913</span></span>
+<span><span class="co">## Row3   0.67620314  1.27445601</span></span>
+<span><span class="co">## Row4  -0.24715185  1.14986732</span></span>
+<span><span class="co">## Row5  -0.36104616  1.21724990</span></span>
+<span><span class="co">## Row6  -0.35232429  1.00870384</span></span>
+<span><span class="co">## Row7   0.02923276  1.42607019</span></span>
+<span><span class="co">## Row8  -1.52132442 -0.07068494</span></span>
+<span><span class="co">## Row9   0.91074249  0.00124498</span></span>
+<span><span class="co">## Row10  1.03735154 -0.49361983</span></span>
+<span><span class="co">## Row11  1.48873106  0.30301163</span></span>
+<span><span class="co">## Row12  1.32413988  0.80737226</span></span>
+<span><span class="co">## Row13  0.11539968  1.35664212</span></span>
+<span><span class="co">## Row14 -0.43682281  1.01460143</span></span>
+<span><span class="co">## Row15 -1.31924290 -0.54464472</span></span>
+<span><span class="co">## Row16 -1.17468450 -0.24267677</span></span>
+<span><span class="co">## Row17 -1.11253132 -0.51277027</span></span>
+<span><span class="co">## Row18 -1.15894462 -0.54293016</span></span>
+<span><span class="co">## Row19 -1.34067758 -0.50275746</span></span>
+<span><span class="co">## Row20 -1.36735842 -0.59206426</span></span>
+<span><span class="co">## Row21 -1.13970115 -0.47560393</span></span>
+<span><span class="co">## Row22  0.76438948 -1.34594506</span></span>
+<span><span class="co">## Row23  0.92078456 -1.38061842</span></span>
+<span><span class="co">## Row24  0.97903603 -1.39523907</span></span>
+<span><span class="co">## Row25  0.63127604  0.57685067</span></span>
+<span><span class="co">## Row26  0.27406047 -1.96409680</span></span>
+<span><span class="co">## Row27  1.11557251 -1.30936765</span></span>
+<span><span class="co">## Row28  1.01881756 -0.82579310</span></span>
+<span><span class="co"># Standard errors for parameters:</span></span>
+<span><span class="va">fitnb</span><span class="op">$</span><span class="va">sd</span></span>
+<span><span class="co">## $theta</span></span>
+<span><span class="co">##                LV1       LV2</span></span>
+<span><span class="co">## Alopacce 0.0000000 0.0000000</span></span>
+<span><span class="co">## Alopcune 0.2736250 0.0000000</span></span>
+<span><span class="co">## Alopfabr 0.3301675 0.2043799</span></span>
+<span><span class="co">## Arctlute 0.6749295 0.7849207</span></span>
+<span><span class="co">## Arctperi 0.4757312 0.5592186</span></span>
+<span><span class="co">## Auloalbi 0.4407860 0.3892595</span></span>
+<span><span class="co">## Pardlugu 0.2275828 0.2005394</span></span>
+<span><span class="co">## Pardmont 0.2196720 0.1816350</span></span>
+<span><span class="co">## Pardnigr 0.4734823 0.3799179</span></span>
+<span><span class="co">## Pardpull 0.4966111 0.4106379</span></span>
+<span><span class="co">## Trocterr 0.2098660 0.1568698</span></span>
+<span><span class="co">## Zoraspin 0.3480318 0.2796544</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $sigma.lv</span></span>
+<span><span class="co">##       LV1       LV2 </span></span>
+<span><span class="co">## 0.4163260 0.4257699 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $beta0</span></span>
+<span><span class="co">##  Alopacce  Alopcune  Alopfabr  Arctlute  Arctperi  Auloalbi  Pardlugu  Pardmont </span></span>
+<span><span class="co">## 0.4518437 0.4630215 0.5478076 1.7105340 1.4645773 0.7893153 0.4391427 0.3996812 </span></span>
+<span><span class="co">##  Pardnigr  Pardpull  Trocterr  Zoraspin </span></span>
+<span><span class="co">## 0.7870493 0.8340618 0.3339015 0.5830986 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $inv.phi</span></span>
+<span><span class="co">##  Alopacce  Alopcune  Alopfabr  Arctlute  Arctperi  Auloalbi  Pardlugu  Pardmont </span></span>
+<span><span class="co">## 0.6025064 0.6026069 0.3957482 0.5787015 1.8042589 0.8383731 0.5810493 0.7756873 </span></span>
+<span><span class="co">##  Pardnigr  Pardpull  Trocterr  Zoraspin </span></span>
+<span><span class="co">## 1.3150373 1.2472515 6.8923548 1.2850966 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $phi</span></span>
+<span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
+<span><span class="co">## 0.35314034 0.27937678 0.79590692 0.71830258 0.33180691 0.35388269 0.43717650 </span></span>
+<span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
+<span><span class="co">## 0.29633645 0.20365381 0.25857990 0.04092226 0.19413856</span></span></code></pre></div>
+</details><p><span style="color:blue"> E4. Fit model with different numbers of
+latent variables.</span></p>
+<details><summary><span style="color:red"> Show the answers. </span>
+</summary><p><span style="color:red"> 4. Default number of latent variables is 2.
+Let’s try 1 and 3 latent variables as well: </span></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># In exercise 2, we fitted GLLVM with two latent variables </span>
-<span class="va">fitnb</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, family = "negative.binomial")</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -733.6806 </span>
-<span class="co">## Residual degrees of freedom:  289 </span>
-<span class="co">## AIC:  1561.361 </span>
-<span class="co">## AICc:  1577.028 </span>
-<span class="co">## BIC:  1623.975</span>
-<span class="co"># How about 1 or 3 LVs</span>
-<span class="va">fitnb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
-<span class="va">fitnb1</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, num.lv = 1, family = "negative.binomial")</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -759.4012 </span>
-<span class="co">## Residual degrees of freedom:  300 </span>
-<span class="co">## AIC:  1590.802 </span>
-<span class="co">## AICc:  1599.712 </span>
-<span class="co">## BIC:  1638.762</span>
-<span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb1</span><span class="op">)</span>
-<span class="co">##              [,1]</span>
-<span class="co">## Row1  -0.81680096</span>
-<span class="co">## Row2  -0.94960133</span>
-<span class="co">## Row3  -0.91686860</span>
-<span class="co">## Row4  -1.10569018</span>
-<span class="co">## Row5  -1.22147786</span>
-<span class="co">## Row6  -1.03402154</span>
-<span class="co">## Row7  -1.26769984</span>
-<span class="co">## Row8  -0.53474357</span>
-<span class="co">## Row9   0.36605908</span>
-<span class="co">## Row10  1.00892833</span>
-<span class="co">## Row11  0.31291662</span>
-<span class="co">## Row12 -0.31670590</span>
-<span class="co">## Row13 -1.17620934</span>
-<span class="co">## Row14 -1.03498651</span>
-<span class="co">## Row15 -0.09009225</span>
-<span class="co">## Row16 -0.27458320</span>
-<span class="co">## Row17 -0.02446666</span>
-<span class="co">## Row18 -0.02080146</span>
-<span class="co">## Row19 -0.12969356</span>
-<span class="co">## Row20 -0.06888764</span>
-<span class="co">## Row21 -0.04323099</span>
-<span class="co">## Row22  1.54083081</span>
-<span class="co">## Row23  1.65024701</span>
-<span class="co">## Row24  1.68379528</span>
-<span class="co">## Row25 -0.28901228</span>
-<span class="co">## Row26  1.92917349</span>
-<span class="co">## Row27  1.62339239</span>
-<span class="co">## Row28  1.20019873</span>
-<span class="va">fitnb3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>
-<span class="va">fitnb3</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, num.lv = 3, family = "negative.binomial")</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -733.6806 </span>
-<span class="co">## Residual degrees of freedom:  279 </span>
-<span class="co">## AIC:  1581.361 </span>
-<span class="co">## AICc:  1605.145 </span>
-<span class="co">## BIC:  1657.297</span>
-<span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb3</span><span class="op">)</span>
-<span class="co">##               LV1          LV2           LV3</span>
-<span class="co">## Row1   0.92851391  1.270548810  9.431962e-06</span>
-<span class="co">## Row2  -0.68267006  0.793855142 -8.386363e-06</span>
-<span class="co">## Row3   0.67620128  1.274487384  8.445526e-06</span>
-<span class="co">## Row4  -0.24714651  1.149901494 -2.185045e-06</span>
-<span class="co">## Row5  -0.36103967  1.217284606 -4.044272e-06</span>
-<span class="co">## Row6  -0.35232406  1.008733704 -2.146452e-06</span>
-<span class="co">## Row7   0.02921248  1.426094102  2.048064e-06</span>
-<span class="co">## Row8  -1.52136688 -0.070684422 -1.653403e-05</span>
-<span class="co">## Row9   0.91074139  0.001253858 -1.128049e-05</span>
-<span class="co">## Row10  1.03734225 -0.493594303 -7.966341e-06</span>
-<span class="co">## Row11  1.48870317  0.303022912 -8.517011e-06</span>
-<span class="co">## Row12  1.32414883  0.807398841 -4.677532e-06</span>
-<span class="co">## Row13  0.11538559  1.356669683  3.898320e-06</span>
-<span class="co">## Row14 -0.43681871  1.014633128  9.734836e-07</span>
-<span class="co">## Row15 -1.31926181 -0.544634423  7.542452e-06</span>
-<span class="co">## Row16 -1.17469016 -0.242659470  3.558241e-06</span>
-<span class="co">## Row17 -1.11254234 -0.512757976  8.367344e-06</span>
-<span class="co">## Row18 -1.15897652 -0.542931597  9.083275e-06</span>
-<span class="co">## Row19 -1.34067065 -0.502735985  2.020586e-06</span>
-<span class="co">## Row20 -1.36735438 -0.592045364  3.947129e-06</span>
-<span class="co">## Row21 -1.13971618 -0.475593326 -2.679309e-06</span>
-<span class="co">## Row22  0.76438429 -1.345943436  1.975783e-06</span>
-<span class="co">## Row23  0.92078131 -1.380613197 -7.417643e-07</span>
-<span class="co">## Row24  0.97904900 -1.395211312 -9.505309e-07</span>
-<span class="co">## Row25  0.63125550  0.576867107  4.699412e-06</span>
-<span class="co">## Row26  0.27406906 -1.964095537  3.924502e-06</span>
-<span class="co">## Row27  1.11555668 -1.309361894 -9.369011e-07</span>
-<span class="co">## Row28  1.01880731 -0.825778957  1.724848e-06</span></code></pre></div>
-</details><p><span style="color:blue"> E5. Include environmental variables to the GLLVM and explore the model fit. </span></p>
-<details><p><summary><span style="color:red"> Show me the answers. </span></summary></p>
-<p><span style="color:red"> 5. Environmental variables can be included with an argument <code>X</code>: </span></p>
+<code class="sourceCode R"><span><span class="co"># In exercise 2, we fitted GLLVM with two latent variables </span></span>
+<span><span class="va">fitnb</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -733.6806 </span></span>
+<span><span class="co">## Residual degrees of freedom:  289 </span></span>
+<span><span class="co">## AIC:  1561.361 </span></span>
+<span><span class="co">## AICc:  1577.028 </span></span>
+<span><span class="co">## BIC:  1740.765</span></span>
+<span><span class="co"># How about 1 or 3 LVs</span></span>
+<span><span class="va">fitnb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">fitnb1</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 1)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -759.4012 </span></span>
+<span><span class="co">## Residual degrees of freedom:  300 </span></span>
+<span><span class="co">## AIC:  1590.802 </span></span>
+<span><span class="co">## AICc:  1599.712 </span></span>
+<span><span class="co">## BIC:  1728.218</span></span>
+<span><span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb1</span><span class="op">)</span></span>
+<span><span class="co">##               LV1</span></span>
+<span><span class="co">## Row1  -0.81681840</span></span>
+<span><span class="co">## Row2  -0.94962071</span></span>
+<span><span class="co">## Row3  -0.91688589</span></span>
+<span><span class="co">## Row4  -1.10570975</span></span>
+<span><span class="co">## Row5  -1.22149785</span></span>
+<span><span class="co">## Row6  -1.03404098</span></span>
+<span><span class="co">## Row7  -1.26772054</span></span>
+<span><span class="co">## Row8  -0.53475920</span></span>
+<span><span class="co">## Row9   0.36605157</span></span>
+<span><span class="co">## Row10  1.00892142</span></span>
+<span><span class="co">## Row11  0.31290178</span></span>
+<span><span class="co">## Row12 -0.31672181</span></span>
+<span><span class="co">## Row13 -1.17623095</span></span>
+<span><span class="co">## Row14 -1.03500232</span></span>
+<span><span class="co">## Row15 -0.09010329</span></span>
+<span><span class="co">## Row16 -0.27459379</span></span>
+<span><span class="co">## Row17 -0.02447655</span></span>
+<span><span class="co">## Row18 -0.02080962</span></span>
+<span><span class="co">## Row19 -0.12970280</span></span>
+<span><span class="co">## Row20 -0.06889909</span></span>
+<span><span class="co">## Row21 -0.04324255</span></span>
+<span><span class="co">## Row22  1.54082986</span></span>
+<span><span class="co">## Row23  1.65024885</span></span>
+<span><span class="co">## Row24  1.68379475</span></span>
+<span><span class="co">## Row25 -0.28902595</span></span>
+<span><span class="co">## Row26  1.92917867</span></span>
+<span><span class="co">## Row27  1.62340034</span></span>
+<span><span class="co">## Row28  1.20019999</span></span>
+<span><span class="va">fitnb3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="va">fitnb3</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 3)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -733.6806 </span></span>
+<span><span class="co">## Residual degrees of freedom:  279 </span></span>
+<span><span class="co">## AIC:  1581.361 </span></span>
+<span><span class="co">## AICc:  1605.145 </span></span>
+<span><span class="co">## BIC:  1798.937</span></span>
+<span><span class="fu"><a href="../reference/getLV.gllvm.html">getLV</a></span><span class="op">(</span><span class="va">fitnb3</span><span class="op">)</span></span>
+<span><span class="co">##               LV1         LV2           LV3</span></span>
+<span><span class="co">## Row1   0.92853164  1.27051398  4.114625e-07</span></span>
+<span><span class="co">## Row2  -0.68267889  0.79380121 -2.125719e-07</span></span>
+<span><span class="co">## Row3   0.67620487  1.27444261 -2.442246e-07</span></span>
+<span><span class="co">## Row4  -0.24716159  1.14984498  5.755878e-07</span></span>
+<span><span class="co">## Row5  -0.36105016  1.21722778  1.520366e-06</span></span>
+<span><span class="co">## Row6  -0.35232548  1.00868219  5.467976e-07</span></span>
+<span><span class="co">## Row7   0.02923333  1.42605256 -3.142166e-07</span></span>
+<span><span class="co">## Row8  -1.52132648 -0.07071581 -2.931988e-06</span></span>
+<span><span class="co">## Row9   0.91074571  0.00123517 -1.189281e-06</span></span>
+<span><span class="co">## Row10  1.03735875 -0.49362417 -1.591075e-06</span></span>
+<span><span class="co">## Row11  1.48873138  0.30300580 -1.606647e-06</span></span>
+<span><span class="co">## Row12  1.32414296  0.80736551 -1.691839e-06</span></span>
+<span><span class="co">## Row13  0.11539778  1.35662460  3.096662e-07</span></span>
+<span><span class="co">## Row14 -0.43682286  1.01458212  7.996505e-08</span></span>
+<span><span class="co">## Row15 -1.31924387 -0.54467127  8.180501e-07</span></span>
+<span><span class="co">## Row16 -1.17466384 -0.24269312  7.847368e-07</span></span>
+<span><span class="co">## Row17 -1.11252921 -0.51279429  8.061651e-07</span></span>
+<span><span class="co">## Row18 -1.15894173 -0.54295293  1.712681e-07</span></span>
+<span><span class="co">## Row19 -1.34066804 -0.50278021  5.565895e-07</span></span>
+<span><span class="co">## Row20 -1.36734143 -0.59208262  9.980562e-08</span></span>
+<span><span class="co">## Row21 -1.13969798 -0.47562690 -6.174381e-07</span></span>
+<span><span class="co">## Row22  0.76440206 -1.34594555  2.801545e-07</span></span>
+<span><span class="co">## Row23  0.92078756 -1.38062270 -1.519610e-07</span></span>
+<span><span class="co">## Row24  0.97904735 -1.39523947 -1.518857e-07</span></span>
+<span><span class="co">## Row25  0.63127625  0.57683584  2.587103e-06</span></span>
+<span><span class="co">## Row26  0.27408138 -1.96409900  8.900569e-07</span></span>
+<span><span class="co">## Row27  1.11557785 -1.30936991  1.274150e-07</span></span>
+<span><span class="co">## Row28  1.01882343 -0.82579764  1.471016e-07</span></span></code></pre></div>
+</details><p><span style="color:blue"> E5. Include environmental variables to the
+GLLVM and explore the model fit. </span></p>
+<details><summary><span style="color:red"> Show the answers. </span>
+</summary><p><span style="color:red"> 5. Environmental variables can be included
+with an argument <code>X</code>: </span></p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fitnbx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, X <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">x</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span>
-<span class="va">fitnbx</span>
-<span class="co">## Call: </span>
-<span class="co">## gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", </span>
-<span class="co">##     seed = 123)</span>
-<span class="co">## family: </span>
-<span class="co">## [1] "negative.binomial"</span>
-<span class="co">## method: </span>
-<span class="co">## [1] "VA"</span>
-<span class="co">## </span>
-<span class="co">## log-likelihood:  -588.9187 </span>
-<span class="co">## Residual degrees of freedom:  217 </span>
-<span class="co">## AIC:  1415.837 </span>
-<span class="co">## AICc:  1548.06 </span>
-<span class="co">## BIC:  1574.37</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="va">fitnbx</span><span class="op">)</span>
-<span class="co">## $theta</span>
-<span class="co">##                   LV1         LV2</span>
-<span class="co">## Alopacce 1.000000e+00  0.00000000</span>
-<span class="co">## Alopcune 2.201030e+00  1.00000000</span>
-<span class="co">## Alopfabr 1.600673e+00 -6.19175541</span>
-<span class="co">## Arctlute 2.864009e+00  3.14015521</span>
-<span class="co">## Arctperi 4.225987e-06 -1.59827630</span>
-<span class="co">## Auloalbi 1.490626e+00 -1.09087040</span>
-<span class="co">## Pardlugu 3.944534e-01 -0.01181004</span>
-<span class="co">## Pardmont 8.906196e-01 -4.40722335</span>
-<span class="co">## Pardnigr 2.417023e+00  3.04636451</span>
-<span class="co">## Pardpull 1.680649e+00  3.91430696</span>
-<span class="co">## Trocterr 1.030496e+00 -0.26949953</span>
-<span class="co">## Zoraspin 1.570712e+00 -0.06703990</span>
-<span class="co">## </span>
-<span class="co">## $sigma.lv</span>
-<span class="co">##          LV1          LV2 </span>
-<span class="co">## 4.769707e-01 5.407191e-08 </span>
-<span class="co">## </span>
-<span class="co">## $Intercept</span>
-<span class="co">##    Alopacce    Alopcune    Alopfabr    Arctlute    Arctperi    Auloalbi </span>
-<span class="co">##  -1.8071409  -4.6621993  -4.2203179 -15.5708545 -14.9172687 -16.3509261 </span>
-<span class="co">##    Pardlugu    Pardmont    Pardnigr    Pardpull    Trocterr    Zoraspin </span>
-<span class="co">##   7.9304033  -6.3995234  -5.6548543 -13.6113376  -0.3335285  -4.1373207 </span>
-<span class="co">## </span>
-<span class="co">## $Xcoef</span>
-<span class="co">##            soil.dry    bare.sand fallen.leaves         moss  herb.layer</span>
-<span class="co">## Alopacce -0.8877652 -0.009236264  -0.291154481  0.274071405  0.65126327</span>
-<span class="co">## Alopcune  1.3897158 -0.516769565   0.007388244 -0.136643741  0.48677242</span>
-<span class="co">## Alopfabr -0.7970493  0.823486985  -0.144746849  0.531528428  0.42607137</span>
-<span class="co">## Arctlute  6.2600527 -0.007168804  -1.824212208  0.502290940 -0.09611211</span>
-<span class="co">## Arctperi -1.7800845  0.238640897  -2.189657279  0.496151396  0.02133837</span>
-<span class="co">## Auloalbi  0.3201391 -0.134812812   0.608772421  0.129547190  4.18602975</span>
-<span class="co">## Pardlugu -2.5395186 -0.732454425   0.364918500 -0.358296603  0.60353930</span>
-<span class="co">## Pardmont  1.6381338  0.137516050  -0.546832391  0.917168251  0.70950686</span>
-<span class="co">## Pardnigr  2.6358769 -0.161193176  -0.856933463 -0.350885549  0.84822861</span>
-<span class="co">## Pardpull  3.0900509 -0.454410066  -0.478356968  0.447287457  2.07114013</span>
-<span class="co">## Trocterr  1.2576619 -0.263429950  -0.228842528 -0.158045801  0.47718240</span>
-<span class="co">## Zoraspin  2.1514878  0.046106909  -0.577735329 -0.005377085  0.67480473</span>
-<span class="co">##           reflection</span>
-<span class="co">## Alopacce  0.69600460</span>
-<span class="co">## Alopcune  0.31245470</span>
-<span class="co">## Alopfabr  0.52418739</span>
-<span class="co">## Arctlute -0.85635784</span>
-<span class="co">## Arctperi  4.00811796</span>
-<span class="co">## Auloalbi -0.66896638</span>
-<span class="co">## Pardlugu -1.19124482</span>
-<span class="co">## Pardmont  0.04129952</span>
-<span class="co">## Pardnigr -0.68172099</span>
-<span class="co">## Pardpull -0.48743757</span>
-<span class="co">## Trocterr -0.33631811</span>
-<span class="co">## Zoraspin -1.00338989</span>
-<span class="co">## </span>
-<span class="co">## $inv.phi</span>
-<span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span>
-<span class="co">## 2.062133e+01 3.531758e+00 9.529654e+00 2.265815e+00 2.462368e+06 1.097022e+01 </span>
-<span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span>
-<span class="co">## 3.464835e+01 2.199516e+00 9.420664e+00 1.903325e+01 2.690830e+01 6.433597e+00 </span>
-<span class="co">## </span>
-<span class="co">## $phi</span>
-<span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span>
-<span class="co">## 4.849347e-02 2.831451e-01 1.049356e-01 4.413423e-01 4.061131e-07 9.115588e-02 </span>
-<span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span>
-<span class="co">## 2.886141e-02 4.546456e-01 1.061496e-01 5.253964e-02 3.716325e-02 1.554340e-01</span>
-<span class="co"># confidence intervals for parameters:</span>
-<span class="fu"><a href="https://rdrr.io/r/stats/confint.html">confint</a></span><span class="op">(</span><span class="va">fitnbx</span><span class="op">)</span>
-<span class="co">##                                      2.5 %        97.5 %</span>
-<span class="co">## theta.LV1.1                   3.184338e-01  6.355076e-01</span>
-<span class="co">## theta.LV1.2                  -1.476236e-04  1.477317e-04</span>
-<span class="co">## theta.LV1.3                   1.000000e+00  1.000000e+00</span>
-<span class="co">## theta.LV1.4                   1.431245e+00  2.970814e+00</span>
-<span class="co">## theta.LV1.5                   7.997578e-01  2.401589e+00</span>
-<span class="co">## theta.LV1.6                   2.581374e+00  3.146645e+00</span>
-<span class="co">## theta.LV1.7                  -3.872607e-03  3.881059e-03</span>
-<span class="co">## theta.LV1.8                   7.682947e-01  2.212958e+00</span>
-<span class="co">## theta.LV1.9                  -1.209328e-01  9.098397e-01</span>
-<span class="co">## theta.LV1.10                  7.055019e-02  1.710689e+00</span>
-<span class="co">## theta.LV1.11                  1.704302e+00  3.129744e+00</span>
-<span class="co">## theta.LV1.12                  1.136453e+00  2.224844e+00</span>
-<span class="co">## theta.LV2.1                   7.035219e-01  1.357471e+00</span>
-<span class="co">## theta.LV2.2                   8.624481e-01  2.278975e+00</span>
-<span class="co">## theta.LV2.3                   0.000000e+00  0.000000e+00</span>
-<span class="co">## theta.LV2.4                   1.000000e+00  1.000000e+00</span>
-<span class="co">## theta.LV2.5                  -6.191755e+00 -6.191755e+00</span>
-<span class="co">## theta.LV2.6                   3.140155e+00  3.140155e+00</span>
-<span class="co">## theta.LV2.7                  -1.598276e+00 -1.598276e+00</span>
-<span class="co">## theta.LV2.8                  -1.090870e+00 -1.090870e+00</span>
-<span class="co">## theta.LV2.9                  -1.181004e-02 -1.181004e-02</span>
-<span class="co">## theta.LV2.10                 -4.407223e+00 -4.407223e+00</span>
-<span class="co">## theta.LV2.11                  3.046365e+00  3.046365e+00</span>
-<span class="co">## theta.LV2.12                  3.914307e+00  3.914307e+00</span>
-<span class="co">## sigma.LV1                    -2.694995e-01 -2.694995e-01</span>
-<span class="co">## sigma.LV2                    -6.703990e-02 -6.703990e-02</span>
-<span class="co">## Intercept.Alopacce           -1.870663e+00 -1.743618e+00</span>
-<span class="co">## Intercept.Alopcune           -4.788344e+00 -4.536055e+00</span>
-<span class="co">## Intercept.Alopfabr           -4.301739e+00 -4.138896e+00</span>
-<span class="co">## Intercept.Arctlute           -1.562596e+01 -1.551575e+01</span>
-<span class="co">## Intercept.Arctperi           -1.502024e+01 -1.481430e+01</span>
-<span class="co">## Intercept.Auloalbi           -1.649582e+01 -1.620603e+01</span>
-<span class="co">## Intercept.Pardlugu            7.840459e+00  8.020348e+00</span>
-<span class="co">## Intercept.Pardmont           -6.443712e+00 -6.355335e+00</span>
-<span class="co">## Intercept.Pardnigr           -5.773772e+00 -5.535936e+00</span>
-<span class="co">## Intercept.Pardpull           -1.369927e+01 -1.352341e+01</span>
-<span class="co">## Intercept.Trocterr           -6.768591e-01  9.802049e-03</span>
-<span class="co">## Intercept.Zoraspin           -4.246020e+00 -4.028622e+00</span>
-<span class="co">## Xcoef.soil.dry:Alopacce      -1.414328e+00 -3.612023e-01</span>
-<span class="co">## Xcoef.soil.dry:Alopcune       7.753925e-01  2.004039e+00</span>
-<span class="co">## Xcoef.soil.dry:Alopfabr      -1.299647e+00 -2.944512e-01</span>
-<span class="co">## Xcoef.soil.dry:Arctlute       5.967398e+00  6.552707e+00</span>
-<span class="co">## Xcoef.soil.dry:Arctperi      -2.532814e+00 -1.027355e+00</span>
-<span class="co">## Xcoef.soil.dry:Auloalbi      -4.266244e-01  1.066902e+00</span>
-<span class="co">## Xcoef.soil.dry:Pardlugu      -2.936680e+00 -2.142357e+00</span>
-<span class="co">## Xcoef.soil.dry:Pardmont       8.946451e-01  2.381622e+00</span>
-<span class="co">## Xcoef.soil.dry:Pardnigr       2.038569e+00  3.233184e+00</span>
-<span class="co">## Xcoef.soil.dry:Pardpull       2.594877e+00  3.585225e+00</span>
-<span class="co">## Xcoef.soil.dry:Trocterr       9.542470e-01  1.561077e+00</span>
-<span class="co">## Xcoef.soil.dry:Zoraspin       1.551622e+00  2.751353e+00</span>
-<span class="co">## Xcoef.bare.sand:Alopacce     -2.203398e-01  2.018673e-01</span>
-<span class="co">## Xcoef.bare.sand:Alopcune     -1.014603e+00 -1.893600e-02</span>
-<span class="co">## Xcoef.bare.sand:Alopfabr      4.937318e-01  1.153242e+00</span>
-<span class="co">## Xcoef.bare.sand:Arctlute     -2.836152e-01  2.692776e-01</span>
-<span class="co">## Xcoef.bare.sand:Arctperi     -3.503039e-01  8.275857e-01</span>
-<span class="co">## Xcoef.bare.sand:Auloalbi     -5.375863e-01  2.679607e-01</span>
-<span class="co">## Xcoef.bare.sand:Pardlugu     -1.157607e+00 -3.073014e-01</span>
-<span class="co">## Xcoef.bare.sand:Pardmont     -1.120486e-01  3.870807e-01</span>
-<span class="co">## Xcoef.bare.sand:Pardnigr     -6.258147e-01  3.034284e-01</span>
-<span class="co">## Xcoef.bare.sand:Pardpull     -8.681391e-01 -4.068103e-02</span>
-<span class="co">## Xcoef.bare.sand:Trocterr     -4.522607e-01 -7.459919e-02</span>
-<span class="co">## Xcoef.bare.sand:Zoraspin     -3.233881e-01  4.156019e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Alopacce -9.274371e-01  3.451282e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Alopcune -3.563748e-01  3.711513e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Alopfabr -7.582484e-01  4.687547e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Arctlute -2.237477e+00 -1.410947e+00</span>
-<span class="co">## Xcoef.fallen.leaves:Arctperi -2.189703e+00 -2.189611e+00</span>
-<span class="co">## Xcoef.fallen.leaves:Auloalbi  3.183468e-01  8.991980e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Pardlugu  1.172327e-01  6.126043e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Pardmont -9.876157e-01 -1.060491e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Pardnigr -1.210708e+00 -5.031587e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Pardpull -7.554122e-01 -2.013017e-01</span>
-<span class="co">## Xcoef.fallen.leaves:Trocterr -3.851551e-01 -7.252995e-02</span>
-<span class="co">## Xcoef.fallen.leaves:Zoraspin -8.946508e-01 -2.608198e-01</span>
-<span class="co">## Xcoef.moss:Alopacce          -3.968837e-02  5.878312e-01</span>
-<span class="co">## Xcoef.moss:Alopcune          -5.303392e-01  2.570517e-01</span>
-<span class="co">## Xcoef.moss:Alopfabr           4.396333e-02  1.019094e+00</span>
-<span class="co">## Xcoef.moss:Arctlute          -2.027232e-01  1.207305e+00</span>
-<span class="co">## Xcoef.moss:Arctperi           8.369031e-02  9.086125e-01</span>
-<span class="co">## Xcoef.moss:Auloalbi          -2.475179e-01  5.066123e-01</span>
-<span class="co">## Xcoef.moss:Pardlugu          -7.357190e-01  1.912578e-02</span>
-<span class="co">## Xcoef.moss:Pardmont           5.622800e-01  1.272057e+00</span>
-<span class="co">## Xcoef.moss:Pardnigr          -7.573340e-01  5.556292e-02</span>
-<span class="co">## Xcoef.moss:Pardpull           1.677742e-01  7.268008e-01</span>
-<span class="co">## Xcoef.moss:Trocterr          -3.292764e-01  1.318482e-02</span>
-<span class="co">## Xcoef.moss:Zoraspin          -3.594569e-01  3.487027e-01</span>
-<span class="co">## Xcoef.herb.layer:Alopacce     3.205666e-01  9.819599e-01</span>
-<span class="co">## Xcoef.herb.layer:Alopcune     1.371091e-02  9.598339e-01</span>
-<span class="co">## Xcoef.herb.layer:Alopfabr    -1.767265e-02  8.698154e-01</span>
-<span class="co">## Xcoef.herb.layer:Arctlute    -3.673092e-01  1.750850e-01</span>
-<span class="co">## Xcoef.herb.layer:Arctperi    -3.727353e-01  4.154120e-01</span>
-<span class="co">## Xcoef.herb.layer:Auloalbi     3.620393e+00  4.751666e+00</span>
-<span class="co">## Xcoef.herb.layer:Pardlugu     3.381626e-01  8.689160e-01</span>
-<span class="co">## Xcoef.herb.layer:Pardmont     2.058513e-01  1.213162e+00</span>
-<span class="co">## Xcoef.herb.layer:Pardnigr     3.675671e-01  1.328890e+00</span>
-<span class="co">## Xcoef.herb.layer:Pardpull     1.649511e+00  2.492769e+00</span>
-<span class="co">## Xcoef.herb.layer:Trocterr     2.593820e-01  6.949828e-01</span>
-<span class="co">## Xcoef.herb.layer:Zoraspin     2.156566e-01  1.133953e+00</span>
-<span class="co">## Xcoef.reflection:Alopacce     2.237039e-01  1.168305e+00</span>
-<span class="co">## Xcoef.reflection:Alopcune    -1.548741e-01  7.797835e-01</span>
-<span class="co">## Xcoef.reflection:Alopfabr    -8.434985e-02  1.132725e+00</span>
-<span class="co">## Xcoef.reflection:Arctlute    -1.363675e+00 -3.490405e-01</span>
-<span class="co">## Xcoef.reflection:Arctperi     3.402525e+00  4.613710e+00</span>
-<span class="co">## Xcoef.reflection:Auloalbi    -1.086119e+00 -2.518137e-01</span>
-<span class="co">## Xcoef.reflection:Pardlugu    -1.729742e+00 -6.527477e-01</span>
-<span class="co">## Xcoef.reflection:Pardmont    -4.722716e-01  5.548706e-01</span>
-<span class="co">## Xcoef.reflection:Pardnigr    -1.071291e+00 -2.921513e-01</span>
-<span class="co">## Xcoef.reflection:Pardpull    -7.965912e-01 -1.782839e-01</span>
-<span class="co">## Xcoef.reflection:Trocterr    -5.269803e-01 -1.456559e-01</span>
-<span class="co">## Xcoef.reflection:Zoraspin    -1.404893e+00 -6.018868e-01</span>
-<span class="co">## inv.phi.Alopacce              1.494798e+01  2.629469e+01</span>
-<span class="co">## inv.phi.Alopcune             -1.143196e-01  7.177836e+00</span>
-<span class="co">## inv.phi.Alopfabr              6.373615e+00  1.268569e+01</span>
-<span class="co">## inv.phi.Arctlute              1.502191e+00  3.029438e+00</span>
-<span class="co">## inv.phi.Arctperi              2.462365e+06  2.462372e+06</span>
-<span class="co">## inv.phi.Auloalbi              5.022272e+00  1.691817e+01</span>
-<span class="co">## inv.phi.Pardlugu              3.265899e+01  3.663770e+01</span>
-<span class="co">## inv.phi.Pardmont              5.237794e-01  3.875252e+00</span>
-<span class="co">## inv.phi.Pardnigr              2.349377e-01  1.860639e+01</span>
-<span class="co">## inv.phi.Pardpull              4.303903e+00  3.376259e+01</span>
-<span class="co">## inv.phi.Trocterr              1.522366e+00  5.229424e+01</span>
-<span class="co">## inv.phi.Zoraspin              1.928417e+00  1.093878e+01</span></code></pre></div>
-</details><details><p><summary><span style="color:red"> Problems? See hints:</span></summary></p>
-<p><span style="color:red"> I have problems in model fitting. My model converges to infinity or local maxima: </span> GLLVMs are complex models where starting values have a big role. Choosing a different starting value method (see argument <code>starting.val</code>) or use multiple runs and pick up the one giving highest log-likelihood value using argument <code>n.init</code>. More variation to the starting points can be added with <code>jitter.var</code>.</p>
-<p><span style="color:red"> My results does not look the same as in answers:</span> The results may not be exactly the same as in the answers, as the initial values for each model fit are slightly different, so the results may also differ slightly.</p>
+<code class="sourceCode R"><span><span class="va">fitnbx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, X <span class="op">=</span> <span class="va">spider</span><span class="op">$</span><span class="va">x</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, seed <span class="op">=</span> <span class="fl">123</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">fitnbx</span></span>
+<span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", </span></span>
+<span><span class="co">##     num.lv = 2, seed = 123)</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "negative.binomial"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "VA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  -588.9187 </span></span>
+<span><span class="co">## Residual degrees of freedom:  217 </span></span>
+<span><span class="co">## AIC:  1415.837 </span></span>
+<span><span class="co">## AICc:  1548.06 </span></span>
+<span><span class="co">## BIC:  1870.074</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitnbx</span><span class="op">)</span></span>
+<span><span class="co">## $theta</span></span>
+<span><span class="co">##                   LV1         LV2</span></span>
+<span><span class="co">## Alopacce 1.000000e+00  0.00000000</span></span>
+<span><span class="co">## Alopcune 2.200914e+00  1.00000000</span></span>
+<span><span class="co">## Alopfabr 1.600985e+00 -6.66323911</span></span>
+<span><span class="co">## Arctlute 2.863755e+00  3.27042770</span></span>
+<span><span class="co">## Arctperi 3.877445e-06 -2.45211873</span></span>
+<span><span class="co">## Auloalbi 1.491226e+00 -0.98926123</span></span>
+<span><span class="co">## Pardlugu 3.944211e-01  0.37547735</span></span>
+<span><span class="co">## Pardmont 8.906847e-01 -4.46897471</span></span>
+<span><span class="co">## Pardnigr 2.416772e+00  3.31852462</span></span>
+<span><span class="co">## Pardpull 1.680540e+00  3.67582040</span></span>
+<span><span class="co">## Trocterr 1.030350e+00 -0.20611673</span></span>
+<span><span class="co">## Zoraspin 1.570650e+00 -0.09001493</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $sigma.lv</span></span>
+<span><span class="co">##          LV1          LV2 </span></span>
+<span><span class="co">## 4.770173e-01 4.015716e-08 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $Intercept</span></span>
+<span><span class="co">##    Alopacce    Alopcune    Alopfabr    Arctlute    Arctperi    Auloalbi </span></span>
+<span><span class="co">##  -1.8065161  -4.6636221  -4.2234456 -15.5748205 -14.8999576 -16.3653792 </span></span>
+<span><span class="co">##    Pardlugu    Pardmont    Pardnigr    Pardpull    Trocterr    Zoraspin </span></span>
+<span><span class="co">##   7.9308728  -6.4003084  -5.6560254 -13.6133238  -0.3339496  -4.1387568 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $Xcoef</span></span>
+<span><span class="co">##            soil.dry    bare.sand fallen.leaves         moss  herb.layer</span></span>
+<span><span class="co">## Alopacce -0.8879767 -0.009456239  -0.291039336  0.273810379  0.65118338</span></span>
+<span><span class="co">## Alopcune  1.3899481 -0.517119398   0.007505298 -0.137118569  0.48673441</span></span>
+<span><span class="co">## Alopfabr -0.7970177  0.823401411  -0.144433743  0.531324231  0.42616543</span></span>
+<span><span class="co">## Arctlute  6.2608685 -0.008044503  -1.823881700  0.502039426 -0.09614013</span></span>
+<span><span class="co">## Arctperi -1.7802715  0.238482569  -1.844686394  0.495502978  0.02116802</span></span>
+<span><span class="co">## Auloalbi  0.3203836 -0.134971445   0.609343260  0.129592833  4.18902393</span></span>
+<span><span class="co">## Pardlugu -2.5396602 -0.732604867   0.364921289 -0.358332535  0.60348613</span></span>
+<span><span class="co">## Pardmont  1.6381987  0.137417824  -0.546778597  0.917016231  0.70953339</span></span>
+<span><span class="co">## Pardnigr  2.6359753 -0.161657205  -0.856769481 -0.351283317  0.84818099</span></span>
+<span><span class="co">## Pardpull  3.0900872 -0.454689652  -0.478209901  0.447009507  2.07140800</span></span>
+<span><span class="co">## Trocterr  1.2576823 -0.263583607  -0.228777546 -0.158266141  0.47716358</span></span>
+<span><span class="co">## Zoraspin  2.1517448  0.045792191  -0.577657642 -0.005648711  0.67487065</span></span>
+<span><span class="co">##          reflection</span></span>
+<span><span class="co">## Alopacce  0.6964030</span></span>
+<span><span class="co">## Alopcune  0.3133630</span></span>
+<span><span class="co">## Alopfabr  0.5252075</span></span>
+<span><span class="co">## Arctlute -0.8550733</span></span>
+<span><span class="co">## Arctperi  4.0047115</span></span>
+<span><span class="co">## Auloalbi -0.6688417</span></span>
+<span><span class="co">## Pardlugu -1.1911144</span></span>
+<span><span class="co">## Pardmont  0.0416782</span></span>
+<span><span class="co">## Pardnigr -0.6807266</span></span>
+<span><span class="co">## Pardpull -0.4867910</span></span>
+<span><span class="co">## Trocterr -0.3358753</span></span>
+<span><span class="co">## Zoraspin -1.0028619</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $inv.phi</span></span>
+<span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
+<span><span class="co">## 2.063686e+01 3.532846e+00 9.528253e+00 2.266621e+00 4.298683e+06 1.096869e+01 </span></span>
+<span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
+<span><span class="co">## 3.466029e+01 2.199819e+00 9.423256e+00 1.903599e+01 2.688826e+01 6.432247e+00 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $phi</span></span>
+<span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
+<span><span class="co">## 4.845700e-02 2.830579e-01 1.049510e-01 4.411853e-01 2.326294e-07 9.116861e-02 </span></span>
+<span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
+<span><span class="co">## 2.885146e-02 4.545829e-01 1.061204e-01 5.253206e-02 3.719095e-02 1.554667e-01</span></span>
+<span><span class="co"># confidence intervals for parameters:</span></span>
+<span><span class="fu"><a href="../reference/confint.gllvm.html">confint</a></span><span class="op">(</span><span class="va">fitnbx</span><span class="op">)</span></span>
+<span><span class="co">##                                      2.5 %        97.5 %</span></span>
+<span><span class="co">## theta.LV1.1                   3.268018e-01  6.272328e-01</span></span>
+<span><span class="co">## theta.LV1.2                  -7.281600e-05  7.289631e-05</span></span>
+<span><span class="co">## theta.LV1.3                   1.000000e+00  1.000000e+00</span></span>
+<span><span class="co">## theta.LV1.4                   2.084870e+00  2.316958e+00</span></span>
+<span><span class="co">## theta.LV1.5                   1.522203e+00  1.679767e+00</span></span>
+<span><span class="co">## theta.LV1.6                   2.795217e+00  2.932292e+00</span></span>
+<span><span class="co">## theta.LV1.7                  -2.930391e-03  2.938146e-03</span></span>
+<span><span class="co">## theta.LV1.8                   1.357092e+00  1.625360e+00</span></span>
+<span><span class="co">## theta.LV1.9                  -9.130160e-02  8.801437e-01</span></span>
+<span><span class="co">## theta.LV1.10                  6.240565e-01  1.157313e+00</span></span>
+<span><span class="co">## theta.LV1.11                  2.302443e+00  2.531102e+00</span></span>
+<span><span class="co">## theta.LV1.12                  1.557396e+00  1.803683e+00</span></span>
+<span><span class="co">## theta.LV2.1                   7.226670e-01  1.338034e+00</span></span>
+<span><span class="co">## theta.LV2.2                   1.442848e+00  1.698452e+00</span></span>
+<span><span class="co">## theta.LV2.3                   0.000000e+00  0.000000e+00</span></span>
+<span><span class="co">## theta.LV2.4                   1.000000e+00  1.000000e+00</span></span>
+<span><span class="co">## theta.LV2.5                  -6.663239e+00 -6.663239e+00</span></span>
+<span><span class="co">## theta.LV2.6                   3.270428e+00  3.270428e+00</span></span>
+<span><span class="co">## theta.LV2.7                  -2.452119e+00 -2.452119e+00</span></span>
+<span><span class="co">## theta.LV2.8                  -9.892612e-01 -9.892612e-01</span></span>
+<span><span class="co">## theta.LV2.9                   3.754773e-01  3.754773e-01</span></span>
+<span><span class="co">## theta.LV2.10                 -4.468975e+00 -4.468975e+00</span></span>
+<span><span class="co">## theta.LV2.11                  3.318525e+00  3.318525e+00</span></span>
+<span><span class="co">## theta.LV2.12                  3.675820e+00  3.675820e+00</span></span>
+<span><span class="co">## sigma.LV1                    -2.061167e-01 -2.061167e-01</span></span>
+<span><span class="co">## sigma.LV2                    -9.001493e-02 -9.001493e-02</span></span>
+<span><span class="co">## Intercept.Alopacce           -1.837363e+00 -1.775669e+00</span></span>
+<span><span class="co">## Intercept.Alopcune           -4.692685e+00 -4.634559e+00</span></span>
+<span><span class="co">## Intercept.Alopfabr           -4.247993e+00 -4.198898e+00</span></span>
+<span><span class="co">## Intercept.Arctlute           -1.560019e+01 -1.554945e+01</span></span>
+<span><span class="co">## Intercept.Arctperi           -1.491047e+01 -1.488945e+01</span></span>
+<span><span class="co">## Intercept.Auloalbi           -1.639107e+01 -1.633969e+01</span></span>
+<span><span class="co">## Intercept.Pardlugu            7.843982e+00  8.017764e+00</span></span>
+<span><span class="co">## Intercept.Pardmont           -6.431512e+00 -6.369105e+00</span></span>
+<span><span class="co">## Intercept.Pardnigr           -5.681798e+00 -5.630253e+00</span></span>
+<span><span class="co">## Intercept.Pardpull           -1.363289e+01 -1.359376e+01</span></span>
+<span><span class="co">## Intercept.Trocterr           -3.836532e-01 -2.842459e-01</span></span>
+<span><span class="co">## Intercept.Zoraspin           -4.160920e+00 -4.116593e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Alopacce      -1.187283e+00 -5.886703e-01</span></span>
+<span><span class="co">## Xcoef.soil.dry:Alopcune       1.278369e+00  1.501527e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Alopfabr      -9.863544e-01 -6.076810e-01</span></span>
+<span><span class="co">## Xcoef.soil.dry:Arctlute       6.114333e+00  6.407404e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Arctperi      -1.811268e+00 -1.749275e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Auloalbi       2.125735e-01  4.281936e-01</span></span>
+<span><span class="co">## Xcoef.soil.dry:Pardlugu      -2.923086e+00 -2.156234e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Pardmont       1.519358e+00  1.757039e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Pardnigr       2.520523e+00  2.751428e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Pardpull       2.998460e+00  3.181715e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Trocterr       9.759302e-01  1.539434e+00</span></span>
+<span><span class="co">## Xcoef.soil.dry:Zoraspin       2.054281e+00  2.249209e+00</span></span>
+<span><span class="co">## Xcoef.bare.sand:Alopacce     -1.636277e-01  1.447152e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Alopcune     -8.149181e-01 -2.193207e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Alopfabr      5.708000e-01  1.076003e+00</span></span>
+<span><span class="co">## Xcoef.bare.sand:Arctlute     -1.816867e-01  1.655976e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Arctperi      1.083219e-01  3.686433e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Auloalbi     -4.165901e-01  1.466473e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Pardlugu     -1.099827e+00 -3.653825e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Pardmont     -8.183806e-02  3.566737e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Pardnigr     -3.811742e-01  5.785975e-02</span></span>
+<span><span class="co">## Xcoef.bare.sand:Pardpull     -7.258276e-01 -1.835517e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Trocterr     -3.959251e-01 -1.312421e-01</span></span>
+<span><span class="co">## Xcoef.bare.sand:Zoraspin     -1.905463e-01  2.821307e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Alopacce -5.878038e-01  5.725142e-03</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Alopcune -2.022342e-01  2.172448e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Alopfabr -2.439387e-01 -4.492883e-02</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Arctlute -2.071373e+00 -1.576391e+00</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Arctperi -1.844691e+00 -1.844682e+00</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Auloalbi  3.696560e-01  8.490305e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Pardlugu  1.515790e-01  5.782636e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Pardmont -8.356289e-01 -2.579283e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Pardnigr -1.075850e+00 -6.376890e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Pardpull -7.293677e-01 -2.270521e-01</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Trocterr -3.773730e-01 -8.018206e-02</span></span>
+<span><span class="co">## Xcoef.fallen.leaves:Zoraspin -7.397779e-01 -4.155374e-01</span></span>
+<span><span class="co">## Xcoef.moss:Alopacce           1.331879e-02  5.343020e-01</span></span>
+<span><span class="co">## Xcoef.moss:Alopcune          -4.200851e-01  1.458480e-01</span></span>
+<span><span class="co">## Xcoef.moss:Alopfabr           3.224561e-01  7.401923e-01</span></span>
+<span><span class="co">## Xcoef.moss:Arctlute           1.728843e-01  8.311946e-01</span></span>
+<span><span class="co">## Xcoef.moss:Arctperi           2.308578e-01  7.601481e-01</span></span>
+<span><span class="co">## Xcoef.moss:Auloalbi          -1.578263e-01  4.170120e-01</span></span>
+<span><span class="co">## Xcoef.moss:Pardlugu          -6.992976e-01 -1.736751e-02</span></span>
+<span><span class="co">## Xcoef.moss:Pardmont           6.449140e-01  1.189118e+00</span></span>
+<span><span class="co">## Xcoef.moss:Pardnigr          -6.143983e-01 -8.816833e-02</span></span>
+<span><span class="co">## Xcoef.moss:Pardpull           2.541062e-01  6.399128e-01</span></span>
+<span><span class="co">## Xcoef.moss:Trocterr          -2.918187e-01 -2.471362e-02</span></span>
+<span><span class="co">## Xcoef.moss:Zoraspin          -2.885238e-01  2.772263e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Alopacce     4.019669e-01  9.003999e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Alopcune     2.772221e-01  6.962468e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Alopfabr     2.151881e-01  6.371428e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Arctlute    -2.204205e-01  2.814028e-02</span></span>
+<span><span class="co">## Xcoef.herb.layer:Arctperi    -3.392319e-01  3.815679e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Auloalbi     4.068069e+00  4.309979e+00</span></span>
+<span><span class="co">## Xcoef.herb.layer:Pardlugu     3.841328e-01  8.228395e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Pardmont     5.264643e-01  8.926025e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Pardnigr     6.959111e-01  1.000451e+00</span></span>
+<span><span class="co">## Xcoef.herb.layer:Pardpull     1.978024e+00  2.164792e+00</span></span>
+<span><span class="co">## Xcoef.herb.layer:Trocterr     2.732295e-01  6.810977e-01</span></span>
+<span><span class="co">## Xcoef.herb.layer:Zoraspin     5.235024e-01  8.262389e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Alopacce     3.437946e-01  1.049011e+00</span></span>
+<span><span class="co">## Xcoef.reflection:Alopcune    -2.174211e-02  6.484682e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Alopfabr     3.728461e-01  6.775688e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Arctlute    -1.052319e+00 -6.578278e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Arctperi     3.952924e+00  4.056499e+00</span></span>
+<span><span class="co">## Xcoef.reflection:Auloalbi    -9.595983e-01 -3.780851e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Pardlugu    -1.345952e+00 -1.036277e+00</span></span>
+<span><span class="co">## Xcoef.reflection:Pardmont    -3.560971e-01  4.394535e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Pardnigr    -9.442964e-01 -4.171567e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Pardpull    -6.916015e-01 -2.819805e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Trocterr    -5.126928e-01 -1.590577e-01</span></span>
+<span><span class="co">## Xcoef.reflection:Zoraspin    -1.288939e+00 -7.167843e-01</span></span>
+<span><span class="co">## inv.phi.Alopacce              2.023020e+01  2.104351e+01</span></span>
+<span><span class="co">## inv.phi.Alopcune              3.394778e+00  3.670913e+00</span></span>
+<span><span class="co">## inv.phi.Alopfabr              9.392739e+00  9.663768e+00</span></span>
+<span><span class="co">## inv.phi.Arctlute              2.249881e+00  2.283361e+00</span></span>
+<span><span class="co">## inv.phi.Arctperi              4.298682e+06  4.298685e+06</span></span>
+<span><span class="co">## inv.phi.Auloalbi              1.087330e+01  1.106408e+01</span></span>
+<span><span class="co">## inv.phi.Pardlugu              3.297875e+01  3.634182e+01</span></span>
+<span><span class="co">## inv.phi.Pardmont              2.094544e+00  2.305093e+00</span></span>
+<span><span class="co">## inv.phi.Pardnigr              9.233842e+00  9.612669e+00</span></span>
+<span><span class="co">## inv.phi.Pardpull              1.868250e+01  1.938949e+01</span></span>
+<span><span class="co">## inv.phi.Trocterr              2.603091e+01  2.774562e+01</span></span>
+<span><span class="co">## inv.phi.Zoraspin              6.239165e+00  6.625329e+00</span></span></code></pre></div>
+</details><details><summary><span style="color:red"> Problems? See hints:</span>
+</summary><p><span style="color:red"> I have problems in model fitting. My model
+converges to infinity or local maxima: </span> GLLVMs are complex models
+where starting values have a big role. Choosing a different starting
+value method (see argument <code>starting.val</code>) or use multiple
+runs and pick up the one giving highest log-likelihood value using
+argument <code>n.init</code>. More variation to the starting points can
+be added with <code>jitter.var</code>.</p>
+<p><span style="color:red"> My results does not look the same as in
+answers:</span> The results may not be exactly the same as in the
+answers, as the initial values for each model fit are slightly
+different, so the results may also differ slightly.</p>
 </details>
 </div>
-<div id="ordination" class="section level1">
-<h1 class="hasAnchor">
-<a href="#ordination" class="anchor"></a>Ordination</h1>
-<div id="gllvm-as-a-model-based-ordination-method" class="section level2">
-<h2 class="hasAnchor">
-<a href="#gllvm-as-a-model-based-ordination-method" class="anchor"></a>GLLVM as a model based ordination method</h2>
+<div class="section level2">
+<h2 id="ordination">Ordination<a class="anchor" aria-label="anchor" href="#ordination"></a>
+</h2>
+<div class="section level3">
+<h3 id="gllvm-as-a-model-based-ordination-method">GLLVM as a model based ordination method<a class="anchor" aria-label="anchor" href="#gllvm-as-a-model-based-ordination-method"></a>
+</h3>
 <ul>
-<li><p>GLLVMs can be used as a model-based approach to unconstrained ordination by including two latent variables in the model: <span class="math inline">\(g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span></p></li>
-<li><p>The latent variable term try to capture the underlying factors driving species abundances at sites.</p></li>
-<li><p>Predictions for the two latent variables, <span class="math inline">\(\boldsymbol{\hat u}_i=(\hat u_{i1}, \hat u_{i2})\)</span>, then provide coordinates for sites in the ordination plot and then provides a graphical representation of which sites are similar in terms of their species composition.</p></li>
+<li><p>GLLVMs can be used as a model-based approach to unconstrained
+ordination by including two latent variables in the model: <span class="math inline">\(g(E(y_{ij})) = \beta_{0j} +
+\boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span></p></li>
+<li><p>The latent variable term try to capture the underlying factors
+driving species abundances at sites.</p></li>
+<li><p>Predictions for the two latent variables, <span class="math inline">\(\boldsymbol{\hat u}_i=(\hat u_{i1}, \hat
+u_{i2})\)</span>, then provide coordinates for sites in the ordination
+plot and then provides a graphical representation of which sites are
+similar in terms of their species composition.</p></li>
 </ul>
 </div>
-<div id="ordination-plot" class="section level2">
-<h2 class="hasAnchor">
-<a href="#ordination-plot" class="anchor"></a>Ordination plot</h2>
+<div class="section level3">
+<h3 id="ordination-plot">Ordination plot<a class="anchor" aria-label="anchor" href="#ordination-plot"></a>
+</h3>
 <ul>
 <li>
-<code><a href="../reference/ordiplot.gllvm.html">ordiplot()</a></code> produces ordination plots based on fitted GLLVMs.</li>
-<li>Uncertainty of the ordination points in model based ordination can be assessed with prediction regions based on the prediction errors of latent variables.</li>
-<li>Prediction regions may also help interpreting which differences between ordination points are really a sign of the difference between species composition at those sites.</li>
+<code><a href="../reference/ordiplot.gllvm.html">ordiplot()</a></code> produces ordination plots based on fitted
+GLLVMs.</li>
+<li>Uncertainty of the ordination points in model based ordination can
+be assessed with prediction regions based on the prediction errors of
+latent variables.</li>
+<li>Prediction regions may also help interpreting which differences
+between ordination points are really a sign of the difference between
+species composition at those sites.</li>
 </ul>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-16-1.png" width="480" style="display: block; margin: auto;"></p>
 </div>
-<div id="biplot" class="section level2">
-<h2 class="hasAnchor">
-<a href="#biplot" class="anchor"></a>Biplot</h2>
+<div class="section level3">
+<h3 id="biplot">Biplot<a class="anchor" aria-label="anchor" href="#biplot"></a>
+</h3>
 <ul>
-<li>Between species correlations can be visualized with biplot<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a> by adding latent variable loadings <span class="math inline">\(\boldsymbol{\theta}_j\)</span> to the ordination of sites, by producing a biplot, (argument <code>biplot = TRUE</code> in <code><a href="../reference/ordiplot.gllvm.html">ordiplot()</a></code>).</li>
-<li>In a biplot latent variables and their loadings are rotated so that the LV loadings of the species are in the same direction with the sites where they are most abundant.</li>
-<li>Biplot can be used for finding groups of correlated species or finding indicator species common at specific sites.</li>
-<li>For example, species named Pardlugu is common in the group of sites located on the bottom (eg sites 8, 19, 20 and 21).</li>
+<li>Between species correlations can be visualized with biplot<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a> by adding
+latent variable loadings <span class="math inline">\(\boldsymbol{\theta}_j\)</span> to the ordination
+of sites, by producing a biplot, (argument <code>biplot = TRUE</code> in
+<code><a href="../reference/ordiplot.gllvm.html">ordiplot()</a></code>).</li>
+<li>In a biplot latent variables and their loadings are rotated so that
+the LV loadings of the species are in the same direction with the sites
+where they are most abundant.</li>
+<li>Biplot can be used for finding groups of correlated species or
+finding indicator species common at specific sites.</li>
+<li>For example, species named Pardlugu is common in the group of sites
+located on the bottom (eg sites 8, 19, 20 and 21).</li>
 <li>x and y axes may help the interpretation.</li>
 </ul>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitnb</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/abline.html">abline</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fl">0</span>, v <span class="op">=</span> <span class="fl">0</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitnb</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fl">0</span>, v <span class="op">=</span> <span class="fl">0</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-17-1.png" width="480" style="display: block; margin: auto;"></p>
 </div>
-<div id="environmental-gradients" class="section level2">
-<h2 class="hasAnchor">
-<a href="#environmental-gradients" class="anchor"></a>Environmental gradients</h2>
+<div class="section level3">
+<h3 id="environmental-gradients">Environmental gradients<a class="anchor" aria-label="anchor" href="#environmental-gradients"></a>
+</h3>
 <ul>
-<li>The potential impact of environmental variables on species communities can be viewed by coloring ordination points according to the variables.</li>
-<li>For example, species named Pardlugu seems to prefer sites with lot of dry soil mass and low reflection of the soil surface with a cloudless sky.</li>
+<li>The potential impact of environmental variables on species
+communities can be viewed by coloring ordination points according to the
+variables.</li>
+<li>For example, species named Pardlugu seems to prefer sites with lot
+of dry soil mass and low reflection of the soil surface with a cloudless
+sky.</li>
 </ul>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Arbitrary color palette, a vector length of 20. Can use, for example, colorRampPalette from package grDevices</span>
-<span class="va">rbPal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"#00FA9A"</span>, <span class="st">"#00EC9F"</span>, <span class="st">"#00DFA4"</span>, <span class="st">"#00D2A9"</span>, <span class="st">"#00C5AF"</span>, <span class="st">"#00B8B4"</span>, <span class="st">"#00ABB9"</span>, <span class="st">"#009DBF"</span>, <span class="st">"#0090C4"</span>, <span class="st">"#0083C9"</span>, <span class="st">"#0076CF"</span>, <span class="st">"#0069D4"</span>, <span class="st">"#005CD9"</span>, <span class="st">"#004EDF"</span>, <span class="st">"#0041E4"</span>, <span class="st">"#0034E9"</span>, <span class="st">"#0027EF"</span>, <span class="st">"#001AF4"</span>, <span class="st">"#000DF9"</span>, <span class="st">"#0000FF"</span><span class="op">)</span>
-<span class="va">X</span> <span class="op">&lt;-</span> <span class="va">spider</span><span class="op">$</span><span class="va">x</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/par.html">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span>, mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span><span class="op">)</span><span class="op">{</span>
-<span class="va">Col</span> <span class="op">&lt;-</span> <span class="va">rbPal</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html">cut</a></span><span class="op">(</span><span class="va">X</span><span class="op">[</span>,<span class="va">i</span><span class="op">]</span>, breaks <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>
-<span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitnb</span>, symbols <span class="op">=</span> <span class="cn">T</span>, s.colors <span class="op">=</span> <span class="va">Col</span>, main <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, 
-         biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="op">}</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Arbitrary color palette, a vector length of 20. Can use, for example, colorRampPalette from package grDevices</span></span>
+<span><span class="va">rbPal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#00FA9A"</span>, <span class="st">"#00EC9F"</span>, <span class="st">"#00DFA4"</span>, <span class="st">"#00D2A9"</span>, <span class="st">"#00C5AF"</span>, <span class="st">"#00B8B4"</span>, <span class="st">"#00ABB9"</span>, <span class="st">"#009DBF"</span>, <span class="st">"#0090C4"</span>, <span class="st">"#0083C9"</span>, <span class="st">"#0076CF"</span>, <span class="st">"#0069D4"</span>, <span class="st">"#005CD9"</span>, <span class="st">"#004EDF"</span>, <span class="st">"#0041E4"</span>, <span class="st">"#0034E9"</span>, <span class="st">"#0027EF"</span>, <span class="st">"#001AF4"</span>, <span class="st">"#000DF9"</span>, <span class="st">"#0000FF"</span><span class="op">)</span></span>
+<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">spider</span><span class="op">$</span><span class="va">x</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span>, mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
+<span><span class="va">Col</span> <span class="op">&lt;-</span> <span class="va">rbPal</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">X</span><span class="op">[</span>,<span class="va">i</span><span class="op">]</span>, breaks <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitnb</span>, symbols <span class="op">=</span> <span class="cn">T</span>, s.colors <span class="op">=</span> <span class="va">Col</span>, main <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">X</span><span class="op">)</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, </span>
+<span>         biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 <p><img src="vignette3_files/figure-html/unnamed-chunk-18-1.png" width="576" style="display: block; margin: auto;"></p>
 <ul>
-<li><p>Here environmental gradients stand out quite clearly, indicating that, at least, some of the differences in species compositions at sites can be explained by the differences in environmental conditions.</p></li>
-<li><p>The next step would be to include covariates to the model to study more precisely the effects of environmental variables: <span class="math inline">\(g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span></p></li>
+<li><p>Here environmental gradients stand out quite clearly, indicating
+that, at least, some of the differences in species compositions at sites
+can be explained by the differences in environmental
+conditions.</p></li>
+<li><p>The next step would be to include covariates to the model to
+study more precisely the effects of environmental variables: <span class="math inline">\(g(E(y_{ij})) = \beta_{0j} +
+\boldsymbol{x}_i'\boldsymbol{\beta}_{j} +
+\boldsymbol{u}_i'\boldsymbol{\theta}_j\)</span></p></li>
 </ul>
 </div>
 </div>
-<div class="footnotes">
+<div class="footnotes footnotes-end-of-document">
 <hr>
 <ol>
-<li id="fn1"><p>Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R. 10. Methods in Ecology and Evolution: 2173–82<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
-<li id="fn2"><p>Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
-<li id="fn3"><p>Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics. Journal of Computational and Graphical Statistics, 26:35-43<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
-<li id="fn4"><p>Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal estimation of latent variable models using extended variational approximations, arXiv:2107.02627 .<a href="#fnref4" class="footnote-back">↩︎</a></p></li>
-<li id="fn5"><p>Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.<a href="#fnref5" class="footnote-back">↩︎</a></p></li>
-<li id="fn6"><p>van der Aart, P. J. M., and Smeenk-Enserink, N. (1975) Correlations between distributions of hunting spiders (Lycosidae, Ctenidae) and environmental characteristics in a dune area. Netherlands Journal of Zoology 25, 1-45.<a href="#fnref6" class="footnote-back">↩︎</a></p></li>
-<li id="fn7"><p>Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.<a href="#fnref7" class="footnote-back">↩︎</a></p></li>
-<li id="fn8"><p>Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58, 453-467<a href="#fnref8" class="footnote-back">↩︎</a></p></li>
+<li id="fn1"><p>Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton.
+2019. Gllvm - Fast Analysis of Multivariate Abundance Data with
+Generalized Linear Latent Variable Models in R. 10. Methods in Ecology
+and Evolution: 2173–82<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans
+Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and
+Laplace Approximation. Journal of Statistical Software, 70(5), 1-21<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
+<li id="fn3"><p>Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V.,
+and Taskinen, S. (2017). Variational approximations for generalized
+linear latent variable models. Journal of Computational and Graphical
+Statistics. Journal of Computational and Graphical Statistics,
+26:35-43<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S.
+(2021). Fast, universal estimation of latent variable models using
+extended variational approximations, arXiv:2107.02627 .<a href="#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn5"><p>Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S.
+(2017). Generalized linear latent variable models for multivariate count
+and biomass data in ecology. Journal of Agricultural, Biological, and
+Environmental Statistics, 22:498-522.<a href="#fnref5" class="footnote-back">↩︎</a></p></li>
+<li id="fn6"><p>van der Aart, P. J. M., and Smeenk-Enserink, N. (1975)
+Correlations between distributions of hunting spiders (Lycosidae,
+Ctenidae) and environmental characteristics in a dune area. Netherlands
+Journal of Zoology 25, 1-45.<a href="#fnref6" class="footnote-back">↩︎</a></p></li>
+<li id="fn7"><p>Dunn, P. K., and Smyth, G. K. (1996). Randomized
+quantile residuals. Journal of Computational and Graphical Statistics,
+5, 236-244.<a href="#fnref7" class="footnote-back">↩︎</a></p></li>
+<li id="fn8"><p>Gabriel, K. R. (1971). The biplot graphic display of
+matrices with application to principal component analysis. Biometrika,
+58, 453-467<a href="#fnref8" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
   </div>
@@ -1020,11 +1127,13 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Sara Taskinen, David I. Warton, Bert van der Veen.</p>
+  <p></p>
+<p>Developed by Jenni Niku, Wesley Brooks, Riki Herliansyah, Francis K.C. Hui, Pekka Korhonen, Sara Taskinen, Bert van der Veen, David I. Warton.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>
@@ -1032,6 +1141,8 @@
 
   
 
+
+  
 
   </body>
 </html>

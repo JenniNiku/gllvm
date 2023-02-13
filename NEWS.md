@@ -9,6 +9,9 @@ Version 1.4.1
 * Bugfix for quadratic model with Poisson, NB, gamma, or exponential responses
 * Bugfix in starting values for constrained and concurrent quadratic model
 
+### Bug Fixes
+* Valgrind error fixed
+
 Version 1.4.0
 ==============
 
