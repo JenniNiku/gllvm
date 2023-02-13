@@ -1,5 +1,4 @@
 Version 1.4.1
-* VA and LA separated into two C++ files
 * Computational stability of random slopes for constr. and concr. ordination significantly improved
 * Computational stability of quadratic model significantly improved
 * Unstructured VA covariance matrix for quadratic models with random intercepts
