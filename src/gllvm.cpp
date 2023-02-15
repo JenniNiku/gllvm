@@ -30,7 +30,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(lambda); // lv loadings
   PARAMETER_MATRIX(lambda2);// quadratic lv loadings
   PARAMETER_MATRIX(thetaH);// hurdle model lv loadings
-
+  
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
@@ -66,9 +66,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(Astruc); //Structure of the variational covariance, 0=diagonal, 1=RR, (2=sparse cholesky not implemented yet)
   DATA_IMATRIX(NN); //nearest neighbours,
   
-
   matrix<Type> dr = dr0.matrix();
-  // REPORT(dr);
+  
   int Klv = x_lv.cols();
   int n = y.rows();
   int p = y.cols();
@@ -104,7 +103,7 @@ Type objective_function<Type>::operator() ()
   // matrix<Type> DistM(dc.rows(),dc.rows());
   // if(((num_corlv>0) || (((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0))) & ((cstruc==2) || (cstruc>3))){
   //   matrix<Type> DiSc(dc.cols(),dc.cols());
-  //   DiSc.fill(0.0);
+  //   DiSc.setZero();
   // 
   //   for(int j=0; j<dc.cols(); j++){
   //     DiSc(j,j) += 1/exp(2*scaledc(j));
@@ -112,7 +111,7 @@ Type objective_function<Type>::operator() ()
   //   }
   //   // sigma_lvc(0,0) = 0;
   // 
-  //   DistM.fill(0.0);
+  //   DistM.setZero();
   //   for (int d=0;d<dc.rows();d++) {
   //     for (int j=0;j<d;j++){
   //       DistM(d,j)=sqrt( ((dc.row(d)-dc.row(j))*DiSc*(dc.row(d)-dc.row(j)).transpose()).sum() ); // + extra(2);
@@ -122,16 +121,16 @@ Type objective_function<Type>::operator() ()
   // }
   
   // if row params are in the same form as LVs, let's put them together
-  if((random(0)>0) & (n == nr)){
+  if((random(0)>0) && (n == nr)){
     nlvr++;
     
     if((num_lv+num_lv_c)>0){
       u.conservativeResize(u.rows(), u.cols()+1);
       // for (int i=0; i<n; i++){
-        for (int q=(num_lv+num_lv_c); q>0; q--){
-          // u(i,q) = u(i,q-1);
-          u.col(q) = u.col(q-1);
-        }
+      for (int q=(num_lv+num_lv_c); q>0; q--){
+        // u(i,q) = u(i,q-1);
+        u.col(q) = u.col(q-1);
+      }
       // }
       
       for (int i=0; i<n; i++){
@@ -143,30 +142,22 @@ Type objective_function<Type>::operator() ()
   }
   
   matrix<Type> eta(n,p);
-  eta.fill(0.0);
+  eta.setZero();
   matrix<Type> lam(n,p);
-  lam.fill(0.0);
   matrix<Type> Cu(nlvr,nlvr); 
-  Cu.fill(0.0);
+  Cu.setZero();  
   
   Type nll = 0; // initial value of log-likelihood
-
-  matrix<Type> b_lv2(x_lv.cols(),nlvr);
-  matrix <Type> Delta(nlvr,nlvr);
-  b_lv2.fill(0.0);
-  Delta.fill(0.0);
-
-  array<Type> D;
-  if( (quadratic>0) && (method!=1)){
-    D = array<Type> (nlvr+num_RR,nlvr+num_RR,p);
-    D.fill(0.0);
-  }else if(quadratic>0){
-    D = array<Type> (nlvr,nlvr,p);
-    D.fill(0.0);
-  }
-
-  matrix<Type> newlam(nlvr,p);
+  
   matrix<Type> RRgamma(num_RR,p);
+  RRgamma.setZero();
+  
+  matrix <Type> Delta(nlvr,nlvr);
+  Delta.setZero();
+  
+  matrix <Type> newlam(nlvr,p);
+  newlam.setZero();  
+  
   //K*K*d or d*d*K
   int sbl12 = 0;
   int sbl3 = 0;
@@ -177,44 +168,29 @@ Type objective_function<Type>::operator() ()
     sbl12 = Klv;
     sbl3 = num_lv_c + num_RR;
   }
-  array<Type> Sigmab_lv(sbl12,sbl12,sbl3);
   
+  vector<matrix<Type>> Sigmab_lv(sbl3);
   if(random(2)>0){
     sigmab_lv = exp(sigmab_lv);
     sigmab_lv *= sigmab_lv;
     
-    Sigmab_lv.fill(0.0);
-    if(sigmab_lv.size()==(num_lv_c+num_RR)){//randomB=="LV", Sigma_q = sigma_q I_klv
-      for (int q=0; q<(num_RR+num_lv_c); q++){
-        matrix <Type> temp = Sigmab_lv.col(q).matrix();
-        temp.diagonal().array() = sigmab_lv(q);
-        Sigmab_lv.col(q) = temp.array();
-      }
-    }else if(sigmab_lv.size()==Klv){//randomB=="P", Sigma_klv = sigma_klv I_d
-      for (int klv=0; klv<Klv; klv++){
-        matrix <Type> temp = Sigmab_lv.col(klv).matrix();
-        temp.diagonal().array() = sigmab_lv(klv);
-        Sigmab_lv.col(klv) = temp.array();
+    if(sigmab_lv.size()>Type(1)){//Sigma_q = sigma_q I_klv
+      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
+      Sigmab_lvtemp.setZero();
+      for (int q=0; q<sbl3; q++){
+        Sigmab_lv(q) = Sigmab_lvtemp;
+        Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
       }
     }else if(sigmab_lv.size()==Type(1)){
+      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
+      Sigmab_lvtemp.setZero();
       for (int klv=0; klv<Klv; klv++){
-        matrix <Type> temp = Sigmab_lv.col(klv).matrix();
-        temp.diagonal().array() = sigmab_lv(0);
-        Sigmab_lv.col(klv) = temp.array();
+        Sigmab_lv(klv) = Sigmab_lvtemp;
+        Sigmab_lv(klv).diagonal().array() = sigmab_lv(0);
       }
     }
-    // else if(sigmab_lv.size()==((num_RR+num_lv_c)*Klv)){//probably a bad idea
-    //   for (int klv=0; klv<Klv; klv++){
-    //     matrix <Type> temp = Sigmab_lv.col(klv).matrix();
-    //     for (int d=0; d<num_RR; d++){
-    //       temp(d,d) = sigmab_lv(d+klv*(num_RR+num_lv_c));
-    //       //        temp.diagoanl() = sigmab_lv(Eigen::seq(klv*(num_RR+num_lv_c),klv*(num_RR+num_lv_c)+(num_RR+num_lv_c)-1));//doesnt work..
-    //       
-    //     }
-    //     Sigmab_lv.col(klv) = temp.array();
-    //   }
-    // }
   }
+
   if((nlvr>0)||(num_RR>0)){
     
     if(nlvr>0){
@@ -241,7 +217,7 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
-    //To create lambda as matrix upper triangle
+    //To create lambda as matrix Upper triangle
     // put LV loadings into a matrix
     if (num_lv>0){
       int tri = 0;
@@ -289,10 +265,11 @@ Type objective_function<Type>::operator() ()
   }
   
   // Loadings for correlated latent variables //CorLV
-  matrix<Type> newlamCor(num_corlv,p);
+  matrix<Type> newlamCor;
   // matrix <Type> Delta_clv(num_corlv,num_corlv);
   if((num_corlv)>0){
-    //To create lambda as matrix upper triangle
+    newlamCor = matrix <Type> (num_corlv,p);
+    //To create lambda as matrix Upper triangle
     // put LV loadings into a matrix
     for (int j=0; j<p; j++){
       for (int i=0; i<num_corlv; i++){
@@ -313,87 +290,1067 @@ Type objective_function<Type>::operator() ()
   }
   
   matrix<Type> mu(n,p);
-  mu.fill(0.0);
   
-  using namespace density;
-  using namespace gllvm;
-  
-  
+
   // Variational approximation
   if((method<1) || (method>1)){
+  // add offset
+  eta += offset;
+  // add fixed row effects
+  if((random(0)==0)){
+    eta += r0*xr;
+  }
+  
+  matrix<Type> cQ(n,p);
+  cQ.setZero();
+  
+  vector<matrix<Type>> A(n);
+  
+  if( (random(2)>0) && (num_RR>0)){
+    for(int i=0; i<n; i++){
+      A(i).resize(nlvr+num_RR,nlvr+num_RR);
+      A(i).setZero();
+    }
+  }else{
+    for(int i=0; i<n; i++){
+      A(i).resize(nlvr,nlvr);
+      A(i).setZero();
+    }
+  }
+  
+  // lltOfB.matrixL() = A(0).template triangularView<Lower>;//wouuld be great if we could store A(i) each as a triangular matrix where the upper zeros are ignored
+  // Set up variational covariance matrix for LVs 
+  if(nlvr>0){
+    // Include variational covs of row effects, if structure is same for both
+    if(nlvr>(num_lv+num_lv_c)){
+      for(int i=0; i<n; i++){
+        A(i)(0,0)=exp(lg_Ar(i));
+      }
+      if(lg_Ar.size()>n){
+        for (int r=1; r<nlvr; r++){
+          for(int i=0; i<n; i++){
+            A(i)(r,0)=lg_Ar(r*n+i);
+          }}
+      }
+    }
     
-    //quadratic coefficients for ordination
-    //if random rows, add quadratic coefficients for num_RR to D otherwise
-    //they go into D_RR below
-    //The ordering here is num_lv_c-num_lv-num_RR so that the code works for
-    //fixed-effects B and random effects B
-    //The order we need to pick them from lambda2 is 
-    //num_lv_c-num_RR-num_lv however, to ensure everything on the R-side works
-    //like it should. So, things are messy but they work.
-    if((quadratic>0) && ((num_lv+num_lv_c+num_RR*random(2))>0)){
-      if(nlvr>(num_lv+num_lv_c)){
+    if((num_lv+num_lv_c)>0){
+      // log-Cholesky parametrization for A_i:s
+      // don't include num_RR for random slopes, comes in later
+      for (int d=0; d<(num_lv+num_lv_c); d++){
+        for(int i=0; i<n; i++){
+          A(i)(d+(nlvr-num_lv-num_lv_c),d+(nlvr-num_lv-num_lv_c))=exp(Au(d*n+i));
+          // A(d,d,i)=exp(Au(d*n+i));
+        }
+      }
+      if(Au.size()>((num_lv+num_lv_c)*n)){
+        int k=0;
+        for (int c=0; c<(num_lv+num_lv_c); c++){
+          for (int r=c+1; r<(num_lv+num_lv_c); r++){
+            for(int i=0; i<n; i++){
+              A(i)(r+(nlvr-num_lv-num_lv_c),c+(nlvr-num_lv-num_lv_c))=Au((num_lv+num_lv_c)*n+k*n+i);
+              // A(r,c,i)=Au(nlvr*n+k*n+i);
+              // A(c,r,i)=A(r,c,i);
+            }
+            k++;
+          }}
+      }
+    }
+    
+    // Add VA terms to logL
+    //Go this route if no random Bs
+    matrix <Type> Atemp(nlvr,nlvr);
+    vector <Type> Adiag(nlvr);
+    matrix <Type> CuI;
+    if(nlvr>(num_lv+num_lv_c)){
+      CuI = Cu.inverse();//for small matrices use .inverse rather than atomic::matinv
+    }
+    for(int i=0; i<n; i++){
+      Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
+      Adiag = Atemp.diagonal();
+      if(nlvr == (num_lv+num_lv_c)) nll -= Adiag.abs().log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
+      if(nlvr>(num_lv+num_lv_c)) {
+        nll -= Adiag.abs().log().sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
+      }
+      
+      // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
+      nll -= 0.5*(nlvr - log(Cu.determinant())*random(0));
+    }
+    //scale LVs with standard deviations, as well as the VA covariance matrices
+    u *= Delta;
+    
+    if((num_RR*random(2))>0){
+      Delta.conservativeResize(nlvr+num_RR,nlvr+num_RR);
+      for(int d=nlvr; d<(nlvr+num_RR); d++){
+        Delta.col(d).setZero();
+        Delta.row(d).setZero();
+      }
+    }
+    
+    for (int i=0; i<n; i++) {
+      A(i) = Delta*A(i);
+    }
+    
+  }
+  //random slopes for constr. ord.
+  if((random(2)>0) && ((num_RR+num_lv_c)>0)){
+    //resize A, u, D, and add RRGamma to newlam.
+    //add columns to u on the right for num_RR with random slopes
+    if(num_RR>0){
+      u.conservativeResize(n, nlvr + num_RR);
+      //resize and fill newlam, we don't use RRgamma further with random Bs
+      //easiest to do is slap RRgamma at the end of newlam
+      //this makes the order of newlam, A, u, and D inconsistent with the R-side of things
+      //nicer would be to have to same order as in R, but that isn't possible since
+      //it requires going down the same route for fixed and random B
+      //which would only work with diagonal of 0s in A
+      //And that needs to be invertible for the quadratic case, so that is not possible
+      newlam.conservativeResize(nlvr+num_RR,p);
+      for(int d=nlvr; d<(nlvr+num_RR); d++){
+        u.col(d).fill(0.0);
+        newlam.row(d).fill(0.0);
+      }
+      nlvr += num_RR;
+      newlam.bottomRows(num_RR) = RRgamma;
+    }
+    
+    // Variational covariance for random slopes
+    vector<matrix<Type>> AB_lv(sbl3);
+    for(int d=0; d<sbl3; d++){
+      AB_lv(d).resize(sbl12,sbl12);
+      AB_lv(d).setZero();
+    }
+    
+    for (int q=0; q<(sbl12); q++){
+      for(int d=0; d<sbl3; d++){
+        AB_lv(d)(q,q)=exp(Ab_lv(q*sbl3+d));
+      }
+    }
+    if(Ab_lv.size()>((sbl12)*sbl3)){
+      int k=0;
+      for (int c=0; c<(sbl12); c++){
+        for (int r=c+1; r<(sbl12); r++){
+          for(int d=0; d<sbl3; d++){
+            AB_lv(d)(r,c)=Ab_lv((sbl12)*sbl3+k*sbl3+d);
+            // Ab(c,r,j)=Ab(r,c,j);
+          }
+          k++;
+        }}
+    }
+    //VA likelihood parts for random slope
+    vector <Type> AB_lvDiag(sbl12);
+    vector <Type> Sigmab_lvDiag(sbl12);
+    for(int klv=0; klv<sbl3; klv++){
+      AB_lvDiag = AB_lv(klv).diagonal();
+      Sigmab_lvDiag = Sigmab_lv(klv).diagonal();
+      if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      if(sbl3==Klv) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      nll -= 0.5*(sbl12-Sigmab_lvDiag.abs().log().sum());
+    }
+    
+    //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
+    //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
+    //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
+    if(sbl3 == Klv){//variance per predictor
+      if((num_lv_c>0) && (num_RR == 0)){
+        if((random(0)>0) && (n == nr)){
+          u.middleCols(1, num_lv_c) += x_lv*b_lv;
+        }else{
+          u.leftCols(num_lv_c) += x_lv*b_lv;
+        }
+        
+        matrix<Type> temp(nlvr,nlvr);
+        //matrix <Type> L(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+        
+        if((random(0) == 0) || (n != nr)){
+          for(int i=0; i<n; i++){
+            temp.setZero();
+            temp = A(i)*A(i).transpose();
+            for(int klv=0; klv<Klv; klv++){
+              temp.topLeftCorner(num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+            }
+            L.compute(temp);//have to recompute cholesky of covariance due to summation
+            A(i) = L.matrixL();//can't do only a part due to potential covariance with num_lv
+          }
+        }else if((n == nr) && (random(0)>0)){//if row effects are included in u and A
+          for(int i=0; i<n; i++){
+            temp.setZero();
+            temp = A(i)*A(i).transpose();
+            for(int klv=0; klv<Klv; klv++){
+              temp.block(1,1,num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+            }
+            L.compute(temp);//have to recompute cholesky of covariance due to summation
+            A(i) = L.matrixL();//can't do only a part due to potential covariance with num_lv
+          }
+        }
+      }else if((num_RR>0) && (num_lv_c == 0)){
+        u.rightCols(num_RR) += x_lv*b_lv;
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+        matrix<Type> temp(nlvr,nlvr);
+        
+        for(int i=0; i<n; i++){
+          temp.setZero();
+          temp = A(i)*A(i).transpose();
+          for(int klv=0; klv<Klv; klv++){
+            temp.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+          }
+          L.compute(temp);
+          A(i) = L.matrixL();//have to recompute cholesky of covariance due to summation
+        }
+      }
+      
+      //separate case because now we have both, so that we need to build the covariances between these two as well, and put them back in the right place in A
+      if((num_RR>0) && (num_lv_c>0)){
+        matrix<Type> temp(num_RR+num_lv_c,num_RR+num_lv_c);
+        matrix <Type> L(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L2;
+        if((random(0)>0) && (n == nr)){
+          u.middleCols(1, num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
+        }else{
+          u.leftCols(num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
+        }
+        u.rightCols(num_RR) += x_lv*b_lv.rightCols(num_RR);
+        
+        for(int i=0; i<n; i++){
+          temp.setZero();
+          L = A(i)*A(i).transpose();
+          for(int klv=0; klv<Klv; klv++){
+            temp +=  x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//num_lv_c variance block
+          }
+          
+          if((random(0)==0) || (n != nr)){
+            L.topLeftCorner(num_lv_c,num_lv_c) += temp.topLeftCorner(num_lv_c,num_lv_c);
+            L.bottomRightCorner(num_RR,num_RR) += temp.bottomRightCorner(num_RR,num_RR);
+            
+            L.bottomLeftCorner(num_RR,num_lv_c) += temp.bottomLeftCorner(num_RR,num_lv_c);
+            L.topRightCorner(num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);
+            
+          }else if ((random(0) > 0) && (n == nr)){//if row effects are included in u and A
+            L.block(1,1,num_lv_c,num_lv_c) += temp.topLeftCorner(num_lv_c,num_lv_c);
+            L.bottomRightCorner(num_RR,num_RR) += temp.bottomRightCorner(num_RR,num_RR);
+            
+            L.block(nlvr-num_RR,1,num_RR,num_lv_c) += temp.bottomLeftCorner(num_RR,num_lv_c);//should be bottom left corner
+            L.block(1,nlvr-num_RR,num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);//should be top right corner
+            
+          }
+          L2.compute(L);
+          A(i) = L2.matrixL();
+        }
+        
+      }
+    }else if(sbl3 == (num_lv_c+num_RR)){//variance per LV
+      if(num_RR>0){
+        u.rightCols(num_RR) += x_lv*b_lv.rightCols(num_RR);
+      }
+      //much easier, since we assume independence between LVs
+      matrix<Type> temp(nlvr,nlvr);
+      Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+      
+      if((random(0)<1) || (n != nr)){
         if(num_lv_c>0){
-          if(lambda2.cols()==1){
-            for (int j=0; j<p; j++){
-              for (int q=1; q<(num_lv_c+1); q++){
-                D(q,q,j) = fabs(lambda2(q-1,0)); //common tolerances model
-              }
-            } 
-          }else{
-            for (int j=0; j<p; j++){
-              for (int q=1; q<(num_lv_c+1); q++){
-                D(q,q,j) = fabs(lambda2(q-1,j)); //full quadratic model
-              }
-            } 
-          }
+          u.leftCols(num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
         }
-        if((num_RR*random(2))>0){
-          if(lambda2.cols()==1){
-            //make sure that num_RR comes at the end..has to be
-            //like this due to the difference between fixed and random Bs
-            for (int j=0; j<p; j++){
-              for (int q=(num_lv_c+1); q<(num_lv_c+1+num_RR); q++){
-                D(q+num_lv,q+num_lv,j) = fabs(lambda2(q-1,0)); //common tolerances model
-              }
-            } 
-          }else{
-            for (int j=0; j<p; j++){
-              for (int q=(num_lv_c+1); q<(num_lv_c+1+num_RR); q++){
-                D(q+num_lv,q+num_lv,j) = fabs(lambda2(q-1,j)); //full quadratic model
-              }
-            } 
+        
+        for(int i=0; i<n; i++){
+          temp.setZero();
+          if(num_lv_c>0){
+            for(int q=0; q<num_lv_c; q++){
+              temp(q,q) = (x_lv.row(i)*AB_lv(q)*AB_lv(q).transpose()*x_lv.row(i).transpose()).sum();
+            }
           }
-        }
-        if(num_lv>0){
-          if(lambda2.cols()==1){
-            //make sure that num_lv is taken from the middle even with num_RR
-            for (int j=0; j<p; j++){
-              for (int q=(num_lv_c+1+num_RR); q<(num_lv_c+1+num_RR+num_lv); q++){
-                D(q-num_RR,q-num_RR,j) = fabs(lambda2(q-1,0)); //common tolerances model
-              }
-            } 
-          }else{
-            for (int j=0; j<p; j++){
-              for (int q=(num_lv_c+1+num_RR); q<(num_lv_c+1+num_RR+num_lv); q++){
-                D(q-num_RR,q-num_RR,j) = fabs(lambda2(q-1,j)); //full quadratic model
-              }
-            } 
+          
+          if(num_RR>0){
+            for(int q=(num_lv_c+num_lv); q<(num_lv_c+num_lv+num_RR); q++){
+              temp(q,q) = (x_lv.row(i)*AB_lv(q-num_lv)*AB_lv(q-num_lv).transpose()*x_lv.row(i).transpose()).sum();
+            }
           }
+          temp += A(i)*A(i).transpose();
+          L.compute(temp);
+          A(i) = L.matrixL();
         }
+        
+      }else if((random(0)>1) && (n == nr)){//if row effects are included in u and A
+        matrix<Type> temp(nlvr,nlvr);
+        Eigen::LLT<Matrix<Type,Eigen::Dynamic,Eigen::Dynamic>> L;
+        
+        if(num_lv_c>0){
+          u.middleCols(1, num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
+        }
+        
+        for(int i=0; i<n; i++){
+          temp.setZero();
+          for(int q=1; q<(num_lv_c+1); q++){
+            if(num_lv_c>0){
+              temp(q,q) = (x_lv.row(i)*AB_lv(q-1)*AB_lv(q-1).transpose()*x_lv.row(i).transpose()).sum();
+            }
+          }
+          if(num_RR>0){
+            for(int q=(num_lv_c+num_lv+1); q<(num_lv_c+num_lv+num_RR+1); q++){
+              temp(q,q) = (x_lv.row(i)*AB_lv(q-num_lv-1)*AB_lv(q-num_lv-1).transpose()*x_lv.row(i).transpose()).sum();
+            }
+          }
+          temp += A(i)*A(i).transpose();
+          L.compute(temp);
+          A(i) = L.matrixL();
+        }
+      }
+    }
+  }
+  
+  
+  // Include random slopes if random(1)>0
+  if(random(1)>0){
+    matrix<Type> sds(l,l);
+    sds.setZero();
+    sds.diagonal() = exp(sigmaB);
+    matrix<Type> S=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+    
+
+    // Variational covariance for random slopes
+    // log-Cholesky parametrization for A_bj:s
+    vector<matrix<Type>> Ab(p);
+    for(int j=0; j<p; j++){
+      Ab(j).resize(l,l);
+      Ab(j).setZero();
+    }
+    
+    for (int dl=0; dl<(l); dl++){
+      for(int j=0; j<p; j++){
+        Ab(j)(dl,dl)=exp(Abb(dl*p+j));
+      }
+    }
+    if(Abb.size()>(l*p)){
+      int k=0;
+      for (int c=0; c<(l); c++){
+        for (int r=c+1; r<(l); r++){
+          for(int j=0; j<p; j++){
+            Ab(j)(r,c)=Abb(l*p+k*p+j);
+            // Ab(c,r,j)=Ab(r,c,j);
+          }
+          k++;
+        }}
+    }
+    
+    /*Calculates the commonly used (1/2) x'_i A_bj x_i
+     A is a num.lv x num.lv x n array, theta is p x num.lv matrix*/
+    matrix <Type> SI = atomic::matinv(S);
+    vector <Type> AbDiag(l);
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        cQ(i,j) += 0.5*((xb.row(i))*Ab(j)*Ab(j).transpose()*xb.row(i).transpose()).sum();
+      }
+      AbDiag = Ab(j).diagonal();
+      nll -= (AbDiag.log().abs().sum() - 0.5*(SI*Ab(j)*Ab(j).transpose()).trace()-0.5*(Br.col(j).transpose()*SI*Br.col(j)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+    }
+    eta += xb*Br;
+    nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
+  }
+  
+  
+  if(model<1){
+    // basic gllvm, gllvm.TMB.R
+    eta += x*b;
+  } else {
+    // Fourth corner model TMB.trait.R
+    matrix<Type> eta1=x*B;
+    int m=0;
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        eta(i,j)+=b(0,j)*extra(1)+eta1(m,0); //extra(1)=0 if beta0comm=TRUE
+        m++;
+      }
+    }
+  }
+  
+  //components for reduced rank regression terms
+  if((num_RR>0) && (random(2)<1)){
+    //predictor coefficients RRR.  num_RR comes after num_lv_c
+    //Since later dimensions are more likely to have less residual variance
+    eta += x_lv*b_lv.rightCols(num_RR)*RRgamma;
+    
+    //quadratic terms for fixed-effects only RRR
+    //-num_lv to ensure that we pick num_RR from the middle
+    if(quadratic>0){
+      matrix<Type> D_RR(num_RR,num_RR);
+      D_RR.setZero();
+      
+      //quadratic coefficients for RRR
+      if(lambda2.cols()==1){
+        for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
+          D_RR.diagonal()(d-num_lv_c) = fabs(lambda2(d,0));
+        }
+        // for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          eta.row(i).array() -=  (x_lv.row(i)*b_lv.rightCols(num_RR)*D_RR*(x_lv.row(i)*b_lv.rightCols(num_RR)).transpose()).value();
+        }
+        // }
       }else{
+        for (int j=0; j<p;j++){
+          D_RR.setZero();
+          for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
+            D_RR.diagonal()(d-num_lv_c) = fabs(lambda2(d,j));
+          }
+          for (int i=0; i<n; i++) {
+            eta(i,j) -=  x_lv.row(i)*b_lv.rightCols(num_RR)*D_RR*(x_lv.row(i)*b_lv.rightCols(num_RR)).transpose();
+          }
+          
+        }
+      }
+      
+    }
+  }
+  
+  
+  // Structured Row/Site effects
+  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c))) && (rstruc>0)){
+    // Group specific random row effects:
+    if(rstruc == 1){
+      if(cstruc==0){
+        for (int j=0; j<p;j++){
+          cQ.col(j) += 0.5*(dr*Ar.matrix());
+          eta.col(j) += dr*r0;
+        }
+        for (int i=0; i<nr; i++) {//i<n //!!!
+          nll -= 0.5*(1 + log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2) - 2*log(sigma))*random(0); ///(n*p)
+        }
+      } else {
+        // group specific random row effects, which are correlated between groups
+        int j,d,r;
+        
+        matrix<Type> Sr(nr,nr);
+        matrix <Type> SRI(nr,nr);
+        if(cstruc==1){// AR1 covariance
+          Sr = gllvm::corAR1(sigma, log_sigma(1), nr);
+        } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+          Sr = gllvm::corCS(sigma, log_sigma(1), nr);
+        } else {
+          DiSc.setZero();
+          for(int j=0; j<dc.cols(); j++){
+            DiSc(j,j) += 1/exp(log_sigma(1+j));
+          }
+          dc_scaled = dc*DiSc;
+          if(cstruc==2){// exp decaying
+            Sr = gllvm::corExp(sigma, Type(0), nr, dc_scaled);
+            // Sr = gllvm::corExp(sigma, (log_sigma(1)), nr, DistM);
+          } else if(cstruc==4) {// Matern
+            Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), nr, dc_scaled);
+            //   Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), nr, DistM);
+          }
+        }
+        
+        // Variational covariance for row effects
+        matrix<Type> Arm(nr,nr);
+        vector <Type> ArmDiag(nr);
+        for (d=0; d<(nr); d++){
+          Arm(d,d)=Ar(d);
+        }
+        
+        if((lg_Ar.size()>nr) && (Astruc>0)){ // unstructured Var.cov
+          int k=0;
+          for (d=0; d<(nr); d++){
+            for (r=d+1; r<(nr); r++){
+              Arm(r,d)=lg_Ar(nr+k);
+              k++;
+            }}
+        }
+        
+        for (j=0; j<p;j++){
+          cQ.col(j) += 0.5*(dr*(Arm*Arm.transpose()).diagonal().matrix());
+          eta.col(j) += dr*r0;
+        }
+        ArmDiag = Arm.diagonal();
+        SRI = atomic::matinv(Sr);
+        nll -= ArmDiag.log().abs().sum()- 0.5*((SRI*(Arm*Arm.transpose())).trace()-(r0.transpose()*(SRI*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
+        
+        nll -= 0.5*(nr-log(Sr.determinant()));
+      }
+      
+    } else if(rstruc == 2){
+      // site specific random row effects, which are correlated within groups
+      int i,j,d,r;
+      matrix<Type> Sr(times,times);
+      
+      // Define covariance matrix
+      if(cstruc==1){// AR1 covariance
+        Sr = gllvm::corAR1(sigma, log_sigma(1), times);
+      } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+        Sr = gllvm::corCS(sigma, log_sigma(1), times);
+      } else{
+        DiSc.setZero();
+        for(int j=0; j<dc.cols(); j++){
+          DiSc(j,j) += 1/exp(log_sigma(1+j));
+        }
+        dc_scaled = dc*DiSc;
+        if(cstruc==2){// exp decaying
+          Sr = gllvm::corExp(sigma, Type(0), times, dc_scaled);
+          // Sr = gllvm::corExp(sigma, (log_sigma(1)), times, DistM);
+        } else if(cstruc==4) {// Matern
+          Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), times, dc_scaled);
+          // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), times, DistM);
+        }
+      }
+      
+      // Variational covariance for row effects
+      vector<matrix<Type>> Arm(nr);
+      for(int i=0; i<nr; i++){
+        Arm(i).resize(times,times);
+        Arm(i).setZero();
+      }
+      
+      for(i=0; i<nr; i++){
+        for (d=0; d<(times); d++){
+          Arm(i)(d,d)=Ar(i*times+d);
+        }
+      }
+      if((lg_Ar.size()>(nr*times)) && (Astruc>0)){ // unstructured Var.cov
+        int k=0;
+        for (d=0; d<(times); d++){
+          for (r=d+1; r<(times); r++){
+            for(int i=0; i<nr; i++){//i<nr
+              Arm(i)(r,d)=lg_Ar(nr*times+k*nr+i);
+              // Arm(d,r,i)=Arm(r,d,i);
+            }
+            k++;
+          }}
+      }
+      
+      for (j=0; j<p;j++){
+        for (i=0; i<nr; i++) {
+          for (d=0; d<(times); d++){
+            cQ(i*times + d,j) += 0.5*(Arm(i).row(d)*Arm(i).row(d).transpose()).sum(); //Arm(d,d,i);
+          }
+        }
+        eta.col(j).array() += r0.array();
+      }
+      r0.resize(times, nr);
+      matrix <Type> SRI = atomic::matinv(Sr);
+      for (i=0; i<nr; i++) {
+        nll -= log(Arm(i).determinant()) + 0.5*( - (SRI*Arm(i)*Arm(i).transpose()).trace()-((r0.col(i).matrix()).transpose()*(SRI*(r0.col(i).matrix()))).sum());
+        // log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      }
+      nll -= 0.5*nr*(times - log(Sr.determinant()));
+    }
+    // eta += dr*r0;
+  }
+  
+  // Correlated LVs
+  if(num_corlv>0) { //CorLV
+    int i,j,d;
+    int arank = 2;
+    matrix<Type> AQ(num_corlv,num_corlv);
+    AQ.setZero(); AQ.diagonal().fill(1.0);
+    
+    if(ucopy.rows() == nu){
+      
+      if(cstruc==0){
+        vector<matrix<Type>> Alvm(nu);
+        
+        for(int d=0; d<nu; d++){
+          Alvm(d).resize(num_corlv,num_corlv);
+          Alvm(d).setZero();
+        }
+        
+        eta += (dr*ucopy)*newlamCor;
+        
+        // Variational covariance for row effects
+        for (int q=0; q<(num_corlv); q++){
+          for (d=0; d<(nu); d++){
+            Alvm(d)(q,q)=exp(Au(q*nu+d));
+          }
+        }
+        if((Astruc>0) && (Au.size()>((num_corlv)*nu))){//unstructured cov
+          int k=0;
+          for (int c=0; c<(num_corlv); c++){
+            for (int r=c+1; r<(num_corlv); r++){
+              for(d=0; d<nu; d++){
+                Alvm(d)(r,c)=Au(nu*num_corlv+k*nu+d);
+              }
+              k++;
+            }}
+        }
+        
+        for (d=0; d<nu; d++) {
+          nll -= log(Alvm(d).determinant()) + 0.5*( - (Alvm(d)*Alvm(d).transpose()).trace() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
+          // for (d=0; d<nu; d++)
+          for (j=0; j<p;j++){
+            cQ.col(j) += 0.5*dr.col(d)*((newlamCor.col(j).transpose()*(Alvm(d)*Alvm(d).transpose()))*newlamCor.col(j));
+          }
+        }
+        nll -= 0.5*(nu*num_corlv);
+        
+      } else {
+        vector<matrix<Type> > Slv(num_corlv);
+        for(int q=0; q<num_corlv; q++){
+          Slv(q).resize(nu,nu);
+          Slv(q).setZero();
+        }
+        
+        matrix<Type> Slvinv(nu,nu);
+        // matrix<Type> Slv(nu,nu);
+        matrix<Type> uq(nu,1);
+        eta += (dr*ucopy)*newlamCor;
+        
+        if(Astruc<3){
+          vector<matrix<Type>> Alvm(num_corlv);
+          
+          for(int d=0; d<nu; d++){
+            Alvm(d).resize(nu,nu);
+            Alvm(d).setZero();
+          }
+          
+          // matrix<Type> Alvm(nu,nu);
+          for(int q=0; q<num_corlv; q++){
+            // site specific LVs, which are correlated between groups
+            // Slv.setZero();
+            uq = ucopy.col(q);
+            
+            // group specific lvs
+            if(cstruc==1){// AR1 covariance
+              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
+            } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
+            } else {
+              DiSc.setZero();
+              for(int j=0; j<dc.cols(); j++){
+                DiSc(j,j) += 1/exp(rho_lvc(q,j));
+              }
+              dc_scaled = dc*DiSc;
+              if(cstruc==2){// exp decaying
+                Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
+                // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
+              } else if(cstruc==4) {// Compound Symm  if(cstruc==3)
+                Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
+                // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
+              }
+            }
+            
+            // Variational covariance for row effects
+            for (d=0; d<(nu); d++){
+              Alvm(q)(d,d)=exp(Au(q*nu+d));
+            }
+            
+            if((Astruc>0) && (Au.size() > nu*num_corlv)){//reduced rank cov
+              // if(Au.size()>(times*nu*num_corlv)){}
+              int k=0;
+              if(Astruc==1){
+                for (d=0; d<nu; d++){
+                  for (int r=d+1; r<(nu); r++){
+                    Alvm(q)(r,d)=Au(nu*num_corlv+k*num_corlv+q);
+                    k++;
+                  }
+                }
+              } else if(Astruc==2) {
+                arank = NN.rows();
+                // arank = NN.cols();
+                // for (d=0; (d<nu); d++){
+                for (int r=0; r<(arank); r++){
+                  Alvm(q)(NN(r,0)-1,NN(r,1)-1)=Au(nu*num_corlv+k*num_corlv+q);
+                  // int d2 = NN(d,r)-1;
+                  // if(d2<d){
+                  //   Alvm(d,d2)=Au(nu*num_corlv+k*num_corlv+q);
+                  // } else {
+                  // Alvm(d2,d)=Au(nu*num_corlv+k*num_corlv+q);
+                  // }
+                  k++;
+                }
+                // }
+              }
+            }
+            
+            for (j=0; j<p;j++){
+              cQ.col(j) += 0.5*pow(newlamCor(q,j),2)*(dr*(Alvm(q)*Alvm(q).transpose()).diagonal().matrix());
+            }
+            Slvinv = atomic::matinv(Slv(q));
+            nll -= log(Alvm(q).determinant()) + 0.5*(- (Slvinv*Alvm(q)*Alvm(q).transpose()).trace()-( uq.transpose()*(Slvinv*uq) ).sum());
+            // nll -= log(Alvm.col(q).matrix().determinant()) + 0.5*(- (atomic::matinv(Slv(q))*(Alvm.col(q).matrix()*Alvm.col(q).matrix().transpose())).trace()-( uq.transpose()*(atomic::matinv(Slv(q))*uq) ).sum());
+            
+            nll -= 0.5*(nu-log(Slv(q).determinant()));
+            
+          }
+        } else if(num_corlv>1){
+          matrix<Type> Alvm(nu,nu);
+          Alvm.setZero();
+          // Kronecker Variational covariance
+          for (d=0; d<(nu); d++){
+            Alvm(d,d)=exp(Au(d));
+          }
+          //reduced rank cov
+          // if(Au.size()>(times*nu*num_corlv)){}
+          int k=0;
+          arank = NN.rows();
+          if(Au.size()>(nu+num_corlv*(num_corlv+1)/2)) {
+            if(Astruc == 4) {
+              for (int r=0; r<(arank); r++){
+                Alvm(NN(r,0)-1,NN(r,1)-1)=Au(nu+k);
+                k++;
+              }
+            } else if(Astruc == 3) {
+              for (d=0; d<nu; d++){
+                for (int r=d+1; r<(nu); r++){
+                  Alvm(r,d)=Au(nu+k);
+                  k++;
+                }
+              }
+            }
+          }
+          
+          for (d=0; d<num_corlv; d++){
+            AQ(d,d)=exp(Au(nu+k));
+            k++;
+            for (int r=d+1; r<(num_corlv); r++){
+              AQ(r,d)=Au(nu+k);
+              k++;
+            }
+          }
+          Alvm *= Alvm.transpose();
+          AQ *= AQ.transpose();
+          
+          for (j=0; j<p;j++){
+            cQ.col(j) += 0.5*(dr*Alvm.diagonal())*((newlamCor.col(j).transpose()*AQ)*newlamCor.col(j));
+          }
+          nll -= 0.5*num_corlv*log(Alvm.determinant()) + 0.5*nu*log(AQ.determinant()) + 0.5*num_corlv*nu;
+          //
+          for(int q=0; q<num_corlv; q++){
+            // site specific LVs, which are correlated between groups
+            // Slv.setZero();
+            uq = ucopy.col(q);
+            
+            // group specific lvs
+            if(cstruc==1){// AR1 covariance
+              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
+            } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
+            } else {
+              DiSc.setZero();
+              for(int j=0; j<dc.cols(); j++){
+                DiSc(j,j) += 1/exp(rho_lvc(q,j));
+              }
+              dc_scaled = dc*DiSc;
+              if(cstruc==2){// exp decaying
+                Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
+                // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
+              } else if(cstruc==4) {// Compound Symm  if(cstruc==3)
+                Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
+                // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
+              }
+            }
+            
+            Slvinv = atomic::matinv(Slv(q));
+            nll -= 0.5*(- AQ(q,q)*(Slvinv*Alvm).trace()-( uq.transpose()*(Slvinv*uq) ).sum());
+            // nll -= 0.5*(- AQ(q,q)*(atomic::matinv(Slv(q))*Alvm).trace()-( uq.transpose()*(atomic::matinv(Slv(q))*uq) ).sum());
+            nll -= -0.5*log(Slv(q).determinant());
+          }
+        }
+      }
+    } else {
+      
+      eta += ucopy*newlamCor;
+      vector<matrix<Type> > Slv(num_corlv);
+      for(int q=0; q<num_corlv; q++){
+        Slv(q).resize(times,times);
+        Slv(q).setZero();
+      }
+      // matrix<Type> Slv(times,times);
+      matrix<Type> Slvinv(times,times);
+      
+      // int acol = times;
+      // if(Astruc>0){
+      //   acol = arank;
+      // }
+      //
+      if(Astruc<3){
+        
+        vector<matrix<Type>> Alvm(num_corlv);
+        
+        for(int d=0; d<num_corlv; d++){
+          Alvm(d).resize(times*nu,times*nu);
+          Alvm(d).setZero();
+        }
+        
+        // array<Type> Alvm(times,times,nu);
+        // matrix<Type> uq(times*nu,1);
+        
+        for(int q=0; q<num_corlv; q++){
+          // site specific LVs, which are correlated within groups
+          
+          // Variational covariance for row effects
+          //diagonal
+          for(i=0; i<nu; i++){
+            for (d=0; d<(times); d++){
+              Alvm(q)(i*times+d,i*times+d)=exp(Au(q*n+i*times+d));
+            }
+          }
+          
+          if((Astruc>0) && (Au.size() > nu*times*num_corlv)){//reduced rank cov
+            // if(Au.size()>(times*nu*num_corlv)){}
+            int k=0;
+            if(Astruc==1){
+              for(i=0; i<nu; i++){
+                for (d=0; ((d<arank) && (d<times)); d++){
+                  // for (d=0; (d<times); d++){//(num_lv+num_lv_c)*n+k*n+q
+                  // for (int r=d; r<(times); r++){
+                  // if(r==d){
+                  // Alvm(r,d,i)=exp(Au(k*num_corlv+q));
+                  // } else {
+                  // Alvm(r,d,i)=Au(k*num_corlv+q);
+                  // }
+                  for (int r=d+1; r<(times); r++){
+                    Alvm(q)(i*times+r,i*times+d)=Au(nu*times*num_corlv+k*num_corlv+q);
+                    // Alvm(r,d,i)=Au(nu*times*num_corlv+k*num_corlv+q);
+                    k++;
+                  }
+                }
+              }
+            } else if(Astruc==2) {
+              arank = NN.rows();
+              for(i=0; i<nu; i++){
+                for (int r=0; r<(arank); r++){
+                  Alvm(q)(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times*num_corlv+k*num_corlv+q);
+                  k++;
+                }
+              }
+              // arank = NN.cols();
+              // for(i=0; i<nu; i++){
+              //   for (d=0; (d<times); d++){
+              //     for (int r=0; r<(arank); r++){
+              //       int d2 = NN(d,r)-1;
+              //       if(d2<d){
+              //         Alvm(i*times+d,i*times+d2,q)=Au(nu*times*num_corlv+k*num_corlv+q);
+              //         // k++;
+              //       } else {
+              //         Alvm(i*times+d2,i*times+d,q)=Au(nu*times*num_corlv+k*num_corlv+q);
+              //       }
+              //       k++;
+              //     }
+              //   }
+              // }
+            }
+          }
+          
+          
+          for (j=0; j<p;j++){
+            for (i=0; i<(times*nu); i++) {
+              cQ(i,j) += 0.5*pow(newlamCor(q,j),2)*(Alvm(q).row(i)*Alvm(q).row(i).transpose()).sum();
+            }
+          }
+          nll -= log(Alvm(q).determinant());
+          
+          // Slv.setZero();
+          // Alvm.setZero();
+          // uq = ucopy.col(q);
+          
+          // Define covariance matrix
+          if(cstruc==1){// AR1 covariance
+            Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+          } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+            Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+          } else {
+            DiSc.setZero();
+            for(int j=0; j<dc.cols(); j++){
+              DiSc(j,j) += 1/exp(rho_lvc(q,j));
+            }
+            dc_scaled = dc*DiSc;
+            if(cstruc==2){// exp decaying
+              Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
+              // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
+            } else if(cstruc==4) {// matern
+              Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
+              // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
+            }
+          }
+          
+          nll -= 0.5*nu*(times - log(Slv(q).determinant()));
+          
+          Slvinv = atomic::matinv(Slv(q));
+          matrix <Type> Alvmblock;
+          matrix <Type> ucopyblock;
+          for (i=0; i<nu; i++) {
+            Alvmblock = Alvm(q).block(i*times,i*times,times,times)*Alvm(q).block(i*times,i*times,times,times).transpose();
+            ucopyblock = ucopy.block(i*times,q,times,1);
+            nll -=  0.5*(- (Slvinv*Alvmblock).trace()-(ucopyblock.transpose()*Slvinv*ucopyblock).sum());
+            // nll -= log(Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix().determinant()) - 0.5*((atomic::matinv(Slv(q))*(Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix()*Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix().transpose())).trace()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(atomic::matinv(Slv(q))*(ucopy.block(i*times,q,times,1).matrix()))).sum());
+            // nll -= 0.5*(log((Alvm.col(i).matrix()*Alvm.col(i).matrix().transpose()).determinant()) - (Slv(q).inverse()*(Alvm.col(i).matrix()*Alvm.col(i).matrix().transpose())).trace()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(Slv(q).inverse()*(ucopy.block(i*times,q,times,1).matrix()))).sum());
+            // log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+          }
+          
+        }
+        
+      } else if(num_corlv>1){
+        // Kron A=AQ*Alvm
+        matrix<Type> Alvm(times*nu,times*nu);
+        Alvm.setZero();
+        // Variational covariance
+        //diagonal
+        for(i=0; i<nu; i++){
+          for (d=0; d<(times); d++){
+            Alvm(i*times+d,i*times+d)=exp(Au(i*times+d));
+          }
+        }
+        
+        //reduced rank cov
+        int k=0;
+        arank = NN.rows();
+        if(Au.size()>(nu*times+num_corlv*(num_corlv+1)/2)) {
+          if(Astruc == 4) {
+            for(i=0; i<nu; i++){
+              for (int r=0; r<(arank); r++){
+                Alvm(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times+k);
+                k++;
+              }
+            }
+          } else if(Astruc == 3){
+            for(i=0; i<nu; i++){
+              for (d=0; (d<times); d++){
+                for (int r=d+1; r<(times); r++){
+                  Alvm(i*times+r,i*times+d)=Au(nu*times+k);
+                  k++;
+                }
+              }
+            }
+          }
+        }
+        //
+        for (d=0; d<num_corlv; d++){
+          AQ(d,d)=exp(Au(nu*times+k));
+          k++;
+          for (int r=d+1; r<(num_corlv); r++){
+            AQ(r,d)=Au(nu*times+k);
+            k++;
+          }
+        }
+        // Alvm *= Alvm.transpose();
+        // AQ *= AQ.transpose();
+        
+        for (j=0; j<p;j++){
+          // for (i=0; i<(nu*times);i++){
+          //   cQ(i,j) += 0.5*(Alvm.row(i)*Alvm.row(i).transpose()).sum()*((newlamCor.col(j).transpose()*(AQ*AQ.transpose()))*newlamCor.col(j)).sum();
+          // }
+          cQ.col(j) += 0.5*(Alvm*Alvm.transpose()).diagonal().matrix()*((newlamCor.col(j).transpose()*(AQ*AQ.transpose()))*newlamCor.col(j));
+          // // cQ.col(j) += 0.5*Alvm.diagonal().matrix()*((newlamCor.col(j).transpose()*AQ)*newlamCor.col(j));
+        }
+        nll -= num_corlv*log(Alvm.determinant()) + times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
+        // nll -= 0.5*num_corlv*log(Alvm.determinant()) + 0.5*times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
+        //
+        for(int q=0; q<num_corlv; q++){
+          // site specific LVs, which are correlated within groups
+          // Slv.setZero();
+          
+          // Define covariance matrix
+          if(cstruc==1){// AR1 covariance
+            Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+          } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+            Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+          } else {
+            DiSc.setZero();
+            for(int j=0; j<dc.cols(); j++){
+              DiSc(j,j) += 1/exp(rho_lvc(q,j));
+            }
+            dc_scaled = dc*DiSc;
+            if(cstruc==2){// exp decaying
+              Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
+              // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
+            } else if(cstruc==4) {// matern
+              Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
+              // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
+            }
+          }
+          
+          nll -= - 0.5*nu*log(Slv(q).determinant());
+          Slvinv = atomic::matinv(Slv(q));
+          matrix <Type> Alvmblock;
+          matrix <Type> ucopyblock;
+          for (i=0; i<nu; i++) {
+            Alvmblock = Alvm.col(q).matrix().block(i*times,i*times,times,times)*Alvm.col(q).matrix().block(i*times,i*times,times,times).transpose();
+            ucopyblock = ucopy.block(i*times,q,times,1);
+            nll -=  0.5*(- (AQ.row(q)*AQ.row(q).transpose()).sum()*(Slvinv*Alvmblock).trace() - (ucopyblock.transpose()*(Slvinv*ucopyblock)).sum());
+            // nll -=  0.5*(- AQ(q,q)*(atomic::matinv(Slv(q))*Alvm.block(i*times,i*times,times,times).matrix()).trace()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(atomic::matinv(Slv(q))*(ucopy.block(i*times,q,times,1).matrix()))).sum());
+          }
+          
+        }
+      }
+      
+    }
+  }
+  
+  matrix <Type> e_eta;
+  
+  if(nlvr>0){
+    matrix<Type> b_lv2(x_lv.cols(),nlvr);
+    b_lv2.setZero();
+    
+    if((num_lv_c>0) && (random(2)<1)){
+      //concurrent ordination terms
+      //predictor coefficients for constrained ordination
+      if((random(0)>0) && (n == nr)){
+        //first column are zeros in case of random intercept
+        //right num_lv columns are zeros in case of num_lv
+        b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
+      }else{
+        b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
+      }
+      
+      eta += x_lv*b_lv2*newlam;
+      
+    }else if((nlvr>0) && (random(2)>0) && (quadratic > 0)){
+      if((random(0)>0) && (n == nr)){
+        //first column are zeros in case of random intercept
+        //middle cols are zeros in case of num_lv
+        if(num_lv_c>0)b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
+        if(num_RR>0) b_lv2.rightCols(num_RR) = b_lv.rightCols(num_RR);
+      }else{
+        if(num_lv_c>0)b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
+        if(num_RR>0) b_lv2.rightCols(num_RR) = b_lv.rightCols(num_RR);
+      }
+    }
+    lam = u*newlam;
+    
+    // Update cQ for non quadratic latent variable model and
+    // also takes this route if there are quadratic constrained LVs with random row-effect
+    if((quadratic < 1) || ((nlvr==1) && (random(2)<1) && (num_RR>0) && (quadratic>0))){
+      
+      //Binomial, Gaussian, Ordinal
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
+        }
+      }
+      eta += lam;
+    }
+    
+    if(((quadratic>0) && (nlvr>0)) || ((quadratic>0) && (num_RR>0))){
+      
+      vector< matrix<Type>> D(p);
+      
+      //quadratic coefficients for ordination
+      //if random rows, add quadratic coefficients for num_RR to D otherwise
+      //they go into D_RR below
+      //The ordering here is num_lv_c-num_lv-num_RR so that the code works for
+      //fixed-effects B and random effects B
+      //The order we need to pick them from lambda2 is
+      //num_lv_c-num_RR-num_lv however, to ensure everything on the R-side works
+      if(((num_lv+num_lv_c+num_RR*random(2))>0)){
+        
+        matrix <Type> Dmat(nlvr,nlvr);
+        Dmat.setZero();
+        for (int j=0; j<p; j++){
+          D(j) = Dmat;
+        }
+        
+        if(nlvr>(num_lv+num_lv_c+num_RR*random(2))){
           if(num_lv_c>0){
             if(lambda2.cols()==1){
               for (int j=0; j<p; j++){
-                for (int q=0; q<num_lv_c; q++){
-                  D(q,q,j) = fabs(lambda2(q,0)); //common tolerances model
+                for (int q=1; q<(num_lv_c+1); q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q-1,0)); //common tolerances model
                 }
-              } 
+              }
             }else{
               for (int j=0; j<p; j++){
-                for (int q=0; q<num_lv_c; q++){
-                  D(q,q,j) = fabs(lambda2(q,j)); //full quadratic model
+                for (int q=1; q<(num_lv_c+1); q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q-1,j)); //full quadratic model
                 }
-              } 
+              }
             }
           }
           if((num_RR*random(2))>0){
@@ -401,1885 +1358,961 @@ Type objective_function<Type>::operator() ()
               //make sure that num_RR comes at the end..has to be
               //like this due to the difference between fixed and random Bs
               for (int j=0; j<p; j++){
-                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
-                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,0)); //common tolerances model
+                for (int q=(num_lv_c+num_lv+1); q<nlvr; q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q-1-num_lv,0)); //common tolerances model
                 }
-              } 
+              }
             }else{
               for (int j=0; j<p; j++){
-                for (int q=num_lv_c; q<(num_lv_c+num_RR); q++){
-                  D(q+num_lv,q+num_lv,j) = fabs(lambda2(q,j)); //full quadratic model
+                for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
+                  D(j).diagonal()(q+num_lv) = fabs(lambda2(q-1-num_lv,j)); //full quadratic model
                 }
-              } 
+              }
             }
           }
           if(num_lv>0){
             if(lambda2.cols()==1){
               //make sure that num_lv is taken from the middle even with num_RR
               for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
-                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,0)); //common tolerances model
+                for (int q=(num_lv_c+1+num_RR*random(2)); q<nlvr; q++){
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,0)); //full quadratic model
                 }
-              } 
+              }
             }else{
               for (int j=0; j<p; j++){
-                for (int q=(num_lv_c+num_RR); q<(num_lv_c+num_RR+num_lv); q++){
-                  D(q-num_RR,q-num_RR,j) = fabs(lambda2(q,j)); //full quadratic model
+                for (int q=(num_lv_c+1+num_RR*random(2)); q<nlvr; q++){
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q-1,j)); //full quadratic model
                 }
-              } 
-            }
-          }
-        }
-      }
-    
-    // add offset
-    eta += offset;
-    // add fixed row effects
-    if(random(0)==0){
-      eta += r0*xr;
-    }
-    
-    matrix<Type> cQ(n,p);
-    cQ.fill(0.0);
-
-    array<Type> A;
-    if( (random(2)>0) && (num_RR!=0)){
-      A = array<Type> (nlvr+num_RR,nlvr+num_RR,n);
-      A.fill(0.0);
-    }else{
-      A = array<Type> (nlvr,nlvr,n);//plus one because just trying
-      A.fill(0.0);
-    }
-    
-    // Set up variational covariance matrix for LVs 
-    if(nlvr>0){
-      // Include variational covs of row effects, if structure is same for both
-      if(nlvr>(num_lv+num_lv_c)){
-        for(int i=0; i<n; i++){
-          A(0,0,i)=exp(lg_Ar(i));
-        }
-        if(lg_Ar.size()>n){
-          for (int r=1; r<nlvr; r++){
-            for(int i=0; i<n; i++){
-              A(r,0,i)=lg_Ar(r*n+i);
-            }}
-        }
-      }
-      
-      
-      if((num_lv+num_lv_c)>0){
-        // log-Cholesky parametrization for A_i:s
-        // don't include num_RR for random slopes, comes in later
-        for (int d=0; d<(num_lv+num_lv_c); d++){
-          for(int i=0; i<n; i++){
-            A(d+(nlvr-num_lv-num_lv_c),d+(nlvr-num_lv-num_lv_c),i)=exp(Au(d*n+i));
-            // A(d,d,i)=exp(Au(d*n+i));
-          }
-        }
-        if(Au.size()>((num_lv+num_lv_c)*n)){
-          int k=0;
-          for (int c=0; c<(num_lv+num_lv_c); c++){
-            for (int r=c+1; r<(num_lv+num_lv_c); r++){
-              for(int i=0; i<n; i++){
-                A(r+(nlvr-num_lv-num_lv_c),c+(nlvr-num_lv-num_lv_c),i)=Au((num_lv+num_lv_c)*n+k*n+i);
-                // A(r,c,i)=Au(nlvr*n+k*n+i);
-                // A(c,r,i)=A(r,c,i);
               }
-              k++;
-            }}
-        }
-      }
-      
-      //set VA covariances for random rows to zero for quadratic model
-      //but not with quadratic model. constrained LVs, and row-eff.
-      if(((quadratic>0)&&(nlvr>(num_lv+num_lv_c)))&&((num_lv+num_lv_c+num_RR*random(2))>0)){
-        for(int i=0; i<n; i++){
-          for (int d=0; d<nlvr; d++){
-            if(d!=0){
-              A(d,0,i) = 0.0;
             }
           }
-        }
-      }
-      
-      // // Add VA terms to logL
-      if(random(2)<1){
-        //Go this route if no random Bs
-        for(int i=0; i<n; i++){
-          if(nlvr == (num_lv+num_lv_c)) nll -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()));
-          if(nlvr>(num_lv+num_lv_c)) nll -= (((vector <Type> (A.col(i).matrix().diagonal())).log()).sum() - 0.5*(Cu.inverse()*(A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
-          // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
-          nll -= 0.5*(nlvr - log(Cu.determinant())*random(0));
-        }
-        //scale LVs with standard deviations, as well as the VA covariance matrices
-        u *= Delta;
-        
-        for (int i=0; i<n; i++) {
-          A.col(i) = (Delta*A.col(i).matrix()).array(); 
-        }
-      }else{
-        //Go this route with random Bs (since size of Cu and A.col(i) are then not the same)
-        matrix<Type> Atemp(nlvr,nlvr);
-        Atemp.fill(0.0);
-        for(int i=0; i<n; i++){
-          Atemp = A.col(i).matrix().topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
-          if(nlvr == (num_lv+num_lv_c)) nll -= (((vector <Type> (Atemp.diagonal())).log()).sum() - 0.5*((Atemp*Atemp.transpose()).diagonal().sum()+(u.row(i)*u.row(i).transpose()).sum()));
-          if(nlvr>(num_lv+num_lv_c)) nll -= (((vector <Type> (Atemp.diagonal())).log()).sum() - 0.5*(Cu.inverse()*(Atemp*Atemp.transpose()).matrix()).diagonal().sum()-0.5*((u.row(i)*Cu.inverse())*u.row(i).transpose()).sum());
-          // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
-          nll -= 0.5*(nlvr - log(Cu.determinant())*random(0));
-        }
-        
-        
-        //scale LVs with standard deviations, as well as the VA covariance matrices
-        u *= Delta;
-        if(num_RR>0){
-          Delta.conservativeResize(nlvr+num_RR,nlvr+num_RR);
-          for(int d=nlvr; d<(nlvr+num_RR); d++){
-            Delta.col(d).fill(0.0);
-            Delta.row(d).fill(0.0);
-          }
-        }
-        
-        for (int i=0; i<n; i++) {
-          A.col(i) = (Delta*A.col(i).matrix()).array(); 
-        }
-      }
-      
-    }
-    
-    //random slopes for constr. ord.
-    if((random(2)>0) && ((num_RR+num_lv_c)>0)){
-      //resize A, u, D, and add RRGamma to newlam.
-      //add columns to u on the right for num_RR with random slopes
-      //resize u
-      if(num_RR>0){
-        u.conservativeResize(n, nlvr + num_RR);  
-        //resize and fill newlam, we don't use RRgamma further with random Bs
-        //easiest to do is slap RRgamma at the end of newlam
-        //this makes the order of newlam, A, u, and D inconsistent with the R-side of things
-        //nicer would be to have to same order as in R, but that isn't possible since
-        //it requires going down the same route for fixed and random B
-        //which would only work with diagonal of 0s in A
-        //And that needs to be invertible for the quadratic case, so that is not possible
-        //potentially adjust in the future if I find out an alternative route.
-        newlam.conservativeResize(nlvr+num_RR,p);
-        for(int d=nlvr; d<(nlvr+num_RR); d++){
-          u.col(d).fill(0.0);
-          newlam.row(d).fill(0.0);
-        }
-        nlvr += num_RR;
-        newlam.bottomRows(num_RR) = RRgamma;
-      }
-      
-      // Variational covariance for random slopes
-      // log-Cholesky parametrization for Ab_k:s
-      array<Type> AB_lv(sbl12,sbl12,sbl3);
-      
-      AB_lv.fill(0.0);
-      for (int q=0; q<(sbl12); q++){
-        for(int d=0; d<sbl3; d++){
-          AB_lv(q,q,d)=exp(Ab_lv(q*sbl3+d));
-        }
-      }
-      if(Ab_lv.size()>((sbl12)*sbl3)){
-        int k=0;
-        for (int c=0; c<(sbl12); c++){
-          for (int r=c+1; r<(sbl12); r++){
-            for(int d=0; d<sbl3; d++){
-              AB_lv(r,c,d)=Ab_lv((sbl12)*sbl3+k*sbl3+d);
-              // Ab(c,r,j)=Ab(r,c,j);
-            }
-            k++;
-          }}
-      }
-      //VA likelihood parts for random slopes
-      if(sbl3 == Klv){//randomB="P" & randomB=="single"
-        for(int klv=0; klv<Klv; klv++){
-          nll -= ((((vector <Type> (AB_lv.col(klv).matrix().diagonal())).log()).sum() - 0.5*((Sigmab_lv.col(klv).matrix()).inverse()*(AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose())).trace()-0.5*(b_lv.row(klv)*((Sigmab_lv.col(klv).matrix()).inverse()*b_lv.row(klv).transpose())).sum()));// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-          nll -= 0.5*(num_lv_c+num_RR-((vector <Type> (Sigmab_lv.col(klv).matrix().diagonal())).log()).sum());
-        }
-      }else{//randomB="LV"
-        for(int q=0; q<(num_lv_c+num_RR); q++){
-          nll -= ((((vector <Type> (AB_lv.col(q).matrix().diagonal())).log()).sum() - 0.5*((Sigmab_lv.col(q).matrix()).inverse()*(AB_lv.col(q).matrix()*AB_lv.col(q).matrix().transpose())).trace()-0.5*(b_lv.col(q).transpose()*((Sigmab_lv.col(q).matrix()).inverse()*b_lv.col(q))).sum()));// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-          nll -= 0.5*(Klv-((vector <Type> (Sigmab_lv.col(q).matrix().diagonal())).log()).sum());
-        }
-      }
-      
-      
-      //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
-      //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
-      //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
-      
-      if(sbl3 == Klv){//variance per predictor
-        if((num_lv_c>0) && (num_RR == 0)){
-          // matrix <Type> b_lv2 =  b_lv;//.leftCols(num_lv_c);
-          if((random(0)>0) && (n == nr)){
-            u.middleCols(1, num_lv_c) += x_lv*b_lv;
-          }else{
-            u.leftCols(num_lv_c) += x_lv*b_lv;
-          }
-          
-          matrix<Type> temp(nlvr,nlvr);
-          temp.fill(0.0);
-          matrix <Type> L(nlvr,nlvr);
-          L.fill(0.0);
-          if((random(0) == 0) || (n != nr)){
-            for(int i=0; i<n; i++){
-              temp = A.col(i).matrix()*A.col(i).matrix().transpose();
-              for(int klv=0; klv<Klv; klv++){
-                temp.topLeftCorner(num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//cholesky of variance block for num_lv_c
-              }
-              L =  temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-              A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
-            }
-          }else if((n == nr) && (random(0)>0)){//if row effects are included in u and A
-            for(int i=0; i<n; i++){
-              temp = A.col(i).matrix()*A.col(i).matrix().transpose();
-              for(int klv=0; klv<Klv; klv++){
-                temp.block(1,1,num_lv_c,num_lv_c) += x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//cholesky of variance block for num_lv_c
-              }
-              L =  temp.llt().matrixL();//can't do only a part due to potential covariance with num_lv
-              A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
-            }
-          }
-        }
-        
-        if((num_RR>0) && (num_lv_c == 0)){
-          // matrix <Type> b_lv3 =  b_lv;//.rightCols(num_RR);
-          u.rightCols(num_RR) += x_lv*b_lv;
-          matrix <Type> L(nlvr,nlvr);
-          L.fill(0.0); 
-          for(int i=0; i<n; i++){
-            L = A.col(i).matrix();
-            for(int klv=0; klv<Klv; klv++){
-              L.bottomRightCorner(num_RR,num_RR) += x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//cholesky of variance block for num_lv_c
-            }
-            
-            L.bottomRightCorner(num_RR,num_RR) =  (L.bottomRightCorner(num_RR,num_RR)).llt().matrixL();//block diagonal structure so only need to re-do part of this matrix, the bottom right
-            A.col(i) =  L.array();//have to recompute cholesky of covariance due to summation
-          }
-        }
-        
-        //separate case because now we have both, so that we need to build the covariances between these two as well, and put them back in the right place in A
-        if((num_RR>0) && (num_lv_c>0)){
-          matrix <Type> b_lv2 =  b_lv.leftCols(num_lv_c);
-          matrix <Type> b_lv3 =  b_lv.rightCols(num_RR);
-          
-          matrix<Type> temp(num_RR+num_lv_c,num_RR+num_lv_c);
-          temp.fill(0.0);
-          
-          matrix <Type> L(nlvr,nlvr);
-          L.fill(0.0);
-          
-          if((random(0)>0) && (n == nr)){
-            u.middleCols(1, num_lv_c) += x_lv*b_lv2;
-          }else{
-            u.leftCols(num_lv_c) += x_lv*b_lv2;
-          }
-          u.rightCols(num_RR) += x_lv*b_lv3;
-          for(int i=0; i<n; i++){
-            L = A.col(i).matrix()*A.col(i).matrix().transpose();
-            temp.setZero();
-            for(int klv=0; klv<Klv; klv++){
-              temp +=  x_lv(i,klv)*x_lv(i,klv)*AB_lv.col(klv).matrix()*AB_lv.col(klv).matrix().transpose();//num_lv_c variance block
-            }
-            
-            if((random(0)==0) || (n != nr)){
-              L.topLeftCorner(num_lv_c,num_lv_c) += temp.topLeftCorner(num_lv_c,num_lv_c);
-              L.bottomRightCorner(num_RR,num_RR) += temp.bottomRightCorner(num_RR,num_RR);
-              
-              L.bottomLeftCorner(num_RR,num_lv_c) += temp.bottomLeftCorner(num_RR,num_lv_c);
-              L.topRightCorner(num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);
-              
-            }else if ((random(0) > 0) && (n == nr)){//if row effects are included in u and A
-              L.block(1,1,num_lv_c,num_lv_c) += temp.topLeftCorner(num_lv_c,num_lv_c);
-              L.bottomRightCorner(num_RR,num_RR) += temp.bottomRightCorner(num_RR,num_RR);
-              
-              L.block(nlvr-num_RR,1,num_RR,num_lv_c) += temp.bottomLeftCorner(num_RR,num_lv_c);//should be bottom left corner
-              L.block(1,nlvr-num_RR,num_lv_c,num_RR) += temp.topRightCorner(num_lv_c,num_RR);//should be top right corner
-              
-            }
-            L = L.llt().matrixL();
-            A.col(i) = L.array();
-          }
-          
-        }
-      }else if(sbl3 == (num_lv_c+num_RR)){//variance per LV
-        if(num_lv_c>0){
-          matrix <Type> b_lv2 =  b_lv.leftCols(num_lv_c);
-          u.leftCols(num_lv_c) += x_lv*b_lv2;
-        }
-        if(num_RR>0){
-          matrix <Type> b_lv3 =  b_lv.rightCols(num_RR);
-          u.rightCols(num_RR) += x_lv*b_lv3;
-        }
-        //much easier, since we assume independence between LVs
-        array <Type> temp(nlvr,nlvr,n);
-        temp.fill(0.0);
-        matrix <Type> L(nlvr,nlvr);
-        L.fill(0.0);
-        
-        if((random(0)<1) || (n != nr)){
+        }else{
           if(num_lv_c>0){
-            for(int i=0; i<n; i++){
-              for(int q=0; q<num_lv_c; q++){
-                temp(q,q,i) = (x_lv.row(i)*(AB_lv.col(q).matrix()*AB_lv.col(q).matrix().transpose())*x_lv.row(i).transpose()).sum();
-              }
-            }
-          }
-          if(num_RR>0){
-            for(int i=0; i<n; i++){
-              for(int q=(num_lv_c+num_lv); q<(num_lv_c+num_lv+num_RR); q++){
-                temp(q,q,i) = (x_lv.row(i)*(AB_lv.col(q-num_lv).matrix()*AB_lv.col(q-num_lv).matrix().transpose())*x_lv.row(i).transpose()).sum();
-              }
-            }
-          }
-          for(int i=0; i<n; i++){
-            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp.col(i).matrix();
-            L = L.llt().matrixL();
-            A.col(i) = L.array();
-          }
-          // REPORT(temp); //Not used
-        }else if((random(0)>1) && (n == nr)){//if row effects are included in u and A
-          array <Type> temp(nlvr,nlvr,n);
-          temp.fill(0.0);
-          matrix <Type> L(nlvr,nlvr);
-          L.fill(0.0);
-          
-          if(num_lv_c>0){
-            matrix <Type> b_lv2 =  b_lv.leftCols(num_lv_c);
-            u.middleCols(1, num_lv_c) += x_lv*b_lv2;
-          }
-          if(num_RR>0){
-            matrix <Type> b_lv3 =  b_lv.rightCols(num_RR);
-            u.rightCols(num_RR) += x_lv*b_lv3;
-          }
-          
-          if(num_lv_c>0){
-            for(int i=0; i<n; i++){
-              for(int q=1; q<(num_lv_c+1); q++){
-                temp(q,q,i) = (x_lv.row(i)*AB_lv.col(q-1).matrix()*AB_lv.col(q-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
-              }
-            }
-          }
-          if(num_RR>0){
-            for(int i=0; i<n; i++){
-              for(int q=(num_lv_c+num_lv+1); q<(num_lv_c+num_lv+num_RR+1); q++){
-                temp(q,q,i) = (x_lv.row(i)*AB_lv.col(q-num_lv-1).matrix()*AB_lv.col(q-num_lv-1).matrix().transpose()*x_lv.row(i).transpose()).sum();
-              }
-            }
-          }
-          for(int i=0; i<n; i++){
-            L = A.col(i).matrix()*A.col(i).matrix().transpose() + temp.col(i).matrix();
-            L = L.llt().matrixL();
-            A.col(i) = L.array();
-          }
-        }
-      }
-      // REPORT(u);
-      // REPORT(A); // Not used, so comment
-      // REPORT(AB_lv);
-    }
-    
-    
-    // Include random slopes if random(1)>0
-    if(random(1)>0){
-      matrix<Type> sds(l,l);
-      sds.fill(0.0);
-      sds.diagonal() = exp(sigmaB);
-      matrix<Type> S=sds*UNSTRUCTURED_CORR(sigmaij).cov()*sds;
-
-      // Variational covariance for random slopes
-      // log-Cholesky parametrization for A_bj:s
-      array<Type> Ab(l,l,p);
-      Ab.fill(0.0);
-      for (int dl=0; dl<(l); dl++){
-        for(int j=0; j<p; j++){
-          Ab(dl,dl,j)=exp(Abb(dl*p+j));
-        }
-      }
-      if(Abb.size()>(l*p)){
-        int k=0;
-        for (int c=0; c<(l); c++){
-          for (int r=c+1; r<(l); r++){
-            for(int j=0; j<p; j++){
-              Ab(r,c,j)=Abb(l*p+k*p+j);
-              // Ab(c,r,j)=Ab(r,c,j);
-            }
-            k++;
-          }}
-      }
-      
-      /*Calculates the commonly used (1/2) x'_i A_bj x_i
-       A is a num.lv x num.lv x n array, theta is p x num.lv matrix*/
-      for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
-          cQ(i,j) += 0.5*((xb.row(i))*((Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()*xb.row(i).transpose())).sum();
-        }
-        nll -= ((((vector <Type> (Ab.col(j).matrix().diagonal())).log()).sum() - 0.5*(S.inverse()*(Ab.col(j).matrix()*Ab.col(j).matrix().transpose()).matrix()).trace()-0.5*(Br.col(j).transpose()*(S.inverse()*Br.col(j))).sum()));// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      }
-      eta += xb*Br;
-      nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
-    }
-    
-    
-    if(model<1){
-      // basic gllvm, gllvm.TMB.R
-      eta += x*b;
-    } else {
-      // Fourth corner model TMB.trait.R
-      matrix<Type> eta1=x*B;
-      int m=0;
-      for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
-          eta(i,j)+=b(0,j)*extra(1)+eta1(m,0); //extra(1)=0 if beta0comm=TRUE
-          m++;
-        }
-      }
-    }
-    
-    matrix <Type> e_eta(n,p);
-    e_eta.fill(0.0);
-    //components for reduced rank regression terms
-    if((num_RR>0) && (random(2)<1)){
-      //predictor coefficients RRR.  num_RR comes after num_lv_c
-      //Since later dimensions are more likely to have less residual variance
-      matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
-      eta += x_lv*b_lv3*RRgamma;
-      
-      //quadratic terms for fixed-effects only RRR
-      //-num_lv to ensure that we pick num_RR from the middle
-      if(quadratic>0){
-        matrix <Type> D_RR(num_RR,num_RR);
-        D_RR.fill(0.0);
-        //quadratic coefficients for RRR
-        if(lambda2.cols()==1){
-          for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
-            D_RR(d-num_lv_c,d-num_lv_c) = fabs(lambda2(d,0));
-          }
-          for (int j=0; j<p;j++){
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
-            }
-          }
-          
-        }else{
-          for (int j=0; j<p;j++){
-            for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
-              D_RR(d-num_lv_c,d-num_lv_c) = fabs(lambda2(d,j));
-            }
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
-            }
-            
-          }
-        }
-        
-      }
-    }else if((quadratic>0) && (random(2)>0)){
-      //slap D's at end for num_RR and random slopes
-      //-num_lv to ensure that we pick num_RR from the middle
-      if(nlvr>(num_lv+num_lv_c+(num_RR*random(2)))){
-        if(lambda2.cols()==1){
-          for (int j=0; j<p; j++){
-            for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-1-num_lv,0)); //common tolerances model
-            }
-          }
-        }else{
-          for (int j=0; j<p; j++){
-            for (int q=(num_lv+num_lv_c+1); q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-1-num_lv,j)); //full quadratic model
-            }
-          }
-        }
-        
-      }else{
-        if(lambda2.cols()==1){
-          for (int j=0; j<p; j++){
-            for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-num_lv,0)); //common tolerances model
-            }
-          }
-        }else{
-          for (int j=0; j<p; j++){
-            for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-              D(q,q,j) = fabs(lambda2(q-num_lv,j)); //full quadratic model
-            }
-          }
-        }
-      }
-    }
-    
-    
-    // Structured Row/Site effects
-    if(((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0)){
-      // Group specific random row effects:
-      if(rstruc == 1){
-        if(cstruc==0){
-          for (int j=0; j<p;j++){
-            cQ.col(j) = cQ.col(j) + 0.5*(dr*Ar.matrix());
-            eta.col(j) = eta.col(j) + dr*r0;
-          }
-          for (int i=0; i<nr; i++) {//i<n //!!!
-            nll -= 0.5*(1 + log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2) - 2*log(sigma))*random(0); ///(n*p)
-          }
-        } else {
-          // group specific random row effects, which are correlated between groups
-          int j,d,r;
-          
-          matrix<Type> Sr(nr,nr);
-          
-          if(cstruc==1){// AR1 covariance
-            Sr = gllvm::corAR1(sigma, log_sigma(1), nr);
-          } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-            Sr = gllvm::corCS(sigma, log_sigma(1), nr);
-          } else {
-            DiSc.fill(0.0);
-            for(int j=0; j<dc.cols(); j++){
-              DiSc(j,j) += 1/exp(log_sigma(1+j));
-            }
-            dc_scaled = dc*DiSc;
-            if(cstruc==2){// exp decaying
-              Sr = gllvm::corExp(sigma, Type(0), nr, dc_scaled);
-              // Sr = gllvm::corExp(sigma, (log_sigma(1)), nr, DistM);
-            } else if(cstruc==4) {// Matern
-              Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), nr, dc_scaled);
-              //   Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), nr, DistM);
-            }
-          }
-          
-          // Variational covariance for row effects
-          matrix<Type> Arm(nr,nr);
-          for (d=0; d<(nr); d++){
-            Arm(d,d)=Ar(d);
-          }
-          
-          if((lg_Ar.size()>nr) & (Astruc>0)){ // unstructured Var.cov
-            int k=0;
-            for (d=0; d<(nr); d++){
-              for (r=d+1; r<(nr); r++){
-                Arm(r,d)=lg_Ar(nr+k);
-                k++;
-              }}
-          }
-          
-          for (j=0; j<p;j++){
-            cQ.col(j) = cQ.col(j) + 0.5*(dr*(Arm*Arm.transpose()).diagonal().matrix());
-            eta.col(j) = eta.col(j) + dr*r0;
-          }
-          
-          nll -= 0.5*(log((Arm*Arm.transpose()).determinant()) - (atomic::matinv(Sr)*(Arm*Arm.transpose())).diagonal().sum()-(r0.transpose()*(atomic::matinv(Sr)*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
-          
-          nll -= 0.5*(nr-log(Sr.determinant()));
-          // REPORT(Arm);
-          // REPORT(Sr);
-        }
-        
-      } else if(rstruc == 2){
-        // site specific random row effects, which are correlated within groups
-        int i,j,d,r;
-        matrix<Type> Sr(times,times);
-        
-        // Define covariance matrix
-        if(cstruc==1){// AR1 covariance
-          Sr = gllvm::corAR1(sigma, log_sigma(1), times);
-        } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-          Sr = gllvm::corCS(sigma, log_sigma(1), times);
-        } else{ 
-          DiSc.fill(0.0);
-          for(int j=0; j<dc.cols(); j++){
-            DiSc(j,j) += 1/exp(log_sigma(1+j));
-          }
-          dc_scaled = dc*DiSc;
-          if(cstruc==2){// exp decaying
-            Sr = gllvm::corExp(sigma, Type(0), times, dc_scaled);
-            // Sr = gllvm::corExp(sigma, (log_sigma(1)), times, DistM);
-          } else if(cstruc==4) {// Matern
-            Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), times, dc_scaled);
-            // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), times, DistM);
-          }
-        }
-        
-        // Variational covariance for row effects
-        array<Type> Arm(times,times,nr);
-        for(i=0; i<nr; i++){
-          for (d=0; d<(times); d++){
-            Arm(d,d,i)=Ar(i*times+d);
-          }
-        }
-        if((lg_Ar.size()>(nr*times)) & (Astruc>0)){ // unstructured Var.cov
-          int k=0;
-          for (d=0; d<(times); d++){
-            for (r=d+1; r<(times); r++){
-              for(int i=0; i<nr; i++){//i<nr
-                Arm(r,d,i)=lg_Ar(nr*times+k*nr+i);
-                // Arm(d,r,i)=Arm(r,d,i);
-              }
-              k++;
-            }}
-        }
-        
-        for (j=0; j<p;j++){
-          for (i=0; i<nr; i++) {
-            for (d=0; d<(times); d++){
-              cQ(i*times + d,j) += 0.5*(Arm.col(i).matrix().row(d)*Arm.col(i).matrix().row(d).transpose()).sum(); //Arm(d,d,i);
-            }
-          }
-          eta.col(j).array() += r0.array();
-        }
-        r0.resize(times, nr);
-        for (i=0; i<nr; i++) {
-          nll -= log(Arm.col(i).matrix().determinant()) + 0.5*( - (atomic::matinv(Sr)*(Arm.col(i).matrix()*Arm.col(i).matrix().transpose())).diagonal().sum()-((r0.col(i).matrix()).transpose()*(atomic::matinv(Sr)*(r0.col(i).matrix()))).sum());
-          // log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-        }
-        nll -= 0.5*nr*(times - log(Sr.determinant()));
-        // Report
-        // REPORT(Arm);
-        // REPORT(Sr);
-      }
-      // REPORT(nr);
-      // REPORT(r0);
-      // eta += dr*r0;
-    }
-    
-    // Correlated LVs
-    if(num_corlv>0) { //CorLV
-      int i,j,d;
-      int arank = 2;
-      matrix<Type> AQ(num_corlv,num_corlv);
-      AQ.fill(0.0); AQ.diagonal().fill(1.0);
-      
-      if(ucopy.rows() == nu){
-        // REPORT(ucopy);
-        // REPORT(nu);
-        
-        if(cstruc==0){
-          array<Type> Alvm(num_corlv,num_corlv,nu);
-          Alvm.fill(0.0);
-          eta += (dr*ucopy)*newlamCor;
-          
-          // Variational covariance for row effects
-          for (int q=0; q<(num_corlv); q++){
-            for (d=0; d<(nu); d++){
-              Alvm(q,q,d)=exp(Au(q*nu+d));
-            }
-          }
-          if((Astruc>0) & (Au.size()>((num_corlv)*nu))){//unstructured cov
-            int k=0;
-            for (int c=0; c<(num_corlv); c++){
-              for (int r=c+1; r<(num_corlv); r++){
-                for(d=0; d<nu; d++){
-                  Alvm(r,c,d)=Au(nu*num_corlv+k*nu+d);
-                }
-                k++;
-              }}
-          }
-          
-          
-          for (d=0; d<nu; d++) {
-            nll -= log(Alvm.col(d).matrix().determinant()) + 0.5*( - (Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()).diagonal().sum() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
-            // for (d=0; d<nu; d++)
-            for (j=0; j<p;j++){
-              cQ.col(j) += 0.5*dr.col(d)*((newlamCor.col(j).transpose()*(Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()))*newlamCor.col(j));
-            }
-          }
-          nll -= 0.5*(nu*num_corlv);
-          
-        } else {
-          vector<matrix<Type> > Slv(num_corlv);
-          // Slv.fill(0.0);
-          matrix<Type> Slvinv(nu,nu);
-          Slvinv.fill(0.0);
-          // matrix<Type> Slv(nu,nu);
-          matrix<Type> uq(nu,1); uq.fill(0.0);
-          eta += (dr*ucopy)*newlamCor;
-
-          if(Astruc<3){
-            array<Type> Alvm(nu,nu,num_corlv);
-            Alvm.fill(0.0);
-            // matrix<Type> Alvm(nu,nu);
-            for(int q=0; q<num_corlv; q++){
-              // site specific LVs, which are correlated between groups
-              // Slv.fill(0.0);
-              uq = ucopy.col(q);
-
-              // group specific lvs
-              if(cstruc==1){// AR1 covariance
-                Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
-              } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-                Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
-              } else {
-                DiSc.fill(0.0);
-                for(int j=0; j<dc.cols(); j++){
-                  DiSc(j,j) += 1/exp(rho_lvc(q,j));
-                }
-                dc_scaled = dc*DiSc;
-                if(cstruc==2){// exp decaying
-                  Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
-                  // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
-                } else if(cstruc==4) {// Compound Symm  if(cstruc==3)
-                  Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
-                  // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
+            if(lambda2.cols()==1){
+              for (int j=0; j<p; j++){
+                for (int q=0; q<num_lv_c; q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q,0)); //common tolerances model
                 }
               }
-
-              // Variational covariance for row effects
-              for (d=0; d<(nu); d++){
-                Alvm(d,d,q)=exp(Au(q*nu+d));
-              }
-
-              if((Astruc>0) & (Au.size() > nu*num_corlv)){//reduced rank cov
-                // if(Au.size()>(times*nu*num_corlv)){}
-                int k=0;
-                if(Astruc==1){
-                  for (d=0; d<nu; d++){
-                    for (int r=d+1; r<(nu); r++){
-                      Alvm(r,d,q)=Au(nu*num_corlv+k*num_corlv+q);
-                      k++;
-                    }
-                  }
-                } else if(Astruc==2) {
-                  arank = NN.rows();
-                  // arank = NN.cols();
-                  // for (d=0; (d<nu); d++){
-                  for (int r=0; r<(arank); r++){
-                    Alvm(NN(r,0)-1,NN(r,1)-1,q)=Au(nu*num_corlv+k*num_corlv+q);
-                    // int d2 = NN(d,r)-1;
-                    // if(d2<d){
-                    //   Alvm(d,d2)=Au(nu*num_corlv+k*num_corlv+q);
-                    // } else {
-                    // Alvm(d2,d)=Au(nu*num_corlv+k*num_corlv+q);
-                    // }
-                    k++;
-                  }
-                  // }
-                }
-                // REPORT(k);
-              }
-
-              for (j=0; j<p;j++){
-                cQ.col(j) = cQ.col(j) + 0.5*pow(newlamCor(q,j),2)*(dr*(Alvm.col(q).matrix()*Alvm.col(q).matrix().transpose()).diagonal().matrix());
-              }
-              Slvinv = atomic::matinv(Slv(q));
-              nll -= log(Alvm.col(q).matrix().determinant()) + 0.5*(- (Slvinv*(Alvm.col(q).matrix()*Alvm.col(q).matrix().transpose())).diagonal().sum()-( uq.transpose()*(Slvinv*uq) ).sum());
-              // nll -= log(Alvm.col(q).matrix().determinant()) + 0.5*(- (atomic::matinv(Slv(q))*(Alvm.col(q).matrix()*Alvm.col(q).matrix().transpose())).diagonal().sum()-( uq.transpose()*(atomic::matinv(Slv(q))*uq) ).sum());
-
-              nll -= 0.5*(nu-log(Slv(q).determinant()));
-              // REPORT(Arm);
-              // REPORT(Sr);
-
-            }
-            REPORT(Alvm);
-          } else if(num_corlv>1){
-            matrix<Type> Alvm(nu,nu);
-            Alvm.fill(0.0);
-            //   // Kronecker Variational covariance
-            for (d=0; d<(nu); d++){
-              Alvm(d,d)=exp(Au(d));
-            }
-            //   //reduced rank cov
-            //     // if(Au.size()>(times*nu*num_corlv)){}
-            int k=0;
-            arank = NN.rows();
-            if(Au.size()>(nu+num_corlv*(num_corlv+1)/2)) {
-              if(Astruc == 4) {
-                for (int r=0; r<(arank); r++){
-                  Alvm(NN(r,0)-1,NN(r,1)-1)=Au(nu+k);
-                  k++;
-                }
-              } else if(Astruc == 3) {
-                for (d=0; d<nu; d++){
-                  for (int r=d+1; r<(nu); r++){
-                    Alvm(r,d)=Au(nu+k);
-                    k++;
-                  }
-                }
-              }
-            }
-
-            for (d=0; d<num_corlv; d++){
-              AQ(d,d)=exp(Au(nu+k));
-              k++;
-              for (int r=d+1; r<(num_corlv); r++){
-                AQ(r,d)=Au(nu+k);
-                k++;
-              }
-            }
-            Alvm *= Alvm.transpose();
-            AQ *= AQ.transpose();
-
-            for (j=0; j<p;j++){
-              cQ.col(j) = cQ.col(j) + 0.5*(dr*Alvm.diagonal())*((newlamCor.col(j).transpose()*AQ)*newlamCor.col(j));
-            }
-            nll -= 0.5*num_corlv*log(Alvm.determinant()) + 0.5*nu*log(AQ.determinant()) + 0.5*num_corlv*nu;
-            //
-            for(int q=0; q<num_corlv; q++){
-              // site specific LVs, which are correlated between groups
-              // Slv.fill(0.0);
-              uq = ucopy.col(q);
-
-              // group specific lvs
-              if(cstruc==1){// AR1 covariance
-                Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
-              } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-                Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
-              } else {
-                DiSc.fill(0.0);
-                for(int j=0; j<dc.cols(); j++){
-                  DiSc(j,j) += 1/exp(rho_lvc(q,j));
-                }
-                dc_scaled = dc*DiSc;
-                if(cstruc==2){// exp decaying
-                  Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
-                  // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
-                } else if(cstruc==4) {// Compound Symm  if(cstruc==3)
-                  Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
-                  // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
-                }
-              }
-
-              Slvinv = atomic::matinv(Slv(q));
-              nll -= 0.5*(- AQ(q,q)*(Slvinv*Alvm).diagonal().sum()-( uq.transpose()*(Slvinv*uq) ).sum());
-              // nll -= 0.5*(- AQ(q,q)*(atomic::matinv(Slv(q))*Alvm).diagonal().sum()-( uq.transpose()*(atomic::matinv(Slv(q))*uq) ).sum());
-              nll -= -0.5*log(Slv(q).determinant());
-            }
-            //
-            REPORT(Alvm);
-          }
-          // REPORT(Slv);
-        }
-      } else {
-
-        eta += ucopy*newlamCor;
-        vector<matrix<Type> > Slv(num_corlv);
-        // Slv.fill(0.0);
-        // matrix<Type> Slv(times,times);
-        matrix<Type> Slvinv(times,times);
-        Slvinv.fill(0.0);
-
-        // int acol = times;
-        // if(Astruc>0){
-        //   acol = arank;
-        // }
-        //
-        if(Astruc<3){
-
-          array<Type> Alvm(times*nu,times*nu,num_corlv);
-          Alvm.fill(0.0);
-          // array<Type> Alvm(times,times,nu);
-          // matrix<Type> uq(times*nu,1);
-
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated within groups
-
-            // Variational covariance for row effects
-            //diagonal
-            for(i=0; i<nu; i++){
-              for (d=0; d<(times); d++){
-                Alvm(i*times+d,i*times+d,q)=exp(Au(q*n+i*times+d));
-              }
-            }
-
-            if((Astruc>0) & (Au.size() > nu*times*num_corlv)){//reduced rank cov
-              // if(Au.size()>(times*nu*num_corlv)){}
-              int k=0;
-              if(Astruc==1){
-                for(i=0; i<nu; i++){
-                  for (d=0; ((d<arank) & (d<times)); d++){
-                    // for (d=0; (d<times); d++){//(num_lv+num_lv_c)*n+k*n+q
-                    // for (int r=d; r<(times); r++){
-                    // if(r==d){
-                    // Alvm(r,d,i)=exp(Au(k*num_corlv+q));
-                    // } else {
-                    // Alvm(r,d,i)=Au(k*num_corlv+q);
-                    // }
-                    for (int r=d+1; r<(times); r++){
-                      Alvm(i*times+r,i*times+d,q)=Au(nu*times*num_corlv+k*num_corlv+q);
-                      // Alvm(r,d,i)=Au(nu*times*num_corlv+k*num_corlv+q);
-                      k++;
-                    }
-                  }
-                }
-              } else if(Astruc==2) {
-                arank = NN.rows();
-                for(i=0; i<nu; i++){
-                  for (int r=0; r<(arank); r++){
-                    Alvm(i*times+NN(r,0)-1,i*times+NN(r,1)-1,q)=Au(nu*times*num_corlv+k*num_corlv+q);
-                    k++;
-                  }
-                }
-                // arank = NN.cols();
-                // for(i=0; i<nu; i++){
-                //   for (d=0; (d<times); d++){
-                //     for (int r=0; r<(arank); r++){
-                //       int d2 = NN(d,r)-1;
-                //       if(d2<d){
-                //         Alvm(i*times+d,i*times+d2,q)=Au(nu*times*num_corlv+k*num_corlv+q);
-                //         // k++;
-                //       } else {
-                //         Alvm(i*times+d2,i*times+d,q)=Au(nu*times*num_corlv+k*num_corlv+q);
-                //       }
-                //       k++;
-                //     }
-                //   }
-                // }
-              }
-              // REPORT(k);
-            }
-
-
-            for (j=0; j<p;j++){
-              for (i=0; i<(times*nu); i++) {
-                cQ(i,j) += 0.5*pow(newlamCor(q,j),2)*(Alvm.col(q).matrix().row(i)*Alvm.col(q).matrix().row(i).transpose()).sum();
-              }
-            }
-            nll -= log(Alvm.col(q).matrix().determinant());
-
-            // Slv.fill(0.0);
-            // Alvm.fill(0.0);
-            // uq = ucopy.col(q);
-
-            // Define covariance matrix
-            if(cstruc==1){// AR1 covariance
-              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
-            } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
-            } else { 
-              DiSc.fill(0.0);
-              for(int j=0; j<dc.cols(); j++){
-                DiSc(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled = dc*DiSc;
-              if(cstruc==2){// exp decaying
-                Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
-                // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
-              } else if(cstruc==4) {// matern
-                Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
-                // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
-              }
-            }
-
-            nll -= 0.5*nu*(times - log(Slv(q).determinant()));
-
-            Slvinv = atomic::matinv(Slv(q));
-            for (i=0; i<nu; i++) {
-              nll -=  0.5*(- (Slvinv*(Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix()*Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix().transpose())).diagonal().sum()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(Slvinv*(ucopy.block(i*times,q,times,1).matrix()))).sum());
-              // nll -= log(Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix().determinant()) - 0.5*((atomic::matinv(Slv(q))*(Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix()*Alvm.col(q).matrix().block(i*times,i*times,times,times).matrix().transpose())).diagonal().sum()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(atomic::matinv(Slv(q))*(ucopy.block(i*times,q,times,1).matrix()))).sum());
-              // nll -= 0.5*(log((Alvm.col(i).matrix()*Alvm.col(i).matrix().transpose()).determinant()) - (Slv(q).inverse()*(Alvm.col(i).matrix()*Alvm.col(i).matrix().transpose())).diagonal().sum()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(Slv(q).inverse()*(ucopy.block(i*times,q,times,1).matrix()))).sum());
-              // log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-            }
-
-            // Report
-            // REPORT(Alvm);
-          }
-
-          REPORT(Alvm);
-        } else if(num_corlv>1){
-          //   // Kron A=AQ*Alvm
-          matrix<Type> Alvm(times*nu,times*nu);
-          Alvm.fill(0.0);
-          //
-          //   // Variational covariance
-          //   //diagonal
-          for(i=0; i<nu; i++){
-            for (d=0; d<(times); d++){
-              Alvm(i*times+d,i*times+d)=exp(Au(i*times+d));
-            }
-          }
-
-          //   //reduced rank cov
-          int k=0;
-          arank = NN.rows();
-          if(Au.size()>(nu*times+num_corlv*(num_corlv+1)/2)) {
-            if(Astruc == 4) {
-              for(i=0; i<nu; i++){
-                for (int r=0; r<(arank); r++){
-                  Alvm(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times+k);
-                  k++;
-                }
-              }
-            } else if(Astruc == 3){
-              for(i=0; i<nu; i++){
-                for (d=0; (d<times); d++){
-                  for (int r=d+1; r<(times); r++){
-                    Alvm(i*times+r,i*times+d)=Au(nu*times+k);
-                    k++;
-                  }
-                }
-              }
-            }
-          }
-          //
-          for (d=0; d<num_corlv; d++){
-            AQ(d,d)=exp(Au(nu*times+k));
-            k++;
-            for (int r=d+1; r<(num_corlv); r++){
-              AQ(r,d)=Au(nu*times+k);
-              k++;
-            }
-          }
-          // Alvm *= Alvm.transpose();
-          // AQ *= AQ.transpose();
-
-          for (j=0; j<p;j++){
-            // for (i=0; i<(nu*times);i++){
-            //   cQ(i,j) += 0.5*(Alvm.row(i)*Alvm.row(i).transpose()).sum()*((newlamCor.col(j).transpose()*(AQ*AQ.transpose()))*newlamCor.col(j)).sum();
-            // }
-            cQ.col(j) = cQ.col(j) + 0.5*(Alvm*Alvm.transpose()).diagonal().matrix()*((newlamCor.col(j).transpose()*(AQ*AQ.transpose()))*newlamCor.col(j));
-            // // cQ.col(j) = cQ.col(j) + 0.5*Alvm.diagonal().matrix()*((newlamCor.col(j).transpose()*AQ)*newlamCor.col(j));
-          }
-          nll -= num_corlv*log(Alvm.determinant()) + times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
-          // nll -= 0.5*num_corlv*log(Alvm.determinant()) + 0.5*times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
-          //
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated within groups
-            // Slv.fill(0.0);
-
-            // Define covariance matrix
-            if(cstruc==1){// AR1 covariance
-              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
-            } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
-            } else {
-              DiSc.fill(0.0);
-              for(int j=0; j<dc.cols(); j++){
-                DiSc(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled = dc*DiSc;
-              if(cstruc==2){// exp decaying
-                Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
-                // Slv(q) = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
-              } else if(cstruc==4) {// matern
-                Slv(q) = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
-                // Slv(q) = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
-              }
-            }
-
-            nll -= - 0.5*nu*log(Slv(q).determinant());
-            Slvinv = atomic::matinv(Slv(q));
-
-            for (i=0; i<nu; i++) {
-              nll -=  0.5*(- (AQ.row(q)*AQ.row(q).transpose()).sum()*(Slvinv*(Alvm.block(i*times,i*times,times,times).matrix()*Alvm.block(i*times,i*times,times,times).matrix().transpose())).diagonal().sum() - ((ucopy.block(i*times,q,times,1).matrix()).transpose()*(Slvinv*(ucopy.block(i*times,q,times,1).matrix()))).sum());
-              // nll -=  0.5*(- AQ(q,q)*(atomic::matinv(Slv(q))*Alvm.block(i*times,i*times,times,times).matrix()).diagonal().sum()-((ucopy.block(i*times,q,times,1).matrix()).transpose()*(atomic::matinv(Slv(q))*(ucopy.block(i*times,q,times,1).matrix()))).sum());
-            }
-
-          }
-          REPORT(Alvm);
-        }
-
-        // REPORT(Slv);
-        // REPORT(Alvm);
-      }
-      REPORT(AQ);
-      // REPORT(nu);
-    }
-    
-    
-    if(nlvr>0){
-      //constrained ordination terms
-      if((num_lv_c>0) && (random(2)<1)){
-        //predictor coefficients for constrained ordination
-        if((random(0)>0) && (n == nr)){
-          //first column are zeros in case of random intercept
-          b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
-          
-        }else{
-          b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
-        }
-        
-        eta += x_lv*b_lv2*newlam;
-        //quadratic term for constrained ordination
-        if(quadratic>0){
-          for (int j=0; j<p;j++){
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-            }
-          }
-        }
-      }
-      lam += u*newlam;
-      
-      // Update cQ for non quadratic latent variable model and
-      // also takes this route if there are quadratic constrained LVs with random row-effect
-      if((quadratic < 1) || ( (nlvr==1 && random(2)<0 && num_RR>0))){
-        
-        //Binomial, Gaussian, Ordinal
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            cQ(i,j) += 0.5*((newlam.col(j)).transpose()*((A.col(i).matrix()*A.col(i).matrix().transpose()).matrix()*newlam.col(j))).sum();
-          }
-        }
-        eta += lam;
-      }
-      // do not take this route not with quadratic model, constrained LVs and random row-effects.
-      if(( (quadratic>0 && nlvr > 0) && (num_lv+num_lv_c)>0 ) || ( quadratic>0 && random(2) > 0 )){
-        matrix <Type> Acov(nlvr,nlvr);
-        //quadratic model approximation
-        //Poisson
-        if(family==0){
-          matrix <Type> B(nlvr,nlvr);
-          matrix <Type> v(nlvr,1);
-          for (int i=0; i<n; i++) {
-            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-            matrix <Type> Ql = (A.col(i).matrix()).inverse();
-            matrix <Type> Q = Ql*Ql.transpose();
-            for (int j=0; j<p;j++){
-              B = (2*D.col(j).matrix()+Q);
-              if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
-                v = (newlam.col(j)+Q*u.row(i).transpose());
-              }else if(random(2)<1){
-                //extra term for concurrent ordination
-                v = (newlam.col(j)+Q*u.row(i).transpose() - 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
-              }
-              
-              Type detB = atomic::logdet(B);
-              Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
-              e_eta(i,j) += exp(cQ(i,j) + eta(i,j) + 0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value()-detB)-detA); //add all the other stuff to the quadratic approximation
-              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-              
-              if((num_lv_c>0) && (random(2)<1)){
-                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-              }
-            }
-          }
-        }
-        // //NB, gamma, exponential
-        if((family==1)||(family==4)||(family==8)){
-          matrix <Type> B(nlvr,nlvr);
-          matrix <Type> v(nlvr,1);
-          for (int i=0; i<n; i++) {
-            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-            matrix <Type> Ql = (A.col(i).matrix()).inverse();
-            matrix <Type> Q = Ql*Ql.transpose();
-            for (int j=0; j<p;j++){
-              B = (-2*D.col(j).matrix()+Q);
-              if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
-                v = (-newlam.col(j)+Q*u.row(i).transpose());
-              }else if(random(2)<1){
-                //extra term for concurrent ordination
-                v = (-newlam.col(j)+Q*u.row(i).transpose() + 2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose());
-              }
-              
-              Type detB = log((B.llt().matrixL()).determinant());//required like this due to potential negative semi-definiteness
-              Type detA = ((vector <Type> (A.col(i).matrix().diagonal())).log()).sum(); //log-determinant of cholesky
-              e_eta(i,j) += exp(-eta(i,j) - cQ(i,j)+0.5*((v.transpose()*atomic::matinv(B)*v).value()-(u.row(i)*Q*u.row(i).transpose()).value())-detA-detB);
-              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-              if((num_lv_c>0) && (random(2)<1)){
-                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-              }
-            }
-          }
-        }
-        //Binomial, Gaussian, Ordinal
-        if((family==2)||(family==3)||(family==7)){
-          for (int i=0; i<n; i++) {
-            Acov = (A.col(i).matrix()*A.col(i).matrix().transpose()).matrix();
-            for (int j=0; j<p;j++){
-              if((random(2)>0) || ((num_lv>0)&(num_lv_c==0))){
-                cQ(i,j) += 0.5*(newlam.col(j)*newlam.col(j).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*u.row(i).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*newlam.col(j)).value();
-              }else if(random(2)<1){
-                //extra terms for concurrent ordination
-                cQ(i,j) += 0.5*((newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose()).transpose()*Acov).trace() + (D.col(j).matrix()*Acov*D.col(j).matrix()*Acov).trace() +2*(u.row(i)*D.col(j).matrix()*Acov*D.col(j).matrix()*(u.row(i)).transpose()).value() - 2*(u.row(i)*D.col(j).matrix()*Acov*(newlam.col(j)-2*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose())).value();
-              }
-              eta(i,j) += lam(i,j) - (u.row(i)*D.col(j).matrix()*u.row(i).transpose()).value() - (D.col(j).matrix()*Acov).trace();
-              if((num_lv_c>0) && (random(2)<1)){
-                eta(i,j) -= 2*u.row(i)*D.col(j).matrix()*(x_lv.row(i)*b_lv2).transpose();
-              }
-            }
-          }
-        }
-      }
-    }
-    // REPORT(eta);
-    // REPORT(cQ);
-    
-    if(family==0){//poisson
-      if((quadratic < 1) || ( (quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0) )){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
-          }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
-        }
-      }else{
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
-          }
-        }
-      }
-    } else if((family == 1) & (method<1)){//NB VA
-      if((quadratic < 1) || ( (quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0) )){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            // nll -= Type(gllvm::dnegbinva(y(i,j), eta(i,j), iphi(j), cQ(i,j)));
-            nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
-          }
-        }
-      }else{
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
-            //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
-          }
-        }
-      }
-      
-    } else if ((family == 1) & (method>1)) { // NB EVA
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
-          nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
-          
-          // nll += gllvm::nb_Hess(y(i,j), eta(i,j), iphi(j)) * cQ(i,j);
-          // nll -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));
-          // nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
-          // nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
-        }
-      }
-    } else if((family == 2) & (method<1)) {//binomial probit VA
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-          nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
-        }
-      }
-    } else if ((family == 2) & (method>1)) { // Binomial EVA
-      if (extra(0) == 0) { // logit
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p; j++) {
-            // nll -= gllvm::dbinom_logit_eva(y(i,j), eta(i,j), cQ(i,j));
-            
-            Type mu = 0.0;
-            Type mu_prime = 0.0;
-            
-            CppAD::vector<Type> z(4);
-            z[0] = eta(i,j);
-            z[1] = 0;
-            z[2] = 1/(1+exp(-z[0]));
-            z[3] = exp(z[0])/(exp(z[0])+1);
-            
-            mu = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
-            mu_prime = mu * (1-mu);
-            nll -= y(i,j) * eta(i,j) + log(1-mu);
-            nll += mu_prime*cQ(i,j);
-          }
-        }
-      } else if (extra(0) == 1) { // probit
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p; j++) {
-            Type etaP = pnorm_approx(Type(eta(i,j)));   //pnorm funktion approksimaatio
-            nll -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //
-            Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
-            nll -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j); //Tää toimii ok tähän etaD = (log=true)
-          }
-        }
-      }
-    } else if(family==3) {//gaussian
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
-        }
-      }
-    } else if(family==4) {//gamma
-      if((quadratic < 1) || ( (quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0) )){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
-          }
-        }
-      }else{
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
-          }
-        }
-      }
-      
-    } else if(family==5){ // Tweedie EVA
-      Type v = extra(0);
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p; j++) {
-          // Tweedie log-likelihood:
-          nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), v, true);
-          if (y(i,j) == 0) {
-            // Hessian-trace part:
-            nll += (1/iphi(j)) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
-          } else if (y(i,j) > 0) {
-            nll -= (1/iphi(j)) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
-          }
-        }
-      }
-    } else if((family==7) && (zetastruc == 1)){//ordinal
-      int ymax =  CppAD::Integer(y.maxCoeff());
-      int K = ymax - 1;
-      
-      matrix <Type> zetanew(p,K);
-      zetanew.fill(0.0);
-      
-      int idx = 0;
-      for(int j=0; j<p; j++){
-        int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
-        int Kj = ymaxj - 1;
-        if(Kj>1){
-          for(int k=0; k<(Kj-1); k++){
-            if(k==1){
-              zetanew(j,k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
             }else{
-              zetanew(j,k+1) = zeta(idx+k);
-            }
-            
-          }
-        }
-        idx += Kj-1;
-      }
-      
-      for (int i=0; i<n; i++) {
-        for(int j=0; j<p; j++){
-          int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
-          //minimum category
-          if(y(i,j)==1){
-            nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
-          }else if(y(i,j)==ymaxj){
-            //maximum category
-            int idx = ymaxj-2;
-            nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
-          }else if(ymaxj>2){
-            for (int l=2; l<ymaxj; l++) {
-              if((y(i,j)==l) && (l != ymaxj)){
-                nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1)));
+              for (int j=0; j<p; j++){
+                for (int q=0; q<num_lv_c; q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q,j)); //full quadratic model
+                }
               }
             }
+          }
+          if((num_RR*random(2))>0){
+            if(lambda2.cols()==1){
+              //make sure that num_RR comes at the end..has to be
+              //like this due to the difference between fixed and random Bs
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv+num_lv_c); q<nlvr; q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q-num_lv,0)); //common tolerances model
+                }
+              }
+            }else{
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv+num_lv_c); q<nlvr; q++){
+                  D(j).diagonal()(q) = fabs(lambda2(q-num_lv,j)); //full quadratic model
+                }
+              }
+            }
+          }
+          if(num_lv>0){
+            if(lambda2.cols()==1){
+              //make sure that num_lv is taken from the middle even with num_RR
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv_c+num_RR*random(2)); q<(num_lv_c+num_RR*random(2)+num_lv); q++){
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q,0)); //common tolerances model
+                }
+              }
+            }else{
+              for (int j=0; j<p; j++){
+                for (int q=(num_lv_c+num_RR*random(2)); q<(num_lv_c+num_RR*random(2)+num_lv); q++){
+                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q,j)); //full quadratic model
+                }
+              }
+            }
+          }
+        }
+      }
+      if((num_lv_c>0) && (random(2)<1)){
+        //quadratic term for constrained ordination
+        for (int j=0; j<p;j++){
+          for (int i=0; i<n; i++) {
+            eta(i,j) -=  x_lv.row(i)*b_lv2*D(j)*(x_lv.row(i)*b_lv2).transpose();
+          }
+        }
+      }
+      
+      // do not take this route not with quadratic model, (fixed-effect) constrained LVs and random row-effects.
+      if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
+        //quadratic model approximation
+        
+        //Poisson, NB, gamma, exponential
+        if((family==0)||(family==1)||(family==4)||(family==8)){
+          e_eta = matrix <Type> (n,p);
+          
+          int sign;
+          //sign controls whether it's Poisson or other
+          if((family>0)){
+            sign = 1;
+          }else{
+            sign = -1;
           }
           
-          nll += cQ(i,j);
-          //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
+          matrix<Type> Binv(nlvr,nlvr);
+          matrix<Type> Cinv(nlvr,nlvr);
+          matrix<Type> Acov(nlvr,nlvr);
+          Type logdetC;
+          Type vBinvv;
+          matrix <Type> BiQ(nlvr,nlvr);
+          matrix <Type> BiQL(nlvr,nlvr);
+          matrix <Type> Id(nlvr,nlvr);
+          Id.setZero();Id.diagonal().fill(1.0);
+          //this implementation does not follow calculation from van der Veen et al. 2021
+          //but prevents Acov^-1 via woodbury matrix identity
+          //see https://math.stackexchange.com/questions/17776/inverse-of-the-sum-of-matrices
+          for (int i=0; i<n; i++) {
+            Acov = A(i)*A(i).transpose();
+            for (int j=0; j<p;j++){
+              Cinv.setZero();
+              Binv.setZero();
+              BiQ.setZero();
+              ///these terms are separated from the rest, they apply also to cases with random row intercepts
+              vBinvv = (newlam.col(j).transpose()*Acov*newlam.col(j)-2*sign*u.row(i)*newlam.col(j)).value();
+              Cinv = (Id - 2*sign*Acov*D(j)).inverse();
+              Binv = Acov+2*sign*Cinv*Acov*D(j)*Acov;
+              BiQ = Id+2*sign*D(j)*Cinv*Acov;//Q*Binv
+              
+              //the calculation generally prevents having to explicitly invert A*A^t, or having to invert A(i).
+              vBinvv += (2*newlam.col(j).transpose()*Cinv*Acov*D(j)*(sign*Acov*newlam.col(j)-2*u.row(i).transpose())+2*sign*u.row(i)*D(j)*Cinv*u.row(i).transpose()).value();
+              
+              //extra term for concurrent ordination
+              if((random(2)<1) && (num_lv_c>0)){
+                vBinvv += (-4*x_lv.row(i)*b_lv2*D(j)*Binv*newlam.col(j)+4*sign*u.row(i)*BiQ*D(j)*(x_lv.row(i)*b_lv2).transpose()+4*x_lv.row(i)*b_lv2*D(j)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
+              }
+              
+              //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
+              BiQL = BiQ.llt().matrixL();
+              logdetC = BiQL.diagonal().array().abs().log().sum();
+              e_eta(i,j) = exp(-sign*(eta(i,j) + cQ(i,j)) + 0.5*(vBinvv)+logdetC);
+              
+            }
+          }
         }
-      }
-    } else if((family==7) && (zetastruc==0)){
-      int ymax =  CppAD::Integer(y.maxCoeff());
-      int K = ymax - 1;
-      
-      vector <Type> zetanew(K);
-      zetanew.fill(0.0);
-      for(int k=0; k<(K-1); k++){
-        if(k==1){
-          zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
-        }else{
-          zetanew(k+1) = zeta(k);
-        }
-      }
-      for (int i=0; i<n; i++) {
-        for(int j=0; j<p; j++){
-          //minimum category
-          if(y(i,j)==1){
-            nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
-          }else if(y(i,j)==ymax){
-            //maximum category
-            int idx = ymax-2;
-            nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
-          }else if(ymax>2){
-            for (int l=2; l<ymax; l++) {
-              if((y(i,j)==l) && (l != ymax)){
-                nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+        // Binomial, Gaussian, Ordinal
+        if((family==2)||(family==3)||(family==7)){
+          matrix <Type> Acov(nlvr,nlvr);
+          for (int i=0; i<n; i++) {
+            Acov = A(i)*A(i).transpose();
+            for (int j=0; j<p;j++){
+              cQ(i,j) += (0.5*newlam.col(j).transpose()*Acov*newlam.col(j)).value();
+              cQ(i,j) += (D(j)*Acov*D(j)*Acov).trace() +2*(u.row(i)*D(j)*Acov*D(j)*u.row(i).transpose()).value() - 2*(u.row(i)*D(j)*Acov*newlam.col(j)).value();
+              if(num_lv_c>0 && random(2)<1){
+                //extra terms for concurrent ordination
+                cQ(i,j) += (2*x_lv.row(i)*b_lv2*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose() -2*x_lv.row(i)*b_lv2*D(j)*Acov*newlam.col(j)+4*u.row(i)*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
               }
             }
           }
-          nll += cQ(i,j);
+        }
+        
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            eta(i,j) += lam(i,j) - (u.row(i)*D(j)*u.row(i).transpose()).sum() - (D(j)*A(i)*A(i).transpose()).trace();
+            if((num_lv_c>0) && (random(2)<1)){
+              eta(i,j) -= 2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose();
+            }
+          }
+        }
+      }
+    }
+  }
+  if(family==0){//poisson
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0) ))){
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
       }
-    } else if(family==8) {// exp dist
-      if((quadratic < 1) || ( (quadratic > 0 && (num_lv+num_lv_c)<1 && nlvr >0) )){
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
-          }
-        }
-      }else{
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= ( -eta(i,j) - e_eta(i,j)*y(i,j) );
-          }
+    }else{
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= y(i,j)*eta(i,j) - e_eta(i,j) - lfactorial(y(i,j));
         }
       }
+    }
+  } else if((family == 1) && (method<1)){//NB VA
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0)) )){
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          // nll -= Type(gllvm::dnegbinva(y(i,j), eta(i,j), iphi(j), cQ(i,j)));
+          nll -= y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphi(j))*log(iphi(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphi(j)) - iphi(j)*cQ(i,j) + iphi(j)*log(iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
+        }
+      }
+    }else{
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= -iphi(j)*eta(i,j) -(y(i,j)+iphi(j))*log(1+iphi(j)*e_eta(i,j))+ lgamma(y(i,j)+iphi(j))+ iphi(j)*log(iphi(j)) -lgamma(iphi(j)) -lfactorial(y(i,j));
+          //log(1+phi*e_eta) = log(phi+1/e_eta)+log(e_eta)
+        }
+      }
+    }
+    
+  } else if ((family == 1) && (method>1)) { // NB EVA
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
+        nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
+        
+        // nll += gllvm::nb_Hess(y(i,j), eta(i,j), iphi(j)) * cQ(i,j);
+        // nll -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));
+        // nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
+        // nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
+      }
+    }
+  } else if((family == 2) && (method<1)) {//binomial probit VA
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
+        nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
+      }
+    }
+  } else if ((family == 2) && (method>1)) { // Binomial EVA
+    if (extra(0) == 0) { // logit
+      Type mu_prime;
+      CppAD::vector<Type> z(4);
       
-    } else if(family==9) { // Beta EVA
       for (int i=0; i<n; i++) {
         for (int j=0; j<p; j++) {
-          // define mu, mu' and mu''
-          Type mu = 0.0;
-          Type mu_prime = 0.0;
-          Type mu_prime2 = 0.0;
-          if (extra(0) == 0) { // logit
-            
-            CppAD::vector<Type> z(4);
-            z[0] = eta(i,j);
-            z[1] = 0;
-            z[2] = 1/(1+exp(-z[0]));
-            z[3] = exp(z[0])/(exp(z[0])+1);
-            
-            mu = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
-            mu_prime = mu * (1-mu);
-            mu_prime2 = mu_prime * (1-2*mu);
-            
-          } else if (extra(0) == 1) { // probit
-            mu = pnorm(eta(i,j), Type(0), Type(1));
-            mu_prime = dnorm(eta(i,j), Type(0), Type(1));
-            mu_prime2 = (-eta(i,j))*mu_prime;
-          }
-          CppAD::vector<Type> a(2);
-          CppAD::vector<Type> b(2);
-          a[0] = mu*iphi(j);
-          a[1] = 1;
-          b[0] = (1-mu)*iphi(j);
-          b[1] = 1;
-          CppAD::vector<Type> aa = a;
-          CppAD::vector<Type> bb = b;
-          aa[1] = 2;
-          bb[1] = 2;
-          Type dig_a = Type(atomic::D_lgamma(a)[0]);
-          Type dig_b = Type(atomic::D_lgamma(b)[0]);
-          Type trig_a = Type(atomic::D_lgamma(aa)[0]);
-          Type trig_b = Type(atomic::D_lgamma(bb)[0]);
-          //
-          nll -= dbeta(squeeze(y(i,j)), Type(a[0]), Type(b[0]), 1);
-          nll -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
-          nll -= iphi(j) * mu_prime2 * (log(squeeze(y(i,j))) - log(1-squeeze(y(i,j)))) * cQ(i,j);
-          //
-        }
-      }
-    }
-    // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
-    
-  } else {
-    if(random(2)>0){
-      // REPORT(Sigmab_lv); //!!!!
-      //MVNORM_t<Type> mvnorm(Sigmab_lv);
-      if(sbl3==Klv){
-        for (int klv=0; klv<Klv; klv++) {
-          nll += MVNORM(Sigmab_lv.col(klv).matrix())(b_lv.row(klv));
-        }
-      }else{
-        for (int q=0; q<(num_lv_c+num_RR); q++) {
-          nll += MVNORM(Sigmab_lv.col(q).matrix())(b_lv.col(q));
-        }
-      }
-      
-    }
-    
-    // REPORT(ucopy);
-    // REPORT(num_corlv);
-    // REPORT(nu);
-    // REPORT(dr);
-    // REPORT(cstruc);
-    
-    matrix<Type> etaH(n,p); 
-    etaH.fill(0.0);
-    
-    //For fixed-effects RRR with and without quadratic term
-    if(num_RR>0){
-      matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
-      eta += x_lv*b_lv3*RRgamma;
-      if(quadratic>0){
-        matrix <Type> D_RR(num_RR,num_RR);
-        D_RR.fill(0.0);
-        if(lambda2.cols()==1){
-          for (int d=0; d<num_RR;d++){
-            D_RR(d,d) = fabs(lambda2(d,0));
-          }
-          for (int j=0; j<p;j++){
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
-            }
-          }
+          // nll -= gllvm::dbinom_logit_eva(y(i,j), eta(i,j), cQ(i,j));
           
-        }else{
-          for (int j=0; j<p;j++){
-            for (int d=0; d<num_RR;d++){
-              D_RR(d,d) = fabs(lambda2(d,j));
-            }
-            
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
-            }
-          }
+          mu(i,j) = 0.0;
+          mu_prime = 0.0;
+          
+          z[0] = eta(i,j);
+          z[1] = 0;
+          z[2] = 1/(1+exp(-z[0]));
+          z[3] = exp(z[0])/(exp(z[0])+1);
+          
+          mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+          mu_prime = mu(i,j) * (1-mu(i,j));
+          nll -= y(i,j) * eta(i,j) + log(1-mu(i,j));
+          nll += mu_prime*cQ(i,j);
         }
-        
       }
-    }
-    
-    // Laplace approximation
-    
-    // add offset to lin. predictor 
-    eta += offset;
-    if(random(0)==0){
-      eta += r0*xr;
-    }
-    
-    
-    // Include random slopes if random(1)>0
-    if(random(1)>0){
-      vector<Type> sdsv = exp(sigmaB);
-      density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
-      for (int j=0; j<p;j++){
-        nll += VECSCALE(neg_log_MVN,sdsv)(vector<Type>(Br.col(j)));
-      }
-      eta += xb*Br;
-    }
-    
-    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
-    if(nlvr>0){
-      MVNORM_t<Type> mvnorm(Cu);
+    } else if (extra(0) == 1) { // probit
+      Type etaP;
       for (int i=0; i<n; i++) {
-        nll += mvnorm(u.row(i));
+        for (int j=0; j<p; j++) {
+          etaP = pnorm_approx(Type(eta(i,j)));   //pnorm funktion approksimaatio
+          nll -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //
+          Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
+          nll -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j); //Tää toimii ok tähän etaD = (log=true)
+        }
       }
-      //variances of LVs
-      u *= Delta;
-      
-      if(num_lv_c>0){
-        if((random(0)>0) && (n == nr)){
-          //first column are zeros in case of random intercept
-          b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
-          
-        }else{
-          b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
-        }  
-        eta += x_lv*b_lv2*newlam;
+    }
+  } else if(family==3) {//gaussian
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
       }
-      // add LV term to lin. predictor 
-      lam += u*newlam;
-      eta += lam;
-      if(family==10){
-        // etaH += lam;
-        etaH += ucopy*thetaH;
+    }
+  } else if(family==4) {//gamma
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0) ))){
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+        }
+      }
+    }else{
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -=  ( -eta(i,j) - e_eta(i,j)*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
+        }
       }
     }
     
+  } else if(family==5){ // Tweedie EVA
+    Type v = extra(0);
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p; j++) {
+        // Tweedie log-likelihood:
+        nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), v, true);
+        if (y(i,j) == 0) {
+          // Hessian-trace part:
+          nll += (1/iphi(j)) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
+        } else if (y(i,j) > 0) {
+          nll -= (1/iphi(j)) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
+        }
+      }
+    }
+  } else if((family==7) && (zetastruc == 1)){//ordinal
+    int ymax =  CppAD::Integer(y.maxCoeff());
+    int K = ymax - 1;
     
-    // Structured Row/Site effects
-    if(((random(0)>0) & (nlvr==(num_lv+num_lv_c))) & (rstruc>0)){
-      int i,j;
-      // Group specific random row effects:
-      if(rstruc == 1){
-        if(cstruc ==0){
-          matrix<Type> Sr(1,1);
-          Sr(0,0) = sigma*sigma;
-          MVNORM_t<Type> mvnorm(Sr);
-          for (int i=0; i<nr; i++) {
-            nll += mvnorm(r0.row(i));
+    matrix <Type> zetanew(p,K);
+    zetanew.setZero();
+    
+    int idx = 0;
+    for(int j=0; j<p; j++){
+      int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+      int Kj = ymaxj - 1;
+      if(Kj>1){
+        for(int k=0; k<(Kj-1); k++){
+          if(k==1){
+            zetanew(j,k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
+          }else{
+            zetanew(j,k+1) = zeta(idx+k);
           }
-        } else {
-          // group specific random row effects, which are correlated between groups
-          matrix<Type> Sr(nr,nr);
-          // if(cstruc==1){// AR1 covariance
-          //   Type rho = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
-          //   for (d=0;d<nr;d++) {
-          //     Sr(d,d)=sigma*sigma;
-          //     for (j=0;j<d;j++){
-          //       Sr(d,j)=sigma*pow(rho,(d-j))*sigma;       // ar1 correlation
-          //       Sr(j,d)=Sr(d,j);
-          //     }
-          //   }
-          // } else if(cstruc==2){// exp decaying
-          //   Type alf = exp(log_sigma(1));
-          //   for (d=0;d<nr;d++) {
-          //     Sr(d,d)=sigma*sigma;
-          //     for (j=0;j<d;j++){
-          //       Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
-          //       Sr(j,d)=Sr(d,j);
-          //     }
-          //   }
-          // } else {// Compound Symm  if(cstruc==3)
-          //   Type rhob = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
-          //   for (d=0;d<nr;d++) {
-          //     Sr(d,d)=sigma*sigma;
-          //     for (j=0;j<d;j++){
-          //       Sr(d,j)=sigma*rhob*sigma;
-          //       Sr(j,d)=Sr(d,j);
-          //     }
-          //   }
-          // }
-          // Define covariance matrix
-          if(cstruc==1){// AR1 covariance
-            Sr = gllvm::corAR1(sigma, log_sigma(1), nr);
-          } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-            Sr = gllvm::corCS(sigma, log_sigma(1), nr);
-          } else {
-            DiSc.fill(0.0);
-            for(int j=0; j<dc.cols(); j++){
-              DiSc(j,j) += 1/exp(log_sigma(1+j));
-            }
-            dc_scaled = dc*DiSc;
-            if(cstruc==2){// exp decaying
-              Sr = gllvm::corExp(sigma, Type(0), nr, dc_scaled);
-              // Sr = gllvm::corExp(sigma, (log_sigma(1)), nr, DistM);
-            } else if(cstruc==4) {// matern
-              Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), nr, dc_scaled);
-              // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), nr, DistM);
+          
+        }
+      }
+      idx += Kj-1;
+    }
+    
+    for (int i=0; i<n; i++) {
+      for(int j=0; j<p; j++){
+        int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+        //minimum category
+        if(y(i,j)==1){
+          nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
+        }else if(y(i,j)==ymaxj){
+          //maximum category
+          int idx = ymaxj-2;
+          nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
+        }else if(ymaxj>2){
+          for (int l=2; l<ymaxj; l++) {
+            if((y(i,j)==l) && (l != ymaxj)){
+              nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1)));
             }
           }
-          MVNORM_t<Type> mvnorm(Sr);
-          nll += mvnorm(r0.col(0));
         }
         
+        nll += cQ(i,j);
+        //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
+      }
+    }
+  } else if((family==7) && (zetastruc==0)){
+    int ymax =  CppAD::Integer(y.maxCoeff());
+    int K = ymax - 1;
+    
+    vector <Type> zetanew(K);
+    zetanew.setZero();
+    for(int k=0; k<(K-1); k++){
+      if(k==1){
+        zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
+      }else{
+        zetanew(k+1) = zeta(k);
+      }
+    }
+    for (int i=0; i<n; i++) {
+      for(int j=0; j<p; j++){
+        //minimum category
+        if(y(i,j)==1){
+          nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+        }else if(y(i,j)==ymax){
+          //maximum category
+          int idx = ymax-2;
+          nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+        }else if(ymax>2){
+          for (int l=2; l<ymax; l++) {
+            if((y(i,j)==l) && (l != ymax)){
+              nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+            }
+          }
+        }
+        nll += cQ(i,j);
+      }
+      // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+    }
+  } else if(family==8) {// exp dist
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0)) )){
+      for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
-          eta.col(j) = eta.col(j) + dr*r0;
+          nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
+        }
+      }
+    }else{
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<p;j++){
+          nll -= ( -eta(i,j) - e_eta(i,j)*y(i,j) );
+        }
+      }
+    }
+    
+  } else if(family==9) { // Beta EVA
+    Type mu_prime;
+    Type mu_prime2;
+    CppAD::vector<Type> z;
+    if(extra(0)==0){
+      z = CppAD::vector<Type> (4);
+    }
+    CppAD::vector<Type> a(2);
+    CppAD::vector<Type> b(2);
+    CppAD::vector<Type> aa;
+    CppAD::vector<Type> bb;
+    Type dig_a;
+    Type dig_b;
+    Type trig_a;
+    Type trig_b;
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p; j++) {
+        // define mu, mu' and mu''
+        mu(i,j) = 0.0;
+        mu_prime = 0.0;
+        mu_prime2 = 0.0;
+        if (extra(0) == 0) { // logit
+          
+          z[0] = eta(i,j);
+          z[1] = 0;
+          z[2] = 1/(1+exp(-z[0]));
+          z[3] = exp(z[0])/(exp(z[0])+1);
+          
+          mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+          mu_prime = mu(i,j) * (1-mu(i,j));
+          mu_prime2 = mu_prime * (1-2*mu(i,j));
+          
+        } else if (extra(0) == 1) { // probit
+          mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
+          mu_prime = dnorm(eta(i,j), Type(0), Type(1));
+          mu_prime2 = (-eta(i,j))*mu_prime;
+        }
+        a[0] = mu(i,j)*iphi(j);
+        a[1] = 1;
+        b[0] = (1-mu(i,j))*iphi(j);
+        b[1] = 1;
+        aa = a;
+        bb = b;
+        aa[1] = 2;
+        bb[1] = 2;
+        dig_a = Type(atomic::D_lgamma(a)[0]);
+        dig_b = Type(atomic::D_lgamma(b)[0]);
+        trig_a = Type(atomic::D_lgamma(aa)[0]);
+        trig_b = Type(atomic::D_lgamma(bb)[0]);
+        
+        nll -= dbeta(squeeze(y(i,j)), Type(a[0]), Type(b[0]), 1);
+        nll -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
+        nll -= iphi(j) * mu_prime2 * (log(squeeze(y(i,j))) - log(1-squeeze(y(i,j)))) * cQ(i,j);
+        
+      }
+    }
+  }
+  // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
+  
+ 
+  }else{
+    using namespace density;
+  if(random(2)>0){
+    // REPORT(Sigmab_lv); //!!!!
+    //MVNORM_t<Type> mvnorm(Sigmab_lv);
+    if(sbl3==Klv){
+      for (int klv=0; klv<Klv; klv++) {
+        nll += MVNORM(Sigmab_lv(klv))(b_lv.row(klv));
+      }
+    }else{
+      for (int q=0; q<(num_lv_c+num_RR); q++) {
+        nll += MVNORM(Sigmab_lv(q))(b_lv.col(q));
+      }
+    }
+    
+  }
+  
+  // REPORT(ucopy);
+  // REPORT(num_corlv);
+  // REPORT(nu);
+  // REPORT(dr);
+  // REPORT(cstruc);
+  
+  matrix<Type> etaH(n,p); 
+  etaH.setZero();
+  
+  //For fixed-effects RRR with and without quadratic term
+  if(num_RR>0){
+    matrix<Type> b_lv3 = b_lv.rightCols(num_RR);
+    eta += x_lv*b_lv3*RRgamma;
+    if(quadratic>0){
+      matrix<Type> D_RR(num_RR,num_RR);
+      D_RR.setZero();
+      if(lambda2.cols()==1){
+        for (int d=0; d<num_RR;d++){
+          D_RR.diagonal()(d) = fabs(lambda2(d,0));
+        }
+        for (int i=0; i<n; i++) {
+          eta.row(i).array() -=  (x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose()).value();
+        }
+        
+      }else{
+        for (int j=0; j<p;j++){
+          D_RR.setZero();
+          for (int d=0; d<num_RR;d++){
+            D_RR.diagonal()(d) = fabs(lambda2(d,j));
+          }
+          
+          for (int i=0; i<n; i++) {
+            eta(i,j) -=  x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose();
+          }
+        }
+      }
+      
+    }
+  }
+  
+  // Laplace approximation
+  
+  // add offset to lin. predictor 
+  eta += offset;
+  if(random(0)==0){
+    eta += r0*xr;
+  }
+  
+  
+  // Include random slopes if random(1)>0
+  if(random(1)>0){
+    vector<Type> sdsv = exp(sigmaB);
+    density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
+    vector<Type> Brcol;
+    for (int j=0; j<p;j++){
+      Brcol = Br.col(j);
+      nll += VECSCALE(neg_log_MVN,sdsv)(Brcol);
+    }
+    eta += xb*Br;
+  }
+  
+  //latent variables and random site effects (r_i,u_i) from N(0,Cu)
+  if(nlvr>0){
+    MVNORM_t<Type> mvnorm(Cu);
+    for (int i=0; i<n; i++) {
+      nll += mvnorm(u.row(i));
+    }
+    //variances of LVs
+    u *= Delta;
+    if(num_lv_c>0){
+      matrix<Type> b_lv2(x_lv.cols(),nlvr);
+      
+      if((random(0)>0) && (n == nr)){
+        //first column are zeros in case of random intercept
+        b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
+        
+      }else{
+        b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
+      }  
+      eta += x_lv*b_lv2*newlam;
+    }
+    // add LV term to lin. predictor 
+    lam += u*newlam;
+    eta += lam;
+    if(family==10){
+      // etaH += lam;
+      etaH += ucopy*thetaH;
+    }
+  }
+  
+  
+  // Structured Row/Site effects
+  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c))) && (rstruc>0)){
+    int i,j;
+    // Group specific random row effects:
+    if(rstruc == 1){
+      if(cstruc ==0){
+        matrix<Type> Sr(1,1);
+        Sr(0,0) = sigma*sigma;
+        MVNORM_t<Type> mvnorm(Sr);
+        for (int i=0; i<nr; i++) {
+          nll += mvnorm(r0.row(i));
         }
       } else {
-        // site specific random row effects, which are correlated within groups
-        
-        // Define covariance matrix
-        matrix<Type> Sr(times,times);
+        // group specific random row effects, which are correlated between groups
+        matrix<Type> Sr(nr,nr);
+        // if(cstruc==1){// AR1 covariance
+        //   Type rho = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
+        //   for (d=0;d<nr;d++) {
+        //     Sr(d,d)=sigma*sigma;
+        //     for (j=0;j<d;j++){
+        //       Sr(d,j)=sigma*pow(rho,(d-j))*sigma;       // ar1 correlation
+        //       Sr(j,d)=Sr(d,j);
+        //     }
+        //   }
+        // } else if(cstruc==2){// exp decaying
+        //   Type alf = exp(log_sigma(1));
+        //   for (d=0;d<nr;d++) {
+        //     Sr(d,d)=sigma*sigma;
+        //     for (j=0;j<d;j++){
+        //       Sr(d,j)=sigma*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*sigma;
+        //       Sr(j,d)=Sr(d,j);
+        //     }
+        //   }
+        // } else {// Compound Symm  if(cstruc==3)
+        //   Type rhob = log_sigma(1) / sqrt(1.0 + pow(log_sigma(1), 2));
+        //   for (d=0;d<nr;d++) {
+        //     Sr(d,d)=sigma*sigma;
+        //     for (j=0;j<d;j++){
+        //       Sr(d,j)=sigma*rhob*sigma;
+        //       Sr(j,d)=Sr(d,j);
+        //     }
+        //   }
+        // }
         // Define covariance matrix
         if(cstruc==1){// AR1 covariance
-          Sr = gllvm::corAR1(sigma, log_sigma(1), times);
+          Sr = gllvm::corAR1(sigma, log_sigma(1), nr);
         } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-          Sr = gllvm::corCS(sigma, log_sigma(1), times);
+          Sr = gllvm::corCS(sigma, log_sigma(1), nr);
         } else {
-          DiSc.fill(0.0);
+          DiSc.setZero();
           for(int j=0; j<dc.cols(); j++){
             DiSc(j,j) += 1/exp(log_sigma(1+j));
           }
           dc_scaled = dc*DiSc;
           if(cstruc==2){// exp decaying
-            Sr = gllvm::corExp(sigma, (Type(0)), times, dc_scaled);
-            // Sr = gllvm::corExp(sigma, (log_sigma(1)), times, DistM);
+            Sr = gllvm::corExp(sigma, Type(0), nr, dc_scaled);
+            // Sr = gllvm::corExp(sigma, (log_sigma(1)), nr, DistM);
           } else if(cstruc==4) {// matern
-            Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), times, dc_scaled);
-            // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), times, DistM);
+            Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), nr, dc_scaled);
+            // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), nr, DistM);
           }
-        }
-        
-        for (j=0; j<p;j++){
-          eta.col(j).array() += r0.array();
         }
         MVNORM_t<Type> mvnorm(Sr);
-        r0.resize(times, nr);
-        for (i=0; i<nr; i++) {
-          nll += mvnorm(vector <Type> (r0.col(i)));
-        }
-        // REPORT(Sr);
-        // REPORT(rho);
+        nll += mvnorm(r0.col(0));
       }
-      // REPORT(r0);
-      // REPORT(eta);
-      // REPORT(nlvr);
-      // REPORT(nr);
-      // REPORT(sigma);
-      // REPORT(log_sigma);
-    }
-    
-    // Correlated LVs
-    if(num_corlv>0) {
-      int i;
-      if(ucopy.rows() == nu){
-        eta += (dr*ucopy)*newlamCor;
-        if(family==10){ // betaH
-          etaH += (dr*ucopy)*thetaH;
-        }
-        
-        // group specific lvs
-        if(cstruc==0){// no covariance
-          matrix<Type> Slv(num_corlv,num_corlv);
-          Slv.fill(0.0);
-          Slv.diagonal().fill(1.0);
-          MVNORM_t<Type> mvnorm(Slv);
-          for (int i=0; i<nu; i++) {
-            nll += mvnorm(ucopy.row(i));
-          }
-          // REPORT(Slv);
-        } else {
-
-          matrix<Type> Slv(nu,nu);
-          Slv.fill(0.0);
-
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated between groups
-            Slv.fill(0.0);
-
-            if(cstruc==1){// AR1 covariance
-              Slv = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
-            } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-              Slv = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
-            } else {
-              DiSc.fill(0.0);
-              for(int j=0; j<dc.cols(); j++){
-                DiSc(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled = dc*DiSc;
-              if(cstruc==2){// exp decaying
-                Slv = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
-                // Slv = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
-              } else if(cstruc==4) {// matern
-                Slv = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
-                // Slv = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
-              }
-            }
-
-            MVNORM_t<Type> mvnormS1(Slv);
-            nll += mvnormS1(ucopy.col(q));
-
-          }
-          // REPORT(Slv);
-        }
+      
+      for (int j=0; j<p;j++){
+        eta.col(j) = eta.col(j) + dr*r0;
+      }
+    } else {
+      // site specific random row effects, which are correlated within groups
+      
+      // Define covariance matrix
+      matrix<Type> Sr(times,times);
+      // Define covariance matrix
+      if(cstruc==1){// AR1 covariance
+        Sr = gllvm::corAR1(sigma, log_sigma(1), times);
+      } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+        Sr = gllvm::corCS(sigma, log_sigma(1), times);
       } else {
-
-        matrix<Type> Slv(times,times);
-        Slv.fill(0.0);
-        eta += ucopy*newlamCor;
-        if(family==10){// betaH
-          etaH += ucopy*thetaH;
+        DiSc.setZero();
+        for(int j=0; j<dc.cols(); j++){
+          DiSc(j,j) += 1/exp(log_sigma(1+j));
         }
+        dc_scaled = dc*DiSc;
+        if(cstruc==2){// exp decaying
+          Sr = gllvm::corExp(sigma, (Type(0)), times, dc_scaled);
+          // Sr = gllvm::corExp(sigma, (log_sigma(1)), times, DistM);
+        } else if(cstruc==4) {// matern
+          Sr = gllvm::corMatern(sigma, Type(0), log_sigma(dc.cols()+1), times, dc_scaled);
+          // Sr = gllvm::corMatern(sigma, log_sigma(1), log_sigma(2), times, DistM);
+        }
+      }
+      
+      for (j=0; j<p;j++){
+        eta.col(j).array() += r0.array();
+      }
+      MVNORM_t<Type> mvnorm(Sr);
+      r0.resize(times, nr);
+      for (i=0; i<nr; i++) {
+        nll += mvnorm(vector <Type> (r0.col(i)));
+      }
+      // REPORT(Sr);
+      // REPORT(rho);
+    }
+    // REPORT(r0);
+    // REPORT(eta);
+    // REPORT(nlvr);
+    // REPORT(nr);
+    // REPORT(sigma);
+    // REPORT(log_sigma);
+  }
+  
+  // Correlated LVs
+  if(num_corlv>0) {
+    int i;
+    if(ucopy.rows() == nu){
+      eta += (dr*ucopy)*newlamCor;
+      if(family==10){ // betaH
+        etaH += (dr*ucopy)*thetaH;
+      }
+      
+      // group specific lvs
+      if(cstruc==0){// no covariance
+        matrix<Type> Slv(num_corlv,num_corlv);
+        Slv.setZero();
+        Slv.diagonal().fill(1.0);
+        MVNORM_t<Type> mvnorm(Slv);
+        for (int i=0; i<nu; i++) {
+          nll += mvnorm(ucopy.row(i));
+        }
+        REPORT(Slv);
+      } else {
+       
+        matrix<Type> Slv(nu,nu);
         for(int q=0; q<num_corlv; q++){
-          // site specific LVs, which are correlated within groups
-          Slv.fill(0.0);
-          // Define covariance matrix
+          // site specific LVs, which are correlated between groups
+          Slv.setZero();
+          
           if(cstruc==1){// AR1 covariance
-            Slv = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+            Slv = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
           } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
-            Slv = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+            Slv = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
           } else {
-            DiSc.fill(0.0);
+            DiSc.setZero();
             for(int j=0; j<dc.cols(); j++){
               DiSc(j,j) += 1/exp(rho_lvc(q,j));
             }
             dc_scaled = dc*DiSc;
             if(cstruc==2){// exp decaying
-              Slv = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
-              // Slv = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
+              Slv = gllvm::corExp(Type(1), Type(0), nu, dc_scaled);
+              // Slv = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
             } else if(cstruc==4) {// matern
-              Slv = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
-              // Slv = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
+              Slv = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), nu, dc_scaled);
+              // Slv = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), nu, DistM);
             }
           }
 
-          MVNORM_t<Type> mvnormS2(Slv);
-
-          for (i=0; i<nu; i++) {
-            nll += mvnormS2(ucopy.block(i*times,q,times,1));
-
-          }
-
+          MVNORM_t<Type> mvnormS1(Slv);
+          nll += mvnormS1(ucopy.col(q));
         }
         // REPORT(Slv);
       }
-      // REPORT(nu);
-    }
-    
-    
-    if(model<1){
-      // gllvm.TMB.R
-      if(family==10){
-        etaH += x*bH;
-      }
-      eta += x*b;
-      for (int j=0; j<p; j++){
-        for(int i=0; i<n; i++){
-          mu(i,j) = exp(eta(i,j));
-        }
-      }
-      
     } else {
-      // Fourth corner model, TMBtrait.R
-      if(family==10){
-        matrix<Type> eta1h=x*bH;
-        eta1h.resize(n, p);
-        etaH += eta1h;
+      
+      matrix<Type> Slv(times,times);
+      eta += ucopy*newlamCor;
+      if(family==10){// betaH
+        etaH += ucopy*thetaH;
       }
-      matrix<Type> eta1=x*B;
-      int m=0;
-      for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
-          eta(i,j)+=b(0,j)*extra(1)+eta1(m,0);
-          m++;
-          mu(i,j) = exp(eta(i,j));
+      for(int q=0; q<num_corlv; q++){
+        // site specific LVs, which are correlated within groups
+        Slv.setZero();
+        // Define covariance matrix
+        if(cstruc==1){// AR1 covariance
+          Slv = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+        } else if(cstruc==3) {// Compound Symm  if(cstruc==3)
+          Slv = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+        } else {
+          DiSc.setZero();
+          for(int j=0; j<dc.cols(); j++){
+            DiSc(j,j) += 1/exp(rho_lvc(q,j));
+          }
+          dc_scaled = dc*DiSc;
+          if(cstruc==2){// exp decaying
+            Slv = gllvm::corExp(Type(1), Type(0), times, dc_scaled);
+            // Slv = gllvm::corExp(Type(1), (rho_lvc(q,0)), times, DistM);
+          } else if(cstruc==4) {// matern
+            Slv = gllvm::corMatern(Type(1), Type(0), rho_lvc(q,dc.cols()), times, dc_scaled);
+            // Slv = gllvm::corMatern(Type(1), rho_lvc(q,0), rho_lvc(q,1), times, DistM);
+          }
         }
+        
+        MVNORM_t<Type> mvnormS2(Slv);
+        
+        for (i=0; i<nu; i++) {
+          nll += mvnormS2(ucopy.block(i*times,q,times,1));
+        }
+        
+      }
+      REPORT(Slv);
+    }
+    // REPORT(nu);
+  }
+  
+  
+  if(model<1){
+    // gllvm.TMB.R
+    if(family==10){
+      etaH += x*bH;
+    }
+    eta += x*b;
+    for (int j=0; j<p; j++){
+      for(int i=0; i<n; i++){
+        mu(i,j) = exp(eta(i,j));
       }
     }
     
-    
-    //likelihood model with the log link function
-    if(family==0){//poisson family
+  } else {
+    // Fourth corner model, TMBtrait.R
+    if(family==10){
+      matrix<Type> eta1h=x*bH;
+      eta1h.resize(n, p);
+      etaH += eta1h;
+    }
+    matrix<Type> eta1=x*B;
+    int m=0;
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        eta(i,j)+=b(0,j)*extra(1)+eta1(m,0);
+        m++;
+        mu(i,j) = exp(eta(i,j));
+      }
+    }
+  }
+  
+  
+  //likelihood model with the log link function
+  if(family==0){//poisson family
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dpois(y(i,j), exp(eta(i,j)), true);
+      }
+    }
+  } else if(family==1){//negative.binomial family
+    if((num_RR>0) && (nlvr == 0) && random(2)>1){
+      //use dnbinom_robust in this case - below code does not function well
+      //for constrained ordination without any random-effects
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
-          nll -= dpois(y(i,j), exp(eta(i,j)), true);
+          nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
         }
       }
-    } else if(family==1){//negative.binomial family
+    }else{
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
         }
-      }} else if(family==2) {//binomial family
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {mu(i,j) = pnorm(eta(i,j));}
-            nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
-          }
-        }
-      } else if(family==3){//gaussian family
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
-          }
-        }
-      } else if(family==4){//gamma family
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
-          }
-        }
-      } else if(family==5){//tweedie familyF
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
-          }
-        }
-      } else if(family==6) {//zero-infl-poisson
-        iphi=iphi/(1+iphi);
-        for (int j=0; j<p;j++){
-          for (int i=0; i<n; i++) {
-            nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
-          }
-        }
-      } else if(family==8) {// exponential family
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            nll -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
-          }
-        }
-      } else if(family==9) {// beta family
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {mu(i,j) = pnorm(eta(i,j));}
-            nll -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(j)), Type((1-mu(i,j))*iphi(j)), 1);
-          }
-        }
-      } else if(family==10) {// beta family
-        for (int i=0; i<n; i++) {
-          for (int j=0; j<p;j++){
-            if(extra(0)<1) {
-              etaH(i,j) = exp(etaH(i,j))/(exp(etaH(i,j))+1);
-              mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {
-              etaH(i,j) = pnorm(etaH(i,j));
-              mu(i,j) = pnorm(eta(i,j));
-            }
-            if (y(i,j) == 0) {
-              nll -= log(1-mu(i,j));
-            } else{
-              nll -= log(mu(i,j)) + dbeta(y(i,j), Type(etaH(i,j)*iphi(j)), Type((1-etaH(i,j))*iphi(j)), 1);
-            }
-          }
-        }
-        // REPORT(mu);
-        // REPORT(etaH);
+      } 
+    }
+  } else if(family==2) {//binomial family
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+        } else {mu(i,j) = pnorm(eta(i,j));}
+        nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
       }
-  }
-  
+    }
+  } else if(family==3){//gaussian family
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dnorm(y(i,j), eta(i,j), iphi(j), true); 
+      }
+    }
+  } else if(family==4){//gamma family
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dgamma(y(i,j), iphi(j), exp(eta(i,j))/iphi(j), true); 
+      }
+    }
+  } else if(family==5){//tweedie familyF
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
+      }
+    }
+  } else if(family==6) {//zero-infl-poisson
+    iphi=iphi/(1+iphi);
+    for (int j=0; j<p;j++){
+      for (int i=0; i<n; i++) {
+        nll -= dzipois(y(i,j), exp(eta(i,j)),iphi(j), true); 
+      }
+    }
+  } else if((family==7) && (zetastruc == 1)){//ordinal, only here for models without random-effects
+    int ymax =  CppAD::Integer(y.maxCoeff());
+    int K = ymax - 1;
+    
+    matrix <Type> zetanew(p,K);
+    zetanew.setZero();
+    
+    int idx = 0;
+    for(int j=0; j<p; j++){
+      int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+      int Kj = ymaxj - 1;
+      if(Kj>1){
+        for(int k=0; k<(Kj-1); k++){
+          if(k==1){
+            zetanew(j,k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
+          }else{
+            zetanew(j,k+1) = zeta(idx+k);
+          }
+          
+        }
+      }
+      idx += Kj-1;
+    }
+    
+    for (int i=0; i<n; i++) {
+      for(int j=0; j<p; j++){
+        int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+        //minimum category
+        if(y(i,j)==1){
+          nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
+        }else if(y(i,j)==ymaxj){
+          //maximum category
+          int idx = ymaxj-2;
+          nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
+        }else if(ymaxj>2){
+          for (int l=2; l<ymaxj; l++) {
+            if((y(i,j)==l) && (l != ymaxj)){
+              nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1)));
+            }
+          }
+        }
+      }
+    }
+  } else if((family==7) && (zetastruc==0)){
+    int ymax =  CppAD::Integer(y.maxCoeff());
+    int K = ymax - 1;
+    
+    vector <Type> zetanew(K);
+    zetanew.setZero();
+    for(int k=0; k<(K-1); k++){
+      if(k==1){
+        zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
+      }else{
+        zetanew(k+1) = zeta(k);
+      }
+    }
+    for (int i=0; i<n; i++) {
+      for(int j=0; j<p; j++){
+        //minimum category
+        if(y(i,j)==1){
+          nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+        }else if(y(i,j)==ymax){
+          //maximum category
+          int idx = ymax-2;
+          nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+        }else if(ymax>2){
+          for (int l=2; l<ymax; l++) {
+            if((y(i,j)==l) && (l != ymax)){
+              nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+            }
+          }
+        }
+      }
+      // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+    }
+  } else if(family==8) {// exponential family
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        nll -= dexp(y(i,j), exp(-eta(i,j)), true);  // (-eta(i,j) - exp(-eta(i,j))*y(i,j) );
+      }
+    }
+  } else if(family==9) {// beta family
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+        } else {mu(i,j) = pnorm(eta(i,j));}
+        nll -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(j)), Type((1-mu(i,j))*iphi(j)), 1);
+      }
+    }
+  } else if(family==10) {// beta family
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<p;j++){
+        if(extra(0)<1) {
+          etaH(i,j) = exp(etaH(i,j))/(exp(etaH(i,j))+1);
+          mu(i,j) = mu(i,j)/(mu(i,j)+1);
+        } else {
+          etaH(i,j) = pnorm(etaH(i,j));
+          mu(i,j) = pnorm(eta(i,j));
+        }
+        if (y(i,j) == 0) {
+          nll -= log(1-mu(i,j));
+        } else{
+          nll -= log(mu(i,j)) + dbeta(y(i,j), Type(etaH(i,j)*iphi(j)), Type((1-etaH(i,j))*iphi(j)), 1);
+        }
+      }
+    }
+    // REPORT(mu);
+    // REPORT(etaH);
+}
+}
   return nll;
 }

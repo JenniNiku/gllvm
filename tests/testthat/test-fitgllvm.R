@@ -85,7 +85,8 @@ test_that("concurrent ordination models work", {
   y <- spider$abund
   fc0<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999)
   fc1<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999, randomB="LV")
-  fc2<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999, randomB="LV", row.eff="random")
+  #this has a warning for overfitting that can be ignored
+  suppressWarnings(fc2<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999, randomB="LV", row.eff="random"))
   fc3<-gllvm(y, X, num.lv.c = 2, quadratic=T, family = "poisson", seed = 999, randomB="LV")
   expect_true(is.finite(fc0$logL))
   expect_true(is.finite(fc1$logL))

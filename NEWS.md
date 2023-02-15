@@ -1,5 +1,13 @@
 Version 1.4.1
-==============
+* Computational stability of random slopes for constr. and concr. ordination significantly improved
+* Computational stability of quadratic model significantly improved
+* Unstructured VA covariance matrix for quadratic models with random intercepts
+* Added example for se.gllvm
+
+## Bug Fixes
+* Bugfix in random slopes for concr. ordination with LV-specific variances and random row intercepts
+* Bugfix for quadratic model with Poisson, NB, gamma, or exponential responses
+* Bugfix in starting values for constrained and concurrent quadratic model
 
 ### Bug Fixes
 * Valgrind error fixed

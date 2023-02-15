@@ -286,6 +286,11 @@
 #'               num.lv.c=2, method="VA")
 #'ordiplot(fity1, biplot = TRUE)
 #'
+#'#'## Example 1b: Fit constrained ordination model with two latent variables and with 
+#'# random canonical coefficients
+#'fity2 <- gllvm(y, X = scale(X), family = "negative.binomial", 
+#'               num.RR=2, randomB="LV", method="VA")
+#'               
 #'# Using Laplace approximation: (this line may take about 30 sec to run)
 #'fitl0 <- gllvm(y, family = "negative.binomial", method = "LA")
 #'ordiplot(fitl0)
@@ -1356,7 +1361,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # check if quadratic coefs have converged or have stuck to "LV"
     if(isTRUE(quadratic)){
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
-        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with different starting values or to change the optimizer.\n")
+        warning("Quadratic model seems to have converged to species-common tolerances. Try refitting with `start.struc='all'`, or with different starting values.\n")
       out$quadratic <- "LV"        
       }else if(length(unique(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F]))==1 && starting.val == "zero"){
         warning("It looks like the optimizer failed to move the quadratic coefficients away from the starting values. Please change the starting values. \n")
@@ -1375,6 +1380,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     if(!TMB&family=="ordinal"){
       out$zeta.struc <- "species"
+    }else if(TMB & family == "ordinal"){
+      out$zeta.struc = fitg$zeta.struc
     }
     out$Hess = fitg$Hess
     out$prediction.errors = fitg$prediction.errors
