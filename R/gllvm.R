@@ -626,6 +626,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
       }
     }
+    if((num.lv.c+num.RR)>0&!is.null(formula)&is.null(lv.formula)){
+      stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
+    }
     
     if (!is.null(y)) {
       y <- as.matrix(y)
