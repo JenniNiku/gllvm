@@ -1530,7 +1530,7 @@ Type objective_function<Type>::operator() ()
     }
   }
   if(family==0){//poisson
-    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0) ))){
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (num_RR >0) ))){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
@@ -1545,7 +1545,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   } else if((family == 1) && (method<1)){//NB VA
-    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0)) )){
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (num_RR >0)) )){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           // nll -= Type(gllvm::dnegbinva(y(i,j), eta(i,j), iphi(j), cQ(i,j)));
@@ -1621,7 +1621,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   } else if(family==4) {//gamma
-    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0) ))){
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (num_RR >0) ))){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) )*iphi(j) + log(y(i,j)*iphi(j))*iphi(j) - log(y(i,j)) -lgamma(iphi(j));
@@ -1729,7 +1729,7 @@ Type objective_function<Type>::operator() ()
       // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
     }
   } else if(family==8) {// exp dist
-    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (nlvr >0)) )){
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && (num_RR >0)) )){
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           nll -= ( -eta(i,j) - exp(-eta(i,j)+cQ(i,j))*y(i,j) );
