@@ -2157,7 +2157,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   } else if(family==1){//negative.binomial family
-    if((num_RR>0) && (nlvr == 0) && random(2)>1){
+    if((num_RR>0) && (nlvr == 0) && (random(2)<1)){
       //use dnbinom_robust in this case - below code does not function well
       //for constrained ordination without any random-effects
       for (int j=0; j<p;j++){
