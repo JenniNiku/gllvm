@@ -1678,7 +1678,6 @@ trait.TMB <- function(
         se.B <- se[1:length(B)]; se <- se[-(1:length(B))];
         
         if(num.lv>0) {
-          
           out$sd$sigma.lv <- se.sigma.lv <- se[1:num.lv]; ##*out$params$sigma.lv;
           se<-se[-c(1:num.lv)]
           names(out$sd$sigma.lv) <- paste("LV",1:num.lv,sep="");
@@ -1797,8 +1796,8 @@ trait.TMB <- function(
 
       }
       
-      })
-  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated.\n") }
+      }, silent=T)
+  if(inherits(tr, "try-error")) { cat("Standard errors for parameters could not be calculated, due to singular fit.\n") }
 
 
   return(out)
