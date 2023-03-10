@@ -22,6 +22,16 @@ Calculates Hessian and standard errors for gllvm model.
 \details{
 Computes Hessian and standard errors for gllvm model.
 }
+\examples{
+data(spider)
+mod <- gllvm(spider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
+# Calculate standard errors after fitting
+sdErr <- se(mod)
+# Store the standard errors in the right place
+mod$sd <-sdErr$sd
+# Store the Hessian in the right place
+mod$Hess <- sdErr$Hess
+}
 \references{
 Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
 
