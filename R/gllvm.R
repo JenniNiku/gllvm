@@ -95,9 +95,9 @@
 #'}
 #'
 #' \subsection{Ordination with predictors}{
-#'For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_lv} can be included to explain the latent variables:
+#'For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_{lv}} can be included to explain the latent variables:
 #'
-#'\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i})' D_j (B' x_{lv,i} + \epsilon_i) ,}
+#'\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i} + \epsilon_i)' D_j (B' x_{lv,i} + \epsilon_i) ,}
 #'where \eqn{z_i = B' x_{lv,i} + \epsilon_i} are latent variables informed by the predictors, but not constrained compared to unconstrained ordination as in methods such as CCA or RDA.
 #' Omitting the predictors results in an unconstrained ordination, and omitting \eqn{\epsilon_i} in the usual constrained ordination, which can also be fitted.
 #'}
@@ -625,6 +625,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }
       }
       }
+    }
+    if((num.lv.c+num.RR)>0&!is.null(formula)&is.null(lv.formula)){
+      stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
     
     if (!is.null(y)) {
