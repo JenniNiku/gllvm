@@ -1002,7 +1002,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                 control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
               }
               suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
-          }else{
+              }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
                                 "maxeval" = maxit,
@@ -2117,6 +2117,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(method == "LA"){
         sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr, control = list(reltol=reltol,maxit=maxit))#maxit=maxit
       }
+      # makes a small correction to the partial derivatives of LvXcoef if fixed-effect
+      # because of constrained objective function
+      # assumes L(x) = f(x) + lambda*c(x) for constraint function c(x)
+      # though this is not (exactly) how we are fitting the model.
+      if((num.RR+num.lv.c)>1 && randomB==FALSE){
+        b_lvHE <- sdr[names(pars)=="b_lv",names(pars)=="b_lv"]
+        Lmult <- lambda(pars,objrFinal) #estimates  lagranian multiplier
+        sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(lv.X), d = num.lv.c+num.RR)
+      }
+      
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
       # Not used for this model
       incl[names(objrFinal$par)=="B"] <- FALSE
