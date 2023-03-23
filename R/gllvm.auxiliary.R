@@ -2809,7 +2809,6 @@ eval_eq_j <- function(x, obj, ...){
   return(jacob)
 }
 
-
 #functions for optimization with equality constraints using nloptr
 eval_f<-function(x, obj = NULL){
   #nloptr requires to return likelihood and gradient simultaneously
@@ -2842,3 +2841,81 @@ eval_g_eq <- function(x, obj = NULL){
   res <- list("constraints" = con,"jacobian" = jacob)
   return(res)
 }
+
+# function to post-hoc estimate lagranian multipliers
+# see https://discourse.julialang.org/t/lagrangian-function/38287/18?u=stevengj
+lambda<-function(x,obj)c(-obj$gr()%*%MASS::ginv(eval_eq_j(x,obj = obj)))
+
+# gradient of Lagranian
+gradL <- function(x,lambda,objr){
+  res <- eval_g_eq(x,objr)
+  con <- res$con 
+  con.j <- res$jacobian
+  
+  objr$gr(x)-colSums(lambda2(x,objr)*con.j)#+sig*drop(t(con.j)%*%con)                      
+  }
+
+
+# 2nd derivative, for constraint for correction of SEs
+eval_eq_j <- function(x, obj, ...){
+  B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
+  jacob <- NULL
+  
+  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  nc <- d*(d-1)/2#number of constraints
+  
+  #LV constraint combinations
+  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  
+  #Build jacobian
+  jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
+  #Indices
+  idx.i <- rep(1:nc,each=nrow(B))
+  idx.j <- nrow(B)*(rep(combs[1,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  #d(constraint)/d(b1)
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[2,]])
+  
+  idx.j <- nrow(B)*(rep(combs[2,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+  #d(constraint)/d(b2)
+  jacob.B[cbind(idx.i,idx.j)] <- c(B[,combs[1,]])
+  #padd with zeros for all unrelated parameters
+  jacob <- cbind(matrix(0,nrow=nc,ncol=which(names(obj$par)=="b_lv")[1]-1),jacob.B,matrix(0,nrow=nc,ncol=length(x)-tail(which(names(obj$par)=="b_lv"),1)))
+  return(jacob)
+}
+# this is dc(x)/dbdb, i.e., hessian w.r.t. the constraint function Lmult*(B^tB - I)
+b_lvHEcorrect <- function(Lmult,K,d){
+  corHE <- matrix(0,K*d,K*d)
+  combs <- combn(1:d,2)
+  for(q in 1:ncol(combs)){
+    diag(corHE[(combs[1,q]*K-K+1):(combs[1,q]*K),(combs[2,q]*K-K+1):(combs[2,q]*K)])<- Lmult[q]
+    diag(corHE[(combs[2,q]*K-K+1):(combs[2,q]*K),(combs[1,q]*K-K+1):(combs[1,q]*K)])<- Lmult[q]
+  }
+  corHE  
+}
+
+# function to get the derivative w.r.t. the squared constraint function
+# eval_eq_j2 <- function(x, obj, ...){
+#   B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
+#   jacob <- NULL
+#   
+#   d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+#   nc <- d*(d-1)/2#number of constraints
+#   
+#   #LV constraint combinations
+#   combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+#   
+#   #Build jacobian
+#   jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
+#   #Indices
+#   idx.i <- rep(1:nc,each=nrow(B))
+#   idx.j <- nrow(B)*(rep(combs[1,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+#   #d(constraint^2)/d(b1)
+#   jacob.B[cbind(idx.i,idx.j)] <- 2*B[,combs[2,]]^2*B[,combs[1,]]
+#   
+#   idx.j <- nrow(B)*(rep(combs[2,],each=nrow(B))-1)+rep(1:nrow(B),nc)
+#   #d(constraint^2)/d(b2)
+#   jacob.B[cbind(idx.i,idx.j)] <-  2*B[,combs[1,]]^2*B[,combs[2,]]
+#   #padd with zeros for all unrelated parameters
+#   jacob <- cbind(matrix(0,nrow=nc,ncol=which(names(obj$par)=="b_lv")[1]-1),jacob.B,matrix(0,nrow=nc,ncol=length(x)-tail(which(names(obj$par)=="b_lv"),1)))
+#   return(jacob)
+# }

@@ -324,6 +324,16 @@ se.gllvm <- function(object, ...){
     if(method == "LA"){
       sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
     }
+    # makes a small correction to the partial derivatives of LvXcoef if fixed-effect
+    # because of constrained objective function
+    # assumes L(x) = f(x) + lambda*c(x) for constraint function c(x)
+    # though this is not (exactly) how we are fitting the model.
+    if((object$num.RR+object$num.lv.c)>1 && object$randomB==FALSE){
+      b_lvHE <- sdr[names(pars)=="b_lv",names(pars)=="b_lv"]
+      Lmult <- lambda(pars,objrFinal) #estimates  lagranian multiplier
+      sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(object$lv.X), d = object$num.lv.c+object$num.RR)
+    }
+    
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
     
     # Not used for this model
