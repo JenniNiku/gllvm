@@ -649,7 +649,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         } else if(is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)>0){
 
           if(inherits(row.eff,"formula")){
-            lv.formula <- formula(paste("~", paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))
+            if(any(colnames(X)==all.vars(row.eff))){
+              lv.formula <- formula(paste("~", paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))              
+            }else{
+              lv.formula <- formula(paste("~", paste("+", colnames(X), collapse = "")))
+            }
+
             if (is.data.frame(X)) {
               datayx <- list(X = model.matrix(lv.formula, X)[,-1,drop=F])
             } else {
@@ -657,7 +662,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             }
             lv.X <- as.matrix(model.frame(~ X, data = datayx))
             if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
-            X <-  X[,all.vars(row.eff),drop=F]
+            if(any(colnames(X)==all.vars(row.eff))){
+              X <-  X[,all.vars(row.eff),drop=F]
+            }else{
+             X <- NULL 
+            }
           }else{
             lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
             if (is.data.frame(X)) {
@@ -687,6 +696,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               X <-  X[,all.vars(row.eff),drop=F]
             } else {
               datayx <- data.frame(y, X)
+              X <- NULL
             }
           }else{
             datayx <- data.frame(y, X)
@@ -700,7 +710,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
           lv.X<- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
-     
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
@@ -879,7 +888,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
           colnames(xgrps) <- grps
           studyDesign<-cbind(studyDesign, xgrps)
-          }
+        }
+          
       } else if(all(grps %in% colnames(X))) {
         if (!is.null(studyDesign)){ 
           studyDesign=cbind(studyDesign, X)
@@ -1204,7 +1214,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
-      }
+      
+}
       out$disp.group <- disp.group
       out$seed <- fitg$seed
       out$X.design <- fitg$X.design
