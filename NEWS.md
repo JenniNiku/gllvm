@@ -1,3 +1,9 @@
+Version 1.4.2
+* Added a correction factor to the second partial derivatives of the canonical coefficients for concurrent and constrained ordination
+
+## Bug Fixes
+* Fixed an issue with structured row-effects in concurrent and constrained ordination
+
 Version 1.4.1
 * Computational stability of random slopes for constr. and concr. ordination significantly improved
 * Computational stability of quadratic model significantly improved
