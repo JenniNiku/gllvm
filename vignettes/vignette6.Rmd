@@ -83,8 +83,8 @@ load("RRGLMb1.RData")
 where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
 
 A plot of species-specific effects can be constructed with the  `randomCoefplot` function:
-```{r}
-randomCoefplot(RRGLMb1)
+```{r fig.height=2, fig.width=7}
+randomCoefplot(RRGLMb1,cex.ylab = 0.5)
 ```
 
 
@@ -93,7 +93,7 @@ When using a random-effects formulation, there are is no summary table or there 
 ```{r eval=T, echo=T}
 # Get coefficients
 coefs<-data.frame(coef(RRGLMb1,"LvXcoef"))
-coefs$Predictor <- row.names(dat)
+coefs$Predictor <- row.names(coefs)
 
 # Wide to long
 coefsTab<-reshape(coefs, 
