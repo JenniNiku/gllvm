@@ -2708,9 +2708,6 @@ mlm <- function(y, X = NULL, index = NULL){
 }
 
 RRse <- function(object){
-  if(object$randomB!=FALSE){
-    warning("Cannot calculate only calculate confidence intervals if slopes are treated as fixed-effects.")
-  }
   if(object$quadratic!=FALSE){
     warning("Coefplot for quadratic coefficients not yet implemented.")
   }
@@ -2727,6 +2724,7 @@ RRse <- function(object){
   colnames(betaSE)<-colnames(object$lv.X)
   row.names(betaSE)<-colnames(object$y)
   
+  if(isFALSE(object$randomB)){
   covMat <- object$Hess$cov.mat.mod
   
   colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par[object$Hess$incl])
@@ -2750,6 +2748,110 @@ RRse <- function(object){
   covB <-  covMat[colnames(covMat)=="b_lv",colnames(covMat)=="b_lv", drop=FALSE]
   covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda", drop=FALSE]
   covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv", drop=FALSE]
+  }else{
+    if(object$method=="LA"){
+      covMat <- object$Hess$cov.mat.mod
+      
+      colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par)
+      covMat <- covMat[colnames(covMat)%in%"lambda",colnames(covMat)%in%"lambda"]
+      
+      #add first row and column of zeros before b_lv, for first species
+      covMat <- rbind(covMat,0,covMat)
+      covMat <- cbind(covMat,0,covMat)
+      
+      if(d>1){
+        idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
+        
+        #add zeros where necessary
+        for(q in 1:length(idx)){
+          covMat <- rbind(covMat[1:(idx[q]-1),],0,covMat[(idx[q]):ncol(covMat),])
+          covMat <- cbind(covMat[,1:(idx[q]-1)],0,covMat[,(idx[q]):ncol(covMat)])
+        }
+      }
+      
+      row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
+      covB <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = "residual", return.covb=T)
+      covB <- covB[colnames(covB)=="b_lv",colnames(covB)=="b_lv"]
+      
+      covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda", drop=FALSE]
+      
+      # getting cov(b,gamma) is much more difficult for  Laplace
+      # the solution below goes via the jointPrecision matrix from TMB
+        r <- obj$env$random
+        par = object$TMBfn$env$last.par
+        hessian.random <- obj$env$spHess(par, random = TRUE)
+        f <- object$TMBfn$env$f
+        w <- rep(0, length(par))
+        reverse.sweep <- function(i) {
+          w[i] <- 1
+          f(par, order = 1, type = "ADGrad", rangeweight = w, doforward = 0)[r]
+        }
+        nonr <- setdiff(seq_along(par), r)
+        tmp <- sapply(nonr, reverse.sweep)
+        if(!is.matrix(tmp)) tmp <- matrix(tmp, ncol=length(nonr) )
+        A <- solve(hessian.random, tmp[, object$Hess$incl])
+        G <- hessian.random %*% A
+        G <- as.matrix(G)
+        M1 <- cbind2(hessian.random,G)
+        Vtheta <- object$Hess$Hess.full[object$Hess$incl,object$Hess$incl]
+        M2 <- cbind2(t(G), as.matrix(t(A)%*%G)+Vtheta)
+        M <- rbind2(M1,M2)
+        dn <- c(names(par)[r],names(par[-r]))
+        dimnames(M) <- list(dn,dn)
+        ip <- Matrix::invPerm(c(r,(1:length(par))[-r]))
+        jointPrecision <- M[ip,ip]
+        covMat <- MASS::ginv(as.matrix(jointPrecision))
+        colnames(covMat) <- row.names(covMat) <- colnames(jointPrecision)
+        covMat <- covMat[colnames(covMat)%in%c("b_lv","lambda"),colnames(covMat)%in%c("b_lv","lambda")]
+        
+        #add first row and column of zeros before b_lv, for first species
+        covMat <- rbind(covMat[1:(d*K),, drop=FALSE],0,covMat[-c(1:(d*K)),, drop=FALSE])
+        covMat <- cbind(covMat[,1:(d*K), drop=FALSE],0,covMat[,-c(1:(d*K)), drop=FALSE])
+        
+        if(d>1){
+          idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
+          
+          #add zeros where necessary
+          for(q in 1:length(idx)){
+            covMat <- rbind(covMat[1:(d*K+idx[q]-1),],0,covMat[(d*K+idx[q]):ncol(covMat),])
+            covMat <- cbind(covMat[,1:(d*K+idx[q]-1)],0,covMat[,(d*K+idx[q]):ncol(covMat)])
+          }
+        }
+        row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
+        covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv", drop=FALSE]
+    }else{
+      covMat <- MASS::ginv(object$Hess$Hess.full) #yuk, but we need cov(a,gamma)
+      
+      colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par)
+      covMat <- covMat[colnames(covMat)%in%c("b_lv","lambda"),colnames(covMat)%in%c("b_lv","lambda")]
+      
+      #add first row and column of zeros before b_lv, for first species
+      covMat <- rbind(covMat[1:(d*K),, drop=FALSE],0,covMat[-c(1:(d*K)),, drop=FALSE])
+      covMat <- cbind(covMat[,1:(d*K), drop=FALSE],0,covMat[,-c(1:(d*K)), drop=FALSE])
+      
+      if(d>1){
+        idx<-which(c(upper.tri(object$params$theta[,1:d],diag=T)))[-1]
+        
+        #add zeros where necessary
+        for(q in 1:length(idx)){
+          covMat <- rbind(covMat[1:(d*K+idx[q]-1),],0,covMat[(d*K+idx[q]):ncol(covMat),])
+          covMat <- cbind(covMat[,1:(d*K+idx[q]-1)],0,covMat[,(d*K+idx[q]):ncol(covMat)])
+        }
+      }
+      row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
+      
+          if(object$randomB=="P"|object$randomB=="single"){
+      covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+    }else if(object$randomB=="LV"){
+      covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
+    }
+      covsB <- CMSEPf(object, return.covb = T)
+      covB = covB + covsB[row.names(covsB)=="b_lv",colnames(covsB)=="b_lv"]
+      covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda", drop=FALSE]
+      covLB <- covMat[colnames(covMat)=="lambda",colnames(covMat)=="b_lv", drop=FALSE]
+    }
+
+  }
   #all ordered by LV, so LV11 LV12 LV13 etc
   for(k in 1:K){
     for(j in 1:p){
@@ -2761,7 +2863,6 @@ RRse <- function(object){
             object$params$theta[j,q]*object$params$theta[j,r]*covB[(r-1)*K+k,(q-1)*K+k]+
             covB[(r-1)*K+k,(q-1)*K+k]*covL[(q-1)*p+j,(r-1)*p+j]+
             covLB[(r-1)*p+j,(q-1)*K+k]*covLB[(q-1)*p+j,(r-1)*K+k]
-          
         }
       }
       

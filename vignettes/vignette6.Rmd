@@ -77,9 +77,37 @@ Generally, constrained ordination can have difficulty in estimating the predicto
 RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "LV")
 RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "P")
 ```
+```{r eval=T, echo=F}
+load("RRGLMb1.RData")
+```
 where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
 
-Note: when using a random-effects formulation, there are no confidence intervals available for the canonical coefficients anymore (though also see the function `getPredictErr(.)`). This is because the variance of estimators tends to be on the low side with regularisation.
+A plot of species-specific effects can be constructed with the  `randomCoefplot` function:
+```{r}
+randomCoefplot(RRGLMb1)
+```
+
+
+When using a random-effects formulation, there are is no summary table or there are confidence intervals available for the canonical coefficients. It is possible to construct a summary table as follows:
+
+```{r eval=T, echo=T}
+# Get coefficients
+coefs<-data.frame(coef(RRGLMb1,"LvXcoef"))
+coefs$Predictor <- row.names(dat)
+
+# Wide to long
+coefsTab<-reshape(coefs, 
+        direction = "long",
+        varying = list(colnames(coefs)[1:(RRGLMb1$num.lv.c+RRGLMb1$num.RR)]),
+        v.names = "Estimate", 
+        times=colnames(coefs)[1:(RRGLMb1$num.lv.c+RRGLMb1$num.RR)], 
+        timevar = "LV",
+        new.row.names = NULL)
+# Add prediction errors
+coefsTab <- cbind(coefsTab,PE=c(getPredictErr(RRGLMb1)$b.lv))
+row.names(coefsTab)<-1:nrow(coefsTab)
+coefsTab[,-4]
+```
 
 ## Concurrent ordination
 
