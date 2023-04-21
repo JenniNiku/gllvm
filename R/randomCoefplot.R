@@ -57,7 +57,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     } else {
       sdXcoef <- t(sqrt(object$predict$Br))
     }
-    
+    sdXcoef <- sdXcoef[,which.Xcoef,drop=F]
     if (is.null(mfrow) && k > 1)
       mfrow <- c(1, k)
     if (!is.null(mfrow))
@@ -98,7 +98,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     labely <- colnames(object$y)
     m <- length(labely)
     Xc <- Xcoef
-    sdXcoef <- RRse(object)
+    sdXcoef <- RRse(object)[,which.Xcoef,drop=F]
     
     if (is.null(mfrow) && k > 1)
       mfrow <- c(1, k)

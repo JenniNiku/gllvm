@@ -2775,7 +2775,7 @@ RRse <- function(object){
       
       covL <-  covMat[colnames(covMat)=="lambda",colnames(covMat)=="lambda", drop=FALSE]
       
-      # getting cov(b,gamma) is much more difficult for  Laplace
+      # getting cov(b,gamma) is more difficult for  Laplace because we do not have the full hessian
       # the solution below goes via the jointPrecision matrix from TMB
         r <- object$TMBfn$env$random
         par = object$TMBfn$env$last.par
