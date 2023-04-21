@@ -109,6 +109,8 @@ row.names(coefsTab)<-1:nrow(coefsTab)
 coefsTab[,-4]
 ```
 
+There is a range of potential use cases for random canonical coefficients, but pragmatically, inducing some shrinkage on the predictor effects can result in more better "behaved" (fewer outliers) ordination plots. 
+
 ## Concurrent ordination
 
 Unlike in other R-packages, we can now formulate a ordination where additional random-effects are included that act like LV-level residuals (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
