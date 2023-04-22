@@ -54,6 +54,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(Ab_lv); //variational covariances for b_lv
   PARAMETER_VECTOR(zeta); // ordinal family param
   
+  PARAMETER(ePower);
   DATA_VECTOR(extra); // extra values, power of 
   DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
   DATA_INTEGER(model);// which model, basic or 4th corner
@@ -1274,6 +1275,7 @@ Type objective_function<Type>::operator() ()
   }
   
   matrix <Type> e_eta;
+  vector< matrix<Type>> D(p);
   
   if(nlvr>0){
     matrix<Type> b_lv2(x_lv.cols(),nlvr);
@@ -1320,7 +1322,6 @@ Type objective_function<Type>::operator() ()
     
     if(((quadratic>0) && (nlvr>0)) || ((quadratic>0) && (num_RR>0))){
       
-      vector< matrix<Type>> D(p);
       
       //quadratic coefficients for ordination
       //if random rows, add quadratic coefficients for num_RR to D otherwise
@@ -1447,7 +1448,7 @@ Type objective_function<Type>::operator() ()
       }
       
       // do not take this route not with quadratic model, (fixed-effect) constrained LVs and random row-effects.
-      if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
+      if((((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))) && (method == 1)){
         //quadratic model approximation
         
         //Poisson, NB, gamma, exponential
@@ -1566,7 +1567,13 @@ Type objective_function<Type>::operator() ()
     for (int i=0; i<n; i++) {
       for (int j=0; j<p;j++){
         nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
+        if(quadratic<1){
         nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
+        }else{
+          nll += ((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j))*((newlam.col(j).transpose()- 2*u.row(i)*D(j))*A(i)*A(i).transpose()*(newlam.col(j)- 2*D(j)*u.row(i).transpose())).value(); //first term
+          nll += (((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2))*((newlam.col(j).transpose()- 2*u.row(i)*D(j))*A(i)*A(i).transpose()*(newlam.col(j)- 2*D(j)*u.row(i).transpose())).value(); //second term
+          nll -= (y(i,j)+2*((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j))))*exp(eta(i,j)))*(D(j)*A(i)*A(i).transpose()).trace();//third and fourth terms
+        }
         
         // nll += gllvm::nb_Hess(y(i,j), eta(i,j), iphi(j)) * cQ(i,j);
         // nll -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));
@@ -1637,16 +1644,17 @@ Type objective_function<Type>::operator() ()
     }
     
   } else if(family==5){ // Tweedie EVA
-    Type v = extra(0);
+    //Type ePower = extra(0);
+    ePower = invlogit(ePower) + Type(1);
     for (int i=0; i<n; i++) {
       for (int j=0; j<p; j++) {
         // Tweedie log-likelihood:
-        nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), v, true);
+        nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), ePower, true);
         if (y(i,j) == 0) {
           // Hessian-trace part:
-          nll += (1/iphi(j)) * (2-v)*exp(2*eta(i,j))*exp(-v*eta(i,j)) * cQ(i,j);
+          nll += (1/iphi(j)) * (2-ePower)*exp(2*eta(i,j))*exp(-ePower*eta(i,j)) * cQ(i,j);
         } else if (y(i,j) > 0) {
-          nll -= (1/iphi(j)) * (y(i,j)*(1-v)*exp((1-v)*eta(i,j)) - (2-v)*exp((2-v)*eta(i,j))) * cQ(i,j);
+          nll -= (1/iphi(j)) * (y(i,j)*(1-ePower)*exp((1-ePower)*eta(i,j)) - (2-ePower)*exp((2-ePower)*eta(i,j))) * cQ(i,j);
         }
       }
     }
@@ -2193,9 +2201,10 @@ Type objective_function<Type>::operator() ()
       }
     }
   } else if(family==5){//tweedie familyF
+    ePower = invlogit(ePower) + Type(1);
     for (int j=0; j<p;j++){
       for (int i=0; i<n; i++) {
-        nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),extra(0), true); 
+        nll -= dtweedie(y(i,j), exp(eta(i,j)),iphi(j),ePower, true); 
       }
     }
   } else if(family==6) {//zero-infl-poisson
