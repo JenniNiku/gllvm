@@ -2796,17 +2796,16 @@ RRse <- function(object){
         Vtheta <- object$Hess$Hess.full[object$Hess$incl,object$Hess$incl]
         M2 <- cbind2(t(G), as.matrix(t(A)%*%G)+Vtheta)
         M <- rbind2(M1,M2)
-        dn <- c(names(par)[r],names(par[-r]))
+        dn <- c(names(par)[r],names(par[-r])[object$Hess$incl])
         dimnames(M) <- list(dn,dn)
-        ip <- Matrix::invPerm(c(r,(1:length(par))[-r]))
+        ip <- Matrix::invPerm(c(r,(1:length(par))[-r][object$Hess$incl]))
         jointPrecision <- M[ip,ip]
         # bottom-left block of covariance matrix via block inversion
-        incl = !row.names(jointPrecision)%in%row.names(jointPrecision)[r]
-        
+        incl = !row.names(jointPrecision)%in%c(row.names(jointPrecision)[r],names(object$TMBfn$par)[!object$Hess$incl])
         
         covMat <- -solve(as.matrix(jointPrecision[!incl,!incl]))%*%as.matrix(jointPrecision[!incl,incl])%*%object$Hess$cov.mat.mod
-        row.names(covMat) <- names(object$TMBfn$env$last.par.best)[!incl]
-        colnames(covMat) <- names(object$TMBfn$env$last.par.best)[incl]
+        row.names(covMat) <- names(object$TMBfn$env$last.par.best)[r]
+        colnames(covMat) <- names(object$TMBfn$env$last.par.best)[-r][incl]
         covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
         
         #add first column of zeros for first species
