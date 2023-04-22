@@ -213,15 +213,19 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
               formula = formula(paste(paste(formula, collapse =""), paste(colnames(index), collapse = " + "), sep = "+"))
             }
             fit.mva <- gllvm.TMB(y=y, X=cbind(X,index), formula = formula, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, method=method)
-          }
+            if(family=="tweedie")Power = fit.mva$Power
+            }
           if(is.null(X) & (num.lv+num.lv.c) > 0) {
             fit.mva <- gllvm.TMB(y=y, X=index, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, method=method)
+            if(family=="tweedie")Power = fit.mva$Power
           }
           if(!is.null(X) & (num.lv+num.lv.c) == 0) {
             fit.mva <- gllvm.TMB(y=y, X=X, formula = formula, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, method=method)
+            if(family=="tweedie")Power = fit.mva$Power
           }
           if(is.null(X) & (num.lv+num.lv.c) == 0) {
             fit.mva <- gllvm.TMB(y=y, X=NULL, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, method=method)
+            if(family=="tweedie")Power = fit.mva$Power
           }
           
         } else {
@@ -535,7 +539,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       
     }
   }
-  
+  if(family=="tweedie")out$Power = Power  
   out$phi <- phi
   out$mu <- mu
   if(!is.null(TR)) { out$B <- B}
