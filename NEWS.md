@@ -2,6 +2,7 @@ Version 1.4.2
 * Added a correction factor to the second partial derivatives of the canonical coefficients for concurrent and constrained ordination
 * Added `randomCoefPlot` functionality of constrained and concurrent ordination models with random slopes. Currently not supported for models with quadratic responses
 * `coef` now renames parameter estimates with more intuitive names and allows to subset the parameter list with names
+* Tweedie power paramater is estimated now
 
 ## Bug Fixes
 * Fixed an issue with structured row-effects in concurrent and constrained ordination
