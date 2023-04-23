@@ -904,6 +904,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         stop("Grouping variable needs to be included in 'studyDesign'")
       }
       }
+      if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
+        X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
+        if(ncol(X)==0)X<-NULL
+      }
       
       if(is.null(bar.f)) {
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
