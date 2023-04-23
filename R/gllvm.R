@@ -23,7 +23,7 @@
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
-#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated.
+#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental). 
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
@@ -443,12 +443,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$reltol.c = 1e-8
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
-      if (!("optimizer" %in% names(x))) 
-        x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")
+      if (!("optimizer" %in% names(x)))
+        if(family=="tweedie" && !is.null(Power)){
+          x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")  
+        }else{
+          # due to memory issues this scenario can fail with L-BFGS-B
+          x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"nlminb","alabama")  
+        }
         if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
-        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
+        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")){ x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"}else if((num.RR+num.lv.c)>1 && randomB == FALSE && family=="tweedie" && x$optimizer=="alabama"){x$optim.method="nlminb"}
         }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
@@ -512,7 +517,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.start <- fill_control.start(c(pp.pars, control.start))
     
   #some checks for optimizer
-    
+    if(family=="tweedie" && is.null(Power) && control$optimizer == "optim")warning("Using optimizer 'nlminb' for this model due to memory issues. \n")
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")

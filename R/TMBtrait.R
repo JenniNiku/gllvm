@@ -314,12 +314,11 @@ trait.TMB <- function(
     if(n.init > 1 && trace) cat("initial run ",n.i,"\n");
 
     #### Calculate starting values
-    if(family=="tweedie" && is.null(Power)){Power1=1.1}else{Power1=Power}
-    
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method)
+    if(is.null(fit$Power))fit$Power=1.1
     if(family=="tweedie"){
-      ePower = fit$Power
+      if(is.null(Power)){ePower = fit$Power}else{ePower=Power}
       ePower = log((ePower-1)/(1-(ePower-1)))
       if(ePower==0)ePower=ePower-0.01
     }else{ePower = 0}
