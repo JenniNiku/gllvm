@@ -443,18 +443,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$reltol.c = 1e-8
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
-      if (!("optimizer" %in% names(x)))
-        if(family=="tweedie" && !is.null(Power)){
-          x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")  
-        }else{
-          # due to memory issues this scenario can fail with L-BFGS-B
-          x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"nlminb","alabama")  
-        }
-        if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
+      if (!("optimizer" %in% names(x))) 
+        x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")
+      if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
-        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")){ x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"}else if((num.RR+num.lv.c)>1 && randomB == FALSE && family=="tweedie" && x$optimizer=="alabama"){x$optim.method="nlminb"}
-        }
+        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
+      }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
       if (!("maxit" %in% names(x))) 
@@ -517,7 +512,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.start <- fill_control.start(c(pp.pars, control.start))
     
   #some checks for optimizer
-    if(family=="tweedie" && is.null(Power) && control$optimizer == "optim")warning("Using optimizer 'nlminb' for this model due to memory issues. \n")
+
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
