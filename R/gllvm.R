@@ -23,7 +23,7 @@
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
-#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
+#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated.
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".

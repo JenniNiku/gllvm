@@ -106,6 +106,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
           coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
           fit.mva$phi <- fit.mva$params$phi
+          if(family=="tweedie")Power = fit.mva$Power
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
         } else {
@@ -158,6 +159,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
             sigma=c(max(fit.mva$params$sigma[1],sigma),fit.mva$params$sigma[-1])
             fit.mva$params$row.params <- fit.mva$params$row.params/sd(fit.mva$params$row.params)*sigma[1]
           }
+          if(family=="tweedie")Power = fit.mva$Power
+          
           out$fitstart <- list(A=fit.mva$A, Ab=fit.mva$Ab, TMBfnpar=fit.mva$TMBfn$par) #params = fit.mva$params, 
         }
         if(!is.null(form1)){

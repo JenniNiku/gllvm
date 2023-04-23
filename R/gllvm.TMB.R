@@ -238,8 +238,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       cat("Initial run ", n.i, "\n")
 
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB)
-    if(family=="tweedie"){ePower = log((Power-1)/(1-(Power-1)));if(ePower==0)ePower=ePower-0.01}else{ePower = 0}
+    if(family=="tweedie" && is.null(Power)){Power1=1.1}else{Power1=Power}
+    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power1, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB)
+    
+    if(family=="tweedie"){
+      ePower = fit$Power
+      ePower = log((ePower-1)/(1-(ePower-1)))
+      if(ePower==0)ePower=ePower-0.01
+      }else{ePower = 0}
     ## Set initial values
         sigma <- 1
     if (is.null(start.params)) {
@@ -468,6 +474,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       map.list$lg_phi <- factor(rep(NA,p))
     } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "ZIP")){
       map.list$lg_phi <- factor(disp.group)
+      if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
     }
     if(family != "ordinal") map.list$zeta <- factor(NA)
     if((num.lv.c+num.RR)==0){
@@ -844,7 +851,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist,Astruc=Astruc, NN = NN)
       
       parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta, ePower = ePower) #, scaledc=scaledc
-
+      
 #### Call makeADFun
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -852,7 +859,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
 
-#### Fit model 
+      #### Fit model 
       if((num.lv.c+num.RR)<=1|randomB!=FALSE){
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
@@ -927,7 +934,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.lv1 <- param1[nam=="sigmaLV"]
         if((num.lv+num.lv.c)>0){u1 <- matrix(param1[nam=="u"],nrow(u),num.lv+num.lv.c)}else{u1<-u}
         if(family %in% c("poisson","binomial","ordinal","exponential","tweedie","beta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
-        if(family=="tweedie")ePower = param1[nam == "ePower"]
+        if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
         if(row.eff == "random"){
@@ -1042,9 +1049,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
       }
-      if(family=="tweedie"){
+      if(family=="tweedie" && is.null(Power)){
         ePower = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
         names(ePower) = "Power"
+      }else{
+        ePower = Power
       }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
@@ -1579,9 +1588,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
         }
-        if(family=="tweedie"){
+        if(family=="tweedie" && is.null(Power)){
           ePower = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
           names(ePower) = "Power"
+        }else{
+          ePower = Power
         }
       }
       if(family %in% "betaH"){

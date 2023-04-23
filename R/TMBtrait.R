@@ -314,11 +314,15 @@ trait.TMB <- function(
     if(n.init > 1 && trace) cat("initial run ",n.i,"\n");
 
     #### Calculate starting values
-
+    if(family=="tweedie" && is.null(Power)){Power1=1.1}else{Power1=Power}
+    
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method)
-    if(family=="tweedie"){ePower = log((Power-1)/(1-(Power-1)));if(ePower==0)ePower=ePower-0.01}else{ePower = 0}
-    
+    if(family=="tweedie"){
+      ePower = fit$Power
+      ePower = log((ePower-1)/(1-(ePower-1)))
+      if(ePower==0)ePower=ePower-0.01
+    }else{ePower = 0}
     ## Set initial values
     
     if(is.null(start.params)){
@@ -574,6 +578,7 @@ trait.TMB <- function(
       map.list$lg_phi <- factor(rep(NA,p))
     }else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "ZIP")){
       map.list$lg_phi <- factor(disp.group)
+      if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
     }
     if(family != "ordinal") map.list$zeta <- factor(NA)
     if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
@@ -968,7 +973,7 @@ trait.TMB <- function(
       
       if(num.lv==0) {lambda1 <- 0; }
       if(family %in% c("poisson","binomial","ordinal","exponential","tweedie","beta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
-      if(family=="tweedie")ePower = param1[nam == "ePower"]
+      if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
       if(row.eff == "random"){
         lg_sigma1 <- param1[nam=="log_sigma"]
         lg_Ar<- param1[nam=="lg_Ar"]
@@ -1068,9 +1073,11 @@ trait.TMB <- function(
     param <- objr$env$last.par.best
     if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH")) {
       phis=exp(param[names(param)=="lg_phi"])[disp.group]
-      if(family=="tweedie"){
+      if(family=="tweedie" && is.null(Power)){
         ePower = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
         names(ePower) = "Power"
+      }else{
+        ePower = Power
       }
     }
     if(family=="ZIP") {
