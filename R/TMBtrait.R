@@ -318,10 +318,10 @@ trait.TMB <- function(
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method)
     if(is.null(fit$Power))fit$Power=1.1
     if(family=="tweedie"){
-      if(is.null(Power)){ePower = fit$Power}else{ePower=Power}
-      ePower = log((ePower-1)/(1-(ePower-1)))
+      Power = fit$Power
+      ePower = log((Power-1)/(1-(Power-1)))
       if(ePower==0)ePower=ePower-0.01
-    }else{ePower = 0}
+    }
     ## Set initial values
     
     if(is.null(start.params)){
