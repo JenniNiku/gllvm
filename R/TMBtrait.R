@@ -1075,10 +1075,8 @@ trait.TMB <- function(
     if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH")) {
       phis=exp(param[names(param)=="lg_phi"])[disp.group]
       if(family=="tweedie" && is.null(Power)){
-        ePower = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
-        names(ePower) = "Power"
-      }else{
-        ePower = Power
+        Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
+        names(Power) = "Power"
       }
     }
     if(family=="ZIP") {
@@ -1333,7 +1331,7 @@ trait.TMB <- function(
       out$row.eff <- row.eff
       out$time <- timeo
       out$start <- res
-      if(family == "tweedie"){out$Power <- ePower;}else{out$Power = Power}
+      if(family == "tweedie")out$Power = Power
       
       pars <- optr$par
       
