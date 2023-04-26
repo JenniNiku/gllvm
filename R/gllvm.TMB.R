@@ -1782,7 +1782,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
 
       if(family %in% c("binomial", "beta")) out$link <- link;
-      if(family == "tweedie") out$Power <- Power;print(Power);print(out$Power)
+      if(family == "tweedie") out$Power <- Power;
       if(family=="ordinal"){
         out$params$zeta <- zetas
       }
