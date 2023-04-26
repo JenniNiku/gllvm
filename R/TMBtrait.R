@@ -971,7 +971,7 @@ trait.TMB <- function(
       }
       
       if(num.lv==0) {lambda1 <- 0; }
-      if(family %in% c("poisson","binomial","ordinal","exponential","tweedie","beta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
+      if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
       if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
       if(row.eff == "random"){
         lg_sigma1 <- param1[nam=="log_sigma"]
