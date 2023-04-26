@@ -650,9 +650,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
           if(inherits(row.eff,"formula")){
             if(any(colnames(X)==all.vars(row.eff))){
-              lv.formula <- formula(paste("~", paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))              
+              lv.formula <- formula(paste("~", paste(colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "+")))              
             }else{
-              lv.formula <- formula(paste("~", paste("+", colnames(X), collapse = "")))
+              lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
             }
 
             if (is.data.frame(X)) {
