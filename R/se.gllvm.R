@@ -74,7 +74,7 @@ se.gllvm <- function(object, ...){
       }
 
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
-      
+      incl[names(objrFinal$par)=="ePower"] <- FALSE
       # Variational params not included for incl
 
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
@@ -335,7 +335,7 @@ se.gllvm <- function(object, ...){
     }
     
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
-    
+    incl[names(objrFinal$par)=="ePower"] <- FALSE
     # Not used for this model
     incl[names(objrFinal$par)=="B"] <- FALSE
     incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
