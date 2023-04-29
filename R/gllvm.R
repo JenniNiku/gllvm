@@ -916,7 +916,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
         stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       } else {
-        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(row.eff),data=studyDesign)
         dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
         if(corWithin){ rstruc=2} else { rstruc=1}
