@@ -1448,7 +1448,7 @@ Type objective_function<Type>::operator() ()
       }
       
       // do not take this route not with quadratic model, (fixed-effect) constrained LVs and random row-effects.
-      if((((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))) && (method == 1)){
+      if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
         //quadratic model approximation
         
         //Poisson, NB, gamma, exponential
