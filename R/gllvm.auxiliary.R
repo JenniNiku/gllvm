@@ -2810,7 +2810,7 @@ RRse <- function(object){
         # bottom-left block of covariance matrix via block inversion
         incl = !row.names(jointPrecision)%in%c(row.names(jointPrecision)[r],names(object$TMBfn$par)[!object$Hess$incl])
         
-        covMat <- -solve(as.matrix(jointPrecision[!incl,!incl]))%*%as.matrix(jointPrecision[!incl,incl])%*%object$Hess$cov.mat.mod
+        covMat <- -solve(as.matrix(jointPrecision[!incl,!incl]),as.matrix(jointPrecision[!incl,incl]))%*%object$Hess$cov.mat.mod
         row.names(covMat) <- names(object$TMBfn$env$last.par.best)[r]
         colnames(covMat) <- names(object$TMBfn$env$last.par.best)[-r][incl]
         covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
@@ -2841,7 +2841,7 @@ RRse <- function(object){
       
       # covariance of parameters via block inversion
       incl=object$Hess$incl;incld=object$Hess$incld
-      covMat <- -solve(object$Hess$Hess.full[incld,incld])%*%t(object$Hess$Hess.full[incl,incld])%*%object$Hess$cov.mat.mod
+      covMat <- -solve(object$Hess$Hess.full[incld,incld], t(object$Hess$Hess.full[incl,incld]))%*%object$Hess$cov.mat.mod
       row.names(covMat) <- names(object$TMBfn$par)[incld]
       colnames(covMat) <- names(object$TMBfn$par)[incl]
       covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]

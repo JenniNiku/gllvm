@@ -2239,7 +2239,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         B.mat <- sdr[incl, incld] # a x d
         
         try({
-          cov.mat.mod<- MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))
+          cov.mat.mod<- MASS::ginv(A.mat-B.mat%*%solve(D.mat,t(B.mat)))
           se <- sqrt(diag(abs(cov.mat.mod)))
           
           incla<-rep(FALSE, length(incl))
