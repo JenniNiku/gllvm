@@ -153,7 +153,7 @@ se.gllvm <- function(object, ...){
         A.mat <- sdr[incl,incl] # a x a
         D.mat <- sdr[incld,incld] # d x d
         B.mat <- sdr[incl,incld] # a x d
-        cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
+        cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat,t(B.mat))),silent=T) 
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- sqrt(diag(abs(cov.mat.mod)))
         
@@ -432,7 +432,7 @@ se.gllvm <- function(object, ...){
       D.mat <- sdr[incld, incld] # d x d
       B.mat <- sdr[incl, incld] # a x d
       
-      cov.mat.mod <- try({MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))})
+      cov.mat.mod <- try({MASS::ginv(A.mat-B.mat%*%solve(D.mat,t(B.mat)))})
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- sqrt(diag(abs(cov.mat.mod)))
       
