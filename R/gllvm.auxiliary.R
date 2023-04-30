@@ -2759,7 +2759,7 @@ RRse <- function(object){
     if(object$method=="LA"){
       covMat <- object$Hess$cov.mat.mod
       
-      colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par)
+      colnames(covMat) <- row.names(covMat) <- names(object$TMBfn$par)[object$Hess$incl]
       covMat <- covMat[colnames(covMat)%in%"lambda",colnames(covMat)%in%"lambda"]
       
       #add first row and column of zeros before b_lv, for first species
@@ -2808,11 +2808,18 @@ RRse <- function(object){
         ip <- Matrix::invPerm(c(r,(1:length(par))[-r][object$Hess$incl]))
         jointPrecision <- M[ip,ip]
         # bottom-left block of covariance matrix via block inversion
-        incl = !row.names(jointPrecision)%in%c(row.names(jointPrecision)[r],names(object$TMBfn$par)[!object$Hess$incl])
-        
-        covMat <- -solve(as.matrix(jointPrecision[!incl,!incl]),as.matrix(jointPrecision[!incl,incl]))%*%object$Hess$cov.mat.mod
+        incl = row.names(jointPrecision)%in%names(object$TMBfn$env$last.par.best[-r][object$Hess$incl])
+        incld = row.names(jointPrecision)[r]
+        covMat <- try(-solve(as.matrix(jointPrecision[incld,incld]),as.matrix(jointPrecision[incld,incl]))%*%object$Hess$cov.mat.mod,silent=T)
+        if(inherits(covMat,"try-error")){
+          # Via fixed-effects part of Hessian if random-effects part is singular
+          Ai <- solve(as.matrix(jointPrecision[incl,incl]))
+          B.mat <- as.matrix(jointPrecision[incld,incl])
+          D.mat <- as.matrix(jointPrecision[incld,incld])
+          covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
+        }
         row.names(covMat) <- names(object$TMBfn$env$last.par.best)[r]
-        colnames(covMat) <- names(object$TMBfn$env$last.par.best)[-r][incl]
+        colnames(covMat) <- names(object$TMBfn$env$par)[-r][object$Hess$incl]
         covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
         
         #add first column of zeros for first species
@@ -2841,7 +2848,14 @@ RRse <- function(object){
       
       # covariance of parameters via block inversion
       incl=object$Hess$incl;incld=object$Hess$incld
-      covMat <- -solve(object$Hess$Hess.full[incld,incld], t(object$Hess$Hess.full[incl,incld]))%*%object$Hess$cov.mat.mod
+      covMat <- -solve(object$Hess$Hess.full[incld,incld], object$Hess$Hess.full[incld,incl])%*%object$Hess$cov.mat.mod
+      if(inherits(covMat,"try-error")){
+        # Via fixed-effects part of Hessian if random-effects part is singular
+        Ai <- solve(object$Hess$Hess.full[incl,incl])
+        B.mat <- object$Hess$Hess.full[incld,incl]
+        D.mat <- object$Hess$Hess.full[incld,incld]
+        covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
+      }
       row.names(covMat) <- names(object$TMBfn$par)[incld]
       colnames(covMat) <- names(object$TMBfn$par)[incl]
       covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
