@@ -1668,7 +1668,12 @@ trait.TMB <- function(
         B.mat <- sdr[incl,incld] # a x d
         
         try({
-          cov.mat.mod<- MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))
+          cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+          if(inherits(cov.mat.mod,"try-error")){
+            # block inversion via inverse of fixed-effects block
+            Ai <- try(solve(A.mat),silent=T)
+            cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+          }
           se <- sqrt(diag(abs(cov.mat.mod)))
           incla<-rep(FALSE, length(incl))
           incla[names(objrFinal$par)=="u"] <- TRUE
