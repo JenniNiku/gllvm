@@ -164,6 +164,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       out$row.effects <- sqrt(object$Ar)
     }
 
+    if(object$method %in% c("EVA","VA")){
     if(length(dim(object$A))==2&(num.lv+num.lv.c+num.RR)>0){
       out$lvs <- sqrt(object$A[,1:(num.lv+num.lv.c+num.RR)+r])
     } else if((num.lv+num.lv.c+num.RR)>0){
@@ -177,6 +178,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       out$b.lv <- sdb$Ab_lv
       if(object$randomB=="P")out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
       if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
+    }
     }
   }
 

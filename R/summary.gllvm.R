@@ -11,7 +11,7 @@
 #' @param spp.intercepts option to return species intercepts, defaults to \code{FALSE}
 #' @param row.intercepts option to return row intercepts, defaults to \code{FALSE} 
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
-#' @param rotate defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
+#' @param rotate defaults to \code{TRUE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
 #' @param type to match "type" in \code{\link{ordiplot.gllvm}}
 #' @param ...	 not used.
 #'
@@ -30,9 +30,9 @@
 #'@export print.summary.gllvm 
 
 summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
-                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, rotate = FALSE, type = NULL,
+                          signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, rotate = TRUE, type = NULL,
                           ...) {
-
+  
   n <- NROW(object$y)
   p <- NCOL(object$y)
   nX <- dim(object$X)[2]
@@ -107,8 +107,8 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     cnx <- rep(colnames(object$X.design), each = ifelse(!is.null(object$TR),1,p))
     
     if(!is.null(object$params$Xcoef)){
-    rnc <- rep(rownames(object$params$Xcoef), nX)
-    newnam <- paste(cnx, rnc, sep = ":")
+      rnc <- rep(rownames(object$params$Xcoef), nX)
+      newnam <- paste(cnx, rnc, sep = ":")
     }else if(!is.null(object$X.design)){
       newnam <- colnames(object$X.design)
     }
@@ -122,13 +122,13 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
     if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
-    pars <- c(object$params$LvXcoef)
-    se <- c(object$sd$LvXcoef)
-    
-    zval <- pars/se
-    pvalue <- 2 * pnorm(-abs(zval))
-    coef.table.constrained <- cbind(pars, se, zval, pvalue)
-    dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+      pars <- c(object$params$LvXcoef)
+      se <- c(object$sd$LvXcoef)
+      
+      zval <- pars/se
+      pvalue <- 2 * pnorm(-abs(zval))
+      coef.table.constrained <- cbind(pars, se, zval, pvalue)
+      dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
       covB <- object$Hess$cov.mat.mod

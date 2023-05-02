@@ -23,7 +23,7 @@
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
-#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.
+#' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental). 
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
@@ -445,11 +445,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
         x$optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama")
-        if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
+      if((num.lv.c+num.RR)>1 && family =="tweedie") x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
         if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
-        }
+      }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 200
       if (!("maxit" %in% names(x))) 
@@ -512,7 +512,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.start <- fill_control.start(c(pp.pars, control.start))
     
   #some checks for optimizer
-    
+
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
@@ -650,9 +650,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
           if(inherits(row.eff,"formula")){
             if(any(colnames(X)==all.vars(row.eff))){
-              lv.formula <- formula(paste("~", paste("+", colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "")))              
+              lv.formula <- formula(paste("~", paste(colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "+")))              
             }else{
-              lv.formula <- formula(paste("~", paste("+", colnames(X), collapse = "")))
+              lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
             }
 
             if (is.data.frame(X)) {
@@ -904,6 +904,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         stop("Grouping variable needs to be included in 'studyDesign'")
       }
       }
+      if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
+        X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
+        if(ncol(X)==0)X<-NULL
+      }
       
       if(is.null(bar.f)) {
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
@@ -912,7 +916,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
         stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       } else {
-        if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(row.eff),data=studyDesign)
         dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
         if(corWithin){ rstruc=2} else { rstruc=1}
@@ -1237,9 +1240,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }
         
       }
+      
       if (family == "tweedie") {
         out$Power <- fitg$Power
       }
+      
       if(family == "ordinal"){
         out$zeta.struc = zeta.struc
       }
