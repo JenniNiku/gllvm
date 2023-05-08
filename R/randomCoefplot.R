@@ -46,8 +46,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     k <- length(cnames)
     if(is.null(colnames(object$y))) 
       colnames(object$y) <- paste("Y",1:NCOL(object$y), sep = "")
-    labely <- colnames(object$y)
-    m <- length(labely)
+    m <- length(ncol(object$y))
     Xc <- Xcoef
     
     if((object$method %in% c("VA", "EVA"))){
@@ -86,7 +85,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
       abline(v = 0, lty = 1)
       if (y.label)
-        axis( 2, at = At.y, labels = labely, las = 1, cex.axis = cex.ylab)
+        axis( 2, at = At.y, labels = names(Xc), las = 1, cex.axis = cex.ylab)
     }
   }else{
     if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$LvXcoef))
@@ -128,7 +127,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
       abline(v = 0, lty = 1)
       if (y.label)
-        axis( 2, at = At.y, labels = labely, las = 1, cex.axis = cex.ylab)
+        axis( 2, at = At.y, labels = names(Xc), las = 1, cex.axis = cex.ylab)
     }
   }
 }
