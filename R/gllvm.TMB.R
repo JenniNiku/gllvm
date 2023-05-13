@@ -1628,7 +1628,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(n.i>1){
       if(!is.null(objrFinal)){
         gr1 <- objrFinal$gr()
-        gr1 <- gr1/length(gr1)
+        gr1 <- as.matrix(gr1/length(gr1))
         norm.gr1 <- norm(gr1)
       }else{
         gr1 <- NaN
@@ -1636,7 +1636,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       gr2 <- objr$gr()
-      gr2 <- gr2/length(gr2)
+      gr2 <- as.matrix(gr2/length(gr2))
       norm.gr2 <- norm(gr2)
       n.i.i <- n.i.i +1
       grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
