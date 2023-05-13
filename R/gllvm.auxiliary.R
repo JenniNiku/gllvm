@@ -2263,10 +2263,10 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   if((num.lv+num.lv.c+radidx)>0&type!="marginal"){
     diag.term1 <- Matrix::chol2inv(L)
     
-    if(radidx>0&num.RR>0){
+    if(radidx>0 & num.RR>0 && random[3] == 0){
       diag.term1 <- rbind(diag.term1[1:(num.lv.c*nu+radidx),],matrix(0,nrow=num.RR*nu,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*nu+radidx)),])
       diag.term1 <- cbind(diag.term1[,1:(num.lv.c*nu+radidx)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*nu),diag.term1[,-c(1:(num.lv.c*nu+radidx))])
-    }else if(num.RR>0){
+    }else if(num.RR>0 && random[3] == 0){
       if(num.lv.c>0){
         diag.term1 <- rbind(diag.term1[1:(num.lv.c*nu),],matrix(0,nrow=num.RR*nu,ncol=ncol(diag.term1)),diag.term1[-c(1:(num.lv.c*nu)),])
         diag.term1 <- cbind(diag.term1[,1:(num.lv.c*nu)],matrix(0,nrow=nrow(diag.term1),ncol=num.RR*nu),diag.term1[,-c(1:(num.lv.c*nu))])
