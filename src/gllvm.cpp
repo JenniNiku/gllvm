@@ -33,6 +33,7 @@ Type objective_function<Type>::operator() ()
   
   //latent variables, u, are treated as parameters
   PARAMETER_MATRIX(u);
+  PARAMETER_VECTOR(lg_phiZINB);//extra param for ZINB
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
   PARAMETER_VECTOR(sigmaB); // sds for random slopes
   PARAMETER_VECTOR(sigmab_lv); // sds for random slopes constr. ord.
@@ -1451,15 +1452,15 @@ Type objective_function<Type>::operator() ()
       if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
         //quadratic model approximation
         
-        //Poisson, NB, gamma, exponential
-        if((family==0)||(family==1)||(family==4)||(family==8)){
+        //Poisson, NB, gamma, exponential,ZIP
+        if((family==0)||(family==1)||(family==4)||(family==6)||(family==8)||(family==11)){
           e_eta = matrix <Type> (n,p);
           
           int sign;
           //sign controls whether it's Poisson or other
-          if((family>0)){
+          if((family>0) && (family != 6)){
             sign = 1;
-          }else{
+          }else if((family==0)||(family==6)){
             sign = -1;
           }
           
@@ -1658,6 +1659,34 @@ Type objective_function<Type>::operator() ()
         }
       }
     }
+  } else if(family==6){ 
+    iphi = iphi/(1+iphi);
+    Type pVA;
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && ((num_RR*(1-random(2))) >0) ))){
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          if(y(i,j)>0){
+            nll -= log(1-iphi(j))+y(i,j)*eta(i,j)-exp(eta(i,j)+cQ(i,j))-lfactorial(y(i,j));
+          }else{
+            pVA = ((1-iphi(j))*exp(-exp(eta(i,j)+cQ(i,j))))/((1-iphi(j))*exp(-exp(eta(i,j)+cQ(i,j)))+iphi(j));
+            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-exp(eta(i,j)+cQ(i,j)));
+            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+          }
+        }
+      }
+    }else{
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          if(y(i,j)>0){
+            nll -= log(1-iphi(j))+y(i,j)*eta(i,j)-e_eta(i,j)-lfactorial(y(i,j));
+          }else{
+            pVA = ((1-iphi(j))*exp(-e_eta(i,j)))/((1-iphi(j))*exp(-e_eta(i,j))+iphi(j));
+            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-e_eta(i,j));
+            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+          }
+        }
+      }
+    }
   } else if((family==7) && (zetastruc == 1)){//ordinal
     int ymax =  CppAD::Integer(y.maxCoeff());
     int K = ymax - 1;
@@ -1808,10 +1837,37 @@ Type objective_function<Type>::operator() ()
         
       }
     }
-  }
-  // nll -= -0.5*(u.array()*u.array()).sum() - n*log(sigma)*random(0);// -0.5*t(u_i)*u_i
   
- 
+  }else if(family==11){ 
+    iphi = iphi/(1+iphi);
+    vector<Type> iphiZINB = exp(lg_phiZINB);
+    Type pVA;
+    if((quadratic < 1) || ( ((quadratic > 0) && ((num_lv+num_lv_c)<1) && ((num_RR*(1-random(2))) >0) ))){
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          if(y(i,j)>0){
+            nll -= log(1-iphi(j))+y(i,j)*(eta(i,j)-cQ(i,j)) - (y(i,j)+iphiZINB(j))*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(y(i,j)+iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j)) -lfactorial(y(i,j));
+          }else{
+            pVA = ((1-iphi(j))*exp(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j))))/((1-iphi(j))*exp(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j)))+iphi(j));
+            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j)));
+            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+          }
+        }
+      }
+    }else{
+      for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+          if(y(i,j)>0){
+            nll -= log(1-iphi(j))-iphiZINB(j)*eta(i,j) -(y(i,j)+iphiZINB(j))*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(y(i,j)+iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j)) -lfactorial(y(i,j));
+          }else{
+            pVA = ((1-iphi(j))*exp(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j))))/((1-iphi(j))*exp(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j)))+iphi(j));
+            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j)));
+            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+          }
+        }
+      }
+    }
+  }
   }else{
     using namespace density;
   if(random(2)>0){
@@ -2322,6 +2378,18 @@ Type objective_function<Type>::operator() ()
     }
     // REPORT(mu);
     // REPORT(etaH);
+} else if(family==11) {//zero-infl-NB
+  iphi=iphi/(1+iphi);
+  vector<Type> iphiZINB = exp(lg_phiZINB);
+  for (int j=0; j<p;j++){
+    for (int i=0; i<n; i++) {
+      if(y(i,j)>0){
+        nll -= log(Type(1)-iphi(j)) + dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - iphiZINB(j), 1);
+      }else{
+        nll -= log(iphi(j) + (Type(1)-iphi(j))*dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - iphiZINB(j), 0)); 
+      }
+    }
+  }
 }
 }
   return nll;

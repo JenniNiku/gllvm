@@ -2,7 +2,6 @@
 ## GLLVM fourth corner model, with estimation done via Laplace and Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ##########################################################################################
-
 trait.TMB <- function(
     y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson", num.lv.cor=0, corWithin = TRUE,
     Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
@@ -225,7 +224,7 @@ trait.TMB <- function(
   }
   
   
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB","gaussian", "ordinal", "gamma", "exponential", "beta", "betaH")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN")))
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
@@ -308,17 +307,17 @@ trait.TMB <- function(
     num.X <- dim(X)[2]
     num.T <- dim(TR)[2]
     phi<-phis <- NULL
+    ZINBphi <- ZINBphis <- NULL
     sigma <- 1
-    phi <- phis <- NULL;
     
     if(n.init > 1 && trace) cat("initial run ",n.i,"\n");
     
     #### Calculate starting values
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method)
-    if(is.null(fit$Power))fit$Power=1.1
+    if(is.null(res$Power))res$Power=1.1
     if(family=="tweedie"){
-      Power = fit$Power
+      Power = res$Power
       ePower = log((Power-1)/(1-(Power-1)))
       if(ePower==0)ePower=ePower-0.01
     }else{
@@ -393,7 +392,7 @@ trait.TMB <- function(
         }
         
         if(n.init > 1 && !is.null(res$mu) && starting.val == "res" && family != "tweedie") {
-          if(family=="ZIP") {
+          if(family %in% c("ZIP","ZINB")) {
             lastart <- FAstart(res$mu, family="poisson", y=y, num.lv = num.lv, jitter.var = jitter.var[1], disp.group=disp.group)
           } else {
             lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
@@ -462,13 +461,22 @@ trait.TMB <- function(
       phis <- 1/phis
       
     }
+    if (family == "ZINB") {
+      ZINBphis <- res$phi
+      if (any(ZINBphis > 100))
+        ZINBphis[ZINBphis > 100] <- 100
+      if (any(ZINBphis < 0.01))
+        ZINBphis[ZINBphis < 0.01] <- 0.01
+      res$ZINB.phi <- ZINBphis
+      ZINBphis <- 1/ZINBphis
+    }
     if(family == "tweedie") {
       phis <- res$phi; 
       if(any(phis>10)) phis[phis>10]=10; 
       if(any(phis<0.10))phis[phis<0.10]=0.10; 
       phis= (phis)
     }
-    if (family == "ZIP") {
+    if (family %in% c("ZIP","ZINB")) {
       if(length(unique(disp.group))!=p){
         phis <- (sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01)[disp.group]
       }else{
@@ -505,6 +513,12 @@ trait.TMB <- function(
       u <- vameans
     }
     if(!is.null(phis)) {phi=(phis)} else {phi <- rep(1,p)}
+    if(!is.null(ZINBphis)) {
+      ZINBphi <- ZINBphis 
+    } else { 
+      ZINBphi <- rep(1, p); 
+      res$ZINBphi <- ZINBphi
+    }
     q <- num.lv
     
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0, n)}
@@ -577,10 +591,12 @@ trait.TMB <- function(
     #    if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
     if(family %in% c("poisson","binomial","ordinal","exponential")) {
       map.list$lg_phi <- factor(rep(NA,p))
-    }else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "ZIP")){
+    }else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "ZIP","ZINB")){
       map.list$lg_phi <- factor(disp.group)
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
+      if(family=="ZINB")map.list$lg_phiZINB <- factor(disp.group)
     }
+    if(family!="ZINB")map.list$lg_phiZINB <- factor(rep(NA,p))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
     
@@ -635,8 +651,7 @@ trait.TMB <- function(
       bH <- matrix(0)
       map.list$bH = factor(NA)
     }
-    
-    
+    if(family == "ZINB"){ familyn <- 11;}
     
     # For Laplace method, specify random parameters to randomp
     randomp= NULL #c("u","r0,"Br")
@@ -828,6 +843,7 @@ trait.TMB <- function(
       map.list2$sigmaLV = factor(rep(NA, length(theta)))
       map.list2$u = factor(rep(NA, length(u)))
       map.list2$lg_phi = factor(rep(NA, length(phi)))
+      map.list2$lg_phiZINB = factor(rep(NA, length(ZINBphi)))
       map.list2$sigmaB = factor(rep(NA,length(sigmaB)))
       map.list2$sigmaij = factor(rep(NA,length(sigmaij)))
       map.list2$log_sigma = factor(rep(NA, length(sigma)))
@@ -835,7 +851,7 @@ trait.TMB <- function(
       map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
       map.list2$Abb = factor(rep(NA, length(Abb)))
       map.list2$zeta = factor(rep(NA, length(zeta)))
-      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower) #, scaledc=scaledc
+      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc
       
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN), silent=!trace,
@@ -861,7 +877,7 @@ trait.TMB <- function(
     #### Call makeADFun
     
     if((method %in% c("VA", "EVA")) && (num.lv>0 || row.eff=="random" || !is.null(randomX))){
-      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH,  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower) #, scaledc=scaledc
+      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH,  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc
       
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN), silent=!trace,
@@ -872,7 +888,7 @@ trait.TMB <- function(
     } else {
       Au=0; Abb=0; lg_Ar=0;
       map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
-      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower) #, scaledc=scaledc
+      parameter.list = list(r0=matrix(r0), b = rbind(a), bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=log(sqrt(diag(sigmaB))), sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc
       data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       if(family == "ordinal"){
         data.list$method = 0
@@ -974,6 +990,7 @@ trait.TMB <- function(
       
       if(num.lv==0) {lambda1 <- 0; }
       if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
+      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][disp.group]}else{lg_phiZINB1<-log(ZINBphi)}
       if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
       if(row.eff == "random"){
         lg_sigma1 <- param1[nam=="log_sigma"]
@@ -982,7 +999,7 @@ trait.TMB <- function(
       
       if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
       
-      parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower) #, scaledc=scaledc
+      parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc
       
       data.list = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       objr <- TMB::MakeADFun(
@@ -1032,6 +1049,7 @@ trait.TMB <- function(
       lambda2 <- abs(matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = p))
       
       if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
+      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_ZINBphi"][disp.group]}else{lg_phiZINB1<-log(ZINBphi)}
       if(row.eff == "random"){
         lg_sigma1 <- param1[nam=="log_sigma"]
         lg_Ar<- param1[nam=="lg_Ar"]
@@ -1039,7 +1057,7 @@ trait.TMB <- function(
       
       if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
       
-      parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower) #, scaledc=scaledc
+      parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=lg_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc
       
       data.list = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       objr <- TMB::MakeADFun(
@@ -1079,7 +1097,8 @@ trait.TMB <- function(
         names(Power) = "Power"
       }
     }
-    if(family=="ZIP") {
+    if(family %in% c("ZIP","ZINB")) {
+      if(family == "ZINB")phisZINB <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
       lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0=lp0
       phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
     }
@@ -1310,12 +1329,21 @@ trait.TMB <- function(
           try(names(out$params$phi) <- names(disp.group),silent=T)
         }
       }
-      if(family =="ZIP") {
+      if(family %in% c("ZIP","ZINB")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
         
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)
+        }
+        if(family =="ZINB") {
+          out$params$ZINB.inv.phi <- ZINBphis;
+          out$params$ZINB.phi <- 1/ZINBphis;
+          names(out$params$ZINB.phi) <- colnames(y);
+          if(!is.null(names(disp.group))){
+            try(names(out$params$ZINB.phi) <- names(disp.group),silent=T)
+          }
+          names(out$params$ZINB.inv.phi) <-  names(out$params$ZINB.phi)
         }
       }
       if (family == "ordinal") {
@@ -1610,6 +1638,8 @@ trait.TMB <- function(
       if(beta0com){incl[names(objrFinal$par)=="b"] <- FALSE}
       if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+      if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+      if(family!=10)incl[names(objrFinal$par)=="etaH"] <- FALSE
       
       if(num.lv>0) {
         incld[names(objrFinal$par)=="Au"] <- TRUE
@@ -1731,6 +1761,18 @@ trait.TMB <- function(
       out$sd$B <- se.B; names(out$sd$B) <- colnames(Xd)
       if(row.eff=="fixed") {out$sd$row.params <- se.row.params}
       
+      if(family %in% c("ZINB")) {
+        se.ZINB.lphis <- se[1:length(unique(disp.group))][disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*out$params$ZINB.inv.phi;
+        out$sd$ZINB.phi <- se.ZINB.lphis*out$params$ZINB.phi;
+        names(out$sd$ZINB.phi) <- colnames(y);
+        
+        if(!is.null(names(disp.group))){
+          try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
+        }
+        names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+        se <- se[-(1:length(unique(disp.group)))]
+      }
+      
       if(family %in% c("negative.binomial")) {
         se.lphis <- se[1:length(unique(disp.group))][disp.group];  out$sd$inv.phi <- se.lphis*out$params$inv.phi;
         out$sd$phi <- se.lphis*out$params$phi;
@@ -1751,7 +1793,7 @@ trait.TMB <- function(
         }
         se <- se[-(1:length(unique(disp.group)))]
       }
-      if(family %in% c("ZIP")) {
+      if(family %in% c("ZIP","ZINB")) {
         se.phis <- se[1:length(unique(disp.group))][disp.group];
         out$sd$phi <- se.phis*exp(lp0)/(1+exp(lp0))^2;#
         names(out$sd$phi) <- colnames(y);

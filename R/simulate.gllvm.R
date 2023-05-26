@@ -68,9 +68,11 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   nTot = nsim*nRows*nCols # total number of values to generate
   if(object$family=="negative.binomial")
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
+  if(object$family=="ZINB")
+    invPhis = matrix(rep(object$params$ZINB.inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="tweedie")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family %in% c("gaussian", "gamma", "beta"))
+  if(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB"))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
   if(object$family == "ordinal"){
     if(object$zeta.struc=="species"){
@@ -108,6 +110,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
                   "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
                   "ordinal" = sims,
                   "beta" = rbeta(nTot, shape1 = phis*prs, shape2 = phis*(1-prs)),
+                  "ZIP" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rpois(nTot, lambda = prs)),
+                  "ZINB" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rnbinom(nTot, size = invPhis, mu = prs)),
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))

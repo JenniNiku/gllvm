@@ -56,7 +56,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   if(!is.numeric(y))
     stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
   
-  if(family=="ZIP") family="poisson"
+  if(family=="ZIP") family="negative.binomial"
+  if(family=="ZINB") family="negative.binomial"
   if(family=="betaH") family="beta"
   
   if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta")))
