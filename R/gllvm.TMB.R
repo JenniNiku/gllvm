@@ -398,7 +398,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       phis <- fit$phi
       phis <- phis / (1 - phis)
       
-      ZINBphis <- fit$ZINBphi
+      ZINBphis <- fit$ZINB.phi
       if (any(ZINBphis > 100))
         ZINBphis[ZINBphis > 100] <- 100
       if (any(ZINBphis < 0.01))
@@ -1079,7 +1079,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       param<-objr$env$last.par.best
       if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH","ZIP","ZINB")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
-        if(family == "ZINB")phisZINB <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
+        if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
         if(family %in% c("ZIP","ZINB")) {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
@@ -1616,7 +1616,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       if(family %in% c("negative.binomial", "tweedie", "ZIP", "ZINB", "gaussian", "gamma", "beta", "betaH")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
-        if(family == "ZINB")phisZINB <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
+        if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
         if(family %in% c("ZIP","ZINB")) {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
@@ -2166,14 +2166,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       if(family %in% c("ZIP","ZINB")) {
         p0i <- names(pars)=="lg_phi"
-        p0 <- pars[p0i][disp.group]
-        p0 <- p0+runif(length(unique(disp.group)),0,0.001)[disp.group]
+        p0 <- pars[p0i]
+        p0 <- p0+runif(length(unique(disp.group)),0,0.001)
         pars[p0i] <- p0
       }
       if(family %in% c("ZINB")) {
         p0iZINB <- names(pars)=="lg_phiZINB"
-        p0ZINB <- pars[p0iZINB][disp.group]
-        p0ZINB <- p0ZINB+runif(length(unique(disp.group)),0,0.001)[disp.group]
+        p0ZINB <- pars[p0iZINB]
+        p0ZINB <- p0ZINB+runif(length(unique(disp.group)),0,0.001)
         pars[p0iZINB] <- p0ZINB
       }
       if((method %in% c("VA", "EVA"))){

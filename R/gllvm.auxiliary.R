@@ -176,7 +176,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           if(!is.null(fit.mva$coef$row.params)) row.params=fit.mva$coef$row.params
         }
         
-        
+        if(family=="ZINB")fit.mva$ZINB.phi <- fit.mva$params$ZINB.phi
         fit.mva$phi <- phi <- fit.mva$coef$phi
         ds.res <- matrix(NA, n, p)
         rownames(ds.res) <- rownames(y)

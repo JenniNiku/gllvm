@@ -469,7 +469,7 @@ trait.TMB <- function(
       phis <- res$phi
       phis <- phis / (1 - phis)
       
-      ZINBphis <- res$ZINBphi
+      ZINBphis <- res$ZINB.phi
       if (any(ZINBphis > 100))
         ZINBphis[ZINBphis > 100] <- 100
       if (any(ZINBphis < 0.01))
@@ -1106,7 +1106,7 @@ trait.TMB <- function(
       }
     }
     if(family %in% c("ZIP","ZINB")) {
-      if(family == "ZINB")phisZINB <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
+      if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
       lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0=lp0
       phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
     }
