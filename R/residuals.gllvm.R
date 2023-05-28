@@ -57,21 +57,7 @@ residuals.gllvm <- function(object, ...) {
   
   num.X <- ncol(object$X.design)
   num.T <- ncol(object$TR)
-
-  pzip <- function(y, mu, sigma)
-  {
-    pp <- NULL
-    if (y > -1) {
-      cdf <- ppois(y, lambda = mu, lower.tail = TRUE, log.p = FALSE)
-      cdf <- sigma + (1 - sigma) * cdf
-      pp <- cdf
-    }
-    if (y < 0) {
-      pp <- 0
-    }
-    pp
-  }
-
+  
   if (is.null(object$offset)) {
     offset <- matrix(0, nrow = n, ncol = p)
   } else {
@@ -171,6 +157,14 @@ residuals.gllvm <- function(object, ...) {
       if (object$family == "ZIP") {
         b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = object$params$phi[j])
         a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = object$params$phi[j]))
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "ZINB") {
+        b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = object$params$phi[j])
+        a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = object$params$phi[j]))
         u <- runif(n = 1, min = a, max = b)
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16

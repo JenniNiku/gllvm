@@ -461,8 +461,15 @@ trait.TMB <- function(
       phis <- 1/phis
       
     }
-    if (family == "ZINB") {
-      ZINBphis <- res$phi
+    if (family == "ZIP" && starting.val=="res") {
+      phis <- res$phi
+      phis <- phis / (1 - phis)
+    }
+    if (family == "ZINB" && starting.val=="res") {
+      phis <- res$phi
+      phis <- phis / (1 - phis)
+      
+      ZINBphis <- res$ZINBphi
       if (any(ZINBphis > 100))
         ZINBphis[ZINBphis > 100] <- 100
       if (any(ZINBphis < 0.01))
@@ -476,7 +483,7 @@ trait.TMB <- function(
       if(any(phis<0.10))phis[phis<0.10]=0.10; 
       phis= (phis)
     }
-    if (family %in% c("ZIP","ZINB")) {
+    if (family %in% c("ZIP","ZINB") && is.null(phis)) {
       if(length(unique(disp.group))!=p){
         phis <- (sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01)[disp.group]
       }else{
@@ -512,11 +519,11 @@ trait.TMB <- function(
       theta <- theta[lower.tri(theta, diag = F)]
       u <- vameans
     }
-    if(!is.null(phis)) {phi=(phis)} else {phi <- rep(1,p)}
+    if(!is.null(phis)) {phi=(phis)} else {phi <- rep(1,p)+runif(p,0,0.001) }
     if(!is.null(ZINBphis)) {
       ZINBphi <- ZINBphis 
     } else { 
-      ZINBphi <- rep(1, p); 
+      ZINBphi <- rep(1, p)+runif(p,0,0.001)  
       res$ZINBphi <- ZINBphi
     }
     q <- num.lv

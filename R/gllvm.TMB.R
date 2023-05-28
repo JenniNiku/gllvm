@@ -390,8 +390,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       fit$phi <- phis
       phis <- 1/phis
     }
-    if (family == "ZINB") {
-      ZINBphis <- fit$phi
+    if (family == "ZIP" && starting.val=="res") {
+      phis <- fit$phi
+      phis <- phis / (1 - phis)
+    }
+    if (family == "ZINB" && starting.val=="res") {
+      phis <- fit$phi
+      phis <- phis / (1 - phis)
+      
+      ZINBphis <- fit$ZINBphi
       if (any(ZINBphis > 100))
         ZINBphis[ZINBphis > 100] <- 100
       if (any(ZINBphis < 0.01))
@@ -407,7 +414,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         phis[phis < 0.10] <- 0.10
       phis = (phis)
     }
-    if (family %in%c("ZIP","ZINB")) {
+    if (family %in%c("ZIP","ZINB") && is.null(phis)) {
       if(length(unique(disp.group))!=p){
         phis <- sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
         phis <- phis[disp.group]
@@ -460,13 +467,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(!is.null(phis)) {
       phi <- phis 
     } else { 
-      phi <- rep(1, p); 
+      phi <- rep(1, p)+runif(p,0,0.001); 
       fit$phi <- phi
     }
     if(!is.null(ZINBphis)) {
       ZINBphi <- ZINBphis 
     } else { 
-      ZINBphi <- rep(1, p); 
+      ZINBphi <- rep(1, p)+runif(p,0,0.001) 
       fit$ZINBphi <- ZINBphi
     }
     
@@ -872,7 +879,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist,Astruc=Astruc, NN = NN)
       
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc
+      parameter.list <- list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(

@@ -56,11 +56,11 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   if(!is.numeric(y))
     stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
   
-  if(family=="ZIP") family="negative.binomial"
-  if(family=="ZINB") family="negative.binomial"
+  # if(family=="ZIP") family="poisson"
+  # if(family=="ZINB") family="negative.binomial"
   if(family=="betaH") family="beta"
   
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta","ZIP","ZINB")))
     stop("inputed family not allowed...sorry =(")
   
   if((num.lv+num.lv.c) > 0) {
@@ -107,6 +107,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
           coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
           fit.mva$phi <- fit.mva$params$phi
+          if(family=="ZINB")fit.mva$ZINB.phi <- fit.mva$params$ZINB.phi
           if(family=="tweedie")Power = fit.mva$Power
           resi <- NULL
           mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
@@ -270,9 +271,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   if(family == "negative.binomial") {
     phi <- fit.mva$phi  + 1e-5
-  } else if(family %in% c("gaussian", "gamma", "beta","tweedie")) {
+  } else if(family %in% c("gaussian", "gamma", "beta","tweedie","ZIP","ZINB")) {
     phi <- fit.mva$phi
   } else { phi <- NULL }
+  if(family == "ZINB"){
+    ZINB.phi <- fit.mva$ZINB.phi + 1e-5
+  }
   # 
   # if(family == "tweedie") {
   #   if(is.null(TR)){
@@ -544,6 +548,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     }
   }
   if(family=="tweedie")out$Power = Power  
+  if(family=="ZINB")out$ZINB.phi <- ZINB.phi
   out$phi <- phi
   out$mu <- mu
   if(!is.null(TR)) { out$B <- B}
@@ -593,7 +598,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       # gamma <- start.fit$params$theta
       #eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
       
-      if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
+      if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
         mu <- exp(eta)
       }else if(family %in% c("binomial","beta")) {
         mu <-  binomial(link = link)$linkinv(eta)
@@ -608,6 +613,22 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         
         for (i in 1:n) {
           for (j in 1:p) {
+            if (family == "ZIP") {
+              b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+              a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+              u <- runif(n = 1, min = a, max = b)
+              if(u==1) u=1-1e-16
+              if(u==0) u=1e-16
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "ZINB") {
+              b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+              a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+              u <- runif(n = 1, min = a, max = b)
+              if(u==1) u=1-1e-16
+              if(u==0) u=1e-16
+              ds.res[i, j] <- qnorm(u)
+            }
             if (family == "tweedie") {
               b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
               a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
@@ -801,7 +822,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }
   if(num.RR>0){
     #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
-    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
+    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -816,6 +837,22 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if (family == "ZIP") {
+            b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "ZINB") {
+            b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
           if (family == "tweedie") {
             b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
@@ -958,7 +995,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   
   if((num.lv.c+num.RR)>0&num.lv>0){
     # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
-    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
+    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -973,6 +1010,22 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if (family == "ZIP") {
+            b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "ZINB") {
+            b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
           if (family == "tweedie") {
             b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
@@ -1118,7 +1171,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }
   
   if(num.lv>0&(num.lv.c+num.RR)==0){
-    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
+    if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -1133,6 +1186,22 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if (family == "ZIP") {
+            b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "ZINB") {
+            b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
+            a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
           if (family == "tweedie") {
             b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = Power)
             a <- min(b,fishMod::pTweedie(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], phi = phis[j], p = Power));
@@ -3021,6 +3090,36 @@ b_lvHEcorrect <- function(Lmult,K,d){
   }
   corHE  
 }
+
+# distribution functions for ZIP andZINB
+pzip <- function(y, mu, sigma)
+{
+  pp <- NULL
+  if (y > -1) {
+    cdf <- ppois(y, lambda = mu, lower.tail = TRUE, log.p = FALSE)
+    cdf <- sigma + (1 - sigma) * cdf
+    pp <- cdf
+  }
+  if (y < 0) {
+    pp <- 0
+  }
+  pp
+}
+
+pzinb <- function(y, mu, sigma)
+{
+  pp <- NULL
+  if (y > -1) {
+    cdf <-  pnbinom(y, mu = mu, size = 1 / sigma)
+    cdf <- sigma + (1 - sigma) * cdf
+    pp <- cdf
+  }
+  if (y < 0) {
+    pp <- 0
+  }
+  pp
+}
+
 
 # function to get the derivative w.r.t. the squared constraint function
 # eval_eq_j2 <- function(x, obj, ...){
