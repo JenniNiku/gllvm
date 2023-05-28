@@ -501,6 +501,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
       if(family=="ZINB")map.list$lg_phiZINB <- factor(disp.group)
     }
+    if(family != "tweedie"){map.list$ePower = factor(NA)}
     if(family!="ZINB")map.list$lg_phiZINB <- factor(rep(NA,p))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     if((num.lv.c+num.RR)==0){

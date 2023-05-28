@@ -603,6 +603,7 @@ trait.TMB <- function(
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
       if(family=="ZINB")map.list$lg_phiZINB <- factor(disp.group)
     }
+    if(family != "tweedie"){map.list$ePower = factor(NA)}
     if(family!="ZINB")map.list$lg_phiZINB <- factor(rep(NA,p))
     if(family != "ordinal") map.list$zeta <- factor(NA)
     if(row.eff==FALSE) map.list$r0 <- factor(rep(NA,n))
