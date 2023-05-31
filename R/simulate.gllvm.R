@@ -101,7 +101,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     
     
   }
-  newDat = switch(object$family, "binomial"=rbinom(nTot, size = 1, prob = prs),
+  
+  newDat = switch(object$family, "binomial"=rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs),
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
                   "gaussian" = rnorm(nTot, mean = prs, sd = phis),

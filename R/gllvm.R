@@ -184,6 +184,7 @@
 #'  \item{num.lv}{ Number of unconstrained latent variables}
 #'  \item{num.lv.c}{ Number of latent variables in concurrent ordination}
 #'  \item{num.RR}{ Number of latent variables in constrained ordination}
+#'  \item{Ntrials}{ Number of trials in a binomial model}
 #'  \item{method}{ Method used for integration}
 #'  \item{family}{ Response distribution}
 #'  \item{row.eff}{ Type of row effect used}
@@ -1347,7 +1348,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(num.lv.c>0|num.RR>0){
         cat("Try scaling and centering your predictors before entering them into the model, if you haven't. \n")
       }
-      }
+    }
+    if(family == "binomial")out$Ntrials = fitg$Ntrials
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {
