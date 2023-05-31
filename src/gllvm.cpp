@@ -18,6 +18,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xb); // envs with random slopes
   DATA_ARRAY(dr0); // design matrix for rows, (times, n, nr)
   DATA_MATRIX(offset); //offset matrix
+  DATA_IVECTOR(Ntrials);
   
   PARAMETER_MATRIX(r0); // site/row effects
   PARAMETER_MATRIX(b); // matrix of species specific intercepts and coefs
@@ -1585,10 +1586,12 @@ Type objective_function<Type>::operator() ()
   } else if((family == 2) && (method<1)) {//binomial probit VA
     for (int i=0; i<n; i++) {
       for (int j=0; j<p;j++){
-        mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-        nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j)))) - cQ(i,j);
+      mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
+      nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(j)-y(i,j));
+      nll += cQ(i,j)*Ntrials(j);
       }
     }
+    REPORT(mu);
   } else if ((family == 2) && (method>1)) { // Binomial EVA
     if (extra(0) == 0) { // logit
       Type mu_prime;
@@ -2249,7 +2252,7 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
         } else {mu(i,j) = pnorm(eta(i,j));}
-        nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));
+        nll -= log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(Ntrials(j)-y(i,j))));
       }
     }
   } else if(family==3){//gaussian family

@@ -398,7 +398,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   lvCor = NULL, studyDesign=NULL,dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
                   row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
-                  plot = FALSE, link = "probit", 
+                  plot = FALSE, link = "probit", Ntrials = 1,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 4000, maxit = 4000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
@@ -558,7 +558,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(randomB!=FALSE&!control$TMB){
       stop("Random slopes in ordination only allows with TMB = TRUE.")
     }
-    
+    if(family == "binomial" && max(Ntrials) == 1 && !is.null(y) && max(y)>1){
+    stop("Using the binomial distribution requires setting the `Ntrials` argument.")
+    }
+    if(family == "binomial" && method == "EVA" && max(Ntrials) >1){
+      stop("Binomial distribution not yet supported with the EVA method.")
+    }
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
     # }
@@ -1161,7 +1166,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa,
             setMap = setMap, #Dthreshold=Dthreshold,
-            disp.group = disp.group
+            disp.group = disp.group,
+            Ntrials = Ntrials
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -1194,6 +1200,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             sd.errors = sd.errors,
             trace = trace,
             link = link,
+            Ntrials = Ntrials,
             n.init = n.init,
             n.init.max = n.init.max,
             restrict = restrict,

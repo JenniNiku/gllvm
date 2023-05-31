@@ -4,7 +4,8 @@ Version 1.4.2
 * `coef` now renames parameter estimates with more intuitive names and allows to subset the parameter list with names
 * Tweedie power parameter is estimated now if set to NULL in `gllvm. 
 * VA support for Zero-inflated poisson distribution
-* Zero-inflated negative.binomial distribution added
+* Zero-inflated negative-binomial distribution added
+* Binomial (Ntrials>1) support added (previously only Bernoulli)
 
 ## Bug Fixes
 * Fixed an issue with structured row-effects in concurrent and constrained ordination
