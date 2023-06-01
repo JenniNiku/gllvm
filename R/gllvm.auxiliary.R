@@ -149,7 +149,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           }
           formula=form1
         }
-        if(!TMB) fit.mva <- gllvm.VA(y, X = X, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed = seed, n.init = 1, starting.val="zero", yXT = yXT, Ntrials = Ntrials)
+        if(!TMB) fit.mva <- gllvm.VA(y, X = X, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed = seed, n.init = 1, starting.val="zero", yXT = yXT)
         if(TMB) {
           fit.mva <- try(trait.TMB(y, X = X, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
           fit.mva$method = "VA"
