@@ -31,6 +31,7 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
+  Ntrials = 1,
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -61,7 +62,7 @@ gllvm(
 
 \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).}
 
-\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code("ZINB")), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
+\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.}
 
@@ -172,6 +173,7 @@ An object of class "gllvm" includes the following components:
  \item{num.lv}{ Number of unconstrained latent variables}
  \item{num.lv.c}{ Number of latent variables in concurrent ordination}
  \item{num.RR}{ Number of latent variables in constrained ordination}
+ \item{Ntrials}{ Number of trials in a binomial model}
  \item{method}{ Method used for integration}
  \item{family}{ Response distribution}
  \item{row.eff}{ Type of row effect used}
