@@ -6,6 +6,7 @@ Version 1.4.2
 * VA support for Zero-inflated poisson distribution
 * Zero-inflated negative-binomial distribution added
 * Binomial (Ntrials>1) support added (previously only Bernoulli)
+* Now allowed to have (some) NAs in the response data
 
 ## Bug Fixes
 * Fixed an issue with structured row-effects in concurrent and constrained ordination

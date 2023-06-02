@@ -99,6 +99,7 @@ residuals.gllvm <- function(object, ...) {
   colnames(ds.res) <- colnames(y)
   for (i in 1:n) {
     for (j in 1:p) {
+      if(!is.na(object$y[i,j])){
       if (object$family == "poisson") {
         b <- ppois(as.vector(unlist(y[i, j])), mu[i, j])
         a <- min(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i, j]))
@@ -178,7 +179,6 @@ residuals.gllvm <- function(object, ...) {
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)
       }
-
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
         b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = object$Power)
@@ -229,6 +229,7 @@ residuals.gllvm <- function(object, ...) {
             ds.res[i, j] <- qnorm(u)
           }
 
+      }
       }
     }
   }

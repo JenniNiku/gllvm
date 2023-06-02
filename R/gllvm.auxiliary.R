@@ -27,7 +27,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   row.params <- rep(0, n);
   if(starting.val %in% c("res","random") && !isFALSE(row.eff) || row.eff == "random"){
-    rmeany <- rowMeans(y/matrix(Ntrials, ncol = ncol(y), nrow=nrow(y), byrow = T))
+    rmeany <- rowMeans(y/matrix(Ntrials, ncol = ncol(y), nrow=nrow(y), byrow = T), na.rm = TRUE)
     if(family=="binomial"){
       rmeany=(1e-3+0.99*rmeany)
       if(row.eff %in% c("fixed",TRUE)) {
@@ -46,7 +46,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       if(row.eff %in% c("fixed",TRUE)) {
         row.params <-  row.params <- log(rmeany)-log(rmeany[1])
       } else{
-        row.params <-  row.params <- log(rmeany)-log(mean(y))
+        row.params <-  row.params <- log(rmeany)-log(mean(y, na.rm = TRUE))
       }
     }
     if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] <- 1.5 * sign(row.params[abs(row.params)>1.5])
@@ -613,6 +613,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         
         for (i in 1:n) {
           for (j in 1:p) {
+            if(!is.na(y[i,j])){
             if (family == "ZIP") {
               b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
               a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
@@ -719,13 +720,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                 ds.res[i, j] <- qnorm(u)
               }
             }
+            }
           }
         }
         
       } else {
         ds.res <- resi
       }
-      resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+      resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
       
       if(n>p){
         fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
@@ -837,6 +839,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if(!is.na(y[i,j])){
           if (family == "ZIP") {
             b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
             a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
@@ -942,13 +945,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               ds.res[i, j] <- qnorm(u)
             }
           }
+          }
         }
       }
       
     } else {
       ds.res <- resi
     }
-    resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
   if(num.RR>0){
     
@@ -1010,6 +1014,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if(!is.na(y[i,j])){
           if (family == "ZIP") {
             b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
             a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
@@ -1115,13 +1120,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               ds.res[i, j] <- qnorm(u)
             }
           }
+          }
         }
       }
       
     } else {
       ds.res <- resi
     }
-    resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
     if(p>2 && n>2){
       if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
       
@@ -1186,6 +1192,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       for (i in 1:n) {
         for (j in 1:p) {
+          if(!is.na(y[i,j])){
           if (family == "ZIP") {
             b <- pzip(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = phis[j])
             a <- min(b,pzip(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = phis[j]))
@@ -1291,13 +1298,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               ds.res[i, j] <- qnorm(u)
             }
           }
+          }
         }
       }
       
     } else {
       ds.res <- resi
     }
-    resi <- as.matrix(ds.res); resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
     if(p>2 && n>2){
       if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
       

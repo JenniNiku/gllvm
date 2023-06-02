@@ -559,7 +559,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(randomB!=FALSE&!control$TMB){
       stop("Random slopes in ordination only allows with TMB = TRUE.")
     }
-    if(family == "binomial" && max(Ntrials) == 1 && !is.null(y) && max(y)>1){
+    if(family == "binomial" && max(Ntrials) == 1 && !is.null(y) && max(y, na.rm=TRUE)>1){
     stop("Using the binomial distribution requires setting the `Ntrials` argument.")
     }
     if(family == "binomial" && method == "EVA" && max(Ntrials) >1){
@@ -982,26 +982,26 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # indM[,1]>indM[,2]
       indM<-indM[order(indM[,2]),]
       indM<-indM[order(indM[,1]),]
-      dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]))!=0)
+      dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]))!=0, na.rm=TRUE)
       NN<-indM[dupl,]
     } else {NN=matrix(0)}
     
     if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
 
-    if(any(colSums(y)==0))
+    if(any(colSums(y, na.rm = TRUE) == 0))
       warning("There are responses full of zeros. \n");
 
     if(row.eff %in% c("fixed", "random", TRUE) ){
       if((p<2) & (rstruc == 0))
         stop("There must be at least two responses in order to include unstructured row effects. \n");
-      if(any(rowSums(y)==0))
+      if(any(rowSums(y, na.rm = TRUE)==0))
         warning("There are rows full of zeros in y. \n");
       }
     # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
     #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
     #   #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
     # }
-
+    if(any(is.na(y)))y[is.na(y)]<-NA_real_
     if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")
     }
