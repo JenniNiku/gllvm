@@ -244,7 +244,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     #### Calculate starting values
     fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
     
-    if(is.null(fit$Power))fit$Power=1.1
+    if(is.null(fit$Power) && family == "tweedie")fit$Power=1.1
     if(family=="tweedie"){
       ePower = log((fit$Power-1)/(1-(fit$Power-1)))
       if(ePower==0)ePower=ePower-0.01
@@ -478,7 +478,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       ZINBphi <- ZINBphis 
     } else { 
       ZINBphi <- rep(1, p)+runif(p,0,0.001) 
-      fit$ZINBphi <- ZINBphi
+      if(family=="ZINB")fit$ZINBphi <- ZINBphi
     }
     
     

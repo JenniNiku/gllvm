@@ -319,7 +319,7 @@ trait.TMB <- function(
     #### Calculate starting values
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials)
-    if(is.null(res$Power))res$Power=1.1
+    if(is.null(res$Power) && family == "tweedie")res$Power=1.1
     if(family=="tweedie"){
       Power = res$Power
       ePower = log((Power-1)/(1-(Power-1)))
@@ -528,7 +528,7 @@ trait.TMB <- function(
       ZINBphi <- ZINBphis 
     } else { 
       ZINBphi <- rep(1, p)+runif(p,0,0.001)  
-      res$ZINBphi <- ZINBphi
+      if(family=="ZINB")res$ZINBphi <- ZINBphi
     }
     q <- num.lv
     
