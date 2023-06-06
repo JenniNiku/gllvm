@@ -1282,7 +1282,7 @@ Type objective_function<Type>::operator() ()
   }
   
   matrix <Type> e_eta;
-  vector< matrix<Type>> D(p);
+  vector<Eigen::DiagonalMatrix<Type, Eigen::Dynamic>> D(p);
   
   if(nlvr>0){
     matrix<Type> b_lv2(x_lv.cols(),nlvr);
@@ -1339,10 +1339,9 @@ Type objective_function<Type>::operator() ()
       //num_lv_c-num_RR-num_lv however, to ensure everything on the R-side works
       if(((num_lv+num_lv_c+num_RR*random(2))>0)){
         
-        matrix <Type> Dmat(nlvr,nlvr);
-        Dmat.setZero();
         for (int j=0; j<p; j++){
-          D(j) = Dmat;
+          D(j).resize(nlvr);
+          D(j).setZero();
         }
         
         if(nlvr>(num_lv+num_lv_c+num_RR*random(2))){
