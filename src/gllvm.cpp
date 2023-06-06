@@ -1692,8 +1692,9 @@ Type objective_function<Type>::operator() ()
             pVA = ((1-iphi(j))*exp(-exp(eta(i,j)+cQ(i,j))))/(((1-iphi(j)))*exp(-exp(eta(i,j)+cQ(i,j)))+iphi(j));
             pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
             pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
-            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-exp(eta(i,j)+cQ(i,j)));
-            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+            // nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-exp(eta(i,j)+cQ(i,j)));
+            // nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+            nll -= log(iphi(j))-log(1-pVA);
           }
           }
         }
@@ -1708,8 +1709,7 @@ Type objective_function<Type>::operator() ()
             pVA = ((1-iphi(j))*exp(-e_eta(i,j)))/((1-iphi(j))*exp(-e_eta(i,j))+iphi(j));
             pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
             pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
-            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-e_eta(i,j));
-            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+            nll -= log(iphi(j))-log(1-pVA);
           }
           }
         }
@@ -1885,8 +1885,7 @@ Type objective_function<Type>::operator() ()
             pVA = ((1-iphi(j))*exp(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j))))/((1-iphi(j))*exp(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j)))+iphi(j));
             pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
             pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
-            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(- iphiZINB(j)*log(iphiZINB(j)+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB(j)) - iphiZINB(j)*cQ(i,j) + iphiZINB(j)*log(iphiZINB(j)) - lgamma(iphiZINB(j)));
-            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+            nll -= log(iphi(j))-log(1-pVA);
           }
           }
         }
@@ -1901,8 +1900,7 @@ Type objective_function<Type>::operator() ()
             pVA = ((1-iphi(j))*exp(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j))))/((1-iphi(j))*exp(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j)))+iphi(j));
             pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
             pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
-            nll -= (1-pVA)*log(iphi(j))+pVA*log(1-iphi(j))+pVA*(-iphiZINB(j)*eta(i,j) -iphiZINB(j)*log(1+iphiZINB(j)*e_eta(i,j))+ lgamma(iphiZINB(j))+ iphiZINB(j)*log(iphiZINB(j)) -lgamma(iphiZINB(j)));
-            nll += pVA*log(pVA)+(1-pVA)*log(1-pVA);
+            nll -= log(iphi(j))-log(1-pVA);
           }
           }
         }
