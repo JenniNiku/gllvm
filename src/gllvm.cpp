@@ -1574,13 +1574,7 @@ Type objective_function<Type>::operator() ()
       for (int j=0; j<p;j++){
         if(!isNA(y(i,j))){
         nll -= dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phi(j), 1);
-        if(quadratic<1){
         nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
-        }else{
-          nll += ((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j))*((newlam.col(j).transpose()- 2*u.row(i)*D(j))*A(i)*A(i).transpose()*(newlam.col(j)- 2*D(j)*u.row(i).transpose())).value(); //first term
-          nll += (((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2))*((newlam.col(j).transpose()- 2*u.row(i)*D(j))*A(i)*A(i).transpose()*(newlam.col(j)- 2*D(j)*u.row(i).transpose())).value(); //second term
-          nll -= (y(i,j)+2*((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j))))*exp(eta(i,j)))*(D(j)*A(i)*A(i).transpose()).trace();//third and fourth terms
-        }
         }
         // nll += gllvm::nb_Hess(y(i,j), eta(i,j), iphi(j)) * cQ(i,j);
         // nll -= lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) - lgamma(y(i,j)+1) + y(i,j)*eta(i,j) + iphi(j)*log(iphi(j))-(y(i,j)+iphi(j))*log(exp(eta(i,j))+iphi(j));

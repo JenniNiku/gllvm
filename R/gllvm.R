@@ -407,6 +407,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   ) {
   # Dthreshold=0,
   if(!method%in%c("LA","VA","EVA"))stop("Selected method is not supported.")
+  if(method=="EVA" && !isFALSE(quadratic))stop("The EVA method is not available for a quadratic GLLVM.")
   if(!is.null(lvCor)) warning("'lvCor' is under development, so all properties may not work properly.")
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
