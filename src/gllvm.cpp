@@ -152,6 +152,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> eta(n,p);
   eta.setZero();
   matrix<Type> lam(n,p);
+  lam.setZero();
   matrix<Type> Cu(nlvr,nlvr); 
   Cu.setZero();  
   
