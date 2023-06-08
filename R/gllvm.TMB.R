@@ -853,7 +853,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list2,
-          inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")##GLLVM
         
         if(optimizer=="nlminb") {
@@ -890,7 +889,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
-        inner.control=list(maxit = maxit), #mgcmax = 1e+200,
         DLL = "gllvm")##GLLVM
       
       #### Fit model 
@@ -1022,7 +1020,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list,
-          inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")
         
         if((num.lv.c+num.RR)<=1|randomB!=FALSE){
@@ -1283,7 +1280,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list2,
-          inner.control=list(maxit = maxit), #mgcmax = 1e+200,
           DLL = "gllvm")##GLLVM
         
         if(optimizer=="nlminb") {
@@ -1369,7 +1365,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
+        inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
       #### Fit model 
       
@@ -1451,7 +1447,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         objr <- TMB::MakeADFun(
           data = data.list, silent=!trace,
           parameters = parameter.list, map = map.list,
-          inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
+          inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")
         
         if((num.lv.c+num.RR)<=1|randomB!=FALSE){

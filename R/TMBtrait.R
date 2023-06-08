@@ -868,7 +868,7 @@ trait.TMB <- function(
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN, Ntrials = Ntrials), silent=!trace,
         parameters = parameter.list, map = map.list2,
-        inner.control=list(mgcmax = 1e+200,maxit = maxit),
+        inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
@@ -894,7 +894,7 @@ trait.TMB <- function(
       objr <- TMB::MakeADFun(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN, Ntrials = Ntrials), silent=!trace,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = maxit),
+        inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
       
     } else {
@@ -909,7 +909,7 @@ trait.TMB <- function(
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = maxit,tol10=0.01),
+        inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
     }
     
@@ -1017,7 +1017,7 @@ trait.TMB <- function(
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = 1000),
+        inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
@@ -1075,7 +1075,7 @@ trait.TMB <- function(
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
-        inner.control=list(mgcmax = 1e+200,maxit = 1000),
+        inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
