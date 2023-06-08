@@ -74,7 +74,8 @@ devtools::install_github("JenniNiku/gllvm")
 | ----------- |:------------:|:------- |:------- |
 |Counts  	    | Poisson 	   | VA/LA   |log	    |
 |             | NB    	     | VA/LA   |log		  |
-|             | ZIP       	 | LA      |log		  |
+|             | ZIP       	 | VA/LA   |log		  |
+|             | ZINB       	 | VA/LA   |log		  |
 |Binary       | Bernoulli 	 | VA/LA   |probit  |
 |             |              | LA 		 |logit   | 
 |Ordinal 	    | Ordinal  | VA      |probit  |

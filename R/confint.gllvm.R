@@ -44,17 +44,26 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$params$phi <- NULL
       object$sd$phi <- NULL
     }
+    if (object$family == "ZINB") {
+      object$params$ZINB.phi <- NULL
+      object$sd$ZINB.phi <- NULL
+    }
+    
     if (!is.null(object$params$sigmaB)) {
       object$params$sigmaB <- sqrt(diag(object$params$sigmaB))
       object$sd$corrpar <- NULL
     }
     
     
-    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "p","zeta")
+    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta")
     if(object$randomB!=FALSE){
       object$params$LvXcoef <- NULL
     }
+    
+    if(object$family=="ZINB" && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
+    
     parmincl <- parm_all[parm_all %in% names(object$params)]
+
     cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
     ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
     
@@ -170,11 +179,16 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$inv.phi), sep = ".")
     }
     
+    if(object$family == "ZINB"){
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$ZINB.inv.phi), sep = ".")
+    }
+    
     if(object$family == "tweedie"){
       s <-length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
     }
-    if(object$family == "ZIP"){
+    if(object$family %in%c("ZIP","ZINB")){
       s <- length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("p", names(object$params$p), sep = ".")
     }
@@ -186,6 +200,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       s <- length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("Shape phi", names(object$params$phi), sep = ".")
     }
+    
     rownames(M) <- rnames
   } else {
     if ("beta0" %in% parm) {

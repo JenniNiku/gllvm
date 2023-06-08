@@ -57,21 +57,7 @@ residuals.gllvm <- function(object, ...) {
   
   num.X <- ncol(object$X.design)
   num.T <- ncol(object$TR)
-
-  pzip <- function(y, mu, sigma)
-  {
-    pp <- NULL
-    if (y > -1) {
-      cdf <- ppois(y, lambda = mu, lower.tail = TRUE, log.p = FALSE)
-      cdf <- sigma + (1 - sigma) * cdf
-      pp <- cdf
-    }
-    if (y < 0) {
-      pp <- 0
-    }
-    pp
-  }
-
+  
   if (is.null(object$offset)) {
     offset <- matrix(0, nrow = n, ncol = p)
   } else {
@@ -113,6 +99,7 @@ residuals.gllvm <- function(object, ...) {
   colnames(ds.res) <- colnames(y)
   for (i in 1:n) {
     for (j in 1:p) {
+      if(!is.na(object$y[i,j])){
       if (object$family == "poisson") {
         b <- ppois(as.vector(unlist(y[i, j])), mu[i, j])
         a <- min(b,ppois(as.vector(unlist(y[i, j])) - 1, mu[i, j]))
@@ -176,6 +163,14 @@ residuals.gllvm <- function(object, ...) {
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)
       }
+      if (object$family == "ZINB") {
+        b <- pzinb(as.vector(unlist(y[i, j])), mu = mu[i, j], sigma = object$params$phi[j])
+        a <- min(b,pzinb(as.vector(unlist(y[i, j])) - 1, mu = mu[i, j], sigma = object$params$phi[j]))
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
       if (object$family == "binomial") {
         b <- pbinom(as.vector(unlist(y[i, j])), 1, mu[i, j])
         a <- min(b,pbinom(as.vector(unlist(y[i, j])) - 1, 1, mu[i, j]))
@@ -184,7 +179,6 @@ residuals.gllvm <- function(object, ...) {
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)
       }
-
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
         b <- fishMod::pTweedie(as.vector(unlist(y[i, j])), mu = mu[i, j], phi = phis[j], p = object$Power)
@@ -235,6 +229,7 @@ residuals.gllvm <- function(object, ...) {
             ds.res[i, j] <- qnorm(u)
           }
 
+      }
       }
     }
   }

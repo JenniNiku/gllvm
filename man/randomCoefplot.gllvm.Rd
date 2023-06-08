@@ -8,6 +8,7 @@
 \method{randomCoefplot}{gllvm}(
   object,
   y.label = TRUE,
+  which.Xcoef = NULL,
   cex.ylab = 0.5,
   mfrow = NULL,
   mar = c(4, 6, 2, 1),
@@ -20,6 +21,8 @@
 \item{object}{an object of class 'gllvm'.}
 
 \item{y.label}{logical, if \code{TRUE} (default) colnames of y with respect to coefficients are added to plot.}
+
+\item{which.Xcoef}{fector indicating which covariate coefficients will be plotted. Can be vector of covariate names or numbers. Default is NULL when all covariate coefficients are plotted.}
 
 \item{cex.ylab}{the magnification to be used for axis annotation relative to the current setting of cex.}
 
@@ -52,5 +55,5 @@ randomCoefplot(fitF)
 
 }
 \author{
-Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui, Sara Taskinen
+Jenni Niku <jenni.m.e.niku@jyu.fi>, Francis K.C. Hui, Bert van der Veen, Sara Taskinen,
 }
