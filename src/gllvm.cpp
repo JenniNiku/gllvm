@@ -377,9 +377,9 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<n; i++){
       Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
       Adiag = Atemp.diagonal();
-      if(nlvr == (num_lv+num_lv_c)) nll -= Adiag.abs().log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
+      if(nlvr == (num_lv+num_lv_c)) nll -= Adiag.log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
       if(nlvr>(num_lv+num_lv_c)) {
-        nll -= Adiag.abs().log().sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
+        nll -= Adiag.log().sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
       }
       
       // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
@@ -452,9 +452,9 @@ Type objective_function<Type>::operator() ()
     for(int klv=0; klv<sbl3; klv++){
       AB_lvDiag = AB_lv(klv).diagonal();
       Sigmab_lvDiag = Sigmab_lv(klv).diagonal();
-      if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      if(sbl3==Klv) nll -= (AB_lvDiag.abs().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-      nll -= 0.5*(sbl12-Sigmab_lvDiag.abs().log().sum());
+      if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lvDiag.log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      if(sbl3==Klv) nll -= (AB_lvDiag.log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      nll -= 0.5*(sbl12-Sigmab_lvDiag.log().sum());
     }
     
     //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
@@ -650,7 +650,7 @@ Type objective_function<Type>::operator() ()
         cQ(i,j) += 0.5*((xb.row(i))*Ab(j)*Ab(j).transpose()*xb.row(i).transpose()).sum();
       }
       AbDiag = Ab(j).diagonal();
-      nll -= (AbDiag.log().abs().sum() - 0.5*(SI*Ab(j)*Ab(j).transpose()).trace()-0.5*(Br.col(j).transpose()*SI*Br.col(j)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+      nll -= (AbDiag.log().sum() - 0.5*(SI*Ab(j)*Ab(j).transpose()).trace()-0.5*(Br.col(j).transpose()*SI*Br.col(j)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
     }
     eta += xb*Br;
     nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
@@ -770,7 +770,7 @@ Type objective_function<Type>::operator() ()
         }
         ArmDiag = Arm.diagonal();
         SRI = atomic::matinv(Sr);
-        nll -= ArmDiag.log().abs().sum()- 0.5*((SRI*(Arm*Arm.transpose())).trace()-(r0.transpose()*(SRI*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
+        nll -= ArmDiag.log().sum()- 0.5*((SRI*(Arm*Arm.transpose())).trace()-(r0.transpose()*(SRI*r0)).sum());// /(n*p)log(det(Ar_i))-sum(trace(Sr^(-1)Ar_i))*0.5 + ar_i*(Sr^(-1))*ar_i
         
         nll -= 0.5*(nr-log(Sr.determinant()));
       }
@@ -1504,7 +1504,7 @@ Type objective_function<Type>::operator() ()
               
               //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
               BiQL = BiQ.llt().matrixL();
-              logdetC = BiQL.diagonal().array().abs().log().sum();
+              logdetC = BiQL.diagonal().array().log().sum();
               e_eta(i,j) = exp(-sign*(eta(i,j) + cQ(i,j)) + 0.5*(vBinvv)+logdetC);
               
             }
