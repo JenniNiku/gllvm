@@ -3155,3 +3155,25 @@ pzinb <- function(y, mu, sigma)
 #   jacob <- cbind(matrix(0,nrow=nc,ncol=which(names(obj$par)=="b_lv")[1]-1),jacob.B,matrix(0,nrow=nc,ncol=length(x)-tail(which(names(obj$par)=="b_lv"),1)))
 #   return(jacob)
 # }
+
+# function adapted from utils package to re-order gllvm's parameters and/or standard errors
+relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton")) 
+{
+  ind <- 1L
+  nam = unique(names(flesh))
+  skeleton <- result <- skeleton[nam]
+  for (i in nam) {
+    skel_i <- result[[i]]
+    size <- length(unlist(skel_i))
+    if(is.matrix(skel_i)){
+      result[[i]] <- relist.matrix.gllvm(flesh[seq.int(ind, length.out = size)], 
+                                         skel_i)
+    }else{
+      result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
+                            skel_i)
+    }
+    
+    ind <- ind + size
+  }
+  result
+}

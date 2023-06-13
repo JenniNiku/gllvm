@@ -1100,7 +1100,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
         method = method, family = family, row.eff = row.eff, rstruc =rstruc, corP=list(cstruc = cstruc, corWithin=corWithin, Astruc=0), dist=dist, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
@@ -1169,7 +1169,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            Ntrials = Ntrials
+            Ntrials = Ntrials,
+            out = out
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -1221,7 +1222,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa,
             setMap=setMap, #Dthreshold=Dthreshold,
-            disp.group = disp.group
+            disp.group = disp.group, 
+            out = out
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula
@@ -1234,7 +1236,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$X.design <- fitg$X.design
       out$TMBfn = fitg$TMBfn
       out$logL <- fitg$logL
-      out$randomB = randomB
       if (num.lv|num.lv.c > 0)
         out$lvs <- fitg$lvs
       # out$X <- fitg$X
