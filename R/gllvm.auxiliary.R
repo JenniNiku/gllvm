@@ -3165,13 +3165,8 @@ relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton"))
   for (i in nam) {
     skel_i <- result[[i]]
     size <- length(unlist(skel_i))
-    if(is.matrix(skel_i)){
-      result[[i]] <- relist.matrix.gllvm(flesh[seq.int(ind, length.out = size)], 
-                                         skel_i)
-    }else{
-      result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
+    result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
                             skel_i)
-    }
     
     ind <- ind + size
   }
