@@ -402,7 +402,7 @@ Type objective_function<Type>::operator() ()
     
   }
   //random slopes for constr. ord.
-  vector<matrix<Type>> Ab_lvcov;  //covariance placeholder
+  vector<matrix<Type>> Ab_lvcov;  //covariance of LVs due to random slopes
   if((random(2)>0) && ((num_RR+num_lv_c)>0)){
     // Variational covariance for random slopes
     vector<matrix<Type>> AB_lv(sbl3);
@@ -472,7 +472,7 @@ Type objective_function<Type>::operator() ()
       }
       if(quadratic<1){
       eta += x_lv*b_lv*RRgamma;//for the quadratic model this component is added below
-        REPORT(RRgamma);
+        
       }if(quadratic>0){
       //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
       //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
@@ -503,9 +503,13 @@ Type objective_function<Type>::operator() ()
       u.rightCols(num_RR) += x_lv*b_lv.rightCols(num_RR);
     }
     
-    //rebuild Ab_lvcov to fit A
+    if((nlvr-num_RR-num_lv_c)>0){
+    //rebuild Ab_lvcov to fit A below
     matrix<Type> tempRR(num_RR,num_RR);
     matrix<Type> tempCN(num_lv_c,num_lv_c);
+    matrix<Type> tempRRCN(num_RR,num_lv_c);
+    
+    vector<matrix<Type>>Ab_lvcov2 = Ab_lvcov;
     for(int i=0; i<n; i++){
       if(num_RR>0){
         tempRR = Ab_lvcov(i).bottomRightCorner(num_RR,num_RR);
@@ -513,20 +517,32 @@ Type objective_function<Type>::operator() ()
       if(num_lv_c>0){
         tempCN = Ab_lvcov(i).topLeftCorner(num_lv_c,num_lv_c);
       }
+      if((num_RR+num_lv_c)>0){
+        tempRRCN = Ab_lvcov(i).bottomLeftCorner(num_RR,num_lv_c);
+      }
       //resize to fit A
       Ab_lvcov(i).conservativeResize(nlvr,nlvr);
       Ab_lvcov(i).setZero();
+      
       //re-assign
       //place num_RR in back
-      Ab_lvcov(i).bottomRightCorner(num_RR,num_RR) = tempRR;
+      if(num_RR>0){
+        Ab_lvcov(i).bottomRightCorner(num_RR,num_RR) = tempRR;
+      }
       //num_lv_c is in front, but after a potential intercept
-      if((random(0)==0) || (random(0) == 1) && n!=nr){
+      if((num_lv_c)>0 && ((random(0)==0) || (random(0) == 1) && n!=nr)){
         Ab_lvcov(i).topLeftCorner(num_lv_c,num_lv_c) = tempCN;
-      }else{
+      }else if(num_lv_c>0){
         Ab_lvcov(i).block(1,1,num_lv_c,num_lv_c) = tempCN;
       }
+      //assign covariances of random slopes. There is no covariance if slb3==num_lv_c+num_RR
+      if((num_RR>0)&&(num_lv_c>0)&&(sbl3 == Klv)){
+        Ab_lvcov(i).block(nlvr-num_RR,nlvr-num_lv_c-num_RR-num_lv,num_RR,num_lv_c) = tempRRCN;
+        Ab_lvcov(i).block(nlvr-num_lv_c-num_RR-num_lv,nlvr-num_RR,num_lv_c,num_RR) = tempRRCN.transpose();
+      }
+      
+      }
     }
-    REPORT(Ab_lvcov);
     }
   }
   
@@ -635,7 +651,8 @@ Type objective_function<Type>::operator() ()
   
   
   // Structured Row/Site effects
-  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c))) && (rstruc>0)){
+  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c+num_RR*random(2)))) && (rstruc>0)){
+    
     // Group specific random row effects:
     if(rstruc == 1){
       if(cstruc==0){
