@@ -971,7 +971,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
         }
         
-        sigma.lv1 <- param1[nam=="sigmaLV"]
+        if((num.lv+num.lv.c)>0){sigma.lv1 <- param1[nam=="sigmaLV"]}else{sigma.lv1<-0}
         if((num.lv+num.lv.c)>0){u1 <- matrix(param1[nam=="u"],nrow(u),num.lv+num.lv.c)}else{u1<-u}
         if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
         if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][disp.group]}else{lg_phiZINB1<-log(ZINBphi)}
