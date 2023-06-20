@@ -651,7 +651,7 @@ Type objective_function<Type>::operator() ()
   
   
   // Structured Row/Site effects
-  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c+num_RR*random(2)))) && (rstruc>0)){
+  if(((random(0)>0) && (nlvr==(num_lv+num_lv_c+num_RR*random(2)*quadratic))) && (rstruc>0)){
     
     // Group specific random row effects:
     if(rstruc == 1){
