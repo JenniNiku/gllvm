@@ -9,7 +9,7 @@ trait.TMB <- function(
     link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, rstruc =0, cstruc = "diag", dist = matrix(0),  scalmax=10, MaternKappa = 1.5,
     starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0, dependent.row = FALSE,
     Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE,
-    zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL, Ntrials = 1, out = NULL) {
+    zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL, Ntrials = 1) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
   
@@ -259,18 +259,8 @@ trait.TMB <- function(
   if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
   
-  if(is.null(out)){
-    out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
-  }else{
-    out$X = X1
-    out$TR = TR1
-    out$randomX = randomX
-    out$logL = Inf
-    out$X.design = Xd
-    terms = term
-    out$zeta.struc = zeta.struc
-    out$TMB = TRUE
-  }
+  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
+
 
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   
@@ -675,7 +665,7 @@ trait.TMB <- function(
       bH <- matrix(0)
       map.list$bH = factor(NA)
     }
-    if((num.lv+num.lv.c)==0)map.list$sigmaLV = factor(NA)
+    if(num.lv==0)map.list$sigmaLV = factor(NA)
     if(family == "ZINB"){ familyn <- 11;}
     
     # For Laplace method, specify random parameters to randomp
@@ -1626,15 +1616,7 @@ trait.TMB <- function(
   #     out$logL <- out$logL - n*p*log(pi)/2
   #   }
   # }
-  
-  #### Try to calculate sd errors
-  if(sd.errors && !is.infinite(out$logL)){
-    ses <- se.gllvm(out)
-    out$sd <- ses$sd
-    out$Hess <- ses$Hess
-  }
-  
-  
+
   return(out)
 }
 

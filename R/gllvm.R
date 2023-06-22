@@ -1169,8 +1169,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            Ntrials = Ntrials,
-            out = out
+            Ntrials = Ntrials
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -1222,8 +1221,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa,
             setMap=setMap, #Dthreshold=Dthreshold,
-            disp.group = disp.group, 
-            out = out
+            disp.group = disp.group
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula
@@ -1241,14 +1239,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # out$X <- fitg$X
       
       out$params <- fitg$params
-      if (sd.errors) {
-        out$sd <- fitg$sd
-        if(!is.null(fitg$sd)&(num.lv.c+num.lv)>0|!is.null(fitg$sd)&row.eff=="random"){
-          if(!is.finite(determinant(fitg$Hess$cov.mat.mod)$modulus)){
+      
+      #### Try to calculate sd errors
+      if (!is.infinite(out$logL) && sd.errors) {
+          ses <- se.gllvm(out)
+          out$sd <- ses$sd
+          out$Hess <- ses$Hess
+        if(!is.null(out$sd)&(num.lv.c+num.lv)>0|!is.null(out$sd)&row.eff=="random"){
+          if(!is.finite(determinant(out$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
         }
-        
       }
       
       if (family == "tweedie") {
