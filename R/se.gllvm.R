@@ -181,7 +181,7 @@ se.gllvm <- function(object, ...){
         se.sigma.lv <- se$sigmaLV[1:num.lv]
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
-        rownames(se.lambdas) <- colnames(out$y)
+        rownames(se.lambdas) <- colnames(object$y)
         out$sd$theta <- se.lambdas; 
         
         if(quadratic==TRUE){
@@ -511,7 +511,7 @@ se.gllvm <- function(object, ...){
     }else if(num.lv==0&(num.lv.c+num.RR)>0){
       se.lambdas <- matrix(0,p,(num.lv.c+num.RR)); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
       colnames(se.lambdas) <- paste("CLV", 1:(num.lv.c+num.RR), sep="");
-      rownames(se.lambdas) <- colnames(out$y)
+      rownames(se.lambdas) <- colnames(object$y)
       out$sd$theta <- se.lambdas; se$lambda <- se$lambda[-(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
       
       if(quadratic==TRUE){
@@ -533,7 +533,7 @@ se.gllvm <- function(object, ...){
       se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas)][lower.tri(se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
       if(((p * num.lv - sum(0:num.lv))>0) && (num.lv.c + num.RR)>0) se$lambda <- se$lambda[-c(1:(p * num.lv - sum(0:num.lv)))]
       colnames(se.lambdas) <- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("LV", 1:num.lv, sep=""));
-      rownames(se.lambdas) <- colnames(out$y)
+      rownames(se.lambdas) <- colnames(object$y)
       out$sd$theta <- se.lambdas;
       
       if(quadratic==TRUE){
