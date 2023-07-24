@@ -1245,6 +1245,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           ses <- se.gllvm(out)
           out$sd <- ses$sd
           out$Hess <- ses$Hess
+          out$prediction.errors <- ses$prediction.errors
         if(!is.null(out$sd)&(num.lv.c+num.lv)>0|!is.null(out$sd)&row.eff=="random"){
           if(!is.finite(determinant(out$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
@@ -1414,8 +1415,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }else if(TMB & family == "ordinal"){
       out$zeta.struc = fitg$zeta.struc
     }
-    out$Hess = fitg$Hess
-    out$prediction.errors = fitg$prediction.errors
+
     out$call <- match.call()
     if(quadratic == FALSE){
       class(out) <- "gllvm"  
