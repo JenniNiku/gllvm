@@ -5,6 +5,7 @@
 #'
 #' @param object an object of class 'gllvm'
 #' @param x a summary object
+#' @param by By = "all" (default) will return a Wald statistics per predictor and LV if the ordination includes predictors, by = "terms" will return a multivariate Wald statistic per predictor (displayed at first LV), and by = "LV" will do the same but per dimension (displayed at first predictors).
 #' @param digits the number of significant digits to use when printing
 #' @param signif.stars If \code{TRUE}, significance stars are printed for each coefficient, defaults to \code{TRUE}
 #' @param dispersion option to return dispersion parameters, defaults to \code{FALSE}
@@ -29,7 +30,7 @@
 #'@export
 #'@export print.summary.gllvm 
 
-summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
+summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits") - 3L),
                           signif.stars = getOption("show.signif.stars"), dispersion = FALSE, spp.intercepts = FALSE, row.intercepts = FALSE, Lvcoefs = FALSE, rotate = TRUE, type = NULL,
                           ...) {
   
@@ -43,6 +44,7 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
   quadratic <- object$quadratic
   family <- object$family
   
+  if(!by%in%c("all","terms","LV"))stop("'by' must be one of 'all', 'terms', or 'LV'.")
   #calculate rotation matrix
   if(rotate && (num.lv+num.lv.c+num.RR)>1){
     lv <- getLV(object, type = type)
@@ -124,28 +126,89 @@ summary.gllvm <- function(object, digits = max(3L, getOption("digits") - 3L),
     if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
       pars <- c(object$params$LvXcoef)
       se <- c(object$sd$LvXcoef)
-      
+      zval <- pvalue <- rep(NA,length(pars))
+      if(by=="all"){
       zval <- pars/se
       pvalue <- 2 * pnorm(-abs(zval))
       coef.table.constrained <- cbind(pars, se, zval, pvalue)
       dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+      }else if(by=="terms"){
+        covB <- object$Hess$cov.mat.mod
+        colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
+        covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+        for(i in 1:ncol(object$lv.X)){
+          idx <- seq(i,ncol(object$lv.X)*(object$num.lv.c+object$num.RR),ncol(object$lv.X))
+          b <- object$params$LvXcoef[i,]
+          zval[i] <- b%*%MASS::ginv(covB[idx,idx])%*%b
+          pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
+        }
+        coef.table.constrained <- cbind(pars, se, zval, pvalue)
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+      }else if(by=="LV"){
+        covB <- object$Hess$cov.mat.mod
+        colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
+        covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+        for(i in 1:(object$num.RR+object$num.lv.c)){
+          b <- object$params$LvXcoef[,i]
+          zval[1+ncol(object$lv.X)*(i-1)] <- b%*%MASS::ginv(covB[(1:ncol(object$lv.X))+ncol(object$lv.X)*(i-1),(1:ncol(object$lv.X))+ncol(object$lv.X)*(i-1)])%*%b
+          pvalue[1+ncol(object$lv.X)*(i-1)] <- 1-pchisq(zval[1+ncol(object$lv.X)*(i-1)],ncol(object$lv.X))
+        }
+        coef.table.constrained <- cbind(pars, se, zval, pvalue)
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+      }
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
+      pars <- c(LVcoef)
       covB <- object$Hess$cov.mat.mod
       colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
       covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv", drop=FALSE]
+      zval <- pvalue <- rep(NA,length(pars))
       rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
       for(i in 1:ncol(object$lv.X)){
         rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
       }
-      pars <- c(LVcoef)
       se <- c(rotSD)
-      
-      zval <- pars/se
-      pvalue <- 2 * pnorm(-abs(zval))
-      coef.table.constrained <- cbind(pars, se, zval, pvalue)
-      dimnames(coef.table.constrained) <- list(paste(rep(colnames(object$lv.X),2),"(LV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
-    }
+      if(by=="all"){
+        pars <- c(LVcoef)
+        zval <- pars/se
+        pvalue <- 2 * pnorm(-abs(zval))
+        coef.table.constrained <- cbind(pars, se, zval, pvalue)
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+      }else if(by=="terms"){
+        # This test is invariant to rotation, but the rotation matrix is included for posterity
+        for(i in 1:ncol(object$lv.X)){
+          idx <- seq(i,ncol(object$lv.X)*(object$num.lv.c+object$num.RR),ncol(object$lv.X))
+          b <- LVcoef[i,]
+          zval[i] <- b%*%MASS::ginv(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[idx,idx]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%b
+          pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
+        }
+        coef.table.constrained <- cbind(pars, se, zval, pvalue)
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+      }else if(by=="LV"){
+        covB <- object$Hess$cov.mat.mod
+        colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
+        covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
+
+        for(q in 1:(object$num.RR+object$num.lv.c)){
+         # Rotated cov matrix for the qth LV
+          covBnew <- matrix(0,ncol=ncol(object$lv.X),nrow=ncol(object$lv.X))        
+        for(k in 1:ncol(object$lv.X)){
+          for(k2 in 1:ncol(object$lv.X)){
+            for(q2 in 1:(object$num.RR+object$num.lv.c)){
+              for(q3 in 1:(object$num.RR+object$num.lv.c)){
+                covBnew[k,k2] <- covBnew[k,k2]+svd_rotmat_sites[1:(object$num.RR+object$num.lv.c),1:(object$num.RR+object$num.lv.c)][q2,q]*svd_rotmat_sites[1:(object$num.RR+object$num.lv.c),1:(object$num.RR+object$num.lv.c)][q3,q]*covB[(object$num.RR+object$num.lv.c)*(k-1)+q2,(object$num.RR+object$num.lv.c)*(k2-1)+q3]
+              }
+            }
+          }
+        }
+          b <- LVcoef[,q]
+          zval[1+ncol(object$lv.X)*(q-1)] <- b%*%solve(covBnew)%*%b
+          pvalue[1+ncol(object$lv.X)*(q-1)] <- 1-pchisq(zval[1+ncol(object$lv.X)*(q-1)],ncol(object$lv.X))
+        }
+        coef.table.constrained <- cbind(pars, se, zval, pvalue)
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+        }
+      }
   }else{
     coef.table.constrained <- NULL
   }
@@ -268,7 +331,7 @@ print.summary.gllvm <- function (x, ...)
     coefs <- x$Coef.tableLV
     
     printCoefmat(coefs, digits = x$digits, signif.stars = x$signif.stars, 
-                 na.print = "NA")
+                 na.print = "")
   }
   if(x$spp.intercepts){
     cat("\n Species Intercepts: \n")

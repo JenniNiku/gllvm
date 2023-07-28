@@ -1,6 +1,7 @@
 Version 1.4.2
 * Added a correction factor to the second partial derivatives of the canonical coefficients for concurrent and constrained ordination
 * Added `randomCoefPlot` functionality of constrained and concurrent ordination models with random slopes. Currently not supported for models with quadratic responses
+* Summary now provides the possibility to calculate wald statistics across LVs or predictors for concurrnet and constrained ordination
 * `coef` now renames parameter estimates with more intuitive names and allows to subset the parameter list with names
 * Tweedie power parameter is estimated now if set to NULL in `gllvm. 
 * VA support for Zero-inflated poisson distribution

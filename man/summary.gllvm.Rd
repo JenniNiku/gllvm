@@ -7,6 +7,7 @@
 \usage{
 \method{summary}{gllvm}(
   object,
+  by = "all",
   digits = max(3L, getOption("digits") - 3L),
   signif.stars = getOption("show.signif.stars"),
   dispersion = FALSE,
@@ -22,6 +23,8 @@
 }
 \arguments{
 \item{object}{an object of class 'gllvm'}
+
+\item{by}{By = "all" (default) will return a Wald statistics per predictor and LV if the ordination includes predictors, by = "terms" will return a multivariate Wald statistic per predictor (displayed at first LV), and by = "LV" will do the same but per dimension (displayed at first predictors).}
 
 \item{digits}{the number of significant digits to use when printing}
 
