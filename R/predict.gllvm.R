@@ -303,9 +303,6 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   
   if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0)) {
-    if(!is.null(object$params$row.params)){
-      if(length(object$params$row.params)!=n) object$params$row.params = c(object$TMBfn$env$data$dr0%*%object$params$row.params) # !!!
-    }
     if(nrow(eta) == length(object$params$row.params)){
     r0 <- object$params$row.params
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0

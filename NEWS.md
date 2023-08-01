@@ -16,6 +16,7 @@ Version 1.4.2
 * Species names were in the original order with order = TRUE in RandomCoefPlot
 * Fixed an issue that arose when {0,1} bounded parameters reached the bounds
 * Various bug fixes for constrained/concurrent ordination with random intercepts and random slopes
+* Bug in predictions with structured row intercepts was fixed, see issue #86
 
 Version 1.4.1
 * Computational stability of random slopes for constr. and concr. ordination significantly improved
