@@ -71,23 +71,11 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (is.null(object$TR)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
-    if(object$family=="betaH"){
-      betaHX <- object$params$betaH[,colnames(object$params$betaH) %in% colnames(object$params$Xcoef), drop=FALSE]
-      betaHX <- betaHX[, which.Xcoef, drop=FALSE]
-      rownames(betaHX) <- paste("betaH",rownames(betaHX), sep = ":")
-      sdbetaHX <- object$sd$betaH[,colnames(object$params$betaH) %in% colnames(object$params$Xcoef), drop=FALSE]
-      sdbetaHX <- sdbetaHX[, which.Xcoef, drop=FALSE]
       Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
       sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef, drop=FALSE])
-      Xcoef<-rbind(Xcoef,betaHX)
-      sdXcoef <-rbind(sdXcoef,sdbetaHX)
       
-    } else {
-      Xcoef <- (object$params$Xcoef[, which.Xcoef, drop=FALSE])
-      sdXcoef <- as.matrix(object$sd$Xcoef[, which.Xcoef, drop=FALSE])
-    }
     # cnames <- colnames(object$params$Xcoef)[which.Xcoef]
-    Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=FALSE])
+    # Xcoef <- as.matrix(object$params$Xcoef[, which.Xcoef,drop=FALSE])
     cnames <- colnames(Xcoef)
 
     k <- length(cnames)
