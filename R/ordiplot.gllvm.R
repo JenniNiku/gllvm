@@ -344,7 +344,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             if(type!="marginal"&num.RR==0) A <- object$A
           } else {A<-object$A}
           
-          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diag_unstructured","NN_unstructured","unstructured_unstructured"))) { #Not used at the moment, under development
+          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) { #Not used at the moment, under development
             A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
             for (i in 1:dim(A)[1]) {
               A[i,,]<-A[i,,]*object$AQ
@@ -473,7 +473,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             # A <- array(0,dim=c(Nlv,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
             # A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
           # } else 
-          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diag_unstructured","NN_unstructured","unstructured_unstructured"))) {#Not used at the moment, under development
+          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) {#Not used at the moment, under development
             A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
             for (i in 1:dim(A)[1]) {
               A[i,,]<-A[i,,]*object$AQ
