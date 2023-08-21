@@ -80,7 +80,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     formula <- NULL
   }
   if (object$row.eff != FALSE) {
-    if (length(object$params$row.params) != nrow(object$y)) 
+    if(!is.null(newX) & length(all.vars(object$call$row.eff))){
+      if(all.vars(object$call$row.eff) %in% colnames(newX)) {
+        
+      }
+    } else if ((length(object$params$row.params) != nrow(object$y)) & is.null(newX)) 
       object$params$row.params = c(object$TMBfn$env$data$dr0 %*% 
                                      object$params$row.params)
   }
@@ -302,7 +306,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   
-  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0)) {
+  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0) & is.null(newX)) {
     if(!is.null(object$params$row.params)){
       if(length(object$params$row.params)!=n) object$params$row.params = c(object$TMBfn$env$data$dr0%*%object$params$row.params) # !!!
     }
@@ -327,8 +331,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
-  if (object$family == "binomial" || object$family == 
-      "beta") 
+  if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta")) 
     ilinkfun <- binomial(link = object$link)$linkinv
   if (object$family == "ordinal") 
     ilinkfun <- pnorm
