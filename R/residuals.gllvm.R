@@ -78,20 +78,25 @@ residuals.gllvm <- function(object, ...) {
     offset <- object$offset
   }
 
-  eta.mat <- matrix(object$params$beta0, n, p, byrow = TRUE) + offset
-  if (!is.null(object$X) && is.null(object$TR))
-    eta.mat <- eta.mat + (object$X.design %*% matrix(t(object$params$Xcoef), num.X, p))
-  if (!is.null(object$TR))
-    eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , n, p)
-  if (object$row.eff != FALSE)
-    eta.mat <- eta.mat + matrix(object$params$row.params, n, p, byrow = FALSE)
-  if (num.lv > 0|num.lv.c>0|num.RR>0){
-  lvs <- getLV(object)
-  if(nrow(lvs)!=n) lvs = object$TMBfn$env$data$dr0%*%lvs # !!!
-  if(num.lv>0){
-  lvs[,grepl("^LV",colnames(object$lvs))] <- t(t(lvs[,grepl("^LV",colnames(object$lvs))])*object$params$sigma.lv[grepl("^LV",colnames(object$lvs))])
+  if(object$family == "betaH"){
+    eta.mat <- matrix(object$params$beta0, n, p*2, byrow = TRUE) + c(offset)
+  } else {
+    eta.mat <- matrix(object$params$beta0, n, p, byrow = TRUE) + offset
   }
-  eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
+  
+  if (!is.null(object$X) && is.null(object$TR))
+    eta.mat <- eta.mat + (object$X.design %*% matrix(t(object$params$Xcoef), nrow = num.X, ncol(eta.mat) ))
+  if (!is.null(object$TR))
+    eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , nrow = n, ncol = ncol(eta.mat) )
+  if (object$row.eff != FALSE)
+    eta.mat <- eta.mat + matrix(object$params$row.params, n, ncol(eta.mat), byrow = FALSE)
+  if (num.lv > 0|num.lv.c>0|num.RR>0){
+    lvs <- getLV(object)
+    if(nrow(lvs)!=n) lvs = object$TMBfn$env$data$dr0%*%lvs # !!!
+    if(num.lv>0){
+    lvs[,grepl("^LV",colnames(object$lvs))] <- t(t(lvs[,grepl("^LV",colnames(object$lvs))])*object$params$sigma.lv[grepl("^LV",colnames(object$lvs))])
+    }
+    eta.mat <- eta.mat  + lvs %*% t(object$params$theta[,1:(num.lv+num.lv.c+num.RR),drop=F])
   }
   if(quadratic != FALSE){
    eta.mat <- eta.mat  + lvs^2 %*% t(object$params$theta[,-c(1:(num.lv+num.lv.c+num.RR)),drop=F])
@@ -103,7 +108,7 @@ residuals.gllvm <- function(object, ...) {
   mu <- exp(eta.mat)
   if (any(mu == 0))
     mu <- mu + 1e-10
-  if (object$family == "binomial" || object$family == "beta")
+  if (object$family %in% c("binomial", "beta", "betaH", "orderedBeta") )
     mu <- binomial(link = object$link)$linkinv(eta.mat)
   if (object$family == "gaussian")
     mu <- (eta.mat)
@@ -156,6 +161,33 @@ residuals.gllvm <- function(object, ...) {
         b <- pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
         a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j])))
         u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "betaH") {
+        if(y[i, j]==0){
+          b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j])
+          a = 0
+        } else {
+          b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j]) + binomial(link = object$link)$linkinv(eta.mat[i,p+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
+        }
+        u <- runif(n = 1, min = a, max = b)
+        if(u==1) u=1-1e-16
+        if(u==0) u=1e-16
+        ds.res[i, j] <- qnorm(u)
+      }
+      if (object$family == "orderedBeta") {
+        if(y[i, j]==1){
+          b = 1
+          a = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2])
+        } else if(y[i, j]==0){
+          b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1])
+          a = 0
+        } else {
+          b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) + (binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
+        }
+        u <- try({runif(n = 1, min = a, max = b)})
         if(u==1) u=1-1e-16
         if(u==0) u=1e-16
         ds.res[i, j] <- qnorm(u)
