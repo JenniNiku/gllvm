@@ -48,7 +48,7 @@ se.gllvm <- function(object, ...){
   quadratic <- object$quadratic
   nlvr <- num.lv + num.lv.c 
   nlvr <- num.lv  #+ (object$row.eff=="random")*1
-  cstrucn = switch(object$corP$cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3)
+  cstrucn = switch(object$corP$cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   corwithin <- object$corP$corwithin
   rstruc = object$rstruc
   family = object$family
@@ -267,8 +267,8 @@ se.gllvm <- function(object, ...){
         out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
         names(out$sd$sigma) <- "sigma"; 
         se=se[-(1:(length(object$params$sigma)))] 
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
       }
       if(num.lv.cor>0 & cstrucn>0){
         if(length(object$params$rho.lv)>0){
@@ -593,8 +593,8 @@ se.gllvm <- function(object, ...){
       out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
       se=se[-(1:length(out$sd$sigma))] 
       names(out$sd$sigma) <- "sigma" 
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)) se = se[-(1:length(object$params$rho))]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
     }
     if(num.lv.cor>0 & cstrucn>0){ 
       if(length(object$params$rho.lv)>0){
