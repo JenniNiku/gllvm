@@ -5,94 +5,97 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
                                    link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc="species", maxit=4000,max.iter=4000, disp.group = NULL, randomB = FALSE, method="VA") {
   
   if(!is.null(seed)) set.seed(seed)
-  N<-n <- nrow(y); p <- ncol(y); y <- as.matrix(y)
-  num.T <- 0; if(!is.null(TR)) num.T <- dim(TR)[2]
-  num.X <- 0; Xdesign = NULL
+  N <- n <- nrow(y); p = ncol(y); y = as.matrix(y)
+  num.T = 0; if(!is.null(TR)) num.T = dim(TR)[2]
+  num.X = 0; Xdesign = NULL
   if(!is.null(X)){ 
     if(!is.null(formula) & is.null(TR)){
-      Xdesign <- model.matrix(formula, as.data.frame(X))
-      Xdesign <- Xdesign[, !(colnames(Xdesign) %in% "(Intercept)"), drop=FALSE]
+      Xdesign = model.matrix(formula, as.data.frame(X))
+      Xdesign = Xdesign[, !(colnames(Xdesign) %in% "(Intercept)"), drop=FALSE]
     } else {
-      Xdesign <- X
+      Xdesign = X
     }
-    num.X <- dim(Xdesign)[2] 
+    num.X = dim(Xdesign)[2] 
   }
   Br <- sigmaB <- sigmaij <- NULL
-  mu<-NULL
+  mu = NULL
   if(method=="LA")
-    method="VA"
-  out <- list()
+    method = "VA"
+  out = list()
   
-  sigma=1
+  sigma = 1
   
-  row.params <- rep(0, n);
+  row.params = rep(0, n);
   if(starting.val %in% c("res","random") || row.eff == "random"){
-    rmeany <- rowMeans(y)
+    rmeany = rowMeans(y)
     if(family=="binomial"){
-      rmeany=1e-3+0.99*rmeany
+      rmeany = 1e-3+0.99*rmeany
       if(row.eff %in% c("fixed",TRUE)) {
-        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
+        row.params =  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(rmeany[1])
       } else{
-        row.params <-  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
+        row.params =  binomial(link = link)$linkfun(rmeany) - binomial(link = link)$linkfun(mean(rmeany))
       }
     } else if(family=="gaussian"){
-      rmeany=1e-3+0.99*rmeany
+      rmeany = 1e-3+0.99*rmeany
       if(row.eff %in% c("fixed",TRUE)) {
-        row.params <-  rmeany - rmeany[1]
+        row.params =  rmeany - rmeany[1]
       } else{
-        row.params <-  rmeany - mean(rmeany)
+        row.params =  rmeany - mean(rmeany)
       }
     } else {
       if(row.eff %in% c("fixed",TRUE)) {
-        row.params <-  row.params <- log(rmeany)-log(rmeany[1])
+        row.params =  row.params <- log(rmeany)-log(rmeany[1])
       } else{
-        row.params <-  row.params <- log(rmeany)-log(mean(y))
+        row.params =  row.params <- log(rmeany)-log(mean(y))
       }
     }
-    if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] <- 1.5 * sign(row.params[abs(row.params)>1.5])
-    sigma=sd(row.params)
+    if(any(abs(row.params)>1.5)) row.params[abs(row.params)>1.5] = 1.5 * sign(row.params[abs(row.params)>1.5])
+    sigma = sd(row.params)
   }
   
   if(!is.numeric(y))
     stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
   
-  if(family=="ZIP") family="poisson"
-  if(family=="betaH") family="beta"
+  if(family=="ZIP") family = "poisson"
+  # if(family=="betaH") family = "beta"
+  # if(family=="orderedBeta") family = "beta"
   
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta")))
+  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("inputed family not allowed...sorry =(")
   
   if((num.lv+num.lv.c) > 0) {
-    unique.ind <- which(!duplicated(y))
+    unique.ind = which(!duplicated(y))
     if(is.null(start.lvs)) {
-      index <- MASS::mvrnorm(N, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c));
-      if(num.lv>0&num.lv.c==0)colnames(index) <- paste("LV",1:num.lv, sep = "")
-      if(num.lv==0&num.lv.c>0)colnames(index) <- paste("CLV",1:num.lv.c, sep = "")
-      if(num.lv>0&num.lv.c>0)colnames(index) <- c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
-      unique.index <- as.matrix(index[unique.ind,])
+      index = MASS::mvrnorm(N, rep(0, num.lv+num.lv.c),diag(num.lv+num.lv.c));
+      if(num.lv>0&num.lv.c==0)colnames(index) = paste("LV",1:num.lv, sep = "")
+      if(num.lv==0&num.lv.c>0)colnames(index) = paste("CLV",1:num.lv.c, sep = "")
+      if(num.lv>0&num.lv.c>0)colnames(index) = c(paste("CLV",1:num.lv.c, sep = ""),paste("LV",1:num.lv, sep = ""))
+      unique.index = as.matrix(index[unique.ind,])
     }
     if(!is.null(start.lvs)) {
       if(num.lv.c>0){
-        index.lm <- lm(start.lvs ~ 0+lv.X)
-        b.lv <- coef(index.lm)
-        start.lvs <- as.matrix(residuals.lm(index.lm))
+        index.lm = lm(start.lvs ~ 0+lv.X)
+        b.lv = coef(index.lm)
+        start.lvs = as.matrix(residuals.lm(index.lm))
       }
-      index <- as.matrix(start.lvs)
-      unique.index <- as.matrix(index[unique.ind,])
+      index = as.matrix(start.lvs)
+      unique.index = as.matrix(index[unique.ind,])
     }
   }
   
   if((num.lv+num.lv.c) == 0) { index <- NULL }
   
-  y <- as.matrix(y)
+  y = as.matrix(y)
   
   if(family == "ordinal" && zeta.struc == "species") {
-    max.levels <- apply(y,2,function(x) length(min(x):max(x)));
+    max.levels = apply(y,2,function(x) length(min(x):max(x)));
     if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If al columns only have two levels, please use family == binomial instead. Thanks")
   }else if(family=="ordinal" && zeta.struc == "common"){
-    max.levels=length(min(y):max(y))
+    max.levels = length(min(y):max(y))
   }
-  
+  if(family == "orderedBeta") {
+    zetaOB = matrix(rep(0,p),rep(1,p),p,2)
+  }
   if(is.null(rownames(y))) rownames(y) <- paste("row",1:N,sep="")
   if(is.null(colnames(y))) colnames(y) <- paste("col",1:p,sep="")
   
@@ -104,22 +107,23 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         if(family!="gaussian") {
           if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, formula = formula, lv.X = lv.X, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
           if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
-          coef <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
-          fit.mva$phi <- fit.mva$params$phi
-          resi <- NULL
-          mu <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
+          coef = cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
+          fit.mva$phi = fit.mva$params$phi
+          if(family == "orderedBeta") {zetaOB = fit.mva$zeta = fit.mva$params$zeta}
+          resi = NULL
+          mu = cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
         } else {
           if(!is.null(X)) fit.mva <- mlm(y, X = Xdesign)
           if(is.null(X)) fit.mva <- mlm(y)
           
-          mu <- cbind(rep(1,nrow(y)),Xdesign) %*% fit.mva$coefficients
-          # resi <- fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-          coef <- t(fit.mva$coef)
-          fit.mva$phi <- sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))[disp.group]
+          mu = cbind(rep(1,nrow(y)),Xdesign) %*% fit.mva$coefficients
+          # resi = fit.mva$residuals; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+          coef = t(fit.mva$coef)
+          fit.mva$phi = sapply(1:length(unique(disp.group)),function(x)sd(fit.mva$residuals[,which(disp.group==x)]))[disp.group]
         }
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, randomB = randomB, method = method)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, phis=fit.mva$phi, lv.X = lv.X, zeta = fit.mva$zeta, link = link, maxit=maxit,max.iter=max.iter, Power = Power, disp.group = disp.group, randomB = randomB, method = method)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0){
@@ -158,6 +162,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
             sigma=c(max(fit.mva$params$sigma[1],sigma),fit.mva$params$sigma[-1])
             fit.mva$params$row.params <- fit.mva$params$row.params/sd(fit.mva$params$row.params)*sigma[1]
           }
+          
           out$fitstart <- list(A=fit.mva$A, Ab=fit.mva$Ab, TMBfnpar=fit.mva$TMBfn$par) #params = fit.mva$params, 
         }
         if(!is.null(form1)){
@@ -172,6 +177,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         }
         
         
+        if(family == "orderedBeta") {zetaOB = fit.mva$zeta = fit.mva$params$zeta}
         fit.mva$phi <- phi <- fit.mva$coef$phi
         ds.res <- matrix(NA, n, p)
         rownames(ds.res) <- rownames(y)
@@ -187,7 +193,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         
         gamma=NULL
         if((num.lv+num.lv.c+num.RR)>0){
-          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB, method = method)
+          lastart <- FAstart(eta=mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, phis=fit.mva$phi, lv.X = lv.X, zeta = fit.mva$zeta, link = link, maxit=maxit,max.iter=max.iter, disp.group = disp.group, randomB = randomB, method = method)
           gamma<-lastart$gamma
           index<-lastart$index
           if(num.lv.c>0)
@@ -202,8 +208,12 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         } 
       }
       
-      if(is.null(TR)){params <- cbind(coef,gamma)
-      } else { params <- cbind((fit.mva$coef$beta0),gamma)}
+      if(is.null(TR)){params = cbind(coef,gamma)
+      } else { params = cbind((fit.mva$coef$beta0),gamma)}
+      # if(family == "orderedBeta") {
+      #   zetaOB = fit.mva$params$zeta
+      # }
+      
     } else  if(starting.val != "zero") {
       if(family!="gaussian") {
         if(is.null(TR)){
@@ -262,7 +272,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   
   if(family == "negative.binomial") {
     phi <- fit.mva$phi  + 1e-5
-  } else if(family %in% c("gaussian", "gamma", "beta","tweedie")) {
+  } else if(family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta","tweedie")) {
     phi <- fit.mva$phi
   } else { phi <- NULL }
   # 
@@ -395,6 +405,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
     }
     
   }
+  
   if(starting.val=="random"&(num.lv.c+num.RR)>0){
     if(num.lv.c>0){
       index.lm <- lm(index[,1:num.lv.c,drop=F]~0+lv.X)
@@ -551,6 +562,9 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
   }
   
   if(family == "ordinal") out$zeta <- zeta
+  if(family=="orderedBeta"){
+    out$zeta <- zetaOB
+  }
   options(warn = 0)
   if(row.eff!=FALSE) {
     out$row.params=row.params
@@ -576,6 +590,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   gamma <- NULL
   index.c <- NULL
   gamma.c <- NULL
+  if(family=="orderedBeta"){
+    y <- y*0.99+0.005
+    family="beta"
+  }
   
   #generate starting values for constrained LVs
   if(num.lv.c>0&num.lv==0){
@@ -587,7 +605,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
         mu <- exp(eta)
-      }else if(family %in% c("binomial","beta")) {
+      }else if(family %in% c("binomial","beta","betaH","orderedBeta")) {
         mu <-  binomial(link = link)$linkinv(eta)
       }else {
         mu<-eta
@@ -651,6 +669,44 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
               b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
               a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
               u <- runif(n = 1, min = a, max = b)
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "betaH") {
+              if(j>(p/2)){
+                if(y[i, j]==0){
+                  b = 1 - mu[i,j]
+                  a = 0
+                } else {
+                  b <- 1 
+                  a <- 1 - (mu[i,j]) 
+                }
+              } else {
+                if(y[i, j]==0){
+                  b = 1 - (mu[i,(p/2)+j])
+                  a = 0
+                } else {
+                  if(y[i,j]==1) y[i,j]=1-1e-16
+                  b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+                }
+              }
+              u <- runif(n = 1, min = a, max = b)
+              if(u==1) u=1-1e-16
+              if(u==0) u=1e-16
+              ds.res[i, j] <- qnorm(u)
+            }
+            if (family == "orderedBeta") {
+              if(y[i, j]==1){
+                b = 1
+                a = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2])
+              } else if(y[i, j]==0){
+                b = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1])
+                a = 0
+              } else {
+                b <- a <- 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) + (binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              }
+              u <- try({runif(n = 1, min = a, max = b)})
+              if(u==1) u=1-1e-16
+              if(u==0) u=1e-16
               ds.res[i, j] <- qnorm(u)
             }
             if (family == "ordinal") {
@@ -795,7 +851,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
       mu <- exp(eta)
-    }else if(family %in% c("binomial","beta")) {
+    }else if(family %in% c("binomial","beta","betaH","orderedBeta")) {
       mu <-  binomial(link = link)$linkinv(eta)
     }else{
       mu <- eta
@@ -858,6 +914,44 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "betaH") {
+            if(j>(p/2)){
+              if(y[i, j]==0){
+                b = 1 - mu[i,j]
+                a = 0
+              } else {
+                b <- 1 
+                a <- 1 - (mu[i,j]) 
+              }
+            } else {
+              if(y[i, j]==0){
+                b = 1 - (mu[i,(p/2)+j])
+                a = 0
+              } else {
+                if(y[i,j]==1) y[i,j]=1-1e-16
+                b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              }
+            }
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "orderedBeta") {
+            if(y[i, j]==1){
+              b = 1
+              a = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2])
+            } else if(y[i, j]==0){
+              b = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1])
+              a = 0
+            } else {
+              b <- a <- 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) + (binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            }
+            u <- try({runif(n = 1, min = a, max = b)})
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "ordinal") {
@@ -952,7 +1046,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
       mu <- exp(eta)
-    }else if(family %in% c("binomial","beta")) {
+    }else if(family %in% c("binomial","beta","betaH","orderedBeta")) {
       mu <-  binomial(link = link)$linkinv(eta)
     }else{
       mu <- eta
@@ -1015,6 +1109,44 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "betaH") {
+            if(j>(p/2)){
+              if(y[i, j]==0){
+                b = 1 - mu[i,j]
+                a = 0
+              } else {
+                b <- 1 
+                a <- 1 - (mu[i,j]) 
+              }
+            } else {
+              if(y[i, j]==0){
+                b = 1 - (mu[i,(p/2)+j])
+                a = 0
+              } else {
+                if(y[i,j]==1) y[i,j]=1-1e-16
+                b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              }
+            }
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "orderedBeta") {
+            if(y[i, j]==1){
+              b = 1
+              a = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2])
+            } else if(y[i, j]==0){
+              b = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1])
+              a = 0
+            } else {
+              b <- a <- 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) + (binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            }
+            u <- try({runif(n = 1, min = a, max = b)})
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "ordinal") {
@@ -1112,7 +1244,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   if(num.lv>0&(num.lv.c+num.RR)==0){
     if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie")) {
       mu <- exp(eta)
-    }else if(family %in% c("binomial","beta")) {
+    }else if(family %in% c("binomial","beta", "betaH", "orderedBeta")) {
       mu <-  binomial(link = link)$linkinv(eta)
     }else{
       mu <- eta
@@ -1175,6 +1307,44 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
             b <- pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
             a <- min(b,pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j])))
             u <- runif(n = 1, min = a, max = b)
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "betaH") {
+            if(j>(p/2)){
+              if(y[i, j]==0){
+                b = 1 - mu[i,j]
+                a = 0
+              } else {
+                b <- 1 
+                a <- 1 - (mu[i,j]) 
+              }
+            } else {
+              if(y[i, j]==0){
+                b = 1 - (mu[i,(p/2)+j])
+                a = 0
+              } else {
+                if(y[i,j]==1) y[i,j]=1-1e-16
+                b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+              }
+            }
+            u <- runif(n = 1, min = a, max = b)
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+          }
+          if (family == "orderedBeta") {
+            if(y[i, j]==1){
+              b = 1
+              a = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2])
+            } else if(y[i, j]==0){
+              b = 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1])
+              a = 0
+            } else {
+              b <- a <- 1 - binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) + (binomial(link = link)$linkinv(eta[i,j] - zeta[j,1]) - binomial(link = link)$linkinv(eta[i,j] - zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+            }
+            u <- try({runif(n = 1, min = a, max = b)})
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
             ds.res[i, j] <- qnorm(u)
           }
           if (family == "ordinal") {
