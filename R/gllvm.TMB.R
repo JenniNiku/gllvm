@@ -7,7 +7,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8, reltol.c = 1e-8,
       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, dr=NULL, rstruc =0, cstruc = "diag", dist =matrix(0),
-      optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5,
+      optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL) { 
   # , Dthreshold=0
   # If there is no random effects/LVs set diag iter to zero:
@@ -59,7 +59,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
     }
     if((cstrucn == 2) | (cstrucn == 4)) {
-      AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+      if(is.null(rangeP)) {
+        rangeP = AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+      } else {
+        AD1 = rangeP
+      }
       scaledc = log(AD1)
       # AD1 = pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
       # md = min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
@@ -95,7 +99,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(NROW(dist)!=nu)
             stop("Number of rows in 'dist' should be same as maximum number of groups when corWithin = FALSE")
         }
-      AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+      if(is.null(rangeP)) {
+        rangeP = AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+      } else {
+        AD1 = rangeP
+      }
       scaledc<-log(AD1)
       # AD1<-pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
       # md<-min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
@@ -124,7 +132,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(Lambda.struc == "UNN" && num.lv.cor>0) {Astruc=2; Lambda.struc = "bdNN"}
         if(Lambda.struc == "diagU" && num.lv.cor>0) {Astruc=0; Lambda.struc = "diagonal"}
       }
-      }
+    }
+    if(Lambda.struc == "LR") {Astruc=6}
+    
   }
 
   tr <- NULL
@@ -167,6 +177,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
   }
 
+  if(family == "orderedBeta") {
+    if((sum(y==1) + sum(y==0))==0){
+      stop("No zeros or ones in the data, so use 'family = `beta` '")
+    }
+    if(!all(colSums(y==1)>0) & !all(colSums(y==0)>0)){
+      warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'")
+      zeta.struc = "common"
+    }
+  }
+  
   # Define design matrix for covariates
   num.X <- 0;
   Xorig <- X
@@ -283,13 +303,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           # lambdas <- lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv))
           rho_lvc<- rep(0, num.lv.cor);
           if((cstrucn == 2) | (cstrucn == 4)) {
-            AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+            if(is.null(rangeP)) {
+              rangeP = AD1 = (apply(as.matrix(dist),2,max)-apply(as.matrix(dist),2,min))/scalmax
+            } else {
+              AD1 = rangeP
+            }
             scaledc<-log(AD1)
           }
         }
-        if(family == "betaH"){ # Own loadings for beta distr in hurdle model
-          thetaH <- t(lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv)))
-        }
+        # if(family == "betaH"){ # Own loadings for beta distr in hurdle model
+        #   thetaH <- t(lambdas%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv)))
+        # }
       }
 
       row.params <- NULL
@@ -399,8 +423,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       phis <- phis / (1 - phis)
     } # ZIP probability
-    if (family %in% c("gaussian", "gamma", "beta", "betaH")) {
+    if (family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
       phis <- fit$phi
+      if (family %in% c("betaH", "orderedBeta")) {
+        phis <- rep(5,p)
+      }
     }
     if(family=="ordinal"){
       K = max(y00)-min(y00)
@@ -411,7 +438,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         zeta <- fit$zeta[-1]
       }
 
-    }else{
+    } else if(family=="orderedBeta") {
+      zeta <- rep(-1,p)
+      # if(any(y==1)) 
+      zeta <- c(zeta,rep(3,p))
+    } else {
       zeta = 0
     }
 
@@ -444,6 +475,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       phi <- phis 
     } else { 
         phi <- rep(1, p); 
+        if (family %in% c("betaH", "orderedBeta")) {
+          phi <- rep(5,p)
+        }
         fit$phi <- phi
     }
     
@@ -466,10 +500,27 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     
     if(family %in% c("poisson","binomial","ordinal","exponential")){
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "ZIP")){
+    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP")){
       map.list$lg_phi <- factor(disp.group)
     }
-    if(family != "ordinal") map.list$zeta <- factor(NA)
+    if(!(family %in% c("ordinal", "orderedBeta"))) map.list$zeta <- factor(NA)
+    if((family %in% c("orderedBeta"))){
+      if(zeta.struc=="species"){
+        zetamap = c(1:length(zeta))
+        if(!all(colSums(y==0)>0))
+          zetamap[1:p] <- 1
+        if(!all(colSums(y==1)>0))
+          zetamap[-(1:p)] <- max(zetamap[1:p])+1
+        map.list$zeta = factor( zetamap)
+        
+        # map.list$zeta <- factor(c(rep(NA,p),1:p))
+      }else{
+        zetamap <- c(rep(1,p))
+        # if(any(y==1))
+          zetamap <- c(zetamap,rep(max(zetamap)+1,p))
+        map.list$zeta <- factor( c(zetamap) )
+      }
+    }
     if((num.lv.c+num.RR)==0){
       map.list$b_lv = factor(rep(NA, length(b.lv)))
     }
@@ -510,7 +561,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         rho_lvc<- matrix(c(rep(scaledc, each=num.lv.cor), rho.lv), num.lv.cor)
         # rho_lvc<- matrix(rho.lv,nrow = num.lv.cor)
-      } 
+      }
       # else {
       #   map.list$scaledc = factor(rep(NA, length(scaledc)))
       # }
@@ -518,9 +569,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(cstrucn %in% c(2,4)){
         iv<-1:length(rho_lvc); 
         if(!is.null(setMap$rho_lvc)){
+          # rho_lvc = matrix(log(rangeP), num.lv.cor, ncol(rho_lvc), byrow = TRUE)
           if((length(setMap$rho_lvc)==length(rho_lvc))) 
             iv = (setMap$rho_lvc)
           map.list$rho_lvc = factor(iv)
+        } else if(cstruc=="corMatern"){
+          # Fix matern smoothness by default
+          maprho = matrix(iv, nrow(rho_lvc), ncol(rho_lvc))
+          maprho[, ncol(maprho)] = NA
+          map.list$rho_lvc = factor(c(maprho))
         }
       }
       fit$rho.lv = rho_lvc
@@ -531,12 +588,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     
    ### VA method, used only if there is some random effects/LVs in the model
     
-    if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random" || (randomB!=FALSE)))){
+    if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random" || (randomB!=FALSE) ))){
 
       # Variational covariances for latent variables
       if((num.lv+num.lv.c)>0){
         if(is.null(start.params) || start.params$method=="LA" || num.lv.cor>0){
-          if(Lambda.struc=="diagonal" || (Lambda.struc=="bdNN") || diag.iter>0){
+          if(Lambda.struc=="diagonal" || (Lambda.struc=="bdNN") || (Lambda.struc=="LR") || diag.iter>0){
             Au <- log(rep(Lambda.start[1],(num.lv+num.lv.c)*n)) #1/2, 1
           } else{
             Au <- c(log(rep(Lambda.start[1],(num.lv+num.lv.c)*n)),rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*n)) #1/2, 1
@@ -640,22 +697,26 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         familyn=9
         if(link=="probit") extra[1]=1
       }
-      # if(family == "betaH"){ # Not used for VA atm
-      #   familyn = 10
-      #   bH <- rbind(a,b)
-      #   if(num.lv>0) {
-      #     mapLH<-factor(1:length(thetaH))
-      #     mapLH[lower.tri(thetaH)] <- NA
-      #     map.list$thetaH <- factor(mapLH)
-      #   } else {
-      #     thetaH<- matrix(0); 
-      #     map.list$thetaH = factor(NA)
-      #   }
-      # } else {
-        thetaH<- matrix(0)
-        map.list$thetaH = factor(NA)
-        bH <- matrix(0)
-        map.list$bH = factor(NA)
+      if(family == "orderedBeta") {familyn=12}
+      
+      if(family == "betaH"){ # EVA
+        familyn = 10
+        if(link=="probit") extra[1]=1
+        # bH <- rbind(a,b)
+        # if(num.lv>0) {
+        #   mapLH<-factor(1:length(thetaH))
+        #   mapLH[lower.tri(thetaH)] <- NA
+        #   map.list$thetaH <- factor(mapLH)
+        # } else {
+        #   thetaH<- matrix(0);
+        #   map.list$thetaH = factor(NA)
+        # }
+      }
+      # else {
+      #   thetaH<- matrix(0)
+      #   map.list$thetaH = factor(NA)
+      #   bH <- matrix(0)
+      #   map.list$bH = factor(NA)
       # }
 
       # Set up parameter.list, data.list and map.list
@@ -683,7 +744,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(Lambda.struc == "unstructured" && Astruc==1) {
             Au <- c(Au[1:(n*num.lv.cor)], rep(0,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
           } else if(Lambda.struc == "bdNN" && Astruc==2){
-            Au <- c(Au[1:(n*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor*nu) )
+            Au <- c(Au[1:(n*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor*n) )
           } else if(Astruc==3) {
             Au <- c(Au[1:(n)], rep(0,sum(lower.tri(matrix(0,n,n)))) )
             AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
@@ -696,7 +757,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             Au <- c(Au[1:(n)])
             AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
             Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
-          }}
+          } else if(Astruc==6){
+            Au <- c(Au[1:(n*num.lv.cor)], rep(0.001,NN[1]*num.lv.cor*n) )
+          }
+          }
         } else {
           # u <- as.matrix(u[1:nu,])
           if(nrow(lvs) != nu){
@@ -707,10 +771,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(diag.iter>0){
             if(Astruc<3){
               Au <- c(Au[1:(nu*num.lv.cor)])
-            } else {
+            } else if(Astruc<6){
               Au <- c(Au[1:(nu)])
               AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            } else {
+              Au <- c(Au[1:(nu*num.lv.cor)])
             }
           } else {
             if(Lambda.struc == "unstructured" && Astruc==1 & cstrucn==0 & diag.iter==0){
@@ -731,6 +797,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
             } else  if(Astruc==0){
               Au <- c(Au[1:(nu*num.lv.cor)])
+            } else if(Astruc==6){
+              Au <- c(Au[1:(nu*num.lv.cor)], rep(0.001,NN[1]*num.lv.cor*nu) )
             }
           }
         }
@@ -754,14 +822,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           } else if(cstrucn %in% c(2)){
             sigma = c(log(sigma[1]),scaledc)
           } else if(cstrucn %in% c(4)){
-            sigma = c(log(sigma[1]),scaledc,0)
+            sigma = c(log(sigma[1]),scaledc)
+            # Fix matern smoothness by default
+            if(is.null(setMap$log_sigma)) map.list$log_sigma = factor(c(1:length(sigma),NA))
+            sigma = c(sigma,log(MaternKappa))
           } else {
             sigma = c(log(sigma[1]))
           }
         }
-        if(cstruc=="corMatern"){
-          sigma<- c(sigma,log(MaternKappa))
-        }
+
       } else {
         sigma=0
         map.list$log_sigma <- factor(NA)
@@ -808,7 +877,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
 
 
-        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta) #, scaledc=scaledc
+        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar =lg_Ar, Abb=0, zeta=zeta) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -844,7 +913,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       data.list = list(y = y, x = Xd, x_lv = lv.X , xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist,Astruc=Astruc, NN = NN)
       
-      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta) #, scaledc=scaledc
+      parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar,Abb=0, zeta=zeta) #, scaledc=scaledc,thetaH = thetaH, bH=bH
 
 #### Call makeADFun
       objr <- TMB::MakeADFun(
@@ -941,11 +1010,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             if(Lambda.struc == "unstructured" && Astruc==1) {
               Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
             } else if(Lambda.struc == "bdNN" && Astruc==2){
-              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor*nu) )
+              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor*n) )
             } else if(Astruc==3) {
               Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,sum(lower.tri(matrix(0,n,n)))), Au1[-(1:n)])
             } else if(Astruc==4) {
               Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,nrow(NN)*nu), Au1[-(1:n)])
+            } else if(Astruc==6){
+              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,NN[1]*num.lv.cor*n) )
             }
           } else {
             if(Lambda.struc == "unstructured" && Astruc==1 & cstrucn==0){
@@ -956,6 +1027,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               Au1 <- c(log(exp(Au1[1:(nu)])+1e-2), rep(1e-3,sum(lower.tri(matrix(0,nu,nu)))), Au1[-(1:nu)])
             } else  if(Astruc==4){
               Au1 <- c(log(exp(Au1[1:(nu)])+1e-2), rep(1e-3,nrow(NN)), Au1[-(1:nu)])
+            } else if(Astruc==6){
+              Au1 <- c(pmax(Au1[1:(nu*num.lv.cor)],log(1e-2)), rep(1e-3,NN[1]*num.lv.cor*nu) )
             }
           }
           if(cstrucn>0){
@@ -971,11 +1044,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           Au1<- c(pmax(param1[nam=="Au"],rep(log(1e-6), (num.lv+num.lv.c)*nrow(u1))), rep(0,(num.lv+num.lv.c)*((num.lv+num.lv.c)-1)/2*nrow(u1)))
         } else {Au1<-Au}
 
-        if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
+        if(family %in% c("ordinal")){
+          zeta <- param1[nam=="zeta"] 
+        } else if(family %in% c("orderedBeta")){
+          zeta <- c(rep(0,p),rep(param1[nam=="zeta"] ,p)[1:p])
+        } else {
+          zeta <- 0 
+        }
         #Because then there is no next iteration
         data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
 
-        parameter.list = list(r0=r1, b = b1, bH=bH, b_lv = b.lv1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta) #, scaledc=scaledc
+        parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -1039,7 +1118,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 #### Extract estimated values
       
       param<-objr$env$last.par.best
-      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH")) {
+      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
       }
       if(family == "ordinal"){
@@ -1067,6 +1146,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         out$y<-y00
         out$zeta.struc = zeta.struc
       }
+      if(family == "orderedBeta"){
+        zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+      }
+      
       if((num.lv.c+num.RR)>0){
         bi.lv <- names(param)=="b_lv"
         if(randomB!=FALSE)sib <- names(param)=="sigmab_lv"
@@ -1205,21 +1288,24 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         familyn = 10
         if(link=="probit") extra[1]=1
         
-        bH <- rbind(a,b)
-        if(num.lv>0) {
-          mapLH<-factor(1:length(thetaH))
-          mapLH[lower.tri(thetaH)] <- NA
-          map.list$thetaH <- factor(mapLH)
-        } else {
-          thetaH<- matrix(0); 
-          map.list$thetaH = factor(NA)
-        }
-      } else {
-        thetaH<- matrix(0)
-        map.list$thetaH = factor(NA)
-        bH <- matrix(0)
-        map.list$bH = factor(NA)
-      }
+        # bH <- rbind(a,b)
+        # if(num.lv>0) {
+        #   mapLH<-factor(1:length(thetaH))
+        #   mapLH[lower.tri(thetaH)] <- NA
+        #   map.list$thetaH <- factor(mapLH)
+        # } else {
+        #   thetaH<- matrix(0); 
+        #   map.list$thetaH = factor(NA)
+        # }
+      } 
+      # else {
+      #   thetaH<- matrix(0)
+      #   map.list$thetaH = factor(NA)
+      #   bH <- matrix(0)
+      #   map.list$bH = factor(NA)
+      # }
+      if(family == "orderedBeta") {familyn=12}
+      
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
@@ -1230,7 +1316,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         map.list2$Au <- map.list2$Abb <- map.list2$Ab_lv <- factor(NA)# map.list$lambda2 <- 
         map.list2$b_lv <- factor(rep(NA,length(b.lv)))
 
-        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), thetaH = thetaH, sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, Abb=0, zeta=zeta) #, scaledc=scaledc
+        parameter.list = list(r0 = matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, Abb=0, zeta=zeta) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -1259,7 +1345,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, offset=offset, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), rstruc = rstruc, times = times, cstruc=cstrucn, dc=dist, Astruc=Astruc, NN = NN)
       
-      if(family == "ordinal"){
+      if(family %in% c("ordinal", "orderedBeta")){
         data.list$method = 0
       }
       
@@ -1296,6 +1382,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           sigma = c(log(sigma[1]),0)
         }
         if(cstruc=="corMatern"){
+          # Fix matern smoothness by default
+          if(is.null(setMap$log_sigma)) map.list$log_sigma <- factor(c(1:length(sigma),NA))
           sigma<- c(sigma,log(MaternKappa))
         }
       } else {
@@ -1315,7 +1403,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(family == "ordinal"){
         data.list$method = 0
       }
-      parameter.list = list(r0=matrix(r0), b = rbind(a,b), bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), rho_lvc=rho_lvc, Au=0, lg_Ar=0, Abb=0, zeta=zeta) #, scaledc=scaledc
+      parameter.list = list(r0=matrix(r0), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), rho_lvc=rho_lvc, Au=0, lg_Ar=0, Abb=0, zeta=zeta) #, scaledc=scaledc,thetaH = thetaH, bH=bH
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
@@ -1393,7 +1481,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
         if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])[disp.group]
         
-        parameter.list = list(r0=matrix(r0), b = b, bH=bH, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2),thetaH = thetaH, sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), rho_lvc=rho_lvc, Au=0, lg_Ar=0, Abb=0, zeta=zeta) #, scaledc=scaledc
+        parameter.list = list(r0=matrix(r0), b = b, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B=matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=c(sigma), rho_lvc=rho_lvc, Au=0, lg_Ar=0, Abb=0, zeta=zeta) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
         #### Call makeADFun
         objr <- TMB::MakeADFun(
@@ -1565,21 +1653,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       new.loglik <- objr$env$value.best[1]
-      
-      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma", "beta", "betaH")) {
+
+      if(family %in% c("negative.binomial", "tweedie", "ZIP", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
         if(family=="ZIP") {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
         }
       }
-      if(family %in% "betaH"){
-        bHi <- names(param)=="bH"
-        betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
-        if(num.lv>0) {
-          thetaH[!is.na(map.list$thetaH)] <- param[names(param)=="thetaH"]
-        }
-      }
+      # if(family %in% "betaH"){
+      #   bHi <- names(param)=="bH"
+      #   betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
+      #   if(num.lv>0) {
+      #     thetaH[!is.na(map.list$thetaH)] <- param[names(param)=="thetaH"]
+      #   }
+      # }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
         if(zeta.struc=="species"){
@@ -1604,6 +1692,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         zetas<-zetanew
         out$y<-y00
       }
+      if(family == "orderedBeta"){
+        zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+      }
+      
     }
 
 
@@ -1716,16 +1808,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         rownames(out$params$Xcoef) <- colnames(out$y); colnames(out$params$Xcoef) <- colnames(X); 
       }
 
-      if(family %in% "betaH"){
-        out$params$betaH <- betaH;
-        rownames(out$params$betaH) <- colnames(out$y); 
-        colnames(out$params$betaH) <- paste("c", 1:ncol(betaH))
-        # colnames(out$params$betaH)[1] <- "Intercept"; 
-        if(!is.null(X)){ colnames(out$params$betaH) <- c("Intercept",colnames(X)); }
-        if(num.lv>0) {
-          out$params$thetaH <- thetaH
-        }      
-      }
+      # if(family %in% "betaH"){
+      #   out$params$betaH <- betaH;
+      #   rownames(out$params$betaH) <- colnames(out$y); 
+      #   colnames(out$params$betaH) <- paste("c", 1:ncol(betaH))
+      #   # colnames(out$params$betaH)[1] <- "Intercept"; 
+      #   if(!is.null(X)){ colnames(out$params$betaH) <- c("Intercept",colnames(X)); }
+      #   if(num.lv>0) {
+      #     out$params$thetaH <- thetaH
+      #   }      
+      # }
       if(family =="negative.binomial") {
         out$params$inv.phi <- phis;
         out$params$phi <- 1/phis;
@@ -1735,7 +1827,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         names(out$params$inv.phi) <-  names(out$params$phi)
       }
-      if(family %in% c("gaussian", "tweedie", "gamma","beta", "betaH")) {
+      if(family %in% c("gaussian", "tweedie", "gamma","beta", "betaH", "orderedBeta")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
         if(!is.null(names(disp.group))){
@@ -1777,7 +1869,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
       if(family %in% c("binomial", "beta")) out$link <- link;
       if(family == "tweedie") out$Power <- Power;
-      if(family=="ordinal"){
+      if(family %in% c("ordinal", "orderedBeta")){
         out$params$zeta <- zetas
       }
       out$row.eff <- row.eff
@@ -1822,38 +1914,25 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               nMax<- 1
             }
             A <- array(0, dim=c(nu, nu, nMax))
-            Alvm <- objr$report()$Alvm
             
-            
-            for (d in 1:nMax) {
-              # for (i in 1:nu){
-              #   A[i,i,d]=exp(Au[(d-1)*nu+i]);
-              # }
-              # if(Astruc>0 & length(Au)>(nu*nMax)){
-              #   k=0;
-              #   if(Astruc %in% c(1,3)){ # var cov struct unstructured
-              #     for (i in  1:nu){
-              #       r=i+1
-              #       while (r <= nu){
-              #         A[r,i,d]=Au[nu*nMax+k*nMax+d];
-              #         k=k+1; r=r+1;
-              #       }
-              #     }
-              #   } else if(Astruc %in% c(2,4)) { # var cov struct NN
-              #     arank = nrow(NN);
-              #     for (r in (1:arank)){
-              #       A[NN[r,1],NN[r,2],d]=Au[nu*nMax+k*nMax+d];
-              #       k=k+1;
-              #     }
-              #   }
-              # 
-              # }
-              if(Astruc %in% c(3,4)){
-                A[,,d] <- Alvm #%*%t(Alvm)
-              } else {
-                A[,,d] <- Alvm[,,d]%*%t(Alvm[,,d])
+            if(Astruc==0){
+              Au <- exp(param[names(param)=="Au"])^2
+              for (d in 1:(num.lv.cor)){
+                A[,,d] <- diag(Au[(d-1)*nu+1:nu],nu,nu)
+              }
+            } else {
+              # Alvm <- array(objr$report()$Alvm, dim=c(nu, nu, nMax))
+              for (d in 1:nMax) {
+                if(Astruc %in% c(3,4)){
+                  A[,,d] <- objr$report()$Alvm[[d]]
+                  # A[,,d] <- Alvm #%*%t(Alvm)
+                } 
+                # else {
+                #   A[,,d] <- Alvm[,,d]%*%t(Alvm[,,d])
+                # }
               }
             }
+            
             if(Astruc %in% c(3,4)){
               AQ <- matrix(0,num.lv.cor,num.lv.cor)
               # for (d in 1:num.lv.cor){
@@ -1918,11 +1997,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             #   }
             # }
             # A[,,q] <- A[,,q]%*%t(A[,,q])
-            if(Astruc %in% c(3,4)){
-              A[,,q] <- Alvm%*%t(Alvm)
-            } else {
-              A[,,q] <- Alvm[,,q]%*%t(Alvm[,,q])
-            }
+            # Uncomm
+            # if(Astruc %in% c(3,4)){
+            #   A[,,q] <- Alvm%*%t(Alvm)
+            # } else {
+            #   A[,,q] <- Alvm[,,q]%*%t(Alvm[,,q])
+            # }
           }
           
           if(Astruc %in% c(3,4)){
@@ -2148,7 +2228,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       #loadings for quadratic models
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
       
-      if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+      if(!(familyn %in% c(7,12))) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
 
       if((num.lv+num.lv.c)>0){
@@ -2232,11 +2312,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  
       se <- se[-(1:((num.X+1)*p))]
       
-      if(family %in% "betaH"){
-        out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
-        rownames(out$sd$betaH) <- rownames(out$params$betaH); 
-        colnames(out$sd$betaH) <- colnames(out$params$betaH)
-      }
+      # if(family %in% "betaH"){
+      #   out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
+      #   rownames(out$sd$betaH) <- rownames(out$params$betaH); 
+      #   colnames(out$sd$betaH) <- colnames(out$params$betaH)
+      # }
       
 
       if((num.lv.c+num.RR)>0 & (randomB==FALSE)){
@@ -2312,12 +2392,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         
       }
       
-      if(num.lv>0 & family == "betaH"){
-        se.thetaH <- matrix(0,num.lv,p); 
-        se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
-        se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
-        out$sd$se.thetaH <- se.thetaH
-      }
+      # if(num.lv>0 & family == "betaH"){
+      #   se.thetaH <- matrix(0,num.lv,p); 
+      #   se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
+      #   se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
+      #   out$sd$se.thetaH <- se.thetaH
+      # }
       
       if((num.lv+num.lv.c)>0){
         out$sd$sigma.lv  <- se.sigma.lv
@@ -2342,7 +2422,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         names(out$sd$inv.phi) <-  names(out$sd$phi)
         se <- se[-(1:length(unique(disp.group)))]
       }
-      if(family %in% c("tweedie", "gaussian", "gamma", "beta", "betaH")) {
+      if(family %in% c("tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
         se.lphis <- se[1:length(unique(disp.group))][disp.group];
         out$sd$phi <- se.lphis*out$params$phi;
         names(out$sd$phi) <- colnames(y);
@@ -2379,7 +2459,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-out$params$rho^2)^1.5; if(length(out$params$rho)) se = se[-(1:length(out$params$rho))]}#*sqrt(1-out$params$rho^2)
         if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*out$params$rho; if(length(out$params$rho)) se = se[-(1:length(out$params$rho))]}
       }
-      if(num.lv.cor>0 & cstrucn>0){ 
+      if(num.lv.cor>0 & cstrucn>0){
         if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*(1-out$params$rho.lv^2)^1.5; se = se[-(1:length(out$params$rho.lv))]}
         if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(out$params$rho.lv))]*out$params$rho.lv; se = se[-(1:length(out$params$rho.lv))]}
         names(out$sd$rho.lv) <- names(out$params$rho.lv)
@@ -2410,6 +2490,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           names(out$sd$zeta) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
 
         }
+      }
+      if(family== "orderedBeta") {
+        se.zetanew <- se;
+        out$sd$zeta <- se.zetanew
       }
 
     }}, silent=T)

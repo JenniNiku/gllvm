@@ -67,7 +67,8 @@
 #'   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
 #'   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
 #'   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
-#'   \item{\emph{scalmax}: }{ Sets starting value for the range/scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the coordinates between 0-10.}
+#'   \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
+#'   \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
 #' }
 #' @param ... Not used.
 #'
@@ -400,9 +401,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
                   plot = FALSE, link = "probit", 
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 4000, maxit = 4000, trace = FALSE, optim.method = NULL), 
+                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="unstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5), setMap=NULL, ...
+                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
   if(!is.null(lvCor)) warning("'lvCor' is under development, so all properties may not work properly.")
@@ -451,9 +452,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
         }
       if (!("max.iter" %in% names(x))) 
-        x$max.iter = 200
+        x$max.iter = 6000
       if (!("maxit" %in% names(x))) 
-        x$maxit = 4000
+        x$maxit = 6000
       if (!("trace" %in% names(x))) 
         x$trace = FALSE
       x
@@ -497,6 +498,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$start.struc = "LV"
       if (!("scalmax" %in% names(x))) 
         x$scalmax = 10
+      if (!("rangeP" %in% names(x))) 
+        x$rangeP = NULL
       if (!("MaternKappa" %in% names(x))) 
         x$MaternKappa = 1.5
       x
@@ -564,7 +567,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start;scalmax=control.start$scalmax; MaternKappa=control.start$MaternKappa
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa
     
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
@@ -961,6 +964,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       indM<-indM[order(indM[,1]),]
       dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]))!=0)
       NN<-indM[dupl,]
+    } else if(Lambda.struc %in% c("LR") & num.lv.cor>0){
+      NN <- as.matrix(NN)
     } else {NN=matrix(0)}
     
     if(num.lv==0&num.lv.c==0&num.RR==0)quadratic <- FALSE
@@ -1086,12 +1091,31 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (method == "VA")
         out$link <- "probit"
     }
-    if (family == "beta") {
+    if (family %in% c("beta","betaH","orderedBeta")) {
         out$link <- link
+    }
+
+    if (family == "orderedbeta") {
+      out$link <- "probit"
     }
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
     if (TMB) {
+      if (family == "betaH") {
+        if(is.null(colnames(y))) colnames(y)= paste("y",1:NCOL(y))
+        y01 = y #(y>0)*1; 
+        if(is.null(colnames(y01))) colnames(y01)= paste("y",1:NCOL(y01))
+        colnames(y01) = paste("H01",colnames(y01), sep = "_")
+        y=cbind(y,y01)
+        if(!is.null(TR)){
+          TR=rbind(TR,TR)
+        }
+        if(!is.null(disp.group)){
+          disp.group=c(disp.group,disp.group)
+        }
+        O = cbind(O,O)
+      }
+      
       # trace = FALSE
       if (row.eff == TRUE)
         row.eff <- "fixed"
@@ -1142,7 +1166,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             optim.method=optim.method, 
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
-            scalmax = scalmax, MaternKappa = MaternKappa,
+            scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )
@@ -1193,7 +1217,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             randomB = randomB,
             optim.method=optim.method, 
             dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
-            scalmax = scalmax, MaternKappa = MaternKappa,
+            scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
         )

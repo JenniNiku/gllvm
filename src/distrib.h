@@ -109,19 +109,17 @@ matrix<Type> corExp(Type s0, Type s1, int nr, matrix<Type> dc)
 
 // Matern correlation matrix
 template <class Type>
-matrix<Type> corMatern(Type s0, Type s1, Type s2, int nr, matrix<Type> dc)
+matrix<Type> corMatern(Type s0, Type phi, Type kappa, int nr, matrix<Type> dc)
 {
 //   // s0 covariance
-//   //s1 range
-//   //s2 smoothness
+//   //phi range
+//   //kappa smoothness
   matrix<Type> S(nr,nr);
-  Type ph = exp(s1);
-  Type kappa = exp(s2);
   for (int d=0;d<nr;d++) {
     S(d,d)=s0*s0;
     for (int j=0;j<d;j++){
       // S(d,j)=s0*matern(dc(d,j), ph, kappa)*s0;
-      S(d,j)=s0*matern(sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum()), ph, kappa)*s0; //old
+      S(d,j)=s0*matern(sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum()), phi, kappa)*s0; //old
       S(j,d)=S(d,j);
     }
   }

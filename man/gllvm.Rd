@@ -38,14 +38,14 @@ gllvm(
   gradient.check = FALSE,
   disp.formula = NULL,
   control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
-    + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 4000, maxit =
-    4000, trace = FALSE, optim.method = NULL),
+    + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
+    6000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc =
     "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN
     = 3),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
     start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01,
-    start.struc = "LV", scalmax = 10, MaternKappa = 1.5),
+    start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP = NULL),
   setMap = NULL,
   ...
 )
@@ -149,7 +149,8 @@ gllvm(
   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
-  \item{\emph{scalmax}: }{ Sets starting value for the range/scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the coordinates between 0-10.}
+  \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
+  \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
 }}
 
 \item{setMap}{UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed}
