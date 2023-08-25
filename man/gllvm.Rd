@@ -42,8 +42,7 @@ gllvm(
     + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
     6000, trace = FALSE, optim.method = NULL),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc =
-    "unstructured", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN
-    = 3),
+    "diagonal", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
     start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01,
     start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP = NULL),
@@ -104,6 +103,8 @@ gllvm(
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
 
+\item{Ntrials}{number of trials for binomial family.}
+
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental).}
 
 \item{seed}{a single seed value, defaults to \code{NULL}.}
@@ -132,6 +133,7 @@ gllvm(
 \itemize{
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
+ \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
