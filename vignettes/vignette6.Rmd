@@ -65,7 +65,23 @@ RRGLM <- gllvm(Y, X = X, family = "poisson", num.RR = 2)
 RRGLM <- update(RRGLM, num.RR = 6,starting.val="zero", reltol.c= 1e-15)
 round(sweep(RRGLM$params$LvXcoef,2,apply(RRGLM$params$LvXcoef,2,function(x)sqrt(sum(x^2))),"/"),5)==round(sweep(qr.Q(qr(RRGLM$params$LvXcoef%*%t(RRGLM$params$theta))),2,sign(diag(qr.R(qr(RRGLM$params$LvXcoef%*%t(RRGLM$params$theta))))),"*"),5)
 ```
-The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`. To fit a constrained ordination we make use of additional optimization routines from the \texttt{alabama} and \texttt{nloptr} R-packages. This is necessary, because without the constraint that the predictor slopes are orthogonal the model is *unidentifiable*. It might thus happen, that after fitting the model a warning pops-up along the lines of *predictor slopes are not orthogonal*, in which case you will have to re-fit the model with a different optimization routine (`optimizer='alabama'`) or starting values (`starting.values='zero'`) in order to get the constraints on the canonical coefficients to better converge.
+The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`:
+```{r eval=TRUE, echo=FALSE}
+load("RRGLM.RData")
+```
+```{r eval=TRUE, echo=TRUE}
+summary(RRGLM, rotate = TRUE)
+```
+
+Note the use of the `rotate` argument. This ensures that the solution of the canonical coefficients is rotated to the same solution as displayed in `ordiplot` (which has the same `rotate` argument that is by default set to TRUE). The summary can be useful in determining what drives vertical and horizontal shifts in the location of species and sites in the ordination diagram (but probably not for much more than that).
+
+Unlike the canonical coefficients, the reconstructed species-specific effects are invariant to rotation, so that it is always good practice to additionally study those for more exhaustive inference;
+
+```{r fig.height=2, fig.width=7, echo=TRUE, eval=TRUE}
+coefplot(RRGLM, cex.ylab = 0.5, mar = c(4,2,2,1))
+```
+
+To fit a constrained ordination we make use of additional optimization routines from the \texttt{alabama} and \texttt{nloptr} R-packages. This is necessary, because without the constraint that the predictor slopes are orthogonal the model is *unidentifiable*. It might thus happen, that after fitting the model a warning pops-up along the lines of *predictor slopes are not orthogonal*, in which case you will have to re-fit the model with a different optimization routine (`optimizer='alabama'`) or starting values (`starting.values='zero'`) in order to get the constraints on the canonical coefficients to better converge.
 
 Note: in general to improve convergence, it is good practice to center and scale the predictor variables. 
 
@@ -77,9 +93,39 @@ Generally, constrained ordination can have difficulty in estimating the predicto
 RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "LV")
 RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "P")
 ```
+```{r eval=T, echo=F}
+load("RRGLMb1.RData")
+```
 where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
 
-Note: when using a random-effects formulation, there are no confidence intervals available for the canonical coefficients anymore (though also see the function `getPredictErr(.)`). This is because the variance of estimators tends to be on the low side with regularisation.
+A plot of species-specific effects can be constructed with the  `randomCoefplot` function:
+```{r fig.height=2, fig.width=7}
+randomCoefplot(RRGLMb1, cex.ylab = 0.5, mar = c(4,2,2,1))
+```
+
+
+When using a random-effects formulation, there is no summary table and there are no confidence intervals available for the canonical coefficients. It is possible to construct a summary table with the prediction of the random-effects and the association prediction errors as follows:
+
+```{r eval=T, echo=T}
+# Get coefficients
+coefs<-data.frame(coef(RRGLMb1,"LvXcoef"))
+coefs$Predictor <- row.names(coefs)
+
+# Wide to long
+coefsTab<-reshape(coefs, 
+        direction = "long",
+        varying = list(colnames(coefs)[1:(RRGLMb1$num.lv.c+RRGLMb1$num.RR)]),
+        v.names = "Estimate", 
+        times=colnames(coefs)[1:(RRGLMb1$num.lv.c+RRGLMb1$num.RR)], 
+        timevar = "LV",
+        new.row.names = NULL)
+# Add prediction errors
+coefsTab <- cbind(coefsTab,PE=c(getPredictErr(RRGLMb1)$b.lv))
+row.names(coefsTab)<-1:nrow(coefsTab)
+coefsTab[,-4]
+```
+
+There is a range of potential use cases for random canonical coefficients, but pragmatically, inducing some shrinkage on the predictor effects can result in more better "behaved" (fewer outliers) ordination plots. 
 
 ## Concurrent ordination
 
@@ -129,8 +175,8 @@ references:
   - family: O'Hara
     given: R.B.
   publisher: Methods in Ecology and Evolution
-  volume: 00
-  page: 1-13
+  volume: 14
+  page: 683–695
   type: article-journal
   issued:
     year: 2022

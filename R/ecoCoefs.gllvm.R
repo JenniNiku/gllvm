@@ -29,6 +29,7 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
     num.lv.c <- object$num.lv.c+object$num.RR
     p <- ncol(object$y)
     opt<-object$params$theta[,1:(num.lv+num.lv.c)]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c))]))
+    if(!isFALSE(object$randomB))sd.errors = FALSE
     if(sd.errors==TRUE){
       if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
         cat("Standard errors not present in model, calculating...\n")
@@ -136,6 +137,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
   p <- ncol(object$y)
   quadratic <- object$quadratic
   tol<-1/sqrt(-2*object$params$theta[,-c(1:(num.lv+num.lv.c))])
+  if(!isFALSE(object$randomB))sd.errors = FALSE
   if(sd.errors==TRUE){
     if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       cat("Standard errors not present in model, calculating...\n")

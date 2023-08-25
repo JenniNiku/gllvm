@@ -64,17 +64,11 @@ se.gllvm <- function(object, ...){
       }
       if(object$method == "LA"){
         pars <- objrFinal$par
-        if(family=="ZIP") {
-          p0i <- names(pars)=="lg_phi"
-          p0 <- pars[p0i]
-          p0 <- p0+runif(p,0,0.001)
-          pars[p0i] <- p0
-        }
         sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
       }
 
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
-      
+      incl[names(objrFinal$par)=="ePower"] <- FALSE
       # Variational params not included for incl
 
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
@@ -92,7 +86,7 @@ se.gllvm <- function(object, ...){
       if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
       if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-
+      if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
       
       if(num.lv>0) {
         incld[names(objrFinal$par)=="Au"] <- TRUE
@@ -101,7 +95,6 @@ se.gllvm <- function(object, ...){
         incl[names(objrFinal$par)=="lambda2"] <- FALSE;
         incl[names(objrFinal$par)=="lambda"] <- FALSE;
       }
-      
       
       if(object$row.eff=="random") {
         incld[names(objrFinal$par)=="lg_Ar"] <- TRUE
@@ -127,6 +120,7 @@ se.gllvm <- function(object, ...){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- try(sqrt(diag(abs(covM))))
+        names(se) = names(object$TMBfn$par[incl])
         
         trpred<-try({
           if(num.lv > 0 || object$row.eff == "random" || !is.null(object$randomX)) {
@@ -153,56 +147,59 @@ se.gllvm <- function(object, ...){
         A.mat <- sdr[incl,incl] # a x a
         D.mat <- sdr[incld,incld] # d x d
         B.mat <- sdr[incl,incld] # a x d
-        cov.mat.mod <- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat)),silent=T) 
+        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+        if(inherits(cov.mat.mod,"try-error")){
+          # block inversion via inverse of fixed-effects block
+          Ai <- try(solve(A.mat),silent=T)
+          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+        }
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- sqrt(diag(abs(cov.mat.mod)))
+        names(se) = names(object$TMBfn$par[incl])
         
         incla<-rep(FALSE, length(incl))
         incla[names(objrFinal$par)=="u"] <- TRUE
         out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
         
       }
+
+      # reformat SEs based on the list that went into TMB
+      se <- relist.gllvm(se, object$TMBfn$env$parList())
       
       if(object$row.eff=="fixed") {
-        se.row.params <- c(0,se[1:(n-1)]); 
-        names(se.row.params)  = rownames(object$y); se <- se[-(1:(n-1))] 
+        se.row.params <- c(0,se$r0); 
+        names(se.row.params)  = rownames(object$y);
       }
-      if(object$beta0com){
-        se.beta0 <- se[1]; se <- se[-1];
-      } else {
-        se.beta0 <- se[1:p]; se <- se[-(1:p)];
-      }
-      if(family %in% "betaH"){
-        out$sd$betaH <- se[1:length(object$params$betaH)];  se <- se[-(1:length(object$params$betaH))]
-      }
-      se.B <- se[1:length(object$params$B)]; se <- se[-(1:length(object$params$B))];
+      se.beta0 <- se$b[1,]
+
+      # if(family %in% "betaH"){
+      #   out$sd$betaH <- se$bH
+      # }
+      se.B <- se$B
+      
       if(num.lv > 0) {
-        se.sigma.lv <- se[1:num.lv];se<-se[-c(1:num.lv)]
-        se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
+        se.sigma.lv <- se$sigmaLV[1:num.lv]
+        se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
-        rownames(se.lambdas) <- colnames(out$y)
+        rownames(se.lambdas) <- colnames(object$y)
         out$sd$theta <- se.lambdas; 
-        if((p * num.lv - sum(0:num.lv))>0) se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
         
         if(quadratic==TRUE){
-          se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
+          se.lambdas2 <- matrix(se$lambda2, p, num.lv, byrow = T)  
           colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
-          se <- se[-(1:(num.lv*p))]
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }else if(quadratic=="LV"){
-          se.lambdas2 <- matrix(se[1:num.lv], p, num.lv, byrow = T)
+          se.lambdas2 <- matrix(se$lambda2, p, num.lv, byrow = T)
           colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
-          se <- se[-(1:num.lv)]
           out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
         }
         out$sd$sigma.lv  <- se.sigma.lv
         names(out$sd$sigma.lv) <- colnames(object$params$theta[,1:num.lv])
-        if(num.lv>0 & family == "betaH"){
-          se.thetaH <- matrix(0,num.lv,p); 
-          se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
-          se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
-          out$sd$se.thetaH <- se.thetaH
-        }
+        # if(num.lv>0 & family == "betaH"){
+        #   se.thetaH <- matrix(0,num.lv,p); 
+        #   se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se$thetaH;
+        #   out$sd$se.thetaH <- se.thetaH
+        # }
         
       }
       # For correlated LVs:
@@ -211,12 +208,23 @@ se.gllvm <- function(object, ...){
       # }
       out$sd$beta0 <- se.beta0; 
       if(!object$beta0com){ names(out$sd$beta0)  <-  colnames(object$y);}
-      out$sd$B <- se.B; 
+      out$sd$B <- c(se.B); 
       names(out$sd$B) <- names(object$params$B)
       if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
       
+      if(family %in% c("ZINB")) {
+        se.ZINB.lphis <- se$lg_phiZINB[disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+        out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
+        names(out$sd$ZINB.phi) <- colnames(object$y);
+        
+        if(!is.null(names(disp.group))){
+          try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
+        }
+        names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+      }
+      
       if(family %in% c("negative.binomial")) {
-        se.lphis <- se[1:length(unique(disp.group))];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+        se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
         out$sd$phi <- se.lphis*object$params$phi;
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
@@ -226,10 +234,10 @@ se.gllvm <- function(object, ...){
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
         names(out$sd$inv.phi) <-  names(out$sd$phi)
-        se <- se[-(1:length(unique(disp.group)))]
       }
-      if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH")) {
-        se.lphis <- se[1:length(unique(disp.group))];
+      
+      if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")) {
+        se.lphis <- se$lg_phi[disp.group];
         out$sd$phi <- se.lphis*object$params$phi;
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
@@ -238,12 +246,16 @@ se.gllvm <- function(object, ...){
         }else{
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
-        
-        se <- se[-(1:length(unique(disp.group)))]
       }
-      if(family %in% c("ZIP")) {
-        se.phis <- se[1:length(unique(disp.group))];
-        out$sd$phi <- se.phis*exp(object$lp0)/(1+exp(object$lp0))^2;#
+      
+      if(family%in%c("ZIP","ZINB")) {
+        p0i <- names(pars)=="lg_phi"
+        p0 <- pars[p0i]
+      }
+      
+      if(family %in% c("ZIP","ZINB")) {
+        se.phis <- se$lg_phi[disp.group];
+        out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
         }else if(!is.null(names(disp.group))){
@@ -251,29 +263,28 @@ se.gllvm <- function(object, ...){
         }else{
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
-        se <- se[-(1:length(unique(disp.group)))]
       }
+      
       if(!is.null(object$randomX)){
         nr <- ncol(xb)
-        out$sd$sigmaB <- se[1:ncol(xb)]*c(sqrt(diag(object$params$sigmaB))); 
+        out$sd$sigmaB <- se$sigmaB*c(sqrt(diag(object$params$sigmaB))); 
         names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
-        se <- se[-(1:ncol(xb))]
         if(nr>1){
-          out$sd$corrpar <- se[1:(nr*(nr-1)/2)]
-          se <- se[-(1:(nr*(nr-1)/2))]
+          out$sd$corrpar <- se$sigmaij
         }
       }
+      
       if(object$row.eff=="random") { 
-        out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
+        out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
         names(out$sd$sigma) <- "sigma"; 
-        se=se[-(1:(length(object$params$sigma)))] 
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$rho_lvc*(1-object$params$rho^2)^1.5};
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$rho_lvc*object$params$rho};
       }
+      
       if(num.lv.cor>0 & cstrucn>0){
         if(length(object$params$rho.lv)>0){
-          if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:num.lv.cor)]*(1-object$params$rho.lv^2)^1.5; se = se[-(1:num.lv.cor)]}
-          if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*object$params$rho.lv; se = se[-(1:length(object$params$rho.lv))]}
+          if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
+          if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
           names(out$sd$rho.lv) <- names(object$params$rho.lv)
         }
         # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
@@ -283,7 +294,7 @@ se.gllvm <- function(object, ...){
         y <- object$y
         K = max(y)-min(y)
         if(min(y)==0) y <- y+1 
-        se.zetanew <- se.zetas <- se;
+        se.zetanew <- se.zetas <- se$zeta;
         if(object$zeta.struc == "species"){
           se.zetanew <- matrix(NA,nrow=p,ncol=K)
           idx<-0
@@ -307,12 +318,15 @@ se.gllvm <- function(object, ...){
           
         }
       }
+      if(family== "orderedBeta") {
+        out$sd$zeta <- se$zeta
+      }
       
     }
   } else {
     #Without traits#
     pars <- objrFinal$par
-    if(family=="ZIP") {
+    if(family %in% c("ZIP","ZINB")) {
       p0i <- names(pars)=="lg_phi"
       p0 <- pars[p0i]
       p0 <- p0+runif(p,0,0.001)
@@ -324,8 +338,18 @@ se.gllvm <- function(object, ...){
     if(method == "LA"){
       sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
     }
-    m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
+    # makes a small correction to the partial derivatives of LvXcoef if fixed-effect
+    # because of constrained objective function
+    # assumes L(x) = f(x) + lambda*c(x) for constraint function c(x)
+    # though this is not (exactly) how we are fitting the model.
+    if((object$num.RR+object$num.lv.c)>1 && object$randomB==FALSE){
+      b_lvHE <- sdr[names(pars)=="b_lv",names(pars)=="b_lv"]
+      Lmult <- lambda(pars,objrFinal) #estimates  lagranian multiplier
+      sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(object$lv.X), d = object$num.lv.c+object$num.RR)
+    }
     
+    m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
+    incl[names(objrFinal$par)=="ePower"] <- FALSE
     # Not used for this model
     incl[names(objrFinal$par)=="B"] <- FALSE
     incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
@@ -359,7 +383,8 @@ se.gllvm <- function(object, ...){
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
     if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-
+    if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+    
     if((num.lv+num.lv.c)>0){
       inclr[names(objrFinal$par)=="u"] <- TRUE;
       incld[names(objrFinal$par)=="u"] <- TRUE;
@@ -387,6 +412,8 @@ se.gllvm <- function(object, ...){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
+      names(se) = names(object$TMBfn$par[incl])
+      
       trpred<-try({
       if((num.lv+num.lv.c) > 0 || object$row.eff == "random"){
         sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)
@@ -422,9 +449,16 @@ se.gllvm <- function(object, ...){
       D.mat <- sdr[incld, incld] # d x d
       B.mat <- sdr[incl, incld] # a x d
       
-      cov.mat.mod <- try({MASS::ginv(A.mat-B.mat%*%solve(D.mat)%*%t(B.mat))})
+      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+      if(inherits(cov.mat.mod,"try-error")){
+        # block inversion via inverse of fixed-effects block
+        Ai <- try(solve(A.mat),silent=T)
+        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+      }
+      
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- sqrt(diag(abs(cov.mat.mod)))
+      names(se) = names(object$TMBfn$par[incl])
       
       incla<-rep(FALSE, length(incl))
       incla[names(objrFinal$par)=="u"] <- TRUE
@@ -432,98 +466,109 @@ se.gllvm <- function(object, ...){
 
     }
     
+    # reformat SEs based on the list that went into TMB
+    se <- relist.gllvm(se, object$TMBfn$env$parList())
+    
     num.X <- 0; if(!is.null(object$X)) num.X <- dim(object$X.design)[2]
     if(object$row.eff == "fixed") { 
-      se.row.params <- c(0,se[1:(n-1)]); 
-      names(se.row.params) <- rownames(object$y); se <- se[-(1:(n-1))] 
-      }
-    sebetaM <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  
-    se <- se[-(1:((num.X+1)*p))]
-    
-    
-    if(family %in% "betaH"){
-      out$sd$betaH <- matrix(se[1:((num.X+1)*p)],p,num.X+1,byrow=TRUE);  se <- se[-(1:((num.X+1)*p))]
-      rownames(out$sd$betaH) <- rownames(object$params$betaH); 
-      colnames(out$sd$betaH) <- colnames(object$params$betaH)
+      se.row.params <- c(0,se$r0); 
+      names(se.row.params) <- rownames(object$y);
     }
+    if(family %in% "betaH"){
+      p = p*2
+      # out$sd$betaH <- matrix(se$bH,p,num.X+1,byrow=TRUE);
+      # rownames(out$sd$betaH) <- rownames(object$params$betaH);
+      # colnames(out$sd$betaH) <- colnames(object$params$betaH)
+    }
+    sebetaM <- matrix(se$b,p,num.X+1,byrow=TRUE);  
+
+
 
     if((num.lv.c+num.RR)>0&object$randomB==FALSE){
-      se.LvXcoef <- matrix(se[1:((num.lv.c+num.RR)*ncol(lv.X))],ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
-      se <- se[-c(1:((num.lv.c+num.RR)*ncol(lv.X)))]
+      se.LvXcoef <- matrix(se$b_lv,ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
       colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
       row.names(se.LvXcoef) <- colnames(lv.X)
       out$sd$LvXcoef <- se.LvXcoef
     }
 
     if((num.lv.c+num.lv)>0){
-      se.sigma.lv <- se[1:(num.lv+num.lv.c)];
-      se<-se[-c(1:(num.lv+num.lv.c))]
+      se.sigma.lv <- se$sigmaLV;
     }
     
     if(num.lv > 0&(num.lv.c+num.RR)==0) {
-      se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
+      se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
       colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
       rownames(se.lambdas) <- colnames(object$y)
       out$sd$theta <- se.lambdas; 
-      if((p * num.lv - sum(0:num.lv))>0) se <- se[-(1:(p * num.lv - sum(0:num.lv)))];
+      if(((p * num.lv - sum(0:num.lv))>0) && (num.RR+num.lv.c)>0) se$lambda <- se$lambda[-(1:(p * num.lv - sum(0:num.lv)))];
       
       if(quadratic==TRUE){
-        se.lambdas2 <- matrix(se[1:(p * num.lv)], p, num.lv, byrow = T)  
+        se.lambdas2 <- matrix(se$lambda2[1:(p * num.lv)], p, num.lv, byrow = T)  
         colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
-        se <- se[-(1:(num.lv*p))]
+        se$lambda2 <- se$lambda2[-(1:(num.lv*p))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }else if(quadratic=="LV"){
-        se.lambdas2 <- matrix(se[1:num.lv], p, num.lv, byrow = T)
+        se.lambdas2 <- matrix(se$lambda2[1:num.lv], p, num.lv, byrow = T)
         colnames(se.lambdas2) <- paste("LV", 1:num.lv, "^2", sep = "")
-        se <- se[-(1:num.lv)]
+        se$lambda2 <- se$lambda2[-(1:num.lv)]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }
     }else if(num.lv==0&(num.lv.c+num.RR)>0){
-      se.lambdas <- matrix(0,p,(num.lv.c+num.RR)); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
+      se.lambdas <- matrix(0,p,(num.lv.c+num.RR)); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
       colnames(se.lambdas) <- paste("CLV", 1:(num.lv.c+num.RR), sep="");
-      rownames(se.lambdas) <- colnames(out$y)
-      out$sd$theta <- se.lambdas; se <- se[-(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
+      rownames(se.lambdas) <- colnames(object$y)
+      out$sd$theta <- se.lambdas; se$lambda <- se$lambda[-(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
       
       if(quadratic==TRUE){
-        se.lambdas2 <- matrix(se[1:(p * (num.lv.c+num.RR))], p, (num.lv.c+num.RR), byrow = T)  
+        se.lambdas2 <- matrix(se$lambda2[1:(p * (num.lv.c+num.RR))], p, (num.lv.c+num.RR), byrow = T)  
         colnames(se.lambdas2) <- paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = "")
-        se <- se[-(1:((num.lv.c+num.RR)*p))]
+        se$lambda2 <- se$lambda2[-(1:((num.lv.c+num.RR)*p))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }else if(quadratic=="LV"){
-        se.lambdas2 <- matrix(se[1:(num.lv.c+num.RR)], p, (num.lv.c+num.RR), byrow = T)
+        se.lambdas2 <- matrix(se$lambda2[1:(num.lv.c+num.RR)], p, (num.lv.c+num.RR), byrow = T)
         colnames(se.lambdas2) <- paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = "")
-        se <- se[-(1:(num.lv.c+num.RR))]
+        se$lambda2 <- se$lambda2[-(1:(num.lv.c+num.RR))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }
       
     }else if(num.lv>0&(num.lv.c+num.RR)>0){
       se.lambdas <- matrix(0,p,num.lv+(num.lv.c+num.RR));
-      se.lambdas[,1:(num.lv.c+num.RR)][lower.tri(se.lambdas[,1:(num.lv.c+num.RR),drop=F], diag=FALSE)] <- se[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
-      se <- se[-c(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
-      se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas)][lower.tri(se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se[1:(p * num.lv - sum(0:num.lv))];
-      if((p * num.lv - sum(0:num.lv))>0) se <- se[-c(1:(p * num.lv - sum(0:num.lv)))]
+      se.lambdas[,1:(num.lv.c+num.RR)][lower.tri(se.lambdas[,1:(num.lv.c+num.RR),drop=F], diag=FALSE)] <- se$lambda[1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR)))];
+      se$lambda <- se$lambda[-c(1:(p * (num.lv.c+num.RR) - sum(0:(num.lv.c+num.RR))))];
+      se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas)][lower.tri(se.lambdas[,((num.lv.c+num.RR)+1):ncol(se.lambdas),drop=F], diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
+      if(((p * num.lv - sum(0:num.lv))>0) && (num.lv.c + num.RR)>0) se$lambda <- se$lambda[-c(1:(p * num.lv - sum(0:num.lv)))]
       colnames(se.lambdas) <- c(paste("CLV", 1:(num.lv.c+num.RR), sep=""),paste("LV", 1:num.lv, sep=""));
-      rownames(se.lambdas) <- colnames(out$y)
+      rownames(se.lambdas) <- colnames(object$y)
       out$sd$theta <- se.lambdas;
       
       if(quadratic==TRUE){
-        se.lambdas2 <- matrix(se[1:(p * ((num.lv.c+num.RR)+num.lv))], p, (num.lv.c+num.RR)+num.lv, byrow = T)  
+        se.lambdas2 <- matrix(se$lambda2[1:(p * ((num.lv.c+num.RR)+num.lv))], p, (num.lv.c+num.RR)+num.lv, byrow = T)  
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
-        se <- se[-(1:((num.lv+(num.lv.c+num.RR))*p))]
+        se$lambda2 <- se$lambda2[-(1:((num.lv+(num.lv.c+num.RR))*p))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }else if(quadratic=="LV"){
-        se.lambdas2 <- matrix(se[1:((num.lv.c+num.RR)+num.lv)], p, (num.lv.c+num.RR)+num.lv, byrow = T)
+        se.lambdas2 <- matrix(se$lambda2[1:((num.lv.c+num.RR)+num.lv)], p, (num.lv.c+num.RR)+num.lv, byrow = T)
         colnames(se.lambdas2) <- c(paste("CLV", 1:(num.lv.c+num.RR), "^2", sep = ""),paste("LV", 1:num.lv, "^2", sep = ""))
-        se <- se[-(1:((num.lv.c+num.RR)+num.lv))]
+        se$lambda2 <- se$lambda2[-(1:((num.lv.c+num.RR)+num.lv))]
         out$sd$theta <- cbind(out$sd$theta,se.lambdas2)
       }
     }
     
-    if(num.lv>0 & family == "betaH"){
-      se.thetaH <- matrix(0,num.lv,p); 
-      se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se[1:(sum(upper.tri(se.thetaH, diag=TRUE)))];
-      se <- se[-( 1:sum(upper.tri(se.thetaH, diag=TRUE)) )];
-      out$sd$se.thetaH <- se.thetaH
+    # if(num.lv>0 & family == "betaH"){
+    #   se.thetaH <- matrix(0,num.lv,p); 
+    #   se.thetaH[upper.tri(se.thetaH, diag=TRUE)] <- se$thetaH;
+    #   out$sd$se.thetaH <- se.thetaH
+    # }
+    
+    if(family %in% c("ZINB")) {
+      se.ZINB.lphis <- se$lg_phiZINB[disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+      out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
+      names(out$sd$ZINB.phi) <- colnames(object$y);
+      
+      if(!is.null(names(disp.group))){
+        try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
+      }
+      names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
     }
     
     if((num.lv+num.lv.c)>0){
@@ -543,7 +588,7 @@ se.gllvm <- function(object, ...){
     if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
     
     if(family %in% c("negative.binomial")) {
-      se.lphis <- se[1:length(unique(disp.group))];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+      se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
       out$sd$phi <- se.lphis*object$params$phi;
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
@@ -553,10 +598,10 @@ se.gllvm <- function(object, ...){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
       names(out$sd$inv.phi) <-  names(out$sd$phi)
-      se <- se[-(1:length(unique(disp.group)))]
     }
-    if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH")) {
-      se.lphis <- se[1:length(unique(disp.group))];
+    
+    if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")) {
+      se.lphis <- se$lg_phi[disp.group];
       out$sd$phi <- se.lphis*object$params$phi;
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
@@ -565,12 +610,11 @@ se.gllvm <- function(object, ...){
       }else{
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
-      
-      se <- se[-(1:length(unique(disp.group)))]
     }
-    if(family %in% c("ZIP")) {
-      se.phis <- se[1:length(unique(disp.group))];
-      out$sd$phi <- se.phis*exp(object$lp0)/(1+exp(object$lp0))^2;#
+    
+    if(family %in% c("ZIP","ZINB")) {
+      se.phis <- se$lg_phi[disp.group];
+      out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
       }else if(!is.null(names(disp.group))){
@@ -578,28 +622,25 @@ se.gllvm <- function(object, ...){
       }else{
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
-      se <- se[-(1:length(unique(disp.group)))]
     }
     if((object$randomB!=FALSE)&(num.lv.c+num.RR)>0){
-      se.lsigmab.lv <-  se[1:length(object$paramssigmaLvXcoef)];
-      se <-  se[-c(1:length(object$params$sigmaLvXcoef))]
+      se.lsigmab.lv <-  se$sigmab_lv;
       out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
       if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
       if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X)
       # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
-    if(object$row.eff=="random") { 
-      out$sd$sigma <- se[1:length(object$params$sigma)]*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1)); 
-      se=se[-(1:length(out$sd$sigma))] 
+    if(object$row.eff=="random") {
+      out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
       names(out$sd$sigma) <- "sigma" 
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se[1]*(1-object$params$rho^2)^1.5; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se[1]*object$params$rho; if(length(object$params$rho)>0) se = se[-(1:length(object$params$rho))]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$rho_lvc*(1-object$params$rho^2)^1.5}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$rho_lvc*object$params$rho}
     }
     if(num.lv.cor>0 & cstrucn>0){ 
       if(length(object$params$rho.lv)>0){
-        if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*(1-object$params$rho.lv^2)^1.5; se = se[-(1:length(object$params$rho.lv))]}
-        if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se[(1:length(object$params$rho.lv))]*object$params$rho.lv; se = se[-(1:length(object$params$rho.lv))]}
+        if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
+        if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
         names(out$sd$rho.lv) <- names(object$params$rho.lv)
       }
     }
@@ -608,7 +649,7 @@ se.gllvm <- function(object, ...){
       y <- object$y
       K = max(y)-min(y)
       if(min(y)==0) y <- y+1 
-      se.zetanew <- se.zetas <- se;
+      se.zetanew <- se.zetas <- se$zeta;
       if(object$zeta.struc == "species"){
         se.zetanew <- matrix(NA,nrow=p,ncol=K)
         idx<-0
@@ -631,6 +672,9 @@ se.gllvm <- function(object, ...){
         names(out$sd$zeta) <- paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep="")
         
       }
+    }
+    if(family== "orderedBeta") {
+      out$sd$zeta <- se$zeta
     }
     
   }

@@ -31,6 +31,7 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
+  Ntrials = 1,
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -61,7 +62,7 @@ gllvm(
 
 \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).}
 
-\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero inflated poisson (\code{"ZIP"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
+\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method) and \code{"ordinal"} (only with \code{"VA"}-method).}
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.}
 
@@ -103,7 +104,7 @@ gllvm(
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
 
-\item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1.}
+\item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental).}
 
 \item{seed}{a single seed value, defaults to \code{NULL}.}
 
@@ -173,6 +174,7 @@ An object of class "gllvm" includes the following components:
  \item{num.lv}{ Number of unconstrained latent variables}
  \item{num.lv.c}{ Number of latent variables in concurrent ordination}
  \item{num.RR}{ Number of latent variables in constrained ordination}
+ \item{Ntrials}{ Number of trials in a binomial model}
  \item{method}{ Method used for integration}
  \item{family}{ Response distribution}
  \item{row.eff}{ Type of row effect used}
@@ -238,9 +240,9 @@ The latent variables can then be passed to the \code{start.lvs} argument inside 
 }
 
 \subsection{Ordination with predictors}{
-For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_lv} can be included to explain the latent variables:
+For GLLVMs with both linear and quadratic response model, a series of predictors \eqn{x_{lv}} can be included to explain the latent variables:
 
-\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i})' D_j (B' x_{lv,i} + \epsilon_i) ,}
+\deqn{g(\mu_{ij}) = \alpha_i + \beta_{0j} + x_i'\beta_j + (B' x_{lv,i} + \epsilon_i)' \gamma_j - (B' x_{lv,i} + \epsilon_i)' D_j (B' x_{lv,i} + \epsilon_i) ,}
 where \eqn{z_i = B' x_{lv,i} + \epsilon_i} are latent variables informed by the predictors, but not constrained compared to unconstrained ordination as in methods such as CCA or RDA.
 Omitting the predictors results in an unconstrained ordination, and omitting \eqn{\epsilon_i} in the usual constrained ordination, which can also be fitted.
 }
@@ -292,8 +294,8 @@ With ordinal family response classes must start from 0 or 1.
 \itemize{
   \item{For count data \code{family = poisson()}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j}, or}
-  \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p)(1+\mu_{ij}p)}.}
-
+  \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p)}.}
+  \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})}.}
   
   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})//(1+\phi_j)}.}

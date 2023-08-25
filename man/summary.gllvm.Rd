@@ -7,13 +7,14 @@
 \usage{
 \method{summary}{gllvm}(
   object,
+  by = "all",
   digits = max(3L, getOption("digits") - 3L),
   signif.stars = getOption("show.signif.stars"),
   dispersion = FALSE,
   spp.intercepts = FALSE,
   row.intercepts = FALSE,
   Lvcoefs = FALSE,
-  rotate = FALSE,
+  rotate = TRUE,
   type = NULL,
   ...
 )
@@ -22,6 +23,8 @@
 }
 \arguments{
 \item{object}{an object of class 'gllvm'}
+
+\item{by}{By = "all" (default) will return a Wald statistics per predictor and LV if the ordination includes predictors, by = "terms" will return a multivariate Wald statistic per predictor (displayed at first LV), and by = "LV" will do the same but per dimension (displayed at first predictors).}
 
 \item{digits}{the number of significant digits to use when printing}
 
@@ -35,7 +38,7 @@
 
 \item{Lvcoefs}{option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.}
 
-\item{rotate}{defaults to \code{FALSE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.}
+\item{rotate}{defaults to \code{TRUE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.}
 
 \item{type}{to match "type" in \code{\link{ordiplot.gllvm}}}
 

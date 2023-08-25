@@ -51,11 +51,24 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   out <- list()
   
   if(object$method == "LA"){
-    if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
-    if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
-    if(object$randomB!=FALSE)out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
+    if(cov){
+      if((num.lv+num.RR+num.lv.c)>0) out$lvs <- object$prediction.errors$lvs
+      if(object$row.eff == "random") out$row.effects <- object$prediction.errors$row.params
+      if(object$randomB!=FALSE) out$b.lv <- object$prediction.errors$Ab.lv
+      if(!is.null(object$randomX)){
+        out$Br  <- object$prediction.errors$Br
+      }
+    } else {
+      if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
+      if(object$row.eff == "random") out$row.effects <- sqrt(abs(object$prediction.errors$row.params))
+      if(object$randomB!=FALSE) out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
+      if(!is.null(object$randomX)){
+        out$Br  <- sqrt(apply(object$prediction.errors$Br,1,diag))
+      }
+    }
   }
   
+
   if((object$method %in% c("VA", "EVA"))){
     if(object$row.eff == "random"){
       if(is.null(object$Ar)){
@@ -92,6 +105,10 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         object$Ar<-sdb$Ar[,1]+object$Ar
       }
       
+      if(!is.null(object$randomX)){
+        object$Ab <- sdb$Ab+object$Ab
+      }
+      
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(num.RR>0&object$randomB!=FALSE){
         if(object$randomB=="P"|object$randomB=="single"){
@@ -109,13 +126,6 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         object$A <- A
         
       }
-      # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
-    }
-
-
-          # >>>>>>> c266b618d639dc1c95d1e18ea39d0fb48c05ce87
-          
-          # if(!is.null(object$randomX)) object$Ab<-sdb$Ab+object$Ab
     }else if(!CMSEP&(num.RR+num.lv.c)>0){
       sdb <- list(Ab_lv = 0)
       
@@ -144,6 +154,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       # r=1
       out$row.effects <- (object$Ar)
     }
+
     if(length(dim(object$A))==2){
       out$lvs <- (object$A[,1:(num.lv+num.lv.c+num.RR)+r])
     } else  if((num.lv+num.lv.c+num.RR)>0){
@@ -153,11 +164,17 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         out$lvs <- (object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r])
       }
     }
+    
+    if(!is.null(object$randomX)){
+      out$Br <- object$Ab
+    }
+    
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
       if(object$randomB=="P") out$b.lv <- (abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
       if(object$randomB=="LV") out$b.lv <- (abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
+
   } else {
     if(object$row.eff=="random"){
       # r=1
@@ -173,11 +190,18 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         out$lvs <- sqrt(abs(apply((object$A[,1:(num.lv+num.lv.c+num.RR)+r,1:(num.lv+num.lv.c+num.RR)+r]),1,diag)))
       }
     }
+    
+    if(!is.null(object$randomX)){
+      out$Br <- sqrt(apply(object$Ab,1,diag))
+    }
+    
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
       if(object$randomB=="P")out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
       if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
+    
+  }
   }
 
   if((num.lv+num.lv.c+num.RR) > 1 & is.matrix(out$lvs)) out$lvs <- t(out$lvs)

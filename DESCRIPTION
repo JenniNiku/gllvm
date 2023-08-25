@@ -1,8 +1,8 @@
 Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
-Version: 1.4.2
-Date: 2023-8-4
+Version: 1.4.3
+Date: 2023-8-25
 Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.niku@jyu.fi"),
              person("Wesley", "Brooks", role = "aut"),
              person("Riki", "Herliansyah", role = "aut"),
@@ -18,7 +18,7 @@ Description: Analysis of multivariate data using generalized linear latent varia
       For details see Niku et al. (2019a) <doi:10.1371/journal.pone.0216129> and 
       Niku et al. (2019b) <doi:10.1111/2041-210X.13303>.
 License: GPL-2
-Imports: MASS, Matrix, statmod, fishMod, mgcv, alabama, nloptr
+Imports: MASS, Matrix, statmod, fishMod, mgcv, alabama, nloptr, methods
 Depends: R (>= 3.5.0), TMB, mvabund
 Encoding: UTF-8
 LazyData: true

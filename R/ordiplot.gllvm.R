@@ -330,7 +330,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (object$num.lv.c+object$num.lv)>0 && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           
@@ -458,7 +458,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
           sdb<-CMSEPf(object, type = type)$A
           
-          if((object$row.eff=="random") && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
+          if((object$row.eff=="random") && (object$num.lv.c+object$num.lv)>0  && (dim(object$A)[2]>(object$num.lv.c+object$num.lv)) & (object$num.lvcor==0)){
             object$A<- object$A[,-1,-1]
           }
           

@@ -122,8 +122,10 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |Counts  	    | Poisson 	   | VA/LA   |log	    | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$|
 |             | NB    	     | VA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
 |		          |		           |		     |		    | where $\phi_j>0$ is a dispersion parameter | 
-|             | ZIP       	 | LA      |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
+|             | ZIP       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
+|             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
+|		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
 |Binary       | Bernoulli 	 | VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
 |             |              | LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | LA/EVA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|

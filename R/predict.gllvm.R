@@ -335,7 +335,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     ilinkfun <- binomial(link = object$link)$linkinv
   if (object$family == "ordinal") 
     ilinkfun <- pnorm
-  if (object$family == "ZIP") 
+  if (object$family %in% c("ZIP","ZINB")) 
     ilinkfun <- function(eta) exp(eta) * (1 - matrix(object$params$phi, 
                                                      n, p, byrow = TRUE))
   if (object$family == "gaussian") 
