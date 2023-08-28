@@ -206,7 +206,7 @@ Type objective_function<Type>::operator() ()
       newlam.row(0).fill(1.0);
       Cu.diagonal().fill(1.0);
       
-      if((random(0)>0) && (n == nr)){
+      if(((random(0)>0) && (n == nr)) && (rstruc==0)){
         for (int d=1; d<nlvr; d++){
           // Delta(d,d) = exp(sigmaLV(d-1)); //!!!
           Delta(d,d) = fabs(sigmaLV(d-1));
@@ -464,7 +464,7 @@ Type objective_function<Type>::operator() ()
       if(num_lv_c>0){
         RRgamma.conservativeResize(num_RR+num_lv_c,Eigen::NoChange);
         if(num_RR>0)RRgamma.bottomRows(num_RR) = RRgamma.topRows(num_RR); 
-        if((random(0)==0) || ((random(0)>0) && (n!=nr))){RRgamma.topRows(num_lv_c) = newlam.topRows(num_lv_c);}else if(n == nr){RRgamma.topRows(num_lv_c) = newlam.middleRows(1,num_lv_c);}
+        if((random(0)==0) || ((random(0)>0) && ((n!=nr)|(rstruc>0)) )){RRgamma.topRows(num_lv_c) = newlam.topRows(num_lv_c);}else if(n == nr){RRgamma.topRows(num_lv_c) = newlam.middleRows(1,num_lv_c);}
       }
       for (int j=0; j<p; j++){
         for(int i=0; i<n; i++){
@@ -478,7 +478,7 @@ Type objective_function<Type>::operator() ()
         //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
         //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
         //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
-        if((num_lv_c>0) && (random(0)>0) && (n == nr)){
+        if((num_lv_c>0) && ((random(0)>0) && (n == nr)) && (rstruc==0)){
           u.middleCols(1, num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
         }else if(num_lv_c>0){
           u.leftCols(num_lv_c) += x_lv*b_lv.leftCols(num_lv_c);
@@ -1175,7 +1175,7 @@ Type objective_function<Type>::operator() ()
       if((num_lv_c>0) && (random(2)<1)){
         //concurrent ordination terms
         //predictor coefficients for constrained ordination
-        if((random(0)>0) && (n == nr)){
+        if(((random(0)>0) && (n == nr)) && (rstruc==0)){
           //first column are zeros in case of random intercept
           //right num_lv columns are zeros in case of num_lv
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
@@ -1186,7 +1186,7 @@ Type objective_function<Type>::operator() ()
         eta += x_lv*b_lv2*newlam;
         
       }else if((nlvr>0) && (random(2)>0) && (quadratic > 0)){
-        if((random(0)>0) && (n == nr)){
+        if(((random(0)>0) && (n == nr)) && (rstruc==0)){
           //first column are zeros in case of random intercept
           //middle cols are zeros in case of num_lv
           if(num_lv_c>0)b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
@@ -1940,7 +1940,7 @@ Type objective_function<Type>::operator() ()
       if(num_lv_c>0){
         matrix<Type> b_lv2(x_lv.cols(),nlvr);
         
-        if((random(0)>0) && (n == nr)){
+        if(((random(0)>0) && (n == nr)) && (rstruc==0)){
           //first column are zeros in case of random intercept
           b_lv2.middleCols(1,num_lv_c) = b_lv.leftCols(num_lv_c);
           
