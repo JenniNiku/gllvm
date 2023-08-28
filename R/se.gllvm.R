@@ -275,10 +275,10 @@ se.gllvm <- function(object, ...){
       }
       
       if(object$row.eff=="random") { 
-        out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
+        out$sd$sigma <- se$log_sigma[1]*c(object$params$sigma[1]);
         names(out$sd$sigma) <- "sigma"; 
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$rho_lvc*(1-object$params$rho^2)^1.5};
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$rho_lvc*object$params$rho};
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = c(na.omit(out$sd$rho))};
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = c(na.omit(out$sd$rho))};
       }
       
       if(num.lv.cor>0 & cstrucn>0){
@@ -632,10 +632,11 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$row.eff=="random") {
-      out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
+      # out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
+      out$sd$sigma <- se$log_sigma[1]*c(object$params$sigma[1]);
       names(out$sd$sigma) <- "sigma" 
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$rho_lvc*(1-object$params$rho^2)^1.5}
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$rho_lvc*object$params$rho}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = c(na.omit(out$sd$rho))}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = c(na.omit(out$sd$rho))}
     }
     if(num.lv.cor>0 & cstrucn>0){ 
       if(length(object$params$rho.lv)>0){
