@@ -80,9 +80,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     formula <- NULL
   }
   if (object$row.eff != FALSE) {
-    if(!is.null(newX) & length(all.vars(object$call$row.eff))){
+    if(!is.null(newX) & length(all.vars(object$call$row.eff))>0){
       if(all.vars(object$call$row.eff) %in% colnames(newX)) {
-        
+        warning("Using row effects for predicting new sites does not work yet.")
       }
     } else if ((length(object$params$row.params) != nrow(object$y)) & is.null(newX)) 
       object$params$row.params = c(object$TMBfn$env$data$dr0 %*% 
