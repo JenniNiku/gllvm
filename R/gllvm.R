@@ -609,10 +609,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
         stop("X must be a matrix or data.frame.")
+      if(any(is.na(X)) )
+        stop("NAs are not allowed in 'X'.")
     }
     if(!is.null(TR)){
-      if(!is.matrix(TR) && !is.data.frame(TR) ) 
+      if(!is.matrix(TR) && !is.data.frame(TR) )
         stop("TR must be a matrix or data.frame.")
+      if(any(is.na(TR)) )
+        stop("NAs are not allowed in 'TR'.")
     }
     #is.null(X)&is.null(data)&num.lv.c>0|
     if((num.RR+num.lv.c)>0&is.null(X)&is.null(data)){
@@ -643,6 +647,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if((num.lv.c+num.RR)>0&!is.null(formula)&is.null(lv.formula)){
       stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
+    
     
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -1009,6 +1014,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
     #   #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
     # }
+    if( any(!is.finite(y[!is.na(y)])) ) stop("Infinite values are not allowed in 'y'")
     if(any(is.na(y)))y[is.na(y)]<-NA_real_
     if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")
