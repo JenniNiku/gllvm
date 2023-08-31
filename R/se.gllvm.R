@@ -48,7 +48,10 @@ se.gllvm <- function(object, ...){
   quadratic <- object$quadratic
   nlvr <- num.lv + num.lv.c 
   nlvr <- num.lv  #+ (object$row.eff=="random")*1
-  cstrucn = switch(object$corP$cstruc, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+  cstrucn = c(0,0)
+  for (i in 1:length(object$corP$cstruc)) {
+    cstrucn[i] = switch(object$corP$cstruc[i], "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+  }
   corwithin <- object$corP$corwithin
   rstruc = object$rstruc
   family = object$family
@@ -164,7 +167,7 @@ se.gllvm <- function(object, ...){
       }
 
       # reformat SEs based on the list that went into TMB
-      se <- relist.gllvm(se, object$TMBfn$env$parList())
+      se <- relist.gllvm(se, object$TMBfn$env$parList(), object$TMBfn$env$map)
       
       if(object$row.eff=="fixed") {
         se.row.params <- c(0,se$r0); 
@@ -277,17 +280,17 @@ se.gllvm <- function(object, ...){
       if(object$row.eff=="random") { 
         out$sd$sigma <- se$log_sigma[1]*c(object$params$sigma[1]);
         names(out$sd$sigma) <- "sigma"; 
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = c(na.omit(out$sd$rho))};
-        if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = c(na.omit(out$sd$rho))};
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = out$sd$rho[!is.na(out$sd$rho)] };
+        if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = out$sd$rho[!is.na(out$sd$rho)]};
       }
       
-      if(num.lv.cor>0 & cstrucn>0){
+      if(num.lv.cor>0 & cstrucn[2]>0){
         if(length(object$params$rho.lv)>0){
-          if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
-          if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
+          if((cstrucn[2] %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
+          if((cstrucn[2] %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
           names(out$sd$rho.lv) <- names(object$params$rho.lv)
         }
-        # if((cstrucn %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
+        # if((cstrucn[2] %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
       }
 
       if(family %in% c("ordinal")){
@@ -635,13 +638,13 @@ se.gllvm <- function(object, ...){
       # out$sd$sigma <- se$log_sigma*c(object$params$sigma[1],rep(1,length(object$params$sigma)-1));
       out$sd$sigma <- se$log_sigma[1]*c(object$params$sigma[1]);
       names(out$sd$sigma) <- "sigma" 
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = c(na.omit(out$sd$rho))}
-      if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = c(na.omit(out$sd$rho))}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(1,3))) {out$sd$rho <- se$log_sigma[-1]*(1-object$params$rho^2)^1.5; out$sd$rho = out$sd$rho[!is.na(out$sd$rho)]}
+      if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(2,4))) {out$sd$rho <- se$log_sigma[-1]*object$params$rho; out$sd$rho = out$sd$rho[!is.na(out$sd$rho)]}
     }
-    if(num.lv.cor>0 & cstrucn>0){ 
+    if(num.lv.cor>0 & cstrucn[2]>0){ 
       if(length(object$params$rho.lv)>0){
-        if((cstrucn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
-        if((cstrucn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
+        if((cstrucn[2] %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
+        if((cstrucn[2] %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
         names(out$sd$rho.lv) <- names(object$params$rho.lv)
       }
     }

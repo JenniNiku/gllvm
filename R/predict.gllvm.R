@@ -224,7 +224,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         0) {
       
       if(!is.null(object$lvs)){
-        if(nrow(object$lvs)!=n) object$lvs = object$TMBfn$env$data$dr0%*%object$lvs # !!!
+        if(nrow(object$lvs)!=n) object$lvs = object$TMBfn$env$data$dLV%*%object$lvs # !!!
       }
       
       if (!is.null(newLV)) {

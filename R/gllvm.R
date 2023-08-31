@@ -402,9 +402,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
                   lvCor = NULL, studyDesign=NULL,dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
                   row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
-                  randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc="species",
+                  randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = 1,
-                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, gradient.check = FALSE, disp.formula = NULL,
+                  Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
+                  gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
@@ -415,7 +416,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
   if(!is.null(lvCor)) warning("'lvCor' is under development, so all properties may not work properly.")
     #change default behavior of num.lv.
     #if num.lv.c>0, num.lv defaults to 0 if it is 0. Otherwise, it defaults to 2
-  if(randomB!=FALSE&quadratic!=FALSE&(num.lv.c+num.RR)>0&method=="LA"){
+  if(randomB!=FALSE&&quadratic!=FALSE&&(num.lv.c+num.RR)>0&&method=="LA"){
     stop("Model with quadratic responses and random slopes not allowed with method 'LA'")
   }
   if((num.RR+num.lv.c)==0){
@@ -467,12 +468,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     
     fill_control.va = function(x){
-      if (!("Lambda.struc" %in% names(x))) 
+      if (!("Lambda.struc" %in% names(x)) & is.null(lvCor)) 
         x$Lambda.struc = "unstructured"
+      if (!("Lambda.struc" %in% names(x)) & !is.null(lvCor)) 
+        x$Lambda.struc = "diagonal"
       if (!("Ab.struct" %in% names(x))) 
         x$Ab.struct = "unstructured"
       if (!("Ar.struc" %in% names(x))) 
-        x$Ar.struc = "unstructured"
+        x$Ar.struc = "diagonal"
       if (!("diag.iter" %in% names(x))) 
         x$diag.iter = 5
       if (!("Ab.diag.iter" %in% names(x))) 
@@ -897,7 +900,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       y <- as.matrix(y)
 
 # Structured row parameters
-    rstruc = 0; dr = NULL; cstruc = "diag"
+    rstruc = 0; dr = NULL; dLV = NULL; cstruc = c("diag","diag")
     if(inherits(row.eff,"formula")) {
       bar.f <- findbars1(row.eff) # list with 3 terms
       grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
@@ -938,8 +941,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
         if(corWithin){ rstruc=2} else { rstruc=1}
       }
-      cstruc = corstruc(row.eff)[1]
-      if(cstruc == "diag" & rstruc==2) {rstruc=0; dr=NULL}
+      cstruc[1] = corstruc(row.eff)[1]
+      if(cstruc[1] == "diag" & rstruc==2) {rstruc=0; dr=NULL}
       row.eff = "random"
     }
     
@@ -974,9 +977,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       } else {
         # if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(lvCor),data=studyDesign)
-        dr <- t(as.matrix(mkReTrms1(bar.lv,mf)$Zt))
+        dLV <- t(as.matrix(mkReTrms1(bar.lv,mf)$Zt))
       }
-      cstruc = corstruc(lvCor)[1]
+      cstruc[2] = corstruc(lvCor)[1]
       num.lv.cor = num.lv
       # Have to set this to diagonal to avoid too many parameters:
       # Lambda.struc = "diagonal"
@@ -1197,7 +1200,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            dr=dr,dLV=dLV, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
@@ -1250,7 +1253,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            dr=dr, dLV=dLV, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group

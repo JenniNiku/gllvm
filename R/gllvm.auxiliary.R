@@ -2886,7 +2886,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
       }else if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0))>0 ){
         se <- as.matrix(se)
       } 
-      # else if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0))>0 & (num.lv.cor >0 & (fit$corP$cstruc !="diag"))){
+      # else if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0))>0 & (num.lv.cor >0 & (fit$corP$cstruc[2] !="diag"))){
       #   se <- diag(se)
       # }
       
@@ -3341,7 +3341,7 @@ relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton"))
     size <- length(unlist(skel_i))
     result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
                             skel_i)
-    
+
     ind <- ind + size
   }
   result

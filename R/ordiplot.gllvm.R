@@ -349,7 +349,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             for (i in 1:dim(A)[1]) {
               A[i,,]<-A[i,,]*object$AQ
             }
-          } else if((object$num.lvcor > 0) & (object$corP$cstruc !="diag")) {#Not used at the moment, under development
+          } else if((object$num.lvcor > 0) & (object$corP$cstruc[2] !="diag")) {#Not used at the moment, under development
             A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
             for (i in 1:object$num.lvcor) {
               A[,i,i]<- diag(object$A[,,i])
@@ -478,7 +478,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             for (i in 1:dim(A)[1]) {
               A[i,,]<-A[i,,]*object$AQ
             }
-          } else if((object$num.lvcor > 0) & (object$corP$cstruc !="diag")) {#Not used at the moment, under development
+          } else if((object$num.lvcor > 0) & (object$corP$cstruc[2] !="diag")) {#Not used at the moment, under development
             A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
             for (i in 1:object$num.lvcor) {
               A[,i,i]<- diag(object$A[,,i])

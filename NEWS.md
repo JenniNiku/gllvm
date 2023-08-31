@@ -1,7 +1,19 @@
+Version 1.4.3
+==============
+* For CRAN release 1.4.3 see updates for versions 1.4.2 and 1.4.3
+
+## Bug Fixes
+* Bug in correlated row effects fixed
+* Bug in getPredictErr for models fitted with LA fixed, and it returns now prediction errors for random slopes of X covariates as well
+* Bug in randomCoefplot fixed
+
 Version 1.4.2
+==============
+
+### New Features
 * Added a correction factor to the second partial derivatives of the canonical coefficients for concurrent and constrained ordination
 * Added `randomCoefPlot` functionality of constrained and concurrent ordination models with random slopes. Currently not supported for models with quadratic responses
-* Summary now provides the possibility to calculate wald statistics across LVs or predictors for concurrnet and constrained ordination
+* Summary now provides the possibility to calculate wald statistics across LVs or predictors for concurrent and constrained ordination
 * `coef` now renames parameter estimates with more intuitive names and allows to subset the parameter list with names
 * Tweedie power parameter is estimated now if set to NULL in `gllvm. 
 * VA support for Zero-inflated poisson distribution
@@ -19,6 +31,9 @@ Version 1.4.2
 * Bug in predictions with structured row intercepts was fixed, see issue #86
 
 Version 1.4.1
+==============
+
+### New Features
 * Computational stability of random slopes for constr. and concr. ordination significantly improved
 * Computational stability of quadratic model significantly improved
 * Unstructured VA covariance matrix for quadratic models with random intercepts
