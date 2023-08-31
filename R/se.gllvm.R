@@ -167,7 +167,7 @@ se.gllvm <- function(object, ...){
       }
 
       # reformat SEs based on the list that went into TMB
-      se <- relist.gllvm(se, object$TMBfn$env$parList(), object$TMBfn$env$map)
+      se <- relist.gllvm(se, object$TMBfn$env$parList())
       
       if(object$row.eff=="fixed") {
         se.row.params <- c(0,se$r0); 
