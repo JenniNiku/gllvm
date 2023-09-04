@@ -1271,6 +1271,7 @@ trait.TMB <- function(
     }
     if(family == "orderedBeta") {
       zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+      colnames(zetas) = c("cutoff0","cutoff1")
     }
     
     bi<-names(param)=="b"

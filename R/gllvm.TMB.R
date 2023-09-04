@@ -1196,6 +1196,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       if(family == "orderedBeta"){
         zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+        colnames(zetas) = c("cutoff0","cutoff1")
       }
       
       if((num.lv.c+num.RR)>0){
@@ -1756,6 +1757,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       if(family == "orderedBeta"){
         zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+        colnames(zetas) = c("cutoff0","cutoff1")
       }
       
     }

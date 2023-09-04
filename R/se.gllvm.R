@@ -87,7 +87,7 @@ se.gllvm <- function(object, ...){
 
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
       if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
-      if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+      if(familyn!=7 & familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
       if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
       
@@ -166,6 +166,21 @@ se.gllvm <- function(object, ...){
         
       }
 
+      
+      if(any(names(se)%in%names(object$TMBfn$env$map))){
+        map <- object$TMBfn$env$map[names(object$TMBfn$env$map)%in%names(se)]
+        # rebuild se vector if mapped parameters
+        se.new <- NULL
+        for(nm in unique(names(se))){
+          if(!nm%in%names(map)){
+            se.new <- c(se.new,se[names(se)==nm])
+          }else{
+            se.new <- c(se.new, se[names(se)==nm][map[[nm]]])
+          }
+          
+        }
+        se <- se.new
+      }
       # reformat SEs based on the list that went into TMB
       se <- relist.gllvm(se, object$TMBfn$env$parList())
       
@@ -286,8 +301,8 @@ se.gllvm <- function(object, ...){
       
       if(num.lv.cor>0 & cstrucn[2]>0){
         if(length(object$params$rho.lv)>0){
-          if((cstrucn[2] %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
-          if((cstrucn[2] %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
+          if((cstrucn[2] %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc[1:length(object$params$rho.lv)]*(1-object$params$rho.lv^2)^1.5}
+          if((cstrucn[2] %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc[1:length(object$params$rho.lv)]*object$params$rho.lv}
           names(out$sd$rho.lv) <- names(object$params$rho.lv)
         }
         # if((cstrucn[2] %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
@@ -322,7 +337,8 @@ se.gllvm <- function(object, ...){
         }
       }
       if(family== "orderedBeta") {
-        out$sd$zeta <- se$zeta
+        out$sd$zeta <- matrix(se$zeta,p,2)
+        colnames(out$sd$zeta) = c("cutoff0","cutoff1")
       }
       
     }
@@ -384,7 +400,7 @@ se.gllvm <- function(object, ...){
     
     #loadings for quadratic models
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
-    if(familyn!=7) incl[names(objrFinal$par)=="zeta"] <- FALSE
+    if(familyn!=7 && familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
     if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
     if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
     
@@ -469,6 +485,21 @@ se.gllvm <- function(object, ...){
 
     }
     
+    
+    if(any(names(se)%in%names(object$TMBfn$env$map))){
+      map <- object$TMBfn$env$map[names(object$TMBfn$env$map)%in%names(se)]
+      # rebuild se vector if mapped parameters
+      se.new <- NULL
+      for(nm in unique(names(se))){
+        if(!nm%in%names(map)){
+          se.new <- c(se.new,se[names(se)==nm])
+        }else{
+          se.new <- c(se.new, se[names(se)==nm][map[[nm]]])
+        }
+        
+      }
+      se <- se.new
+    }
     # reformat SEs based on the list that went into TMB
     se <- relist.gllvm(se, object$TMBfn$env$parList())
     
@@ -678,7 +709,8 @@ se.gllvm <- function(object, ...){
       }
     }
     if(family== "orderedBeta") {
-      out$sd$zeta <- se$zeta
+      out$sd$zeta <- matrix(se$zeta,p,2)
+      colnames(out$sd$zeta) = c("cutoff0","cutoff1")
     }
     
   }
