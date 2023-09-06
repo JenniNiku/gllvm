@@ -451,7 +451,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     } # ZIP probability
     if (family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
       phis <- fit$phi
-      if (family %in% c("betaH", "orderedBeta") & is.null(fit$phi)) {
+      if (family %in% c("betaH", "orderedBeta")) {
         phis <- rep(5,p)
       }
     }

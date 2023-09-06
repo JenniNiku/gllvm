@@ -534,7 +534,7 @@ trait.TMB <- function(
     
     if (family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
       phis <- res$phi
-      if (family %in% c("betaH", "orderedBeta") & is.null(res$phi)) {
+      if (family %in% c("betaH", "orderedBeta")) { # & is.null(res$phi)
         phis <- rep(5,p)
       }
     }

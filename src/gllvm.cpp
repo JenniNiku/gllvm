@@ -1812,10 +1812,12 @@ Type objective_function<Type>::operator() ()
             mu_prime = 0.0;
             mu_prime2 = 0.0;
             // probit link
-            if((y(i,j)==0) | (y(i,j)==1)){
+            if((y(i,j)==0)){
               // mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
-              nll -= log(pow(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)), y(i,j)) * pow(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)),(1-y(i,j)))) - cQ(i,j);
-              // nll -= y(i,j)*log(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) ) + (1-y(i,j))*log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+              // nll -= log(pow(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)), y(i,j)) * pow(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)),(1-y(i,j)))) - cQ(i,j);
+              nll -= (1-y(i,j))*log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+            } else if((y(i,j)==1)){
+              nll -= y(i,j)*log(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) ) - cQ(i,j); //
             } else{
               // if (extra(0) == 1) { // probit
               if(zeta.size()>p) {

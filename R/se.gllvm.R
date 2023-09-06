@@ -36,6 +36,13 @@ se.gllvm <- function(object, ...){
   if(!is.finite(object$logL)) stop("Standard errors can not be calculated if log-likelihood value is not finite.")
   if(object$TMB == FALSE) stop("Function is not implemented for TMB = FALSE.")
   objrFinal <- object$TMBfn
+  
+  if(object$family =="betaH"){
+    Y01 = (object$y>0)*1; colnames(Y01) = paste("H01",colnames(object$y), sep = "_")
+    object$y = cbind(object$y, Y01)
+  }
+  
+  
   n <- nrow(object$y)
   p <- ncol(object$y)
   method <- object$method
@@ -508,12 +515,11 @@ se.gllvm <- function(object, ...){
       se.row.params <- c(0,se$r0); 
       names(se.row.params) <- rownames(object$y);
     }
-    if(family %in% "betaH"){
-      p = p*2
-      # out$sd$betaH <- matrix(se$bH,p,num.X+1,byrow=TRUE);
-      # rownames(out$sd$betaH) <- rownames(object$params$betaH);
-      # colnames(out$sd$betaH) <- colnames(object$params$betaH)
-    }
+    # if(family %in% "betaH"){
+    #   # out$sd$betaH <- matrix(se$bH,p,num.X+1,byrow=TRUE);
+    #   # rownames(out$sd$betaH) <- rownames(object$params$betaH);
+    #   # colnames(out$sd$betaH) <- colnames(object$params$betaH)
+    # }
     sebetaM <- matrix(se$b,p,num.X+1,byrow=TRUE);  
 
 
