@@ -710,7 +710,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           m1 <- model.frame(formula, data = datayx)
           term <- terms(m1)
           lv.X <- NULL
-          lv.formula <- y ~ NULL
+          lv.formula <- ~ 1
         } else if(is.null(formula)&!is.null(lv.formula)){
           if(inherits(row.eff,"formula")){
             if(any(colnames(X)==all.vars(row.eff))){

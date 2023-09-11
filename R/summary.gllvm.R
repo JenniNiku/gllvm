@@ -267,7 +267,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     object$params$sigma.lv <- c(object$params$sigma.lv[1:num.lv.c],rep(0,num.RR), if(num.lv>0)object$params$sigma.lv[-c(1:(num.lv.c+num.RR))])
     
     if(rotate){
-      object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2)%*%svd_rotmat_sites))
+      object$params$sigma.lv <- sqrt(diag(t(svd_rotmat_sites)%*%diag(object$params$sigma.lv^2, ncol = num.lv+num.lv.c, nrow = num.lv+num.lv.c)%*%svd_rotmat_sites))
     }
     sumry$sigma.lv <- object$params$sigma.lv
   }
