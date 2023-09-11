@@ -3,9 +3,9 @@ citHeader("To cite the 'gllvm' package in publications use:")
 year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
 vers <- paste("R package version", meta$Version)
 
-citEntry(entry="Manual",
+bibentry(bibtype = "Manual",
          title = "gllvm: Generalized Linear Latent Variable Models",
-         author = personList(as.person("Jenni Niku"), as.person("Wesley Brooks"), as.person("Riki Herliansyah"), as.person("Francis K. C. Hui"), as.person("Pekka Korhonen"), as.person("Sara Taskinen"), as.person("Bert van der Veen"), as.person("David I. Warton")),
+         author = c(as.person("Jenni Niku"), as.person("Wesley Brooks"), as.person("Riki Herliansyah"), as.person("Francis K. C. Hui"), as.person("Pekka Korhonen"), as.person("Sara Taskinen"), as.person("Bert van der Veen"), as.person("David I. Warton")),
          year = year,
          note = vers,
          textVersion =
@@ -15,9 +15,9 @@ citEntry(entry="Manual",
                vers, ".", sep="")
 )
 
-citEntry(entry="Article",
+bibentry(bibtype="Article",
          title = "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R",
-         author = personList(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
+         author = c(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
     	 journal = "Methods in Ecology and Evolution",
          year     = "2019",
          volume      = "10",
@@ -28,9 +28,9 @@ citEntry(entry="Article",
                "Methods in Ecology and Evolution, 10, 2173-2182.")
 )
 
-citEntry(entry="Article",
+bibentry(bibtype="Article",
          title = "Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models",
-         author = personList(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
+         author = c(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
          journal = "Environmetrics",
          year     = "2021",
          volume      = "32",
@@ -41,9 +41,9 @@ citEntry(entry="Article",
                "Environmetrics, 32, 1-17.")
 )
 
-citEntry(entry="Article",
+bibentry(bibtype="Article",
          title = "Model-based ordination for species with unequal niche widths",
-         author = personList(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Erik B. Solbu"), as.person("Robert B. O'Hara")),
+         author = c(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Erik B. Solbu"), as.person("Robert B. O'Hara")),
          journal = "Methods in Ecology and Evolution",
          year     = "2021",
          volume      = "12",
@@ -54,9 +54,9 @@ citEntry(entry="Article",
                "Methods in Ecology and Evolution, 12, 1288-1300.")
 )
 
-citEntry(entry="Article",
+bibentry(bibtype="Article",
          title = "Concurrent ordination: Simultaneous unconstrained and constrained latent variable modelling",
-         author = personList(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Robert B. O'Hara")),
+         author = c(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Robert B. O'Hara")),
          journal = "Methods in Ecology and Evolution",
          year     = "2022",
          volume      = "00",
