@@ -1168,6 +1168,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
         }
+        if(family=="tweedie" && is.null(Power)){
+          Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
+        }
       }
       if(family == "ordinal"){
         zetas <- param[names(param)=="zeta"]
