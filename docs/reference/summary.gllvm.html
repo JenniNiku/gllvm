@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -81,13 +81,14 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for gllvm</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
+<span>  by <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">3L</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"digits"</span><span class="op">)</span> <span class="op">-</span> <span class="fl">3L</span><span class="op">)</span>,</span>
 <span>  signif.stars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"show.signif.stars"</span><span class="op">)</span>,</span>
 <span>  dispersion <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  spp.intercepts <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  row.intercepts <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Lvcoefs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  rotate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rotate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
@@ -100,6 +101,10 @@
     <h2>Arguments</h2>
     <dl><dt>object</dt>
 <dd><p>an object of class 'gllvm'</p></dd>
+
+
+<dt>by</dt>
+<dd><p>By = "all" (default) will return a Wald statistics per predictor and LV if the ordination includes predictors, by = "terms" will return a multivariate Wald statistic per predictor (displayed at first LV), and by = "LV" will do the same but per dimension (displayed at first predictors).</p></dd>
 
 
 <dt>digits</dt>
@@ -127,7 +132,7 @@
 
 
 <dt>rotate</dt>
-<dd><p>defaults to <code>FALSE</code>. If <code>TRUE</code> rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.</p></dd>
+<dd><p>defaults to <code>TRUE</code>. If <code>TRUE</code> rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.</p></dd>
 
 
 <dt>type</dt>
@@ -175,7 +180,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

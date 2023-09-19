@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -97,7 +97,7 @@
 correlations</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2023-01-06</h4>
+            <h4 data-toc-skip class="date">2023-09-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette4.rmd" class="external-link"><code>vignettes/vignette4.rmd</code></a></small>
       <div class="hidden name"><code>vignette4.rmd</code></div>
@@ -195,52 +195,58 @@ intervals, visualization.</p></li>
 <tr class="odd">
 <td></td>
 <td align="center">ZIP</td>
-<td align="left">LA</td>
+<td align="left">VA/LA</td>
 <td align="left">log</td>
 </tr>
 <tr class="even">
+<td></td>
+<td align="center">ZINB</td>
+<td align="left">VA/LA</td>
+<td align="left">log</td>
+</tr>
+<tr class="odd">
 <td>Binary</td>
 <td align="center">Bernoulli</td>
 <td align="left">VA/LA</td>
 <td align="left">probit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td></td>
 <td align="center"></td>
 <td align="left">LA</td>
 <td align="left">logit</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Ordinal</td>
 <td align="center">Ordinal</td>
 <td align="left">VA</td>
 <td align="left">probit</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Normal</td>
 <td align="center">Gaussian</td>
 <td align="left">VA/LA</td>
 <td align="left">identity</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Positive continuous</td>
 <td align="center">Gamma</td>
 <td align="left">VA/LA</td>
 <td align="left">log</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Non-negative continuous</td>
 <td align="center">Exponential</td>
 <td align="left">VA/LA</td>
 <td align="left">log</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Biomass</td>
 <td align="center">Tweedie</td>
 <td align="left">LA/EVA</td>
 <td align="left">log</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Percent cover</td>
 <td align="center">beta</td>
 <td align="left">LA/EVA</td>
@@ -327,11 +333,11 @@ cloudless sky</li>
 <span><span class="co">## method: </span></span>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## log-likelihood:  -593.6748 </span></span>
+<span><span class="co">## log-likelihood:  -588.9187 </span></span>
 <span><span class="co">## Residual degrees of freedom:  217 </span></span>
-<span><span class="co">## AIC:  1425.35 </span></span>
-<span><span class="co">## AICc:  1557.572 </span></span>
-<span><span class="co">## BIC:  1879.586</span></span></code></pre></div>
+<span><span class="co">## AIC:  1415.837 </span></span>
+<span><span class="co">## AICc:  1548.06 </span></span>
+<span><span class="co">## BIC:  1870.074</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="model-selection">Model selection<a class="anchor" aria-label="anchor" href="#model-selection"></a>
@@ -350,7 +356,7 @@ criterion:</li>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1393.837</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1425.35</span></span>
+<span><span class="co">## [1] 1415.837</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1445.35</span></span></code></pre></div>
 </div>
@@ -387,95 +393,95 @@ with <strong>gllvm</strong> so just load with a function
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># response matrix:</span></span>
 <span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span></span>
-<span><span class="co">##    Alopacce Alopcune Alopfabr Arctlute Arctperi Auloalbi Pardlugu Pardmont</span></span>
-<span><span class="co">## 1        25       10        0        0        0        4        0       60</span></span>
-<span><span class="co">## 2         0        2        0        0        0       30        1        1</span></span>
-<span><span class="co">## 3        15       20        2        2        0        9        1       29</span></span>
-<span><span class="co">## 4         2        6        0        1        0       24        1        7</span></span>
-<span><span class="co">## 5         1       20        0        2        0        9        1        2</span></span>
-<span><span class="co">## 6         0        6        0        6        0        6        0       11</span></span>
-<span><span class="co">## 7         2        7        0       12        0       16        1       30</span></span>
-<span><span class="co">## 8         0       11        0        0        0        7       55        2</span></span>
-<span><span class="co">## 9         1        1        0        0        0        0        0       26</span></span>
-<span><span class="co">## 10        3        0        1        0        0        0        0       22</span></span>
-<span><span class="co">## 11       15        1        2        0        0        1        0       95</span></span>
-<span><span class="co">## 12       16       13        0        0        0        0        0       96</span></span>
-<span><span class="co">## 13        3       43        1        2        0       18        1       24</span></span>
-<span><span class="co">## 14        0        2        0        1        0        4        3       14</span></span>
-<span><span class="co">## 15        0        0        0        0        0        0        6        0</span></span>
-<span><span class="co">## 16        0        3        0        0        0        0        6        0</span></span>
-<span><span class="co">## 17        0        0        0        0        0        0        2        0</span></span>
-<span><span class="co">## 18        0        1        0        0        0        0        5        0</span></span>
-<span><span class="co">## 19        0        1        0        0        0        0       12        0</span></span>
-<span><span class="co">## 20        0        2        0        0        0        0       13        0</span></span>
-<span><span class="co">## 21        0        1        0        0        0        0       16        1</span></span>
-<span><span class="co">## 22        7        0       16        0        4        0        0        2</span></span>
-<span><span class="co">## 23       17        0       15        0        7        0        2        6</span></span>
-<span><span class="co">## 24       11        0       20        0        5        0        0        3</span></span>
-<span><span class="co">## 25        9        1        9        0        0        2        1       11</span></span>
-<span><span class="co">## 26        3        0        6        0       18        0        0        0</span></span>
-<span><span class="co">## 27       29        0       11        0        4        0        0        1</span></span>
-<span><span class="co">## 28       15        0       14        0        1        0        0        6</span></span>
-<span><span class="co">##    Pardnigr Pardpull Trocterr Zoraspin</span></span>
-<span><span class="co">## 1        12       45       57        4</span></span>
-<span><span class="co">## 2        15       37       65        9</span></span>
-<span><span class="co">## 3        18       45       66        1</span></span>
-<span><span class="co">## 4        29       94       86       25</span></span>
-<span><span class="co">## 5       135       76       91       17</span></span>
-<span><span class="co">## 6        27       24       63       34</span></span>
-<span><span class="co">## 7        89      105      118       16</span></span>
-<span><span class="co">## 8         2        1       30        3</span></span>
-<span><span class="co">## 9         1        1        2        0</span></span>
-<span><span class="co">## 10        0        0        1        0</span></span>
-<span><span class="co">## 11        0        1        4        0</span></span>
-<span><span class="co">## 12        1        8       13        0</span></span>
-<span><span class="co">## 13       53       72       97       22</span></span>
-<span><span class="co">## 14       15       72       94       32</span></span>
-<span><span class="co">## 15        0        0       25        3</span></span>
-<span><span class="co">## 16        2        0       28        4</span></span>
-<span><span class="co">## 17        0        0       23        2</span></span>
-<span><span class="co">## 18        0        0       25        0</span></span>
-<span><span class="co">## 19        1        0       22        3</span></span>
-<span><span class="co">## 20        0        0       22        2</span></span>
-<span><span class="co">## 21        0        1       18        2</span></span>
-<span><span class="co">## 22        0        0        1        0</span></span>
-<span><span class="co">## 23        0        0        1        0</span></span>
-<span><span class="co">## 24        0        0        0        0</span></span>
-<span><span class="co">## 25        6        0       16        6</span></span>
-<span><span class="co">## 26        0        0        1        0</span></span>
-<span><span class="co">## 27        0        0        0        0</span></span>
-<span><span class="co">## 28        0        0        2        0</span></span>
+<span><span class="co">##       Alopacce Alopcune Alopfabr Arctlute Arctperi Auloalbi Pardlugu Pardmont</span></span>
+<span><span class="co">##  [1,]       25       10        0        0        0        4        0       60</span></span>
+<span><span class="co">##  [2,]        0        2        0        0        0       30        1        1</span></span>
+<span><span class="co">##  [3,]       15       20        2        2        0        9        1       29</span></span>
+<span><span class="co">##  [4,]        2        6        0        1        0       24        1        7</span></span>
+<span><span class="co">##  [5,]        1       20        0        2        0        9        1        2</span></span>
+<span><span class="co">##  [6,]        0        6        0        6        0        6        0       11</span></span>
+<span><span class="co">##  [7,]        2        7        0       12        0       16        1       30</span></span>
+<span><span class="co">##  [8,]        0       11        0        0        0        7       55        2</span></span>
+<span><span class="co">##  [9,]        1        1        0        0        0        0        0       26</span></span>
+<span><span class="co">## [10,]        3        0        1        0        0        0        0       22</span></span>
+<span><span class="co">## [11,]       15        1        2        0        0        1        0       95</span></span>
+<span><span class="co">## [12,]       16       13        0        0        0        0        0       96</span></span>
+<span><span class="co">## [13,]        3       43        1        2        0       18        1       24</span></span>
+<span><span class="co">## [14,]        0        2        0        1        0        4        3       14</span></span>
+<span><span class="co">## [15,]        0        0        0        0        0        0        6        0</span></span>
+<span><span class="co">## [16,]        0        3        0        0        0        0        6        0</span></span>
+<span><span class="co">## [17,]        0        0        0        0        0        0        2        0</span></span>
+<span><span class="co">## [18,]        0        1        0        0        0        0        5        0</span></span>
+<span><span class="co">## [19,]        0        1        0        0        0        0       12        0</span></span>
+<span><span class="co">## [20,]        0        2        0        0        0        0       13        0</span></span>
+<span><span class="co">## [21,]        0        1        0        0        0        0       16        1</span></span>
+<span><span class="co">## [22,]        7        0       16        0        4        0        0        2</span></span>
+<span><span class="co">## [23,]       17        0       15        0        7        0        2        6</span></span>
+<span><span class="co">## [24,]       11        0       20        0        5        0        0        3</span></span>
+<span><span class="co">## [25,]        9        1        9        0        0        2        1       11</span></span>
+<span><span class="co">## [26,]        3        0        6        0       18        0        0        0</span></span>
+<span><span class="co">## [27,]       29        0       11        0        4        0        0        1</span></span>
+<span><span class="co">## [28,]       15        0       14        0        1        0        0        6</span></span>
+<span><span class="co">##       Pardnigr Pardpull Trocterr Zoraspin</span></span>
+<span><span class="co">##  [1,]       12       45       57        4</span></span>
+<span><span class="co">##  [2,]       15       37       65        9</span></span>
+<span><span class="co">##  [3,]       18       45       66        1</span></span>
+<span><span class="co">##  [4,]       29       94       86       25</span></span>
+<span><span class="co">##  [5,]      135       76       91       17</span></span>
+<span><span class="co">##  [6,]       27       24       63       34</span></span>
+<span><span class="co">##  [7,]       89      105      118       16</span></span>
+<span><span class="co">##  [8,]        2        1       30        3</span></span>
+<span><span class="co">##  [9,]        1        1        2        0</span></span>
+<span><span class="co">## [10,]        0        0        1        0</span></span>
+<span><span class="co">## [11,]        0        1        4        0</span></span>
+<span><span class="co">## [12,]        1        8       13        0</span></span>
+<span><span class="co">## [13,]       53       72       97       22</span></span>
+<span><span class="co">## [14,]       15       72       94       32</span></span>
+<span><span class="co">## [15,]        0        0       25        3</span></span>
+<span><span class="co">## [16,]        2        0       28        4</span></span>
+<span><span class="co">## [17,]        0        0       23        2</span></span>
+<span><span class="co">## [18,]        0        0       25        0</span></span>
+<span><span class="co">## [19,]        1        0       22        3</span></span>
+<span><span class="co">## [20,]        0        0       22        2</span></span>
+<span><span class="co">## [21,]        0        1       18        2</span></span>
+<span><span class="co">## [22,]        0        0        1        0</span></span>
+<span><span class="co">## [23,]        0        0        1        0</span></span>
+<span><span class="co">## [24,]        0        0        0        0</span></span>
+<span><span class="co">## [25,]        6        0       16        6</span></span>
+<span><span class="co">## [26,]        0        0        1        0</span></span>
+<span><span class="co">## [27,]        0        0        0        0</span></span>
+<span><span class="co">## [28,]        0        0        2        0</span></span>
 <span><span class="co"># Environmental variables</span></span>
 <span><span class="va">spider</span><span class="op">$</span><span class="va">x</span></span>
-<span><span class="co">##       soil.dry bare.sand fallen.leaves   moss herb.layer reflection</span></span>
-<span><span class="co">##  [1,]   2.3321    0.0000        0.0000 3.0445     4.4543     3.9120</span></span>
-<span><span class="co">##  [2,]   3.0493    0.0000        1.7918 1.0986     4.5643     1.6094</span></span>
-<span><span class="co">##  [3,]   2.5572    0.0000        0.0000 2.3979     4.6052     3.6889</span></span>
-<span><span class="co">##  [4,]   2.6741    0.0000        0.0000 2.3979     4.6151     2.9957</span></span>
-<span><span class="co">##  [5,]   3.0155    0.0000        0.0000 0.0000     4.6151     2.3026</span></span>
-<span><span class="co">##  [6,]   3.3810    2.3979        3.4340 2.3979     3.4340     0.6931</span></span>
-<span><span class="co">##  [7,]   3.1781    0.0000        0.0000 0.6931     4.6151     2.3026</span></span>
-<span><span class="co">##  [8,]   2.6247    0.0000        4.2627 1.0986     3.4340     0.6931</span></span>
-<span><span class="co">##  [9,]   2.4849    0.0000        0.0000 4.3307     3.2581     3.4012</span></span>
-<span><span class="co">## [10,]   2.1972    3.9318        0.0000 3.4340     3.0445     3.6889</span></span>
-<span><span class="co">## [11,]   2.2192    0.0000        0.0000 4.1109     3.7136     3.6889</span></span>
-<span><span class="co">## [12,]   2.2925    0.0000        0.0000 3.8286     4.0254     3.6889</span></span>
-<span><span class="co">## [13,]   3.5175    1.7918        1.7918 0.6931     4.5109     3.4012</span></span>
-<span><span class="co">## [14,]   3.0865    0.0000        0.0000 1.7918     4.5643     1.0986</span></span>
-<span><span class="co">## [15,]   3.2696    0.0000        4.3944 0.6931     3.0445     0.6931</span></span>
-<span><span class="co">## [16,]   3.0301    0.0000        4.6052 0.6931     0.6931     0.0000</span></span>
-<span><span class="co">## [17,]   3.3322    0.0000        4.4543 0.6931     3.0445     1.0986</span></span>
-<span><span class="co">## [18,]   3.1224    0.0000        4.3944 0.0000     3.0445     1.0986</span></span>
-<span><span class="co">## [19,]   2.9232    0.0000        4.5109 1.6094     1.6094     0.0000</span></span>
-<span><span class="co">## [20,]   3.1091    0.0000        4.5951 0.6931     0.6931     0.0000</span></span>
-<span><span class="co">## [21,]   2.9755    0.0000        4.5643 0.6931     1.7918     0.0000</span></span>
-<span><span class="co">## [22,]   1.2528    3.2581        0.0000 4.3307     0.6931     3.9120</span></span>
-<span><span class="co">## [23,]   1.1939    3.0445        0.0000 4.0254     3.2581     4.0943</span></span>
-<span><span class="co">## [24,]   1.6487    3.2581        0.0000 4.0254     3.0445     4.0073</span></span>
-<span><span class="co">## [25,]   1.8245    3.5835        0.0000 1.0986     4.1109     2.3026</span></span>
-<span><span class="co">## [26,]   0.9933    4.5109        0.0000 1.7918     1.7918     4.3820</span></span>
-<span><span class="co">## [27,]   0.9555    2.3979        0.0000 3.8286     3.4340     3.6889</span></span>
-<span><span class="co">## [28,]   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889</span></span>
+<span><span class="co">##    soil.dry bare.sand fallen.leaves   moss herb.layer reflection</span></span>
+<span><span class="co">## 1    2.3321    0.0000        0.0000 3.0445     4.4543     3.9120</span></span>
+<span><span class="co">## 2    3.0493    0.0000        1.7918 1.0986     4.5643     1.6094</span></span>
+<span><span class="co">## 3    2.5572    0.0000        0.0000 2.3979     4.6052     3.6889</span></span>
+<span><span class="co">## 4    2.6741    0.0000        0.0000 2.3979     4.6151     2.9957</span></span>
+<span><span class="co">## 5    3.0155    0.0000        0.0000 0.0000     4.6151     2.3026</span></span>
+<span><span class="co">## 6    3.3810    2.3979        3.4340 2.3979     3.4340     0.6931</span></span>
+<span><span class="co">## 7    3.1781    0.0000        0.0000 0.6931     4.6151     2.3026</span></span>
+<span><span class="co">## 8    2.6247    0.0000        4.2627 1.0986     3.4340     0.6931</span></span>
+<span><span class="co">## 9    2.4849    0.0000        0.0000 4.3307     3.2581     3.4012</span></span>
+<span><span class="co">## 10   2.1972    3.9318        0.0000 3.4340     3.0445     3.6889</span></span>
+<span><span class="co">## 11   2.2192    0.0000        0.0000 4.1109     3.7136     3.6889</span></span>
+<span><span class="co">## 12   2.2925    0.0000        0.0000 3.8286     4.0254     3.6889</span></span>
+<span><span class="co">## 13   3.5175    1.7918        1.7918 0.6931     4.5109     3.4012</span></span>
+<span><span class="co">## 14   3.0865    0.0000        0.0000 1.7918     4.5643     1.0986</span></span>
+<span><span class="co">## 15   3.2696    0.0000        4.3944 0.6931     3.0445     0.6931</span></span>
+<span><span class="co">## 16   3.0301    0.0000        4.6052 0.6931     0.6931     0.0000</span></span>
+<span><span class="co">## 17   3.3322    0.0000        4.4543 0.6931     3.0445     1.0986</span></span>
+<span><span class="co">## 18   3.1224    0.0000        4.3944 0.0000     3.0445     1.0986</span></span>
+<span><span class="co">## 19   2.9232    0.0000        4.5109 1.6094     1.6094     0.0000</span></span>
+<span><span class="co">## 20   3.1091    0.0000        4.5951 0.6931     0.6931     0.0000</span></span>
+<span><span class="co">## 21   2.9755    0.0000        4.5643 0.6931     1.7918     0.0000</span></span>
+<span><span class="co">## 22   1.2528    3.2581        0.0000 4.3307     0.6931     3.9120</span></span>
+<span><span class="co">## 23   1.1939    3.0445        0.0000 4.0254     3.2581     4.0943</span></span>
+<span><span class="co">## 24   1.6487    3.2581        0.0000 4.0254     3.0445     4.0073</span></span>
+<span><span class="co">## 25   1.8245    3.5835        0.0000 1.0986     4.1109     2.3026</span></span>
+<span><span class="co">## 26   0.9933    4.5109        0.0000 1.7918     1.7918     4.3820</span></span>
+<span><span class="co">## 27   0.9555    2.3979        0.0000 3.8286     3.4340     3.6889</span></span>
+<span><span class="co">## 28   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889</span></span>
 <span><span class="co"># Plot data using boxplot:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">boxplot</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette4_files/figure-html/unnamed-chunk-8-1.png" width="480" style="display: block; margin: auto;"></p>
@@ -566,7 +572,7 @@ environmental variable matrix or define the model using formula.
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1449.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1486.451</span></span>
+<span><span class="co">## [1] 1471.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1506.451</span></span>
 <span><span class="co"># Or alternatively using formula:</span></span>
@@ -594,85 +600,85 @@ coefficients for environmental covariates. </span></p>
 obtained with <code><a href="../reference/confint.gllvm.html">confint()</a></code>. </span></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
-<span><span class="co">## $theta</span></span>
-<span><span class="co">##                   LV1</span></span>
-<span><span class="co">## Alopacce 1.000000e+00</span></span>
-<span><span class="co">## Alopcune 1.286545e+00</span></span>
-<span><span class="co">## Alopfabr 4.412280e-01</span></span>
-<span><span class="co">## Arctlute 2.261282e+00</span></span>
-<span><span class="co">## Arctperi 1.670137e-06</span></span>
-<span><span class="co">## Auloalbi 2.499412e+00</span></span>
-<span><span class="co">## Pardlugu 3.973886e-01</span></span>
-<span><span class="co">## Pardmont 9.559363e-01</span></span>
-<span><span class="co">## Pardnigr 2.566348e+00</span></span>
-<span><span class="co">## Pardpull 2.528269e+00</span></span>
-<span><span class="co">## Trocterr 9.658945e-01</span></span>
-<span><span class="co">## Zoraspin 1.751351e+00</span></span>
+<span><span class="co">## $Species.scores</span></span>
+<span><span class="co">##                    LV1</span></span>
+<span><span class="co">## Alopacce  1.000000e+00</span></span>
+<span><span class="co">## Alopcune  1.286626e+00</span></span>
+<span><span class="co">## Alopfabr  4.411689e-01</span></span>
+<span><span class="co">## Arctlute  2.261234e+00</span></span>
+<span><span class="co">## Arctperi -6.012842e-08</span></span>
+<span><span class="co">## Auloalbi  2.499006e+00</span></span>
+<span><span class="co">## Pardlugu  3.975630e-01</span></span>
+<span><span class="co">## Pardmont  9.559510e-01</span></span>
+<span><span class="co">## Pardnigr  2.566330e+00</span></span>
+<span><span class="co">## Pardpull  2.528279e+00</span></span>
+<span><span class="co">## Trocterr  9.658699e-01</span></span>
+<span><span class="co">## Zoraspin  1.751330e+00</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $sigma.lv</span></span>
 <span><span class="co">##       LV1 </span></span>
-<span><span class="co">## 0.8536572 </span></span>
+<span><span class="co">## 0.8536659 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Intercept</span></span>
 <span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
-<span><span class="co">##  -3.009902  -7.406476   2.076389 -21.473930  -7.923393 -12.969239   4.567907 </span></span>
+<span><span class="co">##  -3.009349  -7.406180   2.077215 -21.474514  -7.920502 -12.965495   4.566979 </span></span>
 <span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
-<span><span class="co">##  -6.091447 -14.645560 -16.456241  -3.711909  -9.215324 </span></span>
+<span><span class="co">##  -6.091346 -14.644544 -16.455754  -3.711391  -9.214435 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Xcoef</span></span>
 <span><span class="co">##            soil.dry reflection</span></span>
-<span><span class="co">## Alopacce -0.3440177  1.5944065</span></span>
-<span><span class="co">## Alopcune  2.6109299  0.6246692</span></span>
-<span><span class="co">## Alopfabr -1.8666949  0.7471138</span></span>
-<span><span class="co">## Arctlute  6.3211451  0.8206194</span></span>
-<span><span class="co">## Arctperi -1.7562759  2.8899016</span></span>
-<span><span class="co">## Auloalbi  4.1821634  0.6833454</span></span>
-<span><span class="co">## Pardlugu -0.5453411 -1.2605075</span></span>
-<span><span class="co">## Pardmont  1.7925652  1.4691986</span></span>
-<span><span class="co">## Pardnigr  4.9045384  0.8603027</span></span>
-<span><span class="co">## Pardpull  5.3498371  1.2824172</span></span>
-<span><span class="co">## Trocterr  2.3358622  0.2234979</span></span>
-<span><span class="co">## Zoraspin  3.5555192  0.1198966</span></span>
+<span><span class="co">## Alopacce -0.3441685  1.5943438</span></span>
+<span><span class="co">## Alopcune  2.6107779  0.6246591</span></span>
+<span><span class="co">## Alopfabr -1.8668603  0.7469758</span></span>
+<span><span class="co">## Arctlute  6.3211819  0.8206730</span></span>
+<span><span class="co">## Arctperi -1.7565694  2.8892914</span></span>
+<span><span class="co">## Auloalbi  4.1809424  0.6832245</span></span>
+<span><span class="co">## Pardlugu -0.5450835 -1.2603994</span></span>
+<span><span class="co">## Pardmont  1.7924844  1.4692278</span></span>
+<span><span class="co">## Pardnigr  4.9041324  0.8602608</span></span>
+<span><span class="co">## Pardpull  5.3495734  1.2824136</span></span>
+<span><span class="co">## Trocterr  2.3356686  0.2234745</span></span>
+<span><span class="co">## Zoraspin  3.5551750  0.1198601</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $inv.phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 9.378377e+00 1.699626e+00 1.577576e+00 1.064272e+00 1.904193e+06 1.511389e+00 </span></span>
+<span><span class="co">## 9.378824e+00 1.699587e+00 1.577604e+00 1.064269e+00 1.177849e+08 1.511485e+00 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 1.543717e+00 9.784595e-01 2.517746e+00 2.339290e+00 1.470802e+01 3.625077e+00 </span></span>
+<span><span class="co">## 1.543665e+00 9.784337e-01 2.517810e+00 2.339187e+00 1.470887e+01 3.625183e+00 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 1.066283e-01 5.883646e-01 6.338837e-01 9.396091e-01 5.251569e-07 6.616432e-01 </span></span>
+<span><span class="co">## 1.066232e-01 5.883783e-01 6.338728e-01 9.396117e-01 8.490053e-09 6.616010e-01 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 6.477871e-01 1.022015e+00 3.971806e-01 4.274801e-01 6.799011e-02 2.758562e-01</span></span>
+<span><span class="co">## 6.478090e-01 1.022042e+00 3.971705e-01 4.274989e-01 6.798617e-02 2.758481e-01</span></span>
 <span><span class="co"># Coefficients for covariates are named as `Xcoef`</span></span>
 <span><span class="co"># Confidence intervals for these coefficients:</span></span>
 <span><span class="fu"><a href="../reference/confint.gllvm.html">confint</a></span><span class="op">(</span><span class="va">fitx1</span>, parm <span class="op">=</span> <span class="st">"Xcoef"</span><span class="op">)</span></span>
-<span><span class="co">##               cilow       ciup</span></span>
-<span><span class="co">## Xcoef1  -1.02675014  0.3387148</span></span>
-<span><span class="co">## Xcoef2   1.34775010  3.8741097</span></span>
-<span><span class="co">## Xcoef3  -2.85493122 -0.8784586</span></span>
-<span><span class="co">## Xcoef4   2.24732039 10.3949698</span></span>
-<span><span class="co">## Xcoef5  -2.87568410 -0.6368676</span></span>
-<span><span class="co">## Xcoef6   1.79179225  6.5725345</span></span>
-<span><span class="co">## Xcoef7  -1.64589643  0.5552142</span></span>
-<span><span class="co">## Xcoef8   0.73374547  2.8513850</span></span>
-<span><span class="co">## Xcoef9   2.78605070  7.0230261</span></span>
-<span><span class="co">## Xcoef10  3.14377111  7.5559031</span></span>
-<span><span class="co">## Xcoef11  1.64626282  3.0254616</span></span>
-<span><span class="co">## Xcoef12  1.97734202  5.1336964</span></span>
-<span><span class="co">## Xcoef13  0.95837708  2.2304360</span></span>
-<span><span class="co">## Xcoef14  0.13820389  1.1111346</span></span>
-<span><span class="co">## Xcoef15 -0.24246725  1.7366949</span></span>
-<span><span class="co">## Xcoef16 -0.34236983  1.9836086</span></span>
-<span><span class="co">## Xcoef17  1.63864227  4.1411610</span></span>
-<span><span class="co">## Xcoef18 -0.18420387  1.5508946</span></span>
-<span><span class="co">## Xcoef19 -1.73558631 -0.7854286</span></span>
-<span><span class="co">## Xcoef20  0.89997286  2.0384243</span></span>
-<span><span class="co">## Xcoef21  0.01748890  1.7031166</span></span>
-<span><span class="co">## Xcoef22  0.40750144  2.1573330</span></span>
-<span><span class="co">## Xcoef23 -0.08586577  0.5328616</span></span>
-<span><span class="co">## Xcoef24 -0.46468346  0.7044767</span></span>
+<span><span class="co">##                cilow       ciup</span></span>
+<span><span class="co">## Xcoef1  -0.797800995  0.1094639</span></span>
+<span><span class="co">## Xcoef2   2.304732102  2.9168238</span></span>
+<span><span class="co">## Xcoef3  -2.551630897 -1.1820896</span></span>
+<span><span class="co">## Xcoef4   5.734617868  6.9077459</span></span>
+<span><span class="co">## Xcoef5  -2.663343835 -0.8497951</span></span>
+<span><span class="co">## Xcoef6   3.672263086  4.6896217</span></span>
+<span><span class="co">## Xcoef7  -0.745149871 -0.3450171</span></span>
+<span><span class="co">## Xcoef8   1.482123254  2.1028455</span></span>
+<span><span class="co">## Xcoef9   4.428344305  5.3799206</span></span>
+<span><span class="co">## Xcoef10  4.874308815  5.8248380</span></span>
+<span><span class="co">## Xcoef11  1.907994238  2.7633430</span></span>
+<span><span class="co">## Xcoef12  3.233270703  3.8770794</span></span>
+<span><span class="co">## Xcoef13  1.291822393  1.8968652</span></span>
+<span><span class="co">## Xcoef14  0.287552822  0.9617654</span></span>
+<span><span class="co">## Xcoef15  0.399084331  1.0948672</span></span>
+<span><span class="co">## Xcoef16  0.007075542  1.6342705</span></span>
+<span><span class="co">## Xcoef17  2.622285454  3.1562973</span></span>
+<span><span class="co">## Xcoef18  0.084830120  1.2816189</span></span>
+<span><span class="co">## Xcoef19 -1.577936416 -0.9428624</span></span>
+<span><span class="co">## Xcoef20  1.200605447  1.7378502</span></span>
+<span><span class="co">## Xcoef21  0.299225556  1.4212960</span></span>
+<span><span class="co">## Xcoef22  0.748578699  1.8162486</span></span>
+<span><span class="co">## Xcoef23  0.010807881  0.4361411</span></span>
+<span><span class="co">## Xcoef24 -0.292027552  0.5317477</span></span>
 <span><span class="co"># The first 12 intervals are for soil.dry and next 12 for reflection</span></span></code></pre></div>
 </details><details><summary><span style="color:red"> Problems? See hints:</span>
 </summary><p><span style="color:red"> I have problems in model fitting. My model
@@ -743,7 +749,7 @@ correlation matrix using, eg., a <code>corrplot</code> package.</p></li>
 <code class="sourceCode R"><span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span><span class="op">(</span><span class="va">fitnb</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/taiyun/corrplot" class="external-link">corrplot</a></span><span class="op">)</span>;</span>
-<span><span class="co">## corrplot 0.84 loaded</span></span>
+<span><span class="co">## corrplot 0.92 loaded</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot</a></span><span class="op">(</span><span class="va">cr</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, method <span class="op">=</span> <span class="st">"square"</span>, tl.srt <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette4_files/figure-html/unnamed-chunk-18-1.png" width="480" style="display: block; margin: auto;"></p>
 <ul>
@@ -884,7 +890,7 @@ Environmental Statistics, 22:498-522.<a href="#fnref5" class="footnote-back">↩
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

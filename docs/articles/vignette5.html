@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -97,7 +97,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2023-01-06</h4>
+            <h4 data-toc-skip class="date">2023-09-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette5.Rmd" class="external-link"><code>vignettes/vignette5.Rmd</code></a></small>
       <div class="hidden name"><code>vignette5.Rmd</code></div>
@@ -160,8 +160,7 @@ extracted:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#Species optima for LVs</span></span>
 <span><span class="fu"><a href="../reference/ecoCoefs.html">optima</a></span><span class="op">(</span><span class="va">ftUneqTol</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## $optima</span></span>
-<span><span class="co">##                    LV1        LV2</span></span>
+<pre><code><span><span class="co">##                    LV1        LV2</span></span>
 <span><span class="co">## Alopacce  3.965490e+00  0.0000000</span></span>
 <span><span class="co">## Alopcune -5.553114e+00  2.1737870</span></span>
 <span><span class="co">## Alopfabr  2.882229e+00 -5.0004136</span></span>
@@ -173,27 +172,11 @@ extracted:</p>
 <span><span class="co">## Pardnigr -2.275915e+00  2.6144288</span></span>
 <span><span class="co">## Pardpull -2.559914e+00  3.3701747</span></span>
 <span><span class="co">## Trocterr -2.421346e+00  2.9504054</span></span>
-<span><span class="co">## Zoraspin -1.973960e+00  4.6332028</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $sd</span></span>
-<span><span class="co">##                   LV1       LV2</span></span>
-<span><span class="co">## Alopacce 2.195068e+00 0.0000000</span></span>
-<span><span class="co">## Alopcune 1.202697e+01 0.3569737</span></span>
-<span><span class="co">## Alopfabr 1.842421e+00 1.6823515</span></span>
-<span><span class="co">## Arctlute 1.037179e+00 0.6706263</span></span>
-<span><span class="co">## Arctperi 1.640542e+00 9.4711666</span></span>
-<span><span class="co">## Auloalbi 5.040738e+01 0.3823388</span></span>
-<span><span class="co">## Pardlugu 2.257074e+19 0.5965602</span></span>
-<span><span class="co">## Pardmont 3.404082e+00 0.7455549</span></span>
-<span><span class="co">## Pardnigr 8.929421e-01 0.3604559</span></span>
-<span><span class="co">## Pardpull 1.380352e+00 0.4503055</span></span>
-<span><span class="co">## Trocterr 3.305201e+00 0.4162171</span></span>
-<span><span class="co">## Zoraspin 6.366920e-01 0.7915519</span></span></code></pre>
+<span><span class="co">## Zoraspin -1.973960e+00  4.6332028</span></span></code></pre>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#Species tolerances</span></span>
 <span><span class="fu"><a href="../reference/ecoCoefs.html">tolerances</a></span><span class="op">(</span><span class="va">ftUneqTol</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## $tolerances</span></span>
-<span><span class="co">##                   LV1          LV2</span></span>
+<pre><code><span><span class="co">##                   LV1          LV2</span></span>
 <span><span class="co">## Alopacce 1.991354e+00 75766.331108</span></span>
 <span><span class="co">## Alopcune 8.945236e+00     1.474377</span></span>
 <span><span class="co">## Alopfabr 1.953173e+00     3.781882</span></span>
@@ -205,22 +188,7 @@ extracted:</p>
 <span><span class="co">## Pardnigr 2.416366e+00     1.407778</span></span>
 <span><span class="co">## Pardpull 3.464405e+00     1.353039</span></span>
 <span><span class="co">## Trocterr 3.927594e+00     2.601884</span></span>
-<span><span class="co">## Zoraspin 2.419449e+00     3.130584</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## $sd</span></span>
-<span><span class="co">##                   LV1          LV2</span></span>
-<span><span class="co">## Alopacce 5.511496e-01 2.022875e+12</span></span>
-<span><span class="co">## Alopcune 8.441931e+00 1.210592e-01</span></span>
-<span><span class="co">## Alopfabr 6.742254e-01 8.571050e-01</span></span>
-<span><span class="co">## Arctlute 4.400838e-01 6.274575e-01</span></span>
-<span><span class="co">## Arctperi 1.302227e+00 6.200647e-01</span></span>
-<span><span class="co">## Auloalbi 9.199530e+00 1.190251e-01</span></span>
-<span><span class="co">## Pardlugu 1.340808e+14 5.221469e-01</span></span>
-<span><span class="co">## Pardmont 1.478596e+00 4.625374e-01</span></span>
-<span><span class="co">## Pardnigr 8.168787e-01 1.428389e-01</span></span>
-<span><span class="co">## Pardpull 1.202451e+00 1.100905e-01</span></span>
-<span><span class="co">## Trocterr 1.311188e+00 2.558470e-01</span></span>
-<span><span class="co">## Zoraspin 8.340288e-01 4.255038e-01</span></span></code></pre>
+<span><span class="co">## Zoraspin 2.419449e+00     3.130584</span></span></code></pre>
 <p>The standard deviation of the latent variables can be printed using
 the <span class="math inline">\(\text{summary}(.)\)</span> function.
 Since latent variable models are scale invariant, this scale parameter
@@ -287,7 +255,7 @@ Widths.”</span> 12: 1288–1300.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -97,7 +97,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2023-01-06</h4>
+            <h4 data-toc-skip class="date">2023-09-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette6.Rmd" class="external-link"><code>vignettes/vignette6.Rmd</code></a></small>
       <div class="hidden name"><code>vignette6.Rmd</code></div>
@@ -182,13 +182,85 @@ variables, is:</p>
 <p>The predictor slopes (called canonical coefficients in e.g., CCA or
 RDA) are available under <code>RRGLM$params$LvXcoef</code> or can be
 retrieved with <code>coef(RRGLM)</code> or by
-<code>summary(RRGLM)</code>. To fit a constrained ordination we make use
-of additional optimization routines from the and R-packages. This is
-necessary, because without the constraint that the predictor slopes are
-orthogonal the model is <em>unidentifiable</em>. It might thus happen,
-that after fitting the model a warning pops-up along the lines of
-<em>predictor slopes are not orthogonal</em>, in which case you will
-have to re-fit the model with a different optimization routine
+<code>summary(RRGLM)</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">RRGLM</span>, rotate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## </span></span>
+<span><span class="co">## Call:</span></span>
+<span><span class="co">## gllvm(y = Y, X = X, family = "poisson", num.RR = 6, starting.val = "zero", </span></span>
+<span><span class="co">##     reltol.c = 1e-15)</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Family:  poisson </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## AIC:  1841.216 AICc:  1898.108 BIC:  2161.853 LL:  -836.6 df:  84 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Informed LVs:  0 </span></span>
+<span><span class="co">## Constrained LVs:  6 </span></span>
+<span><span class="co">## Unconstrained LVs:  0 </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Formula:  ~ 1 </span></span>
+<span><span class="co">## LV formula:  ~soil.dry + bare.sand + fallen.leaves + moss + herb.layer + reflection </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Coefficients LV predictors:</span></span>
+<span><span class="co">##                      Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span><span class="co">## soil.dry(CLV1)       0.739241   0.545770   1.354  0.17558    </span></span>
+<span><span class="co">## bare.sand(CLV1)     -1.504227   0.738137  -2.038  0.04156 *  </span></span>
+<span><span class="co">## fallen.leaves(CLV1)  0.249424   1.567803   0.159  0.87360    </span></span>
+<span><span class="co">## moss(CLV1)          -0.406028   1.325428  -0.306  0.75935    </span></span>
+<span><span class="co">## herb.layer(CLV1)     1.983275   1.046501   1.895  0.05807 .  </span></span>
+<span><span class="co">## reflection(CLV1)    -2.069525   0.941468  -2.198  0.02794 *  </span></span>
+<span><span class="co">## soil.dry(CLV2)      -0.524884   0.325749  -1.611  0.10711    </span></span>
+<span><span class="co">## bare.sand(CLV2)     -0.761665   0.395216  -1.927  0.05395 .  </span></span>
+<span><span class="co">## fallen.leaves(CLV2) -0.877375   0.969414  -0.905  0.36543    </span></span>
+<span><span class="co">## moss(CLV2)           0.130217   0.659360   0.197  0.84344    </span></span>
+<span><span class="co">## herb.layer(CLV2)     1.793405   0.584467   3.068  0.00215 ** </span></span>
+<span><span class="co">## reflection(CLV2)     0.315377   0.600692   0.525  0.59957    </span></span>
+<span><span class="co">## soil.dry(CLV3)       0.750252   0.988362   0.759  0.44780    </span></span>
+<span><span class="co">## bare.sand(CLV3)     -0.897121   0.928729  -0.966  0.33406    </span></span>
+<span><span class="co">## fallen.leaves(CLV3) -1.145885   1.649139  -0.695  0.48716    </span></span>
+<span><span class="co">## moss(CLV3)          -0.342914   0.768733  -0.446  0.65554    </span></span>
+<span><span class="co">## herb.layer(CLV3)    -1.345636   1.047277  -1.285  0.19883    </span></span>
+<span><span class="co">## reflection(CLV3)     0.820609   0.674645   1.216  0.22385    </span></span>
+<span><span class="co">## soil.dry(CLV4)      -0.997668   0.514773  -1.938  0.05261 .  </span></span>
+<span><span class="co">## bare.sand(CLV4)     -0.522736   0.432766  -1.208  0.22709    </span></span>
+<span><span class="co">## fallen.leaves(CLV4) -0.606122   1.004898  -0.603  0.54640    </span></span>
+<span><span class="co">## moss(CLV4)           0.150650   0.698787   0.216  0.82931    </span></span>
+<span><span class="co">## herb.layer(CLV4)     0.026434   0.669088   0.040  0.96849    </span></span>
+<span><span class="co">## reflection(CLV4)    -1.211241   0.496380  -2.440  0.01468 *  </span></span>
+<span><span class="co">## soil.dry(CLV5)       0.592508   0.230516   2.570  0.01016 *  </span></span>
+<span><span class="co">## bare.sand(CLV5)      0.430542   0.196589   2.190  0.02852 *  </span></span>
+<span><span class="co">## fallen.leaves(CLV5) -0.814613   0.341699  -2.384  0.01713 *  </span></span>
+<span><span class="co">## moss(CLV5)           0.289127   0.182575   1.584  0.11328    </span></span>
+<span><span class="co">## herb.layer(CLV5)    -0.160839   0.253159  -0.635  0.52521    </span></span>
+<span><span class="co">## reflection(CLV5)    -0.726094   0.149143  -4.868 1.12e-06 ***</span></span>
+<span><span class="co">## soil.dry(CLV6)      -0.031456   0.020354  -1.545  0.12224    </span></span>
+<span><span class="co">## bare.sand(CLV6)      0.004485   0.014587   0.307  0.75850    </span></span>
+<span><span class="co">## fallen.leaves(CLV6) -0.057097   0.033731  -1.693  0.09051 .  </span></span>
+<span><span class="co">## moss(CLV6)          -0.086429   0.020041  -4.313 1.61e-05 ***</span></span>
+<span><span class="co">## herb.layer(CLV6)    -0.015565   0.019434  -0.801  0.42316    </span></span>
+<span><span class="co">## reflection(CLV6)    -0.009270   0.014017  -0.661  0.50840    </span></span>
+<span><span class="co">## ---</span></span>
+<span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span></code></pre>
+<p>Note the use of the <code>rotate</code> argument. This ensures that
+the solution of the canonical coefficients is rotated to the same
+solution as displayed in <code>ordiplot</code> (which has the same
+<code>rotate</code> argument that is by default set to TRUE). The
+summary can be useful in determining what drives vertical and horizontal
+shifts in the location of species and sites in the ordination diagram
+(but probably not for much more than that).</p>
+<p>Unlike the canonical coefficients, the reconstructed species-specific
+effects are invariant to rotation, so that it is always good practice to
+additionally study those for more exhaustive inference;</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">RRGLM</span>, cex.ylab <span class="op">=</span> <span class="fl">0.5</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vignette6_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>To fit a constrained ordination we make use of additional
+optimization routines from the and R-packages. This is necessary,
+because without the constraint that the predictor slopes are orthogonal
+the model is <em>unidentifiable</em>. It might thus happen, that after
+fitting the model a warning pops-up along the lines of <em>predictor
+slopes are not orthogonal</em>, in which case you will have to re-fit
+the model with a different optimization routine
 (<code>optimizer='alabama'</code>) or starting values
 (<code>starting.values='zero'</code>) in order to get the constraints on
 the canonical coefficients to better converge.</p>
@@ -204,7 +276,7 @@ Regularisation adds a penalty to the objective function, as to shrink
 parameter estimates closer to zero that are unimportant. A convenient
 way to add this penalty, is by formulating a random slopes model. In
 <code>gllvm</code> this is done with the following syntax:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">RRGLMb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family<span class="op">=</span><span class="st">"poisson"</span>, num.RR <span class="op">=</span> <span class="fl">2</span>, randomB <span class="op">=</span> <span class="st">"LV"</span><span class="op">)</span></span>
 <span><span class="va">RRGLMb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family<span class="op">=</span><span class="st">"poisson"</span>, num.RR <span class="op">=</span> <span class="fl">2</span>, randomB <span class="op">=</span> <span class="st">"P"</span><span class="op">)</span></span></code></pre></div>
 <p>where the <code>randomB</code> argument is additionally used to
@@ -218,11 +290,50 @@ predictor to near zero. In general, it has the potential to stabilize
 model fitting and reduce variance of the parameter estimates. Finally, a
 slope for a categorical predictor is an intercept, so this formulation
 also allows to include random intercepts in the ordination.</p>
-<p>Note: when using a random-effects formulation, there are no
-confidence intervals available for the canonical coefficients anymore
-(though also see the function <code>getPredictErr(.)</code>). This is
-because the variance of estimators tends to be on the low side with
-regularisation.</p>
+<p>A plot of species-specific effects can be constructed with the
+<code>randomCoefplot</code> function:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/randomCoefplot.gllvm.html">randomCoefplot</a></span><span class="op">(</span><span class="va">RRGLMb1</span>, cex.ylab <span class="op">=</span> <span class="fl">0.5</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vignette6_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>When using a random-effects formulation, there is no summary table
+and there are no confidence intervals available for the canonical
+coefficients. It is possible to construct a summary table with the
+prediction of the random-effects and the association prediction errors
+as follows:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get coefficients</span></span>
+<span><span class="va">coefs</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">RRGLMb1</span>,<span class="st">"LvXcoef"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">coefs</span><span class="op">$</span><span class="va">Predictor</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/row.names.html" class="external-link">row.names</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Wide to long</span></span>
+<span><span class="va">coefsTab</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/stats/reshape.html" class="external-link">reshape</a></span><span class="op">(</span><span class="va">coefs</span>, </span>
+<span>        direction <span class="op">=</span> <span class="st">"long"</span>,</span>
+<span>        varying <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="op">(</span><span class="va">RRGLMb1</span><span class="op">$</span><span class="va">num.lv.c</span><span class="op">+</span><span class="va">RRGLMb1</span><span class="op">$</span><span class="va">num.RR</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>        v.names <span class="op">=</span> <span class="st">"Estimate"</span>, </span>
+<span>        times<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="op">(</span><span class="va">RRGLMb1</span><span class="op">$</span><span class="va">num.lv.c</span><span class="op">+</span><span class="va">RRGLMb1</span><span class="op">$</span><span class="va">num.RR</span><span class="op">)</span><span class="op">]</span>, </span>
+<span>        timevar <span class="op">=</span> <span class="st">"LV"</span>,</span>
+<span>        new.row.names <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="co"># Add prediction errors</span></span>
+<span><span class="va">coefsTab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">coefsTab</span>,PE<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="../reference/getPredictErr.gllvm.html">getPredictErr</a></span><span class="op">(</span><span class="va">RRGLMb1</span><span class="op">)</span><span class="op">$</span><span class="va">b.lv</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/row.names.html" class="external-link">row.names</a></span><span class="op">(</span><span class="va">coefsTab</span><span class="op">)</span><span class="op">&lt;-</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">coefsTab</span><span class="op">)</span></span>
+<span><span class="va">coefsTab</span><span class="op">[</span>,<span class="op">-</span><span class="fl">4</span><span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##        Predictor   LV     Estimate         PE</span></span>
+<span><span class="co">## 1       soil.dry CLV1 -0.080723064 0.07814185</span></span>
+<span><span class="co">## 2      bare.sand CLV1  0.001068039 0.06094532</span></span>
+<span><span class="co">## 3  fallen.leaves CLV1 -0.297420665 0.10174450</span></span>
+<span><span class="co">## 4           moss CLV1  0.809784152 0.09236949</span></span>
+<span><span class="co">## 5     herb.layer CLV1  0.447862820 0.10908394</span></span>
+<span><span class="co">## 6     reflection CLV1  0.836470551 0.13821746</span></span>
+<span><span class="co">## 7       soil.dry CLV2  0.945275422 0.12950352</span></span>
+<span><span class="co">## 8      bare.sand CLV2 -0.075514139 0.04851537</span></span>
+<span><span class="co">## 9  fallen.leaves CLV2 -0.212377414 0.23493650</span></span>
+<span><span class="co">## 10          moss CLV2 -0.386609004 0.64863215</span></span>
+<span><span class="co">## 11    herb.layer CLV2  0.547191839 0.37130075</span></span>
+<span><span class="co">## 12    reflection CLV2 -0.413646154 0.69906377</span></span></code></pre>
+<p>There is a range of potential use cases for random canonical
+coefficients, but pragmatically, inducing some shrinkage on the
+predictor effects can result in more better “behaved” (fewer outliers)
+ordination plots.</p>
 </div>
 </div>
 <div class="section level3">
@@ -235,7 +346,7 @@ measured all relevant predictors?), so that we can assume that the
 ecological gradient is represented by unmeasured and measured predictors
 (the former is how the residual can be understood). The code for this
 is:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">CGLLVM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, num.lv.c <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p>where the <code>num.lv.c</code> argument is used to specify the
 number of latent variables for the concurrent ordination (i.e. latent
@@ -248,7 +359,7 @@ using the <code>num.RR</code>, <code>num.lv.c</code> and
 overfit your model!). It is also possible to combine those arguments
 with full-rank predictor effects. To combine concurrent ordination with
 full-rank predictor effects you need to use the formula interface:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">PCGLLVM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, num.lv.c <span class="op">=</span> <span class="fl">2</span>, </span>
 <span>                 lv.formula <span class="op">=</span> <span class="op">~</span><span class="va">bare.sand</span> <span class="op">+</span> <span class="va">fallen.leaves</span> <span class="op">+</span> <span class="va">moss</span><span class="op">+</span><span class="va">herb.layer</span> <span class="op">+</span> <span class="va">reflection</span>, </span>
 <span>                 formula <span class="op">=</span> <span class="op">~</span><span class="va">soil.dry</span><span class="op">)</span></span></code></pre></div>
@@ -265,7 +376,7 @@ only <span class="math inline">\(\beta_{0j}\)</span>.</p>
 determine the correct number of latent variables. Results of the model
 can be examined in more details using the <code>summary(\cdot)</code>
 function:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">CGLLVM</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
@@ -278,32 +389,32 @@ function:</p>
 <span><span class="co">## Informed LVs:  2 </span></span>
 <span><span class="co">## Constrained LVs:  0 </span></span>
 <span><span class="co">## Unconstrained LVs:  0 </span></span>
-<span><span class="co">## Residual standard deviation of LVs:  0.5163 0.703 </span></span>
+<span><span class="co">## Residual standard deviation of LVs:  0.6577 0.5729 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Formula:  ~ 1 </span></span>
 <span><span class="co">## LV formula:  ~soil.dry + bare.sand + fallen.leaves + moss + herb.layer + reflection </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Coefficients LV predictors:</span></span>
 <span><span class="co">##                     Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">## soil.dry(CLV1)        0.2867     0.2402   1.194  0.23259    </span></span>
-<span><span class="co">## bare.sand(CLV1)       0.2256     0.1737   1.299  0.19410    </span></span>
-<span><span class="co">## fallen.leaves(CLV1)  -0.5494     0.2962  -1.855  0.06365 .  </span></span>
-<span><span class="co">## moss(CLV1)            0.7914     0.1966   4.025 5.69e-05 ***</span></span>
-<span><span class="co">## herb.layer(CLV1)      0.1521     0.1793   0.849  0.39607    </span></span>
-<span><span class="co">## reflection(CLV1)      0.5845     0.2817   2.075  0.03796 *  </span></span>
-<span><span class="co">## soil.dry(CLV2)        1.3270     0.3529   3.760  0.00017 ***</span></span>
-<span><span class="co">## bare.sand(CLV2)      -0.4170     0.2452  -1.701  0.08896 .  </span></span>
-<span><span class="co">## fallen.leaves(CLV2)  -0.7302     0.4036  -1.809  0.07043 .  </span></span>
-<span><span class="co">## moss(CLV2)           -0.3130     0.3433  -0.912  0.36189    </span></span>
-<span><span class="co">## herb.layer(CLV2)      0.5711     0.2409   2.370  0.01777 *  </span></span>
-<span><span class="co">## reflection(CLV2)     -0.6254     0.4014  -1.558  0.11922    </span></span>
+<span><span class="co">## soil.dry(CLV1)      -0.98389    0.33529  -2.934 0.003342 ** </span></span>
+<span><span class="co">## bare.sand(CLV1)      0.47349    0.23214   2.040 0.041380 *  </span></span>
+<span><span class="co">## fallen.leaves(CLV1)  0.33758    0.39012   0.865 0.386866    </span></span>
+<span><span class="co">## moss(CLV1)           0.67915    0.31526   2.154 0.031224 *  </span></span>
+<span><span class="co">## herb.layer(CLV1)    -0.40845    0.22679  -1.801 0.071706 .  </span></span>
+<span><span class="co">## reflection(CLV1)     0.83825    0.37495   2.236 0.025376 *  </span></span>
+<span><span class="co">## soil.dry(CLV2)       0.93546    0.26428   3.540 0.000401 ***</span></span>
+<span><span class="co">## bare.sand(CLV2)     -0.02443    0.19079  -0.128 0.898113    </span></span>
+<span><span class="co">## fallen.leaves(CLV2) -0.84909    0.31374  -2.706 0.006803 ** </span></span>
+<span><span class="co">## moss(CLV2)           0.51290    0.23897   2.146 0.031851 *  </span></span>
+<span><span class="co">## herb.layer(CLV2)     0.42712    0.19684   2.170 0.030013 *  </span></span>
+<span><span class="co">## reflection(CLV2)     0.17366    0.31602   0.550 0.582646    </span></span>
 <span><span class="co">## ---</span></span>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span></code></pre>
 <p>Finally, we can use all the other tools in the R-package for
 inference, such as creating an ordination diagram with arrows:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">CGLLVM</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette6_files/figure-html/unnamed-chunk-9-1.png" width="480" style="display: block; margin: auto;">
+<p><img src="vignette6_files/figure-html/unnamed-chunk-15-1.png" width="480" style="display: block; margin: auto;">
 Arrows that show as less intense red (pink), are predictors of which the
 confidence interval for the slope includes zero, for at least one of the
 two plotted dimensions. There are various arguments included in the
@@ -322,7 +433,7 @@ partition variance per latent variable and for specific predictors.</p>
 <div id="ref-vanderVeen2021b" class="csl-entry">
 Veen, B. van der, F.K.C. Hui, K.A. Hovstad, and R.B. O’Hara. 2022.
 <span>“Concurrent Ordination - Simultaneous Unconstrained and
-Constrained Latent Variable Modelling”</span> 0: 1–13.
+Constrained Latent Variable Modelling”</span> 14: 683–95.
 </div>
 </div>
 </div>
@@ -345,7 +456,7 @@ Constrained Latent Variable Modelling”</span> 0: 1–13.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

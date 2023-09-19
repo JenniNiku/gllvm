@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -73,11 +73,60 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="1.4.1" id="version-141">Version 1.4.1<a class="anchor" aria-label="anchor" href="#version-141"></a></h2>
+<h2 class="page-header" data-toc-text="1.4.3" id="version-143">Version 1.4.3<small>2023-09-18</small><a class="anchor" aria-label="anchor" href="#version-143"></a></h2>
+<ul><li>For CRAN release 1.4.3 see updates for versions 1.4.2 and 1.4.3</li>
+</ul><div class="section level3">
+<h3 id="bug-fixes-1-4-3">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-3"></a></h3>
+<ul><li>Bug in correlated row effects fixed</li>
+<li>Bug in getPredictErr for models fitted with LA fixed, and it returns now prediction errors for random slopes of X covariates as well</li>
+<li>Bug in randomCoefplot fixed</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.4.2" id="version-142">Version 1.4.2<a class="anchor" aria-label="anchor" href="#version-142"></a></h2>
 <div class="section level4">
-<h4 id="bug-fixes-1-4-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-1"></a></h4>
+<h4 id="new-features-1-4-2">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-4-2"></a></h4>
+<ul><li>Added a correction factor to the second partial derivatives of the canonical coefficients for concurrent and constrained ordination</li>
+<li>Added <code>randomCoefPlot</code> functionality of constrained and concurrent ordination models with random slopes. Currently not supported for models with quadratic responses</li>
+<li>Summary now provides the possibility to calculate wald statistics across LVs or predictors for concurrent and constrained ordination</li>
+<li>
+<code>coef</code> now renames parameter estimates with more intuitive names and allows to subset the parameter list with names</li>
+<li>Tweedie power parameter is estimated now if set to NULL in `gllvm.</li>
+<li>VA support for Zero-inflated poisson distribution</li>
+<li>Zero-inflated negative-binomial distribution added</li>
+<li>Binomial (Ntrials&gt;1) support added (previously only Bernoulli)</li>
+<li>Now allowed to have (some) NAs in the response data</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-4-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-2"></a></h3>
+<ul><li>Fixed an issue with structured row-effects in concurrent and constrained ordination</li>
+<li>Fixed a bug that prevented plotting prediction regions for constrained ordination with structured row-effects</li>
+<li>No standard errors should be returned by optima.gllvm and tolerances.gllvm with randomB != FALSE</li>
+<li>Species names were in the original order with order = TRUE in RandomCoefPlot</li>
+<li>Fixed an issue that arose when {0,1} bounded parameters reached the bounds</li>
+<li>Various bug fixes for constrained/concurrent ordination with random intercepts and random slopes</li>
+<li>Bug in predictions with structured row intercepts was fixed, see issue <a href="https://github.com/JenniNiku/gllvm/issues/86" class="external-link">#86</a></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.4.1" id="version-141">Version 1.4.1<small>2023-01-07</small><a class="anchor" aria-label="anchor" href="#version-141"></a></h2>
+<div class="section level4">
+<h4 id="new-features-1-4-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-4-1"></a></h4>
+<ul><li>Computational stability of random slopes for constr. and concr. ordination significantly improved</li>
+<li>Computational stability of quadratic model significantly improved</li>
+<li>Unstructured VA covariance matrix for quadratic models with random intercepts</li>
+<li>Added example for se.gllvm</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-4-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-1"></a></h3>
+<ul><li>Bugfix in random slopes for concr. ordination with LV-specific variances and random row intercepts</li>
+<li>Bugfix for quadratic model with Poisson, NB, gamma, or exponential responses</li>
+<li>Bugfix in starting values for constrained and concurrent quadratic model</li>
+</ul><div class="section level4">
+<h4 id="bug-fixes-1-4-1-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-1-1"></a></h4>
 <ul><li>Valgrind error fixed</li>
 </ul></div>
+</div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.4.0" id="version-140">Version 1.4.0<small>2022-12-17</small><a class="anchor" aria-label="anchor" href="#version-140"></a></h2>
@@ -205,7 +254,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

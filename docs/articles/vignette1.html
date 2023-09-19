@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
       </span>
     </div>
 
@@ -97,7 +97,7 @@
 gllvm</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2023-01-06</h4>
+            <h4 data-toc-skip class="date">2023-09-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette1.Rmd" class="external-link"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -338,7 +338,7 @@ is a dispersion parameter</td>
 <tr class="even">
 <td></td>
 <td align="center">ZIP</td>
-<td align="left">LA</td>
+<td align="left">VA/LA</td>
 <td align="left">log</td>
 <td align="left">
 <span class="math inline">\(E(y_{ij}) =
@@ -351,6 +351,23 @@ is a dispersion parameter</td>
 <td align="left"></td>
 <td align="left"><span class="math inline">\(V(\mu_{ij}) =
 \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)\)</span></td>
+</tr>
+<tr class="even">
+<td></td>
+<td align="center">ZINB</td>
+<td align="left">VA/LA</td>
+<td align="left">log</td>
+<td align="left">
+<span class="math inline">\(E(y_{ij}) =
+(1-p_j)\mu_{ij}\)</span>, <span class="math inline">\(P(y_{ij}=0)=p_j\)</span>,</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td align="center"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"><span class="math inline">\(V(\mu_{ij}) =
+\mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))\)</span></td>
 </tr>
 <tr class="even">
 <td>Binary</td>
@@ -471,11 +488,11 @@ distributions for the data – the Poisson and negative binomial (NB).</p>
 <span><span class="co">#&gt; method: </span></span>
 <span><span class="co">#&gt; [1] "VA"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; log-likelihood:  -2098.631 </span></span>
+<span><span class="co">#&gt; log-likelihood:  -2134.443 </span></span>
 <span><span class="co">#&gt; Residual degrees of freedom:  1108 </span></span>
-<span><span class="co">#&gt; AIC:  4441.261 </span></span>
-<span><span class="co">#&gt; AICc:  4468.372 </span></span>
-<span><span class="co">#&gt; BIC:  5065.263</span></span></code></pre></div>
+<span><span class="co">#&gt; AIC:  4512.886 </span></span>
+<span><span class="co">#&gt; AICc:  4539.997 </span></span>
+<span><span class="co">#&gt; BIC:  5136.888</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></span>
 <span><span class="va">fit_ord</span></span>
@@ -634,7 +651,7 @@ especially for large datasets with many covariates and latent variables,
 this can take a while to run.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">MuMIn</span><span class="op">)</span></span>
-<span><span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/MuMIn/man/dredge.html" class="external-link">dredge</a></span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AICc"</span><span class="op">)</span></span>
+<span><span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu">dredge</span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AICc"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">fit_table</span>, <span class="va">delta</span><span class="op">&lt;</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co"># Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Canopy.cover +  Volume.lying.CWD, </span></span>
 <span><span class="co">#     family = "negative.binomial", num.lv = i, sd.errors = FALSE, </span></span>
@@ -663,7 +680,7 @@ visualised using the <code>corrplot</code> package:</p>
 <code class="sourceCode R"><span><span class="co"># Residual correlation matrix:</span></span>
 <span><span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span><span class="op">(</span><span class="va">fit_env</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/taiyun/corrplot" class="external-link">corrplot</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">gclus</span><span class="op">)</span></span>
-<span><span class="co">#&gt; corrplot 0.84 loaded</span></span>
+<span><span class="co">#&gt; corrplot 0.92 loaded</span></span>
 <span><span class="co">#&gt; Loading required package: cluster</span></span></code></pre></div>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot</a></span><span class="op">(</span><span class="va">cr</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html" class="external-link">order.single</a></span><span class="op">(</span><span class="va">cr</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/gclus/man/order.html" class="external-link">order.single</a></span><span class="op">(</span><span class="va">cr</span><span class="op">)</span><span class="op">]</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, </span>
@@ -722,10 +739,10 @@ approximately 40% of the (co)variation in ant species abundances.</p>
 <code class="sourceCode R"><span><span class="va">rcov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit_env</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit1lv</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>; <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 44.15295</span></span>
-<span><span class="co">#&gt; [1] 25.69847</span></span>
+<span><span class="co">#&gt; [1] 44.03107</span></span>
+<span><span class="co">#&gt; [1] 1.800777e-13</span></span>
 <span><span class="fl">1</span> <span class="op">-</span> <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span> <span class="op">/</span> <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 0.4179671</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 1</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="incorporating-functional-traits-into-fourth-corner-models">Incorporating functional traits into fourth corner models<a class="anchor" aria-label="anchor" href="#incorporating-functional-traits-into-fourth-corner-models"></a>
@@ -760,7 +777,7 @@ The resulting plots indicate that interactions of the trait variable
 <code>Canopy.cover</code> have the strongest effects on ant
 abundances.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://lattice.r-forge.r-project.org/" class="external-link">lattice</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lattice.r-forge.r-project.org/" class="external-link">lattice</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fit_4th</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">11</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex.ylab <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="va">fourth</span> <span class="op">&lt;-</span> <span class="va">fit_4th</span><span class="op">$</span><span class="va">fourth.corner</span></span>
 <span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">1.5</span></span>
@@ -838,7 +855,7 @@ Latent Variable Models in R.”</span> 10: 2173–82.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>
