@@ -272,10 +272,10 @@ trait.TMB <- function(
     if (!(method %in% c("VA", "EVA"))) #"tweedie", 
       stop("family=\"", family, "\" : family not implemented with LA method, change the method to 'VA'")
     
-    if((sum(y==1) + sum(y==0))==0){
+    if((sum(y==1, na.rm = TRUE) + sum(y==0, na.rm = TRUE))==0){
       stop("No zeros or ones in the data, so use 'family = `beta` '")
     }
-    if(!all(colSums(y==1)>0) & !all(colSums(y==0)>0)){
+    if(!all(colSums(y==1, na.rm = TRUE)>0) & !all(colSums(y==0, na.rm = TRUE)>0)){
       warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'")
       zeta.struc = "common"
     }
@@ -621,9 +621,9 @@ trait.TMB <- function(
     if((family %in% c("orderedBeta"))){
       if(zeta.struc=="species"){
         zetamap = c(1:length(zeta))
-        if(!all(colSums(y==0)>0))
+        if(!all(colSums(y==0, na.rm = TRUE)>0))
           zetamap[1:p] <- 1
-        if(!all(colSums(y==1)>0))
+        if(!all(colSums(y==1, na.rm = TRUE)>0))
           zetamap[-(1:p)] <- max(zetamap[1:p])+1
         map.list$zeta = factor( zetamap)
         
