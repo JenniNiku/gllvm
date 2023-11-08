@@ -15,6 +15,8 @@ bibentry(bibtype = "Manual",
                vers, ".", sep="")
 )
 
+citHeader("accompanied by any of associated research articles, as applicable:")
+
 bibentry(bibtype="Article",
          title = "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R",
          author = c(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
@@ -58,11 +60,24 @@ bibentry(bibtype="Article",
          title = "Concurrent ordination: Simultaneous unconstrained and constrained latent variable modelling",
          author = c(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Robert B. O'Hara")),
          journal = "Methods in Ecology and Evolution",
-         year     = "2022",
-         volume      = "00",
-         pages   = "1-13",
+         year     = "2023",
+         volume      = "14",
+         pages   = "683-695",
          textVersion =
-         paste("van der Veen, B., Hui, F. K. C., Hovstad, K.A., and O'Hara, R.B. (2022).",
+         paste("van der Veen, B., Hui, F. K. C., Hovstad, K.A., and O'Hara, R.B. (2023).",
          "Concurrent ordination: simultaneous unconstrained and constrained latent variable modelling.",
-               "Methods in Ecology and Evolution, 00, 1-13.")
+               "Methods in Ecology and Evolution, 14, 683-695.")
+)
+
+bibentry(bibtype="Article",
+         title = "Fast and universal estimation of latent variable models using extended variational approximations",
+         author = c(as.person("Pekka Korhonen"), as.person("Francis K. C. Hui"), as.person("Jenni Niku"), as.person("Sara Taskinen")),
+         journal = "Statistics and Computing",
+         year     = "2023",
+         volume      = "33",
+         pages   = "1-16",
+         textVersion =
+         paste("Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2023).",
+         "Fast and universal estimation of latent variable models using extended variational approximations.",
+               "Statistics and Computing, 33, 1-16.")
 )
