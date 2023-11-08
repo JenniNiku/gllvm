@@ -607,10 +607,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   gamma <- NULL
   index.c <- NULL
   gamma.c <- NULL
-  if(family=="orderedBeta"){
-    y <- y*0.99+0.005
-    family="beta"
-  }
+  # if(family=="orderedBeta"){
+  #   y <- y*0.99+0.005
+  #   family="beta"
+  # }
   
   #generate starting values for constrained LVs
   if(num.lv.c>0&num.lv==0){
