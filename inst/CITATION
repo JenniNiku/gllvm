@@ -15,8 +15,6 @@ bibentry(bibtype = "Manual",
                vers, ".", sep="")
 )
 
-citHeader("accompanied by any of associated research articles, as applicable:")
-
 bibentry(bibtype="Article",
          title = "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R",
          author = c(as.person("Jenni Niku"), as.person("Francis K. C. Hui"), as.person("Sara Taskinen"), as.person("David I. Warton")),
@@ -27,7 +25,8 @@ bibentry(bibtype="Article",
          textVersion =
          paste("Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2019).",
   	       "gllvm - Fast analysis of multivariate abundance data with generalized linear latent variable models in R.",
-               "Methods in Ecology and Evolution, 10, 2173-2182.")
+               "Methods in Ecology and Evolution, 10, 2173-2182."),
+               header = "accompanied by any of associated research articles, as applicable:"
 )
 
 bibentry(bibtype="Article",
