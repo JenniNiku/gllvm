@@ -94,9 +94,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   }
   if(num.lv.cor > 0){#rstruc
     dist<-as.matrix(dist)
-    if(is.null(dLV)) stop("Define structure for row params if 'rstruc == ",rstruc,"'.")
+    if(is.null(dLV)) stop("Define structure for LVs if 'rstruc == ",rstruc,"'.")
     # LVs correlated within groups
-    if(is.null(dLV)) stop("Define structure for row params if 'rstruc == 2'.")
+    if(is.null(dLV)) stop("Define structure for LVs if 'rstruc == 2'.")
     nu <- dim(dLV)[2]
     times <- n/nu#dim(dLV)[1]
     if((cstrucn[2] == 2) | (cstrucn[2] == 4)) {
@@ -1927,6 +1927,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           names(out$params$sigma)="sigma"
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(1,2,3,4))){ 
             out$params$rho <- rho
+            names(out$params$rho)="rho"
             # if(cstrucn[1] %in% c(2,4)){ out$params$scaledc=scaledc}
           }
           if((num.lv+num.lv.c)>1 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:(num.lv+num.lv.c)), sep = "")

@@ -74,8 +74,9 @@ residuals.gllvm <- function(object, ...) {
     eta.mat <- eta.mat + (object$X.design %*% matrix(t(object$params$Xcoef), nrow = num.X, ncol(eta.mat) ))
   if (!is.null(object$TR))
     eta.mat <- eta.mat + matrix(object$X.design %*% c(object$params$B) , nrow = n, ncol = ncol(eta.mat) )
-  if (object$row.eff != FALSE)
+  if (object$row.eff != FALSE){
     eta.mat <- eta.mat + matrix(object$params$row.params, n, ncol(eta.mat), byrow = FALSE)
+  }
   if (num.lv > 0|num.lv.c>0|num.RR>0){
     lvs <- getLV(object)
     if(nrow(lvs)!=n) lvs = object$TMBfn$env$data$dLV%*%lvs # !!!

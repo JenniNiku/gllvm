@@ -1430,6 +1430,7 @@ trait.TMB <- function(
           names(out$params$sigma) <- "sigma"
           if((rstruc ==2 | (rstruc == 1)) & (cstrucn[1] %in% c(1,2,3,4))){
             out$params$rho <- rho
+            names(out$params$rho)="rho"
           }
           if(num.lv>0 && dependent.row) names(out$params$sigma) <- paste("sigma",c("",1:num.lv), sep = "")
         }
