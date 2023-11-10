@@ -1042,7 +1042,7 @@ Type objective_function<Type>::operator() ()
               }
             }
             // 0.5*logdet(A)
-            nll -= log(Alvm(q).determinant());
+            nll -= log(Alvm(q).diagonal().prod()); //log(Alvm(q).determinant());
             
             // Define covariance matrix
             if(cstruc(1)==1){// AR1 covariance
@@ -1062,12 +1062,14 @@ Type objective_function<Type>::operator() ()
               }
             }
             
-            nll -= 0.5*nu*(times - log(Slv(q).determinant()));
-            
+            nll -= 0.5*nu*(times - atomic::logdet(Slv(q)));
+
             Slvinv = atomic::matinv(Slv(q));
-            matrix <Type> Alvmblock;
-            matrix <Type> ucopyblock;
+            matrix <Type> Alvmblock(times,times);
+            matrix <Type> ucopyblock(times,1);
             for (i=0; i<nu; i++) {
+              Alvmblock.setZero();
+              ucopyblock.setZero();
               Alvmblock = Alvm(q).block(i*times,i*times,times,times)*Alvm(q).block(i*times,i*times,times,times).transpose();
               ucopyblock = ucopy.block(i*times,q,times,1);
               nll -=  0.5*(- (Slvinv*Alvmblock).trace()-(ucopyblock.transpose()*Slvinv*ucopyblock).sum());
@@ -1075,6 +1077,7 @@ Type objective_function<Type>::operator() ()
             
           }
           
+          REPORT(Alvm);
         } else if(num_corlv>1){
           // Kron A=AQ*Alvm
           matrix<Type> Alvm(times*nu,times*nu);
@@ -1162,6 +1165,7 @@ Type objective_function<Type>::operator() ()
           }
           REPORT(Alvm);
         }
+
         
       }
       REPORT(AQ);
