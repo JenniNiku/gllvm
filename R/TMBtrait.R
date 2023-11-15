@@ -553,7 +553,7 @@ trait.TMB <- function(
     } else if(family=="orderedBeta") {
       zeta <- rep(0,p)
       # if(any(y==1)) 
-      zeta <- c(zeta,rep(3,p))
+      zeta <- c(zeta,rep(log(3),p))
     } else {
       zeta = 0
     }
@@ -1271,6 +1271,7 @@ trait.TMB <- function(
     }
     if(family == "orderedBeta") {
       zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+      zetas[,2] = exp(zetas[,2])
       colnames(zetas) = c("cutoff0","cutoff1")
     }
     
@@ -1558,9 +1559,9 @@ trait.TMB <- function(
                 
                 k=0;
                 if((Astruc==1) & (length(Au) > nu*num.lv.cor) ){ # unstructured variational covariance
-                  for (i in 1:nu){
+                  for (i in 1:(nu-1)){
                     for (r in (i+1):nu){
-                      A[,,d]=Au[nu*num.lv.cor+k*num.lv.cor+d];
+                      A[r,i,d]=Au[nu*num.lv.cor+k*num.lv.cor+d];
                       k=k+1;
                     }
                   }
