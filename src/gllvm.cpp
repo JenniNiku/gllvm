@@ -1791,7 +1791,7 @@ Type objective_function<Type>::operator() ()
       zetanew.setZero();
       for(int j=0; j<p; j++){
         zetanew(j,0)= zeta(j);
-        if(zeta.size()>p) zetanew(j,1)= fabs(zeta(p+j));
+        if(zeta.size()>p) zetanew(j,1)= exp(zeta(p+j));
       }
       
       Type mu_prime;
