@@ -16,8 +16,10 @@
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
-#' @param corWithin logical. If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
-#' @param dist matrix of coordinates or time points used for row parameters correlation structure \code{corExp}.
+#' @param corWithin logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
+#' @param corWithinLV logical. For LVs with correlation, If \code{TRUE}, correlation is set between rows of the observation units within group. Defaults to \code{FALSE}, when correlation is set for rows between groups.
+#' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
+#' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param randomB either \code{FALSE}(default), "LV", "P", or "single". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
@@ -218,9 +220,10 @@
 #'  \item{quadratic }{ flag for quadratic model}
 #'  \item{Hess }{ List holding matrices of second derivatives}
 #'  \item{beta0com }{ Flag for common intercept in fourth corner models}
-#'  \item{rstruc }{ Integer that indicates which type of row structure is included}
 #'  \item{cstruc }{ Correlation structure for row effects}
+#'  \item{cstruclv }{ Correlation structure for LVs}
 #'  \item{dist }{ Matrix of coordinates or time points used for row effects}
+#'  \item{distLV }{ Matrix of coordinates or time points used for LVs}
 #'  \item{terms }{ Terms object for main predictors}
 #'  \item{start }{ starting values for model}
 #'  \item{optim.method }{ Optimization method when using 'optim', 'alabama', or 'nloptr'}
@@ -400,8 +403,8 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
-                  lvCor = NULL, studyDesign=NULL,dist = matrix(0), corWithin = FALSE, quadratic = FALSE, 
-                  row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
+                  lvCor = NULL, studyDesign=NULL,dist = matrix(0), distLv = matrix(0), corWithin = FALSE, corWithinLV = FALSE,
+                  quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = 1,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
@@ -889,8 +892,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(!is.null(lv.formula)){
           lv.formula <- formula(paste("~",paste(attr(terms(lv.formula),"term.labels")[!attr(terms(lv.formula),"term.labels")%in%lv.X.red],collapse="+")))
         }
-        
-        #modify terms object
       }
     }
     
@@ -899,8 +900,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (p == 1)
       y <- as.matrix(y)
 
+    if(!inherits(row.eff, "formula") && row.eff == "random"){
+      row.eff <- ~(1|site)
+      studyDesign <- cbind(studyDesign, site = 1:n)
+    }
 # Structured row parameters
-    rstruc = 0; dr = NULL; dLV = NULL; cstruc = c("diag","diag")
+    dr = NULL; dLV = NULL; cstruc = "diag"
     if(inherits(row.eff,"formula")) {
       bar.f <- findbars1(row.eff) # list with 3 terms
       grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
@@ -934,16 +939,40 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
         # } else if(!all(grps %in% colnames(X))) {
         # stop("Grouping variable need to be included in 'X'")
-      } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
-        stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
-      } else {
-        mf <- model.frame(subbars1(row.eff),data=studyDesign)
-        dr <- t(as.matrix(mkReTrms1(bar.f,mf)$Zt))
-        if(corWithin){ rstruc=2} else { rstruc=1}
       }
-      cstruc[1] = corstruc(row.eff)[1]
-      if(cstruc[1] == "diag" & rstruc==2) {rstruc=0; dr=NULL}
-      row.eff = "random"
+      # else if(!all(apply(studyDesign[,(colnames(studyDesign) %in% grps)],2,order)==c(1:n)) && (corWithin)) {
+      #   stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
+      # } 
+      
+      cstruc <- corstruc(row.eff)
+      corWithin <- ifelse(cstruc == "diag", FALSE, corWithin)
+      
+      if(!is.null(bar.f)) {
+        mf <- model.frame(subbars1(row.eff),data=studyDesign)
+        # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
+        # consequence: we can use Zt everywhere
+        mf.new <- mf
+        if(any(corWithin)){
+          mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
+        }
+        colnames(mf.new) <- colnames(mf)
+        dr <- Matrix::t(mkReTrms1(bar.f,mf.new)$Zt)
+        colnames(dr) <- rep(colnames(mf.new),apply(mf.new,2,function(x)length(unique(x))))
+        
+        # add unique column names with corWithin so that we can identify them as separate random effects later
+      if(any(corWithin)){
+        corWithinNew <- corWithin
+        cstrucNew <- cstruc
+        for(re.nm in colnames(mf)[corWithin]){
+          cstrucNew <- rep(cstrucNew, times = ifelse(colnames(mf)==re.nm, length(unique(mf[, re.nm])), 1))
+          corWithinNew <- rep(corWithinNew, times = ifelse(colnames(mf)==re.nm, length(unique(mf[, re.nm])), 1))
+          colnames(dr)[colnames(dr) == re.nm] <- paste0(re.nm, sort(mf[, re.nm]))
+        }
+        corWithin <- corWithinNew
+        cstruc <- cstrucNew
+      }
+      }
+      row.eff <- "random"
     }
     
     if(inherits(lvCor,"formula")) {
@@ -972,14 +1001,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
         # } else if(!all(grps %in% colnames(X))) {
         # stop("Grouping variable need to be included in 'X'")
-      } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithin)) {
+      } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithinLV)) {
         stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       } else {
         # if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
         mf <- model.frame(subbars1(lvCor),data=studyDesign)
-        dLV <- t(as.matrix(mkReTrms1(bar.lv,mf)$Zt))
+        dLV <- Matrix::t(mkReTrms1(bar.lv,mf)$Zt)
       }
-      cstruc[2] = corstruc(lvCor)[1]
+      cstruclv = corstruc(lvCor)[1]
       num.lv.cor = num.lv
       # Have to set this to diagonal to avoid too many parameters:
       # Lambda.struc = "diagonal"
@@ -987,7 +1016,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       num.lv.cor = 0
     }
     if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
-      NN<-t(apply(as.matrix(dist(dist, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
+      NN<-t(apply(as.matrix(dist(distLv, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
       i1<-rep(1:nrow(NN), each=ncol(NN))
       i2<-c(t(NN))
       indM<-cbind(i1,i2)
@@ -1007,12 +1036,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(any(colSums(y, na.rm = TRUE) == 0))
       warning("There are responses full of zeros. \n");
 
-    if(row.eff %in% c("fixed", "random", TRUE) ){
-      if((p<2) & (rstruc == 0))
-        stop("There must be at least two responses in order to include unstructured row effects. \n");
+    # if(row.eff %in% c("fixed", "random", TRUE) ){
+    #   if((p<2) & (any(rstruc == 0)))
+    #     stop("There must be at least two responses in order to include unstructured row effects. \n");
+    # }
       if(any(rowSums(y, na.rm = TRUE)==0))
         warning("There are rows full of zeros in y. \n");
-      }
     # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
     #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
     #   #This can potentially be relaxed for the gaussian, binomial and ordinal distributions because the linear and quadratic approximation terms can be separated.
@@ -1115,7 +1144,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, rstruc =rstruc, corP=list(cstruc = cstruc, corWithin=corWithin, Astruc=0), dist=dist, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1200,7 +1229,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr,dLV=dLV, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            dr=dr,dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
@@ -1253,7 +1282,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, dLV=dLV, rstruc =rstruc, cstruc = cstruc, dist =dist, corWithin = corWithin, NN=NN, 
+            dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corwithinLV, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
