@@ -99,6 +99,14 @@ subbars1<-function (term)
     term[[1]] <- as.name("+")
   if (is.call(term) && term[[1]] == as.name("||")) 
     term[[1]] <- as.name("+")
+  if (is.call(term) && term[[1]] == as.name("/")){
+    term2<<-term
+    # stopifnot(lenght(term) >= )
+  }
+    # term <- append(term, term2[[1]])
+    # 
+    # append(term, as.name(paste0("(1|+",all.vars(term)[1],))
+    # term <- append(term, as.name(paste0("+(1|",paste0(terms(term[[1]]),collapse=":"))))
   for (j in 2:length(term)) {
     term[[j]] <- subbars1(term[[j]])
   }
@@ -143,7 +151,7 @@ mkReTrms1 <- function (bars, fr)
   Zt <- do.call(rbind, Ztlist)
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt)
+  ll <- list(Zt = Zt, nl = nl)
   ll
 }
 

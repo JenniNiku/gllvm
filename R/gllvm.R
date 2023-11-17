@@ -403,7 +403,7 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
-                  lvCor = NULL, studyDesign=NULL,dist = matrix(0), distLv = matrix(0), corWithin = FALSE, corWithinLV = FALSE,
+                  lvCor = NULL, studyDesign=NULL,dist = list(matrix(0)), distLV = matrix(0), corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = 1,
@@ -902,13 +902,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     if(!inherits(row.eff, "formula") && row.eff == "random"){
       row.eff <- ~(1|site)
-      studyDesign <- cbind(studyDesign, site = 1:n)
+      if(is.null(studyDesign)){
+        studyDesign <- data.frame(site = 1:n)
+      }else{
+        studyDesign <- cbind(studyDesign, data.frame(site = 1:n)) 
+      }
     }
 # Structured row parameters
-    dr = NULL; dLV = NULL; cstruc = "diag"
+    dr = NULL; cstruc = "diag"
     if(inherits(row.eff,"formula")) {
       bar.f <- findbars1(row.eff) # list with 3 terms
-      grps <- unlist(lapply(bar.f,function(x) as.character(x[[3]])))
+      grps <- unique(unlist(lapply(bar.f, all.vars)))
       if(is.null(studyDesign)){
         if(!is.null(data)) {
         if(any(colnames(data) %in% grps)){
@@ -943,8 +947,21 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # else if(!all(apply(studyDesign[,(colnames(studyDesign) %in% grps)],2,order)==c(1:n)) && (corWithin)) {
       #   stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       # } 
+      # if there are nested components, the formula needs to be expanded to ensure 
+      # a correct number of entries in corstruc
+      form.parts <- strsplit(deparse1(row.eff),split="\\+")[[1]]
+      nested.parts <- grepl("/",form.parts)
+      if(any(nested.parts)){
+      form.parts <- strsplit(deparse1(row.eff),split="\\+")[[1]]
       
-      cstruc <- corstruc(row.eff)
+      for(i in which(nested.parts))
+        form.parts[i] <- paste0("(", findbars1(formula(paste0("~",form.parts[i]))),")",collapse="+")
+      
+      corstruc.form <- as.formula(paste0("~", paste0(form.parts,collapse="+")))
+      }else{
+      corstruc.form <- row.eff
+      }
+      cstruc <- corstruc(corstruc.form)
       corWithin <- ifelse(cstruc == "diag", FALSE, corWithin)
       
       if(!is.null(bar.f)) {
@@ -956,8 +973,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
         }
         colnames(mf.new) <- colnames(mf)
-        dr <- Matrix::t(mkReTrms1(bar.f,mf.new)$Zt)
-        colnames(dr) <- rep(colnames(mf.new),apply(mf.new,2,function(x)length(unique(x))))
+        RElist <- mkReTrms1(bar.f,mf.new)
+        dr <- Matrix::t(RElist$Zt)
+        colnames(dr) <- rep(names(RElist$nl),RElist$nl)
         
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
@@ -975,6 +993,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       row.eff <- "random"
     }
     
+    dLV = NULL;cstruclv = "diag"
     if(inherits(lvCor,"formula")) {
       bar.lv <- findbars1(lvCor) # list with 3 terms
       grps <- unlist(lapply(bar.lv,function(x) as.character(x[[3]])))
@@ -996,7 +1015,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           X<-cbind(X,xgrps)
         }
       }
-      
       if(is.null(bar.lv)) {
         stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
         # } else if(!all(grps %in% colnames(X))) {
@@ -1282,7 +1300,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corwithinLV, NN=NN, 
+            dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group
@@ -1425,6 +1443,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {
       out$fourth.corner <- try(getFourthCorner(out),silent = TRUE)
+    }
+    if(row.eff == "random"){
+      out$dr = fitg$dr
     }
     if (is.finite(out$logL) && row.eff == "random" && FALSE){
       if(method == "LA"){

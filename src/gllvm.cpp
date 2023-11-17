@@ -139,9 +139,7 @@ Type objective_function<Type>::operator() ()
   eta.setZero();
   matrix<Type> lam(n,p);
   lam.setZero();
-  matrix<Type> Cu(nlvr,nlvr); 
-  Cu.setZero();  
-  
+
   Type nll = 0; // initial value of log-likelihood
   
   matrix<Type> RRgamma(num_RR,p);
@@ -190,8 +188,6 @@ Type objective_function<Type>::operator() ()
     
     if(nlvr>0){
       newlam.row(0).fill(1.0);
-      Cu.diagonal().fill(1.0);
-      
   if((num_lv+num_lv_c)>0){
         for (int d=0; d<nlvr; d++){
           // Delta(d,d) = exp(sigmaLV(d));
@@ -330,20 +326,10 @@ Type objective_function<Type>::operator() ()
       //Go this route if no random Bs
       matrix <Type> Atemp(nlvr,nlvr);
       vector <Type> Adiag(nlvr);
-      matrix <Type> CuI;
-      if(nlvr>(num_lv+num_lv_c)){
-        CuI = Cu.inverse();//for small matrices use .inverse rather than atomic::matinv
-      }
       for(int i=0; i<n; i++){
         Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
         Adiag = Atemp.diagonal();
-        if(nlvr == (num_lv+num_lv_c)) nll -= Adiag.log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
-        if(nlvr>(num_lv+num_lv_c)) {
-          nll -= Adiag.log().sum() - 0.5*(CuI*Atemp*Atemp.transpose()).trace()-0.5*((u.row(i)*CuI)*u.row(i).transpose()).sum();
-        }
-        
-        // log(det(A_i))-sum(trace(Cu^(-1)*A_i))*0.5 sum.diag(A)
-        nll -= 0.5*(nlvr - log(Cu.determinant())*random(0));
+        nll -= Adiag.log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
       }
       //scale LVs with standard deviations, as well as the VA covariance matrices
       u *= Delta;
@@ -638,7 +624,7 @@ Type objective_function<Type>::operator() ()
             }}
         }
         // we do not want the cholesky here, so need to store the square of the matrix
-        Arm(re) = Arm(re)*Arm(re).transpose();
+        Arm(re) *= Arm(re).transpose();
 
       // Two: store them all in one big sparse covariance matrix
       // This will facilitate things if at a later time we want correlation between effects too
@@ -646,32 +632,37 @@ Type objective_function<Type>::operator() ()
       // tempArmRe a temporary matrix that is needed to get things in the right format
       Eigen::SparseMatrix<Type, Eigen::RowMajor> tempArmRe(nr.sum(), nr(re));
       tempArmRe.setZero();
-      tempArmRe.middleRows(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tmbutils::asSparseMatrix(Arm(re));
-      ArmSP.middleCols(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tempArmRe;
+      if(re==0){
+        tempArmRe.topRows(nr(0)) = tmbutils::asSparseMatrix(Arm(0));
+        ArmSP.leftCols(nr(0)) = tempArmRe;
+      }else{
+        tempArmRe.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Arm(re));
+        ArmSP.middleCols(nr.head(re).sum(), nr(re)) = tempArmRe;
+      }
       }
       // add terms to cQ
-      
+
       for (int j=0; j<p;j++){
-        cQ.col(j) += 0.5*(Eigen::VectorXd::Ones(nr.sum())*dr0*ArmSP);
+        cQ.col(j) += 0.5*(dr0*ArmSP*Eigen::VectorXd::Ones(nr.sum()));
       }
-      
+
       REPORT(Arm);
       REPORT(ArmSP);
-      
+
       // Three: we build the actual covariance matrix
       Eigen::SparseMatrix<Type>SrSP(nr.sum(), nr.sum());
       SrSP.setZero();
       vector<matrix<Type>> Sr(nr.size());
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
-      
+
       for(int re=0; re<nr.size();re++){
         Sr(re).resize(nr(re),nr(re));
         Sr(re).setZero();
-        
+
         // diagonal row effect
         if(cstruc(re) == 0){
-          Sr(re).diagonal().array() = sigma(sigmacounter);
+        Sr(re).diagonal().array() = sigma(sigmacounter);
         sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
         Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
@@ -696,18 +687,22 @@ Type objective_function<Type>::operator() ()
           }
           dccounter++;
         }
-        
+
         // we do not want the cholesky of these matrices here, so need to store the square of each matrix
-        Sr(re) = Sr(re)*Sr(re).transpose();
-        
+        Sr(re) *= Sr(re).transpose();
+
         // This will facilitate things if at a later time we want correlation between effects too
         // SrSP is our sparse covariance matrix across all REs
         // tempSrSP a temporary matrix that is needed to get things in the right format
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSrSP(nr.sum(), nr(re));
         tempSrSP.setZero();
-        tempSrSP.middleRows(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tmbutils::asSparseMatrix(Sr(re));
-        SrSP.middleCols(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tempSrSP;
-  
+        if(re==0){
+          tempSrSP.topRows(nr(0)) = tmbutils::asSparseMatrix(Sr(0));
+          SrSP.leftCols(nr(0)) = tempSrSP;
+        }else{
+          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Sr(re));
+          SrSP.middleCols(nr.head(re).sum(), nr(re)) = tempSrSP;
+        }
       }
       // Four: add the terms to the likelihood and cQ.
       // For LL, determinant we can calculate as the product of determinants of the block matrices for now
@@ -721,9 +716,13 @@ Type objective_function<Type>::operator() ()
       for(int i=0; i<nr.sum(); i++){
         SrIArmSPtrace += SrIArmSP.coeffRef(i,i);
       }
-      nll -= vector<Type>(Armldlt.vectorD()).log().sum() - 0.5*(SrIArmSPtrace+(r0.transpose()*(SrI*r0)).sum());
+      nll -= 0.5*vector<Type>(Armldlt.vectorD()).log().sum() - 0.5*(SrIArmSPtrace+(r0.transpose()*(SrI*r0)).sum());
       // determinants of each block of the covariance matrix
       nll -= 0.5*(nr.sum()-vector<Type>(Srldlt.vectorD()).log().sum());
+      REPORT(SrI);
+      REPORT(SrSP);
+      REPORT(SrIArmSP);
+      REPORT(SrIArmSPtrace);
     }
     
     // Correlated LVs
@@ -1809,11 +1808,12 @@ Type objective_function<Type>::operator() ()
       eta += xb*Br;
     }
     
-    //latent variables and random site effects (r_i,u_i) from N(0,Cu)
+    //latent variables
     if(nlvr>0){
-      MVNORM_t<Type> mvnorm(Cu);
       for (int i=0; i<n; i++) {
-        nll += mvnorm(u.row(i));
+        for(int q=0; q<u.cols(); q++){
+        nll -= dnorm(u(i,q), Type(0), Type(1), true);
+      }
       }
       //variances of LVs
       u *= Delta;
@@ -1842,6 +1842,7 @@ Type objective_function<Type>::operator() ()
 
       // Build the covariance matrix
       Eigen::SparseMatrix<Type>SrSP(nr.sum(), nr.sum());
+      //should probably reserve number of non-zeros
       SrSP.setZero();
       vector<matrix<Type>> Sr(nr.size());
       int dccounter = 0; // tracking used dc entries
@@ -1880,18 +1881,31 @@ Type objective_function<Type>::operator() ()
         }
         
         // we do not want the cholesky of these matrices here, so need to store the square of each matrix
-        Sr(re) = Sr(re)*Sr(re).transpose();
+        Sr(re) *= Sr(re).transpose();
         
         // This will facilitate things if at a later time we want correlation between effects too
         // SrSP is our sparse covariance matrix across all REs
         // tempSrSP a temporary matrix that is needed to get things in the right format
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSrSP(nr.sum(), nr(re));
         tempSrSP.setZero();
-        tempSrSP.middleRows(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tmbutils::asSparseMatrix(Sr(re));
-        SrSP.middleCols(nr.head(re).sum(), nr.head(re).sum()+nr(re)-1) = tempSrSP;
+        // REPORT(tempSrSP);
+        REPORT(Sr);
+        // REPORT(tempSrSP);
+        if(re==0){
+          tempSrSP.topRows(nr(0)) = tmbutils::asSparseMatrix(Sr(0));
+          SrSP.leftCols(nr(0)) = tempSrSP;
+        }else{
+          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Sr(re));
+          SrSP.middleCols(nr.head(re).sum(), nr(re)) = tempSrSP;
+        }
       }
       // Add to the LL
-      nll += GMRF(SrSP)(r0);
+      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > Srldlt(SrSP);
+      Eigen::SparseMatrix<Type> I(nr.sum(),nr.sum());
+      I.setIdentity();
+      Eigen::SparseMatrix <Type> SrI = Srldlt.solve(I);
+      nll += GMRF(SrI)(r0);
+      REPORT(SrSP);
     }
     
     // Correlated LVs
