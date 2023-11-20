@@ -641,11 +641,10 @@ Type objective_function<Type>::operator() ()
       }
       }
       // add terms to cQ
-
-      for (int j=0; j<p;j++){
-        cQ.col(j) += 0.5*(dr0*ArmSP*Eigen::VectorXd::Ones(nr.sum()));
+      for (int i=0; i<n;i++){
+        cQ.row(i) += 0.5*(dr0.row(i)*ArmSP*dr0.row(i).transpose())*Eigen::MatrixXd::Ones(1,p);
       }
-
+      REPORT(cQ);
       REPORT(Arm);
       REPORT(ArmSP);
 
@@ -716,9 +715,10 @@ Type objective_function<Type>::operator() ()
       for(int i=0; i<nr.sum(); i++){
         SrIArmSPtrace += SrIArmSP.coeffRef(i,i);
       }
-      nll -= 0.5*vector<Type>(Armldlt.vectorD()).log().sum() - 0.5*(SrIArmSPtrace+(r0.transpose()*(SrI*r0)).sum());
+
+      nll -= 0.5*vector<Type>(Armldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(SrIArmSPtrace+(r0.transpose()*(SrI*r0)).sum());
       // determinants of each block of the covariance matrix
-      nll -= 0.5*(nr.sum()-vector<Type>(Srldlt.vectorD()).log().sum());
+      nll -= 0.5*(nr.sum()-vector<Type>(Srldlt.vectorD()).cwiseAbs().log().sum());
       REPORT(SrI);
       REPORT(SrSP);
       REPORT(SrIArmSP);

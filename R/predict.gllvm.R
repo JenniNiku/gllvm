@@ -84,9 +84,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if(all.vars(object$call$row.eff) %in% colnames(newX)) {
         warning("Using row effects for predicting new sites does not work yet.")
       }
-    } else if ((length(object$params$row.params) != nrow(object$y)) & is.null(newX)) 
-      object$params$row.params = c(object$TMBfn$env$data$dr0 %*% 
-                                     object$params$row.params)
+    }
   }
   b0 <- object$params$beta0
   eta <- matrix(b0, n, p, byrow = TRUE)
@@ -308,13 +306,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0) & is.null(newX)) {
     if(!is.null(object$params$row.params)){
-      if(length(object$params$row.params)!=n) object$params$row.params = c(object$TMBfn$env$data$dr0%*%object$params$row.params) # !!!
+     object$params$row.params = object$TMBfn$env$data$dr0%*%object$params$row.params # !!!
     }
-    if(nrow(eta) == length(object$params$row.params)){
     r0 <- object$params$row.params
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
-    eta <- eta + r0
-    }
+    eta <- eta + r0%*%rep(1,ncol(model$y))
   }
 
   if(!is.null(object$offset)){

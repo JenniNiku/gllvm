@@ -2,13 +2,6 @@
 ## GLLVM, with estimation done via Variational approximation using TMB-package
 ## Original author: Jenni Niku
 ########################################################################################
-# y=spider$abund; X = NULL; lv.X = NULL; formula = NULL; family = "poisson"; 
-# num.lv = 0; num.lv.c = 0; num.RR = 0; num.lv.cor=0; lv.formula = NULL; corWithinLV = FALSE; randomB = FALSE; 
-# method="LA";Lambda.struc="unstructured"; Ar.struc="diagonal"; row.eff = "random"; reltol = 1e-8; reltol.c = 1e-8;
-# seed = NULL;maxit = 3000; max.iter=200; start.lvs = NULL; offset=NULL; sd.errors = FALSE;
-# trace=FALSE;link="logit";n.init=1;n.init.max = 10; restrict=30;start.params=NULL; dr=dr; dLV=NULL; cstruc = "diag"; cstruclv = "diag"; dist =list(matrix(0)); distLV = matrix(0);
-# optimizer="optim";starting.val="res";Power=1.5;diag.iter=1; dependent.row = FALSE; scalmax = 10; MaternKappa = 1.5; rangeP = NULL;
-# Lambda.start=c(0.1,0.5); quad.start=0.01; jitter.var=0; zeta.struc = "species"; quadratic = FALSE; start.struc = "LV"; optim.method = "BFGS"; disp.group = NULL; NN=matrix(0); setMap=NULL; Ntrials = 1
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-8, reltol.c = 1e-8,
@@ -21,7 +14,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   # if(!is.null(dr) && ncol(dr) != length(Ar.struc) && length(Ar.struc==1)){
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
-  if(((num.lv+num.lv.c)==0) & (row.eff!="random") & (randomB==FALSE)) diag.iter <-  0
+  if(((num.lv+num.lv.c)==0) & (randomB==FALSE)) diag.iter <-  0
   
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
@@ -776,7 +769,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lg_Ar <- rep(log(Lambda.start[2]), sum(nr))
         
         if(Ar.struc!="diagonal"){
-          lg_Ar<-c(lg_Ar, rep(0, sum(nr*(nr-1)/2)))
+          lg_Ar<-c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
         }
       } else {lg_Ar <- 0}
       
@@ -826,7 +819,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       ## Row effect settings
       if(row.eff=="random"){
         # if(dependent.row&quadratic==F|dependent.row&starting.val=="zero") 
-        #   sigma<-c(log(sigma), rep(0, num.lv+num.lv.c))
         sigmanew <- map.list$log_sigma <- NULL
         iter = 1 # keep track of # spatial structures
         for(re in cstrucn){
@@ -834,11 +826,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             sigmanew = c(sigmanew, log(sigma[1]),0)
             if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(2)){
-            sigmanew = c(sigmanew, log(sigma[1]),scaledc[iter])
+            sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
             if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(4)){
-            sigmanew = c(sigmanew, log(sigma[1]),scaledc[iter])
+            sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
             # Fix matern smoothness by default
             if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2, NA)
@@ -1047,7 +1039,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(row.eff == "random"){
           log_sigma1 <- log(exp(param1[nam=="log_sigma"])+1e-3)
           if(!is.null(map.list$log_sigma)) log_sigma1 = log_sigma1[map.list$log_sigma]
-          lg_Ar<- log(exp(param1[nam=="lg_Ar"])+1e-3)
+          lg_Ar<- c(log(exp(param1[nam=="lg_Ar"][1:sum(nr)])+1e-3), param1[nam=="lg_Ar"][-c(1:sum(nr))])
         } else {log_sigma1 = 0}
         
         if(num.lv.cor>0){
@@ -1433,15 +1425,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         randomp <- c(randomp,"r0")
         
         sigmanew <- map.list$log_sigma <- NULL
+        iter <- 1
           for(re in cstrucn){
             if(re %in% c(1,3)) {
               sigmanew = c(sigmanew, log(sigma[1]),0)
               if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
             } else if(re %in% c(2)){
-              sigmanew = c(sigmanew, log(sigma[1]),scaledc)
+              sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
+              iter <- iter + 1
               if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
             } else if(re %in% c(4)){
-              sigmanew = c(sigmanew, log(sigma[1]),scaledc)
+              sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
+              iter <- iter + 1
               # Fix matern smoothness by default
               if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2, NA)
               sigmanew = c(sigmanew, sigma,log(MaternKappa))
@@ -2139,8 +2134,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               A[i,,] <- A[i,,]%*%t(A[i,,])
             }
             out$A <- A
-          } else {
-            out$Ar <- A
           }
         }
         
@@ -2183,21 +2176,22 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           lg_Ar <- lg_Ar[-c(1:sum(nr))]
           for(re in 1:length(nr)){
             Ar[[re]] <- diag(Ar.sds[1:nr[re]])
-            Ar.sds <- Ar.sds[-c(1:nr[re])]
           }
           if(Ar.struc == "unstructured"){
-            if(length(lg_Ar)>sum(nr)){
+            if(length(lg_Ar)>0){
               k=1;
               for(re in 1:length(nr)){
-              for(d in 1:nr[re]){
-                r <- d + 1;
-                while (r <= nr[re]){
+              for(d in 1:(nr[re]-1)){
+              for(r in (d+1):nr[re]){
                   Ar[[re]][r,d] = lg_Ar[k];
-                  k=k+1; r=r+1;
+                  k=k+1;
                 }}
             }
           }
-        }
+          }
+          for(re in 1:length(nr)){
+            Ar[[re]] <- Ar[[re]]%*%t(Ar[[re]])
+          }
         out$Ar <- Ar
         }
         
