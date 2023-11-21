@@ -14,7 +14,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   # if(!is.null(dr) && ncol(dr) != length(Ar.struc) && length(Ar.struc==1)){
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
-  if(((num.lv+num.lv.c)==0) & (randomB==FALSE)) diag.iter <-  0
+  if(((num.lv+num.lv.c)==0) & (row.eff!="random") & (randomB==FALSE)) diag.iter <-  0
   
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
@@ -768,7 +768,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(row.eff == "random"){
           lg_Ar <- rep(log(Lambda.start[2]), sum(nr))
         
-        if(Ar.struc!="diagonal"){
+        if(Ar.struc!="diagonal" && diag.iter == 0){
           lg_Ar<-c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
         }
       } else {lg_Ar <- 0}
@@ -1006,7 +1006,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       
       ### Now diag.iter, improves the model fit sometimes
-      if((diag.iter>0) && !(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error")){
+      if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured"))){
         objr1 <- objr
         optr1 <- optr
         param1 <- optr$par
@@ -1022,7 +1022,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           Ab_lv1 <- 0
         }
         if((num.lv.c+num.RR)>0){b.lv1 <- matrix(param1[nam=="b_lv"],ncol(lv.X),(num.lv.c+num.RR))}else{b.lv1<-matrix(0)}
-        lambda1 <- param1[nam=="lambda"]
+        if((num.lv+num.lv.c+num.RR+num.lv.cor)>0){lambda1 <- param1[nam=="lambda"]}else{lambda1<-lambda}
         if (quadratic=="LV" | quadratic == T && start.struc == "LV"){
           lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = 1)#In this scenario we have estimated two quadratic coefficients before
         }else if(quadratic == T){
@@ -1037,9 +1037,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigmaB1 <- param1[nam=="sigmaB"]
         sigmaij1 <- param1[nam=="sigmaij"]
         if(row.eff == "random"){
-          log_sigma1 <- log(exp(param1[nam=="log_sigma"])+1e-3)
+          log_sigma1 <- ifelse(param1[nam=="log_sigma"]==0,1e-3,param1[nam=="log_sigma"])
           if(!is.null(map.list$log_sigma)) log_sigma1 = log_sigma1[map.list$log_sigma]
-          lg_Ar<- c(log(exp(param1[nam=="lg_Ar"][1:sum(nr)])+1e-3), param1[nam=="lg_Ar"][-c(1:sum(nr))])
+          lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(nr)])+1e-3)
+          if(Ar.struc=="unstructured"){
+            lg_Ar <- c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
+          }
         } else {log_sigma1 = 0}
         
         if(num.lv.cor>0){
@@ -1097,7 +1100,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         #Because then there is no next iteration
         data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials)
         
-        parameter.list = list(r0=r1, b = b1, b_lv = b.lv1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
+        parameter.list <- list(r0=r1, b = b1, b_lv = b.lv1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaB=log(diag(sigmaB)),sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=0, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
 
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -1699,7 +1702,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         ri <- names(param)=="r0"
         row.params=param[ri]
         if(row.eff=="random"){
-          sigma<-exp(param[names(param)=="log_sigma"])
+          sigma<-param[names(param)=="log_sigma"]
           # if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho<- param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
           # if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
           #   rho<- exp(param[names(param)=="log_sigma"][-1]);
@@ -1926,9 +1929,35 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       if(row.eff!=FALSE) {
         if(row.eff=="random"){ 
-          out$params$sigma=sigma; 
           out$dr=dr
-          try(names(out$params$sigma) <- unique(colnames(dr)),silent=T)
+          iter = 1 # keep track of index
+          for(re in 1:length(cstrucn)){
+            if(cstrucn[re] %in% c(1,3)) {
+              sigma[iter] <- exp(sigma[iter])
+              names(sigma)[iter] = names(nr)[re]
+              names(sigma)[iter+1] = paste0(names(nr)[re],"rho")
+              sigma[iter+1] <- sigma[iter+1] / sqrt(1.0 + sigma[iter+1]^2);
+              iter <- iter +2
+            } else if(cstrucn[re] %in% c(2)){
+              sigma[iter] <- exp(sigma[iter:(iter+1)])
+              names(sigma)[iter] = "Scale"
+              names(sigma)[iter+1] = names(nr)[re]
+              iter <- iter + 2
+            } else if(cstrucn[re] %in% c(4)){
+              sigma[iter] <- exp(sigma[iter:(iter+2)])
+              names(sigma)[iter] = "Scale"
+              names(sigma)[iter+1] = names(nr)[re]
+              iter <- iter + 2
+              # Matern smoothness
+              names(sigma)[iter+1] = "Matern kappa"
+              iter <- iter +1
+            } else {
+              names(sigma)[iter] = names(nr)[re]
+              iter <- iter +1
+            }
+          }
+          out$params$sigma=sigma; 
+          
           # if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,2,3,4))){ 
           #   out$params$rho <- rho
           #   names(out$params$rho)="rho"
