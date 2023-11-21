@@ -47,7 +47,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   # if(rstruc==0){ # No structure
   #   dr <- diag(n)
   # }
-  if(num.lv.cor==0){ # No structure
+  if(num.lv.cor==0 || is.null(dLV)){ # No structure
     dLV <- as(diag(n), "TsparseMatrix")
   }
   
@@ -59,8 +59,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   rho.lv =NULL  
   if(!is.null(dr)){
     nr <- table(factor(colnames(dr),levels=unique(colnames(dr))))
-
-  if(is.null(dLV))dLV <- as(matrix(0), "TsparseMatrix")  
     # distance matrix checks
       if(any(cstruc%in%c("corExp","corMatern"))){
         if(length(dist)!=sum(cstruc%in%c("corExp","corMatern"))){
@@ -95,8 +93,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       # Ar.struc <- ifelse(nr==1, "diagonal", Ar.struc)
   }else{
-    dr <- as(matrix(0), "TsparseMatrix")  
-    nr <- 0
+    dr <- as(diag(n), "TsparseMatrix")  
+    dimnames(dr) <- list(rep("site", n), rep("site", n))
+    nr <- n
+    names(nr) = "site"
   }
 
   if(num.lv.cor > 0){#rstruc
