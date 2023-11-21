@@ -331,6 +331,8 @@ Type objective_function<Type>::operator() ()
         Adiag = Atemp.diagonal();
         nll -= Adiag.log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
       }
+      nll -= 0.5*n*nlvr;
+      
       //scale LVs with standard deviations, as well as the VA covariance matrices
       u *= Delta;
       
