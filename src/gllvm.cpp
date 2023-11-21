@@ -649,6 +649,7 @@ Type objective_function<Type>::operator() ()
       REPORT(ArmSP);
 
       // Three: we build the actual covariance matrix
+      // This can straightforwardly be extended to estimate correlation betwee effects
       Eigen::SparseMatrix<Type>SrSP(nr.sum(), nr.sum());
       SrSP.setZero();
       vector<matrix<Type>> Sr(nr.size());
@@ -661,7 +662,7 @@ Type objective_function<Type>::operator() ()
 
         // diagonal row effect
         if(cstruc(re) == 0){
-        Sr(re).diagonal().array() = sigma(sigmacounter);
+        Sr(re).diagonal().array() = pow(sigma(sigmacounter), 2);
         sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
         Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
@@ -688,7 +689,7 @@ Type objective_function<Type>::operator() ()
         }
 
         // we do not want the cholesky of these matrices here, so need to store the square of each matrix
-        Sr(re) *= Sr(re).transpose();
+        // Sr(re) *= Sr(re).transpose();
 
         // This will facilitate things if at a later time we want correlation between effects too
         // SrSP is our sparse covariance matrix across all REs
