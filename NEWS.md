@@ -1,3 +1,8 @@
+Version 1.4.4
+=============
+* Removed "dependent.row" feature
+* Added possibility for multiple random row intercepts
+
 Version 1.4.3
 ==============
 * For CRAN release 1.4.3 see updates for versions 1.4.2 and 1.4.3
