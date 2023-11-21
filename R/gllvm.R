@@ -206,6 +206,7 @@
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
 #'    \item{row.params }{ row-specific intercepts}
+#'    \item{sigma }{ scale parameters for row-specific random effects}
 #'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
 #'    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
 #'    }}
