@@ -161,7 +161,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       cal <- cal + n
     }
     if (object$row.eff == "random") {
-      rnames[(cal + 1)] <- "sigma"
+      rnames[(cal + 1):(cal+length(object$sd$sigma))] <- "sigma"
       cal <- cal + length(object$sd$sigma)
       # if(!is.null(object$params$rho)) {
       #   rnames[(cal + 1)] <- "rho"

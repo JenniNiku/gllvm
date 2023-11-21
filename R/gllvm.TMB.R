@@ -337,8 +337,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       if (row.eff != FALSE) {
         row.params <- fit$row.params
-        if(row.eff=="random") try(row.params <- (Matrix::t(dr)%*%(row.params))/(dim(dr)[1]/dim(dr)[2]), silent = TRUE)
         if (row.eff == "random") {
+          try(row.params <- (Matrix::t(dr)%*%(row.params))/(dim(dr)[1]/dim(dr)[2]), silent = TRUE)
           sigma <- aggregate(as.matrix(row.params), by = list(row.names(row.params)), FUN = sd)[,2]
         }
       }#rep(0,n)
@@ -1293,7 +1293,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         ri = names(param)=="r0"
         row.params = param[ri]#c(0,param[ri])
         if(row.eff=="random"){
-          sigma = exp(param[names(param)=="log_sigma"])
+          sigma = param[names(param)=="log_sigma"]
           # if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(1,3))) rho = param[names(param)=="log_sigma"][2] / sqrt(1.0 + param[names(param)=="log_sigma"][2]^2);
           # if((rstruc ==2 | (rstruc == 1)) & (cstrucn %in% c(2,4))) {
           #   rho = exp(param[names(param)=="log_sigma"][-1]);
@@ -1952,6 +1952,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               names(sigma)[iter+1] = "Matern kappa"
               iter <- iter +1
             } else {
+              sigma[iter] <- exp(sigma[iter])
               names(sigma)[iter] = names(nr)[re]
               iter <- iter +1
             }

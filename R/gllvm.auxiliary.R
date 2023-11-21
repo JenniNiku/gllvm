@@ -2378,7 +2378,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   }
   r <- obj$env$random
   par = obj$env$last.par.best
-  
+  nr = obj$env$data$nr
   num.lv <- obj$env$data$num_lv
   num.lv.c <- obj$env$data$num_lv_c
   num.RR <- obj$env$data$num_RR
@@ -2543,12 +2543,16 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   out <- list()
   
   #separate errors row-effects
-  ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])
+  ser0 <- covb[colnames(covb)=="r0",colnames(covb)=="r0"]
   covb <- covb[colnames(covb)!="r0",colnames(covb)!="r0"]
   
   if(random[1] >0) {
-    CovRow <- matrix(ser0); 
-    out$row <- CovRow
+      Ar <- list()
+      for(re in 1:length(nr)){
+        Ar[[re]] <- ser0[1:nr[re],1:nr[re]]
+        ser0 <- ser0[-c(1:nr[re]),-c(1:nr[re])]
+      }
+    out$row <- Ar
   }
   seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   
@@ -2723,6 +2727,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   
   n<-nrow(fit$y)
   p<-ncol(fit$y)
+  nr <- model$TMBfn$env$data$nr
   num.lv <- fit$num.lv
   num.lv.c <- fit$num.lv.c
   num.RR <- fit$num.RR
@@ -2840,13 +2845,17 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   colnames(covb)<-row.names(covb)<-colnames(D)
   
   #separate errors row-effects
-  ser0 <- diag(covb[colnames(covb)=="r0",colnames(covb)=="r0"])
+  ser0 <- covb[colnames(covb)=="r0",colnames(covb)=="r0"]
   covb <- covb[colnames(covb)!="r0",colnames(covb)!="r0"]
   
   out <- list()
   if(fit$row.eff == "random") {
-    CovArerr <- matrix(ser0); 
-    out$Ar <- CovArerr
+    Ar <- list()
+    for(re in 1:length(nr)){
+      Ar[[re]] <- ser0[1:nr[re],1:nr[re]]
+      ser0 <- ser0[-c(1:nr[re]),-c(1:nr[re])]
+    }
+    out$Ar <- Ar
   }
   
   #separate errors b_lv
