@@ -1939,12 +1939,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               sigma[iter+1] <- sigma[iter+1] / sqrt(1.0 + sigma[iter+1]^2);
               iter <- iter +2
             } else if(cstrucn[re] %in% c(2)){
-              sigma[iter] <- exp(sigma[iter:(iter+1)])
+              sigma[iter:(iter+1)] <- exp(sigma[iter:(iter+1)])
               names(sigma)[iter] = "Scale"
               names(sigma)[iter+1] = names(nr)[re]
               iter <- iter + 2
             } else if(cstrucn[re] %in% c(4)){
-              sigma[iter] <- exp(sigma[iter:(iter+2)])
+              sigma[iter:(iter+2)] <- exp(sigma[iter:(iter+2)])
               names(sigma)[iter] = "Scale"
               names(sigma)[iter+1] = names(nr)[re]
               iter <- iter + 2
