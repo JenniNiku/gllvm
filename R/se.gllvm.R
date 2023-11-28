@@ -93,6 +93,8 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
+      incl[names(objrFinal$par)=="spAr"] <- FALSE;
+      incl[names(objrFinal$par)=="betar"] <- FALSE;
       incl[names(objrFinal$par)=="Au"] <- FALSE;
       incl[names(objrFinal$par)=="u"] <- FALSE; 
 
@@ -119,7 +121,12 @@ se.gllvm <- function(object, ...){
         if(object$row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
         if(object$row.eff=="fixed") incl[1] <- FALSE
       }
-      
+      if(object$col.eff$col.eff=="random") {
+        incld[names(objrFinal$par)=="spAr"] <- TRUE
+        incld[names(objrFinal$par)=="betar"] <- TRUE
+      } else {
+        incl[names(objrFinal$par)=="log_sigma_sp"] <- FALSE
+      }
       
       if(is.null(object$randomX)) {
         incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
@@ -302,7 +309,11 @@ se.gllvm <- function(object, ...){
           out$sd$corrpar <- se$sigmaij
         }
       }
-      
+      if(object$col.eff$col.eff=="random"){
+        sigma.sp <- se$log_sigma_sp
+        sigma.sp <- sigma.sp*object$params$sigma.sp
+        out$sd$sigma.sp <- sigma.sp
+      }
       if(object$row.eff=="random") { 
         iter = 1 # keep track of index
         sigma <- se$log_sigma
@@ -412,6 +423,8 @@ se.gllvm <- function(object, ...){
     incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
     incl[names(objrFinal$par)=="Abb"]=FALSE;
     incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
+    incl[names(objrFinal$par)=="spAr"] <- FALSE;
+    incl[names(objrFinal$par)=="betar"] <- FALSE;
     incl[names(objrFinal$par)=="Au"] <- FALSE;
     incl[names(objrFinal$par)=="u"] <- FALSE;
     
@@ -698,6 +711,11 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X)
       # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
+    }
+    if(object$col.eff$col.eff=="random"){
+      sigma.sp <- se$log_sigma_sp
+      sigma.sp <- sigma.sp*object$params$sigma.sp
+      out$sd$sigma.sp <- sigma.sp
     }
     if(object$row.eff=="random") { 
       iter = 1 # keep track of index

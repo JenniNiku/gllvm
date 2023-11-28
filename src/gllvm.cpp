@@ -34,6 +34,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xb); // envs with random slopes
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
+  DATA_SPARSE_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
   DATA_MATRIX(offset); //offset matrix
   DATA_IVECTOR(Ntrials);
   
@@ -58,6 +59,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sigmaij);// cov terms for random slopes covariance
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect) and 
   PARAMETER_MATRIX(rho_lvc);// correlation parameters for correlated LVs, matrix of q x 1 for corExp/corCS, qx2 for Matern
+  PARAMETER_VECTOR(log_sigma_sp);// log(SD for species effect)
+  PARAMETER_MATRIX(betar); // random slopes for species
+  PARAMETER_VECTOR(spAr); // VA covariances for species
   
   DATA_INTEGER(num_lv); // number of lvs
   DATA_INTEGER(num_lv_c); //number of constrained lvs
@@ -77,9 +81,10 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(extra); // extra values, power of 
   DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
   DATA_INTEGER(model);// which model, basic or 4th corner
-  DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes
+  DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for betar: (3) 1 = random
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
   DATA_IVECTOR(nr); // number of observations in each random row effect
+  DATA_IVECTOR(nsp); // number of sites in each random row effect, per species
   DATA_INTEGER(times); // number of time points, for LVs
   DATA_IVECTOR(cstruc); //correlation structure for row.params 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
   DATA_INTEGER(cstruclv); //correlation structure for LVs 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
@@ -726,6 +731,88 @@ Type objective_function<Type>::operator() ()
       REPORT(SrSP);
       REPORT(SrIArmSP);
       REPORT(SrIArmSPtrace);
+    }
+    
+    // random species effects
+    if((random(3)>0)){
+      vector<Type> sigmaSP = exp(log_sigma_sp);
+        eta += spdr*betar;
+      // covariance matrix of random effects
+      matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
+      matrix<Type> SprI(nsp.sum(),nsp.sum());SprI.setZero();
+      
+      int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
+      for(int re=0; re<nsp.size(); re++){
+        for(int nr=0; nr<nsp(re); nr++){
+        Spr(sprdiagcounter,sprdiagcounter) += pow(sigmaSP(re),2);
+        SprI(sprdiagcounter,sprdiagcounter) += pow(sigmaSP(re),-2);
+        sprdiagcounter++;
+      }
+      }
+      
+      int sdcounter = 0;
+      int covscounter = p*nsp.sum();
+      for(int j=0; j<p; j++){
+      Eigen::SparseMatrix<Type>SArmSP(nsp.sum(), nsp.sum());
+      SArmSP.setZero();
+      vector<matrix<Type>> SArm(nsp.size());
+      
+      // One: build SArm, variational covariance matrix for all random effects as a list
+      for(int re=0; re<nsp.size();re++){
+        SArm(re).resize(nsp(re),nsp(re));
+        SArm(re).setZero();
+        
+        for (int d=0; d<(nsp(re)); d++){ // diagonals of varcov
+          SArm(re)(d,d)=exp(spAr(sdcounter));
+          sdcounter++;
+        }
+        
+        if((spAr.size()>(p*nsp).sum())){ // unstructured Var.cov
+          for (int d=0; d<(nsp(re)); d++){
+            for (int r=d+1; r<(nsp(re)); r++){
+              SArm(re)(r,d)=spAr(covscounter);
+              covscounter++;
+            }}
+        }
+        // we do not want the cholesky here, so need to store the square of the matrix
+        SArm(re) *= SArm(re).transpose();
+        
+        // Two: store them all in one big sparse covariance matrix
+        // This will facilitate things if at a later time we want correlation between effects too
+        // ArmSP is our sparse covariance matrix across all REs
+        // tempArmRe a temporary matrix that is needed to get things in the right format
+        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(nsp.sum(), nsp(re));
+        tempSArmRe.setZero();
+        if(re==0){
+          tempSArmRe.topRows(nsp(0)) = tmbutils::asSparseMatrix(SArm(0));
+          SArmSP.leftCols(nsp(0)) = tempSArmRe;
+        }else{
+          tempSArmRe.middleRows(nsp.head(re).sum(), nsp(re)) = tmbutils::asSparseMatrix(SArm(re));
+          SArmSP.middleCols(nsp.head(re).sum(), nsp(re)) = tempSArmRe;
+        }
+      }
+      if(j==0){
+        REPORT(SArmSP);
+        REPORT(SArm);
+      }
+      // add terms to cQ
+      for (int i=0; i<n;i++){
+        cQ(i,j) += 0.5*(spdr.row(i)*SArmSP*spdr.row(i).transpose()).sum();
+      }
+      
+      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > SArmSPldlt(SArmSP);
+      Eigen::SparseMatrix <Type> SprISArmSP = tmbutils::asSparseMatrix(SprI)*SArmSP;// need to explicitly store this to get the trace
+      Type SrIArmSPtrace = 0;
+      for(int i=0; i<nsp.sum(); i++){
+        SrIArmSPtrace += SprISArmSP.coeffRef(i,i);
+      }
+      
+      nll -= 0.5*vector<Type>(SArmSPldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(SrIArmSPtrace+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
+      // determinants of each block of the covariance matrix
+      nll -= 0.5*nsp.sum()-sum(log_sigma_sp);
+      }
+      REPORT(Spr);
+      REPORT(betar);
     }
     
     // Correlated LVs

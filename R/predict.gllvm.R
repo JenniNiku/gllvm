@@ -312,6 +312,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
     eta <- eta + r0%*%rep(1,ncol(model$y))
   }
+  
+  if (object$col.eff$col.eff == "random" && is.null(newX)) {
+    eta <- eta + object$col.eff$spdr%*%object$params$betar
+  }
 
   if(!is.null(object$offset)){
     if(offset!=FALSE){

@@ -113,7 +113,6 @@ subbars1<-function (term)
   term
 }
 
-
 mkModMlist <- function (x, frloc) {
   frloc <- factorize(x, frloc)
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
@@ -155,7 +154,6 @@ mkReTrms1 <- function (bars, fr)
   ll
 }
 
-
 factorize <- function (x, frloc, char.only = FALSE) {
   for (i in all.vars(x[[length(x)]])) {
     if (!is.null(curf <- frloc[[i]])) 
@@ -189,5 +187,73 @@ expandDoubleVerts1 <- function (term) {
         term[[3]] <- expandDoubleVerts1(term[[3]])
     }
   }
+  term
+}
+
+anyBars <- function (term) 
+{
+  any(c("|", "||") %in% all.names(term))
+}
+
+isAnyArgBar <- function (term) 
+{
+  if ((term[[1]] != as.name("~")) && (term[[1]] != as.name("("))) {
+    for (i in seq_along(term)) {
+      if (isBar(term[[i]])) 
+        return(TRUE)
+    }
+  }
+  FALSE
+}
+
+isBar <- function (term) 
+{
+  if (is.call(term)) {
+    if ((term[[1]] == as.name("|")) || (term[[1]] == as.name("||"))) {
+      return(TRUE)
+    }
+  }
+  FALSE
+}
+
+nobars1 <- function (term) 
+{
+  e <- environment(term)
+  nb <- nobars1_(term)
+  if (is(term, "formula") && length(term) == 3 && is.symbol(nb)) {
+    nb <- reformulate("1", response = deparse(nb))
+  }
+  if (is.null(nb)) {
+    nb <- if (is(term, "formula")) 
+      ~1
+    else 1
+  }
+  environment(nb) <- e
+  nb
+}
+
+nobars1_ <- function (term) 
+{
+  if (!anyBars(term)) 
+    return(term)
+  if (isBar(term)) 
+    return(NULL)
+  if (isAnyArgBar(term)) 
+    return(NULL)
+  if (length(term) == 2) {
+    nb <- nobars1_(term[[2]])
+    if (is.null(nb)) 
+      return(NULL)
+    term[[2]] <- nb
+    return(term)
+  }
+  nb2 <- nobars1_(term[[2]])
+  nb3 <- nobars1_(term[[3]])
+  if (is.null(nb2)) 
+    return(nb3)
+  if (is.null(nb3)) 
+    return(nb2)
+  term[[2]] <- nb2
+  term[[3]] <- nb3
   term
 }

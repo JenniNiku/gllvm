@@ -54,6 +54,7 @@
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
+#'  \item{\emph{sp.Ar.struc}: }{ covariance structure of VA distributions for random column effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
@@ -411,7 +412,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", sp.Ar.struc  = "diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -480,6 +481,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$Ab.struct = "unstructured"
       if (!("Ar.struc" %in% names(x))) 
         x$Ar.struc = "diagonal"
+      if (!("sp.Ar.struc" %in% names(x))) 
+        x$sp.Ar.struc = "diagonal"
       if (!("diag.iter" %in% names(x))) 
         x$diag.iter = 5
       if (!("Ab.diag.iter" %in% names(x))) 
@@ -583,10 +586,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
-    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
+    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; sp.Ar.struc = control.va$sp.Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa
-    
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
       stop("Cannot fit model with traits and reduced rank predictors. \n")
@@ -655,6 +657,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
     
+    # separate species random effects
+    col.eff <- FALSE; X.col.eff <- cbind(X,studyDesign)
+    if(anyBars(formula)){
+      col.eff <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))
+      formula <- nobars1_(formula)
+      if(is.null(formula) && is.null(lv.formula)){
+        X <- NULL
+      }
+    }
+    if(anyBars(col.eff) && is.null(X.col.eff)){
+      stop("Covariates for species random effects must be provided.")
+    }
     
     if (!is.null(y)) {
       y <- as.matrix(y)
@@ -901,6 +915,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (p == 1)
       y <- as.matrix(y)
 
+    # Species random effects    
+    spdr = NULL; cstruc = "diag"
+    if(inherits(col.eff,"formula")) {
+      bar.f <- findbars1(col.eff) # list with 3 terms
+      if(!is.null(bar.f)) {
+        mf <- model.frame(subbars1(col.eff),data=X.col.eff)
+        RElist <- mkReTrms1(bar.f,mf)
+        spdr <- Matrix::t(RElist$Zt)
+        colnames(spdr) <- rep(names(RElist$nl),RElist$nl)
+      }
+      col.eff <- "random"
+    }
+
     if(!inherits(row.eff, "formula") && row.eff == "random"){
       row.eff <- ~(1|site)
       if(is.null(studyDesign)){
@@ -909,6 +936,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         studyDesign <- cbind(studyDesign, data.frame(site = 1:n)) 
       }
     }
+    
 # Structured row parameters
     dr = NULL; cstruc = "diag"
     if(inherits(row.eff,"formula")) {
@@ -1163,7 +1191,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, spdr = spdr, sp.Ar.struc = sp.Ar.struc),  corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1216,6 +1244,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
+            col.eff = col.eff,
             reltol = reltol,
             # reltol.c = reltol.c,
             seed = seed,
@@ -1237,7 +1266,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Power = Power,
             diag.iter = diag.iter,
             Ab.diag.iter = Ab.diag.iter,
-            Ab.struct = Ab.struct, Ar.struc = Ar.struc,
+            Ab.struct = Ab.struct, Ar.struc = Ar.struc, sp.Ar.struc = sp.Ar.struc,
             dependent.row = dependent.row,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
@@ -1252,7 +1281,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            Ntrials = Ntrials
+            Ntrials = Ntrials, 
+            spdr = spdr
         )
         out$X <- fitg$X
         out$TR <- fitg$TR
@@ -1271,8 +1301,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             num.lv.cor=num.lv.cor,
             family = family,
             method = method,
-            Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
+            Lambda.struc = Lambda.struc, Ar.struc = Ar.struc, sp.Ar.struc = sp.Ar.struc,
             row.eff = row.eff,
+            col.eff = col.eff,
             reltol = reltol,
             reltol.c = reltol.c,
             seed = seed,
@@ -1304,7 +1335,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
-            disp.group = disp.group
+            disp.group = disp.group,
+            spdr = spdr
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula
