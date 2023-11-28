@@ -2276,7 +2276,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           out$Ab.lv <- AB_lv
         } 
         
-        
         if(row.eff=="random"){
           lg_Ar <- param[names(param)=="lg_Ar"]
           Ar <- vector("list", length(nr))
@@ -2303,6 +2302,33 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         out$Ar <- Ar
         }
         
+        if(col.eff=="random"){
+          spAr <- param[names(param)=="spAr"]
+          spArs <- vector("list", p) #p*length(nsp)
+          Ar.sds <- exp((spAr)[1:(p*sum(nsp))])
+          spAr <- spAr[-c(1:(p*sum(nsp)))]
+          for(j in 1:p){
+          for(re in 1:length(nsp)){
+            spArs[[j]][[re]] <- diag(Ar.sds[1:nsp[re]])
+          }
+          if(sp.Ar.struc == "unstructured"){
+            if(length(spAr)>0){
+              k=1;
+              for(re in 1:length(nsp)){
+                for(d in 1:(nsp[re]-1)){
+                  for(r in (d+1):nsp[re]){
+                    spArs[[j]][[re]][r,d] = spAr[k];
+                    k=k+1;
+                  }}
+              }
+            }
+          }
+          for(re in 1:length(nsp)){
+            spArs[[j]][[re]] <- spArs[[j]][[re]]%*%t(spArs[[j]][[re]])
+          }
+          }
+          out$spArs <- spArs
+        }
       }
       seed.best <- seed[n.i]
     }

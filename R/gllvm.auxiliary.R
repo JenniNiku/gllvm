@@ -2379,6 +2379,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   r <- obj$env$random
   par = obj$env$last.par.best
   nr = obj$env$data$nr
+  nsp = obj$env$data$nsp
   num.lv <- obj$env$data$num_lv
   num.lv.c <- obj$env$data$num_lv_c
   num.RR <- obj$env$data$num_RR
@@ -2387,7 +2388,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   xb<- obj$env$data$xb
   
   random <- obj$env$data$random
-  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br","b_lv"))
+  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br","b_lv","betar"))
   
   if(is.null(type)){
     if((num.lv.c+num.RR)==0){
@@ -2553,6 +2554,20 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
         ser0 <- ser0[-c(1:nr[re]),-c(1:nr[re])]
       }
     out$row <- Ar
+  }
+  #separate errors column effects
+  sebetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
+  covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
+  if(random[4]>0) {
+    spArs <- vector("list",p)
+    
+    for(j in 1:p){
+      for(re in 1:length(nsp)){
+        spArs[[j]][[re]] <- sebetar[1:nsp[re],1:nsp[re]]
+        sebetar <- sebetar[-c(1:nsp[re]),-c(1:nsp[re])]
+      }
+    }
+    out$spArs <- spArs
   }
   seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   
@@ -2728,12 +2743,14 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   n<-nrow(fit$y)
   p<-ncol(fit$y)
   nr <- model$TMBfn$env$data$nr
+  nsp <- model$TMBfn$env$data$nsp
   num.lv <- fit$num.lv
   num.lv.c <- fit$num.lv.c
   num.RR <- fit$num.RR
   num.lv.cor <- fit$num.lvcor
   randomB <- fit$randomB
   incla<-rep(FALSE, length(fit$Hess$incl))
+  if(fit$col.eff$col.eff == "random") incla[names(fit$TMBfn$par)%in%c("betar")] <- TRUE
   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
   if(!is.null(fit$randomX)) incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
   if((num.lv+num.lv.c)>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
@@ -2756,6 +2773,9 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   }
   
   #### add errors for Bs if fixed ####
+  if(fit$col.eff$col.eff=="random"){
+    radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="betar"]) 
+  }
   if(!fit$row.eff%in%c(FALSE,"fixed",NULL)){
     radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="r0"]) 
   }
@@ -2818,12 +2838,12 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     row.names(D)<-colnames(D)
   }
   
-  if(num.lv.cor>0)
+  if(num.lv.cor>0){
     Q <- matrix(0,nrow=sum(names(fit$TMBfn$par)%in%c("u"))+radidx,ncol=dim(A)[1])
-  else
+  }else{
     Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n+radidx,ncol=dim(A)[1])
   # Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
-  
+  }
   
   if((num.lv.c+num.RR)>0&randomB==FALSE){
     for(q in 1:(num.lv.c+num.RR)){
@@ -2858,6 +2878,20 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     out$Ar <- Ar
   }
   
+  #separate errors column effects
+  sebetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
+  covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
+  if(fit$col.eff$col.eff == "random") {
+    spArs <- vector("list",p)
+    
+    for(j in 1:p){
+    for(re in 1:length(nsp)){
+      spArs[[j]][[re]] <- sebetar[1:nsp[re],1:nsp[re]]
+      sebetar <- sebetar[-c(1:nsp[re]),-c(1:nsp[re])]
+    }
+    }
+    out$spArs <- spArs
+  }
   #separate errors b_lv
   if(fit$randomB!=FALSE){
     seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])

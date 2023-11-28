@@ -791,10 +791,7 @@ Type objective_function<Type>::operator() ()
           SArmSP.middleCols(nsp.head(re).sum(), nsp(re)) = tempSArmRe;
         }
       }
-      if(j==0){
-        REPORT(SArmSP);
-        REPORT(SArm);
-      }
+ 
       // add terms to cQ
       for (int i=0; i<n;i++){
         cQ(i,j) += 0.5*(spdr.row(i)*SArmSP*spdr.row(i).transpose()).sum();
@@ -1997,6 +1994,25 @@ Type objective_function<Type>::operator() ()
       nll += GMRF(SrI)(r0);
       REPORT(SrSP);
     }
+    
+    if((random(3)>0)){
+      vector<Type> sigmaSP = exp(log_sigma_sp);
+      eta += spdr*betar;
+      // covariance matrix of random effects
+      matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
+      
+      int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
+      for(int re=0; re<nsp.size(); re++){
+        for(int nr=0; nr<nsp(re); nr++){
+          Spr(sprdiagcounter,sprdiagcounter) += pow(sigmaSP(re),2);
+          sprdiagcounter++;
+        }
+      }
+      for(int j=0; j<p; j++){
+      nll += MVNORM(Spr)(betar.col(j));
+      }
+      }
+
     
     // Correlated LVs
     if(num_corlv>0) {

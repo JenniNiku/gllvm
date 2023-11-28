@@ -137,19 +137,22 @@ se.gllvm <- function(object, ...){
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
       }
  
-      if(method=="LA" || (num.lv==0 && (object$row.eff!="random" && is.null(object$randomX)))){
+      if(method=="LA" || (num.lv==0 && (object$row.eff!="random" && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- try(sqrt(diag(abs(covM))))
         names(se) = names(object$TMBfn$par[incl])
         
         trpred<-try({
-          if(num.lv > 0 || object$row.eff == "random" || !is.null(object$randomX)) {
+          if(num.lv > 0 || object$row.eff == "random" || !is.null(object$randomX) || object$col.eff$col.eff == "random") {
           sd.random <- sdrandom(objrFinal, covM, incl)
           prediction.errors <- list()
           
           if(object$row.eff=="random"){
             prediction.errors$row.params <- sd.random$row
+          }
+          if(object$col.eff$col.eff == "random"){
+            prediction.errors$col.eff <- sd.random$spArs
           }
           if(!is.null(object$randomX)){
             prediction.errors$Br  <- sd.random$Ab
@@ -475,19 +478,22 @@ se.gllvm <- function(object, ...){
     
     
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE)){
-      covM <- try(MASS::ginv(sdr[incl,incl]))
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE) && object$col.eff$col.eff!="random"){
+      covM <<- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
       names(se) = names(object$TMBfn$par[incl])
-      
+      incl<<-incl
       trpred<-try({
-      if((num.lv+num.lv.c) > 0 || object$row.eff == "random"){
+      if((num.lv+num.lv.c) > 0 || object$row.eff == "random" || object$col.eff$col.eff == "random"){
         sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)
         prediction.errors <- list()
         
         if(object$row.eff=="random"){
           prediction.errors$row.params <- sd.random$row
+        }
+        if(object$col.eff$col.eff == "random"){
+          prediction.errors$col.eff <- sd.random$spArs
         }
         if((num.lv+num.lv.c+num.RR)>0){
           # cov.lvs <- array(0, dim = c(n, nlvr, nlvr))

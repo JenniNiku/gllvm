@@ -1385,6 +1385,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(randomB!=FALSE){
           out$Ab.lv <- fitg$Ab.lv
         }
+        if(col.eff == "random"){
+          out$spArs <- fitg$spArs
+        }
       }
       if (!is.null(randomX)) {
         out$corr <- fitg$corr
