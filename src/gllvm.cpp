@@ -752,53 +752,51 @@ Type objective_function<Type>::operator() ()
       
       int sdcounter = 0;
       int covscounter = p*nsp.sum();
-      for(int j=0; j<p; j++){
-      Eigen::SparseMatrix<Type>SArmSP(nsp.sum(), nsp.sum());
+      vector<matrix<Type>> SArm(p);
+      Eigen::SparseMatrix<Type>SArmSP(p*nsp.sum(), p*nsp.sum());
       SArmSP.setZero();
-      vector<matrix<Type>> SArm(nsp.size());
-      
+      for(int j=0; j<p; j++){
+
       // One: build SArm, variational covariance matrix for all random effects as a list
-      for(int re=0; re<nsp.size();re++){
-        SArm(re).resize(nsp(re),nsp(re));
-        SArm(re).setZero();
+        SArm(j).resize(nsp.sum(),nsp.sum());
+        SArm(j).setZero();
         
-        for (int d=0; d<(nsp(re)); d++){ // diagonals of varcov
-          SArm(re)(d,d)=exp(spAr(sdcounter));
+        for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
+          SArm(j)(d,d)=exp(spAr(sdcounter));
           sdcounter++;
         }
         
         if((spAr.size()>(p*nsp).sum())){ // unstructured Var.cov
-          for (int d=0; d<(nsp(re)); d++){
-            for (int r=d+1; r<(nsp(re)); r++){
-              SArm(re)(r,d)=spAr(covscounter);
+          for (int d=0; d<(nsp.sum()); d++){
+            for (int r=d+1; r<(nsp.sum()); r++){
+              SArm(j)(r,d)=spAr(covscounter);
               covscounter++;
             }}
         }
         // we do not want the cholesky here, so need to store the square of the matrix
-        SArm(re) *= SArm(re).transpose();
+        SArm(j) *= SArm(j).transpose();
         
         // Two: store them all in one big sparse covariance matrix
         // This will facilitate things if at a later time we want correlation between effects too
         // ArmSP is our sparse covariance matrix across all REs
         // tempArmRe a temporary matrix that is needed to get things in the right format
-        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(nsp.sum(), nsp(re));
+        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
         tempSArmRe.setZero();
-        if(re==0){
-          tempSArmRe.topRows(nsp(0)) = tmbutils::asSparseMatrix(SArm(0));
-          SArmSP.leftCols(nsp(0)) = tempSArmRe;
+        if(j==0){
+          tempSArmRe.topRows(nsp.sum()) = tmbutils::asSparseMatrix(SArm(0));
+          SArmSP.leftCols(nsp.sum()) = tempSArmRe;
         }else{
-          tempSArmRe.middleRows(nsp.head(re).sum(), nsp(re)) = tmbutils::asSparseMatrix(SArm(re));
-          SArmSP.middleCols(nsp.head(re).sum(), nsp(re)) = tempSArmRe;
+          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = tmbutils::asSparseMatrix(SArm(j));
+          SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
         }
-      }
- 
+
       // add terms to cQ
       for (int i=0; i<n;i++){
-        cQ(i,j) += 0.5*(spdr.row(i)*SArmSP*spdr.row(i).transpose()).sum();
+        cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
       }
       
-      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > SArmSPldlt(SArmSP);
-      Eigen::SparseMatrix <Type> SprISArmSP = tmbutils::asSparseMatrix(SprI)*SArmSP;// need to explicitly store this to get the trace
+      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > SArmSPldlt(tmbutils::asSparseMatrix(SArm(j)));
+      Eigen::SparseMatrix <Type> SprISArmSP = tmbutils::asSparseMatrix(SprI)*tmbutils::asSparseMatrix(SArm(j));// need to explicitly store this to get the trace
       Type SrIArmSPtrace = 0;
       for(int i=0; i<nsp.sum(); i++){
         SrIArmSPtrace += SprISArmSP.coeffRef(i,i);
@@ -810,6 +808,7 @@ Type objective_function<Type>::operator() ()
       }
       REPORT(Spr);
       REPORT(betar);
+      REPORT(SArm);
     }
     
     // Correlated LVs

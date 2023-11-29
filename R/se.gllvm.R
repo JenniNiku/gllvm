@@ -476,14 +476,19 @@ se.gllvm <- function(object, ...){
       if(object$row.eff=="fixed"){ incl[1] <- FALSE }
     }
     
-    
+    if(object$col.eff$col.eff=="random") {
+      incld[names(objrFinal$par)=="spAr"] <- TRUE
+      incld[names(objrFinal$par)=="betar"] <- TRUE
+    } else {
+      incl[names(objrFinal$par)=="log_sigma_sp"] <- FALSE
+    }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE) && object$col.eff$col.eff!="random"){
-      covM <<- try(MASS::ginv(sdr[incl,incl]))
+      covM <- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
       names(se) = names(object$TMBfn$par[incl])
-      incl<<-incl
+
       trpred<-try({
       if((num.lv+num.lv.c) > 0 || object$row.eff == "random" || object$col.eff$col.eff == "random"){
         sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)

@@ -2307,25 +2307,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           spArs <- vector("list", p) #p*length(nsp)
           Ar.sds <- exp((spAr)[1:(p*sum(nsp))])
           spAr <- spAr[-c(1:(p*sum(nsp)))]
+          k=1;
+          
           for(j in 1:p){
-          for(re in 1:length(nsp)){
-            spArs[[j]][[re]] <- diag(Ar.sds[1:nsp[re]])
-          }
+            spArs[[j]] <- diag(Ar.sds[1:sum(nsp)])
+            Ar.sds <- Ar.sds[-c(1:sum(nsp))]
           if(sp.Ar.struc == "unstructured"){
             if(length(spAr)>0){
-              k=1;
-              for(re in 1:length(nsp)){
-                for(d in 1:(nsp[re]-1)){
-                  for(r in (d+1):nsp[re]){
-                    spArs[[j]][[re]][r,d] = spAr[k];
+                for(d in 1:(sum(nsp)-1)){
+                  for(r in (d+1):sum(nsp)){
+                    spArs[[j]][r,d] = spAr[k];
                     k=k+1;
                   }}
-              }
             }
           }
-          for(re in 1:length(nsp)){
-            spArs[[j]][[re]] <- spArs[[j]][[re]]%*%t(spArs[[j]][[re]])
-          }
+            spArs[[j]] <- spArs[[j]]%*%t(spArs[[j]])
           }
           out$spArs <- spArs
         }

@@ -2562,10 +2562,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     spArs <- vector("list",p)
     
     for(j in 1:p){
-      for(re in 1:length(nsp)){
-        spArs[[j]][[re]] <- sebetar[1:nsp[re],1:nsp[re]]
-        sebetar <- sebetar[-c(1:nsp[re]),-c(1:nsp[re])]
-      }
+        spArs[[j]] <- sebetar[1:sum(nsp),1:sum(nsp)]
+        sebetar <- sebetar[-c(1:sum(nsp)),-c(1:sum(nsp))]
     }
     out$spArs <- spArs
   }
@@ -2885,10 +2883,8 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
     spArs <- vector("list",p)
     
     for(j in 1:p){
-    for(re in 1:length(nsp)){
-      spArs[[j]][[re]] <- sebetar[1:nsp[re],1:nsp[re]]
-      sebetar <- sebetar[-c(1:nsp[re]),-c(1:nsp[re])]
-    }
+      spArs[[j]] <- sebetar[1:sum(nsp),1:sum(nsp)]
+      sebetar <- sebetar[-c(1:sum(nsp)),-c(1:sum(nsp))]
     }
     out$spArs <- spArs
   }
