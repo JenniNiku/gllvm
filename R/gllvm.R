@@ -19,7 +19,8 @@
 #' @param corWithin logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param corWithinLV logical. For LVs with correlation, If \code{TRUE}, correlation is set between rows of the observation units within group. Defaults to \code{FALSE}, when correlation is set for rows between groups.
 #' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
-#' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}.
+#' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}
+#' @param colMat matrix of similarity for the column effects, must be positive definite
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param randomB either \code{FALSE}(default), "LV", "P", or "single". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
@@ -405,7 +406,7 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
-                  lvCor = NULL, studyDesign=NULL,dist = list(matrix(0)), distLV = matrix(0), corWithin = FALSE, corWithinLV = FALSE,
+                  lvCor = NULL, studyDesign=NULL,dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, dependent.row = FALSE, beta0com = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = 1,
@@ -658,7 +659,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     
     # separate species random effects
-    col.eff <- FALSE; X.col.eff <- cbind(X,studyDesign)
+    if(length(X)>0 & length(studyDesign)>0){
+      X.col.eff <- cbind(X,studyDesign)
+    }else if(length(X)>0){
+      X.col.eff <- X
+    }else if(length(studyDesign)>0){
+      X.col.eff <- studyDesign
+    }else{
+      X.col.eff <- NULL
+    }
+    col.eff <- FALSE;
     if(anyBars(formula)){
       col.eff <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))
       formula <- nobars1_(formula)
@@ -1303,7 +1313,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc, sp.Ar.struc = sp.Ar.struc,
             row.eff = row.eff,
-            col.eff = col.eff,
+            col.eff = col.eff, colMat = colMat,
             reltol = reltol,
             reltol.c = reltol.c,
             seed = seed,
@@ -1387,6 +1397,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }
         if(col.eff == "random"){
           out$spArs <- fitg$spArs
+          if(!is.null(colMat)){
+            out$col.eff$colL <- fitg$colL
+          }
         }
       }
       if (!is.null(randomX)) {
