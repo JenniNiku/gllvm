@@ -736,8 +736,10 @@ Type objective_function<Type>::operator() ()
     // random species effects
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
-        eta += spdr*betar;
+      eta += spdr*betar;
       // covariance matrix of random effects
+      Eigen::SparseMatrix<Type> Sprp(p*nsp.sum(),p*nsp.sum());Sprp.setZero();
+      
       matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
       matrix<Type> SprI(nsp.sum(),nsp.sum());SprI.setZero();
       
@@ -773,39 +775,60 @@ Type objective_function<Type>::operator() ()
               covscounter++;
             }}
         }
-        // we do not want the cholesky here, so need to store the square of the matrix
-        SArm(j) *= SArm(j).transpose();
-        
         // Two: store them all in one big sparse covariance matrix
         // This will facilitate things if at a later time we want correlation between effects too
         // ArmSP is our sparse covariance matrix across all REs
         // tempArmRe a temporary matrix that is needed to get things in the right format
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
+        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSpr(p*nsp.sum(),nsp.sum());
+        tempSpr.setZero();
         tempSArmRe.setZero();
         if(j==0){
-          tempSArmRe.topRows(nsp.sum()) = tmbutils::asSparseMatrix(SArm(0));
+          tempSArmRe.topRows(nsp.sum()) = tmbutils::asSparseMatrix(matrix<Type>(SArm(0)*SArm(0).transpose()));
+          tempSpr.topRows(nsp.sum()) = tmbutils::asSparseMatrix(Spr);
           SArmSP.leftCols(nsp.sum()) = tempSArmRe;
+          Sprp.leftCols(nsp.sum()) = tempSpr;
         }else{
-          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = tmbutils::asSparseMatrix(SArm(j));
+          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = tmbutils::asSparseMatrix(matrix<Type>(SArm(j)*SArm(j).transpose()));
           SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
+          tempSpr.middleRows(j*nsp.sum(), nsp.sum()) = tmbutils::asSparseMatrix(Spr);
+          Sprp.middleCols(j*nsp.sum(), nsp.sum()) = tempSpr;
         }
 
+        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI*SArm(j)).trace()+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
+      }
+      // add terms to cQ
+      // This part is over all species so that we can add a phylogenetic effect.
+      // for (int i=0; i<n;i++){
+      //   cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
+      // }
+      
+      vector<Type> betarVec(p*nsp.sum());
+      for (int j=0; j<p;j++){
+        betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
+      }
+      REPORT(betarVec);
       // add terms to cQ
       for (int i=0; i<n;i++){
-        cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
-      }
-      
-      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > SArmSPldlt(tmbutils::asSparseMatrix(SArm(j)));
-      Eigen::SparseMatrix <Type> SprISArmSP = tmbutils::asSparseMatrix(SprI)*tmbutils::asSparseMatrix(SArm(j));// need to explicitly store this to get the trace
-      Type SrIArmSPtrace = 0;
-      for(int i=0; i<nsp.sum(); i++){
-        SrIArmSPtrace += SprISArmSP.coeffRef(i,i);
-      }
-      
-      nll -= 0.5*vector<Type>(SArmSPldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(SrIArmSPtrace+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
+        vector<Type> spdrp(nsp.sum()*p);
+        for (int j=0; j<p;j++){
+          spdrp.segment(j*nsp.sum(), nsp.sum()) =  vector<Type>(spdr.row(i));
+        }
+        if(i==0)REPORT(spdrp);
+        vector<Type> intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
+        matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
+        for (int j=0; j<p;j++){
+          intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
+        }
+        if(i==0)REPORT(intres);
+        if(i==0)REPORT(intres2);
+        cQ.row(i) += 0.5*(intres2.colwise().sum());
+
       // determinants of each block of the covariance matrix
-      nll -= 0.5*nsp.sum()-sum(log_sigma_sp);
       }
+      REPORT(SArmSP);
+      nll -= 0.5*p*nsp.sum()-p*sum(log_sigma_sp);
+      
       REPORT(Spr);
       REPORT(betar);
       REPORT(SArm);
