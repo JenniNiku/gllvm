@@ -809,7 +809,7 @@ Type objective_function<Type>::operator() ()
       //   cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
       // }
       
-      // vector<Type> betarVec(p*nsp.sum());
+      vector<Type> betarVec(p*nsp.sum());
       for (int j=0; j<p;j++){
         betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
       }
