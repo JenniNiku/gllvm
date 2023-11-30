@@ -35,6 +35,7 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
   DATA_SPARSE_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
+  DATA_MATRIX(colL); //lower cholesky of column similarity matrix
   DATA_MATRIX(offset); //offset matrix
   DATA_IVECTOR(Ntrials);
   
@@ -736,7 +737,12 @@ Type objective_function<Type>::operator() ()
     // random species effects
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
-      eta += spdr*betar;
+      if(colL.cols()==p){
+        eta += spdr*betar*colL;
+      }else{
+        eta += spdr*betar;
+      }
+      
       // covariance matrix of random effects
       Eigen::SparseMatrix<Type> Sprp(p*nsp.sum(),p*nsp.sum());Sprp.setZero();
       
@@ -803,35 +809,43 @@ Type objective_function<Type>::operator() ()
       //   cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
       // }
       
-      vector<Type> betarVec(p*nsp.sum());
+      // vector<Type> betarVec(p*nsp.sum());
       for (int j=0; j<p;j++){
         betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
       }
-      REPORT(betarVec);
+      // REPORT(betarVec);
       // add terms to cQ
       for (int i=0; i<n;i++){
         vector<Type> spdrp(nsp.sum()*p);
         for (int j=0; j<p;j++){
           spdrp.segment(j*nsp.sum(), nsp.sum()) =  vector<Type>(spdr.row(i));
         }
-        if(i==0)REPORT(spdrp);
-        vector<Type> intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
+        // if(i==0)REPORT(spdrp);
+        //phylogenetically structured REs
+        matrix<Type> I(nsp.sum(),nsp.sum());
+        I.setIdentity();
+        vector<Type> intres;//store intermediate result
+        if(colL.cols()==p){
+          Eigen::SparseMatrix<Type> kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
+          REPORT(kronL);
+          intres = (spdrp.matrix()*spdrp.matrix().transpose()*kronL*SArmSP*kronL.transpose()).diagonal();
+        }else{
+          intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
+        }
         matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
         for (int j=0; j<p;j++){
           intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
         }
-        if(i==0)REPORT(intres);
-        if(i==0)REPORT(intres2);
         cQ.row(i) += 0.5*(intres2.colwise().sum());
 
       // determinants of each block of the covariance matrix
       }
-      REPORT(SArmSP);
+      // REPORT(SArmSP);
       nll -= 0.5*p*nsp.sum()-p*sum(log_sigma_sp);
       
-      REPORT(Spr);
-      REPORT(betar);
-      REPORT(SArm);
+      // REPORT(Spr);
+      // REPORT(betar);
+      // REPORT(SArm);
     }
     
     // Correlated LVs
@@ -2019,7 +2033,11 @@ Type objective_function<Type>::operator() ()
     
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
-      eta += spdr*betar;
+      if(colL.cols()==p){
+        eta += spdr*betar*colL;
+      }else{
+        eta += spdr*betar;
+      }
       // covariance matrix of random effects
       matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
       
