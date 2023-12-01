@@ -812,8 +812,8 @@ Type objective_function<Type>::operator() ()
       }
       // REPORT(betarVec);
       // add terms to cQ
-      Eigen::SparseMatrix<Type> kronL;
-      vector<Type> intres;//for storing intermediate results below
+      Eigen::SparseMatrix<Type> kronL(nsp.sum()*p, nsp.sum()*p);
+      vector<Type> intres(nsp.sum()*p);//for storing intermediate results below
       matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
       
       if(colL.cols()==p){
@@ -821,15 +821,14 @@ Type objective_function<Type>::operator() ()
         I.setIdentity();
         kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
       }
-      
+      vector<Type> spdrp(nsp.sum()*p);
       for (int i=0; i<n;i++){
-        vector<Type> spdrp(nsp.sum()*p);
         for (int j=0; j<p;j++){
-          spdrp.segment(j*nsp.sum(), nsp.sum()) =  vector<Type>(spdr.row(i));
+          spdrp.segment(j*nsp.sum(), nsp.sum()) =  spdr.row(i);//just repeating vector entries for all j
         }
 
-        //phylogenetically structured REs
         if(colL.cols()==p){
+          //phylogenetically structured REs
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*kronL*SArmSP*kronL.transpose()).diagonal();
         }else{
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
@@ -838,6 +837,7 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
         }
+
         cQ.row(i) += 0.5*(intres2.colwise().sum());
 
       }
