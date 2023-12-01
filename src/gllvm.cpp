@@ -738,7 +738,7 @@ Type objective_function<Type>::operator() ()
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
       if(colL.cols()==p){
-        eta += spdr*betar*colL;
+        eta += spdr*betar*colL.transpose();
       }else{
         eta += spdr*betar;
       }
@@ -814,13 +814,21 @@ Type objective_function<Type>::operator() ()
       // add terms to cQ
       Eigen::SparseMatrix<Type> kronL(nsp.sum()*p, nsp.sum()*p);
       vector<Type> intres(nsp.sum()*p);//for storing intermediate results below
-      matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
-      
+      // matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
+      // Eigen::SparseMatrix<Type> intres3(nsp.sum()*p,nsp.sum()*p);
+      matrix <Type>  intres3(nsp.sum()*p,nsp.sum()*p);
       if(colL.cols()==p){
         matrix<Type> I(nsp.sum(),nsp.sum());
         I.setIdentity();
         kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
+        intres3 = kronL*SArmSP*kronL.transpose(); //this is a dense matrix if L is dense
       }
+      
+      // if(colL.cols()==p){
+      //   matrix<Type> I(nsp.sum(),nsp.sum());
+      //   I.setIdentity();
+      //   kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
+      // }
       vector<Type> spdrp(nsp.sum()*p);
       for (int i=0; i<n;i++){
         for (int j=0; j<p;j++){
@@ -829,16 +837,16 @@ Type objective_function<Type>::operator() ()
 
         if(colL.cols()==p){
           //phylogenetically structured REs
-          intres = (spdrp.matrix()*spdrp.matrix().transpose()*kronL*SArmSP*kronL.transpose()).diagonal();
+          intres = (spdrp.matrix()*spdrp.matrix().transpose()*intres3).diagonal();
         }else{
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
         }
-
-        for (int j=0; j<p;j++){
-          intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
-        }
-
-        cQ.row(i) += 0.5*(intres2.colwise().sum());
+// 
+//         for (int j=0; j<p;j++){
+//           intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
+//         }
+        // instead of a temporary object, the Map here addresses a memory leak
+        cQ.row(i) += 0.5*Eigen::Map<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> >(intres.data(),nsp.sum(),p).colwise().sum();
 
       }
       // REPORT(SArmSP);
@@ -2035,7 +2043,7 @@ Type objective_function<Type>::operator() ()
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
       if(colL.cols()==p){
-        eta += spdr*betar*colL;
+        eta += spdr*betar*colL.transpose();
       }else{
         eta += spdr*betar;
       }
