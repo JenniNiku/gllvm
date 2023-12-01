@@ -784,7 +784,7 @@ Type objective_function<Type>::operator() ()
         // Two: store them all in one big sparse covariance matrix
         // This will facilitate things if at a later time we want correlation between effects too
         // ArmSP is our sparse covariance matrix across all REs
-        // tempArmRe a temporary matrix that is needed to get things in the right format
+        // tempSArmRe a temporary matrix that is needed to get things in the right format
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSpr(p*nsp.sum(),nsp.sum());
         tempSpr.setZero();
@@ -805,40 +805,41 @@ Type objective_function<Type>::operator() ()
       }
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
-      // for (int i=0; i<n;i++){
-      //   cQ(i,j) += 0.5*(spdr.row(i)*SArm(j)*spdr.row(i).transpose()).sum();
-      // }
-      
+
       vector<Type> betarVec(p*nsp.sum());
       for (int j=0; j<p;j++){
         betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
       }
       // REPORT(betarVec);
       // add terms to cQ
+      Eigen::SparseMatrix<Type> kronL;
+      vector<Type> intres;//for storing intermediate results below
+      matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
+      
+      if(colL.cols()==p){
+        matrix<Type> I(nsp.sum(),nsp.sum());
+        I.setIdentity();
+        kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
+      }
+      
       for (int i=0; i<n;i++){
         vector<Type> spdrp(nsp.sum()*p);
         for (int j=0; j<p;j++){
           spdrp.segment(j*nsp.sum(), nsp.sum()) =  vector<Type>(spdr.row(i));
         }
-        // if(i==0)REPORT(spdrp);
+
         //phylogenetically structured REs
-        matrix<Type> I(nsp.sum(),nsp.sum());
-        I.setIdentity();
-        vector<Type> intres;//store intermediate result
         if(colL.cols()==p){
-          Eigen::SparseMatrix<Type> kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
-          REPORT(kronL);
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*kronL*SArmSP*kronL.transpose()).diagonal();
         }else{
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
         }
-        matrix<Type> intres2(nsp.sum(),p);intres2.setZero();
+
         for (int j=0; j<p;j++){
           intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
         }
         cQ.row(i) += 0.5*(intres2.colwise().sum());
 
-      // determinants of each block of the covariance matrix
       }
       // REPORT(SArmSP);
       nll -= 0.5*p*nsp.sum()-p*sum(log_sigma_sp);
