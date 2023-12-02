@@ -738,7 +738,7 @@ Type objective_function<Type>::operator() ()
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
       if(colL.cols()==p){
-        eta += spdr*betar*colL.transpose();
+        eta += spdr*(betar*colL.transpose());
       }else{
         eta += spdr*betar;
       }
@@ -2043,7 +2043,7 @@ Type objective_function<Type>::operator() ()
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp);
       if(colL.cols()==p){
-        eta += spdr*betar*colL.transpose();
+        eta += spdr*(betar*colL.transpose());
       }else{
         eta += spdr*betar;
       }
