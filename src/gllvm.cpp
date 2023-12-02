@@ -836,7 +836,7 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           spdrp.segment(j*nsp.sum(), nsp.sum()) =  spdr.row(i);//just repeating vector entries for all j
         }
-        REPORT(sdrp);
+        REPORT(spdrp);
         if(colL.cols()==p){
           //phylogenetically structured REs
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*intres3).diagonal();
