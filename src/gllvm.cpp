@@ -801,7 +801,7 @@ Type objective_function<Type>::operator() ()
           Sprp.middleCols(j*nsp.sum(), nsp.sum()) = tempSpr;
         }
 
-        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI*SArm(j)).trace()+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
+        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI*SArm(j)*SArm(j).transpose()).trace()+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
       }
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
@@ -810,7 +810,7 @@ Type objective_function<Type>::operator() ()
       for (int j=0; j<p;j++){
         betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
       }
-      // REPORT(betarVec);
+      REPORT(betarVec);
       // add terms to cQ
       Eigen::SparseMatrix<Type> kronL(nsp.sum()*p, nsp.sum()*p);
       vector<Type> intres(nsp.sum()*p);//for storing intermediate results below
@@ -821,7 +821,9 @@ Type objective_function<Type>::operator() ()
         matrix<Type> I(nsp.sum(),nsp.sum());
         I.setIdentity();
         kronL = tmbutils::asSparseMatrix(tmbutils::kronecker(colL, I));
+        REPORT(kronL);
         intres3 = kronL*SArmSP*kronL.transpose(); //this is a dense matrix if L is dense
+        REPORT(intres3);
       }
       
       // if(colL.cols()==p){
@@ -834,23 +836,23 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           spdrp.segment(j*nsp.sum(), nsp.sum()) =  spdr.row(i);//just repeating vector entries for all j
         }
-
+        REPORT(sdrp);
         if(colL.cols()==p){
           //phylogenetically structured REs
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*intres3).diagonal();
         }else{
           intres = (spdrp.matrix()*spdrp.matrix().transpose()*SArmSP).diagonal();
         }
+        REPORT(intres);
 // 
 //         for (int j=0; j<p;j++){
 //           intres2.col(j) = intres.segment(j*nsp.sum(),nsp.sum());
 //         }
-        // instead of a temporary object, the Map here addresses a memory leak
         cQ.row(i) += 0.5*Eigen::Map<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> >(intres.data(),nsp.sum(),p).colwise().sum();
 
       }
       // REPORT(SArmSP);
-      nll -= 0.5*p*nsp.sum()-p*sum(log_sigma_sp);
+      nll -= 0.5*p*(nsp.sum()-log(Spr.diagonal().prod()));
       
       // REPORT(Spr);
       // REPORT(betar);
