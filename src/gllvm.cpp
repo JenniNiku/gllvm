@@ -641,10 +641,10 @@ Type objective_function<Type>::operator() ()
       Eigen::SparseMatrix<Type, Eigen::RowMajor> tempArmRe(nr.sum(), nr(re));
       tempArmRe.setZero();
       if(re==0){
-        tempArmRe.topRows(nr(0)) = tmbutils::asSparseMatrix(Arm(0));
+        tempArmRe.topRows(nr(0)) = Arm(0).sparseView();
         ArmSP.leftCols(nr(0)) = tempArmRe;
       }else{
-        tempArmRe.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Arm(re));
+        tempArmRe.middleRows(nr.head(re).sum(), nr(re)) = Arm(re).sparseView();
         ArmSP.middleCols(nr.head(re).sum(), nr(re)) = tempArmRe;
       }
       }
@@ -675,7 +675,7 @@ Type objective_function<Type>::operator() ()
         }else if(cstruc(re) == 1){ // corAR1
         Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
         sigmacounter+=2;
-        }else if(cstruc(re) == 3){ // corExp
+        }else if(cstruc(re) == 3){ // corCS
           Sr(re) = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter += 2;
         }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
@@ -687,10 +687,10 @@ Type objective_function<Type>::operator() ()
           sigmacounter++;
           dc_scaled = dc(dccounter)*DiSc;
           if(cstruc(re)==2){ // corExp
-            Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+            Sr(re) = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
             sigmacounter++;
           } else if(cstruc(re)==4) { // corMatern
-            Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+            Sr(re) = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
             sigmacounter += 2;
           }
           dccounter++;
@@ -705,10 +705,10 @@ Type objective_function<Type>::operator() ()
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSrSP(nr.sum(), nr(re));
         tempSrSP.setZero();
         if(re==0){
-          tempSrSP.topRows(nr(0)) = tmbutils::asSparseMatrix(Sr(0));
+          tempSrSP.topRows(nr(0)) = Sr(0).sparseView();
           SrSP.leftCols(nr(0)) = tempSrSP;
         }else{
-          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Sr(re));
+          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = Sr(re).sparseView();
           SrSP.middleCols(nr.head(re).sum(), nr(re)) = tempSrSP;
         }
       }
@@ -788,10 +788,10 @@ Type objective_function<Type>::operator() ()
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
         tempSArmRe.setZero();
         if(j==0){
-          tempSArmRe.topRows(nsp.sum()) = tmbutils::asSparseMatrix(matrix<Type>(SArm(0)*SArm(0).transpose()));
+          tempSArmRe.topRows(nsp.sum()) = (SArm(0)*SArm(0)).transpose().sparseView();
           SArmSP.leftCols(nsp.sum()) = tempSArmRe;
         }else{
-          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = tmbutils::asSparseMatrix(matrix<Type>(SArm(j)*SArm(j).transpose()));
+          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = (SArm(j)*SArm(j).transpose()).sparseView();
           SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
         }
 
@@ -799,24 +799,19 @@ Type objective_function<Type>::operator() ()
       }
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
-      matrix <Type> s(1,nsp.sum());
-      matrix<Type> kronLs(p,p*nsp.sum());
-      matrix<Type> I(p,p);
-      I.setIdentity();
+      matrix<Type> kronL = tmbutils::kronecker(colL, matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))); // p by p*nsp.sum()
+      matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
+      matrix <Type> s(p,p*nsp.sum());
       for (int i=0; i<n;i++){
-        s = spdr.row(i);
-        if(colL.cols()==p){
-          //phylogenetically structured REs
-          kronLs = tmbutils::kronecker(colL,s);
-        }else{
-          kronLs = tmbutils::kronecker(I,s);
-        }
-        cQ.row(i) += 0.5*(kronLs*SArmSP*kronLs.transpose()).diagonal();
+        s = (spdr.row(i)*I.transpose()).replicate(p,1);
+        // kronecker(colL, sdpr.row(i))*SArmSP*t(kronecker(colL,sdpr.row(i))
+        // but this prevents having to re-compute the kronecker product on every i
+        // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
+        cQ.row(i) += 0.5*((kronL.array()*s.array()).matrix()*SArmSP*(kronL.array()*s.array()).matrix().transpose()).diagonal();
       }
       nll -= 0.5*p*(nsp.sum()-log(Spr.diagonal().prod()));
       
     }
-    
     // Correlated LVs
     if(num_corlv>0) { //CorLV
       int i,j,d;
@@ -1963,10 +1958,10 @@ Type objective_function<Type>::operator() ()
           sigmacounter++;
           dc_scaled = dc(dccounter)*DiSc;
           if(cstruc(re)==2){ // corExp
-            Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+            Sr(re) = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
             sigmacounter++;
           } else if(cstruc(re)==4) { // corMatern
-            Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+            Sr(re) = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
             sigmacounter += 2;
           }
           dccounter++;
@@ -1984,10 +1979,10 @@ Type objective_function<Type>::operator() ()
         REPORT(Sr);
         // REPORT(tempSrSP);
         if(re==0){
-          tempSrSP.topRows(nr(0)) = tmbutils::asSparseMatrix(Sr(0));
+          tempSrSP.topRows(nr(0)) = Sr(0).sparseView();
           SrSP.leftCols(nr(0)) = tempSrSP;
         }else{
-          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = tmbutils::asSparseMatrix(Sr(re));
+          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = Sr(re).sparseView();
           SrSP.middleCols(nr.head(re).sum(), nr(re)) = tempSrSP;
         }
       }
