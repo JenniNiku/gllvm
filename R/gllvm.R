@@ -207,6 +207,7 @@
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
+#'    \item{betar}{ column random effects}
 #'    \item{row.params }{ row-specific intercepts}
 #'    \item{sigma }{ scale parameters for row-specific random effects}
 #'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
@@ -215,7 +216,7 @@
 #'  \item{Power }{ power parameter \eqn{\nu} for Tweedie family}
 #'  \item{sd }{ list of standard errors of parameters}
 #'  \item{prediction.errors }{ list of prediction covariances for latent variables and variances for random row effects when method \code{"LA"} is used}
-#'  \item{A, Ar, Ab_lv}{ covariance matrices for variational densities of latent variables, random row effects, and random slopes respectively}
+#'  \item{A, Ar, Ab_lv, spArs}{ covariance matrices for variational densities of latent variables, random row effects, random slopes, and colum effects respectively}
 #'  \item{seed}{ Seed used for calculating starting values}
 #'  \item{TMBfn}{ TMB objective and derivative functions}
 #'  \item{logL }{ log likelihood}
@@ -227,6 +228,12 @@
 #'  \item{cstruclv }{ Correlation structure for LVs}
 #'  \item{dist }{ Matrix of coordinates or time points used for row effects}
 #'  \item{distLV }{ Matrix of coordinates or time points used for LVs}
+#'  \item{col.eff }{ list of components for column random effects}
+#'  \itemize{
+#'  \item{col.eff }{flag indicating if column random effects are included}
+#'  \item{colL }{ lower cholesky factor for covariance matrix of column effects}
+#'  \item{sdrp }{ sparse design matrix}
+#'  }
 #'  \item{terms }{ Terms object for main predictors}
 #'  \item{start }{ starting values for model}
 #'  \item{optim.method }{ Optimization method when using 'optim', 'alabama', or 'nloptr'}
