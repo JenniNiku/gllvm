@@ -34,6 +34,7 @@ logLik.gllvm <- function(object, ...)
   }
     if(object$col.eff$col.eff == "random"){
       object$params$betar <- NULL
+      object$params$sigma.sp <- unique(object$params$sigma.sp[lower.tri(object$params$sigma.sp,diag=TRUE)])
     }
     if(object$family=="ordinal"){
       if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]

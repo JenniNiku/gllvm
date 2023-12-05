@@ -35,6 +35,7 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
   DATA_SPARSE_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
+  DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
   DATA_MATRIX(colL); //lower cholesky of column similarity matrix
   DATA_MATRIX(offset); //offset matrix
   DATA_IVECTOR(Ntrials);
@@ -729,7 +730,7 @@ Type objective_function<Type>::operator() ()
     
     // random species effects
     if((random(3)>0)){
-      vector<Type> sigmaSP = exp(log_sigma_sp);
+      vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
       if(colL.cols()==p){
         eta += spdr*(betar*colL.transpose());
       }else{
@@ -739,17 +740,25 @@ Type objective_function<Type>::operator() ()
       // covariance matrix of random effects
       // Eigen::SparseMatrix<Type> Sprp(p*nsp.sum(),p*nsp.sum());Sprp.setZero();
       
-      Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Spr(nsp.sum());Spr.setZero();
-      Eigen::DiagonalMatrix<Type, Eigen::Dynamic> SprI(nsp.sum());SprI.setZero();
+      matrix <Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
+      matrix <Type> SprI(nsp.sum(),nsp.sum());SprI.setZero();
       
       int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
       for(int re=0; re<nsp.size(); re++){
         for(int nr=0; nr<nsp(re); nr++){
         Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
-        SprI.diagonal()(sprdiagcounter) += pow(sigmaSP(re),-2);
         sprdiagcounter++;
       }
       }
+      //correlated random effects
+      if(cs.cols()>1){
+      vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
+      for(int rec=0; rec<cs.rows(); rec++){
+        Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
+        Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+      }
+      }
+      SprI = Spr.inverse();
       
       int sdcounter = 0;
       int covscounter = p*nsp.sum();
@@ -1989,7 +1998,7 @@ Type objective_function<Type>::operator() ()
     }
     
     if((random(3)>0)){
-      vector<Type> sigmaSP = exp(log_sigma_sp);
+      vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
       if(colL.cols()==p){
         eta += spdr*(betar*colL.transpose());
       }else{
@@ -2005,8 +2014,17 @@ Type objective_function<Type>::operator() ()
           sprdiagcounter++;
         }
       }
+      //correlated random effects
+      if(cs.cols()>1){
+        vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
+        for(int rec=0; rec<cs.rows(); rec++){
+          Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
+          Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+        }
+      }
+      MVNORM_t<Type> mvnormSP(Slv);
       for(int j=0; j<p; j++){
-      nll += MVNORM(Spr)(betar.col(j));
+      nll += mvnormSP(betar.col(j));
       }
       }
 

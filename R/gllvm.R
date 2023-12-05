@@ -233,6 +233,8 @@
 #'  \item{col.eff }{flag indicating if column random effects are included}
 #'  \item{colL }{ lower cholesky factor for covariance matrix of column effects}
 #'  \item{sdrp }{ sparse design matrix}
+#'  \item{nsp }{ vector of levels per random effect}
+#'  
 #'  }
 #'  \item{terms }{ Terms object for main predictors}
 #'  \item{start }{ starting values for model}
@@ -675,15 +677,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }else{
       X.col.eff <- NULL
     }
-    col.eff <- FALSE;
+    col.eff <- FALSE;col.eff.formula = ~0
     if(anyBars(formula)){
-      col.eff <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))
-      formula <- nobars1_(formula)
+      col.eff <- "random"
+      col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
+      formula <- nobars1_(formula) # take out random effects
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
     }
-    if(anyBars(col.eff) && is.null(X.col.eff)){
+    if(anyBars(col.eff.formula) && is.null(X.col.eff)){
       stop("Covariates for species random effects must be provided.")
     }
     
@@ -934,15 +937,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     # Species random effects    
     spdr = NULL; cstruc = "diag"
-    if(inherits(col.eff,"formula")) {
-      bar.f <- findbars1(col.eff) # list with 3 terms
+    if(col.eff == "random") {
+      bar.f <- findbars1(col.eff.formula) # list with 3 terms
       if(!is.null(bar.f)) {
-        mf <- model.frame(subbars1(col.eff),data=X.col.eff)
+        mf <- model.frame(subbars1(col.eff.formula),data=X.col.eff)
         RElist <- mkReTrms1(bar.f,mf)
         spdr <- Matrix::t(RElist$Zt)
-        colnames(spdr) <- rep(names(RElist$nl),RElist$nl)
+        cs <- RElist$cs
+        colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
       }
-      col.eff <- "random"
     }
 
     if(!inherits(row.eff, "formula") && row.eff == "random"){
@@ -1021,7 +1024,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElist <- mkReTrms1(bar.f,mf.new)
         dr <- Matrix::t(RElist$Zt)
-        colnames(dr) <- rep(names(RElist$nl),RElist$nl)
+        colnames(dr) <- rep(names(RElist$nms),RElist$nms)
         
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
@@ -1208,7 +1211,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, spdr = spdr, sp.Ar.struc = sp.Ar.struc),  corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, sp.Ar.struc = sp.Ar.struc),  corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1353,7 +1356,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            spdr = spdr
+            spdr = spdr,
+            cs = cs
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula
@@ -1407,6 +1411,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           if(!is.null(colMat)){
             out$col.eff$colL <- fitg$colL
           }
+          out$col.eff$nsp <- fitg$nsp
         }
       }
       if (!is.null(randomX)) {

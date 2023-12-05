@@ -313,8 +313,12 @@ se.gllvm <- function(object, ...){
         }
       }
       if(object$col.eff$col.eff=="random"){
-        sigma.sp <- se$log_sigma_sp
-        sigma.sp <- sigma.sp*object$params$sigma.sp
+        sigma.sp <- se$log_sigma_sp[c(1:length(object$col.eff$nsp))]
+        covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
+        sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
+        if(ncol(object$TMBfn$env$data$cs)==2){
+          sigma.sp[object$TMBfn$env$data$cs[,1],object$TMBfn$env$data$cs[,2]] <- sigma.sp[object$TMBfn$env$data$cs[,2],object$TMBfn$env$data$cs[,1]] <- covsigma.sp
+        }
         out$sd$sigma.sp <- sigma.sp
       }
       if(object$row.eff=="random") { 
@@ -724,8 +728,12 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      sigma.sp <- se$log_sigma_sp
-      sigma.sp <- sigma.sp*object$params$sigma.sp
+      sigma.sp <- se$log_sigma_sp[c(1:length(object$col.eff$nsp))]
+      covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
+      sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
+      if(ncol(object$TMBfn$env$data$cs)==2){
+        sigma.sp[object$TMBfn$env$data$cs[,1],object$TMBfn$env$data$cs[,2]] <- sigma.sp[object$TMBfn$env$data$cs[,2],object$TMBfn$env$data$cs[,1]] <- covsigma.sp
+      }
       out$sd$sigma.sp <- sigma.sp
     }
     if(object$row.eff=="random") { 

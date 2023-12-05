@@ -144,13 +144,19 @@ mkReTrms1 <- function (bars, fr)
   
   #
   blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
-  nl <- vapply(blist, `[[`, 0L, "nl")
-  
+  cnms <- lapply(blist,`[[`,"cnms")
+  nms <- unlist(lapply(cnms,length))
+  if(any(nms>1)){
+  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)1-diag(length(x)))))==1,arr.ind = T)
+  cs <- cs[seq(1,nrow(cs),2),,drop=F]#correlation structure for REs in same term
+  }else{
+    cs <- NULL
+  }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt, nl = nl)
+  ll <- list(Zt = Zt, nms = nms, cs = cs)
   ll
 }
 
