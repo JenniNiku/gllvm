@@ -14,7 +14,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   # if(!is.null(dr) && ncol(dr) != length(Ar.struc) && length(Ar.struc==1)){
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
-  if(((num.lv+num.lv.c)==0) & (row.eff!="random") & (randomB==FALSE) & (col.eff != "random")) diag.iter <-  0
+  if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE) & (col.eff != "random" || sp.Ar.struc=="diagonal")) diag.iter <-  0
   
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")

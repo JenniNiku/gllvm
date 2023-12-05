@@ -719,19 +719,12 @@ Type objective_function<Type>::operator() ()
       I.setIdentity();
       Eigen::SparseMatrix <Type> SrI = Srldlt.solve(I);
       Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > Armldlt(ArmSP);
-      Eigen::SparseMatrix <Type> SrIArmSP = SrI*ArmSP;// need to explicitly store this to get the trace
-      Type SrIArmSPtrace = 0;
-      for(int i=0; i<nr.sum(); i++){
-        SrIArmSPtrace += SrIArmSP.coeffRef(i,i);
-      }
 
-      nll -= 0.5*vector<Type>(Armldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(SrIArmSPtrace+(r0.transpose()*(SrI*r0)).sum());
+      nll -= 0.5*vector<Type>(Armldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(matrix<Type>(SrI*ArmSP).trace()+(r0.transpose()*(SrI*r0)).sum());
       // determinants of each block of the covariance matrix
       nll -= 0.5*(nr.sum()-vector<Type>(Srldlt.vectorD()).cwiseAbs().log().sum());
       REPORT(SrI);
       REPORT(SrSP);
-      REPORT(SrIArmSP);
-      REPORT(SrIArmSPtrace);
     }
     
     // random species effects
@@ -788,7 +781,7 @@ Type objective_function<Type>::operator() ()
         Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
         tempSArmRe.setZero();
         if(j==0){
-          tempSArmRe.topRows(nsp.sum()) = (SArm(0)*SArm(0)).transpose().sparseView();
+          tempSArmRe.topRows(nsp.sum()) = (SArm(0)*SArm(0).transpose()).sparseView();
           SArmSP.leftCols(nsp.sum()) = tempSArmRe;
         }else{
           tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = (SArm(j)*SArm(j).transpose()).sparseView();
