@@ -99,14 +99,6 @@ subbars1<-function (term)
     term[[1]] <- as.name("+")
   if (is.call(term) && term[[1]] == as.name("||")) 
     term[[1]] <- as.name("+")
-  if (is.call(term) && term[[1]] == as.name("/")){
-    term2<<-term
-    # stopifnot(lenght(term) >= )
-  }
-    # term <- append(term, term2[[1]])
-    # 
-    # append(term, as.name(paste0("(1|+",all.vars(term)[1],))
-    # term <- append(term, as.name(paste0("+(1|",paste0(terms(term[[1]]),collapse=":"))))
   for (j in 2:length(term)) {
     term[[j]] <- subbars1(term[[j]])
   }
@@ -145,18 +137,20 @@ mkReTrms1 <- function (bars, fr)
   #
   blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
   cnms <- lapply(blist,`[[`,"cnms")
-  nms <- unlist(lapply(cnms,length))
-  if(any(nms>1)){
-  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)1-diag(length(x)))))==1,arr.ind = T)
+  grps <- unlist(lapply(cnms,length))
+  nms <- make.unique(unlist(cnms))
+  if(any(grps>1)){
+  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)1-diag(length(x)))))==1, arr.ind = TRUE)
   cs <- cs[seq(1,nrow(cs),2),,drop=F]#correlation structure for REs in same term
   }else{
     cs <- NULL
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
+  row.names(Zt) <- nms
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt, nms = nms, cs = cs)
+  ll <- list(Zt = Zt, grps = grps,  cs = cs)
   ll
 }
 

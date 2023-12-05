@@ -943,8 +943,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         mf <- model.frame(subbars1(col.eff.formula),data=X.col.eff)
         RElist <- mkReTrms1(bar.f,mf)
         spdr <- Matrix::t(RElist$Zt)
-        cs <- RElist$cs
-        colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
+        cs - RElist$cs
+        # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
       }
     }
 
@@ -1024,7 +1024,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElist <- mkReTrms1(bar.f,mf.new)
         dr <- Matrix::t(RElist$Zt)
-        colnames(dr) <- rep(names(RElist$nms),RElist$nms)
+        colnames(dr) <- rep(names(RElist$grps),RElist$grps)
         
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
@@ -1363,7 +1363,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
-      
+      if(col.eff == "random"){
+        if(!is.null(colMat)){
+          out$col.eff$colL <- fitg$colL
+        }
+        out$col.eff$nsp <- fitg$nsp
+      }
 }
       out$disp.group <- disp.group
       out$seed <- fitg$seed
@@ -1408,10 +1413,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }
         if(col.eff == "random"){
           out$spArs <- fitg$spArs
-          if(!is.null(colMat)){
-            out$col.eff$colL <- fitg$colL
-          }
-          out$col.eff$nsp <- fitg$nsp
         }
       }
       if (!is.null(randomX)) {

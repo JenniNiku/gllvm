@@ -741,12 +741,11 @@ Type objective_function<Type>::operator() ()
       // Eigen::SparseMatrix<Type> Sprp(p*nsp.sum(),p*nsp.sum());Sprp.setZero();
       
       matrix <Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
-      matrix <Type> SprI(nsp.sum(),nsp.sum());SprI.setZero();
       
       int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
       for(int re=0; re<nsp.size(); re++){
         for(int nr=0; nr<nsp(re); nr++){
-        Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
+        Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
         sprdiagcounter++;
       }
       }
@@ -755,11 +754,11 @@ Type objective_function<Type>::operator() ()
       vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
       for(int rec=0; rec<cs.rows(); rec++){
         Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-        Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+        // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
       }
       }
-      SprI = Spr.inverse();
-      
+      matrix <Type> SprI = Spr.inverse();//Spr.template triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()));
+
       int sdcounter = 0;
       int covscounter = p*nsp.sum();
       vector<matrix<Type>> SArm(p);
@@ -797,7 +796,7 @@ Type objective_function<Type>::operator() ()
           SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
         }
 
-        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI*SArm(j)*SArm(j).transpose()).trace()+(betar.col(j).transpose()*(SprI*betar.col(j))).sum());
+        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI.transpose()*SArm(j)*SArm(j).transpose()*SprI).trace()+(betar.col(j).transpose()*(SprI.transpose()*SprI*betar.col(j))).sum());
       }
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
@@ -2010,7 +2009,7 @@ Type objective_function<Type>::operator() ()
       int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
       for(int re=0; re<nsp.size(); re++){
         for(int nr=0; nr<nsp(re); nr++){
-          Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
+          Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
           sprdiagcounter++;
         }
       }
@@ -2019,10 +2018,10 @@ Type objective_function<Type>::operator() ()
         vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
         for(int rec=0; rec<cs.rows(); rec++){
           Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-          Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+          // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
         }
       }
-      MVNORM_t<Type> mvnormSP(Slv);
+      MVNORM_t<Type> mvnormSP(Spr);
       for(int j=0; j<p; j++){
       nll += mvnormSP(betar.col(j));
       }

@@ -370,7 +370,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         betar2 <- setNames(c(betar2),rep(colnames(spdr),times=p))
         log_sigma_sp <- log(aggregate(betar2, by = list(names(betar2)), FUN = sd)[,2])
         if(ncol(cs)==2){
-          betarCov <- cov(t(betar[t(cs),,drop=F]))
+          betarCov <- suppressWarnings(t(chol(cov(t(betar)),pivot=T)))
           log_sigma_sp <- c(log_sigma_sp,betarCov[cs])
         }
       }
@@ -2060,8 +2060,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         out$params$betar <- betar
         out$params$sigma.sp <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
         if(ncol(cs)==2){
-          out$params$sigma.sp[cs[,1],cs[,2]] <- out$params$sigma.sp[cs[,2],cs[,1]] <- covsigma.sp
+          out$params$sigma.sp[cs[,1],cs[,2]] <- covsigma.sp
         }
+        out$params$sigma.sp <- out$params$sigma.sp%*%t(out$params$sigma.sp)
         colnames(out$params$sigma.sp) <- colnames(spdr)
         out$spdr <- spdr
       }
