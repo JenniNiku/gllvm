@@ -810,7 +810,7 @@ Type objective_function<Type>::operator() ()
         // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
         cQ.row(i) += 0.5*((kronL.array()*s.array()).matrix()*SArmSP*(kronL.array()*s.array()).matrix().transpose()).diagonal();
       }
-      nll -= 0.5*p*(nsp.sum()-log(Spr.diagonal().prod()));
+      nll -= 0.5*p*nsp.sum()-p*Spr.diagonal().array().log().sum();
       
     }
     // Correlated LVs
@@ -2021,7 +2021,7 @@ Type objective_function<Type>::operator() ()
           // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
         }
       }
-      MVNORM_t<Type> mvnormSP(Spr);
+      MVNORM_t<Type> mvnormSP(Spr*Spr.transpose());
       for(int j=0; j<p; j++){
       nll += mvnormSP(betar.col(j));
       }
