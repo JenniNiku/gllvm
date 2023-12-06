@@ -943,7 +943,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         mf <- model.frame(subbars1(col.eff.formula),data=X.col.eff)
         RElist <- mkReTrms1(bar.f,mf)
         spdr <- Matrix::t(RElist$Zt)
-        cs - RElist$cs
+        cs <- RElist$cs
         # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
       }
     }
