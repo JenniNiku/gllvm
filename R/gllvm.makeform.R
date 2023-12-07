@@ -135,13 +135,12 @@ mkReTrms1 <- function (bars, fr)
   term.names <- vapply(bars, safeDeparse, "")
   
   #
-  blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
-  cnms <- lapply(blist,`[[`,"cnms")
-  grps <- unlist(lapply(cnms,length))
-  nms <- make.unique(unlist(cnms))
+  blist <<- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
+  cnms <<- lapply(blist,`[[`,"cnms")
+  grps <<- unlist(lapply(cnms,length))
+  nms <<- make.unique(unlist(cnms))
   if(any(grps>1)){
-  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)1-diag(length(x)))))==1, arr.ind = TRUE)
-  cs <- cs[seq(1,nrow(cs),2),,drop=F]#correlation structure for REs in same term
+  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
   }else{
     cs <- NULL
   }
