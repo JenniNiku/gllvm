@@ -15,6 +15,12 @@ struct dclist : vector<matrix<Type> > {
 };
 
 template<class Type>
+matrix<Type> cov2cor(matrix<Type> x){
+  return x.diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*x*x.diagonal().cwiseInverse().cwiseSqrt().asDiagonal();
+}
+  
+  
+template<class Type>
 bool isNA(Type x){
   return R_IsNA(asDouble(x));
 }
@@ -34,9 +40,9 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(xb); // envs with random slopes
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
-  DATA_SPARSE_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
+  DATA_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
   DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
-  DATA_MATRIX(colL); //lower cholesky of column similarity matrix
+  DATA_SPARSE_MATRIX(colMat); //lower cholesky of column similarity matrix
   DATA_MATRIX(offset); //offset matrix
   DATA_IVECTOR(Ntrials);
   
@@ -731,11 +737,7 @@ Type objective_function<Type>::operator() ()
     // random species effects
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
-      if(colL.cols()==p){
-        eta += spdr*(betar*colL.transpose());
-      }else{
-        eta += spdr*betar;
-      }
+      eta += spdr*betar;
       
       // covariance matrix of random effects
       // Eigen::SparseMatrix<Type> Sprp(p*nsp.sum(),p*nsp.sum());Sprp.setZero();
@@ -757,28 +759,27 @@ Type objective_function<Type>::operator() ()
         // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
       }
       }
-      matrix <Type> SprI = Spr.inverse();//Spr.template triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()));
-
+      matrix <Type>SArmSP(p*nsp.sum(), p*nsp.sum());
+      SArmSP.setZero();
+      // Two: store them all in one big sparse covariance matrix
+      // This will facilitate things if at a later time we want correlation between effects too
+      // SArmSP is our sparse VA covariance matrix across all REs
+      
+      // sp.Ar.struc == "diagonalp" or "blockdiagonalp", i.e., independence over species
+      if((spAr.size() ==(p*nsp.sum())) || (spAr.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
       int sdcounter = 0;
       int covscounter = p*nsp.sum();
-      vector<matrix<Type>> SArm(p);
-      Eigen::SparseMatrix<Type>SArmSP(p*nsp.sum(), p*nsp.sum());
-      SArmSP.setZero();
+      // matrix <Type> SprI = Spr.inverse();//Spr.template triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()));
       for(int j=0; j<p; j++){
-
-      // One: build SArm, variational covariance matrix for all random effects as a list
-        SArm(j).resize(nsp.sum(),nsp.sum());
-        SArm(j).setZero();
-        
         for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
-          SArm(j)(d,d)=exp(spAr(sdcounter));
+          SArmSP.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(), nsp.sum())(d,d)=exp(spAr(sdcounter));
           sdcounter++;
         }
         
-        if((spAr.size()>(p*nsp).sum())){ // unstructured Var.cov
+        if((spAr.size()>(p*nsp.sum()))){ // unstructured Var.cov
           for (int d=0; d<(nsp.sum()); d++){
             for (int r=d+1; r<(nsp.sum()); r++){
-              SArm(j)(r,d)=spAr(covscounter);
+              SArmSP.block(j*nsp.sum(), j*nsp.sum(), nsp.sum(), nsp.sum())(r,d)=spAr(covscounter);
               covscounter++;
             }}
         }
@@ -786,33 +787,123 @@ Type objective_function<Type>::operator() ()
         // This will facilitate things if at a later time we want correlation between effects too
         // SArmSP is our sparse VA covariance matrix across all REs
         // tempSArmRe a temporary matrix that is needed to get things in the right format
-        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
-        tempSArmRe.setZero();
-        if(j==0){
-          tempSArmRe.topRows(nsp.sum()) = (SArm(0)*SArm(0).transpose()).sparseView();
-          SArmSP.leftCols(nsp.sum()) = tempSArmRe;
-        }else{
-          tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = (SArm(j)*SArm(j).transpose()).sparseView();
-          SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
+        // Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSArmRe(p*nsp.sum(), nsp.sum());
+        // tempSArmRe.setZero();
+        // if(j==0){
+        //   tempSArmRe.topRows(nsp.sum()) = (SArm(0)*SArm(0).transpose()).sparseView();
+        //   SArmSP.leftCols(nsp.sum()) = tempSArmRe;
+        // }else{
+        //   tempSArmRe.middleRows(j*nsp.sum(), nsp.sum()) = (SArm(j)*SArm(j).transpose()).sparseView();
+        //   SArmSP.middleCols(j*nsp.sum(), nsp.sum()) = tempSArmRe;
+        // }
+
+        // nll -= SArm(j).diagonal().array().log().sum() - 0.5*((SprI.transpose()*SArm(j)*SArm(j).transpose()*SprI).trace()+(betar.col(j).transpose()*(SprI.transpose()*SprI*betar.col(j))).sum());
+        
+        // add terms to cQ
+        // This part is over all species so that we can add a phylogenetic effect.
+        // matrix<Type> kronL = tmbutils::kronecker(colL, matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))); // p by p*nsp.sum()
+        // matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
+        // matrix <Type> s(p,p*nsp.sum());
+        // for (int i=0; i<n;i++){
+        //   s = (spdr.row(i)*I.transpose()).replicate(p,1);
+        //   // kronecker(colL, sdpr.row(i))*SArmSP*t(kronecker(colL,sdpr.row(i))
+        //   // but this prevents having to re-compute the kronecker product on every i
+        //   // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
+        //   cQ.row(i) += 0.5*(kronL.cwiseProduct(s)*SArmSP*kronL.cwiseProduct(s).transpose()).diagonal();
+        // }
+        // nll -= 0.5*p*nsp.sum()-p*Spr.diagonal().array().log().sum();
+      }
+      SArmSP *= SArmSP.transpose();
+      }else if((spAr.size()==(p+nsp.sum())) || (spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
+        // sp.Ar.struc == "MNdiagonal" and "MNunstructured"
+        vector<matrix<Type>> SArm(2);
+        SArm(0).resize(nsp.sum(),nsp.sum());SArm(0).setZero();
+        SArm(1).resize(p,p);SArm(1).setZero();
+        int sdcounter = 0;
+        int covscounter = p+nsp.sum();
+        // row variance
+        for (int d=0; d<(nsp.sum()); d++){ // diagonals of row covariance
+          SArm(0)(d,d)=exp(spAr(sdcounter));
+          sdcounter++;
+        }
+        
+        // column variance
+        for (int j=0; j<p; j++){ // diagonals of column covariance
+          SArm(1)(j,j)=exp(spAr(sdcounter));
+          sdcounter++;
+        }
+        
+        if((spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured row covariance
+          for (int d=0; d<(nsp.sum()); d++){
+            for (int r=d+1; r<(nsp.sum()); r++){
+              SArm(0)(r,d)=spAr(covscounter);
+              covscounter++;
+            }}
         }
 
-        nll -= vector<Type>(SArm(j).diagonal()).log().sum() - 0.5*((SprI.transpose()*SArm(j)*SArm(j).transpose()*SprI).trace()+(betar.col(j).transpose()*(SprI.transpose()*SprI*betar.col(j))).sum());
+       if((spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured column covariance
+         for (int j=0; j<p; j++){
+           for (int r=j+1; r<p; r++){
+             SArm(1)(r,j)=spAr(covscounter);
+             covscounter++;
+           }}
+       }
+
+       SArmSP = tmbutils::kronecker(cov2cor(matrix<Type>(SArm(1)*SArm(1).transpose())),matrix<Type>(SArm(0)*SArm(0).transpose()));
+      }else if(spAr.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
+        //unstructured
+        int sdcounter = 0;
+        int covscounter = p*nsp.sum();
+
+        for (int d=0; d<(p*nsp.sum()); d++){ // diagonals 
+          SArmSP(d,d)=exp(spAr(sdcounter));
+          sdcounter++;
+        }
+        
+          for (int d=0; d<(p*nsp.sum()); d++){
+            for (int r=d+1; r<(p*nsp.sum()); r++){
+              SArmSP(r,d)=spAr(covscounter);
+              covscounter++;
+            }}
+          SArmSP *= SArmSP.transpose();
       }
+      //Likelihood terms based on covariance kron(chol(P),chol(Sigma))
+      // matrix<Type>ColMatL = colMat.llt().matrixL();
+      matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
+      Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
+      SprMNI.makeCompressed();
+      Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
+      lu.analyzePattern(SprMNI); 
+      lu.factorize(SprMNI);
+      //vector<Type> betarVec = Eigen::Map<Eigen::VectorXd>(betar.data(), betar.cols()*betar.rows());
+      matrix<Type> betarVec(1,p*nsp.sum());
+      for (int j=0; j<p;j++){
+        betarVec.row(0).segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
+      }
+      // SprMNMI*betarVec;
+      // Eigen::Map<Eigen::VectorXd> betarVec(betar.data(), betar.rows()*betar.cols());
+      // vector<Type> betarVec = Eigen::Map<vector<Type>> (betar.data(), betar.rows()*betar.cols());
+
+      // Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> betarVec = betar;
+      nll -= 0.5*(atomic::logdet(SArmSP) - (SprMNI*SArmSP).trace()-(betarVec*(SprMNI*betarVec.transpose())).sum());
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
-      matrix<Type> kronL = tmbutils::kronecker(colL, matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))); // p by p*nsp.sum()
+      Eigen::SparseMatrix<Type> kronL = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)), matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))).sparseView(); // p by p*nsp.sum()
       matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
-      matrix <Type> s(p,p*nsp.sum());
+      Eigen::DiagonalMatrix <Type, Eigen::Dynamic> s(p*nsp.sum());
+      //matrix <Type> s(p,p*nsp.sum());
       for (int i=0; i<n;i++){
-        s = (spdr.row(i)*I.transpose()).replicate(p,1);
+        //s = (spdr.row(i)*I.transpose()).replicate(p,1);
+        s.diagonal() = spdr.row(i)*I.transpose();
         // kronecker(colL, sdpr.row(i))*SArmSP*t(kronecker(colL,sdpr.row(i))
         // but this prevents having to re-compute the kronecker product on every i
         // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
-        cQ.row(i) += 0.5*((kronL.array()*s.array()).matrix()*SArmSP*(kronL.array()*s.array()).matrix().transpose()).diagonal();
+        // cQ.row(i) += 0.5*(kronL.cwiseProduct(s)*SArmSP*kronL.cwiseProduct(s).transpose()).diagonal();
+        cQ.row(i) += 0.5*(kronL*s*SArmSP*s*kronL.transpose()).diagonal();
       }
-      nll -= 0.5*p*nsp.sum()-p*Spr.diagonal().array().log().sum();
-      
+      nll -= 0.5*(p*nsp.sum()+lu.logAbsDeterminant());
     }
+    
     // Correlated LVs
     if(num_corlv>0) { //CorLV
       int i,j,d;
@@ -1947,7 +2038,7 @@ Type objective_function<Type>::operator() ()
         }else if(cstruc(re) == 1){ // corAR1
           Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter+=2;
-        }else if(cstruc(re) == 3){ // corExp
+        }else if(cstruc(re) == 3){ // corCS
           Sr(re) = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter += 2;
         }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
@@ -1998,11 +2089,8 @@ Type objective_function<Type>::operator() ()
     
     if((random(3)>0)){
       vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
-      if(colL.cols()==p){
-        eta += spdr*(betar*colL.transpose());
-      }else{
-        eta += spdr*betar;
-      }
+      eta += spdr*betar;
+
       // covariance matrix of random effects
       matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
       
@@ -2021,10 +2109,14 @@ Type objective_function<Type>::operator() ()
           // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
         }
       }
-      MVNORM_t<Type> mvnormSP(Spr*Spr.transpose());
-      for(int j=0; j<p; j++){
-      nll += mvnormSP(betar.col(j));
-      }
+      matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
+      Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
+      // SprMNM = SprMNM*SprMNM.transpose();
+      vector<Type> betarVec(p*nsp.sum());
+      for (int j=0; j<p;j++){
+        betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
+      }      
+      nll += GMRF(SprMNI)(betarVec);
       }
 
     

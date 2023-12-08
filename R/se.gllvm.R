@@ -317,7 +317,7 @@ se.gllvm <- function(object, ...){
         covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
         sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
         if(ncol(object$TMBfn$env$data$cs)==2){
-          sigma.sp[object$TMBfn$env$data$cs[,1],object$TMBfn$env$data$cs[,2]] <- covsigma.sp
+          sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
         }
         out$sd$sigma.sp <- sigma.sp
       }
@@ -732,7 +732,7 @@ se.gllvm <- function(object, ...){
       covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
       sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
       if(ncol(object$TMBfn$env$data$cs)==2){
-        sigma.sp[object$TMBfn$env$data$cs[,1],object$TMBfn$env$data$cs[,2]] <- covsigma.sp
+        sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
       }
       out$sd$sigma.sp <- sigma.sp
     }

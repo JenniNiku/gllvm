@@ -422,7 +422,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", sp.Ar.struc  = "diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "unstructured", Ar.struc="diagonal", sp.Ar.struc  = "MNunstructured", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -492,7 +492,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("Ar.struc" %in% names(x))) 
         x$Ar.struc = "diagonal"
       if (!("sp.Ar.struc" %in% names(x))) 
-        x$sp.Ar.struc = "diagonal"
+        x$sp.Ar.struc = "MNunstructured"
       if (!("diag.iter" %in% names(x))) 
         x$diag.iter = 5
       if (!("Ab.diag.iter" %in% names(x))) 
