@@ -135,10 +135,11 @@ mkReTrms1 <- function (bars, fr)
   term.names <- vapply(bars, safeDeparse, "")
   
   #
-  blist <<- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
-  cnms <<- lapply(blist,`[[`,"cnms")
-  grps <<- unlist(lapply(cnms,length))
-  nms <<- make.unique(unlist(cnms))
+  blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
+  nl <- vapply(blist, `[[`, 0L, "nl")
+  cnms <- lapply(blist,`[[`,"cnms")
+  grps <- unlist(lapply(cnms,length))
+  nms <- make.unique(unlist(cnms))
   if(any(grps>1)){
   cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
   }else{
@@ -146,10 +147,10 @@ mkReTrms1 <- function (bars, fr)
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
-  row.names(Zt) <- nms
+  try({row.names(Zt) <- nms}, silent = TRUE)
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt, grps = grps,  cs = cs)
+  ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl)
   ll
 }
 

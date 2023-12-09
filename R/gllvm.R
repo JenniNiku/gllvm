@@ -1024,7 +1024,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElist <- mkReTrms1(bar.f,mf.new)
         dr <- Matrix::t(RElist$Zt)
-        colnames(dr) <- rep(names(RElist$grps),RElist$grps)
+        colnames(dr) <- rep(names(RElist$nl),RElist$nl)
         
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
