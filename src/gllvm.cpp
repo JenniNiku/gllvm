@@ -611,13 +611,12 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      for (int j=0; j<p;j++){
-        eta.col(j) += dr0*r0;
-      }
+      eta += dr0*r0*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       
-      Eigen::SparseMatrix<Type>ArmSP(nr.sum(), nr.sum());
-      ArmSP.setZero();
       vector<matrix<Type>> Arm(nr.size());
+      vector<matrix<Type>> Sr(nr.size());
+      int dccounter = 0; // tracking used dc entries
+      int sigmacounter = 0; // tracking used sigma entries
       
       // One: build Arm, variational covariance matrix for all random effects as a list
       int sdcounter = 0;
@@ -638,50 +637,21 @@ Type objective_function<Type>::operator() ()
               covscounter++;
             }}
         }
-        // we do not want the cholesky here, so need to store the square of the matrix
-        Arm(re) *= Arm(re).transpose();
-
-      // Two: store them all in one big sparse covariance matrix
-      // This will facilitate things if at a later time we want correlation between effects too
-      // ArmSP is our sparse covariance matrix across all REs
-      // tempArmRe a temporary matrix that is needed to get things in the right format
-      Eigen::SparseMatrix<Type, Eigen::RowMajor> tempArmRe(nr.sum(), nr(re));
-      tempArmRe.setZero();
-      if(re==0){
-        tempArmRe.topRows(nr(0)) = Arm(0).sparseView();
-        ArmSP.leftCols(nr(0)) = tempArmRe;
-      }else{
-        tempArmRe.middleRows(nr.head(re).sum(), nr(re)) = Arm(re).sparseView();
-        ArmSP.middleCols(nr.head(re).sum(), nr(re)) = tempArmRe;
-      }
-      }
       // add terms to cQ
-      for (int i=0; i<n;i++){
-        cQ.row(i) += 0.5*(dr0.row(i)*ArmSP*dr0.row(i).transpose())*Eigen::MatrixXd::Ones(1,p);
-      }
-      REPORT(cQ);
-      REPORT(Arm);
-      REPORT(ArmSP);
-
-      // Three: we build the actual covariance matrix
-      // This can straightforwardly be extended to estimate correlation betwee effects
-      Eigen::SparseMatrix<Type>SrSP(nr.sum(), nr.sum());
-      SrSP.setZero();
-      vector<matrix<Type>> Sr(nr.size());
-      int dccounter = 0; // tracking used dc entries
-      int sigmacounter = 0; // tracking used sigma entries
-
-      for(int re=0; re<nr.size();re++){
+      matrix<Type> ArmMat = Arm(re)*Arm(re).transpose();
+        cQ += 0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()*Eigen::MatrixXd::Ones(1,p);
+      // We build the actual covariance matrix
+      // This can straightforwardly be extended to estimate correlation between effects
         Sr(re).resize(nr(re),nr(re));
         Sr(re).setZero();
 
         // diagonal row effect
         if(cstruc(re) == 0){
-        Sr(re).diagonal().array() = pow(sigma(sigmacounter), 2);
-        sigmacounter++;
+          Sr(re).diagonal().array() = pow(sigma(sigmacounter), 2);
+          sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
-        Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
-        sigmacounter+=2;
+          Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+          sigmacounter+=2;
         }else if(cstruc(re) == 3){ // corCS
           Sr(re) = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter += 2;
@@ -702,36 +672,20 @@ Type objective_function<Type>::operator() ()
           }
           dccounter++;
         }
-
-        // we do not want the cholesky of these matrices here, so need to store the square of each matrix
-        // Sr(re) *= Sr(re).transpose();
-
-        // This will facilitate things if at a later time we want correlation between effects too
-        // SrSP is our sparse covariance matrix across all REs
-        // tempSrSP a temporary matrix that is needed to get things in the right format
-        Eigen::SparseMatrix<Type, Eigen::RowMajor> tempSrSP(nr.sum(), nr(re));
-        tempSrSP.setZero();
+        
+        //TMB's matinvpd function: invere of matrix with logdet for free
+        CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr(re)));
+        Type logdetSr = res[0];
+        matrix <Type> invSr = atomic::vec2mat(res,Sr(re).rows(),Sr(re).cols(),1);
+        // matrix<Type> invSr = atomic::matinvpd(Sr(re), logdetSr);
         if(re==0){
-          tempSrSP.topRows(nr(0)) = Sr(0).sparseView();
-          SrSP.leftCols(nr(0)) = tempSrSP;
+          nll -= Arm(re).diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
         }else{
-          tempSrSP.middleRows(nr.head(re).sum(), nr(re)) = Sr(re).sparseView();
-          SrSP.middleCols(nr.head(re).sum(), nr(re)) = tempSrSP;
+          nll -= Arm(re).diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
         }
+        // determinants of each block of the covariance matrix
+        nll -= 0.5*(nr(re)-logdetSr);
       }
-      // Four: add the terms to the likelihood and cQ.
-      // For LL, determinant we can calculate as the product of determinants of the block matrices for now
-      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > Srldlt(SrSP);
-      Eigen::SparseMatrix<Type> I(nr.sum(),nr.sum());
-      I.setIdentity();
-      Eigen::SparseMatrix <Type> SrI = Srldlt.solve(I);
-      Eigen::SimplicialLDLT< Eigen::SparseMatrix<Type> > Armldlt(ArmSP);
-
-      nll -= 0.5*vector<Type>(Armldlt.vectorD()).cwiseAbs().log().sum() - 0.5*(matrix<Type>(SrI*ArmSP).trace()+(r0.transpose()*(SrI*r0)).sum());
-      // determinants of each block of the covariance matrix
-      nll -= 0.5*(nr.sum()-vector<Type>(Srldlt.vectorD()).cwiseAbs().log().sum());
-      REPORT(SrI);
-      REPORT(SrSP);
     }
     
     // random species effects
@@ -813,6 +767,7 @@ Type objective_function<Type>::operator() ()
         // }
         // nll -= 0.5*p*nsp.sum()-p*Spr.diagonal().array().log().sum();
       }
+      nll -= SArmSP.diagonal().array().log().sum();
       SArmSP *= SArmSP.transpose();
       }else if((spAr.size()==(p+nsp.sum())) || (spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
         // sp.Ar.struc == "MNdiagonal" and "MNunstructured"
@@ -849,7 +804,11 @@ Type objective_function<Type>::operator() ()
            }}
        }
 
-       SArmSP = tmbutils::kronecker(cov2cor(matrix<Type>(SArm(1)*SArm(1).transpose())),matrix<Type>(SArm(0)*SArm(0).transpose()));
+       // nll -= SArmSP.diagonal().array().log().sum();
+       // determinant of kronecker product of two matrices based on their cholesky factors
+       matrix<Type> corL = SArm(1).diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*SArm(1);
+       nll -= SArm(0).rows()*corL.diagonal().array().log().sum() + SArm(1).rows()*SArm(0).diagonal().array().log().sum();
+       SArmSP = tmbutils::kronecker(matrix<Type>(corL*corL.transpose()),matrix<Type>(SArm(0)*SArm(0).transpose()));
       }else if(spAr.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
         //unstructured
         int sdcounter = 0;
@@ -865,6 +824,8 @@ Type objective_function<Type>::operator() ()
               SArmSP(r,d)=spAr(covscounter);
               covscounter++;
             }}
+          
+          nll -= SArmSP.diagonal().array().log().sum();
           SArmSP *= SArmSP.transpose();
       }
       //Likelihood terms based on covariance kron(chol(P),chol(Sigma))
@@ -885,7 +846,7 @@ Type objective_function<Type>::operator() ()
       // vector<Type> betarVec = Eigen::Map<vector<Type>> (betar.data(), betar.rows()*betar.cols());
 
       // Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> betarVec = betar;
-      nll -= 0.5*(atomic::logdet(SArmSP) - (SprMNI*SArmSP).trace()-(betarVec*(SprMNI*betarVec.transpose())).sum());
+      nll -= -0.5*((SprMNI*SArmSP).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
       // add terms to cQ
       // This part is over all species so that we can add a phylogenetic effect.
       Eigen::SparseMatrix<Type> kronL = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)), matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))).sparseView(); // p by p*nsp.sum()
@@ -2058,6 +2019,7 @@ Type objective_function<Type>::operator() ()
           }
           dccounter++;
         }
+        
         
         // we do not want the cholesky of these matrices here, so need to store the square of each matrix
         Sr(re) *= Sr(re).transpose();
