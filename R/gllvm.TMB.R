@@ -104,11 +104,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           AD1 = rangeP
         }
       }
-      # feed TMB a distance matrix rather than coordinates
-      if(any(cstruc=="corExp")){
-        distIdx <- 1:sum(cstruc%in%c("corExp","corMatern"))
-        dist[distIdx[cstruc[cstruc%in%c("corExp","corMatern")]=="corExp"]] <- lapply(dist[distIdx[cstruc[cstruc%in%c("corExp","corMatern")]=="corExp"]],stats::dist)
-      }
       scaledc = lapply(AD1, log)
       # AD1 = pmax(apply(as.matrix(dist),2,function(x) min(dist(unique(x), diag = FALSE))),1)
       # md = min(dist(as.matrix(dist)%*%diag(1/(AD1), length(AD1)), diag = FALSE))/2
@@ -1114,10 +1109,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         
         if((num.lv.c+num.RR)>0){b.lv1 <- matrix(param1[nam=="b_lv"],ncol(lv.X),(num.lv.c+num.RR))}else{b.lv1<-matrix(0)}
         if((num.lv+num.lv.c+num.RR+num.lv.cor)>0){lambda1 <- param1[nam=="lambda"]}else{lambda1<-lambda}
-        if (quadratic=="LV" | quadratic == T && start.struc == "LV"){
-          lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = 1)#In this scenario we have estimated two quadratic coefficients before
-        }else if(quadratic == T){
-          lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
+        if (quadratic=="LV" | isTRUE(quadratic) && start.struc == "LV"){
+          lambda2 <- matrix(param1[nam == "lambda2"], byrow = TRUE, ncol = num.lv+(num.lv.c+num.RR), nrow = 1)#In this scenario we have estimated two quadratic coefficients before
+        }else if(isTRUE(quadratic)){
+          lambda2 <- matrix(param1[nam == "lambda2"], byrow = TRUE, ncol = num.lv+(num.lv.c+num.RR), nrow = p)
         }
         
         if((num.lv+num.lv.c)>0){sigma.lv1 <- param1[nam=="sigmaLV"]}else{sigma.lv1<-0}
