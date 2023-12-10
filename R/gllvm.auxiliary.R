@@ -2556,15 +2556,11 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$row <- Ar
   }
   #separate errors column effects
-  sebetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
+  covbetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
   covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
   if(random[4]>0) {
-    spArs <- vector("list",p)
+    spArs <- matrix(diag(covbetar), ncol = p)
     
-    for(j in 1:p){
-        spArs[[j]] <- sebetar[1:sum(nsp),1:sum(nsp)]
-        sebetar <- sebetar[-c(1:sum(nsp)),-c(1:sum(nsp))]
-    }
     out$spArs <- spArs
   }
   seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
@@ -2877,16 +2873,10 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   }
   
   #separate errors column effects
-  sebetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
+  covbetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
   covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
   if(fit$col.eff$col.eff == "random") {
-    spArs <- vector("list",p)
-    
-    for(j in 1:p){
-      spArs[[j]] <- sebetar[1:sum(nsp),1:sum(nsp)]
-      sebetar <- sebetar[-c(1:sum(nsp)),-c(1:sum(nsp))]
-    }
-    out$spArs <- spArs
+    out$spArs <- covbetar
   }
   #separate errors b_lv
   if(fit$randomB!=FALSE){

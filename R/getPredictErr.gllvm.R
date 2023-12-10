@@ -40,6 +40,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   }
   
   n <- nrow(object$y)
+  p <- ncol(object$y)
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
@@ -69,9 +70,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       }
       if(object$col.eff$col.eff=="random"){
       out$col.eff <- object$prediction.errors$col.eff
-      for(j in 1:ncol(object$y)){
-          out$col.eff[[j]]<- try(t(chol(out$col.eff[[j]])))
-      }
+      out$col.eff <- sqrt(abs(out$col.eff))
       }
       if(object$randomB!=FALSE) out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
       if(!is.null(object$randomX)){
@@ -109,8 +108,12 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         object$Ar[[re]]<-sdb$Ar[[re]]+object$Ar[[re]]
       }
       if(object$col.eff$col.eff == "random"){
-        for(j in 1:ncol(object$y)){
-          object$spArs[[j]]<-sdb$spArs[[j]]+object$spArs[[j]]
+        if(object$col.eff$sp.Ar.struc %in% c("diagonal", "blockdiagonal")){
+          object$spArs <- matrix(diag(sdb$spArs+Matrix::bdiag(object$spArs)), ncol = p)
+        }else if(object$col.eff$sp.Ar.struc == "unstructured"){
+          object$spArs <- matrix(diag(sdb$spArs+object$spArs[[1]]), ncol = p)
+        }else if(object$col.eff$sp.Ar.struc %in% c("MNdiagonal", "MNunstructured")){
+          object$spArs <- matrix(diag(sdb$spArs + kronecker(cov2cor(object$spArs[[2]]), object$spArs[[1]])), ncol = p)
         }
       }
       if(!is.null(object$randomX)){
@@ -195,10 +198,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       }
     }
     if(object$col.eff$col.eff == "random"){
-      out$col.eff <- object$spArs
-    for(j in 1:ncol(object$y)){
-        out$col.eff[[j]] <- try(t(chol(out$col.eff[[j]])))
-    }
+      out$col.eff <- sqrt(abs(object$spArs))
     }
 
     if(length(dim(object$A))==2&(num.lv+num.lv.c+num.RR)>0){
