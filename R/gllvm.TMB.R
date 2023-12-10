@@ -2075,6 +2075,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       if(col.eff == "random"){
         row.names(betar) <- colnames(spdr)
+        if(!is.null(colnames(object$y))) colnames(betar) <- colnames(object$y)
         out$params$betar <- betar
         out$params$sigma.sp <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
         if(ncol(cs)==2){

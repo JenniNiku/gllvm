@@ -36,10 +36,10 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   
-  if ((is.null(object$Xrandom) || is.null(object$randomX)) && isFALSE(object$randomB))
+  if ((is.null(object$Xrandom) || is.null(object$randomX)) && isFALSE(object$randomB)  && object$col.eff$col.eff!="random")
     stop("No random covariates in the model.")
   
-  if((object$num.lv.c+object$num.RR)==0){
+  if((object$num.lv.c+object$num.RR)==0 && !is.null(object$params$Br)){
     if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))
     Xcoef <- as.matrix(t(object$params$Br)[,which.Xcoef,drop=F])
     cnames <- colnames(object$Xr[,which.Xcoef])
@@ -87,17 +87,37 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       if (y.label)
         axis( 2, at = At.y, labels = names(Xc), las = 1, cex.axis = cex.ylab)
     }
-  }else{
-    if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$LvXcoef))
-    Xcoef <- as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,which.Xcoef,drop=F]
-    cnames <- colnames(object$lv.X[,which.Xcoef,drop=F])
+  }
+  
+  if((object$num.lv.c+object$num.RR)>0 || object$col.eff$col.eff == "random"){
+    if((object$num.lv.c+object$num.RR)>0 && object$col.eff$col.eff == "random"){
+      if(is.null(which.Xcoef))which.Xcoef <- c(1:(NROW(object$params$LvXcoef)+NROW(object$params$betar)))      
+    } else if((object$num.lv.c+object$num.RR)>0){
+      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$LvXcoef))      
+    }else if(object$col.eff$col.eff=="random"){
+      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$betar))      
+    }
+    Xcoef <- cnames <- sdXcoef <- NULL
+    
+    if((object$num.lv.c+object$num.RR)>0){
+      Xcoef <- cbind(Xcoef,as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,which.Xcoef,drop=F])
+      cnames <- c(cnames, colnames(object$lv.X[,which.Xcoef,drop=F]))
+      sdXcoef <- cbind(sdXcoef, RRse(object)[,which.Xcoef,drop=F])
+    }
+    if(object$col.eff$col.eff>0){
+      Xcoef <- cbind(Xcoef, t(object$params$betar)[,which.Xcoef,drop=F])
+      cnames <- c(cnames, row.names(object$params$betar))
+      sdXcoef <- cbind(sdXcoef, t(getPredictErr(object)$col.eff)) 
+    }
+  }
+
+  if((object$num.lv.c+object$num.RR)>0 | object$col.eff$col.eff=="random"){
     k <- length(cnames)
     if(is.null(colnames(object$y))) 
       colnames(object$y) <- paste("Y",1:NCOL(object$y), sep = "")
     labely <- colnames(object$y)
     m <- length(labely)
     Xc <- Xcoef
-    sdXcoef <- RRse(object)[,which.Xcoef,drop=F]
     
     if (is.null(mfrow) && k > 1)
       mfrow <- c(1, k)
