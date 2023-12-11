@@ -681,6 +681,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     col.eff <- FALSE;col.eff.formula = ~0
     if(anyBars(formula)){
+      if(!is.null(TR))stop("Random-effects formula not yet implemented for traits. See 'randomX' argument instead.")
       col.eff <- "random"
       col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
       formula <- nobars1_(formula) # take out random effects
