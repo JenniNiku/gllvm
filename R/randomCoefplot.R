@@ -104,7 +104,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       cnames <- c(cnames, colnames(object$lv.X[,which.Xcoef,drop=F]))
       sdXcoef <- cbind(sdXcoef, RRse(object)[,which.Xcoef,drop=F])
     }
-    if(object$col.eff$col.eff>0){
+    if(object$col.eff$col.eff=="random"){
       Xcoef <- cbind(Xcoef, t(object$params$betar)[,which.Xcoef,drop=F])
       cnames <- c(cnames, row.names(object$params$betar))
       sdXcoef <- cbind(sdXcoef, t(getPredictErr(object)$col.eff)) 
