@@ -32,10 +32,6 @@ logLik.gllvm <- function(object, ...)
   if (!is.null(object$params$inv.phi)) {
     object$params$inv.phi <- NULL
   }
-    if(object$col.eff$col.eff == "random"){
-      object$params$betar <- NULL
-      object$params$sigma.sp <- unique(object$params$sigma.sp[lower.tri(object$params$sigma.sp,diag=TRUE)])
-    }
     if(object$family=="ordinal"){
       if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]
       if(object$zeta.struc=="common")object$params$zeta<-object$params$zeta[-1]
@@ -44,7 +40,7 @@ logLik.gllvm <- function(object, ...)
     object$params$row.params <- object$params$row.params[-1]
   if (object$row.eff == "random")
     object$params$row.params <- NULL
-  if (!is.null(object$randomX)){
+  if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
   }

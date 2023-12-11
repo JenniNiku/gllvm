@@ -91,6 +91,8 @@ residuals.gllvm <- function(object, ...) {
   
   if (!is.null(object$randomX))
     eta.mat <- eta.mat + (object$Xrandom %*% object$params$Br)
+  if (object$col.eff$col.eff=="random")
+    eta.mat <- eta.mat + (object$col.eff$spdr %*% object$params$Br)
   
   mu <- exp(eta.mat)
   if (any(mu == 0))

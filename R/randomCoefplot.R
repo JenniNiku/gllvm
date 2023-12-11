@@ -91,11 +91,11 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   
   if((object$num.lv.c+object$num.RR)>0 || object$col.eff$col.eff == "random"){
     if((object$num.lv.c+object$num.RR)>0 && object$col.eff$col.eff == "random"){
-      if(is.null(which.Xcoef))which.Xcoef <- c(1:(NROW(object$params$LvXcoef)+NROW(object$params$betar)))      
+      if(is.null(which.Xcoef))which.Xcoef <- c(1:(NROW(object$params$LvXcoef)+NROW(object$params$Br)))      
     } else if((object$num.lv.c+object$num.RR)>0){
       if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$LvXcoef))      
     }else if(object$col.eff$col.eff=="random"){
-      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$betar))      
+      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))      
     }
     Xcoef <- cnames <- sdXcoef <- NULL
     
@@ -105,8 +105,8 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       sdXcoef <- cbind(sdXcoef, RRse(object)[,which.Xcoef,drop=F])
     }
     if(object$col.eff$col.eff=="random"){
-      Xcoef <- cbind(Xcoef, t(object$params$betar)[,which.Xcoef,drop=F])
-      cnames <- c(cnames, row.names(object$params$betar))
+      Xcoef <- cbind(Xcoef, t(object$params$Br)[,which.Xcoef,drop=F])
+      cnames <- c(cnames, row.names(object$params$Br))
       sdXcoef <- cbind(sdXcoef, t(getPredictErr(object)$col.eff)) 
     }
   }

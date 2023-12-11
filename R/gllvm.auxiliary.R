@@ -2388,7 +2388,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   xb<- obj$env$data$xb
   
   random <- obj$env$data$random
-  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br","b_lv","betar"))
+  radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0","Br","b_lv"))
   
   if(is.null(type)){
     if((num.lv.c+num.RR)==0){
@@ -2556,8 +2556,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$row <- Ar
   }
   #separate errors column effects
-  covbetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
-  covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
+  covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
+  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   if(random[4]>0) {
     spArs <- matrix(diag(covbetar), ncol = p)
     
@@ -2744,7 +2744,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   num.lv.cor <- fit$num.lvcor
   randomB <- fit$randomB
   incla<-rep(FALSE, length(fit$Hess$incl))
-  if(fit$col.eff$col.eff == "random") incla[names(fit$TMBfn$par)%in%c("betar")] <- TRUE
+  if(fit$col.eff$col.eff == "random") incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
   if(!is.null(fit$randomX)) incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
   if((num.lv+num.lv.c)>0) incla[names(fit$TMBfn$par)%in%c("u")] <- TRUE
@@ -2768,7 +2768,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   
   #### add errors for Bs if fixed ####
   if(fit$col.eff$col.eff=="random"){
-    radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="betar"]) 
+    radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
   }
   if(!fit$row.eff%in%c(FALSE,"fixed",NULL)){
     radidx <- radidx +length(fit$TMBfn$par[names(fit$TMBfn$par)=="r0"]) 
@@ -2873,8 +2873,8 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   }
   
   #separate errors column effects
-  covbetar <- covb[colnames(covb)=="betar",colnames(covb)=="betar"]
-  covb <- covb[colnames(covb)!="betar",colnames(covb)!="betar"]
+  covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
+  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   if(fit$col.eff$col.eff == "random") {
     out$spArs <- covbetar
   }

@@ -93,8 +93,6 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
-      incl[names(objrFinal$par)=="spAr"] <- FALSE;
-      incl[names(objrFinal$par)=="betar"] <- FALSE;
       incl[names(objrFinal$par)=="Au"] <- FALSE;
       incl[names(objrFinal$par)=="u"] <- FALSE; 
 
@@ -121,13 +119,7 @@ se.gllvm <- function(object, ...){
         if(object$row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
         if(object$row.eff=="fixed") incl[1] <- FALSE
       }
-      if(object$col.eff$col.eff=="random") {
-        incld[names(objrFinal$par)=="spAr"] <- TRUE
-        incld[names(objrFinal$par)=="betar"] <- TRUE
-      } else {
-        incl[names(objrFinal$par)=="log_sigma_sp"] <- FALSE
-      }
-      
+
       if(is.null(object$randomX)) {
         incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
       } else {
@@ -313,8 +305,12 @@ se.gllvm <- function(object, ...){
         }
       }
       if(object$col.eff$col.eff=="random"){
-        sigma.sp <- se$log_sigma_sp[c(1:length(object$col.eff$nsp))]
-        covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
+        sigma.sp <- se$sigmaB[c(1:length(object$col.eff$nsp))]
+        covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
+        if(!is.null(object$params$rho.sp)){
+          out$sd$rho.sp <- tail(covsigma.sp,1)*(exp(-exp(object$params$rho.sp))*exp(object$params$rho.sp))
+          covsigma.sp <- head(covsigma.sp, -1)
+        }
         sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
         if(ncol(object$TMBfn$env$data$cs)==2){
           sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
@@ -424,14 +420,13 @@ se.gllvm <- function(object, ...){
     incl[names(objrFinal$par)=="ePower"] <- FALSE
     # Not used for this model
     incl[names(objrFinal$par)=="B"] <- FALSE
-    incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
+    incl[names(objrFinal$par)%in%c("sigmaij")] <- FALSE
     
     # Variational params not included for incl
     incl[names(objrFinal$par)=="Ab_lv"] <- FALSE;
     incl[names(objrFinal$par)=="Abb"]=FALSE;
     incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
-    incl[names(objrFinal$par)=="spAr"] <- FALSE;
-    incl[names(objrFinal$par)=="betar"] <- FALSE;
+    incl[names(objrFinal$par)=="Br"] <- FALSE;
     incl[names(objrFinal$par)=="Au"] <- FALSE;
     incl[names(objrFinal$par)=="u"] <- FALSE;
     
@@ -481,10 +476,10 @@ se.gllvm <- function(object, ...){
     }
     
     if(object$col.eff$col.eff=="random") {
-      incld[names(objrFinal$par)=="spAr"] <- TRUE
-      incld[names(objrFinal$par)=="betar"] <- TRUE
+      incld[names(objrFinal$par)=="Abb"] <- TRUE
+      incld[names(objrFinal$par)=="Br"] <- TRUE
     } else {
-      incl[names(objrFinal$par)=="log_sigma_sp"] <- FALSE
+      incl[names(objrFinal$par)=="sigmaB"] <- FALSE
     }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE) && object$col.eff$col.eff!="random"){
@@ -728,8 +723,12 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      sigma.sp <- se$log_sigma_sp[c(1:length(object$col.eff$nsp))]
-      covsigma.sp <- se$log_sigma_sp[-c(1:length(object$col.eff$nsp))]
+      sigma.sp <- se$sigmaB[c(1:length(object$col.eff$nsp))]
+      covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
+      if(!is.null(object$params$rho.sp)){
+        out$sd$rho.sp <- tail(covsigma.sp,1)*(exp(-exp(object$params$rho.sp))*exp(object$params$rho.sp))
+        covsigma.sp <- head(covsigma.sp, -1)
+      }
       sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
       if(ncol(object$TMBfn$env$data$cs)==2){
         sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp

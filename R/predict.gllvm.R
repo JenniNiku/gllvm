@@ -314,7 +314,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   if (object$col.eff$col.eff == "random" && is.null(newX)) {
-    eta <- eta + object$col.eff$spdr%*%object$params$betar
+    eta <- eta + object$col.eff$spdr%*%object$params$Br
   }
 
   if(!is.null(object$offset)){

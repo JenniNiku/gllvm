@@ -1264,7 +1264,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             family = family,
             Lambda.struc = Lambda.struc,
             row.eff = row.eff,
-            col.eff = col.eff,
             reltol = reltol,
             # reltol.c = reltol.c,
             seed = seed,
@@ -1301,9 +1300,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            Ntrials = Ntrials, 
-            spdr = spdr
-        )
+            Ntrials = Ntrials
+            )
         out$X <- fitg$X
         out$TR <- fitg$TR
         out$formula <- fitg$formula

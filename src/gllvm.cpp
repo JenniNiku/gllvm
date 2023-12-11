@@ -50,7 +50,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(b); // matrix of species specific intercepts and coefs
   // PARAMETER_MATRIX(bH); // matrix of species specific intercepts and coefs for beta hurdle model
   PARAMETER_MATRIX(B); // coefs of 4th corner model
-  PARAMETER_MATRIX(Br); // random slopes for envs
+  PARAMETER_MATRIX(Br); // random slopes for env species
   PARAMETER_MATRIX(b_lv); //slopes for RRR and constrained ord, VA means for random slopes
   //Left columns are for constrained ordination, Right for RRR
   PARAMETER_VECTOR(sigmaLV);//SD for LV
@@ -62,15 +62,12 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(u);
   PARAMETER_VECTOR(lg_phiZINB);//extra param for ZINB
   PARAMETER_VECTOR(lg_phi); // dispersion params/extra zero probs for ZIP
-  PARAMETER_VECTOR(sigmaB); // sds for random slopes
+  PARAMETER_VECTOR(sigmaB); // sds for random species effects
   PARAMETER_VECTOR(sigmab_lv); // sds for random slopes constr. ord.
   PARAMETER_VECTOR(sigmaij);// cov terms for random slopes covariance
   PARAMETER_VECTOR(log_sigma);// log(SD for row effect) and 
   PARAMETER_MATRIX(rho_lvc);// correlation parameters for correlated LVs, matrix of q x 1 for corExp/corCS, qx2 for Matern
-  PARAMETER_VECTOR(log_sigma_sp);// log(SD for species effect)
-  PARAMETER_MATRIX(betar); // random slopes for species
-  PARAMETER_VECTOR(spAr); // VA covariances for species
-  
+
   DATA_INTEGER(num_lv); // number of lvs
   DATA_INTEGER(num_lv_c); //number of constrained lvs
   DATA_INTEGER(num_RR); //number of RRR dimensions
@@ -89,7 +86,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(extra); // extra values, power of 
   DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
   DATA_INTEGER(model);// which model, basic or 4th corner
-  DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for betar: (3) 1 = random
+  DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for Br: (3) 1 = random
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
   DATA_IVECTOR(nr); // number of observations in each random row effect
   DATA_IVECTOR(nsp); // number of sites in each random row effect, per species
@@ -544,8 +541,9 @@ Type objective_function<Type>::operator() ()
     }
     
     
-    // Include random slopes if random(1)>0
+    // Include random slopes
     if(random(1)>0){
+      //random species effects for trait.TMB
       matrix<Type> sds(l,l);
       sds.setZero();
       sds.diagonal() = exp(sigmaB);
@@ -590,6 +588,169 @@ Type objective_function<Type>::operator() ()
       }
       eta += xb*Br;
       nll -= 0.5*(l - log(S.determinant())*random(1))*p;//n*
+    }else if(random(3)>0){
+      // random species effects for gllvm.TMB
+        vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
+        eta += spdr*Br;
+        
+        // one: build covariance matrix of random effects
+        // as lower cholesky factor
+        matrix <Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
+        
+        int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
+        for(int re=0; re<nsp.size(); re++){
+          for(int nr=0; nr<nsp(re); nr++){
+            Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
+            sprdiagcounter++;
+          }
+        }
+        //covariances of random effects
+        if(cs.cols()>1){
+          vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
+          for(int rec=0; rec<cs.rows(); rec++){
+            Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
+            // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+          }
+        }
+        // isolate column correlation signal parameter
+        Type rhoSP;
+        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
+          rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
+          REPORT(rhoSP);
+        }
+        matrix <Type>SArm(p*nsp.sum(), p*nsp.sum());
+        SArm.setZero();
+        
+        // Two: SArm is our VA covariance matrix across all REs
+        
+        // sp.Ar.struc == "diagonalp" or "blockdiagonalp", i.e., independence over species
+        // determinants for VA objective function for efficiency calculated per VA covariance structure
+        if((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
+          int sdcounter = 0;
+          int covscounter = p*nsp.sum();
+          // matrix <Type> SprI = Spr.inverse();//Spr.template triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()));
+          for(int j=0; j<p; j++){
+            for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
+              SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(), nsp.sum())(d,d)=exp(Abb(sdcounter));
+              sdcounter++;
+            }
+            
+            if((Abb.size()>(p*nsp.sum()))){ // unstructured Var.cov
+              for (int d=0; d<(nsp.sum()); d++){
+                for (int r=d+1; r<(nsp.sum()); r++){
+                  SArm.block(j*nsp.sum(), j*nsp.sum(), nsp.sum(), nsp.sum())(r,d)=Abb(covscounter);
+                  covscounter++;
+                }}
+            }
+          }
+          nll -= SArm.diagonal().array().log().sum();
+          SArm *= SArm.transpose();
+        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
+          // sp.Ar.struc == "MNdiagonal" and "MNunstructured"
+          vector<matrix<Type>> SArmLst(2);
+          SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
+          SArmLst(1).resize(p,p);SArmLst(1).setZero();
+          int sdcounter = 0;
+          int covscounter = p+nsp.sum();
+          // row variance
+          for (int d=0; d<(nsp.sum()); d++){ // diagonals of row covariance
+            SArmLst(0)(d,d)=exp(Abb(sdcounter));
+            sdcounter++;
+          }
+          
+          // column variance
+          for (int j=0; j<p; j++){ // diagonals of column covariance
+            SArmLst(1)(j,j)=exp(Abb(sdcounter));
+            sdcounter++;
+          }
+          
+          if((Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured row covariance
+            for (int d=0; d<(nsp.sum()); d++){
+              for (int r=d+1; r<(nsp.sum()); r++){
+                SArmLst(0)(r,d)=Abb(covscounter);
+                covscounter++;
+              }}
+          }
+          
+          if((Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured column covariance
+            for (int j=0; j<p; j++){
+              for (int r=j+1; r<p; r++){
+                SArmLst(1)(r,j)=Abb(covscounter);
+                covscounter++;
+              }}
+          }
+          
+          // determinant of kronecker product of two matrices based on their cholesky factors
+          matrix<Type> corL = (SArmLst(1)*SArmLst(1).transpose()).diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*SArmLst(1);
+          nll -= SArmLst(0).rows()*corL.diagonal().array().log().sum() + SArmLst(1).rows()*SArmLst(0).diagonal().array().log().sum();
+          
+          SArm = tmbutils::kronecker(matrix<Type>(corL*corL.transpose()),matrix<Type>(SArmLst(0)*SArmLst(0).transpose()));
+        }else if(Abb.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
+          //unstructured
+          int sdcounter = 0;
+          int covscounter = p*nsp.sum();
+          
+          for (int d=0; d<(p*nsp.sum()); d++){ // diagonals 
+            SArm(d,d)=exp(Abb(sdcounter));
+            sdcounter++;
+          }
+          
+          for (int d=0; d<(p*nsp.sum()); d++){
+            for (int r=d+1; r<(p*nsp.sum()); r++){
+              SArm(r,d)=Abb(covscounter);
+              covscounter++;
+            }}
+          
+          nll -= SArm.diagonal().array().log().sum();
+          SArm *= SArm.transpose();
+        }
+        //Likelihood terms and cQ
+        Eigen::SparseMatrix<Type>colCorMat;
+        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
+          // if(col_struc== 0){
+          // Brownian motion
+          // corColMat = colMat  
+          // }else if(col_struc==1){
+          // function as in Ovaskainen et al. 2017
+          matrix <Type> Irho(p,p);
+          Irho.setZero();
+          Irho.diagonal().fill(1-rhoSP);
+          colCorMat = colMat*rhoSP + tmbutils::asSparseMatrix(Irho);
+          //}else if(col_struc == 2){
+          // Ornstein-Uhlenbeck
+          //}
+        }else{
+          colCorMat = colMat;
+        }
+        Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colCorMat,tmbutils::asSparseMatrix(matrix<Type>(Spr*Spr.transpose())));
+        SprMN.makeCompressed();
+        Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
+        lu.analyzePattern(SprMN); 
+        lu.factorize(SprMN);
+        matrix<Type> betarVec(1,p*nsp.sum());
+        for (int j=0; j<p;j++){
+          betarVec.row(0).segment(j*nsp.sum(), nsp.sum()) = Br.col(j);
+        }
+        
+        // combined trace and inner product term to prevent explicit inversion of matrix
+        // we have the lu anyway for the determinant below
+        nll -= -0.5*lu.solve(betarVec.transpose()*betarVec+SArm).trace();
+        // nll -= -0.5*((SprMNI*SArm).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
+        
+        // add terms to cQ
+        // This part is over all species so that we can add a phylogenetic effect.
+        Eigen::SparseMatrix<Type> kronL = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)), matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))).sparseView(); // p by p*nsp.sum()
+        matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
+        Eigen::DiagonalMatrix <Type, Eigen::Dynamic> s(p*nsp.sum());
+        for (int i=0; i<n;i++){
+          s.diagonal() = spdr.row(i)*I.transpose();
+          // kronecker(colL, sdpr.row(i))*SArm*t(kronecker(colL,sdpr.row(i))
+          // but this prevents having to re-compute the kronecker product on every i
+          // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
+          cQ.row(i) += 0.5*(kronL*s*SArm*s*kronL.transpose()).diagonal();
+        }
+        nll -= 0.5*(p*nsp.sum()-lu.logAbsDeterminant());
+      
     }
     
     
@@ -687,147 +848,7 @@ Type objective_function<Type>::operator() ()
         nll -= 0.5*(nr(re)-logdetSr);
       }
     }
-    
-    // random species effects
-    if((random(3)>0)){
-      vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
-      eta += spdr*betar;
-      
-      // one: build covariance matrix of random effects
-      // as lower cholesky factor
-      matrix <Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
-      
-      int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-      for(int re=0; re<nsp.size(); re++){
-        for(int nr=0; nr<nsp(re); nr++){
-        Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
-        sprdiagcounter++;
-      }
-      }
-      //covariances of random effects
-      if(cs.cols()>1){
-      vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
-      for(int rec=0; rec<cs.rows(); rec++){
-        Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-        // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
-      }
-      }
-      matrix <Type>SArm(p*nsp.sum(), p*nsp.sum());
-      SArm.setZero();
-
-      // Two: SArm is our VA covariance matrix across all REs
-      
-      // sp.Ar.struc == "diagonalp" or "blockdiagonalp", i.e., independence over species
-      // determinants for VA objective function for efficiency calculated per VA covariance structure
-      if((spAr.size() ==(p*nsp.sum())) || (spAr.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
-      int sdcounter = 0;
-      int covscounter = p*nsp.sum();
-      // matrix <Type> SprI = Spr.inverse();//Spr.template triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()));
-      for(int j=0; j<p; j++){
-        for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
-          SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(), nsp.sum())(d,d)=exp(spAr(sdcounter));
-          sdcounter++;
-        }
-        
-        if((spAr.size()>(p*nsp.sum()))){ // unstructured Var.cov
-          for (int d=0; d<(nsp.sum()); d++){
-            for (int r=d+1; r<(nsp.sum()); r++){
-              SArm.block(j*nsp.sum(), j*nsp.sum(), nsp.sum(), nsp.sum())(r,d)=spAr(covscounter);
-              covscounter++;
-            }}
-        }
-      }
-      nll -= SArm.diagonal().array().log().sum();
-      SArm *= SArm.transpose();
-      }else if((spAr.size()==(p+nsp.sum())) || (spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
-        // sp.Ar.struc == "MNdiagonal" and "MNunstructured"
-        vector<matrix<Type>> SArmLst(2);
-        SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
-        SArmLst(1).resize(p,p);SArmLst(1).setZero();
-        int sdcounter = 0;
-        int covscounter = p+nsp.sum();
-        // row variance
-        for (int d=0; d<(nsp.sum()); d++){ // diagonals of row covariance
-          SArmLst(0)(d,d)=exp(spAr(sdcounter));
-          sdcounter++;
-        }
-        
-        // column variance
-        for (int j=0; j<p; j++){ // diagonals of column covariance
-          SArmLst(1)(j,j)=exp(spAr(sdcounter));
-          sdcounter++;
-        }
-        
-        if((spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured row covariance
-          for (int d=0; d<(nsp.sum()); d++){
-            for (int r=d+1; r<(nsp.sum()); r++){
-              SArmLst(0)(r,d)=spAr(covscounter);
-              covscounter++;
-            }}
-        }
-
-       if((spAr.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured column covariance
-         for (int j=0; j<p; j++){
-           for (int r=j+1; r<p; r++){
-             SArmLst(1)(r,j)=spAr(covscounter);
-             covscounter++;
-           }}
-       }
-
-       // determinant of kronecker product of two matrices based on their cholesky factors
-       matrix<Type> corL = (SArmLst(1)*SArmLst(1).transpose()).diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*SArmLst(1);
-       nll -= SArmLst(0).rows()*corL.diagonal().array().log().sum() + SArmLst(1).rows()*SArmLst(0).diagonal().array().log().sum();
-
-       SArm = tmbutils::kronecker(matrix<Type>(corL*corL.transpose()),matrix<Type>(SArmLst(0)*SArmLst(0).transpose()));
-      }else if(spAr.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
-        //unstructured
-        int sdcounter = 0;
-        int covscounter = p*nsp.sum();
-
-        for (int d=0; d<(p*nsp.sum()); d++){ // diagonals 
-          SArm(d,d)=exp(spAr(sdcounter));
-          sdcounter++;
-        }
-        
-          for (int d=0; d<(p*nsp.sum()); d++){
-            for (int r=d+1; r<(p*nsp.sum()); r++){
-              SArm(r,d)=spAr(covscounter);
-              covscounter++;
-            }}
-          
-          nll -= SArm.diagonal().array().log().sum();
-          SArm *= SArm.transpose();
-      }
-      //Likelihood terms and cQ
-      Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(matrix<Type>(Spr*Spr.transpose())));
-      SprMN.makeCompressed();
-      Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
-      lu.analyzePattern(SprMN); 
-      lu.factorize(SprMN);
-      matrix<Type> betarVec(1,p*nsp.sum());
-      for (int j=0; j<p;j++){
-        betarVec.row(0).segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
-      }
-
-      // combined trace and inner product term to prevent explicit inversion of matrix
-      // we have the lu anyway for the determinant below
-      nll -= -0.5*lu.solve(betarVec.transpose()*betarVec+SArm).trace();
-      // nll -= -0.5*((SprMNI*SArm).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
-      
-      // add terms to cQ
-      // This part is over all species so that we can add a phylogenetic effect.
-      Eigen::SparseMatrix<Type> kronL = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)), matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))).sparseView(); // p by p*nsp.sum()
-      matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
-      Eigen::DiagonalMatrix <Type, Eigen::Dynamic> s(p*nsp.sum());
-      for (int i=0; i<n;i++){
-        s.diagonal() = spdr.row(i)*I.transpose();
-        // kronecker(colL, sdpr.row(i))*SArm*t(kronecker(colL,sdpr.row(i))
-        // but this prevents having to re-compute the kronecker product on every i
-        // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
-        cQ.row(i) += 0.5*(kronL*s*SArm*s*kronL.transpose()).diagonal();
-      }
-      nll -= 0.5*(p*nsp.sum()-lu.logAbsDeterminant());
-    }
+  
     
     // Correlated LVs
     if(num_corlv>0) { //CorLV
@@ -2014,8 +2035,8 @@ Type objective_function<Type>::operator() ()
     }
     
     if((random(3)>0)){
-      vector<Type> sigmaSP = exp(log_sigma_sp.segment(0,nsp.size()));
-      eta += spdr*betar;
+      vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
+      eta += spdr*Br;
 
       // covariance matrix of random effects
       matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
@@ -2029,18 +2050,19 @@ Type objective_function<Type>::operator() ()
       }
       //correlated random effects
       if(cs.cols()>1){
-        vector<Type> sigmaSPij = log_sigma_sp.segment(nsp.size(),cs.rows());
+        vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
         for(int rec=0; rec<cs.rows(); rec++){
           Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
           // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
         }
       }
       matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
+      //still implement colMat stuff here
       Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
       // SprMNM = SprMNM*SprMNM.transpose();
       vector<Type> betarVec(p*nsp.sum());
       for (int j=0; j<p;j++){
-        betarVec.segment(j*nsp.sum(), nsp.sum()) = betar.col(j);
+        betarVec.segment(j*nsp.sum(), nsp.sum()) = Br.col(j);
       }      
       nll += GMRF(SprMNI)(betarVec);
       }
