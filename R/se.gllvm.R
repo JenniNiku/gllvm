@@ -304,19 +304,7 @@ se.gllvm <- function(object, ...){
           out$sd$corrpar <- se$sigmaij
         }
       }
-      if(object$col.eff$col.eff=="random"){
-        sigma.sp <- se$sigmaB[c(1:length(object$col.eff$nsp))]
-        covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
-        if(!is.null(object$params$rho.sp)){
-          out$sd$rho.sp <- tail(covsigma.sp,1)*(exp(-exp(object$params$rho.sp))*exp(object$params$rho.sp))
-          covsigma.sp <- head(covsigma.sp, -1)
-        }
-        sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
-        if(ncol(object$TMBfn$env$data$cs)==2){
-          sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
-        }
-        out$sd$sigmaB <- sigma.sp
-      }
+
       if(object$row.eff=="random") { 
         iter = 1 # keep track of index
         sigma <- se$log_sigma
@@ -723,13 +711,13 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      sigma.sp <- se$sigmaB[c(1:length(object$col.eff$nsp))]
+      sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[c(1:length(object$col.eff$nsp))]
       covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
       if(!is.null(object$params$rho.sp)){
-        out$sd$rho.sp <- tail(covsigma.sp,1)*(exp(-exp(object$params$rho.sp))*exp(object$params$rho.sp))
+        out$sd$rho.sp <- tail(covsigma.sp,1)*(-object$params$rho.sp*log(object$params$rho.sp))
         covsigma.sp <- head(covsigma.sp, -1)
       }
-      sigma.sp <- diag(sigma.sp*diag(object$params$sigma.sp))
+      sigma.sp <- diag(sigma.sp)
       if(ncol(object$TMBfn$env$data$cs)==2){
         sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
       }

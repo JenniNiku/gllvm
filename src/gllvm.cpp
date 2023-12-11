@@ -599,7 +599,7 @@ Type objective_function<Type>::operator() ()
         int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
         for(int re=0; re<nsp.size(); re++){
           for(int nr=0; nr<nsp(re); nr++){
-            Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
+            Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
             sprdiagcounter++;
           }
         }
@@ -608,7 +608,7 @@ Type objective_function<Type>::operator() ()
           vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
           for(int rec=0; rec<cs.rows(); rec++){
             Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-            // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+            Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
           }
         }
         // isolate column correlation signal parameter
@@ -721,7 +721,7 @@ Type objective_function<Type>::operator() ()
         }else{
           colCorMat = colMat;
         }
-        Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colCorMat,tmbutils::asSparseMatrix(matrix<Type>(Spr*Spr.transpose())));
+        Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colCorMat,tmbutils::asSparseMatrix(Spr));
         SprMN.makeCompressed();
         Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
         lu.analyzePattern(SprMN); 
@@ -1940,7 +1940,7 @@ Type objective_function<Type>::operator() ()
         int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
         for(int re=0; re<nsp.size(); re++){
           for(int nr=0; nr<nsp(re); nr++){
-            Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
+            Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
             sprdiagcounter++;
           }
         }
@@ -1949,12 +1949,37 @@ Type objective_function<Type>::operator() ()
           vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
           for(int rec=0; rec<cs.rows(); rec++){
             Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-            // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+            Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
           }
         }
-        matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
+        matrix<Type>SprI = Spr.inverse();
+        Eigen::SparseMatrix<Type>colCorMat;
+        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
+          Type rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
+          // if(col_struc== 0){
+          // Brownian motion
+          // corColMat = colMat  
+          // }else if(col_struc==1){
+          // function as in Ovaskainen et al. 2017
+          matrix <Type> Irho(p,p);
+          Irho.setZero();
+          Irho.diagonal().fill(1-rhoSP);
+          colCorMat = colMat*rhoSP + tmbutils::asSparseMatrix(Irho);
+          //}else if(col_struc == 2){
+          // Ornstein-Uhlenbeck
+          //}
+        }else{
+          colCorMat = colMat;
+        }
+        Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colCorMat,tmbutils::asSparseMatrix(Spr));//colL should be cholesky of correlation matrix here, for identifiability
+        SprMN.makeCompressed();
+        Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
+        lu.analyzePattern(SprMN); 
+        lu.factorize(SprMN);
+        Eigen::SparseMatrix<Type> I(p*nsp.sum(),p*nsp.sum());
+        I.setIdentity();
+        Eigen::SparseMatrix<Type> SprMNI = lu.solve(I);
         //still implement colMat stuff here
-        Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
         // SprMNM = SprMNM*SprMNM.transpose();
         vector<Type> betarVec(p*nsp.sum());
         for (int j=0; j<p;j++){

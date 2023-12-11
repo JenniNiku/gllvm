@@ -372,7 +372,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         BrVec <- setNames(BrVec,rep(colnames(spdr),times=p))
         sigmaB <- log(aggregate(BrVec, by = list(names(BrVec)), FUN = sd)[,2])
         if(ncol(cs)==2){
-          BrCov <- suppressWarnings(t(chol(cov(t(Br)),pivot=T)))
+          BrCov <- cov(t(Br))
           sigmaB <- c(sigmaB,BrCov[cs])
         }
         # rho.sp
@@ -2085,10 +2085,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         row.names(Br) <- colnames(spdr)
         if(!is.null(colnames(y))) colnames(Br) <- colnames(y)
         out$params$Br <- Br
-        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
+        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)]^2)
         if(any(colMat[row(colMat)!=col(colMat)]!=0))out$params$rho.sp <- rho.sp
         if(ncol(cs)==2){
-          out$params$sigmaB[cs] <- covsigma.sp
+          out$params$sigmaB[cs] <- out$params$sigmaB[cs[,c(2,1)]] <- covsigma.sp
         }
         colnames(out$params$sigmaB) <- colnames(spdr)
         out$spdr <- spdr
