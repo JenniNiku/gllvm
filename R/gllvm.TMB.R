@@ -65,7 +65,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(ncol(colMat)!=p){
         stop("Matrix for column effects is of incorrect size.")
       }
-      colMat <- as(try(solve(cov2cor(colMat)),silent = TRUE),"TsparseMatrix")
+      colMat <- as(try(cov2cor(colMat),silent = TRUE),"TsparseMatrix")
       if(inherits(colMat,"try-error")){
         stop("Matrix for column effects is not positive definite.")
       }
@@ -2075,7 +2075,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       if(col.eff == "random"){
         row.names(betar) <- colnames(spdr)
-        if(!is.null(colnames(object$y))) colnames(betar) <- colnames(object$y)
+        if(!is.null(colnames(y))) colnames(betar) <- colnames(y)
         out$params$betar <- betar
         out$params$sigma.sp <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
         if(ncol(cs)==2){
