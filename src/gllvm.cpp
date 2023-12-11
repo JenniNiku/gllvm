@@ -37,10 +37,9 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(x); // matrix of covariates
   DATA_MATRIX(x_lv); // matrix of covariates for Reduced Rank and/or constrained ord
   DATA_MATRIX(xr); 
-  DATA_MATRIX(xb); // envs with random slopes
+  DATA_MATRIX(xb); // design matrix for random species effects, (n, spnr)
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
-  DATA_MATRIX(spdr); // design matrix for random species effects, (n, spnr)
   DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
   DATA_SPARSE_MATRIX(colMat); //lower cholesky of column similarity matrix
   DATA_MATRIX(offset); //offset matrix
@@ -108,7 +107,6 @@ Type objective_function<Type>::operator() ()
     nu = dLV.cols();
   }
   
-  int l = xb.cols();
   vector<Type> iphi = exp(lg_phi);
 
   // Set first row param to zero, if row effects are fixed
@@ -544,6 +542,7 @@ Type objective_function<Type>::operator() ()
     // Include random slopes
     if(random(1)>0){
       //random species effects for trait.TMB
+      int l = xb.cols();
       matrix<Type> sds(l,l);
       sds.setZero();
       sds.diagonal() = exp(sigmaB);
@@ -591,7 +590,7 @@ Type objective_function<Type>::operator() ()
     }else if(random(3)>0){
       // random species effects for gllvm.TMB
         vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
-        eta += spdr*Br;
+        eta += xb*Br;
         
         // one: build covariance matrix of random effects
         // as lower cholesky factor
@@ -740,13 +739,13 @@ Type objective_function<Type>::operator() ()
         // add terms to cQ
         // This part is over all species so that we can add a phylogenetic effect.
         Eigen::SparseMatrix<Type> kronL = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)), matrix<Type>(Eigen::MatrixXd::Ones(1,nsp.sum()))).sparseView(); // p by p*nsp.sum()
-        matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating spdr.row(i)
+        matrix <Type> I =  Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum()).replicate(p,1);// p*nsp.sum() by nsp.sum(), used for replicating xb.row(i)
         Eigen::DiagonalMatrix <Type, Eigen::Dynamic> s(p*nsp.sum());
         for (int i=0; i<n;i++){
-          s.diagonal() = spdr.row(i)*I.transpose();
+          s.diagonal() = xb.row(i)*I.transpose();
           // kronecker(colL, sdpr.row(i))*SArm*t(kronecker(colL,sdpr.row(i))
           // but this prevents having to re-compute the kronecker product on every i
-          // by separating kronecker(colL, rep(1,nsp.sum())) and spdr.row(i)
+          // by separating kronecker(colL, rep(1,nsp.sum())) and xb.row(i)
           cQ.row(i) += 0.5*(kronL*s*SArm*s*kronL.transpose()).diagonal();
         }
         nll -= 0.5*(p*nsp.sum()-lu.logAbsDeterminant());
@@ -1931,7 +1930,38 @@ Type objective_function<Type>::operator() ()
         nll += VECSCALE(neg_log_MVN,sdsv)(Brcol);
       }
       eta += xb*Br;
-    }
+    }else if((random(3)>0)){
+        vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
+        eta += xb*Br;
+        
+        // covariance matrix of random effects
+        matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
+        
+        int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
+        for(int re=0; re<nsp.size(); re++){
+          for(int nr=0; nr<nsp(re); nr++){
+            Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
+            sprdiagcounter++;
+          }
+        }
+        //correlated random effects
+        if(cs.cols()>1){
+          vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
+          for(int rec=0; rec<cs.rows(); rec++){
+            Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
+            // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+          }
+        }
+        matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
+        //still implement colMat stuff here
+        Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
+        // SprMNM = SprMNM*SprMNM.transpose();
+        vector<Type> betarVec(p*nsp.sum());
+        for (int j=0; j<p;j++){
+          betarVec.segment(j*nsp.sum(), nsp.sum()) = Br.col(j);
+        }      
+        nll += GMRF(SprMNI)(betarVec);
+      }
     
     //latent variables
     if(nlvr>0){
@@ -2033,40 +2063,6 @@ Type objective_function<Type>::operator() ()
       nll += GMRF(SrI)(r0);
       REPORT(SrSP);
     }
-    
-    if((random(3)>0)){
-      vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
-      eta += spdr*Br;
-
-      // covariance matrix of random effects
-      matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
-      
-      int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-      for(int re=0; re<nsp.size(); re++){
-        for(int nr=0; nr<nsp(re); nr++){
-          Spr.diagonal()(sprdiagcounter) += sigmaSP(re);
-          sprdiagcounter++;
-        }
-      }
-      //correlated random effects
-      if(cs.cols()>1){
-        vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
-        for(int rec=0; rec<cs.rows(); rec++){
-          Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-          // Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
-        }
-      }
-      matrix<Type>SprI = (Spr*Spr.transpose()).inverse();
-      //still implement colMat stuff here
-      Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colMat,tmbutils::asSparseMatrix(SprI));//colL should be cholesky of correlation matrix here, for identifiability
-      // SprMNM = SprMNM*SprMNM.transpose();
-      vector<Type> betarVec(p*nsp.sum());
-      for (int j=0; j<p;j++){
-        betarVec.segment(j*nsp.sum(), nsp.sum()) = Br.col(j);
-      }      
-      nll += GMRF(SprMNI)(betarVec);
-      }
-
     
     // Correlated LVs
     if(num_corlv>0) {
