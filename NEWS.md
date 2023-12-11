@@ -2,6 +2,10 @@ Version 1.4.4
 =============
 * Removed "dependent.row" feature
 * Added possibility for multiple random row intercepts
+* Added possibility for random species effects, potentially correlated
+  * Can be plotted with "randomCoefPlot"
+* Added possibility to Phylogenetically structure the random species effects
+  * Phylogenetic signal parameter is included as object$params$rho.sp
 
 Version 1.4.3
 ==============
