@@ -207,7 +207,9 @@
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
 #'    \item{B }{ coefficients in fourth corner model}
-#'    \item{betar}{ column random effects}
+#'    \item{Br}{ column random effects}
+#'    \item{sigmaB}{ scale parameters for column-specific random effects}
+#'    \item{rho.sp}{ (positive) correlation parameter for influence strength of "colMat"}
 #'    \item{row.params }{ row-specific intercepts}
 #'    \item{sigma }{ scale parameters for row-specific random effects}
 #'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
