@@ -394,7 +394,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     } else{
       if (all(dim(start.params$y) == dim(y)) &&
           is.null(X) == is.null(start.params$X) &&
-          (row.eff == start.params$row.eff) && (col.eff == start.params.col.eff)) {
+          (row.eff == start.params$row.eff) && (col.eff == start.params$col.eff$col.eff)) {
         if(class(start.params)[2]=="gllvm.quadratic" && quadratic != FALSE){
           lambda2 <- start.params$params$theta[,-c(1:(start.params$num.lv+start.params$num.lv.c+start.params$num.RR)),drop=F]
         }else if(class(start.params)[1]=="gllvm" && quadratic != FALSE){
@@ -453,7 +453,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(col.eff == "random"){
           Br <- start.params$params$Br
-          sigmaB <- log(start.params$params$sigma.sp)
+          sigmaB <- log(start.params$params$sigmaB)
           if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
         }
       } else {
@@ -2085,12 +2085,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         row.names(Br) <- colnames(spdr)
         if(!is.null(colnames(y))) colnames(Br) <- colnames(y)
         out$params$Br <- Br
-        out$params$sigma.sp <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
+        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)])
         if(any(colMat[row(colMat)!=col(colMat)]!=0))out$params$rho.sp <- rho.sp
         if(ncol(cs)==2){
-          out$params$sigma.sp[cs] <- covsigma.sp
+          out$params$sigmaB[cs] <- covsigma.sp
         }
-        colnames(out$params$sigma.sp) <- colnames(spdr)
+        colnames(out$params$sigmaB) <- colnames(spdr)
         out$spdr <- spdr
       }
       

@@ -315,7 +315,7 @@ se.gllvm <- function(object, ...){
         if(ncol(object$TMBfn$env$data$cs)==2){
           sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
         }
-        out$sd$sigma.sp <- sigma.sp
+        out$sd$sigmaB <- sigma.sp
       }
       if(object$row.eff=="random") { 
         iter = 1 # keep track of index
@@ -733,7 +733,7 @@ se.gllvm <- function(object, ...){
       if(ncol(object$TMBfn$env$data$cs)==2){
         sigma.sp[object$TMBfn$env$data$cs] <- covsigma.sp
       }
-      out$sd$sigma.sp <- sigma.sp
+      out$sd$sigmaB <- sigma.sp
     }
     if(object$row.eff=="random") { 
       iter = 1 # keep track of index
