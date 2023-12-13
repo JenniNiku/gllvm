@@ -154,7 +154,7 @@ trait.TMB <- function(
   if(!is.null(X)) {
     num.X <- dim(X)[2]
     for (i in 1:num.X) {
-      if(!is.factor(X[,i])) {
+      if(!is.factor(X[,i]) && !is.character(X[,i])) {
         if(length(unique(X[,i]))>2){ Xi <- scale(X[,i], scale = scale.X, center = scale.X) } else { Xi <- X[,i] }
         X[,i] <- Xi
         X.new <- cbind(X.new,Xi); if(!is.null(colnames(X)[i])) colnames(X.new)[dim(X.new)[2]] <- colnames(X)[i]
@@ -162,7 +162,7 @@ trait.TMB <- function(
         dum <- model.matrix( ~ X[,i]-1)
         dum <- as.matrix(dum[, !(colnames(dum) %in% c("(Intercept)"))])
         # colnames(dum) <- paste(colnames(X)[i], levels(X[,i])[ - 1], sep = "")
-        colnames(dum) <- paste(colnames(X)[i], levels(X[,i]), sep = "")
+        colnames(dum) <- paste(colnames(X)[i], levels(as.factor(X[,i])), sep = "")
         X.new <- cbind(X.new, dum)
       }
     }
@@ -367,6 +367,7 @@ trait.TMB <- function(
     #### Calculate starting values
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct)
+    
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
     if(family=="tweedie"){
       Power = res$Power
