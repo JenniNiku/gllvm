@@ -693,7 +693,7 @@ Type objective_function<Type>::operator() ()
           // Ornstein-Uhlenbeck
           //} else if(col_struc == 3){
           // random walk
-          }
+          //}
         }else{
           colCorMat = colMat;
         }
@@ -1903,70 +1903,87 @@ Type objective_function<Type>::operator() ()
     
     
     // Include random slopes if random(1)>0
-    if(random(1)>0){
-      vector<Type> sdsv = exp(sigmaB);
-      density::UNSTRUCTURED_CORR_t<Type> neg_log_MVN(sigmaij);
-      vector<Type> Brcol;
-      for (int j=0; j<p;j++){
-        Brcol = Br.col(j);
-        nll += VECSCALE(neg_log_MVN,sdsv)(Brcol);
-      }
-      eta += xb*Br;
-    }else if((random(3)>0)){
-        vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
-        eta += xb*Br;
-        
-        // covariance matrix of random effects
-        matrix<Type> Spr(nsp.sum(),nsp.sum());Spr.setZero();
-        
-        int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-        for(int re=0; re<nsp.size(); re++){
-          for(int nr=0; nr<nsp(re); nr++){
-            Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
-            sprdiagcounter++;
-          }
-        }
-        //correlated random effects
-        if(cs.cols()>1){
-          vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
-          for(int rec=0; rec<cs.rows(); rec++){
-            Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-            Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
-          }
-        }
+     if((random(1)>0) | (random(3)>0)){
+       eta += xb*Br;
+       matrix <Type> Spr;
+       Type rhoSP;
+       
+       if(random(1)>0){
+         int l = xb.cols();
+         matrix<Type> sds(l,l);sds.setZero();
+         sds.diagonal() =  exp(sigmaB.segment(0,l));
+         Spr=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+         REPORT(sds);
+         REPORT(Spr);
+       }
+       
+       if(random(3)>0){
+         // random species effects for gllvm.TMB
+         vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
+         // one: build covariance matrix of random effects
+         // as lower cholesky factor
+         Spr = matrix<Type>(nsp.sum(),nsp.sum());Spr.setZero();
+         
+         int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
+         for(int re=0; re<nsp.size(); re++){
+           for(int nr=0; nr<nsp(re); nr++){
+             Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
+             sprdiagcounter++;
+           }
+         }
+         //covariances of random effects
+         if(cs.cols()>1){
+           vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
+           for(int rec=0; rec<cs.rows(); rec++){
+             Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
+             Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
+           }
+         }
+       }
         matrix<Type>SprI = Spr.inverse();
-        Eigen::SparseMatrix<Type>colCorMat;
-        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
-          Type rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
-          // if(col_struc== 0){
-          // Brownian motion
-          // corColMat = colMat  
-          // }else if(col_struc==1){
-          // function as in Ovaskainen et al. 2017
-          matrix <Type> Irho(p,p);
-          Irho.setZero();
-          Irho.diagonal().fill(1-rhoSP);
-          colCorMat = colMat*rhoSP + tmbutils::asSparseMatrix(Irho);
-          //}else if(col_struc == 2){
-          // Ornstein-Uhlenbeck
-          //}
-        }else{
-          colCorMat = colMat;
-        }
-        Eigen::SparseMatrix<Type> SprMN = tmbutils::kronecker(colCorMat,tmbutils::asSparseMatrix(Spr));//colL should be cholesky of correlation matrix here, for identifiability
-        SprMN.makeCompressed();
-        Eigen::SparseLU<Eigen::SparseMatrix<Type>> lu;
-        lu.analyzePattern(SprMN); 
-        lu.factorize(SprMN);
-        Eigen::SparseMatrix<Type> I(p*nsp.sum(),p*nsp.sum());
-        I.setIdentity();
-        Eigen::SparseMatrix<Type> SprMNI = lu.solve(I);
-        //still implement colMat stuff here
-        // SprMNM = SprMNM*SprMNM.transpose();
+       Eigen::SparseMatrix<Type>colCorMat;
+       matrix<Type>colCorMatI;
+       Eigen::SparseLU<Eigen::SparseMatrix<Type>> luColCorMat;
+       Eigen::SparseMatrix<Type> SprMNI;
+       if(colMat.rows()==p){
+         //operations with column correlation matrix
+         if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
+           if(random(3)>0){
+             rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
+           }else if(random(1)>0 && sigmaB.size()>nsp.size()){
+             rhoSP = exp(-exp(sigmaB.segment(nsp.size(),1)(0)));  
+           }
+           // if(col_struc== 0){
+           // Brownian motion
+           // corColMat = colMat  
+           // }else if(col_struc==1){
+           // function as in Ovaskainen et al. 2017
+           matrix <Type> Irho(p,p);
+           Irho.setZero();
+           Irho.diagonal().fill(1-rhoSP);
+           colCorMat = colMat*rhoSP + Irho.sparseView();
+           //}else if(col_struc == 2){
+           // Ornstein-Uhlenbeck
+           //} else if(col_struc == 3){
+           // random walk
+           //}
+         }else{
+           colCorMat = colMat;
+         }
+         luColCorMat.compute(colCorMat);
+         Eigen::SparseMatrix<Type> Ip(p,p);
+         Ip.setIdentity();
+         colCorMatI = luColCorMat.solve(Ip);
+         SprMNI = tmbutils::kronecker(colCorMatI,SprI).sparseView(); // inverse of covariane
+       }else{
+         //prevent a bunch of operations inversion if we don't need them
+         //no column correlation matrix
+         SprMNI = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)),SprI).sparseView(); // inverse of covariane
+       }
         vector<Type> betarVec(p*nsp.sum());
         for (int j=0; j<p;j++){
           betarVec.segment(j*nsp.sum(), nsp.sum()) = Br.col(j);
-        }      
+        }
         nll += GMRF(SprMNI)(betarVec);
       }
     
