@@ -298,6 +298,10 @@ se.gllvm <- function(object, ...){
       
       if(!is.null(object$randomX)){
         nr <- ncol(xb)
+        if(length(se$sigmaB)>nr && !is.null(object$params$rho.sp)){
+            out$sd$rho.sp <- tail(se$sigmaB,1)*(-object$params$rho.sp*log(object$params$rho.sp))
+            se$sigmaB <- head(se$sigmaB, -1)
+        }
         out$sd$sigmaB <- se$sigmaB*c(sqrt(diag(object$params$sigmaB))); 
         names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
         if(nr>1){

@@ -2,7 +2,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
                                    offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, num.RR = 0, start.lvs = NULL, 
                                    seed = NULL,Power=NULL,starting.val="res",formula=NULL, lv.formula = NULL,
                                    jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
-                                   link = "probit", randomX = NULL, beta0com = FALSE, zeta.struc="species", maxit=4000,max.iter=4000, disp.group = NULL, randomB = FALSE, method="VA", Ntrials = 1) {
+                                   link = "probit", randomX = NULL, Ab.struct = "blockdiagonal", beta0com = FALSE, zeta.struc="species", maxit=4000,max.iter=4000, disp.group = NULL, randomB = FALSE, method="VA", Ntrials = 1) {
   
   if(!is.null(seed)) set.seed(seed)
   N <- n <- nrow(y); p = ncol(y); y = as.matrix(y)
@@ -159,8 +159,8 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
           fit.mva <- try(trait.TMB(y, X = X, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
           fit.mva$method = "VA"
           if(!is.null(randomX) && !inherits(fit.mva, "try-error") && is.finite(fit.mva$logL)) {
-            fit.mva <- trait.TMB(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, start.params = fit.mva, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials);
-          } else {fit.mva <- trait.TMB(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials);}
+            fit.mva <- trait.TMB(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, start.params = fit.mva, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct);
+          } else {fit.mva <- trait.TMB(y, X = X, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, seed=seed,n.init=1,starting.val="zero",yXT = yXT, row.eff = row.eff, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct);}
           fit.mva$coef=fit.mva$params
           if(row.eff=="random") { # !!!!  
             sigma=c(max(fit.mva$params$sigma[1],sigma),fit.mva$params$sigma[-1])
@@ -2559,9 +2559,9 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
   covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   if(random[4]>0) {
-    spArs <- matrix(diag(covbetar), ncol = p)
+    Ab <- matrix(diag(covbetar), ncol = p)
     
-    out$spArs <- spArs
+    out$Ab <- Ab
   }
   seb_lv <- diag(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   
@@ -2578,10 +2578,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   
   if(random[2]>0){
-    CovABerr<-array(0, c(p,ncol(xb),ncol(xb)))
-    for (i in 1:ncol(xb)) {
-      CovABerr[,i,i] <- seBr[1:p]; seBr<-seBr[-(1:p)]
-    }
+    CovABerr<-matrix(diag(seBr),ncol=p)
     out$Ab <- CovABerr
   }
   # if((num.RR+num.lv+num.lv.c)>0){
@@ -2736,8 +2733,8 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   
   n<-nrow(fit$y)
   p<-ncol(fit$y)
-  nr <- model$TMBfn$env$data$nr
-  nsp <- model$TMBfn$env$data$nsp
+  nr <- fit$TMBfn$env$data$nr
+  nsp <- fit$TMBfn$env$data$nsp
   num.lv <- fit$num.lv
   num.lv.c <- fit$num.lv.c
   num.RR <- fit$num.RR
@@ -2873,10 +2870,10 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   }
   
   #separate errors column effects
-  covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
-  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   if(fit$col.eff$col.eff == "random") {
-    out$spArs <- covbetar
+    covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
+    covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
+    out$Ab <- covbetar
   }
   #separate errors b_lv
   if(fit$randomB!=FALSE){
@@ -2888,15 +2885,11 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
   # separate errors AB
-  seAb <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
+  seAb <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
   covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
   
   if(!is.null(fit$randomX)){
-    CovABerr<-array(0, dim(fit$Ab))
-    for (i in 1:ncol(fit$Ab)) {
-      CovABerr[,i,i] <- seAb[1:p]; seAb<-seAb[-(1:p)]
-    }
-    out$Ab <- CovABerr
+    out$Ab <- seAb
   }
   
   if(!return.covb){

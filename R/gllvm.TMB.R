@@ -58,7 +58,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   }else{
     spdr <- as.matrix(spdr)
     nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
-    if(!is.null(colMat)){
+    if(!is.null(colMat)  && all(dim(colMat)!=1)){
       if(ncol(colMat)!=nrow(colMat)){
         stop("Matrix for column effects must be square.")
       }
@@ -70,7 +70,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         stop("Matrix for column effects is not positive definite.")
       }
     }else{
-      colMat <- as(diag(p),"TsparseMatrix")
+      colMat <- as(matrix(0),"TsparseMatrix")
     }
     if(is.null(cs)) cs <- matrix(0)
   }
@@ -2396,7 +2396,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   }}
                   }
                 spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
-                spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
+                spArs[[2]] <- cov2cor(spArs[[2]]%*%t(spArs[[2]]))
             }
           }else if(sp.Ar.struc == "unstructured"){
             spArs <- vector("list", 1)
@@ -2412,7 +2412,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                 }}
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
           }
-          out$spArs <- spArs
+          out$Ab <- spArs
         }
       }
       seed.best <- seed[n.i]

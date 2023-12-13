@@ -54,23 +54,29 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   if(object$method == "LA"){
     if(cov){
       if((num.lv+num.RR+num.lv.c)>0) out$lvs <- object$prediction.errors$lvs
-      if(object$row.eff == "random") out$row.effects <- object$prediction.errors$row.params
-      if(object$col.eff$col.eff == "random") out$col.eff <- object$prediction.errors$col.eff
+      if(object$row.eff == "random") out$row.effects <- lapply(object$prediction.errors$row.params,diag)
+      if(object$col.eff$col.eff == "random") {
+        out$Br <- object$prediction.errors$col.eff
+        row.names(out$Br) <- row.names(object$params$Br)
+        colnames(out$Br) <- colnames(object$y)
+      }
       if(object$randomB!=FALSE) out$b.lv <- object$prediction.errors$Ab.lv
       if(!is.null(object$randomX)){
         out$Br  <- object$prediction.errors$Br
+        row.names(out$Br) <- row.names(object$params$Br)
+        colnames(out$Br) <- colnames(object$y)
       }
     } else {
       if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
       if(object$row.eff == "random"){
         out$row.effects <- object$prediction.errors$row.params
-        for(re in 1:length(object$TMBfn$env$data$nr)){
-          out$row.effects[[re]] <- try(t(chol(out$row.effects[[re]])))
-        }
+        out$row.effects[[re]] <- lapply(out$row.effects,function(x)sqrt(diag(x)))
       }
       if(object$col.eff$col.eff=="random"){
-      out$col.eff <- object$prediction.errors$col.eff
-      out$col.eff <- sqrt(abs(out$col.eff))
+      out$Br <- object$prediction.errors$Br
+      out$Br <- sqrt(abs(out$Br))
+      row.names(out$Br) <- row.names(object$params$Br)
+      colnames(out$Br) <- colnames(object$y)
       }
       if(object$randomB!=FALSE) out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
       if(!is.null(object$randomX)){
@@ -105,21 +111,18 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       
       if(object$row.eff == "random"){
         for(re in 1:length(object$TMBfn$env$data$nr))
-        object$Ar[[re]]<-sdb$Ar[[re]]+object$Ar[[re]]
+        object$Ar[[re]]<-diag(sdb$Ar[[re]]+object$Ar[[re]])
       }
-      if(object$col.eff$col.eff == "random"){
-        if(object$col.eff$sp.Ar.struc %in% c("diagonal", "blockdiagonal")){
-          object$spArs <- matrix(diag(sdb$spArs+Matrix::bdiag(object$spArs)), ncol = p)
+      if(object$col.eff$col.eff == "random" | !is.null(object$randomX)){
+        if(object$col.eff$Ab.struct %in% c("diagonal", "blockdiagonal")){
+          object$Ab <- matrix(diag(sdb$Ab+Matrix::bdiag(object$Ab)), ncol = p)
         }else if(object$col.eff$sp.Ar.struc == "unstructured"){
-          object$spArs <- matrix(diag(sdb$spArs+object$spArs[[1]]), ncol = p)
+          object$Ab <- matrix(diag(sdb$Ab+object$Ab[[1]]), ncol = p)
         }else if(object$col.eff$sp.Ar.struc %in% c("MNdiagonal", "MNunstructured")){
-          object$spArs <- matrix(diag(sdb$spArs + kronecker(cov2cor(object$spArs[[2]]), object$spArs[[1]])), ncol = p)
+          object$Ab <- matrix(diag(sdb$Ab + kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])), ncol = p)
         }
       }
-      if(!is.null(object$randomX)){
-        object$Ab <- sdb$Ab+object$Ab
-      }
-      
+
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(num.RR>0&object$randomB!=FALSE){
         if(object$randomB=="P"|object$randomB=="single"){
@@ -166,7 +169,9 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       out$row.effects <- (object$Ar)
     }
     if(object$col.eff$col.eff=="random"){
-      out$col.eff <- object$spArs
+      out$Br <- object$Ab
+      row.names(out$Br) <- row.names(object$params$Br)
+      colnames(out$Br) <- colnames(object$y)
     }
 
     if(length(dim(object$A))==2){
@@ -181,6 +186,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     
     if(!is.null(object$randomX)){
       out$Br <- object$Ab
+      colnames(out$Br) <- colnames(object$y)
+      row.names(out$Br) <- row.names(object$params$Br)
     }
     
     if(object$randomB!=FALSE){
@@ -193,12 +200,12 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     if(object$row.eff=="random"){
       # r=1
       out$row.effects <- object$Ar
-      for(re in 1:length(object$TMBfn$env$data$nr)){
-        out$row.effects[[re]] <- try(t(chol(out$row.effects[[re]])))
-      }
+      out$row.effects <- lapply(out$row.effects, sqrt)
     }
     if(object$col.eff$col.eff == "random"){
-      out$col.eff <- sqrt(abs(object$spArs))
+      out$Br <- sqrt(abs(object$Ab))
+      row.names(out$Br) <- row.names(object$params$Br)
+      colnames(out$Br) <- colnames(object$y)
     }
 
     if(length(dim(object$A))==2&(num.lv+num.lv.c+num.RR)>0){
@@ -212,7 +219,9 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     }
     
     if(!is.null(object$randomX)){
-      out$Br <- sqrt(apply(object$Ab,1,diag))
+      out$Br <- sqrt(object$Ab)
+      colnames(out$Br) <- colnames(object$y)
+      row.names(out$Br) <- row.names(object$params$Br)
     }
     
     if(object$randomB!=FALSE){
