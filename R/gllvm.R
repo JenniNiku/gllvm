@@ -52,7 +52,7 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "unstructured", "diagonal", "blockdiagonal", "MNdiagonal", or "MNunstructured".}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -665,6 +665,24 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
     
+    # check if formula includes smooths
+    if(anySmooths(formula)){
+      # isolate the smooths
+      smooth.formula <- onlySmooths(formula)
+      # construct smooths
+      smooths <- formula2smooth(smooth.formula)
+      # get smooths' stuff
+      smoothDat <- getSmoothDat(smooths, X)
+      # add fixed effect terms to formula and X (need names)
+      
+      # smooth2random in formula
+      formula <- smooth2random(formula)
+      # 
+      # add grouping variables to "studyDesign"
+      
+      #and extract penalty matrices
+      col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
+    }
     # separate species random effects
     if(length(X)>0 & length(studyDesign)>0){
       X.col.eff <- cbind(X,studyDesign)
