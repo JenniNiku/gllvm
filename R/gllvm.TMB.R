@@ -2470,7 +2470,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     # we are in a triangular block
                     for(j2 in 1:(p-1)){ # column j2
                       for(j in (j2+1):p){ # row j
-                        if(ncol(LcolMat)!= p || LcolMat[j,j2]>0){
+                        if(ncol(LcolMat)!= p || LcolMat[j,j2]!=0){
                         spArs[[1]][j+(i-1)*p,j2+(d-1)*p] <- spAr[1]
                         spAr <- spAr[-1]
                         }
@@ -2479,6 +2479,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   }
                 }
               }
+            
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
             #reorder
             spArs[[1]] <- spArs[[1]][order(rep(1:p,times=sum(nsp))),order(rep(1:p,times=sum(nsp)))]

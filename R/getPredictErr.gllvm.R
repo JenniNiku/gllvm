@@ -118,9 +118,9 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           object$Ab <- matrix(diag(sdb$Ab+Matrix::bdiag(object$Ab)), ncol = p)
         }else if(object$col.eff$Ab.struct == "spblockdiagonal"){
           object$Ab <- matrix(diag(sdb$Ab+Matrix::bdiag(object$Ab)[order(rep(1:p,times=nrow(object$params$Br))),order(rep(1:p,times=nrow(object$params$Br)))]), ncol = p)
-        }else if(object$col.eff$sp.Ar.struc == "unstructured"){
+        }else if(object$col.eff$Ab.struct == "unstructured"){
           object$Ab <- matrix(diag(sdb$Ab+object$Ab[[1]]), ncol = p)
-        }else if(object$col.eff$sp.Ar.struc %in% c("MNdiagonal", "MNunstructured")){
+        }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
           object$Ab <- matrix(diag(sdb$Ab + kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])), ncol = p)
         }
       }
