@@ -1884,22 +1884,61 @@ trait.TMB <- function(
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
           }
-        }else if(Ab.struct == "unstructured"){
+        }else if(sp.Ar.struc == "unstructured"){
           Abs <- vector("list", 1)
           
-          Ar.sds <- exp((Ab)[1:(p*xdr)])
-          Ab <- Ab[-c(1:(p*xdr))]
-          Abs[[1]] <- diag(Ar.sds[1:(p*xdr)])
+          Ar.sds <- exp((Ab)[1:(p*ncol(xb))])
+          Ab <- Ab[-c(1:(p*ncol(xb)))]
+          Abs[[1]] <- diag(Ar.sds[1:(p*ncol(xb))])
           k=1;
-          for(d in 1:(p*xdr-1)){
-            for(r in (d+1):(p*xdr)){
-              Abs[[1]][r,d] = Ab[1];
-              Ab <- Ab[-1]
-            }}
+
+          for(i in 1:ncol(xb)){ # row block
+            for(d in 1:i){ # column block
+              if(d<i){
+                if(ncol(LcolMat)==p){
+                  # we are in a square (non symmetric) block
+                  for(j2 in 1:(p-1)){ # column j2
+                    for(j in (j2+1):p){ # row j
+                      if(LcolMat[j,j2]!=0){
+                        Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
+                        Ab <- Ab[-1]
+                        Abs[[1]][j2+(i-1)*p,j+(d-1)*p] <- Ab[1]
+                        Ab <- Ab[-1]
+                      }
+                    }
+                  }
+                  # diagonals
+                  for(j in 1:p){
+                    Abs[[1]][j+(i-1)*p,j+(d-1)*p] <- Ab[1]
+                    Ab <- Ab[-1]
+                  }
+                }else{
+                  for(j2 in 1:(p-1)){ # column j2
+                    for(j in (j2+1):p){ # row j
+                      Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
+                      Ab <- Ab[-1]
+                    }
+                  }
+                }
+              } else{
+                # we are in a triangular block
+                for(j2 in 1:(p-1)){ # column j2
+                  for(j in (j2+1):p){ # row j
+                    if(ncol(LcolMat)!= p || LcolMat[j,j2]>0){
+                      Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
+                      Ab <- Ab[-1]
+                    }
+                  }
+                }
+              }
+            }
+          }
           Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
+          #reorder
+          Abs[[1]] <- Abs[[1]][order(rep(1:p,times=ncol(xb))),order(rep(1:p,times=ncol(xb)))]
         }else if(Ab.struct == "spblockdiagonal"){
           Abs <- vector("list", 1)
-          for(d in 1:sum(nsp)){
+          for(d in 1:ncol(xb)){
             Ar.sds <- exp((Ab)[1:p])
             Ab <- Ab[-c(1:p)]
             Abs[[d]] <- diag(Ar.sds)

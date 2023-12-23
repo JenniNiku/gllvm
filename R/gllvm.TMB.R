@@ -2433,12 +2433,55 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             spAr <- spAr[-c(1:(p*sum(nsp)))]
             spArs[[1]] <- diag(Ar.sds[1:(p*sum(nsp))])
               k=1;
-              for(d in 1:(p*sum(nsp)-1)){
-                for(r in (d+1):(p*sum(nsp))){
-                  spArs[[1]][r,d] = spAr[1];
-                  spAr <- spAr[-1]
-                }}
+              # for(d in 1:(p*sum(nsp)-1)){
+              #   for(r in (d+1):(p*sum(nsp))){
+              #     spArs[[1]][r,d] = spAr[1];
+              #     spAr <- spAr[-1]
+              #   }}
+              for(i in 1:sum(nsp)){ # row block
+                for(d in 1:i){ # column block
+                  if(d<i){
+                    if(ncol(LcolMat)==p){
+                    # we are in a square (non symmetric) block
+                    for(j2 in 1:(p-1)){ # column j2
+                      for(j in (j2+1):p){ # row j
+                        if(LcolMat[j,j2]!=0){
+                        spArs[[1]][j+(i-1)*p,j2+(d-1)*p] <- spAr[1]
+                        spAr <- spAr[-1]
+                        spArs[[1]][j2+(i-1)*p,j+(d-1)*p] <- spAr[1]
+                        spAr <- spAr[-1]
+                        }
+                      }
+                    }
+                    # diagonals
+                    for(j in 1:p){
+                      spArs[[1]][j+(i-1)*p,j+(d-1)*p] <- spAr[1]
+                      spAr <- spAr[-1]
+                    }
+                    }else{
+                      for(j2 in 1:(p-1)){ # column j2
+                        for(j in (j2+1):p){ # row j
+                          spArs[[1]][j+(i-1)*p,j2+(d-1)*p] <- spAr[1]
+                          spAr <- spAr[-1]
+                        }
+                      }
+                    }
+                  } else{
+                    # we are in a triangular block
+                    for(j2 in 1:(p-1)){ # column j2
+                      for(j in (j2+1):p){ # row j
+                        if(ncol(LcolMat)!= p || LcolMat[j,j2]>0){
+                        spArs[[1]][j+(i-1)*p,j2+(d-1)*p] <- spAr[1]
+                        spAr <- spAr[-1]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
+            #reorder
+            spArs[[1]] <- spArs[[1]][order(rep(1:p,times=sum(nsp))),order(rep(1:p,times=sum(nsp)))]
           }else if(sp.Ar.struc == "spblockdiagonal"){
             spArs <- vector("list", 1)
             for(d in 1:sum(nsp)){
