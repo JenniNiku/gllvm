@@ -804,13 +804,21 @@ Type objective_function<Type>::operator() ()
           //   }
           // }
         } else if(Abb.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
-          matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
+          // matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
           // Ab.struct == "unstructured"
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
-          SArm.setZero();
+          // SArm.setZero();
+          Eigen::SparseMatrix<Type> SArm(p*nsp.sum(),p*nsp.sum()); // declares a column-major sparse matrix type of double
+          typedef Eigen::Triplet<Type> T;
+          std::vector<T> tripletList;
+          if(LcolMat.cols()==p){
+            tripletList.reserve(nsp.sum()*colMat.nonZeros());
+          }else{
+            tripletList.reserve(p*nsp.sum()*p*nsp.sum()); 
+          }
           for (int d=0; d<(p*nsp.sum()); d++){ // diagonals
-            SArm(d,d)=exp(Abb(sdcounter));
+            tripletList.push_back(T(d,d,exp(Abb(sdcounter))));
             sdcounter++;
           }
           int j, j2;
@@ -826,23 +834,23 @@ Type objective_function<Type>::operator() ()
                       // lower half in block
                       j=itx.row();
                       j2=itx.col();
-                      SArm(j+(d-1)*p,j2+(r-1)*p)=Abb(covscounter);
+                      tripletList.push_back(T(j+(d-1)*p,j2+(r-1)*p,Abb(covscounter)));
                       covscounter++;
                       //upper half in block
                       j2=itx.row();
                       j=itx.col();
-                      SArm(j+(d-1)*p,j2+(r-1)*p)=Abb(covscounter);
+                      tripletList.push_back(T(j+(d-1)*p,j2+(r-1)*p, Abb(covscounter)));
                       covscounter++;
                     }
                     //diagonals
                     for (int j=0; j<p; j++){
-                      SArm(j+(d-1)*p,j+(r-1)*p)=Abb(covscounter);
+                      tripletList.push_back(T(j+(d-1)*p,j+(r-1)*p,Abb(covscounter)));
                       covscounter++;
                     }
                 }else{
-                for (int j=1; j<(p+1); j++){
-                  for (int j2=1; j2<(p+1); j2++){
-                    SArm(j+(d-1)*p-1,j2+(r-1)*p-1)=Abb(covscounter);
+                for (int j2=1; j2<p; j2++){
+                  for (int j=(j2+1); j<(p+1); j++){
+                    tripletList.push_back(T(j+(d-1)*p-1,j2+(r-1)*p-1,Abb(covscounter)));
                     covscounter++;
                   }
               }
@@ -856,21 +864,25 @@ Type objective_function<Type>::operator() ()
                     {
                       j=itx.row();
                       j2=itx.col();
-                      SArm(j+(d-1)*p,j2+(r-1)*p)=Abb(covscounter);
+                      tripletList.push_back(T(j+(d-1)*p,j2+(r-1)*p,Abb(covscounter)));
                       covscounter++;
                     }
                 }else{
-                for (int j=2; j<(p+1); j++){
-                  for (int j2=1; j2<j; j2++){
-                    SArm(j+(d-1)*p-1,j2+(r-1)*p-1)=Abb(covscounter);
+                  for (int j2=1; j2<p; j2++){
+                    for (int j=(j2+1); j<(p+1); j++){
+                    tripletList.push_back(T(j+(d-1)*p-1,j2+(r-1)*p-1,Abb(covscounter)));
                     covscounter++;
                   }
                 }
                 }
               }
             }}
+          SArm.setFromTriplets(tripletList.begin(),tripletList.end());
 
           nll -= SArm.diagonal().array().log().sum();
+
+          SArm = SArm*SArm.transpose();
+          
           matrix<Type> SprMN(p*nsp.sum(),p*nsp.sum());
           matrix<Type> SprMNI(p*nsp.sum(),p*nsp.sum());
           if(colMat.cols()==p){
@@ -890,27 +902,25 @@ Type objective_function<Type>::operator() ()
           }
             matrix<Type> betarVec = atomic::vec2mat(atomic::mat2vec(matrix<Type>(Br.transpose())),1,p*nsp.sum(),0);
             //remaining likelihood terms
-            matrix<Type> SArmMat = SArm*SArm.transpose();
-            nll -= -0.5*((SprMNI*SArmMat).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
-            matrix<Type> SAp(nsp.sum(),nsp.sum());
+            nll -= -0.5*((SprMNI*SArm).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
+            // matrix<Type> SAp(nsp.sum(),nsp.sum());
+            //permutation vector
+            vector<int> permVec(p*nsp.sum());int count = 0;
             for (int j=0; j<p;j++){
-              // bit of a mess but need the d*d covariance matrix for each species
-              // not ideal, might have to do this differently..
               for (int d=0; d<nsp.sum(); d++){
-               SAp(d,d) = SArmMat(d*p+j,d*p+j);
-                for (int r=0; r<d; r++){
-                  // if(r!=d){
-                  SAp(d,r) = SArmMat(r*p+j,d*p+j); //these two entries should be the same..
-                  SAp(r,d) =  SAp(d,r);
-                  // SAp(r,d) = SArmMat(d*p+j,r*p+j);
-                  //}
-                }
+              permVec(count) = j+d*p;
+              count++;
               }
+            }
+            Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> permMat;
+            permMat.indices() = permVec;
+            SArm = SArm.twistedBy(permMat.transpose()); //Permute rows & columns to have in species order, instead of RE order
+            for (int j=0; j<p;j++){
               //consume smore memory for some reason, but is faster in n
-              cQ.col(j) += 0.5*((xb*SAp).cwiseProduct(xb)).rowwise().sum();
+              cQ.col(j) += 0.5*((xb*SArm.block(j*nsp.sum(),j*nsp.sum(),nsp.sum(),nsp.sum())).cwiseProduct(xb)).rowwise().sum();
               //kron(xb,I_p) A kron(xb,I_p)^t'
               // for (int i=0; i<n;i++){
-              // cQ(i,j) += 0.5*(xb.row(i)*SAp*xb.row(i).transpose()).sum();
+              // cQ(i,j) += 0.5*(xb.row(i)*A*xb.row(i).transpose()).sum();
               // }
             }
             
