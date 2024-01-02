@@ -1052,7 +1052,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     }
     resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
-  if(num.RR>0){
+  if(num.RR>0 && isFALSE(randomB)){
     
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
@@ -1093,6 +1093,11 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
     # RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
+  }else if(num.RR>0 && !isFALSE(randomB)){
+    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "iid", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+    RRcoef <- fit$params$LvXcoef
+    RRgamma <- fit$params$theta
+    eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
   }
   
   if((num.lv.c+num.RR)>0&num.lv>0){
@@ -3110,7 +3115,7 @@ RRse <- function(object){
         row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
         covLB <- t(covMat)
     }else{
-    if(object$randomB=="P"|object$randomB=="single"){
+    if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
       covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
     }else if(object$randomB=="LV"){
       covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))

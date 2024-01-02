@@ -6,6 +6,9 @@ Version 1.4.4
   * Can be plotted with "randomCoefPlot"
 * Added possibility to Phylogenetically structure the random species effects
   * Phylogenetic signal parameter is included as object$params$rho.sp
+* num.RR and num.lv.c can now be larger than the number of predictors if randomB!=FALSE
+* Added "iid" option for "randomB"
+* Added a "getEnvironCov" function to extract species associations due to random covariate effects
 
 Version 1.4.3
 ==============

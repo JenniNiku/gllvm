@@ -402,7 +402,7 @@ se.gllvm <- function(object, ...){
     # because of constrained objective function
     # assumes L(x) = f(x) + lambda*c(x) for constraint function c(x)
     # though this is not (exactly) how we are fitting the model.
-    if((object$num.RR+object$num.lv.c)>1 && object$randomB==FALSE){
+    if((object$num.RR+object$num.lv.c)>1 && isFALSE(object$randomB)){
       b_lvHE <- sdr[names(pars)=="b_lv",names(pars)=="b_lv"]
       Lmult <- lambda(pars,objrFinal) #estimates  lagranian multiplier
       sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(object$lv.X), d = object$num.lv.c+object$num.RR)
@@ -426,10 +426,10 @@ se.gllvm <- function(object, ...){
     if((num.lv.c+num.RR)==0){
       incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
-    }else if((num.lv.c+num.RR)>0&object$randomB==FALSE){
+    }else if((num.lv.c+num.RR)>0&isFALSE(object$randomB)){
       incl[names(objrFinal$par)=="b_lv"] <- TRUE
       incl[names(objrFinal$par)=="sigmab_lv"] <- FALSE
-    }else if((num.lv.c+num.RR>0)&object$randomB!=FALSE){
+    }else if((num.lv.c+num.RR>0)&!isFALSE(object$randomB)){
       incl[names(objrFinal$par)=="b_lv"] <- FALSE
       
       inclr[names(objrFinal$par)=="b_lv"] <- TRUE
@@ -437,7 +437,7 @@ se.gllvm <- function(object, ...){
       
       incld[names(objrFinal$par)=="Ab_lv"] <- TRUE
       
-      incl[names(objrFinal$par)=="sigmab_lv"] <- TRUE
+      if(object$randomB!="iid")incl[names(objrFinal$par)=="sigmab_lv"] <- TRUE
     }
     
     #loadings for quadratic models
@@ -474,7 +474,7 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="sigmaB"] <- FALSE
     }
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && object$randomB==FALSE) && object$col.eff$col.eff!="random"){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
@@ -501,7 +501,7 @@ se.gllvm <- function(object, ...){
           
           prediction.errors$lvs <- cov.lvs
           #sd.random <- sd.random[-(1:(n*num.lv))]
-          if(object$randomB!=FALSE){
+          if(!isFALSE(object$randomB)){
             prediction.errors$Ab.lv <- sd.random$Ab_lv
           }
         }
@@ -567,7 +567,7 @@ se.gllvm <- function(object, ...){
 
 
 
-    if((num.lv.c+num.RR)>0&object$randomB==FALSE){
+    if((num.lv.c+num.RR)>0&isFALSE(object$randomB)){
       se.LvXcoef <- matrix(se$b_lv,ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
       colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
       row.names(se.LvXcoef) <- colnames(lv.X)
@@ -706,9 +706,11 @@ se.gllvm <- function(object, ...){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
     }
-    if((object$randomB!=FALSE)&(num.lv.c+num.RR)>0){
+    if(!isFALSE(object$randomB)&(num.lv.c+num.RR)>0){
+      if(object$randomB!="iid"){
       se.lsigmab.lv <-  se$sigmab_lv;
       out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
+      }
       if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
       if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X)
       # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")

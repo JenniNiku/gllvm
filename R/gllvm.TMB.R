@@ -330,7 +330,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }else if(quadratic==FALSE){
           lambda2 <- 0
         }
-        if(randomB!=FALSE){
+        if(randomB!=FALSE & randomB!="iid"){
           sigmab_lv <- fit$sigmab_lv
         }
         
@@ -407,9 +407,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }else if(quadratic == FALSE){
           lambda2 <- 0
         }
-        if(start.params$randomB!=FALSE && randomB !=FALSE){
+        if(start.params$randomB!=FALSE && randomB !=FALSE && randomB!="iid"){
           sigmab_lv <- start.params$sigmaLvXcoef
-        }else if(randomB!=FALSE){
+        }else if(randomB!=FALSE && randomB!="iid"){
           sigmab_lv <- fit$sigmab_lv
         }
         if((start.params$num.lv.c+start.params$num.RR)==0){
@@ -586,6 +586,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(col.eff==FALSE) {map.list$Br <- factor(NA);map.list$sigmaB <- factor(NA); map.list$Abb <- factor(NA);}
     if(randomB==FALSE){
       map.list$sigmab_lv <- factor(NA)
+    }else if(randomB=="iid"){
+      map.list$sigmab_lv <- factor(NA)
+      sigmab_lv <- 0
     }
     
     if(family %in% c("poisson","binomial","ordinal","exponential")){
@@ -629,7 +632,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(row.eff=="fixed"){xr <- matrix(1,1,p)} else {xr <- matrix(0,1,p)}
     if(randomB!=FALSE){
       randoml[3]<-1
-    }else{
+    }
+    if(isFALSE(randomB) | randomB=="iid"){
       sigmab_lv <- 0
     }
     if(!is.null(X)){Xd <- cbind(1,X)} else {Xd <- matrix(1,n)}
@@ -686,7 +690,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     
     ### VA method, used only if there is some random effects/LVs in the model
     
-    if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random" || (randomB!=FALSE) || col.eff == "random")) ){
+    if(((method %in% c("VA", "EVA")) && (nlvr>0 || row.eff == "random" || !isFALSE(randomB) || col.eff == "random")) ){
       
       # Variational covariances for latent variables
       if((num.lv+num.lv.c)>0){
@@ -787,15 +791,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       # Variational covariances for random slopes of const. ord.
-      if((num.RR+num.lv.c)>0&(randomB!=FALSE)){
-        if(randomB=="P"|randomB=="single"){
+      if((num.RR+num.lv.c)>0&!isFALSE(randomB)){
+        if(randomB=="P"|randomB=="single"|randomB=="iid"){
           ab12 <- num.RR+num.lv.c
           ab3 <- ncol(lv.X)
         }else{
           ab12 <- ncol(lv.X)
           ab3 <- num.RR+num.lv.c
         }
-        if(is.null(start.params) || start.params$method=="LA" || start.params$randomB==FALSE){
+        if(is.null(start.params) || start.params$method=="LA" || isFALSE(start.params$randomB)){
           if(Lambda.struc=="diagonal" || diag.iter>0){
             Ab_lv <- log(rep(Lambda.start[1],ab12*ab3)) #1/2, 1
           } else{
@@ -1034,7 +1038,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         DLL = "gllvm")##GLLVM
       
       #### Fit model 
-      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
+      if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
@@ -1089,8 +1093,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         nam <- names(param1)
         if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
         b1 <- matrix(param1[nam=="b"],num.X+1,p)
-        if(randomB!=FALSE){
-          sigmab_lv1 <- param1[nam=="sigmab_lv"]
+        if(!isFALSE(randomB)){
+          if(randomB!="iid"){
+            sigmab_lv1 <- param1[nam=="sigmab_lv"]
+          }else{
+            sigmab_lv1 <- 0
+          }
           Ab_lv1<- c(pmax(param1[nam=="Ab_lv"],rep(log(1e-6), ab12*ab3)), rep(0.01,ab12*(ab12-1)/2*ab3))
         }else{
           sigmab_lv1<-0
@@ -1209,7 +1217,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           parameters = parameter.list, map = map.list,
           DLL = "gllvm")
         
-        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
+        if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
             timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
           }
@@ -1307,7 +1315,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       if((num.lv.c+num.RR)>0){
         bi.lv <- names(param)=="b_lv"
-        if(randomB!=FALSE)sib <- names(param)=="sigmab_lv"
+        if(!isFALSE(randomB))sib <- names(param)=="sigmab_lv"
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
@@ -1423,10 +1431,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       #   bHi <- names(param)=="bH"
       #   betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
       # }
-      if((randomB!=FALSE)&(num.lv.c+num.RR)>0)sigmab_lv <- exp(param[sib])
+      if(!isFALSE(randomB)&(num.lv.c+num.RR)>0&randomB!="iid")sigmab_lv <- exp(param[sib])
       new.loglik <- objr$env$value.best[1]
       
-    } else if(method=="LA" || (nlvr==0 && (method %in% c("VA", "EVA")) && row.eff!="random" && (randomB==FALSE) && col.eff == FALSE)){
+    } else if(method=="LA" || (nlvr==0 && (method %in% c("VA", "EVA")) && row.eff!="random" && isFALSE(randomB) && isFALSE(col.eff))){
       ## Laplace method / nlvr==0
       if(!is.null(X)){Xd=cbind(1,X)} else {Xd=matrix(1,n)}
       ### Family settings
@@ -1572,10 +1580,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         randomp <- c(randomp,"Br")
       }
       
-      if(randomB!=FALSE){
+      if(!isFALSE(randomB)){
         randoml[3] <- 1
         randomp <- c(randomp, "b_lv")
-      }else{
+      }
+      if(isFALSE(randomB)|randomB=="iid"){
         sigmab_lv <- 0
       }
       
@@ -1602,7 +1611,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       #   low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
       #   timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
       # }
-      if((num.lv.c+num.RR)<=1|randomB!=FALSE){
+      if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
         }
@@ -1658,9 +1667,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         lambda <- objr$env$last.par.best[names(objr$env$last.par.best)=="lambda"]
         lambda2 <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="lambda2"],ncol=num.RR,nrow=p,byrow=T)
         b.lv <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="b_lv"],ncol=num.RR,nrow=ncol(lv.X))
-        if(randomB!=FALSE){
+        if(!isFALSE(randomB) & randomB!="iid"){
           sigmab_lv <- objr$env$last.par.best[names(objr$env$last.par.best)=="sigmab_lv"]
-        }else{
+        }else if(isFALSE(randomB)|randomB=="iid"){
           sigmab_lv <- 0
         }
         b <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="b"],num.X+1,p)
@@ -1676,7 +1685,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")
         
-        if((num.lv.c+num.RR)<=1|randomB!=FALSE){
+        if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
             timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
           }
@@ -1730,7 +1739,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       param <- objr$env$last.par.best
       if((num.lv.c+num.RR)>0){
         bi.lv <- names(param)=="b_lv"
-        if(randomB!=FALSE)sib <- names(param)=="sigmab_lv"
+        if(!isFALSE(randomB) & randomB!="iid")sib <- names(param)=="sigmab_lv"
       }
       bi <- names(param)=="b"
       li <- names(param)=="lambda"
@@ -1845,7 +1854,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(!is.null(X)) betas=betaM[,-1]
       if((num.lv.c+num.RR)>0){
         b.lv <- matrix(param[bi.lv],ncol(lv.X),(num.lv.c+num.RR))
-        if(randomB!=FALSE)sigmab_lv <- exp(param[sib])
+        if(!isFALSE(randomB) & randomB!="iid")sigmab_lv <- exp(param[sib])
       }
       
       new.loglik <- objr$env$value.best[1]
@@ -1940,8 +1949,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           out$params$LvXcoef <- b.lv
           colnames(out$params$LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
           row.names(out$params$LvXcoef) <- colnames(lv.X)
-          if(randomB!=FALSE){
-            out$params$sigmaLvXcoef <- sigmab_lv
+          if(!isFALSE(randomB)){
+            if(randomB!="iid"){out$params$sigmaLvXcoef <- sigmab_lv}else{out$params$sigmaLvXcoef <- 1}
             if(randomB=="LV")names(out$params$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
             if(randomB=="P")names(out$params$sigmaLvXcoef) <- colnames(lv.X)
             # if(randomB=="all")names(out$params$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
@@ -2309,7 +2318,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         
         # For random slopes constr. ord.
-        if((num.RR+num.lv.c)>0&(randomB!=FALSE)){
+        if((num.RR+num.lv.c)>0&!isFALSE(randomB)){
           param <- objr$env$last.par.best
           AB_lv <- array(0, dim=c(ab3, ab12, ab12))
           

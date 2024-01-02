@@ -22,7 +22,7 @@
 #' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}.
 #' @param colMat matrix of similarity for the column effects, such as from a Phylogeny. Must be positive definite.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
-#' @param randomB either \code{FALSE}(default), "LV", "P", or "single". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
+#' @param randomB either \code{FALSE}(default), "LV", "P", "single", or "iid". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param Ntrials number of trials for binomial family.
@@ -438,8 +438,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     randomB <- FALSE
   }
 
-  if(!randomB%in%c(FALSE,"single","P","LV")){
-    stop("RandomB should be one of FALSE, 'single', 'P', or 'LV'")
+  if(!randomB%in%c(FALSE,"single","P","LV","iid")){
+    stop("RandomB should be one of FALSE, 'single', 'P', 'LV', or 'iid'.")
   }
   
   if(is.null(num.lv)&num.lv.c==0&num.RR==0){
@@ -917,11 +917,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #check for redundant predictors
     
     if(!is.null(lv.X)){
-      if((num.RR+num.lv.c)>ncol(lv.X)){
+      if((num.RR+num.lv.c)>ncol(lv.X) && isFALSE(randomB)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
       }
-      if((num.RR+num.lv.c)>=p){
-        stop("num.RR and num.lv.c should be less than the number of species.")
+      if((num.RR+num.lv.c)>p){
+        stop("num.RR and num.lv.c should be less than, or equal to, the number of species.")
       }
       #check for redundant predictors
       QR<-qr(lv.X)
