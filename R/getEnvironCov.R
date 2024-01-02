@@ -124,13 +124,14 @@ return(out)
 }
 
 #'@export getEnvironCor
-getEnvironCov <- function(object, ...)
+getEnvironCor <- function(object, ...)
 {
   UseMethod(generic = "getEnvironCor")
 }
 
+#'@export
 #'@export getEnvironCor.gllvm
-getEnvironCov <- function(object, ...)
+getEnvironCor.gllvm <- function(object, ...)
 {
   cov2cor(getEnvironCov.gllvm(object)$cov)
 }
