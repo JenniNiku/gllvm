@@ -7,12 +7,21 @@
 \alias{gllvm}
 \title{Extract species covariances due to environmental random effects from gllvm object}
 \usage{
-\method{getEnvironCov}{gllvm}(object)
+\method{getEnvironCov}{gllvm}(object, x.randomB = NULL)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
+\item{x.randomB}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.}
+
 \item{...}{not used}
+}
+\value{
+Function returns the following components:
+ \item{cov}{species covariances due to covariates}
+ \item{trace.randomB}{ trace of the covariance matrix due to random canonical coefficients}
+ \item{trace.randomB.quad}{ trace of the covariance matrix components due to squared model terms}
+ \item{trace.col.eff}{ trace of the covariance matrix due to random column (species) effects}
 }
 \description{
 Calculates the species environment covariance matrix for a gllvm object.
@@ -38,14 +47,15 @@ where \Theta is the matrix of loadings, and S the (diagonal) covariance matrix f
 with I_d an identity matrix for the number of constrained and informed latent variables, and \sigma_k^2 the variance per predictor for the canonical coefficients.
 }
 \examples{
-# Extract subset of the microbial data to be used as an example
-data(microbialdata)
-y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
-                     decreasing = TRUE)[21:40]]
-fit <- gllvm(y, family = poisson())
-fit$logL
-cr <- getResidualCor(fit)
-
+\dontrun{
+# Example with the spider dataset
+data(spider)
+fit <- gllvm(spider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
+envcov <- getEnvironCov(fit)
+envcov$trace.randomB
+# As proportion of variance in the model
+envcov$trace.randomB/sum(envcov$trace.randomB)
+}
 }
 \seealso{
 \code{\link{getEnvironCor}} ,\code{\link{getResidualCov.gllvm}}, \code{\link{getResidualCor.gllvm}},.
