@@ -431,7 +431,7 @@ Type objective_function<Type>::operator() ()
       if(quadratic<1){
         eta += x_lv*b_lv*RRgamma;//for the quadratic model this component is added below
         
-      }if(quadratic>0){
+      }else if(quadratic>0){
         //now rebuild A and u with covariances for random slopes so that existing infrastructure below can be used
         //in essence, q(XBsigmab_lv + eDelta) ~ N(uDelta + \sum \limits^K X_ik b_lv_k , Delta A Delta + \sum \limits^K X_ik^2 AB_lv_k )
         //so build u and A accordingly (and note covariance due to Bs if num_lv_c and num_RR > 0)
