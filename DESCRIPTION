@@ -23,7 +23,7 @@ LazyData: true
 LinkingTo: TMB, RcppEigen
 RoxygenNote: 7.2.3
 NeedsCompilation: yes
-URL: https://github.com/JenniNiku/gllvm
+URL: https://jenniniku.github.io/gllvm/, https://github.com/JenniNiku/gllvm
 BugReports: https://github.com/JenniNiku/gllvm/issues
 Suggests: 
     knitr,
