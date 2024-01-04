@@ -1128,6 +1128,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         out$link <- "probit"
     }
     if (family %in% c("beta","betaH","orderedBeta")) {
+      if(family=="beta" && any(range(y)==0|range(y)>1)){
+        stop("Data must be in the range 0-1 for the beta distribution.")
+      }
         out$link <- link
     }
 
