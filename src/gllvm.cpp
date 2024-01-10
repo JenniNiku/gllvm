@@ -2171,7 +2171,7 @@ Type objective_function<Type>::operator() ()
          //no column correlation matrix
          SprMNI = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)),SprI).sparseView(); // inverse of covariane
        }
-       matrix<Type> betarVec = atomic::vec2mat(atomic::mat2vec(Br),1,p*nsp.sum(),0);
+       vector<Type> betarVec = atomic::mat2vec(Br);
        
         nll += GMRF(SprMNI)(betarVec);
       }
