@@ -283,16 +283,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, nsp = nsp, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
   #if (n.init > 1)
-  if(col.eff == "random"){
-    newSpdr <- spdr
-    colnames(newSpdr) <- make.unique(colnames(spdr))
-    Xnew <- Xorig
-    Xnew <- cbind(Xnew,newSpdr)
-    formula2 <- update(as.formula(formula), formula(paste0("~.+",paste0(colnames(newSpdr),collapse="+"))))
-  }else{
-    Xnew <- Xorig
-    formula2 <- formula
-  }
   # n.init model fits
   while(n.i <= n.init){
     
@@ -300,7 +290,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       cat("Initial run ", n.i, "\n")
     
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = Xnew, formula = formula2, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
+    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
     
     if(is.null(fit$Power) && family == "tweedie")fit$Power=1.1
     if(family=="tweedie"){
@@ -367,17 +357,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       if(col.eff == "random"){
-        Br <- t(fit$params[,-c(1:(length(all.vars(formula))+1)),drop=F][,1:ncol(spdr),drop=F])
-        row.names(Br) <- colnames(spdr)
-        BrVec <- c(Br)
-        BrVec <- setNames(BrVec,rep(colnames(spdr),times=p))
-        sigmaB <- log(aggregate(BrVec, by = list(names(BrVec)), FUN = sd)[,2])
-        if(ncol(cs)==2){
-          BrCov <- cov(t(Br))
-          sigmaB <- c(sigmaB,BrCov[cs])
-        }
-        # rho.sp
-        if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, 1)
+      bstart <- start.values.randomX(y, as.matrix(spdr), family, formula=formula(paste0("~",paste0(make.unique(colnames(spdr)),collapse="+"))), starting.val = randomX.start, Power = Power, link = link)
+      Br <- bstart$Br
+      sigmaB <- log(sqrt(diag(bstart$sigmaB)))
+      # colMat signal strength
+      if(!is.null(colMat))sigmaB <- c(sigmaB,1)
+      if(ncol(cs)==2){
+        sigmaB <- c(sigmaB,bstart$sigmaB[cs])
+      }
       }
       row.params <- NULL
       
@@ -2110,7 +2097,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         row.names(Br) <- colnames(spdr)
         if(!is.null(colnames(y))) colnames(Br) <- colnames(y)
         out$params$Br <- Br
-        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)]^2)
+        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)]^2, nrow = length(rep(1:length(sigma.sp),nsp)), ncol = length(rep(1:length(sigma.sp),nsp)))
         if(any(colMat[row(colMat)!=col(colMat)]!=0))out$params$rho.sp <- rho.sp
         if(ncol(cs)==2){
           out$params$sigmaB[cs] <- out$params$sigmaB[cs[,c(2,1),drop=F]] <- covsigma.sp
