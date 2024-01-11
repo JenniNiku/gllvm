@@ -43,6 +43,7 @@ logLik.gllvm <- function(object, ...)
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
+    object$params$sigmaB <- unique(object$params$sigmaB[object$params$sigmaB!=0])
   }
   if(object$randomB!=FALSE){
     object$params$LvXcoef <- NULL
