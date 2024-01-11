@@ -717,7 +717,7 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[c(1:length(object$col.eff$nsp))]
+      sigma.sp <- 2*diag(object$params$sigmaB)*rep(se$sigmaB[1:length(object$col.eff$nsp)],object$col.eff$nsp)
       covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
       if(!is.null(object$params$rho.sp)){
         out$sd$rho.sp <- tail(covsigma.sp,1)*(-object$params$rho.sp*log(object$params$rho.sp))
