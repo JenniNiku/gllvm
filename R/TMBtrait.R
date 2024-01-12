@@ -1126,6 +1126,8 @@ trait.TMB <- function(
           }else{
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
           }
+        }else{
+          Abb <- log(exp(param1[nam=="Abb"])+1e-3)
         }
       } else {
         Br1 <- Br

@@ -4,7 +4,7 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
-                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal", row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), reltol = 1e-8, reltol.c = 1e-8,
+                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal", row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
                       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, spdr = NULL, cs = NULL, dr=NULL, dLV=NULL, cstruc = "diag", cstruclv = "diag", dist =list(matrix(0)), distLV = matrix(0),
                       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
@@ -64,8 +64,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(ncol(colMat)!=p){
         stop("Matrix for column effects is of incorrect size.")
       }
-      colMat <- as(try(cov2cor(colMat),silent = TRUE),"TsparseMatrix")
-      LcolMat <- try(t(chol(colMat)),silent=T)
+      colMat <- try(as(cov2cor(colMat),"TsparseMatrix"),silent = TRUE)
+      LcolMat <- try(as(t(chol(colMat)),"TsparseMatrix"), silent = TRUE)
       if(inherits(LcolMat,"try-error")){
         stop("Matrix for column effects is not positive definite.")
       }
@@ -360,11 +360,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       bstart <- start.values.randomX(y, as.matrix(spdr), family, formula=formula(paste0("~",paste0(make.unique(colnames(spdr)),collapse="+"))), starting.val = randomX.start, Power = Power, link = link)
       Br <- bstart$Br
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
-      # colMat signal strength
-      if(!is.null(colMat))sigmaB <- c(sigmaB,1)
       if(ncol(cs)==2){
         sigmaB <- c(sigmaB,bstart$sigmaB[cs])
       }
+      # colMat signal strength
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, 1)
+      }else{
+        sigmaB <- 0;Br <- matrix(0)
       }
       row.params <- NULL
       
@@ -1112,6 +1114,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }else if(sp.Ar.struc == "spblockdiagonal"){
               spAr1<- log(exp(param1[nam=="Abb"][1:(p*sum(nsp))])+1e-3)
               spAr1 <-  c(spAr1, rep(1e-3, sum(nsp)*p*(p-1)/2))
+          }else{
+            spAr1 <- log(exp(param1[nam=="Abb"])+1e-3)
           }
         }else{
           Br1 <- matrix(0)

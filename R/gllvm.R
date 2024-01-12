@@ -1337,7 +1337,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc, sp.Ar.struc = Ab.struct,
             row.eff = row.eff,
-            col.eff = col.eff, colMat = colMat,
+            col.eff = col.eff, colMat = colMat, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
             seed = seed,
