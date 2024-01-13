@@ -345,15 +345,17 @@ trait.TMB <- function(
           stop("Matrix for column effects is not positive definite.")
         }
         diag(LcolMat)<-0
+        LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)
         rhoSP <- TRUE
       }else{
-        LcolMat <- colMat <- as(matrix(0),"TsparseMatrix")
+        colMat <- as(matrix(0),"TsparseMatrix")
+        LcolMatIdx <- matrix(0)
         rhoSP <- FALSE
       }
     } else {
       xb <- Br <- matrix(0); sigmaB <- 1; sigmaij <- 0; Abb <- 0 
-      colMat <- cs <- matrix(0)
-      LcolMat <- colMat <- as(colMat, "TsparseMatrix")
+      LcolMatIdx <- colMat <- cs <- matrix(0)
+      colMat <- as(colMat, "TsparseMatrix")
       rhoSP <- FALSE
       
     }
@@ -1020,7 +1022,7 @@ trait.TMB <- function(
       parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
 
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMat = LcolMat, nsp = rep(1,ncol(xb)), cs = matrix(0)), silent=!trace,
+        data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMatIdx = LcolMatIdx, nsp = rep(1,ncol(xb)), cs = matrix(0)), silent=!trace,
         parameters = parameter.list, map = map.list2,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
@@ -1045,7 +1047,7 @@ trait.TMB <- function(
     if( (method %in% c("VA", "EVA")) && (num.lv>0 || row.eff=="random" || !is.null(randomX) || (family =="orderedBeta")) ){
       parameter.list <- list(r0=matrix(r0), b = rbind(a),  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMat = LcolMat, nsp = rep(1,ncol(xb)), cs = matrix(0)), silent=!trace,
+        data = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMatIdx = LcolMatIdx, nsp = rep(1,ncol(xb)), cs = matrix(0)), silent=!trace,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
@@ -1055,7 +1057,7 @@ trait.TMB <- function(
       map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
       
       parameter.list = list(r0=matrix(r0), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMat = LcolMat, nsp = rep(1,ncol(xb)), cs = matrix(0))
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMatIdx = LcolMatIdx, nsp = rep(1,ncol(xb)), cs = matrix(0))
 
       if(family == "ordinal"){
         data.list$method = 0
@@ -1211,7 +1213,7 @@ trait.TMB <- function(
       }
       parameter.list <- list(r0=r1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMat = LcolMat, nsp = rep(1,ncol(xb)), cs = matrix(0))
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMatIdx = LcolMatIdx, nsp = rep(1,ncol(xb)), cs = matrix(0))
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -1298,7 +1300,7 @@ trait.TMB <- function(
       
         parameter.list = list(r0=r1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br=Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLv, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMat = LcolMat, nsp = rep(1,ncol(xb)), cs = matrix(0))
+      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, dLV = dLV, offset=offset, nr = nr, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLv, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMat = colMat,  LcolMatIdx = LcolMatIdx, nsp = rep(1,ncol(xb)), cs = matrix(0))
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -1873,13 +1875,15 @@ trait.TMB <- function(
                 }}
               }else{
                 #only VA covariances for non-zeros
-                for(d in 1:(p-1)){
-                  for(r in (d+1):p){
-                    if(LcolMat[r,d]!=0){
-                      Abs[[2]][r,d] = Ab[1];
-                      Ab <- Ab[-1]
-                    }
-                  }}
+                # for(d in 1:(p-1)){
+                #   for(r in (d+1):p){
+                #     if(LcolMat[r,d]!=0){
+                #       Abs[[2]][r,d] = Ab[1];
+                #       Ab <- Ab[-1]
+                #     }
+                #   }}
+                Abs[[2]][LcolMatIdx] <- Ab[1:nrow(LcolMatIdx)]
+                
               }
               
             }
@@ -1897,17 +1901,13 @@ trait.TMB <- function(
           for(i in 1:ncol(xb)){ # row block
             for(d in 1:i){ # column block
               if(d<i){
-                if(ncol(LcolMat)==p){
+                if(ncol(colMat)==p){
                   # we are in a square (non symmetric) block
-                  for(j2 in 1:(p-1)){ # column j2
-                    for(j in (j2+1):p){ # row j
-                      if(LcolMat[j,j2]!=0){
-                        Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
-                        Ab <- Ab[-1]
-                        Abs[[1]][j2+(i-1)*p,j+(d-1)*p] <- Ab[1]
-                        Ab <- Ab[-1]
-                      }
-                    }
+                  for(j in 1:nrow(LcolMatIdx)){
+                    Abs[[1]][LcolMatIdx[j,1]+(i-1)*p,LcolMatIdx[j,2]+(d-1)*p] <- Ab[1]
+                    Ab <- Ab[-1]
+                    Abs[[1]][LcolMatIdx[j,2]+(i-1)*p,LcolMatIdx[j,1]+(d-1)*p] <- Ab[1]
+                    Ab <- Ab[-1]
                   }
                   # diagonals
                   for(j in 1:p){
@@ -1924,12 +1924,17 @@ trait.TMB <- function(
                 }
               } else{
                 # we are in a triangular block
-                for(j2 in 1:(p-1)){ # column j2
-                  for(j in (j2+1):p){ # row j
-                    if(ncol(LcolMat)!= p || LcolMat[j,j2]>0){
+                if(ncol(colMat)!=p){
+                  for(j2 in 1:(p-1)){ # column j2
+                    for(j in (j2+1):p){ # row j
                       Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
                       Ab <- Ab[-1]
                     }
+                  }
+                }else{
+                  for(j in 1:nrow(LcolMatIdx)){
+                    Abs[[1]][LcolMatIdx[j,1]+(i-1)*p,LcolMatIdx[j,2]+(d-1)*p] <- Ab[1]
+                    Ab <- Ab[-1]
                   }
                 }
               }
@@ -1947,12 +1952,16 @@ trait.TMB <- function(
           }
           k=1;
           for(d in 1:ncol(xb)){
+            if(ncol(colMat)!=p){
             for(j in 1:(p-1)){
               for(r in (j+1):p){
-                if(ncol(LcolMat)!=p || LcolMat[r,j]!=0){
                 Abs[[d]][r,j] = Ab[1];
                 Ab <- Ab[-1]
-              }}}
+              }}
+            }else{
+              Abs[[d]][LcolMatIdx] <- Ab[1:nrow(LcolMatIdx)]
+              Ab <- Ab[-c(1:nrow(LcolMatIdx))]
+            }
             Abs[[d]] <- Abs[[d]]%*%t(Abs[[d]])
           }
         }
