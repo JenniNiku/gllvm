@@ -823,16 +823,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           spAr <- rep(log(Lambda.start[2]), p+sum(nsp))
           if(sp.Ar.struc == "MNunstructured" && diag.iter == 0){
             # if(ncol(colMat)!=p){
-              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, p*(p-1)/2)))
+              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
             # }else{
             #   #only VA covariances for nonzeros in colMat
             #   spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, sum(colMat[lower.tri(colMat)]>0))))
             # }
           }
         }else if(sp.Ar.struc == "unstructured"){
-          spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, p*sum(nsp)*(p*sum(nsp)-1)/2))
+          spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, (ncol(LcolMatIdx)<2)*p*sum(nsp)*(p*sum(nsp)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*sum(nsp)+(nrow(LcolMatIdx)*2+p)*(sum(nsp)*(sum(nsp)-1)/2))))
         }else if(sp.Ar.struc == "spblockdiagonal"){
-          spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(nsp)*p*(p-1)/2))
+          spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, (ncol(LcolMatIdx)<2)*sum(nsp)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)))
         }
       } else {spAr <- 0}
       
@@ -1106,17 +1106,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }else if(sp.Ar.struc == "MNunstructured"){
             spAr1<- log(exp(param1[nam=="Abb"][1:(p+sum(nsp))])+1e-3)
             # if(ncol(colMat)!=p){
-              spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, p*(p-1)/2)))
+              spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
             # }else{
             #   #only VA covariances for nonzeros in colMat
             #   spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, sum(LcolMat[lower.tri(LcolMat,diag = FALSE)]>0))))
             # }          
             }else if(sp.Ar.struc == "unstructured"){
             spAr1<- log(exp(param1[nam=="Abb"][1:(p*sum(nsp))])+1e-3)
-            spAr1<-c(spAr1,(rep(1e-3, p*sum(nsp)*(p*sum(nsp)-1)/2)))
+            spAr1<-c(spAr1,(rep(1e-3, (ncol(LcolMatIdx)<2)*p*sum(nsp)*(p*sum(nsp)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*sum(nsp)+(nrow(LcolMatIdx)*2+p)*(sum(nsp)*(sum(nsp)-1)/2)))))
             }else if(sp.Ar.struc == "spblockdiagonal"){
               spAr1<- log(exp(param1[nam=="Abb"][1:(p*sum(nsp))])+1e-3)
-              spAr1 <-  c(spAr1, rep(1e-3, sum(nsp)*p*(p-1)/2))
+              spAr1 <-  c(spAr1,rep(1e-3, (ncol(LcolMatIdx)<2)*sum(nsp)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)))
           }else{
             spAr1 <- log(exp(param1[nam=="Abb"])+1e-3)
           }

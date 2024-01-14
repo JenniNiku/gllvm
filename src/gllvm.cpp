@@ -652,7 +652,7 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*(xb.row(i)*SArm(j)*SArm(j).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
+        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == ((p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)|(p+nsp.sum()+LcolMatIdx.rows())))){
           // Ab.struct == "MNdiagonal" and "MNunstructured"
           vector<matrix<Type>> SArmLst(2);
           SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
@@ -671,7 +671,7 @@ Type objective_function<Type>::operator() ()
             sdcounter++;
           }
           
-          if((Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){ // unstructured row covariance
+          if((Abb.size()>(p+nsp.sum()))){ // unstructured row covariance
             for (int d=0; d<(nsp.sum()); d++){
               for (int r=d+1; r<(nsp.sum()); r++){
                 SArmLst(0)(r,d)=Abb(covscounter);
@@ -680,7 +680,7 @@ Type objective_function<Type>::operator() ()
           }
           
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2 && (Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
+          if(LcolMatIdx.cols()==2){
             // Force sparsity in SArmLst(1)*SArmLst(1).transpose()
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArmLst(1)(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
@@ -726,7 +726,7 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*SArmP(j,j)*(xb.row(i)*SArmLst(0)*SArmLst(0).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if(Abb.size() == (nsp.sum()*p +nsp.sum()*p*(p-1)/2)){
+        }else if(Abb.size() == ((nsp.sum()*p +nsp.sum()*p*(p-1)/2)|(nsp.sum()*p+LcolMatIdx.rows()))){
           // Ab.struct == "spblockdiagonal"
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
@@ -754,7 +754,7 @@ Type objective_function<Type>::operator() ()
           }
 
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2 && (Abb.size() == (p*nsp.sum() + nsp.sum()*p*(p-1)/2))){
+          if(LcolMatIdx.cols()==2){
             // Force sparsity in SArm
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArm(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
@@ -794,7 +794,7 @@ Type objective_function<Type>::operator() ()
           //   }
           //   }
           // }
-        } else if(Abb.size() == (nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2){
+        } else if(Abb.size() == ((nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2)|(nsp.sum()*p+LcolMatIdx.rows()*nsp.sum()+(LcolMatIdx.rows()*2+p)*(nsp.sum()*(nsp.sum()-1)/2))){
           // matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
           // Ab.struct == "unstructured"
           int sdcounter = 0;

@@ -850,7 +850,8 @@ trait.TMB <- function(
           #matrix normal VA matrix
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2),rep(1e-3, p*(p-1)/2)))
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
+            
           }
         }else if(Ab.struct == "unstructured"){
           Abb <- c(unlist(lapply(res$fitstart$Ab,diag)), rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2))
@@ -867,12 +868,12 @@ trait.TMB <- function(
           #matrix normal VA matrix
           Abb <- rep(log(a.var), p+ncol(xb))
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2),rep(1e-3, p*(p-1)/2)))
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }
         }else if(Ab.struct == "unstructured"){
-          Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2))
+          Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, (ncol(LcolMatIdx)<2)*p*ncol(xb)*(p*ncol(xb)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*ncol(xb)+(nrow(LcolMatIdx)*2+p)*(ncol(xb)*(ncol(xb)-1)/2))))
         }else if(Ab.struct == "spblockdiagonal"){
-          Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*p*(p-1)/2))
+          Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, (ncol(LcolMatIdx)<2)*ncol(xb)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)))
         }
       }
        
@@ -1110,21 +1111,21 @@ trait.TMB <- function(
         }else if(Ab.struct == "MNunstructured"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p+ncol(xb))])+1e-3)
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2),rep(1e-3, p*(p-1)/2)))            
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }else{
             Abb<- log(exp(param1[nam=="Abb"])+1e-3)
           }
         }else if(Ab.struct == "unstructured"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
-            Abb<-c(Abb,(rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2)))
+            Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*p*ncol(xb)*(p*ncol(xb)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*ncol(xb)+(nrow(LcolMatIdx)*2+p)*(ncol(xb)*(ncol(xb)-1)/2))))
           }else{
             Abb<- log(exp(param1[nam=="Abb"])+1e-3)
           }
         }else if(sp.Ar.struc == "spblockdiagonal"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
-            Abb <-  c(Abb, rep(1e-3, ncol(xb)*p*(p-1)/2))
+            Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*ncol(xb)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)))
           }else{
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
           }
@@ -1259,21 +1260,21 @@ trait.TMB <- function(
         }else if(Ab.struct == "MNunstructured"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p+ncol(xb))])+1e-3)
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2),rep(1e-3, p*(p-1)/2)))            
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }else{
             Abb<- log(exp(param1[nam=="Abb"])+1e-3)
           }
         }else if(Ab.struct == "unstructured"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
-            Abb<-c(Abb,(rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2)))
+            Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*p*ncol(xb)*(p*ncol(xb)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*ncol(xb)+(nrow(LcolMatIdx)*2+p)*(ncol(xb)*(ncol(xb)-1)/2))))
           }else{
             Abb<- log(exp(param1[nam=="Abb"])+1e-3)
           }
         }else if(sp.Ar.struc == "spblockdiagonal"){
           if(Ab.diag.iter>0){
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
-            Abb <-  c(Abb, rep(1e-3, ncol(xb)*p*(p-1)/2))
+            Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*ncol(xb)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)))
           }else{
             Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
           }
