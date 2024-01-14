@@ -606,8 +606,9 @@ Type objective_function<Type>::operator() ()
             colCorMat = colMat;
           }
         }
-        // Ab.struct == "diagonal" or "blockdiagonal", i.e., independence over species
+        //Variational components
         if((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
+          // Ab.struct == "diagonal" or "blockdiagonal", i.e., independence over species
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
           vector<Type> SprIAtrace(p);
@@ -680,7 +681,7 @@ Type objective_function<Type>::operator() ()
           }
           
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2){
+          if(LcolMatIdx.cols()==2 && (Abb.size()>(p+nsp.sum()))){
             // Force sparsity in SArmLst(1)*SArmLst(1).transpose()
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArmLst(1)(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
