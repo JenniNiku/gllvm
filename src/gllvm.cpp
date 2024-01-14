@@ -652,7 +652,7 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*(xb.row(i)*SArm(j)*SArm(j).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == ((p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)|(p+nsp.sum()+LcolMatIdx.rows())))){
+        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()+LcolMatIdx.rows()+nsp.sum()*(nsp.sum()-1)/2))){
           // Ab.struct == "MNdiagonal" and "MNunstructured"
           vector<matrix<Type>> SArmLst(2);
           SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
@@ -726,7 +726,7 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*SArmP(j,j)*(xb.row(i)*SArmLst(0)*SArmLst(0).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if(Abb.size() == ((nsp.sum()*p +nsp.sum()*p*(p-1)/2)|(nsp.sum()*p+LcolMatIdx.rows()))){
+        }else if((Abb.size() == ((nsp.sum()*p +nsp.sum()*p*(p-1)/2))) || (Abb.size()==(nsp.sum()*p+LcolMatIdx.rows()*nsp.sum()))){
           // Ab.struct == "spblockdiagonal"
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
@@ -760,7 +760,7 @@ Type objective_function<Type>::operator() ()
                 SArm(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
                 covscounter++;
               }
-          }else if(Abb.size() == (p*nsp.sum() + nsp.sum()*p*(p-1)/2)){
+          }else{
             for (int j=0; j<p; j++){
               for (int r=j+1; r<p; r++){
                 SArm(r,j)=Abb(covscounter);
@@ -794,7 +794,7 @@ Type objective_function<Type>::operator() ()
           //   }
           //   }
           // }
-        } else if(Abb.size() == ((nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2)|(nsp.sum()*p+LcolMatIdx.rows()*nsp.sum()+(LcolMatIdx.rows()*2+p)*(nsp.sum()*(nsp.sum()-1)/2))){
+        } else if((Abb.size() == ((nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2)) || (Abb.size() == (nsp.sum()*p+LcolMatIdx.rows()*nsp.sum()+(LcolMatIdx.rows()*2+p)*(nsp.sum()*(nsp.sum()-1)/2)))){
           // matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
           // Ab.struct == "unstructured"
           int sdcounter = 0;
