@@ -612,11 +612,15 @@ Type objective_function<Type>::operator() ()
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
           vector<Type> SprIAtrace(p);
-          for(int j=0; j<p; j++){
-            matrix<Type> SArm(nsp.sum(),nsp.sum());//limit the scope of SArmLst(j) to this iteration for memory efficiency
+          for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
+            matrix <Type> SArm(nsp.sum(),nsp.sum());
+            if((Abb.size() == (p*nsp.sum()))){
+              //ignoring the diagonal entries if possible
+              SArm = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
+            }
             SArm.setZero();
             for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
-              SArm(d,d)=exp(Abb(sdcounter));
+              SArm.diagonal()(d)=exp(Abb(sdcounter));
               sdcounter++;
             }
             
@@ -653,26 +657,36 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*(xb.row(i)*SArm(j)*SArm(j).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if((Abb.size()==(p+nsp.sum())) || (Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()+LcolMatIdx.rows()+nsp.sum()*(nsp.sum()-1)/2))){
+        }else if((Abb.size()==(nsp.sum()+p-1)) || (Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()-1+LcolMatIdx.rows()+nsp.sum()*(nsp.sum()-1)/2))){
           // Ab.struct == "MNdiagonal" and "MNunstructured"
+          
           vector<matrix<Type>> SArmLst(2);
-          SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
-          SArmLst(1).resize(p,p);SArmLst(1).setZero();
+          
+          if((Abb.size()==(nsp.sum()+p-1))){
+            //ignoring the diagonal entries if possible
+            SArmLst(0) = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
+            SArmLst(1) = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(p);
+          }else{
+            SArmLst(0).resize(nsp.sum(),nsp.sum());SArmLst(0).setZero();
+            SArmLst(1).resize(p,p);SArmLst(1).setZero();
+          }
+          
           int sdcounter = 0;
-          int covscounter = p+nsp.sum();
+          int covscounter = p+nsp.sum()-1;
           // row variance
           for (int d=0; d<(nsp.sum()); d++){
-            SArmLst(0)(d,d)=exp(Abb(sdcounter));
+            SArmLst(0).diagonal()(d)=exp(Abb(sdcounter));
             sdcounter++;
           }
           
           // column variance
-          for (int j=0; j<p; j++){
-            SArmLst(1)(j,j)=exp(Abb(sdcounter));
+          SArmLst(1).diagonal()(0) = 1;//first entry fixed to 1 for identifiability
+          for (int j=1; j<p; j++){
+            SArmLst(1).diagonal()(j)=exp(Abb(sdcounter));
             sdcounter++;
           }
           
-          if((Abb.size()>(p+nsp.sum()))){ // unstructured row covariance
+          if((Abb.size()>(p+nsp.sum()-1))){ // unstructured row covariance
             for (int d=0; d<(nsp.sum()); d++){
               for (int r=d+1; r<(nsp.sum()); r++){
                 SArmLst(0)(r,d)=Abb(covscounter);
@@ -681,14 +695,14 @@ Type objective_function<Type>::operator() ()
           }
           
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2 && (Abb.size()>(p+nsp.sum()))){
+          if(LcolMatIdx.cols()==2 && (Abb.size()>(p+nsp.sum()-1))){
             // Force sparsity in SArmLst(1)*SArmLst(1).transpose()
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArmLst(1)(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
                 covscounter++;
             }
-          }else if((Abb.size() == (p+nsp.sum() + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
-            for (int j=0; j<p; j++){
+          }else if((Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
+              for (int j=0; j<p; j++){
               for (int r=j+1; r<p; r++){
                 SArmLst(1)(r,j)=Abb(covscounter);
                 covscounter++;
@@ -698,7 +712,7 @@ Type objective_function<Type>::operator() ()
           
           
           // determinant of kronecker product of two matrices based on their cholesky factors
-          SArmLst(1) = (SArmLst(1)*SArmLst(1).transpose()).diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*SArmLst(1); //identifiability
+          // SArmLst(1) = (SArmLst(1)*SArmLst(1).transpose()).diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*SArmLst(1); //identifiability
           nll -= SArmLst(0).rows()*SArmLst(1).diagonal().array().log().sum() + SArmLst(1).rows()*SArmLst(0).diagonal().array().log().sum();
           
           //simultanouesly invert and get logdet of matrix

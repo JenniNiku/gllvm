@@ -820,7 +820,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }
         }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"){
           #matrix normal VA matrix
-          spAr <- rep(log(Lambda.start[2]), p+sum(nsp))
+          spAr <- rep(log(Lambda.start[2]), sum(nsp)+p-1)
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
             # if(ncol(colMat)!=p){
               spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
@@ -1104,7 +1104,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             spAr1<- log(exp(param1[nam=="Abb"][1:(p*sum(nsp))])+1e-3)
             if(Ab.diag.iter>0)spAr1 <- c(spAr1, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
           }else if(sp.Ar.struc == "MNunstructured"){
-            spAr1<- log(exp(param1[nam=="Abb"][1:(p+sum(nsp))])+1e-3)
+            spAr1<- log(exp(param1[nam=="Abb"][1:(sum(nsp)+p-1)])+1e-3)
             # if(ncol(colMat)!=p){
             if(Ab.diag.iter>0)spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
             # }else{
@@ -2395,10 +2395,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             spArs <- vector("list", 2)
             
             if(sp.Ar.struc%in%c("MNdiagonal", "MNunstructured")){
-              Ar.sds <- exp((spAr)[1:(p+sum(nsp))])
-              spAr <- spAr[-c(1:(p+sum(nsp)))]
+               Ar.sds <- exp(spAr[1:(p+sum(nsp)-1)])
+               spAr <- spAr[-c(1:(p+sum(nsp)-1))]
+              
               spArs[[1]] <- diag(Ar.sds[1:sum(nsp)])
-              spArs[[2]] <- diag(Ar.sds[-c(1:sum(nsp))])
+              spArs[[2]] <- diag(c(1,Ar.sds[-c(1:sum(nsp))]))
               if(sp.Ar.struc == "MNunstructured"){
                 k=1;
               # row covariance
@@ -2425,7 +2426,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                
                   }
                 spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
-                spArs[[2]] <- cov2cor(spArs[[2]]%*%t(spArs[[2]]))
+                spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
+                if(sp.Ar.struc == "MNunstructured") spArs[[2]]
             }
           }else if(sp.Ar.struc == "unstructured"){
             spArs <- vector("list", 1)

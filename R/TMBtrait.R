@@ -848,10 +848,9 @@ trait.TMB <- function(
           }
         }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
           #matrix normal VA matrix
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          Abb <- unlist(lapply(res$fitstart$Ab,diag))[-c(ncol(xb)+1)]
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
             Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
-            
           }
         }else if(Ab.struct == "unstructured"){
           Abb <- c(unlist(lapply(res$fitstart$Ab,diag)), rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2))
@@ -866,7 +865,7 @@ trait.TMB <- function(
           }
         }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
           #matrix normal VA matrix
-          Abb <- rep(log(a.var), p+ncol(xb))
+          Abb <- rep(log(a.var), ncol(xb)+p-1)  
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
             Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }
@@ -1107,7 +1106,7 @@ trait.TMB <- function(
           Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
         }else if(Ab.struct == "MNunstructured"){
-          Abb<- log(exp(param1[nam=="Abb"][1:(p+ncol(xb))])+1e-3)
+          Abb<- log(exp(param1[nam=="Abb"][1:(ncol(xb)+p-1)])+1e-3)
           if(Ab.diag.iter>0){
             Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }
@@ -1116,7 +1115,7 @@ trait.TMB <- function(
           if(Ab.diag.iter>0){
             Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*p*ncol(xb)*(p*ncol(xb)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*ncol(xb)+(nrow(LcolMatIdx)*2+p)*(ncol(xb)*(ncol(xb)-1)/2))))
           }
-        }else if(sp.Ar.struc == "spblockdiagonal"){
+        }else if(Ab.struct == "spblockdiagonal"){
           Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
           if(Ab.diag.iter>0){
             Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*ncol(xb)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)*ncol(xb)))
@@ -1248,7 +1247,7 @@ trait.TMB <- function(
             Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
         }else if(Ab.struct == "MNunstructured"){
-          Abb<- log(exp(param1[nam=="Abb"][1:(p+ncol(xb))])+1e-3)
+          Abb<- log(exp(param1[nam=="Abb"][1:(ncol(xb)+p-1)])+1e-3)
           if(Ab.diag.iter>0){
             Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, (ncol(LcolMatIdx)<2)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx))))
           }
@@ -1257,7 +1256,7 @@ trait.TMB <- function(
           if(Ab.diag.iter>0){
             Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*p*ncol(xb)*(p*ncol(xb)-1)/2+(ncol(LcolMatIdx)>1)*(nrow(LcolMatIdx)*ncol(xb)+(nrow(LcolMatIdx)*2+p)*(ncol(xb)*(ncol(xb)-1)/2))))
           }
-        }else if(sp.Ar.struc == "spblockdiagonal"){
+        }else if(Ab.struct == "spblockdiagonal"){
           Abb<- log(exp(param1[nam=="Abb"][1:(p*ncol(xb))])+1e-3)
           if(Ab.diag.iter>0){
             Abb <- c(Abb,rep(1e-3, (ncol(LcolMatIdx)<2)*ncol(xb)*p*(p-1)/2+(ncol(LcolMatIdx)>1)*nrow(LcolMatIdx)*ncol(xb)))
@@ -1841,10 +1840,11 @@ trait.TMB <- function(
           Abs <- vector("list", 2)
           
           if(Ab.struct%in%c("MNdiagonal", "MNunstructured")){
-            Ar.sds <- exp((Ab)[1:(p+xdr)])
-            Ab <- Ab[-c(1:(p+xdr))]
+              Ar.sds <- exp(Ab[1:(p+xdr-1)])
+              Ab <- Ab[-c(1:(p+xdr-1))]
+            
             Abs[[1]] <- diag(Ar.sds[1:xdr])
-            Abs[[2]] <- diag(Ar.sds[-c(1:xdr)])
+            Abs[[2]] <- diag(c(1,Ar.sds[-c(1:xdr)]))
             if(Ab.struct == "MNunstructured"){
               k=1;
               # row covariance
@@ -1877,7 +1877,7 @@ trait.TMB <- function(
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
           }
-        }else if(sp.Ar.struc == "unstructured"){
+        }else if(Ab.struct == "unstructured"){
           Abs <- vector("list", 1)
           
           Ar.sds <- exp((Ab)[1:(p*ncol(xb))])
