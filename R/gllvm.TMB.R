@@ -2462,7 +2462,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                         for(j in (j2+1):p){ # row j
                           spArs[[1]][j+(i-1)*p,j2+(d-1)*p] <- spAr[1]
                           spAr <- spAr[-1]
+                          spArs[[1]][j2+(i-1)*p,j+(d-1)*p] <- spAr[1]
+                          spAr <- spAr[-1]
                         }
+                      }
+                      # diagonals
+                      for(j in 1:p){
+                        spArs[[1]][j+(i-1)*p,j+(d-1)*p] <- spAr[1]
+                        spAr <- spAr[-1]
                       }
                     }
                   } else{
@@ -2483,9 +2490,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   }
                 }
               }
-            
+            spArs<<-spArs
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
-            #reorder
+            # reorder so that the block diagonals are the nsp*nsp covariance matrices for species
             spArs[[1]] <- spArs[[1]][order(rep(1:p,times=sum(nsp))),order(rep(1:p,times=sum(nsp)))]
           }else if(sp.Ar.struc == "spblockdiagonal"){
             spArs <- vector("list", 1)

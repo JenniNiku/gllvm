@@ -1906,7 +1906,14 @@ trait.TMB <- function(
                     for(j in (j2+1):p){ # row j
                       Abs[[1]][j+(i-1)*p,j2+(d-1)*p] <- Ab[1]
                       Ab <- Ab[-1]
+                      Abs[[1]][j2+(i-1)*p,j+(d-1)*p] <- Ab[1]
+                      Ab <- Ab[-1]
                     }
+                  }
+                  # diagonals
+                  for(j in 1:p){
+                    Abs[[1]][j+(i-1)*p,j+(d-1)*p] <- Ab[1]
+                    Ab <- Ab[-1]
                   }
                 }
               } else{
