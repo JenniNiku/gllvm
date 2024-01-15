@@ -580,6 +580,7 @@ Type objective_function<Type>::operator() ()
         
         matrix<Type>colCorMat(p,p);
         matrix<Type>colCorMatI(p,p);
+        Type logdetColCorMat = 0;
         if(colMat.cols()==p){
           //operations with column correlation matrix
           if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
@@ -605,19 +606,22 @@ Type objective_function<Type>::operator() ()
           }else{
             colCorMat = colMat;
           }
+          CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
+          logdetColCorMat = res[0];
+          colCorMatI = atomic::vec2mat(res,p,p,1);
         }
         //Variational components
         if((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
           // Ab.struct == "diagonal" or "blockdiagonal", i.e., independence over species
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
-          vector<Type> SprIAtrace(p);
+          // vector<Type> SprIAtrace(p);
+          matrix <Type> SArm(nsp.sum(),nsp.sum());
+          if((Abb.size() == (p*nsp.sum()))){
+            //ignoring the diagonal entries if possible
+            SArm = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
+          }
           for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
-            matrix <Type> SArm(nsp.sum(),nsp.sum());
-            if((Abb.size() == (p*nsp.sum()))){
-              //ignoring the diagonal entries if possible
-              SArm = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
-            }
             SArm.setZero();
             for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
               SArm.diagonal()(d)=exp(Abb(sdcounter));
@@ -635,21 +639,20 @@ Type objective_function<Type>::operator() ()
             nll -= SArm.diagonal().array().log().sum();
             
             SArm *= SArm.transpose();
-            SprIAtrace(j) = (SprI*SArm).trace();
+            // SprIAtrace(j) = (SprI*SArm).trace();
+            nll -= -0.5*colCorMatI(j,j)*(SprI*SArm).trace();
             
             //kron(xb,I_p) A kron(xb,I_p)^t
             cQ.col(j) += 0.5*((xb*SArm).cwiseProduct(xb)).rowwise().sum();
           }
           
           if(colMat.cols()==p){
-            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
-            Type logdetColCorMat = res[0];
-            matrix <Type> colCorMatI = atomic::vec2mat(res,p,p,1);
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);//determinant of kronecker product
-            nll -= -0.5*((colCorMatI*SprIAtrace.matrix().asDiagonal()).trace()+(Br*colCorMatI*Br.transpose()*SprI).trace());
+            // nll -= -0.5*((colCorMatI*SprIAtrace.matrix().asDiagonal()).trace()+(Br*colCorMatI*Br.transpose()*SprI).trace());
+            nll -= -0.5*(Br*colCorMatI*Br.transpose()*SprI).trace();
           }else{
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr); 
-            nll -= -0.5*(SprIAtrace.sum()+(Br*Br.transpose()*SprI).trace());
+            nll -= -0.5*(Br*Br.transpose()*SprI).trace();
           }
           // for (int j=0; j<p;j++){
           //   //kron(xb,I_p) A kron(xb,I_p)^t
@@ -717,11 +720,6 @@ Type objective_function<Type>::operator() ()
           
           //simultanouesly invert and get logdet of matrix
            if(colMat.cols()==p){
-            //operations with column correlation matrix
-            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
-            Type logdetColCorMat = res[0];
-            matrix <Type> colCorMatI = atomic::vec2mat(res,p,p,1);
-            
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
             //remaining likelihood terms
             nll -= -0.5*((colCorMatI*SArmLst(1)*SArmLst(1).transpose()).trace()*(Spr*SArmLst(0)*SArmLst(0).transpose()).trace()+(Br*colCorMatI*Br.transpose()*SprI).trace());
@@ -746,13 +744,8 @@ Type objective_function<Type>::operator() ()
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
           
-          matrix <Type> colCorMatI;
           if(colMat.cols()==p){
             //operations with column correlation matrix
-            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
-            Type logdetColCorMat = res[0];
-            colCorMatI = atomic::vec2mat(res,p,p,1);
-            
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
             nll -= -0.5*(Br*colCorMatI*Br.transpose()*SprI).trace();
           }else{
@@ -880,10 +873,6 @@ Type objective_function<Type>::operator() ()
           matrix<Type> betarVec = atomic::vec2mat(atomic::mat2vec(matrix<Type>(Br.transpose())),1,p*nsp.sum(),0);
           
           if(colMat.cols()==p){
-            //operations with column correlation matrix
-            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
-            Type logdetColCorMat = res[0];
-            matrix <Type> colCorMatI = atomic::vec2mat(res,p,p,1);
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
             //remaining likelihood terms
             // SprMN = tmbutils::kronecker(Spr,colCorMat); // covariance matrix
