@@ -640,7 +640,12 @@ Type objective_function<Type>::operator() ()
             
             SArm *= SArm.transpose();
             // SprIAtrace(j) = (SprI*SArm).trace();
-            nll -= -0.5*colCorMatI(j,j)*(SprI*SArm).trace();
+            if(colMat.cols()==p){
+              nll -= -0.5*colCorMatI(j,j)*(SprI*SArm).trace();  
+            }else{
+              nll -= -0.5*(SprI*SArm).trace();
+            }
+            
             
             //kron(xb,I_p) A kron(xb,I_p)^t
             cQ.col(j) += 0.5*((xb*SArm).cwiseProduct(xb)).rowwise().sum();
@@ -838,12 +843,19 @@ Type objective_function<Type>::operator() ()
                       covscounter++;
                     }
                 }else{
-                for (int j2=1; j2<p; j2++){
-                  for (int j=(j2+1); j<(p+1); j++){
-                    tripletList.push_back(T(j+(d-1)*p-1,j2+(r-1)*p-1,Abb(covscounter)));
+                  for (int j2=0; j2<p; j2++){
+                    for (int j=j2+1; j<p; j++){
+                    tripletList.push_back(T(j+(d-1)*p,j2+(r-1)*p,Abb(covscounter)));
+                    covscounter++;
+                    tripletList.push_back(T(j2+(d-1)*p,j+(r-1)*p,Abb(covscounter)));
                     covscounter++;
                   }
               }
+                //diagonals
+                for (int j=0; j<p; j++){
+                  tripletList.push_back(T(j+(d-1)*p,j+(r-1)*p,Abb(covscounter)));
+                  covscounter++;
+                }
                 }
               }else{
                 //we are in a triangular block
@@ -853,19 +865,19 @@ Type objective_function<Type>::operator() ()
                       covscounter++;
                     }
                 }else{
-                  // for (int j2=1; j2<p; j2++){ // start at the second column: equivalent to starting at pth row
-                  //   for (int j=(j2+1); j<(p+1); j++){ // equivalent to not having -1
-                  for (int i=p; i<LcolMatIdx.rows(); i++){
-                    tripletList.push_back(T(LcolMatIdx(i,0)+(d-1)*p-1,LcolMatIdx(i,1)+(r-1)*p-1,Abb(covscounter)));
-                    covscounter++;
-                  // }
-                }
+                  for (int j2=0; j2<p; j2++){
+                    for (int j=j2+1; j<p; j++){
+                      tripletList.push_back(T(j+(d-1)*p,j2+(r-1)*p,Abb(covscounter)));
+                      covscounter++;
+                    }
+                  }
                 }
               }
             }}
-          REPORT(SArm);
           SArm.setFromTriplets(tripletList.begin(),tripletList.end());
-
+          REPORT(SArm);
+          REPORT(covscounter);
+          
           nll -= SArm.diagonal().array().log().sum();
 
           SArm = SArm*SArm.transpose();
