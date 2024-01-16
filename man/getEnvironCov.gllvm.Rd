@@ -4,7 +4,6 @@
 \alias{getEnvironCov.gllvm}
 \alias{getEnvironCov}
 \alias{getEnvironCor}
-\alias{gllvm}
 \title{Extract species covariances due to environmental random effects from gllvm object}
 \usage{
 \method{getEnvironCov}{gllvm}(object, x.randomB = NULL)
@@ -42,7 +41,7 @@ For reduced rank models, the covariance is separately defined for the different 
 
 where \eqn{\Theta} is the matrix of loadings, and S the (diagonal) covariance matrix for the canonical coefficients. With predictor-specific variances, we instead have:
 
-\deqn{\Sigma_e = \Sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',}
+\deqn{\Sigma_e = \sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',}
 
 with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients.
 }
