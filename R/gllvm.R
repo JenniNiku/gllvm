@@ -665,24 +665,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
     
-    # check if formula includes smooths
-    if(anySmooths(formula)){
-      # isolate the smooths
-      smooth.formula <- onlySmooths(formula)
-      # construct smooths
-      smooths <- formula2smooth(smooth.formula)
-      # get smooths' stuff
-      smoothDat <- getSmoothDat(smooths, X)
-      # add fixed effect terms to formula and X (need names)
-      
-      # smooth2random in formula
-      formula <- smooth2random(formula)
-      # 
-      # add grouping variables to "studyDesign"
-      
-      #and extract penalty matrices
-      col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
-    }
+    # # check if formula includes smooths
+    # if(anySmooths(formula)){
+    #   # isolate the smooths
+    #   smooth.formula <- onlySmooths(formula)
+    #   # construct smooths
+    #   smooths <- formula2smooth(smooth.formula)
+    #   # get smooths' stuff
+    #   smoothDat <- getSmoothDat(smooths, X)
+    #   # add fixed effect terms to formula and X (need names)
+    #   
+    #   # smooth2random in formula
+    #   formula <- smooth2random(formula)
+    #   # 
+    #   #and extract penalty matrices
+    #   col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
+    # }
     # separate species random effects
     if(length(X)>0 & length(studyDesign)>0){
       X.col.eff <- cbind(X,studyDesign)
