@@ -18,17 +18,17 @@
 #' 
 #'  \deqn{\Sigma_e = C*kronecker(P\rho + (1-\rho)I_p, R)*C',}
 #'  
-#' where P is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \rho the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{C = kronecker(I_p, 1_r)}, with 1_r a vector of 1s equal to the number of random effects.
+#' where P is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho_{sp}} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{C = kronecker(I_p, 1_r)}, with 1_r a vector of 1s equal to the number of random effects.
 #' 
 #' For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
 #' 
 #'  \deqn{\Sigma_e = \Theta*S*\Theta',}
 #' 
-#' where \Theta is the matrix of loadings, and S the (diagonal) covariance matrix for the canonical coefficients. With predictor-specific variances, we instead have:
+#' where \eqn{\Theta} is the matrix of loadings, and S the (diagonal) covariance matrix for the canonical coefficients. With predictor-specific variances, we instead have:
 #' 
 #' \deqn{\Sigma_e = \Sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',}
 #'
-#' with I_d an identity matrix for the number of constrained and informed latent variables, and \sigma_k^2 the variance per predictor for the canonical coefficients.
+#' with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients.
 #' @author Bert van der Veen
 #'
 #'@seealso  \code{\link{getEnvironCor}} ,\code{\link{getResidualCov.gllvm}}, \code{\link{getResidualCor.gllvm}},.
