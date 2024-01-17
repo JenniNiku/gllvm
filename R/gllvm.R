@@ -26,7 +26,7 @@
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param Ntrials number of trials for binomial family.
-#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.
+#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental). 
 #' @param seed a single seed value, defaults to \code{NULL}.
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -410,8 +410,6 @@
 #'@importFrom utils combn tail relist
 #'@importFrom methods cbind2 rbind2
 #'
-
-
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
