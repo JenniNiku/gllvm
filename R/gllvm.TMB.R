@@ -446,7 +446,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(col.eff == "random"){
           Br <- start.params$params$Br
-          sigmaB <- log(start.params$params$sigmaB)
+          sigmaB <- log(diag(start.params$params$sigmaB))
+          if(!is.null(cs) && (ncol(cs) == 2)){
+            if(any(sigmaB[cs]==0)){
+              sigmaB[cs] <- sigmaB[cs]+1e-5
+            }
+            sigmaB <- c(sigmaB, sigmaB[cs])
+          }
           if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
         }
       } else {
