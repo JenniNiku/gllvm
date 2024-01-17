@@ -538,7 +538,6 @@ Type objective_function<Type>::operator() ()
         
       }
     }
-    
 
       if(random(1)>0 | random(3)>0){
         eta += xb*Br;
@@ -2126,12 +2125,11 @@ Type objective_function<Type>::operator() ()
            }
          }
        }
-       matrix<Type>SprI = Spr.inverse();
-       Eigen::SparseMatrix<Type>colCorMat;
-       matrix<Type>colCorMatI;
-       Eigen::SparseLU<Eigen::SparseMatrix<Type>> luColCorMat;
-       Eigen::SparseMatrix<Type> SprMNI;
-       if(colMat.rows()==p){
+
+
+       if(colMat.cols()==p){
+         matrix<Type>SprI = Spr.inverse();
+         Eigen::SparseMatrix<Type> colCorMat;
          //operations with column correlation matrix
          if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
            if(random(3)>0){
@@ -2156,19 +2154,25 @@ Type objective_function<Type>::operator() ()
          }else{
            colCorMat = colMat;
          }
+         
+         Eigen::SparseLU<Eigen::SparseMatrix<Type>> luColCorMat;
          luColCorMat.compute(colCorMat);
          Eigen::SparseMatrix<Type> Ip(p,p);
          Ip.setIdentity();
-         colCorMatI = luColCorMat.solve(Ip);
-         SprMNI = tmbutils::kronecker(colCorMatI,SprI).sparseView(); // inverse of covariane
+         matrix<Type> colCorMatI = luColCorMat.solve(Ip);
+         Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colCorMatI,SprI).sparseView(); // inverse of covariance
+         
+         vector<Type> betarVec = atomic::mat2vec(Br);
+         nll += GMRF(SprMNI)(betarVec);
        }else{
-         //prevent a bunch of operations inversion if we don't need them
-         //no column correlation matrix
-         SprMNI = tmbutils::kronecker(matrix<Type>(Eigen::MatrixXd::Identity(p,p)),SprI).sparseView(); // inverse of covariane
+         //independence across species
+          vector<Type> Brcol;
+          MVNORM_t<Type> mvnorm(Spr);
+          for (int j=0; j<p;j++){
+           Brcol = Br.col(j);
+           nll += mvnorm(Br);
+          }
        }
-       vector<Type> betarVec = atomic::mat2vec(Br);
-       
-        nll += GMRF(SprMNI)(betarVec);
       }
     
     //latent variables
