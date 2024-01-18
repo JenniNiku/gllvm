@@ -940,10 +940,8 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      eta += dr0*r0*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
+      eta += (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       
-      vector<matrix<Type>> Arm(nr.size());
-      vector<matrix<Type>> Sr(nr.size());
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       
@@ -951,38 +949,41 @@ Type objective_function<Type>::operator() ()
       int sdcounter = 0;
       int covscounter = nr.sum();
       for(int re=0; re<nr.size();re++){
-        Arm(re).resize(nr(re),nr(re));
-        Arm(re).setZero();
+        matrix<Type> Arm(nr(re),nr(re));
+        matrix<Type> Sr(nr(re), nr(re));
+        Arm.setZero();Sr.setZero();
         
         for (int d=0; d<(nr(re)); d++){ // diagonals of varcov
-          Arm(re)(d,d)=exp(lg_Ar(sdcounter));
+          Arm(d,d)=exp(lg_Ar(sdcounter));
           sdcounter++;
         }
         
         if((lg_Ar.size()>nr.sum())){ // unstructured Var.cov
           for (int d=0; d<(nr(re)); d++){
             for (int r=d+1; r<(nr(re)); r++){
-              Arm(re)(r,d)=lg_Ar(covscounter);
+              Arm(r,d)=lg_Ar(covscounter);
               covscounter++;
             }}
         }
       // add terms to cQ
-      matrix<Type> ArmMat = Arm(re)*Arm(re).transpose();
-        cQ += 0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()*Eigen::MatrixXd::Ones(1,p);
+      matrix<Type> ArmMat = Arm*Arm.transpose();
+        cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()).replicate(1,p);
       // We build the actual covariance matrix
       // This can straightforwardly be extended to estimate correlation between effects
-        Sr(re).resize(nr(re),nr(re));
-        Sr(re).setZero();
-
+        matrix <Type> invSr(nr(re),nr(re));invSr.setZero();
+        Type logdetSr;
         // diagonal row effect
         if(cstruc(re) == 0){
-          Sr(re).diagonal().array() = pow(sigma(sigmacounter), 2);
+          Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
+          // inverse and log determinant are straighforwardly available here
+          invSr.diagonal().array() = pow(sigma(sigmacounter), -2);
+          logdetSr = Sr.diagonal().array().log().sum();
           sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
-          Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+          Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter+=2;
         }else if(cstruc(re) == 3){ // corCS
-          Sr(re) = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+          Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter += 2;
         }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
           // Distance matrix calculated from the coordinates for rows
@@ -993,24 +994,26 @@ Type objective_function<Type>::operator() ()
           sigmacounter++;
           dc_scaled = dc(dccounter)*DiSc;
           if(cstruc(re)==2){ // corExp
-            Sr(re) = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+            Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
             sigmacounter++;
           } else if(cstruc(re)==4) { // corMatern
-            Sr(re) = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+            Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
             sigmacounter += 2;
           }
           dccounter++;
         }
-        
-        //TMB's matinvpd function: invere of matrix with logdet for free
-        CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr(re)));
-        Type logdetSr = res[0];
-        matrix <Type> invSr = atomic::vec2mat(res,Sr(re).rows(),Sr(re).cols(),1);
+        if(cstruc(re)>0){
+          //TMB's matinvpd function: inverse of matrix with logdet for free
+        CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
+        logdetSr = res[0];
+        matrix <Type> invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
+        }
+
         // matrix<Type> invSr = atomic::matinvpd(Sr(re), logdetSr);
         if(re==0){
-          nll -= Arm(re).diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+          nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
         }else{
-          nll -= Arm(re).diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+          nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
         }
         // determinants of each block of the covariance matrix
         nll -= 0.5*(nr(re)-logdetSr);
@@ -2203,7 +2206,7 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      eta += dr0*r0*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
+      eta += (dr0*r0).replicate(1,p);//matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       
       vector<matrix<Type>> Arm(nr.size());
       vector<matrix<Type>> Sr(nr.size());
