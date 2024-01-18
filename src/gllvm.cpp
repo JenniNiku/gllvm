@@ -572,10 +572,20 @@ Type objective_function<Type>::operator() ()
             Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
           }
         }
+        matrix <Type> SprI(nsp.sum(),nsp.sum());
+        Type logdetSpr;
+        //could/should build in detection of block matrices based on entries in cs.
+        if((cs.cols()>1)|(random(1)>0)){
+          //Spr is not diagonal
+          CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Spr));
+          logdetSpr = res[0];
+          SprI = atomic::vec2mat(res,Spr.rows(),Spr.cols(),1);
+        }else{
+          //Spr is diagonal
+          logdetSpr = Spr.diagonal().array().log().sum();
+          SprI = Spr.diagonal().cwiseInverse().asDiagonal();
+        }
         
-        CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Spr));
-        Type logdetSpr = res[0];
-        matrix <Type> SprI = atomic::vec2mat(res,Spr.rows(),Spr.cols(),1);
         
         matrix<Type>colCorMat(p,p);
         matrix<Type>colCorMatI(p,p);
@@ -974,7 +984,9 @@ Type objective_function<Type>::operator() ()
         Type logdetSr;
         // diagonal row effect
         if(cstruc(re) == 0){
-          Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
+          Eigen::DiagonalMatrix<Type, Eigen::Dynamic> invSr(nr(re));
+          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Sr(nr(re));
+          // Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
           // inverse and log determinant are straighforwardly available here
           invSr.diagonal().array() = pow(sigma(sigmacounter), -2);
           logdetSr = Sr.diagonal().array().log().sum();
@@ -2208,23 +2220,20 @@ Type objective_function<Type>::operator() ()
       vector<Type> sigma = exp(log_sigma);
       eta += (dr0*r0).replicate(1,p);//matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       
-      vector<matrix<Type>> Arm(nr.size());
-      vector<matrix<Type>> Sr(nr.size());
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       for(int re=0; re<nr.size();re++){
-      Sr(re).resize(nr(re),nr(re));
-      Sr(re).setZero();
-      
+      matrix<Type> Sr(nr(re),nr(re));Sr.setZero();
+
       // diagonal row effect
       if(cstruc(re) == 0){
-        Sr(re).diagonal().array() = pow(sigma(sigmacounter), 2);
+        Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
         sigmacounter++;
       }else if(cstruc(re) == 1){ // corAR1
-        Sr(re) = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+        Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
         sigmacounter+=2;
       }else if(cstruc(re) == 3){ // corCS
-        Sr(re) = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+        Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
         sigmacounter += 2;
       }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
         // Distance matrix calculated from the coordinates for rows
@@ -2235,17 +2244,25 @@ Type objective_function<Type>::operator() ()
         sigmacounter++;
         dc_scaled = dc(dccounter)*DiSc;
         if(cstruc(re)==2){ // corExp
-          Sr(re) = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+          Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
           sigmacounter++;
         } else if(cstruc(re)==4) { // corMatern
-          Sr(re) = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+          Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
           sigmacounter += 2;
         }
         dccounter++;
       }
       
+      if(cstruc(re)==0){
+        //independence of REs
+        vector<Type> r0s = r0.col(0).segment(0,nr(re));
+        for(int ir=0; ir<nr(re); ir++){
+          nll -= dnorm(r0s(ir), Type(0), Type(1), true);
+        }
+        }else{
+        nll += MVNORM(Sr)(r0.col(0).segment(0,nr(re)));
+      }
       
-      nll += MVNORM(Sr(re))(r0.col(0).segment(0,nr(re)));
       }
     }
     
