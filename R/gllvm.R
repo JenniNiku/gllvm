@@ -52,7 +52,7 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured".}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured". Can a length two vector, where the second entry is a boolean for triggering the incompletely cholesky factorization of the variational covariance matrix (only if colMat is provided).}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -1204,7 +1204,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
-
+    if(!is.null(colMat) && Ab.struct[1] %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
+      warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be zero due to the structure in the variational covariance matrix.\n")
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct[1] %in% c("unstructured", "spblockdiagonal", "MNunstructured")){
+      warning("This is probably not a good thing to try; so many variational parameters are not required for your model. \n")
+    }
+    
     if (is.null(offset))
       O <- matrix(0, nrow = n, ncol = p)
     else if (NCOL(offset) == 1)
