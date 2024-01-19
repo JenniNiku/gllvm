@@ -15,12 +15,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
+  
+  if(length(sp.Ar.struc)==2){
+    incomplete.cholesky = as.logical(sp.Ar.struc[2])
+    sp.Ar.struc = sp.Ar.struc[1]
+  }else{
+    incomplete.cholesky = FALSE
+  }
+  
   if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
-  
+
   
   if(!is.null(start.params)) starting.val <- "zero"
   ignore.u <- FALSE
@@ -66,12 +74,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         stop("Matrix for column effects is of incorrect size.")
       }
       colMat <- try(as(cov2cor(colMat),"TsparseMatrix"),silent = TRUE)
-      LcolMat <- try(t(chol(colMat)), silent = TRUE)
-      if(inherits(LcolMat,"try-error")){
-        stop("Matrix for column effects is not positive definite.")
+      if(!incomplete.cholesky){
+        LcolMat <- try(t(chol(colMat)), silent = TRUE)
+        if(inherits(LcolMat,"try-error")){
+          stop("Matrix for column effects is not positive definite.")
+        }
+        diag(LcolMat)<-0
+        LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)  
+      }else{
+        LcolMat <- colMat
+        LcolMat[upper.tri(LcolMat,diag=T)]<-0
+        LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
       }
-      diag(LcolMat)<-0
-      LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)
     }else{
       colMat <- as(matrix(0),"TsparseMatrix")
       LcolMatIdx <- matrix(0)

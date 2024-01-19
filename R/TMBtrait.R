@@ -13,6 +13,14 @@ trait.TMB <- function(
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
   
+  if(length(Ab.struct)==2){
+    incomplete.cholesky = as.logical(Ab.struct[2])
+    Ab.struct = Ab.struct[1]
+  }else{
+    incomplete.cholesky = FALSE
+  }
+  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
+  
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
@@ -339,13 +347,20 @@ trait.TMB <- function(
         if(ncol(colMat)!=p){
           stop("Matrix for column effects is of incorrect size.")
         }
+
         colMat <- as(try(cov2cor(colMat),silent = TRUE),"TsparseMatrix")
+        if(!incomplete.cholesky){
         LcolMat <- try(t(chol(colMat)),silent=T)
         if(inherits(LcolMat,"try-error")){
           stop("Matrix for column effects is not positive definite.")
         }
         diag(LcolMat)<-0
         LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)
+        }else{
+          LcolMat <- colMat
+          LcolMat[upper.tri(LcolMat,diag=T)]<-0
+          LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
+        }
         rhoSP <- TRUE
       }else{
         colMat <- as(matrix(0),"TsparseMatrix")
