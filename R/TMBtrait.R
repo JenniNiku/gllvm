@@ -4,7 +4,7 @@
 ##########################################################################################
 trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson", num.lv.cor=0, corWithinLV = FALSE,
-      Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
+      Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ab.incomplete.cholesky = FALSE, Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, dLV=NULL, cstruc = "diag", cstruclv  ="diag", dist = list(matrix(0)), distLV = matrix(0), scalmax=10, MaternKappa = 1.5,
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,colMat = NULL,
@@ -12,13 +12,8 @@ trait.TMB <- function(
       zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL, Ntrials = 1) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
+  if(!is.null(Ab.struct.rank) & Ab.incomplete.cholesky | is.null(Ab.incomplete.cholesky))Ab.incomplete.cholesky <- FALSE
   
-  if(length(Ab.struct)==2){
-    incomplete.cholesky = as.logical(Ab.struct[2])
-    Ab.struct = Ab.struct[1]
-  }else{
-    incomplete.cholesky = FALSE
-  }
   if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
   
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
@@ -349,16 +344,47 @@ trait.TMB <- function(
         }
 
         colMat <- as(try(cov2cor(colMat),silent = TRUE),"TsparseMatrix")
-        if(!incomplete.cholesky){
+        if(!Ab.incomplete.cholesky && is.null(Ab.struct.rank)){
         LcolMat <- try(t(chol(colMat)),silent=T)
         if(inherits(LcolMat,"try-error")){
           stop("Matrix for column effects is not positive definite.")
         }
         diag(LcolMat)<-0
         LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)
-        }else{
+        }else if(Ab.incomplete.cholesky){
           LcolMat <- colMat
           LcolMat[upper.tri(LcolMat,diag=T)]<-0
+          LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
+        }else if(!is.null(Ab.struct.rank)){
+          # find blockstructure in colMat
+          blocks = list()
+          B = 1
+          E = B
+          while(B<p){
+            while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+              # expand block
+              E = E+1;
+            }
+            # save block
+            blocks[[length(blocks)+1]] = colMat[B:E,B:E]
+            E = E+1;
+            B = E;
+          }
+          # build "LcolMatIdx";
+          LcolMat <- matrix(0,ncol=p,nrow=p)
+          j <- 1
+          for(block in 1:length(blocks)){
+            LcolMatSub <- LcolMat[j:(j+ncol(blocks[[block]])-1),j:j:(j+ncol(blocks[[block]])-1)]
+            if(Ab.struct.rank>ncol(blocks[[block]])){
+              LcolMatSub <- 1 
+            }else{
+              LcolMatSub[,1:Ab.struct.rank] <- 1
+            }
+            LcolMatSub[upper.tri(LcolMatSub, diag = TRUE)] <- 0
+            LcolMat[j:(j+ncol(blocks[[block]])-1),j:j:(j+ncol(blocks[[block]])-1)] <- LcolMatSub
+            
+            j <- j + ncol(blocks[[block]])
+          }
           LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
         }
         rhoSP <- TRUE
@@ -385,7 +411,7 @@ trait.TMB <- function(
     
     #### Calculate starting values
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
-                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct)
+                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
     if(family=="tweedie"){

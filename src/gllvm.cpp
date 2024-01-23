@@ -587,8 +587,8 @@ Type objective_function<Type>::operator() ()
         }
         
         
-        matrix<Type>colCorMat(p,p);
-        matrix<Type>colCorMatI(p,p);
+        Eigen::SparseMatrix<Type>colCorMat(p,p);colCorMat.reserve(colMat.nonZeros());
+        Eigen::SparseMatrix<Type>colCorMatI(p,p);colCorMatI.reserve(colMat.nonZeros());
         Type logdetColCorMat = 0;
         if(colMat.cols()==p){
           //operations with column correlation matrix
@@ -603,8 +603,8 @@ Type objective_function<Type>::operator() ()
             // corColMat = colMat  
             // }else if(col_struc==1){
             // function as in Ovaskainen et al. 2017
-            matrix <Type> Irho(p,p);
-            Irho.setZero();
+            Eigen::SparseMatrix <Type> Irho(p,p);Irho.reserve(p);
+            Irho.setIdentity();
             Irho.diagonal().fill(1-rhoSP);
             colCorMat = colMat*rhoSP + Irho;//.sparseView();
             //}else if(col_struc == 2){
@@ -615,9 +615,19 @@ Type objective_function<Type>::operator() ()
           }else{
             colCorMat = colMat;
           }
-          CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
-          logdetColCorMat = res[0];
-          colCorMatI = atomic::vec2mat(res,p,p,1);
+          Eigen::SparseLU<Eigen::SparseMatrix<Type>> luColCorMat;
+          luColCorMat.compute(colCorMat);
+          Eigen::SparseMatrix<Type> Ip(p,p);Ip.reserve(p);
+          Ip.setIdentity();
+          colCorMatI = luColCorMat.solve(Ip);
+          logdetColCorMat = luColCorMat.logAbsDeterminant();
+          // REPORT(logdetColCorMat);
+          // REPORT(colCorMatI);
+          // REPORT(colCorMat);
+          
+          // CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
+          // logdetColCorMat = res[0];
+          // colCorMatI = atomic::vec2mat(res,p,p,1);
         }
         //Variational components
         if((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
@@ -630,6 +640,7 @@ Type objective_function<Type>::operator() ()
             //ignoring the diagonal entries if possible
             SArm = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
           }
+          vector<Type> colCorMatIdiag = colCorMatI.diagonal();
           for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
             SArm.setZero();
             for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
@@ -650,7 +661,7 @@ Type objective_function<Type>::operator() ()
             SArm *= SArm.transpose();
             // SprIAtrace(j) = (SprI*SArm).trace();
             if(colMat.cols()==p){
-              nll -= -0.5*colCorMatI(j,j)*(SprI*SArm).trace();  
+              nll -= -0.5*colCorMatIdiag(j)*(SprI*SArm).trace();  
             }else{
               nll -= -0.5*(SprI*SArm).trace();
             }
@@ -712,7 +723,7 @@ Type objective_function<Type>::operator() ()
           }
           
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2 && (Abb.size()>(p+nsp.sum()-1))){
+          if(LcolMatIdx.cols()==2 && (Abb.size()>(p+nsp.sum()-1)) && (colMat.nonZeros()<(colMat.rows()*colMat.cols()))){
             // Force sparsity in SArmLst(1)*SArmLst(1).transpose()
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArmLst(1)(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
@@ -776,7 +787,7 @@ Type objective_function<Type>::operator() ()
           }
 
           //iterate over non-zeros in the column covariance matrix: if entry is 0 we do not need VA covariance, so our VA matrix is sparse
-          if(LcolMatIdx.cols()==2){
+          if(LcolMatIdx.cols()==2 && (colMat.nonZeros()<(colMat.rows()*colMat.cols()))){
             // Force sparsity in SArm
             for (int i=0; i<LcolMatIdx.rows(); i++){
                 SArm(LcolMatIdx(i,0)-1,LcolMatIdx(i,1)-1)=Abb(covscounter);
@@ -818,7 +829,7 @@ Type objective_function<Type>::operator() ()
           // }
         } else if((Abb.size() == ((nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2)) || (Abb.size() == (nsp.sum()*p+LcolMatIdx.rows()*nsp.sum()+(LcolMatIdx.rows()*2+p)*(nsp.sum()*(nsp.sum()-1)/2)))){
           // matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
-          // Ab.struct == "unstructured"
+          // Ab.struct == "unstructured". Only here as reference and should not be used unless "colMat" is present
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
           // SArm.setZero();
@@ -897,13 +908,13 @@ Type objective_function<Type>::operator() ()
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
             //remaining likelihood terms
             // SprMN = tmbutils::kronecker(Spr,colCorMat); // covariance matrix
-            matrix<Type> SprMNI = tmbutils::kronecker(SprI,colCorMatI); // inverse of covariane
-            nll -= -0.5*((SprMNI*SArm).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
+            Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(tmbutils::asSparseMatrix(SprI),colCorMatI); // inverse of covariane
+            nll -= -0.5*((SprMNI*SArm).eval().diagonal().sum()+(betarVec*(SprMNI*betarVec.transpose())).sum());
           }else{
             nll -= 0.5*(p*nsp.sum()-p*logdetSpr);
             //remaining likelihood terms
             // SprMN = tmbutils::kronecker(Spr,matrix<Type>(Eigen::MatrixXd::Identity(p,p))); // covariance matrix
-            matrix<Type> SprMNI = tmbutils::kronecker(SprI,matrix<Type>(Eigen::MatrixXd::Identity(p,p))); // inverse of covariane
+            matrix<Type> SprMNI = tmbutils::kronecker(SprI,matrix<Type>(Eigen::MatrixXd::Identity(p,p))); // inverse of covariance
             nll -= -0.5*((SprMNI*SArm).trace()+(betarVec*(SprMNI*betarVec.transpose())).sum());
           }
             //remaining likelihood terms
@@ -989,7 +1000,7 @@ Type objective_function<Type>::operator() ()
           // Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
           // inverse and log determinant are straighforwardly available here
           invSr.diagonal().array() = pow(sigma(sigmacounter), -2);
-          logdetSr = Sr.diagonal().array().log().sum();
+          logdetSr = -2*nr(re)*log(sigma(sigmacounter));
           sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
           Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
@@ -2144,7 +2155,7 @@ Type objective_function<Type>::operator() ()
 
        if(colMat.cols()==p){
          matrix<Type>SprI = Spr.inverse();
-         Eigen::SparseMatrix<Type> colCorMat;
+         Eigen::SparseMatrix<Type> colCorMat(p,p);colCorMat.reserve(colMat.nonZeros());
          //operations with column correlation matrix
          if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
            if(random(3)>0){
@@ -2157,10 +2168,10 @@ Type objective_function<Type>::operator() ()
            // corColMat = colMat  
            // }else if(col_struc==1){
            // function as in Ovaskainen et al. 2017
-           matrix <Type> Irho(p,p);
-           Irho.setZero();
+           Eigen::SparseMatrix<Type> Irho(p,p);Irho.reserve(p);
+           Irho.setIdentity();
            Irho.diagonal().fill(1-rhoSP);
-           colCorMat = colMat*rhoSP + Irho.sparseView();
+           colCorMat = colMat*rhoSP + Irho;
            //}else if(col_struc == 2){
            // Ornstein-Uhlenbeck
            //} else if(col_struc == 3){
@@ -2172,10 +2183,10 @@ Type objective_function<Type>::operator() ()
          
          Eigen::SparseLU<Eigen::SparseMatrix<Type>> luColCorMat;
          luColCorMat.compute(colCorMat);
-         Eigen::SparseMatrix<Type> Ip(p,p);
+         Eigen::SparseMatrix<Type> Ip(p,p);Ip.reserve(p);
          Ip.setIdentity();
-         matrix<Type> colCorMatI = luColCorMat.solve(Ip);
-         Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colCorMatI,SprI).sparseView(); // inverse of covariance
+         Eigen::SparseMatrix<Type> colCorMatI = luColCorMat.solve(Ip);
+         Eigen::SparseMatrix<Type> SprMNI = tmbutils::kronecker(colCorMatI,tmbutils::asSparseMatrix(SprI)); // inverse of covariance
          
          vector<Type> betarVec = atomic::mat2vec(Br);
          nll += GMRF(SprMNI)(betarVec);

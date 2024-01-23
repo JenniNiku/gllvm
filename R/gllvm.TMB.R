@@ -4,7 +4,7 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
-                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
+                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, sp.Ar.incomplete.cholesky = FALSE, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
                       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, spdr = NULL, cs = NULL, dr=NULL, dLV=NULL, cstruc = "diag", cstruclv = "diag", dist =list(matrix(0)), distLV = matrix(0),
                       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
@@ -15,14 +15,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
-  
-  if(length(sp.Ar.struc)==2){
-    incomplete.cholesky = as.logical(sp.Ar.struc[2])
-    sp.Ar.struc = sp.Ar.struc[1]
-  }else{
-    incomplete.cholesky = FALSE
-  }
-  
+  if(!is.null(sp.Ar.struc.rank) & sp.Ar.incomplete.cholesky | is.null(sp.Ar.incomplete.cholesky))sp.Ar.incomplete.cholesky <- FALSE
   if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
@@ -74,16 +67,47 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         stop("Matrix for column effects is of incorrect size.")
       }
       colMat <- try(as(cov2cor(colMat),"TsparseMatrix"),silent = TRUE)
-      if(!incomplete.cholesky){
+      if(!sp.Ar.incomplete.cholesky && is.null(sp.Ar.struc.rank)){
         LcolMat <- try(t(chol(colMat)), silent = TRUE)
         if(inherits(LcolMat,"try-error")){
           stop("Matrix for column effects is not positive definite.")
         }
         diag(LcolMat)<-0
         LcolMatIdx <- which(as.matrix(LcolMat) != 0, arr.ind = TRUE)  
-      }else{
+      }else if(sp.Ar.incomplete.cholesky){
         LcolMat <- colMat
         LcolMat[upper.tri(LcolMat,diag=T)]<-0
+        LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
+      }else if(!is.null(sp.Ar.struc.rank)){
+        # find blockstructure in colMat
+        blocks = list()
+        B = 1
+        E = B
+        while(B<p){
+          while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+            # expand block
+            E = E+1;
+          }
+          # save block
+          blocks[[length(blocks)+1]] = colMat[B:E,B:E]
+          E = E+1;
+          B = E;
+        }
+      # build "LcolMatIdx";
+        LcolMat <- matrix(0,ncol=p,nrow=p)
+        j <- 1
+        for(block in 1:length(blocks)){
+          LcolMatSub <- LcolMat[j:(j+ncol(blocks[[block]])-1),j:j:(j+ncol(blocks[[block]])-1)]
+          if(sp.Ar.struc.rank>ncol(blocks[[block]])){
+            LcolMatSub <- 1 
+          }else{
+            LcolMatSub[,1:sp.Ar.struc.rank] <- 1
+          }
+          LcolMatSub[upper.tri(LcolMatSub, diag = TRUE)] <- 0
+          LcolMat[j:(j+ncol(blocks[[block]])-1),j:j:(j+ncol(blocks[[block]])-1)] <- LcolMatSub
+          
+          j <- j + ncol(blocks[[block]])
+        }
         LcolMatIdx <- which(LcolMat!=0, arr.ind = TRUE)
       }
     }else{
@@ -2510,7 +2534,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   }
                 }
               }
-            spArs<<-spArs
+            
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
             # reorder so that the block diagonals are the nsp*nsp covariance matrices for species
             spArs[[1]] <- spArs[[1]][order(rep(1:p,times=sum(nsp))),order(rep(1:p,times=sum(nsp)))]

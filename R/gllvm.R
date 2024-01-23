@@ -52,7 +52,9 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured". Can a length two vector, where the second entry is a boolean for triggering the incompletely cholesky factorization of the variational covariance matrix (only if colMat is provided).}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured".
+#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use. Only applicable with "MNunstructured", "spblockdiagonal", and "unstructured".}
+#'  \item{\emph{Ab.incomplete.cholesky}: }{boolean for triggering the incompletely cholesky factorization of the variational covariance matrix (only if colMat is provided), only applicable to "MNunstructured", "spblockdiagonal", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -420,7 +422,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, incomplete.cholesky = FALSE, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -487,6 +489,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$Lambda.struc = "diagonal"
       if (!("Ab.struct" %in% names(x))) 
         x$Ab.struct = "blockdiagonal"
+      if (!("Ab.struct.rank" %in% names(x))) 
+        x$Ab.struct.rank = NULL
+      if (!("Ab.incomplete.cholesky" %in% names(x))) 
+        x$Ab.incomplete.cholesky = FALSE
       if (!("Ar.struc" %in% names(x))) 
         x$Ar.struc = "diagonal"
       if (!("diag.iter" %in% names(x))) 
@@ -592,7 +598,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method
-    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
+    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ab.incomplete.cholesky = control.va$Ab.incomplete.cholesky; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa
     
@@ -1204,9 +1210,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
-    if(!is.null(colMat) && Ab.struct[1] %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
+    if(!is.null(colMat) && Ab.struct %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be zero due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct[1] %in% c("unstructured", "spblockdiagonal", "MNunstructured")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "spblockdiagonal", "MNunstructured")){
       warning("This is probably not a good thing to try; so many variational parameters are not required for your model. \n")
     }
     
@@ -1230,7 +1236,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, Ab.struct = Ab.struct),  corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, Ab.incomplete.cholesky = Ab.incomplete.cholesky),  corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1303,8 +1309,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            Ab.diag.iter = Ab.diag.iter,colMat = colMat,
-            Ab.struct = Ab.struct, Ar.struc = Ar.struc,
+            Ab.diag.iter = Ab.diag.iter, colMat = colMat, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, Ab.incomplete.cholesky = Ab.incomplete.cholesky,
+            Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
             randomX = randomX,
@@ -1337,7 +1343,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             num.lv.cor=num.lv.cor,
             family = family,
             method = method,
-            Lambda.struc = Lambda.struc, Ar.struc = Ar.struc, sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter,
+            Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
+            sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, sp.Ar.incomplete.cholesky = Ab.incomplete.cholesky,
             row.eff = row.eff,
             col.eff = col.eff, colMat = colMat, randomX.start = randomX.start,
             reltol = reltol,
