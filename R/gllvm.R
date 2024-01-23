@@ -1211,9 +1211,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
     if(!is.null(colMat) && Ab.struct %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
-      warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be zero due to the structure in the variational covariance matrix.\n")
+      warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
     }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "spblockdiagonal", "MNunstructured")){
-      warning("This is probably not a good thing to try; so many variational parameters are not required for your model. \n")
+      stop("This is probably not a good thing to try; so many variational parameters are not required for your model.")
     }
     
     if (is.null(offset))
