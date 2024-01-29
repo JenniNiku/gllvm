@@ -60,7 +60,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
     
     if(!is.null(colMat)  && all(dim(colMat)!=1)){
-      if(is.null(sp.Ar.struc.rank) && sp.Ar.struc != "unstructured"){
+      if(sp.Ar.struc%in%c("diagonal","blockdiagonal")){
+        sp.Ar.struc.rank = 0
+      }else if(is.null(sp.Ar.struc.rank) && sp.Ar.struc != "unstructured"){
         sp.Ar.struc.rank <- p
       }else if(is.null(sp.Ar.struc.rank) && sp.Ar.struc == "unstructured"){
         sp.Ar.struc.rank <- sum(nsp)*p
@@ -2454,19 +2456,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     }}
                 }else{
                   sp = 0;
+                  blocks<<-blocks
+                  Abranks<<-Abranks
+                  blocksp<<-blocksp
+                  spAr2<<-spAr
                   for(cb in 1:length(blocks[-1])){
-                    if(Abranks[cb]==1){
-                      for (r in 2:blocksp[cb]){
-                        spArs[[2]][r+sp,1+sp]=spAr[1];
-                        spAr <- spAr[-1]
-                      }
-                    }else{
-                    for (j in 1:(Abranks[cb]-1)){
+                    for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
+                        if(j<r && r<blocksp[cb]){
                         spArs[[2]][r+sp,j+sp]=spAr[1];
                         spAr <- spAr[-1]
+                        }
                       }
-                    }
                     }
                   sp = sp +blocksp[cb]
                 }
@@ -2491,19 +2492,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               }else{
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
-                  if(Abranks[cb]==1){
-                    for (r in 2:blocksp[cb]){
-                      spArs[[d]][r+sp,1+sp]=spAr[1];
-                      spAr <- spAr[-1]
-                    } 
-                  }else{
-                    for (j in 1:(Abranks[cb]-1)){
+                    for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
+                        if(j<r && r<blocksp[cb]){
                         spArs[[d]][r+sp,j+sp]=spAr[1];
                         spAr <- spAr[-1]
+                        }
                       }
                     }
-                  }
                   sp = sp +blocksp[cb]
                 }
               }
@@ -2527,10 +2523,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                 for(cb in 1:length(blocks[-1])){
                   spArs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*sum(nsp))])
                   
-                for(j in 1:(Abranks[cb]-1)){
+                for(j in 1:Abranks[cb]){
                   for(r in (j+1):(blocksp[cb]*sum(nsp))){
+                    if(j<r && r<blocksp[cb]){
                     spArs[[cb]][r,j] = spAr[1];
                     spAr <- spAr[-1]
+                    }
                   }} 
                 }
                 spArs <- list(Matrix::bdiag(spArs))

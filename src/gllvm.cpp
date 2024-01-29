@@ -601,6 +601,7 @@ Type objective_function<Type>::operator() ()
         }else{
           rhoSP = 1;
         }
+        REPORT(rhoSP);
         for(int cb=1; cb<colMatBlocks.size(); cb++){
           matrix<Type> colCorMat(colMatBlocks(cb).rows(),colMatBlocks(cb).cols());
           colCorMatIblocks(cb-1).resize(colMatBlocks(cb).rows(),colMatBlocks(cb).cols());
@@ -611,16 +612,16 @@ Type objective_function<Type>::operator() ()
           Irho.diagonal().fill(1-rhoSP);
           colCorMat = colMatBlocks(cb)*rhoSP + Irho;
           
-          logdetColCorMat += atomic::logdet(colCorMat);
-          if((rhoSP<1)){
-            colCorMatIblocks(cb-1) = atomic::matinv(colCorMat);
-          }else{
-            colCorMatIblocks(cb-1) = Eigen::MatrixXd::Identity(colCorMatIblocks(cb-1).rows(),colCorMatIblocks(cb-1).cols());
-          }
+          
+          CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(colCorMat));
+          colCorMatIblocks(cb-1) = atomic::vec2mat(res,colMatBlocks(cb).rows(),colMatBlocks(cb).cols(),1);
+          logdetColCorMat += res[0];
+            // logdetColCorMat += atomic::logdet(colCorMat);
+            // colCorMatIblocks(cb-1) = atomic::matinv(colCorMat);
         }
         }
         //Variational components
-        if((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))){
+        if(((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))) && Abranks(0) == 0){
           // Ab.struct == "diagonal" or "blockdiagonal", i.e., independence over species
           int sdcounter = 0;
           int covscounter = p*nsp.sum();
@@ -713,12 +714,12 @@ Type objective_function<Type>::operator() ()
                 covscounter++;
               }}
           }
-          
+          REPORT(SArmR);
           typedef Eigen::Triplet<Type> T;
           int sp = 0;//tracking how many species we have had so far
           for(int cb=0; cb<colCorMatIblocks.size(); cb++){
             
-            if(Abranks(cb)<colMatBlocks(0)(cb+1,0)){
+            if(Abranks(cb)<colCorMatIblocks(cb).cols()){
               //use sparse matrices if we can to speed things up with many species
               Eigen::SparseMatrix<Type>SArmC(colCorMatIblocks(cb).cols(),colCorMatIblocks(cb).cols());
               std::vector<T> tripletList;
@@ -751,7 +752,7 @@ Type objective_function<Type>::operator() ()
                   }}
               }
               SArmC.setFromTriplets(tripletList.begin(),tripletList.end());
-              
+              REPORT(SArmC);
               // determinant of kronecker product of two matrices based on their cholesky factors
               nll -= SArmR.rows()*SArmC.diagonal().array().log().sum() + SArmC.rows()*SArmR.diagonal().array().log().sum();
               
@@ -801,6 +802,7 @@ Type objective_function<Type>::operator() ()
                   cQ.col(j+sp) += 0.5*SArmP(j,j)*((xb*SArmR*SArmR.transpose()).cwiseProduct(xb)).rowwise().sum();
                 }
                 sp += colCorMatIblocks(cb).cols();
+                REPORT(SArmC);
             }
           
          

@@ -336,7 +336,9 @@ trait.TMB <- function(
       
       if(!is.null(colMat) && all(dim(colMat)!=1)){
         #is left empty, set to maximum number of columns
-        if(is.null(Ab.struct.rank) && Ab.struct != "unstructured"){
+        if(Ab.struct%in%c("diagonal","blockdiagonal")){
+          Ab.struct.rank = 0
+        }else if(is.null(Ab.struct.rank) && Ab.struct != "unstructured"){
           Ab.struct.rank <- p
         }else if(is.null(Ab.struct.rank) && Ab.struct == "unstructured"){
           Ab.struct.rank <- ncol(xb)*p
@@ -1907,18 +1909,13 @@ trait.TMB <- function(
               }else{
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
-                  if(Abranks[cb]==1){
-                    for (r in 2:blocksp[cb]){
-                      Abs[[2]][r+sp,1+sp]=Ab[1];
-                      Ab <- Ab[-1]
-                    }
-                  }else{
-                    for (j in 1:(Abranks[cb]-1)){
+                    for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
+                        if(j<r && r<blocksp[cb]){
                         Abs[[2]][r+sp,j+sp]=Ab[1];
                         Ab <- Ab[-1]
+                        }
                       }
-                    }
                   }
                   sp = sp +blocksp[cb]
                 }
@@ -1943,14 +1940,9 @@ trait.TMB <- function(
             }else{
               sp = 0;
               for(cb in 1:length(blocks[-1])){
-                if(Abranks[cb]==1){
-                  for (r in 2:blocksp[cb]){
-                    Abs[[d]][r+sp,1+sp]=Ab[1];
-                    Ab <- Ab[-1]
-                  } 
-                }else{
-                  for (j in 1:(Abranks[cb]-1)){
+                  for (j in 1:Abranks[cb]){
                     for (r in (j+1):blocksp[cb]){
+                      if(j<r && r<blocksp[cb]){
                       Abs[[d]][r+sp,j+sp]=Ab[1];
                       Ab <- Ab[-1]
                     }
@@ -1979,10 +1971,12 @@ trait.TMB <- function(
             for(cb in 1:length(blocks[-1])){
               Abs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*ncol(xb))])
               
-              for(j in 1:(Abranks[cb]-1)){
+              for(j in 1:Abranks[cb]){
                 for(r in (j+1):(blocksp[cb]*ncol(xb))){
+                  if(j<r && r<blocksp[cb]){
                   Abs[[cb]][r,j] = Ab[1];
                   Ab <- Ab[-1]
+                  }
                 }} 
             }
             Abs <- list(Matrix::bdiag(Abs))
