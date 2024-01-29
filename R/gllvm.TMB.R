@@ -2456,10 +2456,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     }}
                 }else{
                   sp = 0;
-                  blocks<<-blocks
-                  Abranks<<-Abranks
-                  blocksp<<-blocksp
-                  spAr2<<-spAr
+
                   for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
