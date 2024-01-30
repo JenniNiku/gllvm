@@ -593,28 +593,30 @@ Type objective_function<Type>::operator() ()
         if(colMatBlocksI(0)(0,0) == p){
         if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
           if(random(3)>0){
-            rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
+            rhoSP = sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0);
+            rhoSP = CppAD::CondExpGt(rhoSP, Type(3.3), Type(3.3), rhoSP);
+            rhoSP = exp(-exp(rhoSP));
           }else if(random(1)>0 && sigmaB.size()>nsp.size()){
             rhoSP = sigmaB.segment(nsp.size(),1)(0);
-            rhoSP = exp(-exp(sigmaB.segment(nsp.size(),1)(0)));  
+            rhoSP = CppAD::CondExpGt(rhoSP, Type(3.3), Type(3.3), rhoSP);
+            rhoSP = exp(-exp(rhoSP));
           }
         }else{
           rhoSP = 1;
         }
-        rhoSP = CppAD::CondExpGt(rhoSP, Type(1-1e-15), rhoSP-Type(1e-15), rhoSP); //correct if on the boundary
-        rhoSP = CppAD::CondExpLt(rhoSP, Type(1e-15), rhoSP+Type(1e-15), rhoSP); //correct if on the boundary
 
         for(int cb=1; cb<colMatBlocksI.size(); cb++){
           //efficiently update inverse and determinant using rank 1 updates
           colCorMatIblocks(cb-1) = colMatBlocksI(cb)/rhoSP; // start at (colMat*rho)^-1
           logdetColCorMat += colCorMatIblocks(cb-1).cols()*log(rhoSP);//log-determinant of colMat*rho
           for(int j=0; j<colCorMatIblocks(cb-1).cols(); j++){
-            logdetColCorMat += log(1+(1-rhoSP)*colCorMatIblocks(cb-1)(j,j));
-            colCorMatIblocks(cb-1) -= 1/(1/(1-rhoSP)+colCorMatIblocks(cb-1)(j,j))*colCorMatIblocks(cb-1).row(j).transpose()*colCorMatIblocks(cb-1).row(j);
+            logdetColCorMat += log1p((1-rhoSP)*colCorMatIblocks(cb-1)(j,j));
+            colCorMatIblocks(cb-1) -= ((1-rhoSP)/(1+(1-rhoSP)*colCorMatIblocks(cb-1)(j,j)))*colCorMatIblocks(cb-1).row(j).transpose()*colCorMatIblocks(cb-1).row(j);
+            colCorMatIblocks(cb-1) = (colCorMatIblocks(cb-1)+colCorMatIblocks(cb-1).transpose())/2;//symmetrize to prevent some underflow issues
           }
         }
-        // REPORT(logdetColCorMat);
-        // REPORT(colCorMatIblocks);
+        REPORT(logdetColCorMat);
+        REPORT(colCorMatIblocks);
         }
         //Variational components
         if(((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))) && Abranks(0) == 0){
@@ -990,8 +992,10 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      eta += (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
-      
+      matrix<Type>etatemp(n,p);
+      etatemp = (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
+      REPORT(etatemp);
+      eta += etatemp;
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       
@@ -1018,22 +1022,23 @@ Type objective_function<Type>::operator() ()
       // add terms to cQ
       matrix<Type> ArmMat = Arm*Arm.transpose();
         cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()).replicate(1,p);
+
       // We build the actual covariance matrix
       // This can straightforwardly be extended to estimate correlation between effects
         matrix <Type> invSr(nr(re),nr(re));invSr.setZero();
         Type logdetSr;
         // diagonal row effect
         if(cstruc(re) == 0){
-          Eigen::DiagonalMatrix<Type, Eigen::Dynamic> invSr(nr(re));
+          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic> invSr(nr(re));
           // Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Sr(nr(re));
           // Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
           // inverse and log determinant are straighforwardly available here
-          invSr.diagonal().array() = pow(sigma(sigmacounter), -2);
-          logdetSr = -2*nr(re)*log(sigma(sigmacounter));
+          invSr.diagonal().fill(pow(sigma(sigmacounter), -2));
+          logdetSr = 2*nr(re)*log(sigma(sigmacounter));
           sigmacounter++;
         }else if(cstruc(re) == 1){ // corAR1
           Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
-          sigmacounter+=2;
+          sigmacounter+= 2;
         }else if(cstruc(re) == 3){ // corCS
           Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
           sigmacounter += 2;
@@ -1058,7 +1063,7 @@ Type objective_function<Type>::operator() ()
           //TMB's matinvpd function: inverse of matrix with logdet for free
         CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
         logdetSr = res[0];
-        matrix <Type> invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
+        invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
         }
 
         // matrix<Type> invSr = atomic::matinvpd(Sr(re), logdetSr);
