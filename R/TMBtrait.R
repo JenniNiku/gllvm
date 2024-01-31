@@ -325,7 +325,7 @@ trait.TMB <- function(
       Br <- bstart$Br
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
       # colMat signal strength
-      if(!is.null(colMat))sigmaB <- c(sigmaB,1)
+      if(!is.null(colMat))sigmaB <- c(sigmaB,3)
       sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
       
       # method <- "LA"

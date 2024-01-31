@@ -396,7 +396,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigmaB <- c(sigmaB,bstart$sigmaB[cs])
       }
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, 1)
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, 3)
       }else{
         sigmaB <- 0;Br <- matrix(0)
       }
