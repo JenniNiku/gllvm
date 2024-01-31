@@ -2,7 +2,7 @@
 #' @description  Calculates the species environment covariance matrix for a gllvm object.
 #'
 #' @param object an object of class 'gllvm'.
-#' @param x.randomB (optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.
+#' @param x (optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.
 #' @param ... not used
 #' 
 #' @return Function returns the following components:
@@ -47,13 +47,18 @@
 #'@export
 #'@export getEnvironCov.gllvm
 
-getEnvironCov.gllvm <- function(object, x.randomB = NULL){
+getEnvironCov.gllvm <- function(object, x = NULL){
   
   if(isFALSE(object$randomB) & isFALSE(object$col.eff$col.eff)){
     stop("Canot calculate correlations without random effects for covariates in the model.")
   }
 
 if(object$col.eff$col.eff=="random"){
+  if(is.null(x)){
+    x <- rep(1,nrow(object$params$Br))
+  }else if(length(x)!=nrow(object$params$Br)){
+    stop("Supplied 'x' of  incorrect length.")
+  }
   C <- kronecker(diag(ncol(object$y)),t(x))
   if(is.null(object$col.eff$colMat)){
     object$col.eff$colMat <- diag(ncol(object$y))
@@ -64,20 +69,20 @@ if(object$col.eff$col.eff=="random"){
   trace.environ.col <- sum(diag(cov.environ.col))
 }
   if(!isFALSE(object$randomB)){
-    if(is.null(x.randomB)){
-      x.randomX <- rep(1,nrow(object$params$LvXcoef))
-    }else if(length(x.randomB)!=ncol(object$lv.X)){
-      stop("Supplied 'x.randomB' of  incorrect length.")
+    if(is.null(x)){
+      x <- rep(1,nrow(object$params$LvXcoef))
+    }else if(length(x)!=ncol(object$lv.X)){
+      stop("Supplied 'x' of  incorrect length.")
     }
   if(object$randomB=="LV"){
     # x_i^\top\beta_j, where \beta_k \sim N(0,\Gamma \Sigma \Gamma^\top)
     # so, x_i^\top \beta \sim MN(0,x_i^\top x_i, \Gamma \Sigma \Gamma^\top) = N(0,\sum^k x_ik^2 \Gamma \Sigma\Gamma^\top)
     
-  cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)Reduce("+",sapply(x.randomB,function(xk)xk^2*object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef[q]^2,simplify=F)),simplify=F)
+  cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)Reduce("+",sapply(x,function(xk)xk^2*object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef[q]^2,simplify=F)),simplify=F)
   trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
   if(!isFALSE(object$quadratic)){
     # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-    Sigmaz <- Reduce("+", sapply(x.randomB,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
+    Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
     theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
     cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q],simplify=F)
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
@@ -86,12 +91,12 @@ if(object$col.eff$col.eff=="random"){
     # x_i^\top\beta_j, where \beta_j \sim N(0,\Gamma \Gamma^\top) and \beta_k \sim N(0, \Sigma), i.e., \beta \sim MN(0,\Sigma, \Gamma \Gamma^\top)
     # so, x_i^\top \beta \sim MN(0,x_i^\top \Sigma x_i, \Gamma \Gamma^\top)
     
-  cov.environ.randomB <- sapply(1:length(object$params$sigmaLvXcoef), function(k)object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F])*(object$params$sigmaLvXcoef[k]*x.randomB[k])^2,simplify=F)
+  cov.environ.randomB <- sapply(1:length(object$params$sigmaLvXcoef), function(k)object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F])*(object$params$sigmaLvXcoef[k]*x[k])^2,simplify=F)
   trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
   
   if(!isFALSE(object$quadratic)){
     # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-    Sigmaz <- diag(rep(x.randomB%*%diag(model2$params$sigmaLvXcoef^2)%*%x.randomB,object$num.lv.c+object$num.RR))
+    Sigmaz <- diag(rep(x%*%diag(model2$params$sigmaLvXcoef^2)%*%x,object$num.lv.c+object$num.RR))
     theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
     cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
@@ -100,7 +105,7 @@ if(object$col.eff$col.eff=="random"){
     cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef^2,simplify=F)
     cov.environ.randomB.trace <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
     if(!isFALSE(object$quadratic)){
-      Sigmaz <- Reduce("+", sapply(x.randomB,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
+      Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
     # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
       theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
       cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz^2,simplify=F)
@@ -113,7 +118,7 @@ if(object$col.eff$col.eff=="random"){
   out <- list()
   if(object$col.eff$col.eff=="random"){
   covMat <- cov.environ.col
-  out$trace.col.eff <- trace.environ.cov
+  out$trace.col.eff <- trace.environ.col
   }
   
   if(!isFALSE(object$randomB)){

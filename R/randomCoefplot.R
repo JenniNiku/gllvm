@@ -38,6 +38,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   
   if ((is.null(object$Xrandom) || is.null(object$randomX)) && isFALSE(object$randomB)  && object$col.eff$col.eff!="random")
     stop("No random covariates in the model.")
+  if(is.null(object$TR) && object$col.eff$col.eff=="random") object$Xr <- as.matrix(object$col.eff$spdr)
   
   if((object$num.lv.c+object$num.RR)==0 && !is.null(object$params$Br)){
     if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))
@@ -49,13 +50,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     m <- ncol(object$y)
     Xc <- Xcoef
     
-    if((object$method %in% c("VA", "EVA"))){
-      object$Ab <- object$Ab+CMSEPf(object)$Ab
-      # object$Ab <- object$Ab+sdB(object)
-      sdXcoef <- t(sqrt(apply(object$Ab,1,diag)))
-    } else {
-      sdXcoef <- t(sqrt(apply(object$prediction.errors$Br,1,diag)))
-    }
+    sdXcoef <- t(getPredictErr(object)$Br)
     sdXcoef <- sdXcoef[,which.Xcoef,drop=F]
     if (is.null(mfrow) && k > 1)
       mfrow <- c(1, k)

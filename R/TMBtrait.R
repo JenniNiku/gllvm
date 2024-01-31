@@ -285,7 +285,7 @@ trait.TMB <- function(
     }
   }
   
-  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
+  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,colMat = colMat,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
 
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   

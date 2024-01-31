@@ -312,7 +312,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   
   n.i <- 1
   if(starting.val!="zero"){seed.best <- seed[n.i]}else{seed.best <- NULL}
-  out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMatBlocksI = blocks, nsp = nsp, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
+  out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, nsp = nsp, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
   #if (n.init > 1)
   # n.init model fits
