@@ -993,10 +993,7 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      matrix<Type>etatemp(n,p);
-      etatemp = (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
-      REPORT(etatemp);
-      eta += etatemp;
+      eta += (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       
@@ -2189,7 +2186,7 @@ Type objective_function<Type>::operator() ()
 
 
        if(colMatBlocksI(0)(0,0)==p){
-           if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
+           if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){//safeguard though this should always happen
              if(random(3)>0){
                rhoSP = exp(-exp(sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0)));
              }else if(random(1)>0 && sigmaB.size()>nsp.size()){
