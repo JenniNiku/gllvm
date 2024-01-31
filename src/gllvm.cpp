@@ -588,9 +588,10 @@ Type objective_function<Type>::operator() ()
         }
         
         vector<matrix<Type>> colCorMatIblocks(colMatBlocksI.size()-1);
-        Type logdetColCorMat = colMatBlocksI(0).col(1).segment(1,colMatBlocksI.size()-1).sum();
+        Type logdetColCorMat;
         
         if(colMatBlocksI(0)(0,0) == p){
+          logdetColCorMat = colMatBlocksI(0).col(1).segment(1,colMatBlocksI.size()-1).sum();
         if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
           if(random(3)>0){
             rhoSP = sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),1)(0);
@@ -612,7 +613,7 @@ Type objective_function<Type>::operator() ()
           for(int j=0; j<colCorMatIblocks(cb-1).cols(); j++){
             logdetColCorMat += log1p((1-rhoSP)*colCorMatIblocks(cb-1)(j,j));
             colCorMatIblocks(cb-1) -= ((1-rhoSP)/(1+(1-rhoSP)*colCorMatIblocks(cb-1)(j,j)))*colCorMatIblocks(cb-1).row(j).transpose()*colCorMatIblocks(cb-1).row(j);
-            colCorMatIblocks(cb-1) = (colCorMatIblocks(cb-1)+colCorMatIblocks(cb-1).transpose())/2;//symmetrize to prevent some underflow issues
+            // colCorMatIblocks(cb-1) = (colCorMatIblocks(cb-1)+colCorMatIblocks(cb-1).transpose())/2;//symmetrize to prevent some underflow issues
           }
         }
         REPORT(logdetColCorMat);
