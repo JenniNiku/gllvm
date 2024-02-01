@@ -891,7 +891,7 @@ trait.TMB <- function(
           }
         }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
           #matrix normal VA matrix
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))[-c(ncol(xb)+1)]
+          Abb <- unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
             if(ncol(colMat)!=p){
               Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, p*(p-1)/2)))
