@@ -15,7 +15,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
-  if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
+  if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
@@ -396,7 +396,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigmaB <- c(sigmaB,bstart$sigmaB[cs])
       }
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, 3)
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, .5)
       }else{
         sigmaB <- 0;Br <- matrix(0)
       }
@@ -857,24 +857,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           #matrix normal VA matrix
           spAr <- rep(log(Lambda.start[2]), sum(nsp)+p-1)
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
-            if(ncol(colMat)!=p){
-              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, p*(p-1)/2)))
-            }else{
               spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-            }
           }
+        }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
+          spAr <- rep(log(Lambda.start[2]), sum(p*sum(nsp)))# variances
+          if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2)) # rest blockdiagonal
+          spAr <- c(spAr, rep(log(Lambda.start[2]), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(sp.Ar.struc == "spblockdiagonal" ||  (sp.Ar.struc=="unstructured" && Ab.diag.iter==1)){
-          if(ncol(colMat)!=p){
-            spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(nsp)*p*(p-1)/2))
-          }else{
             spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }
       }else if(sp.Ar.struc == "unstructured"){
-          if(ncol(colMat)==p){
             spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else{
-            spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, p*sum(nsp)*(p*sum(nsp)-1)/2))
-          } 
       }
           } else {spAr <- 0}
       # Variational covariances for  random rows
@@ -1119,7 +1111,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       
       ### Now diag.iter, improves the model fit sometimes
-      if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal")))){
+      if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","blockdiagonalsp")))){
         objr1 <- objr
         optr1 <- optr
         param1 <- optr$par
@@ -1146,17 +1138,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(sp.Ar.struc=="blockdiagonal"){
            spAr1 <- c(spAr1, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
           }else if(sp.Ar.struc == "MNunstructured"){
-              if(ncol(colMat)!=p){
-                spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, p*(p-1)/2)))
-              }else{
-                spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-              }
+              spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
             }else if(sp.Ar.struc == "spblockdiagonal"){
-              if(ncol(colMat)!=p){
-                spAr1 <- c(spAr1,rep(1e-3, sum(nsp)*p*(p-1)/2))
-              }else{
-                spAr1 <- c(spAr1,rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-              }
+              spAr1 <- c(spAr1,rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+            }else if(sp.Ar.struc == "blockdiagonalsp"){
+              spAr1 <- c(spAr1[1:c(blocksp*sum(nsp)+p-lenght(blocksp))], rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2)) # rest blockdiagonal
+              spAr1 <- c(spAr1, spAr1[-c(1:c(blocksp*sum(nsp)))]) # rest p*p
             }else if(sp.Ar.struc == "unstructured"){
               if(ncol(colMat)==p){
                 spAr1 <- c(spAr1,rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
@@ -2452,13 +2439,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                         spAr <- spAr[-1]
                       }}
                 # column covariance
-                if(ncol(colMat)!=p){
-                  for(d in 1:(p-1)){
-                    for(r in (d+1):p){
-                      spArs[[2]][r,d] = spAr[1];
-                      spAr <- spAr[-1]
-                    }}
-                }else{
+                
                   sp = 0;
 
                   for(cb in 1:length(blocks[-1])){
@@ -2472,10 +2453,44 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     }
                   sp = sp +blocksp[cb]
                 }
-                  }
+                  
                   }
                 spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
                 spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
+          }else if(sp.Ar.struc %in% c("diagonalsp", "blockdiagonalsp")){
+            spArs <- list(length(blocks[-1]))
+            Ar.sds <- exp(spAr[1:(sum(blocksp*sum(nsp))+p-length(blocksp))])
+            spAr <- spAr[-c(1:(sum(blocksp*sum(nsp))+p-length(blocksp)))]
+            for(cb in 1:length(blocks[-1])){
+            SArmbs <- list()
+            # build block diagonal matrices
+            for(j in 1:blocksp[cb]){
+              SArmbs[[j]] <- diag(Ar.sds[1:sum(nsp)])
+              Ar.sds <- Ar.sds[-c(1:sum(nsp))]
+              if(sp.Ar.struc == "blockdiagonalsp"){
+                  for(d in 1:(sum(nsp)-1)){
+                    for(r in (d+1):sum(nsp)){
+                      SArmbs[[j]][r,d] = spAr[1];
+                      spAr <- spAr[-1]
+                    }}
+              }
+            }
+            # build second matrix, first diagonal entry fixed for identifiability
+            SArmC = diag(c(1, Ar.sds[1:(blocksp[cb]-1)]))
+            Ar.sds <- Ar.sds[-c(1:(blocksp[cb]-1))]
+
+            for (j in 1:Abranks[cb]){
+              for (r in (j+1):blocksp[cb]){
+                if(j<r && r<=blocksp[cb]){
+                  SArmC[r,j]=spAr[1];
+                  spAr <- spAr[-1]
+                }
+              }
+            }
+            SArmC <- SArmC%*%t(SArmC)
+            spArs[[cb]] <- Matrix::bdiag(SArmbs)%*%kronecker(cov2cor(SArmC),diag(sum(nsp)))%*%Matrix::t(Matrix::bdiag(SArmbs))
+            }
+            spArs <- as.matrix(Matrix::bdiag(spArs))
           }else if(sp.Ar.struc == "spblockdiagonal"){
             spArs <- vector("list", 1)
             for(d in 1:sum(nsp)){
@@ -2484,13 +2499,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               spArs[[d]] <- diag(Ar.sds)
             }
             for(d in 1:sum(nsp)){
-              if(ncol(colMat)!=p){
-                for(j in 1:(p-1)){
-                  for(r in (j+1):p){
-                    spArs[[d]][r,j] = spAr[1];
-                    spAr <- spAr[-1]
-                  }}
-              }else{
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
@@ -2503,7 +2511,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     }
                   sp = sp +blocksp[cb]
                 }
-              }
               spArs[[d]] <- spArs[[d]]%*%t(spArs[[d]])
             }
           }else if(sp.Ar.struc == "unstructured"){
@@ -2512,15 +2519,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             Ar.sds <- exp((spAr)[1:(p*sum(nsp))])
             spAr <- spAr[-c(1:(p*sum(nsp)))]
 
-              if(ncol(colMat)!=p){
-                spArs[[1]] <- diag(Ar.sds[1:(p*sum(nsp))])
-                
-                for(j in 1:(p*sum(nsp)-1)){
-                  for(r in (j+1):(p*sum(nsp))){
-                    spArs[[1]][r,j] = spAr[1];
-                    spAr <- spAr[-1]
-                  }}
-              }else{
                 for(cb in 1:length(blocks[-1])){
                   spArs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*sum(nsp))])
                   
@@ -2533,8 +2531,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   }} 
                 }
                 spArs <- list(Matrix::bdiag(spArs))
-              }
-            
             spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
           }
           out$Ab <- spArs

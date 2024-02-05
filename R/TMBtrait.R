@@ -13,7 +13,7 @@ trait.TMB <- function(
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
 
-  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal")) Ab.diag.iter <- 0
+  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
   
   if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
     stop("Selected family not permitted...sorry!")
@@ -325,7 +325,7 @@ trait.TMB <- function(
       Br <- bstart$Br
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
       # colMat signal strength
-      if(!is.null(colMat))sigmaB <- c(sigmaB,3)
+      if(!is.null(colMat))sigmaB <- c(sigmaB,.5)
       sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
       
       # method <- "LA"
@@ -893,19 +893,15 @@ trait.TMB <- function(
           #matrix normal VA matrix
           Abb <- unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-            if(ncol(colMat)!=p){
-              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, p*(p-1)/2)))
-            }else{
               Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-            }          
             }
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter==1)){
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
-          if(ncol(colMat)!=p){
-            Abb <- c(Abb, rep(1e-3, ncol(xb)*p*(p-1)/2))
-          }else{
-            Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }
+          Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          Abb <- c(Abb, rep(log(a.var), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
           if(ncol(colMat)==p){
@@ -925,17 +921,13 @@ trait.TMB <- function(
         }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
           #matrix normal VA matrix
           Abb <- rep(log(a.var), ncol(xb)+p-1)  
-          if(ncol(colMat)!=p){
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, p*(p-1)/2)))
-          }else{
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-          }
+          Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter == 1)){
-          if(ncol(colMat)!=p){
-            Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*p*(p-1)/2))
-          }else{
-            Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }
+          Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+        }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+          Abb <- rep(log(a.var),sum(p*ncol(xb)))
+          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          Abb <- c(Abb, rep(log(a.var), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           if(ncol(colMat)==p){
             Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
@@ -1154,7 +1146,7 @@ trait.TMB <- function(
   
     ### Now diag.iter, improves the model fit sometimes
     
-    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal")))){
+    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","blockdiagonalsp")))){
       objr1 <- objr
       optr1 <- optr
       param1 <- optr$par
@@ -1173,26 +1165,17 @@ trait.TMB <- function(
           if(Ab.struct=="blockdiagonal"){
             Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }else if(Ab.struct == "MNunstructured"){
-            if(ncol(colMat)!=p){
-              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, p*(p-1)/2)))
-            }else{
-              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-            }
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
           }else if(Ab.struct == "spblockdiagonal"){
-            if(ncol(colMat)!=p){
-              Abb <- c(Abb,rep(1e-3, ncol(xb)*p*(p-1)/2))
-            }else{
-              Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-            }
+            Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          }else if(Ab.struct == "blockdiagonalsp"){
+            Abb <- c(Abb[1:c(blocksp*ncol(xb)+p-lenght(blocksp))], rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+            Abb <- c(Abb, Abb[-c(1:c(blocksp*ncol(xb)))]) # rest p*p
           }else if(Ab.struct == "unstructured"){
             # previous iteration was "spblockdiagonal" so could re-use covariances between species, but generating new ones instead here
             # since reordering would be a pain
             Abb <- Abb[1:(ncol(xb)*p)]
-            if(ncol(colMat)==p){
               Abb <- c(Abb,rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-            }else{
-              Abb <- c(Abb,rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2))
-            }  
           }else{
             Abb <- log(exp(param1[nam=="Abb"])+1e-3)
           }
@@ -1903,13 +1886,6 @@ trait.TMB <- function(
                   Ab <- Ab[-1]
                 }}
               # column covariance
-              if(ncol(colMat)!=p){
-                for(d in 1:(p-1)){
-                  for(r in (d+1):p){
-                    Abs[[2]][r,d] = Ab[1];
-                    Ab <- Ab[-1]
-                  }}
-              }else{
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
@@ -1922,10 +1898,44 @@ trait.TMB <- function(
                   }
                   sp = sp +blocksp[cb]
                 }
-              }
+              
             }
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
+        }else if(Ab.struct %in% c("diagonalsp", "blockdiagonalsp")){
+          Abs <- list(length(blocks[-1]))
+          Ar.sds <- exp(Ab[1:(sum(blocksp*ncol(xb))+p-length(blocksp))])
+          Ab <- Ab[-c(1:(sum(blocksp*ncol(xb))+p-length(blocksp)))]
+          for(cb in 1:length(blocks[-1])){
+            SArmbs <- list()
+            # build block diagonal matrices
+            for(j in 1:blocksp[cb]){
+              SArmbs[[j]] <- diag(Ar.sds[1:ncol(xb)])
+              Ar.sds <- Ar.sds[-c(1:ncol(xb))]
+              if(Ab.struct == "blockdiagonalsp"){
+                for(d in 1:(ncol(xb)-1)){
+                  for(r in (d+1):ncol(xb)){
+                    SArmbs[[j]][r,d] = Ab[1];
+                    Ab <- Ab[-1]
+                  }}
+              }
+            }
+            # build second matrix, first diagonal entry fixed for identifiability
+            SArmC = diag(c(1, Ar.sds[1:(blocksp[cb]-1)]))
+            Ar.sds <- Ar.sds[-c(1:(blocksp[cb]-1))]
+            
+            for (j in 1:Abranks[cb]){
+              for (r in (j+1):blocksp[cb]){
+                if(j<r && r<=blocksp[cb]){
+                  SArmC[r,j]=Ab[1];
+                  Ab <- Ab[-1]
+                }
+              }
+            }
+            SArmC <- SArmC%*%t(SArmC)
+            Abs[[cb]] <- Matrix::bdiag(SArmbs)%*%kronecker(cov2cor(SArmC),diag(ncol(xb)))%*%Matrix::t(Matrix::bdiag(SArmbs))
+          }
+          Abs <- as.matrix(Matrix::bdiag(Abs))
         }else if(Ab.struct == "spblockdiagonal"){
           Abs <- vector("list", 1)
           for(d in 1:ncol(xb)){
@@ -1934,13 +1944,7 @@ trait.TMB <- function(
             Abs[[d]] <- diag(Ar.sds)
           }
           for(d in 1:ncol(xb)){
-            if(ncol(colMat)!=p){
-              for(j in 1:(p-1)){
-                for(r in (j+1):p){
-                  Abs[[d]][r,j] = Ab[1];
-                  Ab <- Ab[-1]
-                }}
-            }else{
+            
               sp = 0;
               for(cb in 1:length(blocks[-1])){
                   for (j in 1:Abranks[cb]){
@@ -1953,7 +1957,7 @@ trait.TMB <- function(
                 }
                 sp = sp +blocksp[cb]
               }
-            }
+            
             Abs[[d]] <- Abs[[d]]%*%t(Abs[[d]])
           }
         }else if(Ab.struct == "unstructured"){
@@ -1962,15 +1966,6 @@ trait.TMB <- function(
           Ar.sds <- exp((Ab)[1:(p*ncol(xb))])
           Ab <- Ab[-c(1:(p*ncol(xb)))]
 
-          if(ncol(colMat)!=p){
-            Abs[[1]] <- diag(Ar.sds[1:(p*ncol(xb))])
-            
-            for(j in 1:(p*ncol(xb)-1)){
-              for(r in (j+1):(p*ncol(xb))){
-                Abs[[1]][r,j] = Ab[1];
-                Ab <- Ab[-1]
-              }}
-          }else{
             for(cb in 1:length(blocks[-1])){
               Abs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*ncol(xb))])
               
@@ -1980,7 +1975,7 @@ trait.TMB <- function(
                   Abs[[cb]][r,j] = Ab[1];
                   Ab <- Ab[-1]
                   }
-                }} 
+                }
             }
             Abs <- list(Matrix::bdiag(Abs))
           }

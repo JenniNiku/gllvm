@@ -52,7 +52,7 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured".
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default), "MNunstructured" (only with colMat), "diagonalsp" ,"blockdiagonalsp","spblockdiagonal" (only with colMat), or "unstructured" (only with colMat).
 #'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use. Only applicable with "MNunstructured", "spblockdiagonal", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
@@ -1209,9 +1209,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     if(!is.null(colMat) && Ab.struct %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "spblockdiagonal", "MNunstructured")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "blockdiagonalsp","spblockdiagonal", "MNunstructured")){
       warning("So many variational parameters are not required for your model. Setting Ab.struct = 'blockdiagonal'.\n")
       Ab.struct <- "blockdiagonal"
+    }else if(is.null(colMat) && Ab.struct == "MNdiagonal"){
+      warning("Setting Ab.struct = 'diagonal' instead.\n")
+      Ab.struct <- "diagonal"
     }
     
     if (is.null(offset))
