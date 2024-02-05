@@ -20,7 +20,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
-
+  if(is.null(colMat) && !(sp.Ar.struc %in% c("diagonal","blockdiagonal")))sp.Ar.struc <- "blockdiagonal"
   
   if(!is.null(start.params)) starting.val <- "zero"
   ignore.u <- FALSE

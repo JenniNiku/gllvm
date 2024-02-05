@@ -19,6 +19,7 @@ trait.TMB <- function(
     stop("Selected family not permitted...sorry!")
   if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
+  if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
   
   objrFinal <- optrFinal <- NULL
   cstrucn = 0
