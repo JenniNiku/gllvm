@@ -1177,13 +1177,13 @@ trait.TMB <- function(
           if(Ab.struct=="blockdiagonal"){# "diagonal" was previous iteration
             Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }else if(Ab.struct == "MNunstructured"){# "MNdiagonal" was previous iteration
-            Abb<-c(Abb[1:(sum(nsp)+p-1)], c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+            Abb<-c(Abb[1:(ncol(xb)+p-1)], c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
           }else if(Ab.struct == "spblockdiagonal"){# "MNdiagonal" was previous iteration
             Abstruc <- 2
-            Abb <- c(rep(log(0.5), sum(nsp)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+            Abb <- c(rep(log(0.5), ncol(xb)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
           }else if(Ab.struct == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
             Abstruc <- 3
-            Abb <- c(rep(log(0.5), p*sum(nsp)+p-length(blocksp)), rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2), Abb[-c(1:c(blocksp*ncol(xb)))]) # rest blockdiagonal
+            Abb <- c(rep(log(0.5), p*ncol(xb)+p-length(blocksp)), rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
           }else if(Ab.struct == "unstructured"){# "spblockdiagonal" was previous iteration
             Abstruc <- 4
             Abb <- c(Abb[1:(ncol(xb)*p)],rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
