@@ -52,8 +52,8 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default), "MNunstructured" (only with colMat), "diagonalsp" ,"blockdiagonalsp","spblockdiagonal" (only with colMat), or "unstructured" (only with colMat).
-#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use. Only applicable with "MNunstructured", "spblockdiagonal", and "unstructured".}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (only with colMat), "diagonalsp" ,"blockdiagonalsp" (default with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat).
+#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalsp", "blockdiagonalsp","spblockdiagonal", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -68,7 +68,7 @@
 #'   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
 #'   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
-#'   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
+#'   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"} without "colMat" and otherwise to \code{"res"}.}
 #'   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
 #'   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
 #'   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
@@ -421,8 +421,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","blockdiagonalsp"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = ifelse(is.null(colMat), "zero", "res"), quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
   if(!method%in%c("LA","VA","EVA"))stop("Selected method is not supported.")
@@ -487,9 +487,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("Lambda.struc" %in% names(x)) & !is.null(lvCor)) 
         x$Lambda.struc = "diagonal"
       if (!("Ab.struct" %in% names(x))) 
-        x$Ab.struct = "blockdiagonal"
+        x$Ab.struct = ifelse(is.null(colMat), "blockdiagonal", "blockdiagonalsp")
       if (!("Ab.struct.rank" %in% names(x))) 
-        x$Ab.struct.rank = NULL
+        x$Ab.struct.rank = 1
       if (!("Ar.struc" %in% names(x))) 
         x$Ar.struc = "diagonal"
       if (!("diag.iter" %in% names(x))) 
@@ -1207,14 +1207,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
-    if(!is.null(colMat) && Ab.struct %in% c("diagonal", "MNdiagonal", "blockdiagonal")){
+    if(!is.null(colMat) && Ab.struct %in% c("diagonal", "blockdiagonal")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "blockdiagonalsp","spblockdiagonal", "MNunstructured")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalsp","blockdiagonalsp","spblockdiagonal", "MNunstructured","MNdiagonal")){
       warning("So many variational parameters are not required for your model. Setting Ab.struct = 'blockdiagonal'.\n")
       Ab.struct <- "blockdiagonal"
-    }else if(is.null(colMat) && Ab.struct == "MNdiagonal"){
-      warning("Setting Ab.struct = 'diagonal' instead.\n")
-      Ab.struct <- "diagonal"
     }
     
     if (is.null(offset))

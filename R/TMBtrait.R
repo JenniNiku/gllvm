@@ -885,24 +885,25 @@ trait.TMB <- function(
       } else {a.var <- 0.5;}
       
       if(randomX.start == "res" && !is.null(res$fitstart$Ab)){ # !!!! && !is.null(res$fitstart$Ab)
-        if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1)){
+        if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal"){
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
           #matrix normal VA matrix
           Abb <- unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-            }
+              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2)))
+          }
+          Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter==1)){
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
           Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
           }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          Abb <- c(unlist(lapply(res$fitstart$Ab,diag)),rep(log(a.var), p*ncol(xb)+p-length(blocksp)))
           if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
-          Abb <- c(Abb, rep(log(a.var), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
+          Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abb <- unlist(lapply(res$fitstart$Ab,diag))
           if(ncol(colMat)==p){
@@ -914,27 +915,26 @@ trait.TMB <- function(
         res$Br <- Br
         res$Ab <- c(unlist(lapply(res$fitstart$Ab,diag)))
       }else{
-        if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1)){
+        if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal"){
           Abb <- rep(log(a.var), p*ncol(xb))
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured"){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
           #matrix normal VA matrix
           Abb <- rep(log(a.var), ncol(xb)+p-1)  
-          Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+          if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
+            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2)))
+          }
+          Abb<-c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter == 1)){
           Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
-          Abb <- rep(log(a.var),sum(p*ncol(xb)))
+          Abb <- rep(log(a.var),sum(p*ncol(xb))+p-length(blocksp))
           if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
-          Abb <- c(Abb, rep(log(a.var), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
+          Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
-          if(ncol(colMat)==p){
             Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else{
-            Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, p*ncol(xb)*(p*ncol(xb)-1)/2))
-          }
         }
       }
        
@@ -1159,24 +1159,21 @@ trait.TMB <- function(
       if(!is.null(randomX)) {
         Br1 <- matrix(param1[nam=="Br"], ncol(xb), p) #!!!
         sigmaB1 <- param1[nam=="sigmaB"]
+        sigmaB1 <- ifelse(round(param1[nam=="sigmaB"],8)==0,1e-3,param1[nam=="sigmaB"])
         sigmaij1 <- param1[nam=="sigmaij"]*0
         Abb <- param1[nam=="Abb"]
         
         if(Ab.diag.iter>0){
-          if(Ab.struct=="blockdiagonal"){
+          if(Ab.struct=="blockdiagonal"){# "diagonal" was previous iteration
             Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
-          }else if(Ab.struct == "MNunstructured"){
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-          }else if(Ab.struct == "spblockdiagonal"){
-            Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else if(Ab.struct == "blockdiagonalsp"){
-            Abb <- c(Abb[1:c(blocksp*ncol(xb)+p-lenght(blocksp))], rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
-            Abb <- c(Abb, Abb[-c(1:c(blocksp*ncol(xb)))]) # rest p*p
-          }else if(Ab.struct == "unstructured"){
-            # previous iteration was "spblockdiagonal" so could re-use covariances between species, but generating new ones instead here
-            # since reordering would be a pain
-            Abb <- Abb[1:(ncol(xb)*p)]
-              Abb <- c(Abb,rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          }else if(Ab.struct == "MNunstructured"){# "MNdiagonal" was previous iteration
+            Abb<-c(Abb[1:(sum(nsp)+p-1)], c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+          }else if(Ab.struct == "spblockdiagonal"){# "MNdiagonal" was previous iteration
+            Abb <- c(rep(log(0.5), sum(nsp)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          }else if(Ab.struct == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
+            Abb <- c(rep(log(0.5), p*sum(nsp)+p-length(blocksp)), rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2), Abb[-c(1:c(blocksp*ncol(xb)))]) # rest blockdiagonal
+          }else if(Ab.struct == "unstructured"){# "spblockdiagonal" was previous iteration
+              Abb <- c(Abb[1:(ncol(xb)*p)],rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
           }else{
             Abb <- log(exp(param1[nam=="Abb"])+1e-3)
           }
@@ -1886,6 +1883,7 @@ trait.TMB <- function(
                   Abs[[1]][r,d] = Ab[1];
                   Ab <- Ab[-1]
                 }}
+            }
               # column covariance
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
@@ -1899,8 +1897,7 @@ trait.TMB <- function(
                   }
                   sp = sp +blocksp[cb]
                 }
-              
-            }
+
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
         }else if(Ab.struct %in% c("diagonalsp", "blockdiagonalsp")){

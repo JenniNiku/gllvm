@@ -686,14 +686,14 @@ Type objective_function<Type>::operator() ()
           //   cQ(i,j) += 0.5*(xb.row(i)*SArm(j)*SArm(j).transpose()*xb.row(i).transpose()).sum();
           //   }
           // }
-        }else if((Abb.size()==(nsp.sum()+p-1)) || (Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()-1+nsp.sum()*(nsp.sum()-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
+        }else if((Abb.size()==(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()-1+nsp.sum()*(nsp.sum()-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
           // Ab.struct == "MNdiagonal" OR "MNunstructured" with blocks due to Phylogeny
           // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
           matrix<Type>SArmR;//row covariance matrix
           
           // set-up row VA covariance matrix
-          if((Abb.size()==(nsp.sum()+p-1))){
+          if((Abb.size()==(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size() == (p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
             //ignoring the diagonal entries if possible
             SArmR = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
           }else{
@@ -708,7 +708,7 @@ Type objective_function<Type>::operator() ()
             sdcounter++;
           }
           
-          if((Abb.size()>(p+nsp.sum()-1))){ // unstructured row covariance
+          if((Abb.size()>(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size()>(p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){ // unstructured row covariance
             for (int d=0; d<(nsp.sum()); d++){
               for (int r=d+1; r<(nsp.sum()); r++){
                 SArmR(r,d)=Abb(covscounter);
@@ -738,20 +738,13 @@ Type objective_function<Type>::operator() ()
                 sdcounter++;
               }
               
-              if((Abb.size()>(p+nsp.sum()-1))){
                 for (int j=0; j<Abranks(cb); j++){
                   for (int r=j+1; r<(colMatBlocksI(0)(cb+1,0)); r++){
                     tripletList.push_back(T(r,j, Abb(covscounter)));
                     covscounter++;
                   }
                 }
-              }else if((Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2 ))){
-                for (int j=0; j<p; j++){
-                  for (int r=j+1; r<p; r++){
-                    tripletList.push_back(T(r,j,Abb(covscounter)));
-                    covscounter++;
-                  }}
-              }
+
               SArmC.setFromTriplets(tripletList.begin(),tripletList.end());
               REPORT(SArmC);
               // determinant of kronecker product of two matrices based on their cholesky factors
@@ -784,14 +777,13 @@ Type objective_function<Type>::operator() ()
                 sdcounter++;
               }
               
-              if((Abb.size()>(p+nsp.sum()-1))){
                 for (int j=0; j<Abranks(cb); j++){
                   for (int r=j+1; r<(colMatBlocksI(0)(cb+1,0)); r++){
                     SArmC(r,j) = Abb(covscounter);
                     covscounter++;
                   }
                 }
-              }
+
               // determinant of kronecker product of two matrices based on their cholesky factors
               nll -= SArmR.rows()*SArmC.diagonal().array().log().sum() + SArmC.rows()*SArmR.diagonal().array().log().sum();
               
@@ -805,9 +797,7 @@ Type objective_function<Type>::operator() ()
                 sp += colCorMatIblocks(cb).cols();
                 REPORT(SArmC);
             }
-          
-         
-                      }
+        }
         }else if((Abb.size() == ((nsp.sum()*p +nsp.sum()*p*(p-1)/2))) || (Abb.size()==(nsp.sum()*p+sum(nsp)*(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
           // Ab.struct == "spblockdiagonal" with block structure due to phylogeny
           // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
@@ -886,7 +876,7 @@ Type objective_function<Type>::operator() ()
           sp += colCorMatIblocks(cb).cols();
           
           }
-        }else if((Abb.size() == (p*nsp.sum() + p*(p-1)/2) + p-colCorMatIblocks.size()) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
+        }else if((Abb.size() == (p*nsp.sum() + p*(p-1)/2 + p-colCorMatIblocks.size())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
           // Ab.struct == "blockdiagonalsp" OR "diagonalsp". Only here as reference and should not be used unless "colMat" is present
           // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
           // always has p*p matrix with fixed diagonals, in combination with diagonal/blockdiagonal matrix for sp*nsp.sum()
@@ -918,6 +908,7 @@ Type objective_function<Type>::operator() ()
                 }}
             }
             }
+            REPORT(SArmb);
             //construct p by p covariance matrix
             if(Abranks(cb)<colMatBlocksI(0)(cb+1,0)){
             //construct as sparse matrix
@@ -940,6 +931,7 @@ Type objective_function<Type>::operator() ()
                     covscounter++;
                   }
                 }
+                REPORT(SArmC);
 
               SArmC.setFromTriplets(tripletList.begin(),tripletList.end());
               matrix<Type> SArmP = SArmC*SArmC.transpose();
@@ -955,13 +947,7 @@ Type objective_function<Type>::operator() ()
               //build the final covariance matrix
               matrix<Type>SArm(colCorMatIblocks(cb).cols()*nsp.sum(),colCorMatIblocks(cb).cols()*nsp.sum());
               SArm.setZero();
-              // for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-              //   for (int j2=j+1; j2<colCorMatIblocks(cb).cols(); j2++){
-              //     SArm.block(j2*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j2)*SArmb(j).transpose()*SArmP(j2,j);
-              //     SArm.block(j*nsp.sum(),j2*nsp.sum(), nsp.sum(),nsp.sum()) = SArm.block(j2*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()).transpose();
-              //   }
-              //   SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j)*SArmb(j).transpose()*SArmP(j,j);
-              // }
+
               for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
                 SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j);
               }

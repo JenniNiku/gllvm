@@ -395,6 +395,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(ncol(cs)==2){
         sigmaB <- c(sigmaB,bstart$sigmaB[cs])
       }
+      fit$Br <- bstart$Br
+      fit$sigmaB <- bstart$sigmaB
       # colMat signal strength
       if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, .5)
       }else{
@@ -848,21 +850,22 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       # Variational covariances for species effects
       if(col.eff == "random"){
-        if(sp.Ar.struc == "diagonal" || sp.Ar.struc== "blockdiagonal" || (sp.Ar.struc=="spblockdiagonal" && Ab.diag.iter == 1)){
+        if(sp.Ar.struc == "diagonal" || sp.Ar.struc== "blockdiagonal"){
           spAr <- rep(log(Lambda.start[2]), sum(p*sum(nsp)))
           if(sp.Ar.struc == "blockdiagonal" && Ab.diag.iter == 0){
             spAr<-c(spAr, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
           }
-        }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"){
+        }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"  || (sp.Ar.struc=="spblockdiagonal" && Ab.diag.iter == 1)  || (sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 1)){
           #matrix normal VA matrix
           spAr <- rep(log(Lambda.start[2]), sum(nsp)+p-1)
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
-              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2)))
           }
+          spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
-          spAr <- rep(log(Lambda.start[2]), sum(p*sum(nsp)))# variances
+          spAr <- rep(log(Lambda.start[2]), p*sum(nsp)+p-length(blocksp))# variances
           if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2)) # rest blockdiagonal
-          spAr <- c(spAr, rep(log(Lambda.start[2]), p-length(blocksp)), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
+          spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(sp.Ar.struc == "spblockdiagonal" ||  (sp.Ar.struc=="unstructured" && Ab.diag.iter==1)){
             spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
       }else if(sp.Ar.struc == "unstructured"){
@@ -1131,25 +1134,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(col.eff == 'random'){
           Br1 <- matrix(param1[nam=="Br"],nrow=ncol(spdr))
-          sigmaB1 <- ifelse(param1[nam=="sigmaB"]==0,1e-3,param1[nam=="sigmaB"])
-          
+          sigmaB1 <- ifelse(round(param1[nam=="sigmaB"],8)==0,1e-3,param1[nam=="sigmaB"])
+          if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], 1)>0.5,0.5,tail(param1[nam=="sigmaB"], 1))
           spAr1<- log(exp(param1[nam=="Abb"])+1e-3)
           if(Ab.diag.iter>0){
-          if(sp.Ar.struc=="blockdiagonal"){
+          if(sp.Ar.struc=="blockdiagonal"){# "diagonal" was previous iteration
            spAr1 <- c(spAr1, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
-          }else if(sp.Ar.struc == "MNunstructured"){
-              spAr1<-c(spAr1, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
-            }else if(sp.Ar.struc == "spblockdiagonal"){
-              spAr1 <- c(spAr1,rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-            }else if(sp.Ar.struc == "blockdiagonalsp"){
-              spAr1 <- c(spAr1[1:c(blocksp*sum(nsp)+p-lenght(blocksp))], rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2)) # rest blockdiagonal
-              spAr1 <- c(spAr1, spAr1[-c(1:c(blocksp*sum(nsp)))]) # rest p*p
-            }else if(sp.Ar.struc == "unstructured"){
-              if(ncol(colMat)==p){
-                spAr1 <- c(spAr1,rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-              }else{
-                spAr1 <- c(spAr1,rep(1e-3, p*sum(nsp)*(p*sum(nsp)-1)/2))
-              }  
+          }else if(sp.Ar.struc == "MNunstructured"){# "MNdiagonal" was previous iteration
+              spAr1 <- c(spAr1[1:(sum(nsp)+p-1)], c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+            }else if(sp.Ar.struc == "spblockdiagonal"){# "MNdiagonal" was previous iteration
+              spAr1 <- c(rep(log(Lambda.start[2]), sum(nsp)*p),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+            }else if(sp.Ar.struc == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
+              spAr1 <- c(rep(log(Lambda.start[2]), p*sum(nsp)+p-length(blocksp)), rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
+            }else if(sp.Ar.struc == "unstructured"){# "spblockdiagonal" was previous iteration
+                spAr1 <- c(spAr1[1:(sum(nsp)*p)],rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
             }
           }
         }else{
@@ -2438,6 +2436,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                         spArs[[1]][r,d] = spAr[1];
                         spAr <- spAr[-1]
                       }}
+              }
                 # column covariance
                 
                   sp = 0;
@@ -2453,8 +2452,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                     }
                   sp = sp +blocksp[cb]
                 }
-                  
-                  }
+
                 spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
                 spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
           }else if(sp.Ar.struc %in% c("diagonalsp", "blockdiagonalsp")){
