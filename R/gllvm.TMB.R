@@ -2435,16 +2435,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                Ar.sds <- exp(spAr[1:(p+sum(nsp)-1)])
                spAr <- spAr[-c(1:(p+sum(nsp)-1))]
               
-              spArs[[1]] <- diag(Ar.sds[1:sum(nsp)])
+              spArs[[1]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
               spArs[[2]] <- diag(c(1,Ar.sds[-c(1:sum(nsp))]))
-              if(sp.Ar.struc == "MNunstructured"){
+              if(sp.Ar.struc == "MNunstructured" && sum(nsp)>1){
               # row covariance
                     for(d in 1:(sum(nsp)-1)){
                       for(r in (d+1):sum(nsp)){
                         spArs[[1]][r,d] = spAr[1];
                         spAr <- spAr[-1]
                       }}
-              }
+                }
                 # column covariance
                 
                   sp = 0;
@@ -2452,7 +2452,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
-                        if(j<r && r<blocksp[cb]){
+                        if(j<r && r<=blocksp[cb]){
                         spArs[[2]][r+sp,j+sp]=spAr[1];
                         spAr <- spAr[-1]
                         }
@@ -2471,9 +2471,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             SArmbs <- list()
             # build block diagonal matrices
             for(j in 1:blocksp[cb]){
-              SArmbs[[j]] <- diag(Ar.sds[1:sum(nsp)])
+              SArmbs[[j]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
               Ar.sds <- Ar.sds[-c(1:sum(nsp))]
-              if(sp.Ar.struc == "blockdiagonalsp"){
+              if(sp.Ar.struc == "blockdiagonalsp" && sum(nsp)>1){
                   for(d in 1:(sum(nsp)-1)){
                     for(r in (d+1):sum(nsp)){
                       SArmbs[[j]][r,d] = spAr[1];
@@ -2509,7 +2509,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                 for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
-                        if(j<r && r<blocksp[cb]){
+                        if(j<r && r<=blocksp[cb]){
                         spArs[[d]][r+sp,j+sp]=spAr[1];
                         spAr <- spAr[-1]
                         }
@@ -2530,7 +2530,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   
                 for(j in 1:Abranks[cb]){
                   for(r in (j+1):(blocksp[cb]*sum(nsp))){
-                    if(j<r && r<blocksp[cb]){
+                    if(j<r && r<=blocksp[cb]){
                     spArs[[cb]][r,j] = spAr[1];
                     spAr <- spAr[-1]
                     }

@@ -1887,22 +1887,22 @@ trait.TMB <- function(
           Ar.sds <- exp(Ab[1:(p+xdr-1)])
           Ab <- Ab[-c(1:(p+xdr-1))]
             
-            Abs[[1]] <- diag(Ar.sds[1:xdr])
+            Abs[[1]] <- diag(Ar.sds[1:xdr], xdr)
             Abs[[2]] <- diag(c(1,Ar.sds[-c(1:xdr)]))
-            if(Ab.struct == "MNunstructured"){
+            if(Ab.struct == "MNunstructured" && ncol(xb)>1){
               # row covariance
               for(d in 1:(ncol(xb)-1)){
                 for(r in (d+1):ncol(xb)){
                   Abs[[1]][r,d] = Ab[1];
                   Ab <- Ab[-1]
                 }}
-            }
+              }
               # column covariance
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
                       for (r in (j+1):blocksp[cb]){
-                        if(j<r && r<blocksp[cb]){
+                        if(j<r && r<=blocksp[cb]){
                         Abs[[2]][r+sp,j+sp]=Ab[1];
                         Ab <- Ab[-1]
                         }
@@ -1921,9 +1921,9 @@ trait.TMB <- function(
             SArmbs <- list()
             # build block diagonal matrices
             for(j in 1:blocksp[cb]){
-              SArmbs[[j]] <- diag(Ar.sds[1:ncol(xb)])
+              SArmbs[[j]] <- diag(Ar.sds[1:ncol(xb)], xdr)
               Ar.sds <- Ar.sds[-c(1:ncol(xb))]
-              if(Ab.struct == "blockdiagonalsp"){
+              if(Ab.struct == "blockdiagonalsp" && ncol(xb)>1){
                 for(d in 1:(ncol(xb)-1)){
                   for(r in (d+1):ncol(xb)){
                     SArmbs[[j]][r,d] = Ab[1];
@@ -1960,7 +1960,7 @@ trait.TMB <- function(
               for(cb in 1:length(blocks[-1])){
                   for (j in 1:Abranks[cb]){
                     for (r in (j+1):blocksp[cb]){
-                      if(j<r && r<blocksp[cb]){
+                      if(j<r && r<=blocksp[cb]){
                       Abs[[d]][r+sp,j+sp]=Ab[1];
                       Ab <- Ab[-1]
                     }
@@ -1982,7 +1982,7 @@ trait.TMB <- function(
               
               for(j in 1:Abranks[cb]){
                 for(r in (j+1):(blocksp[cb]*ncol(xb))){
-                  if(j<r && r<blocksp[cb]){
+                  if(j<r && r<=blocksp[cb]){
                   Abs[[cb]][r,j] = Ab[1];
                   Ab <- Ab[-1]
                   }
