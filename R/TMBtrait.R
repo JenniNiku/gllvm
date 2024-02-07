@@ -545,16 +545,16 @@ trait.TMB <- function(
           }
         }
         if(family == "negative.binomial" && start.params$family == "negative.binomial" && !is.null(start.params$params$phi)) {res$phi<-start.params$params$phi}
-        
-          if(!is.null(randomX)){
-          Br <- start.params$params$Br
-          sigmaB <- sqrt(diag(start.params$params$sigmaB))
-          sigmaij <- diag(1/sigmaB)%*%start.params$params$sigmaB%*%diag(1/sigmaB)
-          sigmaB <- log(sigmaB)
-          sigmaij <- t(chol(sigmaij))
-          sigmaij <- sigmaij[lower.tri(sigmaij)]
-          if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
-        }
+        # 
+        #   if(!is.null(randomX)){
+        #   Br <- start.params$params$Br
+        #   sigmaB <- sqrt(diag(start.params$params$sigmaB))
+        #   sigmaij <- diag(1/sigmaB)%*%start.params$params$sigmaB%*%diag(1/sigmaB)
+        #   sigmaB <- log(sigmaB)
+        #   sigmaij <- t(chol(sigmaij))
+        #   sigmaij <- sigmaij[lower.tri(sigmaij)]
+        #   if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
+        # }
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other.");}
     }
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)

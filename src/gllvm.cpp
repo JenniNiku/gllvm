@@ -606,7 +606,7 @@ Type objective_function<Type>::operator() ()
         }else{
           rhoSP = 1;
         }
-
+        REPORT(rhoSP);
         for(int cb=1; cb<colMatBlocksI.size(); cb++){
           //efficiently update inverse and determinant using rank 1 updates
           colCorMatIblocks(cb-1) = colMatBlocksI(cb)/rhoSP; // start at (colMat*rho)^-1
@@ -619,7 +619,9 @@ Type objective_function<Type>::operator() ()
             colCorMatIblocks(cb-1) = colCorMatIblocks(cb-1).template selfadjointView<Eigen::Lower>(); //return as symmetric matrix
           }
         }
+        // matrix<Type> test = CppAD::CondExpGt(colCorMatIblocks(0), Type(3.3), 0, colCorMatIblocks(0));
         }
+        REPORT(colCorMatIblocks);
         //Variational components
         
         if(Abstruc == 0){
@@ -888,15 +890,16 @@ Type objective_function<Type>::operator() ()
           int sdcounter = 0;
           int covscounter = p*nsp.sum()+p-colCorMatIblocks.size();
           int idx = 0; int sp = 0;
+          typedef Eigen::Triplet<Type> T;        
           
           for(int cb=0; cb<colCorMatIblocks.size(); cb++){
-            vector<matrix<Type>>SArmb(colCorMatIblocks(cb).cols());
+            std::vector<T> tripletListb;
+            Eigen::SparseMatrix<Type>SArm(colCorMatIblocks(cb).cols()*nsp.sum(),colCorMatIblocks(cb).cols()*nsp.sum());
             //construct blockdiagonal list
             for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-              SArmb(j).resize(nsp.sum(),nsp.sum());
-              SArmb(j).setZero();
+      
             for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
-              SArmb(j)(d,d)=exp(Abb(sdcounter));
+              tripletListb.push_back(T(nsp.sum()*j+d,nsp.sum()*j+d,exp(Abb(sdcounter))));
               sdcounter++;
             }
             
@@ -904,7 +907,7 @@ Type objective_function<Type>::operator() ()
               //only for "blockdiagonalsp"
               for (int d=0; d<(nsp.sum()); d++){
                 for (int r=d+1; r<(nsp.sum()); r++){
-                  SArmb(j)(r,d)=Abb(covscounter);
+                  tripletListb.push_back(T(nsp.sum()*j+r,nsp.sum()*j+d, Abb(covscounter)));
                   covscounter++;
                 }}
             }
@@ -912,7 +915,6 @@ Type objective_function<Type>::operator() ()
             //construct p by p covariance matrix
             if(Abranks(cb)<colMatBlocksI(0)(cb+1,0)){
             //construct as sparse matrix
-            typedef Eigen::Triplet<Type> T;             
              //use sparse matrices if we can to speed things up with many species
              Eigen::SparseMatrix<Type>SArmC(colCorMatIblocks(cb).cols(),colCorMatIblocks(cb).cols());
              std::vector<T> tripletList;
@@ -940,18 +942,17 @@ Type objective_function<Type>::operator() ()
               
               //determinant of this matrix is 2*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
               nll -=  nsp.sum()*SArmC.diagonal().array().log().sum();
-              for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-               nll -= SArmb(j).diagonal().array().log().sum();
-              }
-              SArmP = cov2cor(SArmP);
+              Eigen::SparseMatrix<Type>SArmb(colCorMatIblocks(cb).rows()*nsp.sum(),colCorMatIblocks(cb).rows()*nsp.sum());
+              SArmb.setFromTriplets(tripletListb.begin(),tripletListb.end());
+              nll -= SArmb.diagonal().array().log().sum();
+
               //build the final covariance matrix
               matrix<Type>SArm(colCorMatIblocks(cb).cols()*nsp.sum(),colCorMatIblocks(cb).cols()*nsp.sum());
               SArm.setZero();
-
-              for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-                SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j);
-              }
-              SArm = SArm*tmbutils::kronecker(SArmP, matrix<Type>(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum())))*SArm.transpose();
+              Eigen::SparseMatrix<Type>Ir(nsp.sum(),nsp.sum());
+              Ir.setIdentity();
+              Eigen::SparseMatrix<Type> SArmCKron = tmbutils::kronecker(SArmC, Ir);
+              SArm = SArmb*SArmCKron*SArmCKron.transpose()*SArmb.transpose();
 
         
             //remaining likelihood terms
@@ -983,17 +984,17 @@ Type objective_function<Type>::operator() ()
                 }
               matrix<Type> SArmP = SArmC*SArmC.transpose();
               SArmC *= SArmP.diagonal().cwiseInverse().cwiseSqrt().asDiagonal();//ID constraint
-            
+              Eigen::SparseMatrix<Type>SArmb(colCorMatIblocks(cb).rows()*nsp.sum(),colCorMatIblocks(cb).rows()*nsp.sum());
+              SArmb.setFromTriplets(tripletListb.begin(),tripletListb.end());
+              
               //determinant of this matrix is 2*nsp*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
               nll -=  nsp.sum()*SArmC.diagonal().array().log().sum();
-              for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-                nll -= SArmb(j).diagonal().array().log().sum();
-              }
+              nll -= SArmb.diagonal().array().log().sum();
               SArmP = cov2cor(SArmP);
               
               //build the final covariance matrix
-              matrix<Type>SArm(colCorMatIblocks(cb).cols()*nsp.sum(),colCorMatIblocks(cb).cols()*nsp.sum());
-              SArm.setZero();
+              // matrix<Type>SArm(colCorMatIblocks(cb).cols()*nsp.sum(),colCorMatIblocks(cb).cols()*nsp.sum());
+              // SArm.setZero();
               // for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
               //   for (int j2=j+1; j2<colCorMatIblocks(cb).cols(); j2++){
               //     SArm.block(j2*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j2)*SArmb(j).transpose()*SArmP(j2,j);
@@ -1001,10 +1002,10 @@ Type objective_function<Type>::operator() ()
               //   }
               //   SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j)*SArmb(j).transpose()*SArmP(j,j);
               // }
-              for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
-                SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j);
-              }
-              SArm = SArm*tmbutils::kronecker(SArmP, matrix<Type>(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum())))*SArm.transpose();
+              // for (int j=0; j<colCorMatIblocks(cb).cols(); j++){
+              //   SArm.block(j*nsp.sum(),j*nsp.sum(), nsp.sum(),nsp.sum()) = SArmb(j);
+              // }
+              matrix<Type> SArm = SArmb*tmbutils::kronecker(SArmP, matrix<Type>(Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum())))*SArmb.transpose();
               
               //remaining likelihood terms
               matrix<Type> SprMNI = tmbutils::kronecker(colCorMatIblocks(cb),SprI); // inverse of covariane
