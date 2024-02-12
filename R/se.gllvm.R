@@ -723,7 +723,7 @@ se.gllvm <- function(object, ...){
         out$sd$rho.sp <- tail(covsigma.sp,1)*(-object$params$rho.sp*log(object$params$rho.sp))
         covsigma.sp <- head(covsigma.sp, -1)
       }
-      sigma.sp <- diag(sigma.sp)
+      sigma.sp <- diag(sigma.sp, length(sigma.sp))
       if(ncol(object$TMBfn$env$data$cs)==2){
         sigma.sp[object$TMBfn$env$data$cs] <- sigma.sp[object$TMBfn$env$data$cs[,c(2,1),drop=F]] <- covsigma.sp
       }
