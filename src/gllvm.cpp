@@ -954,11 +954,15 @@ Type objective_function<Type>::operator() ()
               //write trace separately so we don't need to compute the whole product
               Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colCorMatIblocks(cb).cols();j++){
-                for (int j2=0; j2<colCorMatIblocks(cb).cols();j2++){
+                for (int j2=j+1; j2<colCorMatIblocks(cb).cols();j2++){
+                  if(j!=j2){
                   temp.diagonal().fill(SArmP(j,j2));
-                  nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
+                  nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
                 }
+                }
+                nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j))*SArmb(j)*SArmb(j).transpose()).trace();
               }
+ 
               //remaining likelihood terms
               for (int j=0; j<colCorMatIblocks(cb).cols();j++){
                 //consume smore memory for some reason, but is faster in n
@@ -997,10 +1001,13 @@ Type objective_function<Type>::operator() ()
               //write trace separately so we don't need to compute the whole product
               Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colCorMatIblocks(cb).cols();j++){
-                for (int j2=0; j2<colCorMatIblocks(cb).cols();j2++){
-                  temp.diagonal().fill(SArmP(j,j2));
-                  nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
+                for (int j2=j+1; j2<colCorMatIblocks(cb).cols();j2++){
+                  if(j!=j2){
+                    temp.diagonal().fill(SArmP(j,j2));
+                    nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
+                  }
                 }
+                nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j))*SArmb(j)*SArmb(j).transpose()).trace();
               }
 
               //remaining likelihood terms
