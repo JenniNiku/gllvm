@@ -867,6 +867,8 @@ trait.TMB <- function(
       #     Au <- Au[1:(nu*num.lv.cor)]
       #   }
       # }
+    }else{
+      Abstruc <- 0
     }
       
     # Variational covariances for  random rows
@@ -1988,7 +1990,7 @@ trait.TMB <- function(
                   }
                 }
             }
-            Abs <- list(Matrix::bdiag(Abs))
+            Abs <- list(as.matrix(Matrix::bdiag(Abs)))
           }
           Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
         }
