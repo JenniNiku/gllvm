@@ -952,12 +952,12 @@ Type objective_function<Type>::operator() ()
             // //remaining likelihood terms
               nll -= -0.5*(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()*SprI).trace();
               //write trace separately so we don't need to compute the whole product
-              Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
+              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colCorMatIblocks(cb).cols();j++){
                 for (int j2=j+1; j2<colCorMatIblocks(cb).cols();j2++){
                   if(j!=j2){
-                  temp.diagonal().fill(SArmP(j,j2));
-                  nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
+                  // temp.diagonal().fill(SArmP(j,j2));
+                  nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*SArmb(j2).transpose()*SArmP(j,j2)).trace();
                 }
                 }
                 nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j))*SArmb(j)*SArmb(j).transpose()).trace();
@@ -999,12 +999,12 @@ Type objective_function<Type>::operator() ()
               //remaining likelihood terms
               nll -= -0.5*(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()*SprI).trace();
               //write trace separately so we don't need to compute the whole product
-              Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
+              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colCorMatIblocks(cb).cols();j++){
                 for (int j2=j+1; j2<colCorMatIblocks(cb).cols();j2++){
                   if(j!=j2){
-                    temp.diagonal().fill(SArmP(j,j2));
-                    nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*temp*SArmb(j2).transpose()).trace();
+                    // temp.diagonal().fill(SArmP(j,j2));
+                    nll -= -((SprI*colCorMatIblocks(cb)(j,j2))*SArmb(j)*SArmb(j2).transpose()*SArmP(j,j2)).trace();
                   }
                 }
                 nll -= -0.5*((SprI*colCorMatIblocks(cb)(j,j))*SArmb(j)*SArmb(j).transpose()).trace();
