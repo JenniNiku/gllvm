@@ -21,6 +21,7 @@
 #' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
 #' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}.
 #' @param colMat matrix of similarity for the column effects, such as from a Phylogeny. Must be positive definite.
+#' @param colMat.rho.struct either \code{single} (default) or \code{term} indicating whether the signal parameter should be shared for covariates, or not.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
 #' @param randomB either \code{FALSE}(default), "LV", "P", "single", or "iid". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
@@ -52,7 +53,7 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (only with colMat), "diagonalsp" ,"blockdiagonalsp" (default with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat).
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalsp" ,"blockdiagonalsp" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat).
 #'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalsp", "blockdiagonalsp","spblockdiagonal", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
@@ -231,10 +232,12 @@
 #'  \item{distLV }{ Matrix of coordinates or time points used for LVs}
 #'  \item{col.eff }{ list of components for column random effects}
 #'  \itemize{
+#'  \item{Ab.struct }{ variational covariance structure of fitted model}
+#'  \item{Ab.struct.rank }{fitted rank of variational covariance matrix}
 #'  \item{col.eff }{flag indicating if column random effects are included}
-#'  \item{colL }{ lower cholesky factor for covariance matrix of column effects}
-#'  \item{sdrp }{ sparse design matrix}
+#'  \item{spdr }{ design matrix}
 #'  \item{nsp }{ vector of levels per random effect}
+#'  \item{colMat.rho.struct }{ character vector for signal parameter}
 #'  
 #'  }
 #'  \item{terms }{ Terms object for main predictors}
@@ -414,14 +417,14 @@
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
-                  lvCor = NULL, studyDesign=NULL,dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, corWithin = FALSE, corWithinLV = FALSE,
+                  lvCor = NULL, studyDesign=NULL,dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, colMat.rho.struct = "single", corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, beta0com = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = 1,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","blockdiagonalsp"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -487,7 +490,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("Lambda.struc" %in% names(x)) & !is.null(lvCor)) 
         x$Lambda.struc = "diagonal"
       if (!("Ab.struct" %in% names(x))) 
-        x$Ab.struct = ifelse(is.null(colMat), "blockdiagonal", "blockdiagonalsp")
+        x$Ab.struct = ifelse(is.null(colMat), "blockdiagonal", "MNunstructured")
       if (!("Ab.struct.rank" %in% names(x))) 
         x$Ab.struct.rank = 1
       if (!("Ar.struc" %in% names(x))) 
@@ -590,6 +593,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     if(family == "binomial" && method == "EVA" && max(Ntrials) >1){
       stop("Binomial distribution not yet supported with the EVA method.")
+    }
+    if(!colMat.rho.struct %in% c("single","term")){
+      stop("Wrong input for 'colMat.rho.struct'. Must be one of 'single','term'.")
     }
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
@@ -1234,7 +1240,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1307,7 +1313,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            Ab.diag.iter = Ab.diag.iter, colMat = colMat, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
+            Ab.diag.iter = Ab.diag.iter, colMat = colMat, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
@@ -1344,7 +1350,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, 
             row.eff = row.eff,
-            col.eff = col.eff, colMat = colMat, randomX.start = randomX.start,
+            col.eff = col.eff, colMat = colMat, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
             seed = seed,

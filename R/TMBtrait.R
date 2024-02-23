@@ -7,7 +7,7 @@ trait.TMB <- function(
       Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
       link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, dLV=NULL, cstruc = "diag", cstruclv  ="diag", dist = list(matrix(0)), distLV = matrix(0), scalmax=10, MaternKappa = 1.5,
-      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,colMat = NULL,
+      starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,colMat = NULL, colMat.rho.struct = "single",
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL,
       zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL, Ntrials = 1) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
@@ -326,7 +326,7 @@ trait.TMB <- function(
       Br <- bstart$Br
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
       # colMat signal strength
-      if(!is.null(colMat))sigmaB <- c(sigmaB,.5)
+      if(!is.null(colMat))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, ncol(xb))))
       sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
       
       # method <- "LA"
@@ -1471,8 +1471,8 @@ trait.TMB <- function(
       if(ncol(xb)>1){
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp <- exp(-exp(tail(sigmaB,1)))
-          sigmaB <- head(sigmaB,-1)
+          rho.sp <- exp(-exp(tail(sigmaB,ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- diag(exp(sigmaB), length(sigmaB))
         Srij <- names(param)=="sigmaij"
@@ -1483,8 +1483,8 @@ trait.TMB <- function(
         D <- 1
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp <- exp(-exp(tail(sigmaB,1)))
-          sigmaB <- head(sigmaB,-1)
+          rho.sp <- exp(-exp(tail(sigmaB,ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- (exp(sigmaB))
       }
@@ -1667,6 +1667,11 @@ trait.TMB <- function(
         out$params$Br <- Br
         out$params$sigmaB <- sigmaB
         if(rhoSP){
+        if(colMat.rho.struct == "term"){
+          names(rho.sp) <- colnames(xb)
+        }else{
+          names(rho.sp) <- NULL
+        }
         out$params$rho.sp <- rho.sp
         }
         out$corr <- sigmaB_ #!!!!

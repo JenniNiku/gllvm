@@ -4,7 +4,7 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
-                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
+                      method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
                       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, spdr = NULL, cs = NULL, dr=NULL, dLV=NULL, cstruc = "diag", cstruclv = "diag", dist =list(matrix(0)), distLV = matrix(0),
                       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
@@ -398,7 +398,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       fit$Br <- bstart$Br
       fit$sigmaB <- bstart$sigmaB
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, .5)
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, sum(nsp))))
       }else{
         sigmaB <- 0;Br <- matrix(0)
       }
@@ -1140,7 +1140,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(col.eff == 'random'){
           Br1 <- matrix(param1[nam=="Br"],nrow=ncol(spdr))
           sigmaB1 <- ifelse(round(param1[nam=="sigmaB"],8)==0,1e-3,param1[nam=="sigmaB"])
-          if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], 1)>0.5,0.5,tail(param1[nam=="sigmaB"], 1))
+          # if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,sum(nsp)))>0.5,0.5,tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,sum(nsp))))
           spAr1<- log(exp(param1[nam=="Abb"])+1e-3)
           if(Ab.diag.iter>0){
           if(sp.Ar.struc=="blockdiagonal"){# "diagonal" was previous iteration
@@ -1448,8 +1448,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:length(nsp)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:length(nsp))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], 1)))
-          covsigma.sp  = head(covsigma.sp, -1)
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,sum(nsp)))))
+          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,sum(nsp)))
         }
         Bri = names(param)=="Br"
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
@@ -1874,8 +1874,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:length(nsp)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:length(nsp))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], 1)))
-          covsigma.sp  = head(covsigma.sp, -1)
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,sum(nsp)))))
+          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,sum(nsp)))
         }
         Bri = names(param)=="Br"
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
@@ -2143,7 +2143,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(!is.null(colnames(y))) colnames(Br) <- colnames(y)
         out$params$Br <- Br
         out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)]^2, nrow = length(rep(1:length(sigma.sp),nsp)), ncol = length(rep(1:length(sigma.sp),nsp)))
-        if(any(colMat[row(colMat)!=col(colMat)]!=0))out$params$rho.sp <- rho.sp
+        if(any(colMat[row(colMat)!=col(colMat)]!=0)){
+          if(colMat.rho.struct == "term"){
+            names(rho.sp) <- colnames(spdr)
+          }else{
+            names(rho.sp) <- NULL
+          }
+          out$params$rho.sp <- rho.sp
+        }
         if(ncol(cs)==2){
           out$params$sigmaB[cs] <- out$params$sigmaB[cs[,c(2,1),drop=F]] <- covsigma.sp
         }
