@@ -2615,7 +2615,7 @@ Type objective_function<Type>::operator() ()
          sp += colCorMatI.cols();
            }
            //add cheap normalizing constant
-           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat)-nsp.sum()*p*log(sqrt(2.0*M_PI));
+           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
 
            }else{//now colCorMatI is updated for every covariate
              logdetColCorMat = rhoSP.size()*colMatBlocksI(0).col(1).segment(1,colMatBlocksI.size()-1).sum();
@@ -2638,7 +2638,7 @@ Type objective_function<Type>::operator() ()
                }
                sp += colCorMatI.cols();
              }
-             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat)-nsp.sum()*p*log(sqrt(2.0*M_PI));
+             nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
            }
        }else{
          //independence across species
