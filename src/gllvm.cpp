@@ -151,7 +151,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> lam(n,p);
   lam.setZero();
 
-  parallel_accumulator<Type> (this*); // initial value of log-likelihood
+  parallel_accumulator<Type> nll(this); // initial value of log-likelihood
   
   matrix<Type> RRgamma(num_RR,p);
   RRgamma.setZero();
