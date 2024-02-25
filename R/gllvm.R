@@ -456,6 +456,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
     pp.pars <- list(...)
     
+    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
+      stop("Selected family not permitted...sorry!")
+    
     if (inherits(family,"family")) {
       link <- family$link
       family <- family$family
@@ -672,22 +675,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("'lv.formula' should be provided when 'formula' is used with concurrent or constrained ordination.")
     }
     
-    # # check if formula includes smooths
-    # if(anySmooths(formula)){
-    #   # isolate the smooths
-    #   smooth.formula <- onlySmooths(formula)
-    #   # construct smooths
-    #   smooths <- formula2smooth(smooth.formula)
-    #   # get smooths' stuff
-    #   smoothDat <- getSmoothDat(smooths, X)
-    #   # add fixed effect terms to formula and X (need names)
-    #   
-    #   # smooth2random in formula
-    #   formula <- smooth2random(formula)
-    #   # 
-    #   #and extract penalty matrices
-    #   col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
-    # }
     # separate species random effects
     if(length(X)>0 & length(studyDesign)>0){
       X.col.eff <- cbind(X,studyDesign)
@@ -959,7 +946,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       y <- as.matrix(y)
 
     # Species random effects    
-    spdr = NULL; cstruc = "diag"
+    cs = NULL; spdr = NULL; cstruc = "diag"
     if(col.eff == "random") {
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
       if(!is.null(bar.f)) {
@@ -1213,9 +1200,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
 
-    if(!is.null(colMat) && Ab.struct %in% c("diagonal", "blockdiagonal")){
+    if(!is.null(colMat) && Ab.struct %in% c("diagonal", "blockdiagonal") && method %in% c("VA", "EVA")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalsp","blockdiagonalsp","spblockdiagonal", "MNunstructured","MNdiagonal")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalsp","blockdiagonalsp","spblockdiagonal", "MNunstructured","MNdiagonal") && method %in% c("VA","EVA")){
       warning("So many variational parameters are not required for your model. Setting Ab.struct = 'blockdiagonal'.\n")
       Ab.struct <- "blockdiagonal"
     }
@@ -1280,8 +1267,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (row.eff == TRUE)
         row.eff <- "fixed"
       if (!is.null(TR)) {
-        fitg <- trait.TMB(
-            y,
+        fitg <- gllvm.iter(
+            y = y,
             X = X,
             # lv.X = lv.X,
             TR = TR,
@@ -1328,15 +1315,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            Ntrials = Ntrials
+            Ntrials = Ntrials,
+            model = "trait.TMB"
             )
         out$X <- fitg$X
         out$TR <- fitg$TR
         out$formula <- fitg$formula
         
       } else {
-        fitg <- gllvm.TMB(
-            y,
+        fitg <- gllvm.iter(
+            y = y,
             X = X,
             lv.X = lv.X,
             formula = formula,
@@ -1383,7 +1371,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
             spdr = spdr,
-            cs = cs
+            cs = cs,
+            model = "gllvm.TMB"
         )
         if(is.null(formula)) {
           out$formula <- fitg$formula

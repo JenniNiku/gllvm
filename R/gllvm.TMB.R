@@ -16,10 +16,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
   if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
-    stop("Selected family not permitted...sorry!")
-  if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
-    stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
+  
   if(is.null(colMat) && !(sp.Ar.struc %in% c("diagonal","blockdiagonal")))sp.Ar.struc <- "blockdiagonal"
   
   if(!is.null(start.params)) starting.val <- "zero"
@@ -27,11 +24,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   n <- nr <- nu <- dim(y)[1]
   p <- dim(y)[2]
   times <- 1
-  objrFinal <- optrFinal <- NULL
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
   if(family=="binomial" && length(Ntrials) != 1 && length(Ntrials) != p){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  }else if(family=="binomial" && length(Ntrials) == 1){
+  } else if(family=="binomial" && length(Ntrials) == 1){
     Ntrials <- rep(Ntrials, p)
   }
   
@@ -222,33 +218,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   if(family == "ordinal") {
     y00<-y
     if(min(y)==0){ y=y+1}
-    max.levels <- apply(y,2,function(x) length(min(x):max(x)))
-    if(any(max.levels == 1)&zeta.struc=="species" || all(max.levels == 2)&zeta.struc=="species")
-      stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead.")
-    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species"){
-      warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'.")
-      zeta.struc = "common"
-    }
-    
-    if(!all(min(y)==apply(y,2,min))&zeta.struc=="species"){
-      stop("For ordinal data and zeta.struc=`species` all species must have the same minimum category.Setting 'zeta.struc = `common`'.")
-      zeta.struc = "common"
-    }
-    if(any(diff(sort(unique(c(y))))!=1)&zeta.struc=="common")
-      stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
-  }
-  
-  if(family == "orderedBeta") {
-    if (!(method %in% c("VA", "EVA"))) #"tweedie", 
-      stop("family=\"", family, "\" : family not implemented with LA method, change the method to 'VA'.")
-    
-    if((sum(y==1, na.rm = TRUE) + sum(y==0, na.rm = TRUE))==0){
-      stop("No zeros or ones in the data, so use 'family = `beta`'.")
-    }
-    if(!all(colSums(y==1, na.rm = TRUE)>0) & !all(colSums(y==0, na.rm = TRUE)>0)){
-      warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'.")
-      zeta.struc = "common"
-    }
   }
   
   # Define design matrix for covariates
@@ -294,35 +263,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   
   ## Set initial values for model parameters (including dispersion prm) and latent variables
   
-  ### Seeds
-  
-  # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
-  if((length(seed) >1) & (length(seed) < n.init)) {
-    stop("Seed length doesn't match with the number of initial starts.")
-  }
-  if(!is.null(seed) & (length(seed) ==1) & (length(seed) < n.init)) {
-    set.seed(seed)
-    seed <- sample(1:10000, n.init)
-  }
-  # If no seed is sampled it is randomly drawn
-  if(is.null(seed)&starting.val!="zero"){
-    seed <- sample(1:10000, n.init)
-  }
-  
-  
-  n.i <- 1
-  if(starting.val!="zero"){seed.best <- seed[n.i]}else{seed.best <- NULL}
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, nsp = nsp, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
-  #if (n.init > 1)
-  # n.init model fits
-  while(n.i <= n.init){
-    
-    if(n.init > 1 && trace)
-      cat("Initial run ", n.i, "\n")
-    
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed[n.i], starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
+    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed, starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
     
     if(is.null(fit$Power) && family == "tweedie")fit$Power=1.1
     if(family=="tweedie"){
@@ -888,13 +832,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
       #quadratic model starting values
       if(quadratic == TRUE && start.struc == "LV"){
-        start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+        start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
         if(inherits(start.fit,"try-error")&starting.val!="zero"){
-          start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+          start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
         }
         if(!inherits(start.fit,"try-error")&starting.val!="zero"){
           if(is.null(start.fit$lvs)){
-            start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed[n.i], maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+            start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
           }
         }
         if(!inherits(start.fit,"try-error")){
@@ -1061,9 +1005,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       ### Set up data and parameters
       
       data.list <- list(y = y, x = Xd, x_lv = lv.X , xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials)
-      
-      parameter.list <- list(r0 = matrix(r0), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
 
+      parameter.list <- list(r0 = matrix(r0), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
+      
       #### Call makeADFun
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -1941,38 +1885,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     }
     
     
-    #### Check if model fit succeeded/improved on this iteration n.i
     out$start <- fit
     
-    # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
-    if(n.i>1){
-      if(!is.null(objrFinal)){
-        gr1 <- objrFinal$gr()
-        gr1 <- as.matrix(gr1/length(gr1))
-        norm.gr1 <- norm(gr1)
-      }else{
-        gr1 <- NaN
-        norm.gr1 <- NaN
-      }
-      
-      gr2 <- objr$gr()
-      gr2 <- as.matrix(gr2/length(gr2))
-      norm.gr2 <- norm(gr2)
-      n.i.i <- n.i.i +1
-      grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
-      grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
-    }else{
-      n.i.i <- 0
-    }
-    if(n.i.i>n.init.max){
-      n.init <- n.i
-      warning("n.init.max reached after ", n.i, " iterations.")
-    }
-    
-    if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
-      objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;n.i.i<-0;
-      out$start <- fit
-      out$logL <- new.loglik
+
+    if(!inherits(optr, "try-error")){
+      objrFinal<-objr1 <- objr; optrFinal<-optr1<-optr;
+      out$logL <- objrFinal$env$value.best[1]
       if((num.lv+(num.lv.c+num.RR)) > 0) {
         if((num.lv+num.lv.c)>0)out$lvs <- lvs
         out$params$theta <- theta
@@ -2549,15 +2467,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           out$Ab <- spArs
         }
       }
-      seed.best <- seed[n.i]
     }
-    
-    n.i <- n.i+1;
-    
-  }
-  
-  #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
-  out$seed <- seed.best
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
   

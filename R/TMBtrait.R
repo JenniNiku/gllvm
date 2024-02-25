@@ -15,10 +15,6 @@ trait.TMB <- function(
 
   if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
   
-  if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
-    stop("Selected family not permitted...sorry!")
-  if(!(Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN")))
-    stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
   if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
   
   objrFinal <- optrFinal <- NULL
@@ -250,67 +246,16 @@ trait.TMB <- function(
   trial.size <- 1
   
   y <- as.matrix(y)
-  if(!is.numeric(y)) stop("y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1. Thanks")
   if(family == "ordinal") {
     y00<-y
     if(min(y)==0){ y=y+1}
-    max.levels <- apply(y,2,function(x) length(min(x):max(x)))
-    if(any(max.levels == 1)&zeta.struc=="species" || all(max.levels == 2)&zeta.struc=="species")
-      stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
-    if(any(!apply(y,2,function(x)all(diff(sort(unique(x)))==1)))&zeta.struc=="species"){
-      warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'")
-      zeta.struc = "common"
     }
-    
-    if(!all(min(y)==apply(y,2,min))&zeta.struc=="species"){
-      stop("For ordinal data and zeta.struc=`species` all species must have the same minimum category.Setting 'zeta.struc = `common`'.")
-      zeta.struc = "common"
-    }
-    if(any(diff(sort(unique(c(y))))!=1)&zeta.struc=="common")
-      stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
-  }
-  if(is.null(rownames(y))) rownames(y) <- paste("Row",1:n,sep="")
-  if(is.null(colnames(y))) colnames(y) <- paste("Col",1:p,sep="")
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
-  
-  if(family == "orderedBeta") {
-    if (!(method %in% c("VA", "EVA"))) #"tweedie", 
-      stop("family=\"", family, "\" : family not implemented with LA method, change the method to 'VA'")
-    
-    if((sum(y==1, na.rm = TRUE) + sum(y==0, na.rm = TRUE))==0){
-      stop("No zeros or ones in the data, so use 'family = `beta` '")
-    }
-    if(!all(colSums(y==1, na.rm = TRUE)>0) & !all(colSums(y==0, na.rm = TRUE)>0)){
-      warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'")
-      zeta.struc = "common"
-    }
-  }
   
   out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, row.eff = row.eff, logL = Inf, family = family, offset=offset,randomX=randomX,colMat = colMat,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
 
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   
-  n.i <- 1;
-  
-  ### Seeds
-  
-  # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
-  if((length(seed) >1) & (length(seed) < n.init)) {
-    stop("Seed length doesn't match with the number of initial starts.")
-  }
-  if(!is.null(seed) & (length(seed) ==1) & (length(seed) < n.init)) {
-    set.seed(seed)
-    seed <- sample(1:10000, n.init)
-  }
-  # If no seed is sampled it is randomly drawn
-  if(is.null(seed)&starting.val!="zero"){
-    seed <- sample(1:10000, n.init)
-  }
-  # if(n.init > 1) seed <- sample(1:10000, n.init)
-  
-  # n.init model fits
-  while(n.i <= n.init){
-    
     randomXb <- NULL
     
     # Design for random slopes
@@ -400,10 +345,8 @@ trait.TMB <- function(
     ZINBphi <- ZINBphis <- NULL
     sigma <- 1
     
-    if(n.init > 1 && trace) cat("initial run ",n.i,"\n");
-    
     #### Calculate starting values
-    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed[n.i],starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
+    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed,starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
@@ -1514,35 +1457,9 @@ trait.TMB <- function(
     new.loglik<-objr$env$value.best[1]
     
     
-    #### Check if model fit succeeded/improved on this iteration n.i
-    # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
-    if(n.i>1){
-      if(!is.null(objrFinal)){
-        gr1 <- objrFinal$gr()
-        gr1 <- as.matrix(gr1/length(gr1))
-        norm.gr1 <- norm(gr1)
-      }else{
-        gr1 <- NaN
-        norm.gr1 <- NaN
-      }
-      
-      gr2 <- objr$gr()
-      gr2 <- as.matrix(gr2/length(gr2))
-      norm.gr2 <- norm(gr2)
-      n.i.i <- n.i.i +1
-      grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
-      grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
-    }else{
-      n.i.i <- 0
-    }
-    if(n.i.i>n.init.max){
-      n.init <- n.i
-      warning("n.init.max reached after ", n.i, " iterations.")
-    }
-    
-    if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && out$logL > (new.loglik)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(new.loglik) && !inherits(optr, "try-error")){
+    if(!inherits(optr, "try-error")){
       objrFinal<-objr1 <- objr; optrFinal<-optr1 <- optr;n.i.i<-0;
-      out$logL <- new.loglik
+      out$logL <- objrFinal$env$value.best[1]
       if(num.lv > 0) {
         out$lvs <- lvs
         out$params$theta <- theta
@@ -2002,13 +1919,6 @@ trait.TMB <- function(
         out$Ab <- Abs
       }
     }
-    seed.best <- seed[n.i]
-    n.i <- n.i+1;
-  }
-  
-  #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
-  out$seed <- seed.best
-  
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
   
@@ -2021,15 +1931,6 @@ trait.TMB <- function(
   out$logL <- -out$logL
   out$zeta.struc <- zeta.struc
   out$beta0com <- beta0com
-  
-  # if(method == "VA"){ # These have been moved to gllvm.cpp
-  #   if(num.lv > 0) out$logL = out$logL + n*0.5*num.lv
-  #   if(row.eff == "random") out$logL = out$logL + n*0.5
-  #   if(!is.null(randomX)) out$logL = out$logL + p*0.5*ncol(xb)
-  #   if(family=="gaussian") {
-  #     out$logL <- out$logL - n*p*log(pi)/2
-  #   }
-  # }
 
 
   return(out)
