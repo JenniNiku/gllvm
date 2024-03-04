@@ -1383,77 +1383,137 @@ Type objective_function<Type>::operator() ()
       int sdcounter = 0;
       int covscounter = nr.sum();
       for(int re=0; re<nr.size();re++){
-        matrix<Type> Arm(nr(re),nr(re));
-        matrix<Type> Sr(nr(re), nr(re));
-        Arm.setZero();Sr.setZero();
-        
-        for (int d=0; d<(nr(re)); d++){ // diagonals of varcov
-          Arm(d,d)=exp(lg_Ar(sdcounter));
-          sdcounter++;
-        }
-        
-        if((lg_Ar.size()>nr.sum())){ // unstructured Var.cov
+
+        //unstructured row cov
+        if((lg_Ar.size()>nr.sum() && cstruc(re)>0)){ 
+          // do not go here with iid RE
+          // unstructured Var.cov
+          matrix<Type> Arm(nr(re),nr(re));
+          matrix<Type> Sr(nr(re), nr(re));
+          Arm.setZero();Sr.setZero();
+          
+          for (int d=0; d<(nr(re)); d++){ // diagonals of varcov
+            Arm(d,d)=exp(lg_Ar(sdcounter));
+            sdcounter++;
+          }
+          
           for (int d=0; d<(nr(re)); d++){
             for (int r=d+1; r<(nr(re)); r++){
               Arm(r,d)=lg_Ar(covscounter);
               covscounter++;
             }}
-        }
-      // add terms to cQ
-      matrix<Type> ArmMat = Arm*Arm.transpose();
-        cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()).replicate(1,p);
 
-      // We build the actual covariance matrix
-      // This can straightforwardly be extended to estimate correlation between effects
-        matrix <Type> invSr(nr(re),nr(re));invSr.setZero();
-        Type logdetSr;
-        // diagonal row effect
-        if(cstruc(re) == 0){
-          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic> invSr(nr(re));
-          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Sr(nr(re));
-          // Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
-          // inverse and log determinant are straighforwardly available here
-          invSr.diagonal().fill(pow(sigma(sigmacounter), -2));
-          logdetSr = 2*nr(re)*log(sigma(sigmacounter));
-          sigmacounter++;
-        }else if(cstruc(re) == 1){ // corAR1
-          Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
-          sigmacounter+= 2;
-        }else if(cstruc(re) == 3){ // corCS
-          Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
-          sigmacounter += 2;
-        }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
-          // Distance matrix calculated from the coordinates for rows
-          matrix<Type> DiSc(dc(dccounter).cols(),dc(dccounter).cols()); DiSc.fill(0.0);
-          matrix<Type> dc_scaled(dc(dccounter).rows(),dc(dccounter).cols()); dc_scaled.fill(0.0);
-          DiSc.setZero();
-          DiSc.diagonal().array() += 1/sigma(sigmacounter);
-          sigmacounter++;
-          dc_scaled = dc(dccounter)*DiSc;
-          if(cstruc(re)==2){ // corExp
-            Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
-            sigmacounter++;
-          } else if(cstruc(re)==4) { // corMatern
-            Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+          // add terms to cQ
+          matrix<Type> ArmMat = Arm*Arm.transpose();
+          cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()).replicate(1,p);
+          
+          // We build the actual covariance matrix
+          // This can straightforwardly be extended to estimate correlation between effects
+          matrix <Type> invSr(nr(re),nr(re));invSr.setZero();
+          Type logdetSr;
+          if(cstruc(re) == 1){ // corAR1
+            Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+            sigmacounter+= 2;
+          }else if(cstruc(re) == 3){ // corCS
+            Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
             sigmacounter += 2;
+          }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
+            // Distance matrix calculated from the coordinates for rows
+            matrix<Type> DiSc(dc(dccounter).cols(),dc(dccounter).cols()); DiSc.fill(0.0);
+            matrix<Type> dc_scaled(dc(dccounter).rows(),dc(dccounter).cols()); dc_scaled.fill(0.0);
+            DiSc.setZero();
+            DiSc.diagonal().array() += 1/sigma(sigmacounter);
+            sigmacounter++;
+            dc_scaled = dc(dccounter)*DiSc;
+            if(cstruc(re)==2){ // corExp
+              Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+              sigmacounter++;
+            } else if(cstruc(re)==4) { // corMatern
+              Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+              sigmacounter += 2;
+            }
+            dccounter++;
           }
-          dccounter++;
-        }
-        if(cstruc(re)>0){
-          //TMB's matinvpd function: inverse of matrix with logdet for free
-        CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
-        logdetSr = res[0];
-        invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
-        }
-
-        // matrix<Type> invSr = atomic::matinvpd(Sr(re), logdetSr);
-        if(re==0){
-          nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+            //TMB's matinvpd function: inverse of matrix with logdet for free
+            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
+            logdetSr = res[0];
+            invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
+          
+          
+          if(re==0){
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+          }else{
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+          }
+          // determinants of each block of the covariance matrix
+          nll -= 0.5*(nr(re)-logdetSr);
         }else{
-          nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+          Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Arm(nr(re));
+          matrix<Type> Sr(nr(re), nr(re));Sr.setZero();
+          
+          for (int d=0; d<(nr(re)); d++){ // diagonals of varcov
+            Arm.diagonal()(d)=exp(lg_Ar(sdcounter));
+            sdcounter++;
+          }
+          // add terms to cQ
+          cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*Arm*Arm*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).eval().diagonal()).replicate(1,p);
+          
+          // We build the actual covariance matrix
+          // This can straightforwardly be extended to estimate correlation between effects
+          matrix <Type> invSr(nr(re), nr(re));invSr.setZero();
+          Type logdetSr;
+          // diagonal row effect
+          if(cstruc(re) == 0){
+            // inverse and log determinant are straighforwardly available here
+            logdetSr = 2*nr(re)*log(sigma(sigmacounter));
+            sigmacounter++;
+          }else if(cstruc(re) == 1){ // corAR1
+            Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+            sigmacounter+= 2;
+          }else if(cstruc(re) == 3){ // corCS
+            Sr = gllvm::corCS(sigma(sigmacounter), log_sigma(sigmacounter+1), nr(re));
+            sigmacounter += 2;
+          }else if((cstruc(re) == 4) || (cstruc(re) == 2)){ // corMatern, corExp
+            // Distance matrix calculated from the coordinates for rows
+            matrix<Type> DiSc(dc(dccounter).cols(),dc(dccounter).cols()); DiSc.fill(0.0);
+            matrix<Type> dc_scaled(dc(dccounter).rows(),dc(dccounter).cols()); dc_scaled.fill(0.0);
+            DiSc.setZero();
+            DiSc.diagonal().array() += 1/sigma(sigmacounter);
+            sigmacounter++;
+            dc_scaled = dc(dccounter)*DiSc;
+            if(cstruc(re)==2){ // corExp
+              Sr = gllvm::corExp(sigma(sigmacounter), Type(0), nr(re), dc_scaled);
+              sigmacounter++;
+            } else if(cstruc(re)==4) { // corMatern
+              Sr = gllvm::corMatern(sigma(sigmacounter), Type(1), sigma(sigmacounter+1), nr(re), dc_scaled);
+              sigmacounter += 2;
+            }
+            dccounter++;
+          }
+          if(cstruc(re)>0){
+            //TMB's matinvpd function: inverse of matrix with logdet for free
+            CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
+            logdetSr = res[0];
+            invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
+          }
+
+          if(re==0){
+            if(cstruc(re)==0){
+              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0.col(0).segment(0,nr(re)).transpose()*r0.col(0).segment(0,nr(re))).sum());              
+            }else{
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+            }
+          }else{
+            if(cstruc(re)==0){
+              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*r0.col(0).segment(nr.head(re).sum(),nr(re))).sum());
+            }else{
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+            }
+          }
+          // determinants of each block of the covariance matrix
+          nll -= 0.5*(nr(re)-logdetSr);
         }
-        // determinants of each block of the covariance matrix
-        nll -= 0.5*(nr(re)-logdetSr);
+        
       }
     }
   
