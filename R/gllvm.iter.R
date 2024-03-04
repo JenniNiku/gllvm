@@ -42,6 +42,7 @@ gllvm.iter <- function(...){
   args <- args[-which(names(args)=="model")]
 
 if(args$n.init>1){
+  fitFinal <- NULL
 ### Seeds
 # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
 if((length(args$seed) >1) & (length(args$seed) < args$n.init)) {
