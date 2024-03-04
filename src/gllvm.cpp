@@ -1,4 +1,5 @@
 #define TMB_LIB_INIT R_init_gllvm
+#define EIGEN_DONT_PARALLELIZE
 #include <TMB.hpp>
 #include<math.h>
 #include "distrib.h"
