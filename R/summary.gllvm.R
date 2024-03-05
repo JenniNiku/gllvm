@@ -80,6 +80,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   sumry$num.RR <- num.RR
   sumry$quadratic <- quadratic
   sumry$formula <- object$formula
+  if(object$col.eff$col.eff=="random")sumry$formula <- object$call$formula
   sumry$lv.formula <- object$lv.formula
   sumry$'log-likelihood' <- object$logL
   crit <- inf.criteria(object)
@@ -308,7 +309,6 @@ print.summary.gllvm <- function (x, ...)
   if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
   cat("Formula: ", paste(x$formula, collapse = ""), "\n")
-  if(object$col.eff$col.eff=="random")cat("RE formula: ", paste(object$col.eff$col.eff.formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
   
   df <- x[["df"]]
