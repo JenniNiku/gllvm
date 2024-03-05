@@ -2,6 +2,8 @@ Version 1.4.5
 =============
 * Separated "n.init" functionality into gllvm.iter.R
   * Prep for parallelisation
+  * Enabled parallelisation (see TMB::openmp)
+* Largely vectorized "residuals.gllvm", and residuals in "gllvm.aux"
 
 Version 1.4.4
 =============
