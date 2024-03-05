@@ -102,6 +102,10 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    if(object$col.eff$col.eff == "random"){
+      coef.table <- coef.table[!duplicated(coef.table),,drop=FALSE]
+      row.names(coef.table)[tail(1:nrow(coef.table),ncol(object$col.eff$spdr))] <- colnames(object$col.eff$spdr)
+    }
   }else if(!is.logical(object$sd)&!is.null(object$X)){
     pars <- c(object$params$B)
     se <- c(object$sd$B)
@@ -303,7 +307,8 @@ print.summary.gllvm <- function (x, ...)
   #only print SD from LV if model is quadratic or if (hybrid) concurrent
   if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
-  cat("Formula: ", paste(x$formula,collapse=""), "\n")
+  cat("Formula: ", paste(x$formula, collapse = ""), "\n")
+  if(object$col.eff$col.eff=="random")cat("RE formula: ", paste(object$col.eff$col.eff.formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
   
   df <- x[["df"]]

@@ -2402,9 +2402,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             k=1;
             
             for(j in 1:p){
-              spArs[[j]] <- diag(Ar.sds[1:sum(nsp)])
+              spArs[[j]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
               Ar.sds <- Ar.sds[-c(1:sum(nsp))]
-              if(sp.Ar.struc == "blockdiagonal"){
+              if(sp.Ar.struc == "blockdiagonal" && length(nsp) > 1){
                 if(length(spAr)>0){
                   for(d in 1:(sum(nsp)-1)){
                     for(r in (d+1):sum(nsp)){
