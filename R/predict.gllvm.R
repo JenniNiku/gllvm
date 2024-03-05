@@ -58,6 +58,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   r0 <- NULL
   newdata <- newX
   p <- ncol(object$y)
+  if(object$family == "betaH")p <- p*2
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -314,7 +315,16 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   if (object$col.eff$col.eff == "random" && is.null(newX)) {
-    eta <- eta + object$col.eff$spdr%*%object$params$Br
+    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
+  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
+    bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
+    if(!is.null(bar.f)) {
+      mf <- model.frame(subbars1(object$col.eff$col.eff.formula),data=data.frame(newX))
+      RElist <- mkReTrms1(bar.f,mf)
+      newspdr <- Matrix::t(RElist$Zt)
+      eta <- eta + as.matrix(newspdr%*%object$params$Br)
+      eta <- eta + as.matrix(newspdr%*%t(object$params$Xcoef[,colnames(newspdr),drop=FALSE])) # this line usually comes above when newData = NULL
+    }
   }
 
   if(!is.null(object$offset)){
