@@ -553,7 +553,7 @@ se.gllvm <- function(object, ...){
     # reformat SEs based on the list that went into TMB
     se <- relist.gllvm(se, object$TMBfn$env$parList())
     
-    num.X <- 0; if(!is.null(object$X)) num.X <- dim(object$X.design)[2]
+    num.X <- 0; if(!is.null(object$X) || !isFALSE(object$col.eff$col.eff)) num.X <- dim(object$X.design)[2]
     if(object$row.eff == "fixed") { 
       se.row.params <- c(0,se$r0); 
       names(se.row.params) <- rownames(object$y);
@@ -664,7 +664,7 @@ se.gllvm <- function(object, ...){
     #   diag(out$sd$theta) <- c(out$sd$sigma.lv)
     # }
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
-    if(!is.null(object$X)){
+    if(!is.null(object$X) || object$col.eff$col.eff == "random"){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));
       rownames(out$sd$Xcoef) <- colnames(object$y); colnames(out$sd$Xcoef) <- colnames(object$X.design);
     }
