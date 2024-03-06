@@ -104,8 +104,8 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
     if(object$col.eff$col.eff == "random"){
-      coef.table <- coef.table[!duplicated(coef.table),,drop=FALSE]
-      row.names(coef.table)[tail(1:nrow(coef.table),ncol(object$col.eff$spdr))] <- colnames(object$col.eff$spdr)
+      coef.table<- coef.table[!duplicated(coef.table),,drop=FALSE]
+      row.names(coef.table)[grepl("RE_mean_", row.names(coef.table))] <- sub("RE_mean_", "RE mean:",grep("RE_mean_",colnames(object$X.design), value = TRUE))
     }
   }else if(!is.logical(object$sd)&!is.null(object$X)){
     pars <- c(object$params$B)

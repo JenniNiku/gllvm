@@ -95,8 +95,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if (is.null(colnames(object$y))) {
     colnames(object$y) <- paste("y", 1:p, sep = "")
   }
-  if (!is.null(object$X) && is.null(object$TR)) {
+  if (!is.null(object$X) && is.null(object$TR) && any(!grepl("RE_mean_", colnames(object$params$Xcoef)))) {
     B <- object$params$Xcoef
+    if(object$col.eff$col.eff=="random"){
+      B <- B[, subset(colnames(B),!grepl("RE_mean_",colnames(B))), drop = FALSE]
+    }
     if (is.null(newdata)) {
       X.d <- Xnew <- object$X
     }
@@ -116,7 +119,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         formula1 <- formula(formula1)
         Xnew <- as.matrix(model.matrix(formula1, data = data.frame(newdata)))
       }
-      formula <- formula(object$formula)
+      formula <- nobars1_(object$call$formula) # due to potential REs
       xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
       X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")), 
                           drop = F])
@@ -124,7 +127,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                         c("(Intercept)"))]
     }
     else {
-      X.d <- object$X.design
+      X.d <- object$X.design[, subset(colnames(object$X.design),!grepl("RE_mean_",colnames(object$X.design))), drop = FALSE]
     }
     eta <- eta + X.d %*% t(B)
   }
@@ -316,15 +319,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if (object$col.eff$col.eff == "random" && is.null(newX)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
+    eta <- eta + object$X.design[,grepl("RE_mean_",colnames(object$X.design)),drop=FALSE]%*%t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
-    bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
-    if(!is.null(bar.f)) {
-      mf <- model.frame(subbars1(object$col.eff$col.eff.formula),data=data.frame(newX))
-      RElist <- mkReTrms1(bar.f,mf)
-      newspdr <- Matrix::t(RElist$Zt)
-      eta <- eta + as.matrix(newspdr%*%object$params$Br)
-      eta <- eta + as.matrix(newspdr%*%t(object$params$Xcoef[,colnames(newspdr),drop=FALSE])) # this line usually comes above when newData = NULL
-    }
+    stop("Prediction with column effects not yet implemented.")
+      # bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
+      # mf <- model.frame(subbars1(object$col.eff$col.eff.formula),data=data.frame(newX))
+      # RElist <- mkReTrms1(bar.f,mf)
+      # newspdr <- Matrix::t(RElist$Zt)
+      # eta <- eta + as.matrix(newspdr%*%object$params$Br)
+      # eta <- eta + model.matrix(as.formula(paste0("~", paste0(all.vars(object$col.eff$col.eff.formula), collapse = "+"))), newX)[,-1, drop = FALSE]%*%t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
   }
 
   if(!is.null(object$offset)){

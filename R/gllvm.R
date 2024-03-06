@@ -688,6 +688,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }else{
       X.col.eff <- NULL
     }
+    if(anyBars(formula) && is.null(X.col.eff)){
+      stop("Covariates for species random effects must be provided.")
+    }
     col.eff <- FALSE;col.eff.formula = ~0
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
@@ -698,10 +701,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
+      # add to formula for RE means
+      if(is.null(X)){
+        X <- X.col.eff[,all.vars(col.eff.formula),drop = FALSE]
+        colnames(X) <- paste0("RE_mean_", all.vars(col.eff.formula))
+        formula <- as.formula(paste0("~", paste0("RE_mean_", all.vars(col.eff.formula), collapse = "+")))
+      }else{
+        X <- cbind(X, X.col.eff[,all.vars(col.eff.formula), drop = FALSE])
+        colnames(X)[tail(1:ncol(X),length(all.vars(col.eff.formula)))] <- paste0("RE_mean_",all.vars(col.eff.formula))
+        formula <- update(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", all.vars(col.eff.formula), collapse = "+"))))
+      }
     }
-    if(anyBars(col.eff.formula) && is.null(X.col.eff)){
-      stop("Covariates for species random effects must be provided.")
-    }
+
     
     if (!is.null(y)) {
       y <- as.matrix(y)

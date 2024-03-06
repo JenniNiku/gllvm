@@ -640,18 +640,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     # map species common effects for REs
     if(col.eff == "random"){
       if(is.null(map.list[["b"]])){
-        map.list$b <- factor(c(1:(p*ncol(Xd)), rep((p*ncol(Xd)+1):(p*ncol(Xd)+ncol(spdr)), each = p)))
+        map.list$b <- 1:(p*ncol(Xd))
+        map.list$b[grepl("RE_mean_", rep(colnames(Xd), each = p))] <- rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)
+        map.list$b <- factor(map.list$b)
+        map.list<<-map.list
       }else{
         # order of b in template is per species, here first order to covariate
         # for easier construction of map
-        map.list$b <- factor(c(map.list$b[rep(1:(num.X+1),p)], rep((max(as.numeric(map.list$b))+1):((max(as.numeric(map.list$b)))+ncol(spdr)), each = p)))
+        map.list$b <- factor(c(map.list$b[rep(1:(num.X+1),p)], rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)))
       }
-      Xd <- cbind(Xd, spdr)
-      X <- cbind(X, spdr)
-      out$X.design <- X
-      num.X <- num.X + ncol(spdr)
       map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
-      betas <- cbind(betas, t(Br))
     }
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
     extra <- c(0,0,0)
