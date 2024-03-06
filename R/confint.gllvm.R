@@ -38,7 +38,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   quadratic <- object$quadratic
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
-  
+  if(object$col.eff$col.eff == "random" | !is.null(object$randomX))object$params$Br <- NULL
   if(is.null(parm)){
     if (object$family == "negative.binomial") {
       object$params$phi <- NULL
@@ -51,11 +51,15 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     if (!is.null(object$params$sigmaB)) {
       object$params$sigmaB <- sqrt(diag(object$params$sigmaB))
+      if(ncol(object$TMBfn$env$data$cs)>1){
+        object$params$sigmaB <- object$sd$sigmaB[object$TMBfn$env$data$cs]
+      }else if(object$col.eff$col.eff=="random"){
+        object$sd$sigmaB <- diag(object$sd$sigmaB)
+      }
       object$sd$corrpar <- NULL
     }
     
-    
-    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta")
+    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta", "rho.sp")
     if(object$randomB!=FALSE){
       object$params$LvXcoef <- NULL
     }
@@ -64,8 +68,14 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     parmincl <- parm_all[parm_all %in% names(object$params)]
 
-    cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
-    ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
+    cilow <<- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
+    ciup <<- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
+    
+    if("rho.sp"%in%names(object$params[parmincl])){
+      a <- exp(-exp(cilow[grepl("rho.sp", names(cilow))])); b <- exp(-exp(ciup[grepl("rho.sp", names(ciup))]))
+      cilow[grepl("rho.sp", names(cilow))] <- min(a,b)
+      ciup[grepl("rho.sp", names(ciup))] <- max(a,b)
+    }
     
     M <- cbind(cilow, ciup)
     
@@ -168,7 +178,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       #   cal <- cal + length(object$sd$rho)
       # }
     }
-    if (!is.null(object$randomX)) {
+    if (!is.null(object$randomX) | object$col.eff$col.eff == 'random') {
       cal <- cal + length(object$params$sigmaB)
     }
     if (object$randomB!=FALSE) {
