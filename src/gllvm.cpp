@@ -873,7 +873,7 @@ Type objective_function<Type>::operator() ()
             // set-up column (block) covariance matrix
             int jstart = 0;
             if(cb==0){
-              tripletList.push_back(T(0,0, 1));//first entry fixed to 1 for identifiability  
+              tripletList.push_back(T(0,0, 0.3));//first entry fixed for identifiability  
               jstart = 1;
             }
             
@@ -947,7 +947,7 @@ Type objective_function<Type>::operator() ()
             int jstart = 0;
             // set-up column (block) covariance matrix
             if(cb==0){
-              SArmC(0,0) = 1;//first entry fixed to 1 for identifiability  
+              SArmC(0,0) = 0.3;//first entry fixed for identifiability  
               jstart = 1;
             }
             

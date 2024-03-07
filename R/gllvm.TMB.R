@@ -852,7 +852,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           #matrix normal VA matrix
           spAr <- rep(log(Lambda.start[2]), sum(nsp)+p-1)
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
-              spAr<-c(spAr, c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2)))
+              spAr<-c(spAr, c(rep(1e-2, sum(nsp)*(sum(nsp)-1)/2)))
           }
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
@@ -1142,7 +1142,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(sp.Ar.struc=="blockdiagonal"){# "diagonal" was previous iteration
            spAr1 <- c(spAr1, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
           }else if(sp.Ar.struc == "MNunstructured"){# "MNdiagonal" was previous iteration
-              spAr1 <- c(spAr1[1:(sum(nsp)+p-1)], c(rep(1e-3, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+              spAr1 <- c(spAr1[1:(sum(nsp)+p-1)], c(rep(1e-2, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
             }else if(sp.Ar.struc == "spblockdiagonal"){# "MNdiagonal" was previous iteration
               Abstruc <- 2
               spAr1 <- c(rep(log(Lambda.start[2]), sum(nsp)*p),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
@@ -2426,7 +2426,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                spAr <- spAr[-c(1:(p+sum(nsp)-1))]
               
               spArs[[1]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
-              spArs[[2]] <- diag(c(1,Ar.sds[-c(1:sum(nsp))]))
+              spArs[[2]] <- diag(c(.3,Ar.sds[-c(1:sum(nsp))]))
               if(sp.Ar.struc == "MNunstructured" && sum(nsp)>1){
               # row covariance
                     for(d in 1:(sum(nsp)-1)){
