@@ -643,11 +643,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         map.list$b <- 1:(p*ncol(Xd))
         map.list$b[grepl("RE_mean_", rep(colnames(Xd), each = p))] <- rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)
         map.list$b <- factor(map.list$b)
-        map.list<<-map.list
       }else{
         # order of b in template is per species, here first order to covariate
         # for easier construction of map
         map.list$b <- factor(c(map.list$b[rep(1:(num.X+1),p)], rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)))
+      }
+      if(starting.val %in% c("res","random")){
+      betas <- matrix(betas, p, num.X)
+      betas[,grepl("RE_mean_", colnames(Xd)[-1])] <- t(replicate(p, apply(betas[,grepl("RE_mean_", colnames(Xd)[-1]),drop=FALSE],2,mean)))
+      fit$params[, 2:(num.X + 1)] <- betas
+      betas <- c(betas)
       }
       map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
     }
