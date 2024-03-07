@@ -51,9 +51,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     if (!is.null(object$params$sigmaB)) {
       object$params$sigmaB <- sqrt(diag(object$params$sigmaB))
-      if(ncol(object$TMBfn$env$data$cs)>1){
-        object$params$sigmaB <- object$sd$sigmaB[object$TMBfn$env$data$cs]
-      }else if(object$col.eff$col.eff=="random"){
+      if(object$col.eff$col.eff=="random"){
         object$sd$sigmaB <- diag(object$sd$sigmaB)
       }
       object$sd$corrpar <- NULL

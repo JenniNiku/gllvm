@@ -650,7 +650,6 @@ Type objective_function<Type>::operator() ()
                     }
                     C2(i,0) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,j+1)*rhoSP(0);
                   }
-                  
                   matrix <Type> b =  C.llt().solve(C2);
                   for(int i=0; i<k; i++){
                     AL(j+1, nncolMat(i,sp+j)-1) = b(i);
@@ -753,13 +752,8 @@ Type objective_function<Type>::operator() ()
         int sdcounter = 0;
         int covscounter = p*nsp.sum();
         // vector<Type> SprIAtrace(p);
-        matrix <Type> SArm;
-        if((Abb.size() == (p*nsp.sum()))){
-          //ignoring the diagonal entries if possible
-          SArm = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
-        }else{
-          SArm.resize(nsp.sum(),nsp.sum());
-        }
+        matrix <Type> SArm(nsp.sum(),nsp.sum());SArm.setZero();
+
         int block = 0; //keep track of colCorMat blocks
         int sp = 0; //and the number of species we have had in the block
         for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
@@ -846,21 +840,14 @@ Type objective_function<Type>::operator() ()
         }else{
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
         }
-        matrix<Type>SArmR;//row covariance matrix
-        
-        // set-up row VA covariance matrix
-        if((Abb.size()==(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size() == (p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){
-          //ignoring the diagonal entries if possible
-          SArmR = Eigen::DiagonalMatrix<Type, Eigen::Dynamic>(nsp.sum());
-        }else{
-          SArmR.resize(nsp.sum(),nsp.sum());SArmR.setZero();
-        }
+        matrix<Type>SArmR(nsp.sum(), nsp.sum());//row covariance matrix
+        SArmR.setZero();
         
         int sdcounter = 0;
         int covscounter = p+nsp.sum()-1;
         // row variance
         for (int d=0; d<(nsp.sum()); d++){
-          SArmR(d,d)=exp(Abb(sdcounter));
+          SArmR.diagonal()(d)=exp(Abb(sdcounter));
           sdcounter++;
         }
         //prevent some calculations later on for trace terms
@@ -2838,10 +2825,10 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      Type logdetColCorMat = 0;
-      vector <Type> rhoSP(sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
-      
+
       if(colMatBlocksI(0)(0,0)==p){
+        Type logdetColCorMat = 0;
+        vector <Type> rhoSP(sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
         rhoSP.fill(1.0);
         if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
           rhoSP = sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
@@ -3016,11 +3003,9 @@ Type objective_function<Type>::operator() ()
         }
       }else{
         //independence across species
-        vector<Type> Brcol;
         MVNORM_t<Type> mvnorm(Spr);
         for (int j=0; j<p;j++){
-          Brcol = Br.col(j);
-          nll += mvnorm(Br);
+          nll += mvnorm(Br.col(j));
         }
       }
     }
