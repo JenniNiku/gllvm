@@ -65,9 +65,11 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if(object$family=="ZINB" && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
     
     parmincl <- parm_all[parm_all %in% names(object$params)]
-
-    cilow <<- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
-    ciup <<- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
+    if("rho.sp"%in%names(object$params[parmincl])){
+      object$params$rho.sp <- log(-log(object$params$rho.sp))
+    }
+    cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
+    ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
     
     if("rho.sp"%in%names(object$params[parmincl])){
       a <- exp(-exp(cilow[grepl("rho.sp", names(cilow))])); b <- exp(-exp(ciup[grepl("rho.sp", names(ciup))]))
