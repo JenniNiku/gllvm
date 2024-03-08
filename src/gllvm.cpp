@@ -860,47 +860,54 @@ Type objective_function<Type>::operator() ()
               covscounter++;
             }}
         }
-        typedef Eigen::Triplet<Type> T;
+
         int sp = 0;//tracking how many species we have had so far
         for(int cb=0; cb<colCorMatIblocks.size(); cb++){
           
           if(Abranks(cb)<colMatBlocksI(cb+1).cols()){
             //use sparse matrices if we can to speed things up with many species
-            Eigen::SparseMatrix<Type>SArmC(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());
-            std::vector<T> tripletList;
-            
-            
+            // Eigen::SparseMatrix<Type>SArmC(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());
+            // std::vector<T> tripletList;
+            matrix<Type> SArmC(colMatBlocksI(cb+1).cols(), CppAD::Integer(Abranks(cb)));
+            SArmC.setZero();
+            vector<Type>SArmCD(colMatBlocksI(cb+1).cols());//remaining variances
+            SArmCD.setZero();
             // set-up column (block) covariance matrix
             int jstart = 0;
             if(cb==0){
-              tripletList.push_back(T(0,0, 0.3));//first entry fixed for identifiability  
+              // tripletList.push_back(T(0,0, 0.3));//first entry fixed for identifiability  
+              SArmC(0,0) = 0.3;
               jstart = 1;
             }
             
-            for (int j=jstart; j<SArmC.cols(); j++){
-              tripletList.push_back(T(j,j,exp(Abb(sdcounter))));
+            for (int j=jstart; j<colMatBlocksI(cb+1).cols(); j++){
+              if(j<Abranks(cb)){
+                SArmC(j,j) = exp(Abb(sdcounter));
+                SArmCD(j) = 0;
+              }else{
+                SArmCD(j) = exp(Abb(sdcounter));
+              }
               sdcounter++;
             }
             
             for (int j=0; j<Abranks(cb); j++){
               for (int r=j+1; r<colMatBlocksI(cb+1).cols(); r++){
-                tripletList.push_back(T(r,j, Abb(covscounter)));
+                SArmC(r,j) =  Abb(covscounter);
                 covscounter++;
               }
             }
-            
-            SArmC.setFromTriplets(tripletList.begin(),tripletList.end());
             // determinant of kronecker product of two matrices based on their cholesky factors
-            nll -= SArmR.rows()*SArmC.diagonal().array().log().sum() + SArmC.rows()*SArmR.diagonal().array().log().sum();
+            nll -= SArmR.rows()*(SArmC.diagonal().array().log().sum() + SArmCD.tail(colMatBlocksI(cb+1).cols()-SArmC.cols()).log().sum()) + SArmC.rows()*SArmR.diagonal().array().log().sum();
             matrix<Type>SArmP = SArmC*SArmC.transpose();
-            
+            SArmP.diagonal() += SArmCD.pow(2).matrix();
+            // 
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
                 //not sparse
                 nll -= -0.5*((colCorMatIblocks(cb)*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
               }else{
-                //NN spare approximation
+                //NN sparse approximation
                 nll -= -0.5*((colCorMatIblocks(cb).sparseView()*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
               }
             }else{
@@ -925,7 +932,7 @@ Type objective_function<Type>::operator() ()
                  nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                }
              }else{
-               //NN spare approximation
+               //NN sparse approximation
                for (int d=0; d<(nsp.sum()); d++){
                  nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                }
@@ -941,37 +948,37 @@ Type objective_function<Type>::operator() ()
             //dense matrices if we have rank equal to the number of species in a block
             //because Sparse matrices are then slower
             matrix<Type>SArmC;
-            SArmC.resize(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());//column VA covariance  
+            SArmC.resize(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());//column VA covariance
             SArmC.setZero();
-            
+
             int jstart = 0;
             // set-up column (block) covariance matrix
             if(cb==0){
-              SArmC(0,0) = 0.3;//first entry fixed for identifiability  
+              SArmC(0,0) = 0.3;//first entry fixed for identifiability
               jstart = 1;
             }
-            
+
             for (int j=jstart; j<SArmC.cols(); j++){
               SArmC(j,j) = exp(Abb(sdcounter));
               sdcounter++;
             }
-            
+
             for (int j=0; j<Abranks(cb); j++){
               for (int r=j+1; r<(colMatBlocksI(0)(cb+1,0)); r++){
                 SArmC(r,j) = Abb(covscounter);
                 covscounter++;
               }
             }
-            
+
             // determinant of kronecker product of two matrices based on their cholesky factors
             nll -= SArmR.rows()*SArmC.diagonal().array().log().sum() + SArmC.rows()*SArmR.diagonal().array().log().sum();
             matrix<Type>SArmP = SArmC*SArmC.transpose();
-            
+
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if((nncolMat.rows()<p)){
                 //not sparse
-                nll -= -0.5*((colCorMatIblocks(cb)*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());                
+                nll -= -0.5*((colCorMatIblocks(cb)*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
               }else{
                 //NN sparse approximation
                 nll -= -0.5*((colCorMatIblocks(cb).sparseView()*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
@@ -1003,9 +1010,9 @@ Type objective_function<Type>::operator() ()
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
-  
+
             }
-            
+
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //kron(xb,I_p) A kron(xb,I_p)^t
               cQ.col(j+sp) += 0.5*SArmP(j,j)*((xb*SArmR*SArmR.transpose()).cwiseProduct(xb)).rowwise().sum();
@@ -1019,75 +1026,78 @@ Type objective_function<Type>::operator() ()
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         int sdcounter = 0;
         int covscounter = p*nsp.sum();
-        
+
         //prevent some calculations later on for trace terms
         Br = SprIL*Br;
-        
+
         if((rhoSP.size()==1)){
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
         }else{
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
         }
-        
+
         int sp = 0;//keeping track of #species we've had due to blocks
         for(int cb=0; cb<colCorMatIblocks.size(); cb++){
           if((rhoSP.size()) == 1){
             if(nncolMat.rows()<p){
-            nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace();                
+            nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace();
             }else if(nncolMat.rows()==p){
               //sparse approximation to inverse
-              nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace();                
+              nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace();
             }
           }else{
             if(nncolMat.rows()<p){
               for (int d=0; d<(nsp.sum()); d++){
                 nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
-              }              
+              }
             }else if(nncolMat.rows()==p){
               //sparse approximation to inverse
               for (int d=0; d<(nsp.sum()); d++){
                 nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
-              }              
+              }
             }
           }
-          
+
           if(Abranks(cb)<colMatBlocksI(0)(cb+1,0)){
             //can use sparse matrices
-            typedef Eigen::Triplet<Type> T;
             for (int d=0; d<(nsp.sum()); d++){
-              std::vector<T> tripletList;
-              Eigen::SparseMatrix<Type> SArm(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());//limit the scope of SArm(d) to this iteration for memory efficiency due to potentially large d
-              
+              matrix<Type> SArm(colMatBlocksI(cb+1).cols(),CppAD::Integer(Abranks(cb)));//limit the scope of SArm(d) to this iteration for memory efficiency due to potentially large d
+              vector<Type>SArmD(colMatBlocksI(cb+1).cols());
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){ // diagonals
-                tripletList.push_back(T(j,j,exp(Abb(sdcounter))));
+                if(j<Abranks(cb)){
+                  SArm(j,j) = exp(Abb(sdcounter));
+                  SArmD(j) = 0;
+                }else{
+                  SArmD(j) = exp(Abb(sdcounter));
+                }
+
                 sdcounter++;
               }
-              
+
               for (int j=0; j<Abranks(cb); j++){
                 for (int r=j+1; r<(colMatBlocksI(0)(cb+1,0)); r++){
-                  tripletList.push_back(T(r,j,Abb(covscounter)));
+                  SArm(r,j) = Abb(covscounter);
                   covscounter++;
                 }
               }
-              SArm.setFromTriplets(tripletList.begin(),tripletList.end());
-              
-              nll -= SArm.diagonal().array().log().sum();
-              
+              nll -= SArm.diagonal().array().log().sum() + SArmD.tail(colMatBlocksI(cb+1).cols()-SArm.cols()).log().sum();
+
               matrix<Type> SArmpd = SArm*SArm.transpose();
+              SArmpd.diagonal() += SArmD.pow(2).matrix();
               //remaining likelihood terms
               if((rhoSP.size() == 1)){
                 if(nncolMat.rows()<p){
-                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb)*SArmpd).trace());    
+                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb)*SArmpd).trace());
                 }else{
                   //sparse approximation to inverse
-                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb).sparseView()*SArmpd).trace());  
+                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb).sparseView()*SArmpd).trace());
                 }
-                
+
               }else{
                 if(nncolMat.rows()<p){
                   for (int d2=0; d2<(nsp.sum()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*SArmpd).trace()*pow(SprIL(d2,d),2);
-                  }  
+                  }
                 }else{
                   //sparse approximation to inverse
                   for (int d2=0; d2<(nsp.sum()); d2++){
@@ -1095,8 +1105,8 @@ Type objective_function<Type>::operator() ()
                   }
                 }
               }
-              
-              
+
+
               //consume smore memory for some reason, but is faster in n
               for (int j=0; j<(colMatBlocksI(0)(cb+1,0));j++){
                 //kron(xb,I_p) A kron(xb,I_p)^t
@@ -1112,36 +1122,36 @@ Type objective_function<Type>::operator() ()
                 SArm(j,j)=exp(Abb(sdcounter));
                 sdcounter++;
               }
-              
+
               for (int j=0; j<Abranks(cb); j++){
                 for (int r=j+1; r<(colMatBlocksI(0)(cb+1,0)); r++){
                   SArm(r,j)=Abb(covscounter);
                   covscounter++;
                 }
               }
-              
+
               nll -= SArm.diagonal().array().log().sum();
-              
+
               SArm *= SArm.transpose();
               //remaining likelihood terms
               if((rhoSP.size() == 1)){
                 if(nncolMat.rows()<p){
-                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb)*SArm).trace());   
+                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb)*SArm).trace());
                 }else if(nncolMat.rows()==p){
-                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb).sparseView()*SArm).trace());  
+                  nll -= -0.5*(SprI(d,d)*(colCorMatIblocks(cb).sparseView()*SArm).trace());
                 }
               }else{
                 if(nncolMat.rows()<p){
                   for (int d2=0; d2<(nsp.sum()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*SArm).trace()*pow(SprIL(d2,d),2);
-                  } 
+                  }
                 }else if(nncolMat.rows()==p){
                   for (int d2=0; d2<(nsp.sum()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*SArm).trace()*pow(SprIL(d2,d),2);
                   }
                 }
               }
-              
+
               //consume smore memory for some reason, but is faster in n
               for (int j=0; j<(colMatBlocksI(0)(cb+1,0));j++){
                 //kron(xb,I_p) A kron(xb,I_p)^t
@@ -1149,9 +1159,9 @@ Type objective_function<Type>::operator() ()
               }
             }
           }
-          
+
           sp += colMatBlocksI(cb+1).cols();
-          
+
         }
       }else if(Abstruc == 3){
         //(Abb.size() == (p*nsp.sum() + p*(p-1)/2 + p-colCorMatIblocks.size())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
@@ -1159,22 +1169,21 @@ Type objective_function<Type>::operator() ()
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         // always has p*p matrix with fixed diagonals, in combination with diagonal/blockdiagonal matrix for sp*nsp.sum()
         if((rhoSP.size()==1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);  
+          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
         }else{
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
         }
-        
+
         Br.transpose() *= SprIL.transpose();
-        
+
         int sdcounter = 0;
         int covscounter = p*nsp.sum()+p-colCorMatIblocks.size();
         int idx = 0; int sp = 0;
-        typedef Eigen::Triplet<Type> T;        
-        
+
         for(int cb=0; cb<colCorMatIblocks.size(); cb++){
           //construct blockdiagonal list
           vector<matrix<Type>> SArmb(colMatBlocksI(cb+1).cols());
-          
+
           for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
             SArmb(j).resize(nsp.sum(),nsp.sum());
             SArmb(j).setZero();
@@ -1192,42 +1201,50 @@ Type objective_function<Type>::operator() ()
                 }}
             }
           }
-          
+
           //construct p by p covariance matrix
           if(Abranks(cb)<colMatBlocksI(cb+1).cols()){
             //construct as sparse matrix
             //use sparse matrices if we can to speed things up with many species
-            Eigen::SparseMatrix<Type>SArmC(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());
-            std::vector<T> tripletList;
-            
+            matrix<Type>SArmC(colMatBlocksI(cb+1).cols(),CppAD::Integer(Abranks(cb)));
+            SArmC.setZero();
+            vector<Type> SArmCD(colMatBlocksI(cb+1).cols());
+            SArmCD.setZero();
+
             // set-up column (block) covariance matrix
-            tripletList.push_back(T(0,0, 1));//first entry fixed to 1 for identifiability  
-            
-            for (int j=1; j<SArmC.cols(); j++){
-              tripletList.push_back(T(j,j, exp(Abb(sdcounter))));
+            SArmC(0,0) = 1;//first entry fixed for identifiability
+            SArmCD(0) = 0;
+            for (int j=1; j<colMatBlocksI(cb+1).cols(); j++){
+              if(j<Abranks(cb)){
+                SArmC(j,j) = exp(Abb(sdcounter));
+                SArmCD(j) = 0;
+              }else{
+                SArmCD(j) = exp(Abb(sdcounter));
+              }
               sdcounter++;
             }
-            
+
             for (int j=0; j<Abranks(cb); j++){
               for (int r=j+1; r<colMatBlocksI(cb+1).cols(); r++){
-                tripletList.push_back(T(r,j, Abb(covscounter)));
+                SArmC(r,j) =  Abb(covscounter);
                 covscounter++;
               }
             }
-            
-            SArmC.setFromTriplets(tripletList.begin(),tripletList.end());
-            
+
             matrix<Type> SArmP = SArmC*SArmC.transpose();
-            
-            SArmC = SArmC*SArmP.diagonal().cwiseInverse().cwiseSqrt().asDiagonal();//ID constraint
+            SArmP.diagonal() += SArmCD.pow(2).matrix();
+            SArmCD.array() /= SArmP.diagonal().array().cwiseSqrt();
+            SArmC.array().colwise() /= SArmP.diagonal().array().cwiseSqrt();
             
             //determinant of this matrix is nsp*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
-            nll -=  nsp.sum()*SArmC.diagonal().array().log().sum();
+            nll -=  nsp.sum()*SArmC.diagonal().array().log().sum() + nsp.sum()*SArmCD.tail(colMatBlocksI(cb+1).cols()-SArmC.cols()).log().sum();
             for (int j=0; j<colMatBlocksI(0)(cb+1,0); j++){
               nll -= SArmb(j).diagonal().array().log().sum();
             }
-            SArmP = cov2cor(SArmP);
             
+            SArmP = cov2cor(SArmP);
+            matrix<Type> SArmP2 = SArmP;
+            REPORT(SArmP2);
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
@@ -1284,7 +1301,7 @@ Type objective_function<Type>::operator() ()
                 nll -= -0.5*((SprIL.transpose()*tempdiag*SprIL)*SArmb(j)*SArmb(j).transpose()).trace();
               }
             }
-            
+
             //remaining likelihood terms
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //consume smore memory for some reason, but is faster in n
@@ -1351,7 +1368,6 @@ Type objective_function<Type>::operator() ()
               }
               
               //write trace separately so we don't need to compute the whole product
-              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
                 for (int j2=j+1; j2<colMatBlocksI(cb+1).cols();j2++){
                   Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
@@ -1380,7 +1396,7 @@ Type objective_function<Type>::operator() ()
               //consume smore memory for some reason, but is faster in n
               cQ.col(j+sp) += 0.5*((xb*SArmb(j)*SArmb(j).transpose()).cwiseProduct(xb)).rowwise().sum();
             }
-            
+
           }
           sp += colMatBlocksI(cb+1).cols();
         }
@@ -1390,31 +1406,31 @@ Type objective_function<Type>::operator() ()
         // Ab.struct == "unstructured". Only here as reference and should not be used unless "colMat" is present
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         if((rhoSP.size()==1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);  
+          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
         }else{
           nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
         }
-        
+
         Br.transpose() *= SprIL.transpose();
-        
+
         int sdcounter = 0;
         int covscounter = p*nsp.sum();
         int sp = 0;
-        
-        typedef Eigen::Triplet<Type> T;             
-        
+
+        typedef Eigen::Triplet<Type> T;
+
         for(int cb=0; cb<colCorMatIblocks.size(); cb++){
           if(Abranks(cb)<colMatBlocksI(cb+1).cols()){
             std::vector<T> tripletList;
             //can use sparse matrices
             Eigen::SparseMatrix<Type>SArm(colMatBlocksI(cb+1).cols()*nsp.sum(),colMatBlocksI(cb+1).cols()*nsp.sum());
             //block structure :)
-            
+
             for (int d=0; d<(colMatBlocksI(cb+1).cols()*nsp.sum()); d++){ // diagonals of varcov
               tripletList.push_back(T(d,d,exp(Abb(sdcounter))));
               sdcounter++;
             }
-            
+
             // unstructured block Var.cov
             for (int j=0; j<Abranks(cb); j++){
               for (int r=j+1; r<(nsp.sum()*colMatBlocksI(cb+1).cols()); r++){
@@ -1422,18 +1438,18 @@ Type objective_function<Type>::operator() ()
                 covscounter++;
               }
             }
-            
+
             SArm.setFromTriplets(tripletList.begin(),tripletList.end());
-            
+
             nll -= SArm.diagonal().array().log().sum();
-            
+
             matrix<Type> SArmb = SArm*SArm.transpose();
-            
+
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
-                matrix<Type>SprMNI(colMatBlocksI(cb+1).cols()*nsp.sum(), colMatBlocksI(cb+1).cols()*nsp.sum()); // inverse of covariane  
-                SprMNI = tmbutils::kronecker(colCorMatIblocks(cb),SprI);  
+                matrix<Type>SprMNI(colMatBlocksI(cb+1).cols()*nsp.sum(), colMatBlocksI(cb+1).cols()*nsp.sum()); // inverse of covariane
+                SprMNI = tmbutils::kronecker(colCorMatIblocks(cb),SprI);
                 nll -= -0.5*((SprMNI*SArmb).trace()+(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace());
               }else if(nncolMat.rows()==p){
                 //sparse approximation to inverse
@@ -1451,14 +1467,14 @@ Type objective_function<Type>::operator() ()
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
-              
+
               //get colCorMat in same order as Ab
               vector<int> permVec(colMatBlocksI(cb+1).cols()*nsp.sum());
               Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>perm;
               int k = 0;
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
                 for (int d=0; d<nsp.sum(); d++){
-                  permVec(k) = j+d*colMatBlocksI(cb+1).cols();    
+                  permVec(k) = j+d*colMatBlocksI(cb+1).cols();
                   k++;
                 }
               }
@@ -1475,7 +1491,7 @@ Type objective_function<Type>::operator() ()
                nll -= -0.5*(kronSprIL.transpose()*colCorI*kronSprIL*SArmb).trace();
              }
             }
-            
+
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //consume smore memory for some reason, but is faster in n
               cQ.col(j+sp) += 0.5*((xb*SArmb.block(j*nsp.sum(),j*nsp.sum(),nsp.sum(),nsp.sum())).cwiseProduct(xb)).rowwise().sum();
@@ -1490,7 +1506,7 @@ Type objective_function<Type>::operator() ()
               SArm(d,d)=exp(Abb(sdcounter));
               sdcounter++;
             }
-            
+
             // unstructured block Var.cov
             for (int j=0; j<Abranks(cb); j++){
               for (int r=j+1; r<(nsp.sum()*colMatBlocksI(0)(cb+1)); r++){
@@ -1498,11 +1514,11 @@ Type objective_function<Type>::operator() ()
                 covscounter++;
               }
             }
-            
+
             nll -= SArm.diagonal().array().log().sum();
-            
+
             SArm = SArm*SArm.transpose();
-            
+
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
@@ -1531,7 +1547,7 @@ Type objective_function<Type>::operator() ()
               int k = 0;
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
                 for (int d=0; d<nsp.sum(); d++){
-                  permVec(k) = j+d*colMatBlocksI(cb+1).cols();    
+                  permVec(k) = j+d*colMatBlocksI(cb+1).cols();
                   k++;
                 }
               }
@@ -1547,7 +1563,7 @@ Type objective_function<Type>::operator() ()
                 nll -= -0.5*(kronSprIL.transpose()*colCorI*kronSprIL*SArm).trace();
               }
             }
-            
+
             //remaining likelihood terms
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //consume smore memory for some reason, but is faster in n
@@ -1555,7 +1571,7 @@ Type objective_function<Type>::operator() ()
             }
           }
           sp += colMatBlocksI(cb+1).cols();
-          
+
         }
       }
     }
