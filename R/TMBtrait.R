@@ -865,7 +865,7 @@ trait.TMB <- function(
           #matrix normal VA matrix
           Abb <- unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-              Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2)))
+              Abb<-c(Abb, c(rep(1e-2, ncol(xb)*(ncol(xb)-1)/2)))
           }
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter==1)){
@@ -875,7 +875,7 @@ trait.TMB <- function(
           }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
           Abstruc <- 3
           Abb <- c(unlist(lapply(res$fitstart$Ab,diag)),rep(log(a.var), p*ncol(xb)+p-length(blocksp)))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
@@ -900,7 +900,7 @@ trait.TMB <- function(
           #matrix normal VA matrix
           Abb <- rep(log(a.var), ncol(xb)+p-1)  
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
-            Abb<-c(Abb, c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2)))
+            Abb<-c(Abb, c(rep(1e-2, ncol(xb)*(ncol(xb)-1)/2)))
           }
           Abb<-c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter == 1)){
@@ -909,7 +909,7 @@ trait.TMB <- function(
         }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
           Abstruc <- 3
           Abb <- rep(log(a.var),sum(p*ncol(xb))+p-length(blocksp))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
@@ -1146,13 +1146,13 @@ trait.TMB <- function(
           if(Ab.struct=="blockdiagonal"){# "diagonal" was previous iteration
             Abb <- c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }else if(Ab.struct == "MNunstructured"){# "MNdiagonal" was previous iteration
-            Abb<-c(Abb[1:(ncol(xb)+p-1)], c(rep(1e-3, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+            Abb<-c(Abb[1:(ncol(xb)+p-1)], c(rep(1e-2, ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
           }else if(Ab.struct == "spblockdiagonal"){# "MNdiagonal" was previous iteration
             Abstruc <- 2
             Abb <- c(rep(log(0.5), ncol(xb)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
           }else if(Ab.struct == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
             Abstruc <- 3
-            Abb <- c(rep(log(0.5), p*ncol(xb)+p-length(blocksp)), rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
+            Abb <- c(rep(log(0.5), p*ncol(xb)+p-length(blocksp)), rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
           }else if(Ab.struct == "unstructured"){# "spblockdiagonal" was previous iteration
             Abstruc <- 4
             Abb <- c(Abb[1:(ncol(xb)*p)],rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
@@ -1836,7 +1836,7 @@ trait.TMB <- function(
           Ab <- Ab[-c(1:(p+xdr-1))]
             
             Abs[[1]] <- diag(Ar.sds[1:xdr], xdr)
-            Abs[[2]] <- diag(c(1,Ar.sds[-c(1:xdr)]))
+            Abs[[2]] <- diag(c(.3,Ar.sds[-c(1:xdr)]))
             if(Ab.struct == "MNunstructured" && ncol(xb)>1){
               # row covariance
               for(d in 1:(ncol(xb)-1)){
