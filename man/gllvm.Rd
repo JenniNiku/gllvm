@@ -20,6 +20,7 @@ gllvm(
   dist = list(matrix(0)),
   distLV = matrix(0),
   colMat = NULL,
+  colMat.rho.struct = "single",
   corWithin = FALSE,
   corWithinLV = FALSE,
   quadratic = FALSE,
@@ -42,12 +43,12 @@ gllvm(
   disp.formula = NULL,
   control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
     + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
-    6000, trace = FALSE, optim.method = NULL),
-  control.va = list(Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ar.struc
-    = "diagonal", diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN =
-    3),
+    6000, trace = FALSE, optim.method = NULL, nn.colMat = NULL),
+  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
+    "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
+    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
-    start.fit = NULL, start.lvs = NULL, randomX.start = "zero", quad.start = 0.01,
+    start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start = 0.01,
     start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP = NULL),
   setMap = NULL,
   ...
@@ -82,7 +83,9 @@ gllvm(
 
 \item{distLV}{matrix of coordinates or time points used for LV correlation structure \code{corExp}.}
 
-\item{colMat}{matrix of similarity for the column effects, such as from a Phylogeny. Must be positive definite.}
+\item{colMat}{either a list of length 2 with matrix of similarity for the column effects and named matrix "dist" of pairwise distances (of columns, to use in selecting nearest neighbours) for a sparse approximation of the matrix inverse in the likelihood, or only a (p.d.) matrix of similarity for the column effects for a normal inverse calculation.}
+
+\item{colMat.rho.struct}{either \code{single} (default) or \code{term} indicating whether the signal parameter should be shared for covariates, or not.}
 
 \item{corWithin}{logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.}
 
@@ -108,7 +111,7 @@ gllvm(
 
 \item{plot}{logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
-\item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit.}
+\item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".}
 
 \item{Ntrials}{number of trials for binomial family.}
 
@@ -134,13 +137,15 @@ gllvm(
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
+ \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of , defaults to of species. If set to the number of columns in the response data, a standard inverse is used instead.}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
 \itemize{
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
- \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, "diagonal", "blockdiagonal" (default), "spblockdiagonal", "MNdiagonal", "MNunstructured", or "unstructured".}
- \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal".}
+ \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalsp" ,"blockdiagonalsp" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
+ \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalsp", "blockdiagonalsp","spblockdiagonal", and "unstructured".}
+ \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
@@ -155,7 +160,7 @@ gllvm(
   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
-  \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"zero"}.}
+  \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
@@ -224,10 +229,12 @@ An object of class "gllvm" includes the following components:
  \item{distLV }{ Matrix of coordinates or time points used for LVs}
  \item{col.eff }{ list of components for column random effects}
  \itemize{
+ \item{Ab.struct }{ variational covariance structure of fitted model}
+ \item{Ab.struct.rank }{fitted rank of variational covariance matrix}
  \item{col.eff }{flag indicating if column random effects are included}
- \item{colL }{ lower cholesky factor for covariance matrix of column effects}
- \item{sdrp }{ sparse design matrix}
+ \item{spdr }{ design matrix}
  \item{nsp }{ vector of levels per random effect}
+ \item{colMat.rho.struct }{ character vector for signal parameter}
  
  }
  \item{terms }{ Terms object for main predictors}

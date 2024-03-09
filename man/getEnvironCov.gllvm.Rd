@@ -6,12 +6,12 @@
 \alias{getEnvironCor}
 \title{Extract species covariances due to environmental random effects from gllvm object}
 \usage{
-\method{getEnvironCov}{gllvm}(object, x.randomB = NULL)
+\method{getEnvironCov}{gllvm}(object, x = NULL)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{x.randomB}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.}
+\item{x}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.}
 
 \item{...}{not used}
 }
