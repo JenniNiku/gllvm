@@ -1243,8 +1243,7 @@ Type objective_function<Type>::operator() ()
             }
             
             SArmP = cov2cor(SArmP);
-            matrix<Type> SArmP2 = SArmP;
-            REPORT(SArmP2);
+            
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
