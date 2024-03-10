@@ -294,6 +294,8 @@ trait.TMB <- function(
         }
       }else if(is.matrix(colMat)){
         nn.colMat <- p
+      }else{
+        nncolMat <- matrix(0)
       }
       
       if(!is.null(colMat) && all(dim(colMat)!=1)){
