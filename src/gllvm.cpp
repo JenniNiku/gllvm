@@ -3092,7 +3092,7 @@ Type objective_function<Type>::operator() ()
           //independence of REs
           vector<Type> r0s = r0.col(0).segment(0,nr(re));
           for(int ir=0; ir<nr(re); ir++){
-            nll -= dnorm(r0s(ir), Type(0), Type(1), true);
+            nll -= dnorm(r0s(ir), Type(0), sigma(sigmacounter-1), true);
           }
         }else{
           nll += MVNORM(Sr)(r0.col(0).segment(0,nr(re)));
