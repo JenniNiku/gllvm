@@ -691,25 +691,41 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(anyBars(formula) && is.null(X.col.eff)){
       stop("Covariates for species random effects must be provided.")
     }
-    col.eff <- FALSE;col.eff.formula = ~0
+    col.eff <- FALSE;col.eff.formula = ~0; cs = NULL; spdr = NULL; cstruc = "diag"
+    # Species random effects    
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
       col.eff <- "random"
       col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
       formula <- nobars1_(formula) # take out random effects
+      
+      bar.f <- findbars1(col.eff.formula) # list with 3 terms
+      mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
+      RElist <- mkReTrms1(bar.f,mf)
+      spdr <- Matrix::t(RElist$Zt)
+      cs <- RElist$cs # covariances of REs
+      # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
 
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
-      # add to formula for RE means
+      
+      # add to fixed formula for RE means
+      # but exclude first category of categorical variables
+      X.col.eff <- spdr[,!((colnames(spdr)%in%sapply(X.col.eff[,apply(X.col.eff,2,function(x)is.character(x)||is.factor(x)),drop=FALSE],function(x)sort(x)[1])) & apply(spdr,2,function(x)all(x%in%c(0,1)))), drop = FALSE]
+      # final check to ensure no full intercept columns get swept into the fixed effects
+      if(any(apply(X.col.eff, 2, function(x)all(x==1)))){
+        X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1))]
+      }
+      # build formula argument for RE means
       if(is.null(X)){
-        X <- X.col.eff[,all.vars(col.eff.formula),drop = FALSE]
-        colnames(X) <- paste0("RE_mean_", all.vars(col.eff.formula))
-        formula <- as.formula(paste0("~", paste0("RE_mean_", all.vars(col.eff.formula), collapse = "+")))
+        X <- as.matrix(X.col.eff)
+        colnames(X) <- paste0("RE_mean_", make.unique(colnames(X.col.eff)))
+        formula <- as.formula(paste0("~", paste0(colnames(X), collapse = "+")))
       }else{
-        X <- cbind(X, X.col.eff[,all.vars(col.eff.formula), drop = FALSE])
-        colnames(X)[tail(1:ncol(X),length(all.vars(col.eff.formula)))] <- paste0("RE_mean_",all.vars(col.eff.formula))
-        formula <- update(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", all.vars(col.eff.formula), collapse = "+"))))
+        X <- cbind(X, X.col.eff)
+        colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  paste0("RE_mean_", make.unique(colnames(X.col.eff)))
+        formula <- update(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
       }
     }
 
@@ -958,19 +974,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     n <- NROW(y)
     if (p == 1)
       y <- as.matrix(y)
-
-    # Species random effects    
-    cs = NULL; spdr = NULL; cstruc = "diag"
-    if(col.eff == "random") {
-      bar.f <- findbars1(col.eff.formula) # list with 3 terms
-      if(!is.null(bar.f)) {
-        mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
-        RElist <- mkReTrms1(bar.f,mf)
-        spdr <- Matrix::t(RElist$Zt)
-        cs <- RElist$cs
-        # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
-      }
-    }
 
     if(!inherits(row.eff, "formula") && row.eff == "random"){
       row.eff <- ~(1|site)

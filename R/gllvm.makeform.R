@@ -143,7 +143,6 @@ mkReTrms1 <- function (bars, fr)
   nl <- vapply(blist, `[[`, 0L, "nl")
   cnms <- lapply(blist,`[[`,"cnms")
   grps <- unlist(lapply(cnms,length))
-  nms <- make.unique(unlist(cnms))
   if(any(grps>1)){
   cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
   }else{
@@ -151,7 +150,7 @@ mkReTrms1 <- function (bars, fr)
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
-  try({row.names(Zt) <- nms}, silent = TRUE)
+  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1){paste0(x$cnms, row.names(x$sm))}else{make.unique(x$cnms)}))}, silent = TRUE)
   names(Ztlist) <- term.names
   
   ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl)
