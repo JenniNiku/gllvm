@@ -610,9 +610,10 @@ Type objective_function<Type>::operator() ()
             
             for(int cb=1; cb<colMatBlocksI.size(); cb++){
               colCorMatIblocks(cb-1).resize(rhoSP.size()*colMatBlocksI(cb).cols(),rhoSP.size()*colMatBlocksI(cb).cols());
-              colCorMatIblocks(cb-1).setZero();
               matrix<Type> temp(colMatBlocksI(cb).cols(),1);
               for(int re=0; re<rhoSP.size(); re++){
+                colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()).setZero();
+                
                 //efficiently update inverse and determinant using rank 1 updates
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()) = colMatBlocksI(cb)/rhoSP(re); // start at (colMat*rho)^-1
                 logdetColCorMat += colMatBlocksI(cb).cols()*log(rhoSP(re));//second component of log-determinant of colMat*rho
@@ -669,9 +670,9 @@ Type objective_function<Type>::operator() ()
             int sp = 0;
             for(int cb=1; cb<colMatBlocksI.size(); cb++){
               colCorMatIblocks(cb-1).resize(colMatBlocksI(cb).cols()*nsp.sum(), colMatBlocksI(cb).cols()*nsp.sum());
-              colCorMatIblocks(cb-1).setZero();
               sp += 1;//skiping first entry of block, ths is C[1,1], which is here 1
               for(int re=0; re<rhoSP.size(); re++){
+                colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()).setZero();
               if(colMatBlocksI(cb).cols()>1){
                 // colCorMatIblocks(cb-1) = Eigen::SparseMatrix<Type>(colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols());
                 matrix<Type> AL(colMatBlocksI(cb).cols(), colMatBlocksI(cb).cols());
