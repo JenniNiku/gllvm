@@ -538,11 +538,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$MaternKappa = 1.5
       x
     }
-
-    if (inherits(family,"family")) {
-      link <- family$link
-      family <- family$family
-    }  
     
     control <- fill_control(c(pp.pars, control))
     control.va <- fill_control.va(c(pp.pars, control.va))
@@ -701,7 +696,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
       mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
-      RElist <- mkReTrms1(bar.f,mf)
+      RElist <- mkReTrms1(bar.f,mf) #still add find double bars
       spdr <- Matrix::t(RElist$Zt)
       cs <- RElist$cs # covariances of REs
       # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
@@ -1259,7 +1254,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (family %in% c("beta","betaH","orderedBeta")) {
         out$link <- link
     }
-
+    if(link == "logit" && method == "VA"){
+      message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
+    }
     if (family == "orderedbeta") {
       out$link <- "probit"
     }

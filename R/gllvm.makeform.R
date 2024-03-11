@@ -150,7 +150,7 @@ mkReTrms1 <- function (bars, fr)
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
-  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1){paste0(x$cnms, row.names(x$sm))}else{make.unique(x$cnms)}))}, silent = TRUE)
+  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && x$cnms!="(Intercept)"){paste0(x$cnms, row.names(x$sm))}else if(x$cnms!="(Intercept)"){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
   names(Ztlist) <- term.names
   
   ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl)
