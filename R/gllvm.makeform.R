@@ -107,6 +107,15 @@ subbars1<-function (term)
 
 mkModMlist <- function (x, frloc) {
   frloc <- factorize(x, frloc)
+  # safeguard for issues with numeric in factor levels
+  # There is probably a better way to do this
+  if(suppressWarnings(any(!is.na(as.numeric(unlist(frloc[,all.vars(x[[3]])])))))){
+    for(i in which(suppressWarnings(apply(frloc[,all.vars(x[[3]]), drop = FALSE], 2, function(x)any(!is.na(as.numeric(x))))))){
+      ilev <- levels(frloc[,colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i]])
+      ilev <- paste0(colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i], ilev)
+      levels(frloc[,colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i]]) <- ilev
+    }
+  }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
   mm <- model.matrix(eval(base::substitute(~foo, list(foo = x[[2]]))), 
