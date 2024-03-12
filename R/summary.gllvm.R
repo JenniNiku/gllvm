@@ -95,6 +95,17 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if((num.lv+num.lv.c+num.RR)>0 && Lvcoefs){
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
+  if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
+    REcovs <- list(Name = colnames(object$params$sigmaB), Variance = diag(object$params$sigmaB), Std.Dev = sqrt(diag(object$params$sigmaB)))
+    if(!is.null(object$params$rho.sp)){
+      REcovs <- append(list(Name = REcovs$Name, Signal = object$params$rho.sp), REcovs[-1])
+    }
+    if(!all(object$params$sigmaB[row(object$params$sigmaB)!=col(object$params$sigmaB)]==0)){
+      REcovs$Corr <- cov2cor(object$params$sigmaB)
+      REcovs$Corr[upper.tri(REcovs$Corr)] <- ""
+    }
+    sumry$REcovs <- REcovs
+  }
   
   if (!is.logical(object$sd)&!is.null(object$X)&is.null(object$TR)) {
     pars <- c(object$params$Xcoef)
@@ -310,6 +321,11 @@ print.summary.gllvm <- function (x, ...)
   
   cat("Formula: ", paste(x$formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
+  
+  if(!is.null(x$REcovs)){
+    cat("\nRandom effects:\n")
+    print(as.data.frame(x$REcovs), digits = x$digits, row.names = FALSE, right = FALSE)
+  }
   
   df <- x[["df"]]
   if(!is.null(x$Coef.tableX)){
