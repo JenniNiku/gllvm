@@ -4,6 +4,7 @@ Version 1.4.5
   * Prep for parallelisation
   * Enabled parallelisation (see TMB::openmp)
 * Largely vectorized "residuals.gllvm", and residuals in "gllvm.aux"
+* Added covariance of random effects to summary
 
 Version 1.4.4
 =============
