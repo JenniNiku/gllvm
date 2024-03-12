@@ -508,7 +508,7 @@ se.gllvm <- function(object, ...){
         out$prediction.errors <- prediction.errors
       }
       }, silent=TRUE)
-      if(inherits(trpred, "try-error")) { cat("Prediction errors for latent variables could not be calculated.\n") }
+      if(inherits(trpred, "try-error")) { cat("Prediction errors for random effects could not be calculated.\n") }
       
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       
