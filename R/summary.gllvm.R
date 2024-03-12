@@ -96,13 +96,15 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
-    REcovs <- list(Name = colnames(object$params$sigmaB), Variance = diag(object$params$sigmaB), Std.Dev = sqrt(diag(object$params$sigmaB)))
+    REcovs <- data.frame(Name = colnames(object$params$sigmaB), Variance = format(round(diag(object$params$sigmaB), digits), nsmall = digits), Std.Dev = format(round(sqrt(diag(object$params$sigmaB)), digits), nsmall = digits))
     if(!is.null(object$params$rho.sp)){
-      REcovs <- append(list(Name = REcovs$Name, Signal = object$params$rho.sp), REcovs[-1])
+      REcovs <- do.call(cbind, list(data.frame(Name = REcovs$Name), data.frame(Signal = format(round(object$params$rho.sp, digits), nsmall = digits), row.names = NULL), REcovs[,-1]))
     }
     if(!all(object$params$sigmaB[row(object$params$sigmaB)!=col(object$params$sigmaB)]==0)){
-      REcovs$Corr <- cov2cor(object$params$sigmaB)
-      REcovs$Corr[upper.tri(REcovs$Corr)] <- ""
+      cors <- format(round(cov2cor(object$params$sigmaB), digits), nsmall = digits)
+      cors[upper.tri(cors, diag = TRUE)] <- ""
+      REcovs <- cbind(REcovs, cors, deparse.level = 0L)
+      colnames(REcovs)[tail(1:ncol(REcovs), ncol(cors))] <- c("Corr", rep("", ncol(cors) - 1))
     }
     sumry$REcovs <- REcovs
   }
@@ -324,7 +326,7 @@ print.summary.gllvm <- function (x, ...)
   
   if(!is.null(x$REcovs)){
     cat("\nRandom effects:\n")
-    print(as.data.frame(x$REcovs), digits = x$digits, row.names = FALSE, right = FALSE)
+    print(x$REcovs, row.names = FALSE, right = FALSE)
   }
   
   df <- x[["df"]]
