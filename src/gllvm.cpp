@@ -3259,7 +3259,6 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           if(extra(0)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
           } else {mu(i,j) = pnorm(eta(i,j));}
-          mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
           mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
           mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
           if(!isNA(y(i,j))){
