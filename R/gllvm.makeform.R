@@ -122,15 +122,31 @@ mkModMlist <- function (x, frloc) {
                      frloc)
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
-
+  
+  fm <- NULL
+  # design matrix for RE means
+  if(any(colnames(mm)!="(Intercept)")){
+    fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
+    row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
+  }
+  # now intercept part if present
+  if("(Intercept)"%in%colnames(mm)){
+    ff2 <- ff
+    levels(ff2)[1]<- NA # exclude reference category for identifiability
+    fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
+    fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
+    row.names(fm2) <- levels(ff2)
+    fm <- rbind(fm, fm2)
+  }
+  
   if((nrow(sm) != nrow(mm)) && (nrow(sm) == 1) && (ncol(sm) == 1)){ #catch 1s in RE on RHS (i.e., random slopes)
     sm <- matrix(1, ncol = nrow(mm))
   }
   sm <- Matrix::KhatriRao(sm, t(mm))
+  
   dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
-  list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm))
+  list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm), fm = fm)
 }
-
 #
 mkReTrms1 <- function (bars, fr) 
 {
@@ -159,10 +175,14 @@ mkReTrms1 <- function (bars, fr)
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
-  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && x$cnms!="(Intercept)"){paste0(x$cnms, row.names(x$sm))}else if(x$cnms!="(Intercept)"){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
+  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl)
+  # Design matrix RE means
+  Xtlist <- lapply(blist, `[[`, "fm")
+  Xt <- do.call(rbind, Xtlist)
+  
+  ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
   ll
 }
 
