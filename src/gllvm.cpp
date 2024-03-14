@@ -93,7 +93,6 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for Br: (3) 1 = random
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
   DATA_IVECTOR(nr); // number of observations in each random row effect
-  DATA_IVECTOR(nsp); // number of sites in each random row effect, per species
   DATA_INTEGER(times); // number of time points, for LVs
   DATA_IVECTOR(cstruc); //correlation structure for row.params 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
   DATA_INTEGER(cstruclv); //correlation structure for LVs 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
@@ -556,20 +555,18 @@ Type objective_function<Type>::operator() ()
       
       if(random(3)>0){
         // random species effects for gllvm.TMB
-        vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
-        Spr = matrix<Type>(nsp.sum(),nsp.sum());Spr.setZero();
+        vector<Type> sigmaSP = exp(sigmaB.segment(0,xb.cols()));
+        Spr = matrix<Type>(xb.cols(), xb.cols());Spr.setZero();
         
         int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-        for(int re=0; re<nsp.size(); re++){
-          for(int nr=0; nr<nsp(re); nr++){
+        for(int re=0; re<xb.cols(); re++){
             Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
             sprdiagcounter++;
-          }
         }
       }
       //covariances of random effects
       if(cs.cols()>1){
-        vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
+        vector<Type> sigmaSPij = sigmaB.segment(xb.cols(),cs.rows());
         for(int rec=0; rec<cs.rows(); rec++){
           Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
           Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
@@ -578,12 +575,12 @@ Type objective_function<Type>::operator() ()
       
       vector<matrix<Type>> colCorMatIblocks(colMatBlocksI.size()-1);
       Type logdetColCorMat =0;
-      vector <Type> rhoSP(sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
+      vector <Type> rhoSP(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
       
       if(colMatBlocksI(0)(0,0) == p){
         rhoSP.fill(1.0);
-        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
-          rhoSP = sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
+        if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
+          rhoSP = sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
           for(int re=0; re<rhoSP.size(); re++){
             rhoSP(re) = CppAD::CondExpGt(rhoSP(re), Type(3.3), Type(3.3), rhoSP(re));
           }
@@ -605,7 +602,7 @@ Type objective_function<Type>::operator() ()
                 colCorMatIblocks(cb-1) = colCorMatIblocks(cb-1).template selfadjointView<Eigen::Lower>(); //return as symmetric matrix
               }
             }
-          }else{//now colCorMatIblocks is a nsp.sum()*p(block) sized matrix
+          }else{//now colCorMatIblocks is a xb.cols()*p(block) sized matrix
             logdetColCorMat = rhoSP.size()*colMatBlocksI(0).col(1).segment(1,colMatBlocksI.size()-1).sum();
             
             for(int cb=1; cb<colMatBlocksI.size(); cb++){
@@ -666,10 +663,10 @@ Type objective_function<Type>::operator() ()
               }
               sp += colMatBlocksI(cb).cols()-1;
             }
-          }else{//now colCorMatIblocks is a nsp.sum()*p(block) sized matrix
+          }else{//now colCorMatIblocks is a xb.cols()*p(block) sized matrix
             int sp = 0;
             for(int cb=1; cb<colMatBlocksI.size(); cb++){
-              colCorMatIblocks(cb-1).resize(colMatBlocksI(cb).cols()*nsp.sum(), colMatBlocksI(cb).cols()*nsp.sum());
+              colCorMatIblocks(cb-1).resize(colMatBlocksI(cb).cols()*xb.cols(), colMatBlocksI(cb).cols()*xb.cols());
               sp += 1;//skiping first entry of block, ths is C[1,1], which is here 1
               for(int re=0; re<rhoSP.size(); re++){
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()).setZero();
@@ -712,8 +709,8 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      matrix <Type> SprI(nsp.sum(),nsp.sum());
-      matrix <Type> SprIL(nsp.sum(),nsp.sum()); //only used if rhoSP.size()>1
+      matrix <Type> SprI(xb.cols(),xb.cols());
+      matrix <Type> SprIL(xb.cols(),xb.cols()); //only used if rhoSP.size()>1
       Type logdetSpr;
       //could/should build in detection of block matrices based on entries in cs.
       // if(rhoSP.size()==1){
@@ -731,7 +728,7 @@ Type objective_function<Type>::operator() ()
       if((cs.cols()>1)|(random(1)>0)){
         SprIL.setZero();
         //Spr is not diagonal
-        matrix<Type> Ir = Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum());
+        matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
         SprIL = Spr.llt().matrixL().solve(Ir);
         logdetSpr = -2*SprIL.diagonal().array().log().sum();
         SprI = SprIL.transpose()*SprIL;
@@ -748,25 +745,25 @@ Type objective_function<Type>::operator() ()
       //Variational components
       
       if(Abstruc == 0){
-        //((Abb.size() ==(p*nsp.sum())) || (Abb.size() == (p*nsp.sum()+p*nsp.sum()*(nsp.sum()-1)/2))) && Abranks(0) == 0
+        //((Abb.size() ==(p*xb.cols())) || (Abb.size() == (p*xb.cols()+p*xb.cols()*(xb.cols()-1)/2))) && Abranks(0) == 0
         // Ab.struct == "diagonal" or "blockdiagonal", i.e., independence over species
         int sdcounter = 0;
-        int covscounter = p*nsp.sum();
+        int covscounter = p*xb.cols();
         // vector<Type> SprIAtrace(p);
-        matrix <Type> SArm(nsp.sum(),nsp.sum());SArm.setZero();
+        matrix <Type> SArm(xb.cols(), xb.cols());SArm.setZero();
 
         int block = 0; //keep track of colCorMat blocks
         int sp = 0; //and the number of species we have had in the block
         for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
           SArm.setZero();
-          for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
+          for (int d=0; d<xb.cols(); d++){ // diagonals of varcov
             SArm.diagonal()(d)=exp(Abb(sdcounter));
             sdcounter++;
           }
           
-          if((Abb.size()>(p*nsp.sum()))){ // unstructured block Var.cov
-            for (int d=0; d<(nsp.sum()); d++){
-              for (int r=d+1; r<(nsp.sum()); r++){
+          if((Abb.size()>(p*xb.cols()))){ // unstructured block Var.cov
+            for (int d=0; d<(xb.cols()); d++){
+              for (int r=d+1; r<(xb.cols()); r++){
                 SArm(r,d)=Abb(covscounter);
                 covscounter++;
               }}
@@ -784,10 +781,10 @@ Type objective_function<Type>::operator() ()
               sp = 0;
             }
           }else if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size()>1)){
-            Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
-            // matrix<Type> tempdiag(nsp.sum(),nsp.sum());
+            Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
+            // matrix<Type> tempdiag(xb.cols(),xb.cols());
             // tempdiag.setZero();
-            for (int d=0; d<(nsp.sum()); d++){
+            for (int d=0; d<(xb.cols()); d++){
               tempdiag.diagonal()(d) = colCorMatIblocks(block)(colMatBlocksI(block+1).cols()*d+sp,colMatBlocksI(block+1).cols()*d+sp);
             }
             nll -= -0.5*(SprIL.transpose()*tempdiag*SprIL*SArm).trace();
@@ -806,24 +803,24 @@ Type objective_function<Type>::operator() ()
         }
         
         if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size() == 1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);//determinant of kronecker product
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);//determinant of kronecker product
           sp = 0;
           for(int cb=0; cb<colCorMatIblocks.size(); cb++){
             nll -= -0.5*(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()*SprI).trace();
             sp += colCorMatIblocks(cb).cols();
           }
         }else if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size() > 1)){//have to be careful with number of colCorMatIblocks columns
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
           sp = 0;
           Br = SprIL*Br;
           for(int cb=0; cb<colCorMatIblocks.size(); cb++){
-            for (int d=0; d<(nsp.sum()); d++){
+            for (int d=0; d<(xb.cols()); d++){
               nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
             }
             sp += colMatBlocksI(cb+1).cols();
           }
         }else{
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr); 
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr); 
           nll -= -0.5*(Br*Br.transpose()*SprI).trace();
         }
         // for (int j=0; j<p;j++){
@@ -833,30 +830,30 @@ Type objective_function<Type>::operator() ()
         //   }
         // }
       }else if(Abstruc == 1){
-        //(Abb.size()==(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size() == (p+nsp.sum()-1 + p*(p-1)/2 + nsp.sum()*(nsp.sum()-1)/2)) || (Abb.size() == (p+nsp.sum()-1+nsp.sum()*(nsp.sum()-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
+        //(Abb.size()==(xb.cols()+p-1+p*(p-1)/2)) || (Abb.size() == (p+xb.cols()-1 + p*(p-1)/2 + xb.cols()*(xb.cols()-1)/2)) || (Abb.size() == (p+xb.cols()-1+xb.cols()*(xb.cols()-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p+xb.cols()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "MNdiagonal" OR "MNunstructured" with blocks due to Phylogeny
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         if((rhoSP.size() == 1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat); 
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat); 
         }else{
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
         }
-        matrix<Type>SArmR(nsp.sum(), nsp.sum());//row covariance matrix
+        matrix<Type>SArmR(xb.cols(), xb.cols());//row covariance matrix
         SArmR.setZero();
         
         int sdcounter = 0;
-        int covscounter = p+nsp.sum()-1;
+        int covscounter = p+xb.cols()-1;
         // row variance
-        for (int d=0; d<(nsp.sum()); d++){
+        for (int d=0; d<(xb.cols()); d++){
           SArmR.diagonal()(d)=exp(Abb(sdcounter));
           sdcounter++;
         }
         //prevent some calculations later on for trace terms
         Br.transpose() *= SprIL.transpose();
         
-        if((Abb.size()>(nsp.sum()+p-1+p*(p-1)/2)) || (Abb.size()>(p+nsp.sum()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){ // unstructured row covariance
-          for (int d=0; d<(nsp.sum()); d++){
-            for (int r=d+1; r<(nsp.sum()); r++){
+        if((Abb.size()>(xb.cols()+p-1+p*(p-1)/2)) || (Abb.size()>(p+xb.cols()-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){ // unstructured row covariance
+          for (int d=0; d<(xb.cols()); d++){
+            for (int r=d+1; r<(xb.cols()); r++){
               SArmR(r,d)=Abb(covscounter);
               covscounter++;
             }}
@@ -912,29 +909,29 @@ Type objective_function<Type>::operator() ()
                 nll -= -0.5*((colCorMatIblocks(cb).sparseView()*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
               }
             }else{
-              Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
+              Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
               for (int j=0; j<colMatBlocksI(0)(cb+1,0);j++){
                 for (int j2=j+1; j2<colMatBlocksI(0)(cb+1,0);j2++){
-                  for (int d=0; d<(nsp.sum()); d++){
+                  for (int d=0; d<(xb.cols()); d++){
                     tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j2);
                   }
                   if(j!=j2){
                     nll -= -(SprIL.transpose()*tempdiag*SprIL*SArmR*SArmR.transpose()).trace()*SArmP(j,j2);
                   }
                 }
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j);
                 }
                 nll -= -0.5*(SprIL.transpose()*tempdiag*SprIL*SArmR*SArmR.transpose()).trace()*SArmP(j,j);
               }
              if(nncolMat.rows()<p){
                //not sparse
-               for (int d=0; d<(nsp.sum()); d++){
+               for (int d=0; d<(xb.cols()); d++){
                  nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                }
              }else{
                //NN sparse approximation
-               for (int d=0; d<(nsp.sum()); d++){
+               for (int d=0; d<(xb.cols()); d++){
                  nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                }
              }
@@ -985,29 +982,29 @@ Type objective_function<Type>::operator() ()
                 nll -= -0.5*((colCorMatIblocks(cb).sparseView()*SArmP).trace()*(SprI*SArmR*SArmR.transpose()).trace()+(Br.middleCols(sp, colCorMatIblocks(cb).cols())*colCorMatIblocks(cb).sparseView()*Br.middleCols(sp, colCorMatIblocks(cb).cols()).transpose()).trace());
               }
             }else{
-              Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
+              Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
               for (int j=0; j<colMatBlocksI(0)(cb+1,0);j++){
                 for (int j2=j+1; j2<colMatBlocksI(0)(cb+1,0);j2++){
-                  for (int d=0; d<(nsp.sum()); d++){
+                  for (int d=0; d<(xb.cols()); d++){
                     tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j2);
                   }
                   if(j!=j2){
                     nll -= -(SprIL.transpose()*tempdiag*SprIL*SArmR*SArmR.transpose()).trace()*SArmP(j,j2);
                   }
                 }
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j);
                 }
                 nll -= -0.5*(SprIL.transpose()*tempdiag*SprIL*SArmR*SArmR.transpose()).trace()*SArmP(j,j);
               }
               if((nncolMat.rows()<p)){
                 //not sparse
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }else{
                 //NN sparse approximation
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
@@ -1022,19 +1019,19 @@ Type objective_function<Type>::operator() ()
           }
         }
       }else if(Abstruc == 2){
-        //(Abb.size() == ((nsp.sum()*p +nsp.sum()*p*(p-1)/2))) || (Abb.size()==(nsp.sum()*p+sum(nsp)*(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
+        //(Abb.size() == ((xb.cols()*p +xb.cols()*p*(p-1)/2))) || (Abb.size()==(xb.cols()*p+sum(nsp)*(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "spblockdiagonal" with block structure due to phylogeny
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         int sdcounter = 0;
-        int covscounter = p*nsp.sum();
+        int covscounter = p*xb.cols();
 
         //prevent some calculations later on for trace terms
         Br = SprIL*Br;
 
         if((rhoSP.size()==1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
         }else{
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
         }
 
         int sp = 0;//keeping track of #species we've had due to blocks
@@ -1048,12 +1045,12 @@ Type objective_function<Type>::operator() ()
             }
           }else{
             if(nncolMat.rows()<p){
-              for (int d=0; d<(nsp.sum()); d++){
+              for (int d=0; d<(xb.cols()); d++){
                 nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
               }
             }else if(nncolMat.rows()==p){
               //sparse approximation to inverse
-              for (int d=0; d<(nsp.sum()); d++){
+              for (int d=0; d<(xb.cols()); d++){
                 nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
               }
             }
@@ -1061,7 +1058,7 @@ Type objective_function<Type>::operator() ()
 
           if(Abranks(cb)<colMatBlocksI(0)(cb+1,0)){
             //can use sparse matrices
-            for (int d=0; d<(nsp.sum()); d++){
+            for (int d=0; d<(xb.cols()); d++){
               matrix<Type> SArm(colMatBlocksI(cb+1).cols(),CppAD::Integer(Abranks(cb)));//limit the scope of SArm(d) to this iteration for memory efficiency due to potentially large d
               vector<Type>SArmD(colMatBlocksI(cb+1).cols());
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){ // diagonals
@@ -1096,12 +1093,12 @@ Type objective_function<Type>::operator() ()
 
               }else{
                 if(nncolMat.rows()<p){
-                  for (int d2=0; d2<(nsp.sum()); d2++){
+                  for (int d2=0; d2<(xb.cols()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*SArmpd).trace()*pow(SprIL(d2,d),2);
                   }
                 }else{
                   //sparse approximation to inverse
-                  for (int d2=0; d2<(nsp.sum()); d2++){
+                  for (int d2=0; d2<(xb.cols()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*SArmpd).trace()*pow(SprIL(d2,d),2);
                   }
                 }
@@ -1116,7 +1113,7 @@ Type objective_function<Type>::operator() ()
             }
           }else{
             //need to use dense matrices
-            for (int d=0; d<(nsp.sum()); d++){
+            for (int d=0; d<(xb.cols()); d++){
               matrix<Type> SArm(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());//limit the scope of SArm(d) to this iteration for memory efficiency due to potentially large d
               SArm.setZero();
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){ // diagonals
@@ -1143,11 +1140,11 @@ Type objective_function<Type>::operator() ()
                 }
               }else{
                 if(nncolMat.rows()<p){
-                  for (int d2=0; d2<(nsp.sum()); d2++){
+                  for (int d2=0; d2<(xb.cols()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*SArm).trace()*pow(SprIL(d2,d),2);
                   }
                 }else if(nncolMat.rows()==p){
-                  for (int d2=0; d2<(nsp.sum()); d2++){
+                  for (int d2=0; d2<(xb.cols()); d2++){
                     nll -= -0.5*(colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols()*d2,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*SArm).trace()*pow(SprIL(d2,d),2);
                   }
                 }
@@ -1165,20 +1162,20 @@ Type objective_function<Type>::operator() ()
 
         }
       }else if(Abstruc == 3){
-        //(Abb.size() == (p*nsp.sum() + p*(p-1)/2 + p-colCorMatIblocks.size())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + p*nsp.sum()*(nsp.sum()-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*nsp.sum() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
+        //(Abb.size() == (p*xb.cols() + p*(p-1)/2 + p-colCorMatIblocks.size())) || (Abb.size() == (p*xb.cols() + p-colCorMatIblocks.size() + p*xb.cols()*(xb.cols()-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*xb.cols() + p-colCorMatIblocks.size() + p*xb.cols()*(xb.cols()-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*xb.cols() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "blockdiagonalsp" OR "diagonalsp". Only here as reference and should not be used unless "colMat" is present
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
-        // always has p*p matrix with fixed diagonals, in combination with diagonal/blockdiagonal matrix for sp*nsp.sum()
+        // always has p*p matrix with fixed diagonals, in combination with diagonal/blockdiagonal matrix for sp*xb.cols()
         if((rhoSP.size()==1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
         }else{
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
         }
 
         Br.transpose() *= SprIL.transpose();
 
         int sdcounter = 0;
-        int covscounter = p*nsp.sum()+p-colCorMatIblocks.size();
+        int covscounter = p*xb.cols()+p-colCorMatIblocks.size();
         int idx = 0; int sp = 0;
 
         for(int cb=0; cb<colCorMatIblocks.size(); cb++){
@@ -1186,17 +1183,17 @@ Type objective_function<Type>::operator() ()
           vector<matrix<Type>> SArmb(colMatBlocksI(cb+1).cols());
 
           for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
-            SArmb(j).resize(nsp.sum(),nsp.sum());
+            SArmb(j).resize(xb.cols(),xb.cols());
             SArmb(j).setZero();
-            for (int d=0; d<(nsp.sum()); d++){ // diagonals of varcov
+            for (int d=0; d<(xb.cols()); d++){ // diagonals of varcov
               SArmb(j)(d,d) = exp(Abb(sdcounter));
               sdcounter++;
             }
             
-            if((Abb.size()>(p*nsp.sum() + p-colCorMatIblocks.size() + p*(p-1)/2)) || (Abb.size()>(p*nsp.sum() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){ // unstructured block Var.cov
+            if((Abb.size()>(p*xb.cols() + p-colCorMatIblocks.size() + p*(p-1)/2)) || (Abb.size()>(p*xb.cols() + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))){ // unstructured block Var.cov
               //only for "blockdiagonalsp"
-              for (int d=0; d<(nsp.sum()); d++){
-                for (int r=d+1; r<(nsp.sum()); r++){
+              for (int d=0; d<(xb.cols()); d++){
+                for (int r=d+1; r<(xb.cols()); r++){
                   SArmb(j)(r,d) = Abb(covscounter);
                   covscounter++;
                 }}
@@ -1238,7 +1235,7 @@ Type objective_function<Type>::operator() ()
             SArmC.array().colwise() /= SArmP.diagonal().array().cwiseSqrt();
             
             //determinant of this matrix is nsp*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
-            nll -=  nsp.sum()*SArmC.diagonal().array().log().sum() + nsp.sum()*SArmCD.tail(colMatBlocksI(cb+1).cols()-SArmC.cols()).log().sum();
+            nll -=  xb.cols()*SArmC.diagonal().array().log().sum() + xb.cols()*SArmCD.tail(colMatBlocksI(cb+1).cols()-SArmC.cols()).log().sum();
             for (int j=0; j<colMatBlocksI(0)(cb+1,0); j++){
               nll -= SArmb(j).diagonal().array().log().sum();
             }
@@ -1255,7 +1252,7 @@ Type objective_function<Type>::operator() ()
               }
               
               //write trace separately so we don't need to compute the whole product
-              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
+              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(xb.cols());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
                 for (int j2=j+1; j2<colMatBlocksI(cb+1).cols();j2++){
                   if(j!=j2){
@@ -1267,24 +1264,24 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               if(nncolMat.rows()<p){
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }  
               }else if(nncolMat.rows()==p){
                 //sparse approximation to inverse
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
               
               //write trace separately so we don't need to compute the whole product
-              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
+              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(xb.cols());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
                 for (int j2=j+1; j2<colMatBlocksI(cb+1).cols();j2++){
-                  Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
-                  // matrix<Type> tempdiag(nsp.sum(),nsp.sum());
+                  Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
+                  // matrix<Type> tempdiag(xb.cols(),xb.cols());
                   // tempdiag.setZero();
-                  for (int d=0; d<(nsp.sum()); d++){
+                  for (int d=0; d<(xb.cols()); d++){
                     tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j2);
                   }
                   if(j!=j2){
@@ -1292,10 +1289,10 @@ Type objective_function<Type>::operator() ()
                     nll -= -(SprIL.transpose()*tempdiag*SprIL*SArmb(j)*SArmb(j2).transpose()*SArmP(j,j2)).trace();
                   }
                 }
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
-                // matrix<Type> tempdiag(nsp.sum(),nsp.sum());
+                Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
+                // matrix<Type> tempdiag(xb.cols(),xb.cols());
                 // tempdiag.setZero();
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j);
                 }
                 nll -= -0.5*((SprIL.transpose()*tempdiag*SprIL)*SArmb(j)*SArmb(j).transpose()).trace();
@@ -1329,7 +1326,7 @@ Type objective_function<Type>::operator() ()
             SArmC *= SArmP.diagonal().cwiseInverse().cwiseSqrt().asDiagonal();//ID constraint
             
             //determinant of this matrix is 2*nsp*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
-            nll -=  nsp.sum()*SArmC.diagonal().array().log().sum();
+            nll -=  xb.cols()*SArmC.diagonal().array().log().sum();
             for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
               nll -= SArmb(j).diagonal().array().log().sum();
             }
@@ -1345,7 +1342,7 @@ Type objective_function<Type>::operator() ()
               }
               
               //write trace separately so we don't need to compute the whole product
-              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(nsp.sum());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
+              //Eigen::DiagonalMatrix<Type, Eigen::Dynamic> temp(xb.cols());//to hold repeated entries of SArmP, for kron(SArmP, diag(nsp))
               for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
                 for (int j2=j+1; j2<colMatBlocksI(cb+1).cols();j2++){
                   if(j!=j2){
@@ -1357,12 +1354,12 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               if(nncolMat.rows()<p){
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }  
               }else if(nncolMat.rows()==p){
                 //sparse approximation to inverse
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
@@ -1370,10 +1367,10 @@ Type objective_function<Type>::operator() ()
               //write trace separately so we don't need to compute the whole product
               for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
                 for (int j2=j+1; j2<colMatBlocksI(cb+1).cols();j2++){
-                  Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
-                  // matrix<Type> tempdiag(nsp.sum(),nsp.sum());
+                  Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
+                  // matrix<Type> tempdiag(xb.cols(),xb.cols());
                   // tempdiag.setZero();
-                  for (int d=0; d<(nsp.sum()); d++){
+                  for (int d=0; d<(xb.cols()); d++){
                     tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j2);
                   }
                   if(j!=j2){
@@ -1381,10 +1378,10 @@ Type objective_function<Type>::operator() ()
                     nll -= -(SprIL.transpose()*tempdiag*SprIL*SArmb(j)*SArmb(j2).transpose()*SArmP(j,j2)).trace();
                   }
                 }
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(nsp.sum());
-                // matrix<Type> tempdiag(nsp.sum(),nsp.sum());
+                Eigen::DiagonalMatrix<Type, Eigen::Dynamic>tempdiag(xb.cols());
+                // matrix<Type> tempdiag(xb.cols(),xb.cols());
                 // tempdiag.setZero();
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   tempdiag.diagonal()(d) = colCorMatIblocks(cb)(colMatBlocksI(cb+1).cols()*d+j,colMatBlocksI(cb+1).cols()*d+j);
                 }
                 nll -= -0.5*((SprIL.transpose()*tempdiag*SprIL)*SArmb(j)*SArmb(j).transpose()).trace();
@@ -1401,20 +1398,20 @@ Type objective_function<Type>::operator() ()
           sp += colMatBlocksI(cb+1).cols();
         }
       }else if(Abstruc == 4){
-        // (Abb.size() == ((nsp.sum()*p)*(nsp.sum()*p)-(nsp.sum()*p)*((nsp.sum()*p)-1)/2)) || (Abb.size() == (nsp.sum()*p+(sum(nsp)*colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
-        // matrix<Type> SArm(p*nsp.sum(),p*nsp.sum());
+        // (Abb.size() == ((xb.cols()*p)*(xb.cols()*p)-(xb.cols()*p)*((xb.cols()*p)-1)/2)) || (Abb.size() == (xb.cols()*p+(sum(nsp)*colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
+        // matrix<Type> SArm(p*xb.cols(),p*xb.cols());
         // Ab.struct == "unstructured". Only here as reference and should not be used unless "colMat" is present
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         if((rhoSP.size()==1)){
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
         }else{
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
         }
 
         Br.transpose() *= SprIL.transpose();
 
         int sdcounter = 0;
-        int covscounter = p*nsp.sum();
+        int covscounter = p*xb.cols();
         int sp = 0;
 
         typedef Eigen::Triplet<Type> T;
@@ -1423,17 +1420,17 @@ Type objective_function<Type>::operator() ()
           if(Abranks(cb)<colMatBlocksI(cb+1).cols()){
             std::vector<T> tripletList;
             //can use sparse matrices
-            Eigen::SparseMatrix<Type>SArm(colMatBlocksI(cb+1).cols()*nsp.sum(),colMatBlocksI(cb+1).cols()*nsp.sum());
+            Eigen::SparseMatrix<Type>SArm(colMatBlocksI(cb+1).cols()*xb.cols(),colMatBlocksI(cb+1).cols()*xb.cols());
             //block structure :)
 
-            for (int d=0; d<(colMatBlocksI(cb+1).cols()*nsp.sum()); d++){ // diagonals of varcov
+            for (int d=0; d<(colMatBlocksI(cb+1).cols()*xb.cols()); d++){ // diagonals of varcov
               tripletList.push_back(T(d,d,exp(Abb(sdcounter))));
               sdcounter++;
             }
 
             // unstructured block Var.cov
             for (int j=0; j<Abranks(cb); j++){
-              for (int r=j+1; r<(nsp.sum()*colMatBlocksI(cb+1).cols()); r++){
+              for (int r=j+1; r<(xb.cols()*colMatBlocksI(cb+1).cols()); r++){
                 tripletList.push_back(T(r,j,Abb(covscounter)));
                 covscounter++;
               }
@@ -1448,7 +1445,7 @@ Type objective_function<Type>::operator() ()
             //remaining likelihood terms
             if((rhoSP.size()==1)){
               if(nncolMat.rows()<p){
-                matrix<Type>SprMNI(colMatBlocksI(cb+1).cols()*nsp.sum(), colMatBlocksI(cb+1).cols()*nsp.sum()); // inverse of covariane
+                matrix<Type>SprMNI(colMatBlocksI(cb+1).cols()*xb.cols(), colMatBlocksI(cb+1).cols()*xb.cols()); // inverse of covariane
                 SprMNI = tmbutils::kronecker(colCorMatIblocks(cb),SprI);
                 nll -= -0.5*((SprMNI*SArmb).trace()+(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb)*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()).trace());
               }else if(nncolMat.rows()==p){
@@ -1458,22 +1455,22 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               if(nncolMat.rows()<p){
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }else if(nncolMat.rows()==p){
                 //sparse approximation to inverse
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
 
               //get colCorMat in same order as Ab
-              vector<int> permVec(colMatBlocksI(cb+1).cols()*nsp.sum());
+              vector<int> permVec(colMatBlocksI(cb+1).cols()*xb.cols());
               Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>perm;
               int k = 0;
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
-                for (int d=0; d<nsp.sum(); d++){
+                for (int d=0; d<xb.cols(); d++){
                   permVec(k) = j+d*colMatBlocksI(cb+1).cols();
                   k++;
                 }
@@ -1494,22 +1491,22 @@ Type objective_function<Type>::operator() ()
 
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //consume smore memory for some reason, but is faster in n
-              cQ.col(j+sp) += 0.5*((xb*SArmb.block(j*nsp.sum(),j*nsp.sum(),nsp.sum(),nsp.sum())).cwiseProduct(xb)).rowwise().sum();
+              cQ.col(j+sp) += 0.5*((xb*SArmb.block(j*xb.cols(),j*xb.cols(),xb.cols(),xb.cols())).cwiseProduct(xb)).rowwise().sum();
             }
           }else{
             //need to use dense matrices
             matrix<Type>SArm;
             //block structure :)
-            SArm = matrix<Type>(colMatBlocksI(cb+1).cols()*nsp.sum(),colMatBlocksI(cb+1).cols()*nsp.sum());
+            SArm = matrix<Type>(colMatBlocksI(cb+1).cols()*xb.cols(),colMatBlocksI(cb+1).cols()*xb.cols());
             SArm.setZero();
-            for (int d=0; d<(colMatBlocksI(cb+1).cols()*nsp.sum()); d++){ // diagonals of varcov
+            for (int d=0; d<(colMatBlocksI(cb+1).cols()*xb.cols()); d++){ // diagonals of varcov
               SArm(d,d)=exp(Abb(sdcounter));
               sdcounter++;
             }
 
             // unstructured block Var.cov
             for (int j=0; j<Abranks(cb); j++){
-              for (int r=j+1; r<(nsp.sum()*colMatBlocksI(0)(cb+1)); r++){
+              for (int r=j+1; r<(xb.cols()*colMatBlocksI(0)(cb+1)); r++){
                 SArm(r,j)=Abb(covscounter);
                 covscounter++;
               }
@@ -1532,21 +1529,21 @@ Type objective_function<Type>::operator() ()
 
             }else{
               if(nncolMat.rows()<p){
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols())*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }else if(nncolMat.rows()==p){
                 //sparse approximation to inverse
-                for (int d=0; d<(nsp.sum()); d++){
+                for (int d=0; d<(xb.cols()); d++){
                   nll -= -0.5*(Br.block(d,sp, 1,colMatBlocksI(cb+1).cols())*colCorMatIblocks(cb).block(colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols()*d,colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols()).sparseView()*Br.block(d,sp, 1,colMatBlocksI(cb+1).cols()).transpose()).sum();
                 }
               }
               //get colCorMat in same order as Ab
-              vector<int> permVec(colMatBlocksI(cb+1).cols()*nsp.sum());
+              vector<int> permVec(colMatBlocksI(cb+1).cols()*xb.cols());
               Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>perm;
               int k = 0;
               for (int j=0; j<colMatBlocksI(cb+1).cols(); j++){
-                for (int d=0; d<nsp.sum(); d++){
+                for (int d=0; d<xb.cols(); d++){
                   permVec(k) = j+d*colMatBlocksI(cb+1).cols();
                   k++;
                 }
@@ -1567,7 +1564,7 @@ Type objective_function<Type>::operator() ()
             //remaining likelihood terms
             for (int j=0; j<colMatBlocksI(cb+1).cols();j++){
               //consume smore memory for some reason, but is faster in n
-              cQ.col(j+sp) += 0.5*((xb*SArm.block(j*nsp.sum(),j*nsp.sum(),nsp.sum(),nsp.sum())).cwiseProduct(xb)).rowwise().sum();
+              cQ.col(j+sp) += 0.5*((xb*SArm.block(j*xb.cols(),j*xb.cols(),xb.cols(),xb.cols())).cwiseProduct(xb)).rowwise().sum();
             }
           }
           sp += colMatBlocksI(cb+1).cols();
@@ -2821,20 +2818,18 @@ Type objective_function<Type>::operator() ()
       
       if(random(3)>0){
         // random species effects for gllvm.TMB
-        vector<Type> sigmaSP = exp(sigmaB.segment(0,nsp.size()));
-        Spr = matrix<Type>(nsp.sum(),nsp.sum());Spr.setZero();
+        vector<Type> sigmaSP = exp(sigmaB.segment(0,xb.cols()));
+        Spr = matrix<Type>(xb.cols(),xb.cols());Spr.setZero();
         
         int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-        for(int re=0; re<nsp.size(); re++){
-          for(int nr=0; nr<nsp(re); nr++){
+        for(int re=0; re<xb.cols(); re++){
             Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
             sprdiagcounter++;
-          }
         }
       }
       //covariances of random effects
       if(cs.cols()>1){
-        vector<Type> sigmaSPij = sigmaB.segment(nsp.size(),cs.rows());
+        vector<Type> sigmaSPij = sigmaB.segment(xb.cols(),cs.rows());
         for(int rec=0; rec<cs.rows(); rec++){
           Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
           Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
@@ -2844,24 +2839,24 @@ Type objective_function<Type>::operator() ()
 
       if(colMatBlocksI(0)(0,0)==p){
         Type logdetColCorMat = 0;
-        vector <Type> rhoSP(sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
+        vector <Type> rhoSP(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
         rhoSP.fill(1.0);
-        if(sigmaB.size()>(nsp.size()+cs.rows()*(cs.cols()>1))){
-          rhoSP = sigmaB.segment(nsp.size()+cs.rows()*(cs.cols()>1),sigmaB.size()-nsp.size()-cs.rows()*(cs.cols()>1));
+        if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
+          rhoSP = sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
           for(int re=0; re<rhoSP.size(); re++){
             rhoSP(re) = CppAD::CondExpGt(rhoSP(re), Type(3.3), Type(3.3), rhoSP(re));
           }
           rhoSP = exp(-exp(rhoSP));
         }
         
-        matrix <Type> SprI(nsp.sum(),nsp.sum());
-        matrix <Type> SprIL(nsp.sum(),nsp.sum());
+        matrix <Type> SprI(xb.cols(),xb.cols());
+        matrix <Type> SprIL(xb.cols(),xb.cols());
         Type logdetSpr;
         //could/should build in detection of block matrices based on entries in cs.
         if((cs.cols()>1)|(random(1)>0)){
           SprIL.setZero();
           //Spr is not diagonal
-          matrix<Type> Ir = Eigen::MatrixXd::Identity(nsp.sum(),nsp.sum());
+          matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
           SprIL = Spr.llt().matrixL().solve(Ir);
           logdetSpr = -2*SprIL.diagonal().array().log().sum();
           SprI = SprIL.transpose()*SprIL;
@@ -2895,7 +2890,7 @@ Type objective_function<Type>::operator() ()
             sp += colCorMatI.cols();
           }
           //add cheap normalizing constant
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
           
         }else{//now colCorMatI is updated for every covariate
           logdetColCorMat = rhoSP.size()*colMatBlocksI(0).col(1).segment(1,colMatBlocksI.size()-1).sum();
@@ -2918,7 +2913,7 @@ Type objective_function<Type>::operator() ()
             }
             sp += colCorMatI.cols();
           }
-          nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+          nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
         }
         }else if(nncolMat.rows()==p){
           if(rhoSP.size()==1){//p(block) sized matrix
@@ -2963,7 +2958,7 @@ Type objective_function<Type>::operator() ()
               sp += colCorMatI.cols()-1;
             }
             //add cheap normalizing constant
-            nll -= 0.5*(p*nsp.sum()-p*logdetSpr-nsp.sum()*logdetColCorMat);
+            nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
             
           }else{//now colCorMatI is updated for every covariate
             Br.transpose() *= SprIL.transpose();
@@ -3012,7 +3007,7 @@ Type objective_function<Type>::operator() ()
               sp += colCorMatI.cols()-1;
               
             }
-            nll -= 0.5*(p*nsp.sum()-p*logdetSpr-logdetColCorMat);
+            nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
             
           }
           

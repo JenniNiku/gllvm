@@ -237,7 +237,6 @@
 #'  \item{Ab.struct.rank }{fitted rank of variational covariance matrix}
 #'  \item{col.eff }{flag indicating if column random effects are included}
 #'  \item{spdr }{ design matrix}
-#'  \item{nsp }{ vector of levels per random effect}
 #'  \item{colMat.rho.struct }{ character vector for signal parameter}
 #'  
 #'  }
@@ -705,13 +704,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         X <- NULL
       }
       
-      # add to fixed formula for RE means
-      # but exclude first category of categorical variables
-      X.col.eff <- spdr[,!((colnames(spdr)%in%sapply(X.col.eff[,apply(X.col.eff,2,function(x)is.character(x)||is.factor(x)),drop=FALSE],function(x)sort(x)[1])) & apply(spdr,2,function(x)all(x%in%c(0,1)))), drop = FALSE]
-      # final check to ensure no full intercept columns get swept into the fixed effects
-      if(any(apply(X.col.eff, 2, function(x)all(x==1)))){
-        X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1))]
-      }
+      X.col.eff <- as.matrix(t(RElist$Xt))
+      # Keep gllvm.TMB from removing intercept column in REs
+      if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
       # build formula argument for RE means
       if(is.null(X)){
         X <- as.matrix(X.col.eff)
@@ -1397,6 +1392,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(!is.null(colMat)){
           out$col.eff$colMat <- fitg$colMat
         }
+        if(col.eff == "random" && is.null(randomX)) out$col.eff$Xt <- X.col.eff
         out$col.eff$nsp <- fitg$nsp
       }
 }

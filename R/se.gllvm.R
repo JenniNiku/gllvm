@@ -299,8 +299,8 @@ se.gllvm <- function(object, ...){
       if(!is.null(object$randomX)){
         nr <- ncol(xb)
         if(length(se$sigmaB)>nr && !is.null(object$params$rho.sp)){
-            out$sd$rho.sp <- tail(se$sigmaB,ifelse(object$col.eff$colMat.rho.struct == "single", 1, sum(object$col.eff$nsp)))
-            se$sigmaB <- head(se$sigmaB, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, sum(object$col.eff$nsp)))
+            out$sd$rho.sp <- tail(se$sigmaB,ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
+            se$sigmaB <- head(se$sigmaB, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
         }
         out$sd$sigmaB <- se$sigmaB*c(sqrt(diag(object$params$sigmaB))); 
         names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
@@ -717,11 +717,12 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      sigma.sp <- 2*diag(object$params$sigmaB)*rep(se$sigmaB[1:length(object$col.eff$nsp)],object$col.eff$nsp)
-      covsigma.sp <- se$sigmaB[-c(1:length(object$col.eff$nsp))]
+      nr <- ncol(object$col.eff$spdr)
+      sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[1:nr]
+      covsigma.sp <- se$sigmaB[-c(1:nr)]
       if(!is.null(object$params$rho.sp)){
-        out$sd$rho.sp <- tail(covsigma.sp,ifelse(object$col.eff$colMat.rho.struct == "single", 1, sum(object$col.eff$nsp)))
-        covsigma.sp <- head(covsigma.sp, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, sum(object$col.eff$nsp)))
+        out$sd$rho.sp <- tail(covsigma.sp,ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
+        covsigma.sp <- head(covsigma.sp, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
       }
       sigma.sp <- diag(sigma.sp, length(sigma.sp))
       if(ncol(object$TMBfn$env$data$cs)==2){

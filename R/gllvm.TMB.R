@@ -47,7 +47,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     dLV <- as(matrix(0), "TsparseMatrix")
   }
   if(col.eff != "random"){
-    nsp <- 0
+    # nsp <- 0
     spdr <- colMat <- cs <- matrix(0)
     Abstruc <- Abranks <- 0
     blocks = list(matrix(0))
@@ -70,7 +70,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     }
     
     spdr <- as.matrix(spdr)
-    nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
+    # nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
     
     if(!is.null(colMat)  && all(dim(colMat)!=1)){
       if(sp.Ar.struc%in%c("diagonal","blockdiagonal")){
@@ -78,7 +78,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }else if(is.null(sp.Ar.struc.rank) && sp.Ar.struc != "unstructured"){
         sp.Ar.struc.rank <- p
       }else if(is.null(sp.Ar.struc.rank) && sp.Ar.struc == "unstructured"){
-        sp.Ar.struc.rank <- sum(nsp)*p
+        sp.Ar.struc.rank <- ncol(spdr)*p
       }
       if(ncol(colMat)!=nrow(colMat)){
         stop("Matrix for column effects must be square.")
@@ -120,7 +120,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(sp.Ar.struc!="unstructured"){
         Abranks <- ifelse(sp.Ar.struc.rank>blocksp,blocksp,sp.Ar.struc.rank)
       }else{
-        Abranks <- ifelse(sp.Ar.struc.rank>(sum(nsp)*blocksp),sum(nsp)*blocksp,sp.Ar.struc.rank)
+        Abranks <- ifelse(sp.Ar.struc.rank>(ncol(spdr)*blocksp),ncol(spdr)*blocksp,sp.Ar.struc.rank)
       }
     }else{
       nncolMat <- matrix(0)
@@ -290,7 +290,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   
   ## Set initial values for model parameters (including dispersion prm) and latent variables
   
-  out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, nsp = nsp, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
+  out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
     #### Calculate starting values
     fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed, starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
@@ -369,7 +369,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       fit$Br <- bstart$Br
       fit$sigmaB <- bstart$sigmaB
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, sum(nsp))))
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, ncol(spdr))))
       }else{
         sigmaB <- 0;Br <- matrix(0)
       }
@@ -843,29 +843,29 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(col.eff == "random"){
         if(sp.Ar.struc == "diagonal" || sp.Ar.struc== "blockdiagonal"){
           Abstruc <- 0
-          spAr <- rep(log(Lambda.start[2]), sum(p*sum(nsp)))
+          spAr <- rep(log(Lambda.start[2]), sum(p*ncol(spdr)))
           if(sp.Ar.struc == "blockdiagonal" && Ab.diag.iter == 0){
-            spAr<-c(spAr, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
+            spAr<-c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2))
           }
         }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"  || (sp.Ar.struc=="spblockdiagonal" && Ab.diag.iter == 1)  || (sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
-          spAr <- rep(log(Lambda.start[2]), sum(nsp)+p-1)
+          spAr <- rep(log(Lambda.start[2]), ncol(spdr)+p-1)
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
-              spAr<-c(spAr, c(rep(1e-2, sum(nsp)*(sum(nsp)-1)/2)))
+              spAr<-c(spAr, c(rep(1e-2, ncol(spdr)*(ncol(spdr)-1)/2)))
           }
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
           Abstruc <- 3
-          spAr <- rep(log(Lambda.start[2]), p*sum(nsp)+p-length(blocksp))# variances
-          if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2)) # rest blockdiagonal
+          spAr <- rep(log(Lambda.start[2]), p*ncol(spdr)+p-length(blocksp))# variances
+          if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2)) # rest blockdiagonal
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(sp.Ar.struc == "spblockdiagonal" ||  (sp.Ar.struc=="unstructured" && Ab.diag.iter==1)){
           Abstruc <- 2
-          spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          spAr <- c(rep(log(Lambda.start[2]), p*ncol(spdr)),rep(1e-3, ncol(spdr)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
       }else if(sp.Ar.struc == "unstructured"){
             Abstruc <- 4  
-            spAr <- c(rep(log(Lambda.start[2]), p*sum(nsp)),rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+            spAr <- c(rep(log(Lambda.start[2]), p*ncol(spdr)),rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
       }
           } else {spAr <- 0}
       # Variational covariances for  random rows
@@ -986,7 +986,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -1051,7 +1051,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       ### Set up data and parameters
       
-      data.list <- list(y = y, x = Xd, x_lv = lv.X , xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
+      data.list <- list(y = y, x = Xd, x_lv = lv.X , xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
 
       parameter.list <- list(r0 = matrix(r0), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = matrix(0), Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
 
@@ -1136,22 +1136,22 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(col.eff == 'random'){
           Br1 <- matrix(param1[nam=="Br"],nrow=ncol(spdr))
           sigmaB1 <- ifelse(round(param1[nam=="sigmaB"],8)==0,1e-3,param1[nam=="sigmaB"])
-          # if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,sum(nsp)))>0.5,0.5,tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,sum(nsp))))
+          # if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,ncol(spdr)))>0.5,0.5,tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,ncol(spdr))))
           spAr1<- log(exp(param1[nam=="Abb"])+1e-3)
           if(Ab.diag.iter>0){
           if(sp.Ar.struc=="blockdiagonal"){# "diagonal" was previous iteration
-           spAr1 <- c(spAr1, rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2))
+           spAr1 <- c(spAr1, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2))
           }else if(sp.Ar.struc == "MNunstructured"){# "MNdiagonal" was previous iteration
-              spAr1 <- c(spAr1[1:(sum(nsp)+p-1)], c(rep(1e-2, sum(nsp)*(sum(nsp)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
+              spAr1 <- c(spAr1[1:(ncol(spdr)+p-1)], c(rep(1e-2, ncol(spdr)*(ncol(spdr)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))))
             }else if(sp.Ar.struc == "spblockdiagonal"){# "MNdiagonal" was previous iteration
               Abstruc <- 2
-              spAr1 <- c(rep(log(Lambda.start[2]), sum(nsp)*p),rep(1e-3, sum(nsp)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+              spAr1 <- c(rep(log(Lambda.start[2]), ncol(spdr)*p),rep(1e-3, ncol(spdr)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
             }else if(sp.Ar.struc == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
               Abstruc <- 3
-              spAr1 <- c(rep(log(Lambda.start[2]), p*sum(nsp)+p-length(blocksp)), rep(1e-3, p*sum(nsp)*(sum(nsp)-1)/2),rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
+              spAr1 <- c(rep(log(Lambda.start[2]), p*ncol(spdr)+p-length(blocksp)), rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2),rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
             }else if(sp.Ar.struc == "unstructured"){# "spblockdiagonal" was previous iteration
               Abstruc <- 4
-              spAr1 <- c(spAr1[1:(sum(nsp)*p)],rep(1e-3, sum(sum(nsp)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+              spAr1 <- c(spAr1[1:(ncol(spdr)*p)],rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
             }
           }
         }else{
@@ -1236,7 +1236,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
         
         parameter.list <- list(r0=r1, b = b1, b_lv = b.lv1, sigmaB = sigmaB1, Abb = spAr1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B=matrix(0), Br=Br1,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
@@ -1441,11 +1441,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       if(col.eff=="random"){
-        sigma.sp = exp(param[names(param)=="sigmaB"])[1:length(nsp)]
-        covsigma.sp  = param[names(param)=="sigmaB"][-c(1:length(nsp))]
+        sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
+        covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,sum(nsp)))))
-          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,sum(nsp)))
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
@@ -1514,7 +1514,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
         
         map.list2 <- map.list 
         map.list2$log_sigma = factor(NA)
@@ -1547,7 +1547,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           # fit$b.lv <- b.lv
         }
       }
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, nsp = nsp, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr=xr, dr0 = dr, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, nr = nr, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat)
       
       if(family %in% c("ordinal", "orderedBeta")){
         data.list$method = 0
@@ -1876,11 +1876,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
       }
       if(col.eff=="random"){
-        sigma.sp = exp(param[names(param)=="sigmaB"])[1:length(nsp)]
-        covsigma.sp  = param[names(param)=="sigmaB"][-c(1:length(nsp))]
+        sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
+        covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,sum(nsp)))))
-          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,sum(nsp)))
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
@@ -2125,7 +2125,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         row.names(Br) <- colnames(spdr)
         if(!is.null(colnames(y))) colnames(Br) <- colnames(y)
         out$params$Br <- Br
-        out$params$sigmaB <- diag(sigma.sp[rep(1:length(sigma.sp),nsp)]^2, nrow = length(rep(1:length(sigma.sp),nsp)), ncol = length(rep(1:length(sigma.sp),nsp)))
+        out$params$sigmaB <- diag(sigma.sp[1:ncol(spdr)]^2, ncol(spdr))
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
           if(colMat.rho.struct == "term"){
             names(rho.sp) <- colnames(spdr)
@@ -2399,18 +2399,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(col.eff=="random"){
           spAr <- param[names(param)=="Abb"]
           if(sp.Ar.struc%in%c("blockdiagonal","diagonal")){
-            spArs <- vector("list", p) #p*length(nsp)
-            Ar.sds <- exp((spAr)[1:(p*sum(nsp))])
-            spAr <- spAr[-c(1:(p*sum(nsp)))]
+            spArs <- vector("list", p) #p*ncol(spdr)
+            Ar.sds <- exp((spAr)[1:(p*ncol(spdr))])
+            spAr <- spAr[-c(1:(p*ncol(spdr)))]
             k=1;
             
             for(j in 1:p){
-              spArs[[j]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
-              Ar.sds <- Ar.sds[-c(1:sum(nsp))]
-              if(sp.Ar.struc == "blockdiagonal" && length(nsp) > 1){
+              spArs[[j]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
+              Ar.sds <- Ar.sds[-c(1:ncol(spdr))]
+              if(sp.Ar.struc == "blockdiagonal" && ncol(spdr) > 1){
                 if(length(spAr)>0){
-                  for(d in 1:(sum(nsp)-1)){
-                    for(r in (d+1):sum(nsp)){
+                  for(d in 1:(ncol(spdr)-1)){
+                    for(r in (d+1):ncol(spdr)){
                       spArs[[j]][r,d] = spAr[k];
                       k=k+1;
                     }}
@@ -2422,15 +2422,15 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             spAr <- param[names(param)=="Abb"]
             spArs <- vector("list", 2)
 
-               Ar.sds <- exp(spAr[1:(p+sum(nsp)-1)])
-               spAr <- spAr[-c(1:(p+sum(nsp)-1))]
+               Ar.sds <- exp(spAr[1:(p+ncol(spdr)-1)])
+               spAr <- spAr[-c(1:(p+ncol(spdr)-1))]
               
-              spArs[[1]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
-              spArs[[2]] <- diag(c(.3,Ar.sds[-c(1:sum(nsp))]))
-              if(sp.Ar.struc == "MNunstructured" && sum(nsp)>1){
+              spArs[[1]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
+              spArs[[2]] <- diag(c(.3,Ar.sds[-c(1:ncol(spdr))]))
+              if(sp.Ar.struc == "MNunstructured" && ncol(spdr)>1){
               # row covariance
-                    for(d in 1:(sum(nsp)-1)){
-                      for(r in (d+1):sum(nsp)){
+                    for(d in 1:(ncol(spdr)-1)){
+                      for(r in (d+1):ncol(spdr)){
                         spArs[[1]][r,d] = spAr[1];
                         spAr <- spAr[-1]
                       }}
@@ -2455,17 +2455,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                 spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
           }else if(sp.Ar.struc %in% c("diagonalsp", "blockdiagonalsp")){
             spArs <- list(length(blocks[-1]))
-            Ar.sds <- exp(spAr[1:(sum(blocksp*sum(nsp))+p-length(blocksp))])
-            spAr <- spAr[-c(1:(sum(blocksp*sum(nsp))+p-length(blocksp)))]
+            Ar.sds <- exp(spAr[1:(sum(blocksp*ncol(spdr))+p-length(blocksp))])
+            spAr <- spAr[-c(1:(sum(blocksp*ncol(spdr))+p-length(blocksp)))]
             for(cb in 1:length(blocks[-1])){
             SArmbs <- list()
             # build block diagonal matrices
             for(j in 1:blocksp[cb]){
-              SArmbs[[j]] <- diag(Ar.sds[1:sum(nsp)], sum(nsp))
-              Ar.sds <- Ar.sds[-c(1:sum(nsp))]
-              if(sp.Ar.struc == "blockdiagonalsp" && sum(nsp)>1){
-                  for(d in 1:(sum(nsp)-1)){
-                    for(r in (d+1):sum(nsp)){
+              SArmbs[[j]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
+              Ar.sds <- Ar.sds[-c(1:ncol(spdr))]
+              if(sp.Ar.struc == "blockdiagonalsp" && ncol(spdr)>1){
+                  for(d in 1:(ncol(spdr)-1)){
+                    for(r in (d+1):ncol(spdr)){
                       SArmbs[[j]][r,d] = spAr[1];
                       spAr <- spAr[-1]
                     }}
@@ -2484,17 +2484,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               }
             }
             SArmC <- SArmC%*%t(SArmC)
-            spArs[[cb]] <- Matrix::bdiag(SArmbs)%*%kronecker(cov2cor(SArmC),diag(sum(nsp)))%*%Matrix::t(Matrix::bdiag(SArmbs))
+            spArs[[cb]] <- Matrix::bdiag(SArmbs)%*%kronecker(cov2cor(SArmC),diag(ncol(spdr)))%*%Matrix::t(Matrix::bdiag(SArmbs))
             }
             spArs <- as.matrix(Matrix::bdiag(spArs))
           }else if(sp.Ar.struc == "spblockdiagonal"){
             spArs <- vector("list", 1)
-            for(d in 1:sum(nsp)){
+            for(d in 1:ncol(spdr)){
               Ar.sds <- exp((spAr)[1:p])
               spAr <- spAr[-c(1:p)]
               spArs[[d]] <- diag(Ar.sds)
             }
-            for(d in 1:sum(nsp)){
+            for(d in 1:ncol(spdr)){
                 sp = 0;
                 for(cb in 1:length(blocks[-1])){
                     for (j in 1:Abranks[cb]){
@@ -2512,14 +2512,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           }else if(sp.Ar.struc == "unstructured"){
             spArs <- vector("list", 1)
             
-            Ar.sds <- exp((spAr)[1:(p*sum(nsp))])
-            spAr <- spAr[-c(1:(p*sum(nsp)))]
+            Ar.sds <- exp((spAr)[1:(p*ncol(spdr))])
+            spAr <- spAr[-c(1:(p*ncol(spdr)))]
 
                 for(cb in 1:length(blocks[-1])){
-                  spArs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*sum(nsp))])
+                  spArs[[cb]] <- diag(Ar.sds[1:(blocksp[cb]*ncol(spdr))])
                   
                 for(j in 1:Abranks[cb]){
-                  for(r in (j+1):(blocksp[cb]*sum(nsp))){
+                  for(r in (j+1):(blocksp[cb]*ncol(spdr))){
                     if(j<r && r<=blocksp[cb]){
                     spArs[[cb]][r,j] = spAr[1];
                     spAr <- spAr[-1]
