@@ -321,8 +321,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
     X.col.eff <- object$col.eff$spdr
     colnames(X.col.eff) <- make.unique(colnames(X.col.eff))
-    X.col.eff <- X.col.eff[, gsub("RE_mean_","",colnames(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)), drop = FALSE])), drop = FALSE]
-    eta <- eta + as.matrix(X.col.eff%*%t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE]))
+    Xcoef <- t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
+    row.names(Xcoef) <- gsub("RE_mean_","",row.names(Xcoef))
+    eta <- eta + object$col.eff$Xt%*%Xcoef[colnames(object$col.eff$Xt),,drop=FALSE]
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
     stop("Prediction with column effects not yet implemented.")
       # bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
