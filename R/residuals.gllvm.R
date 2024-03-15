@@ -154,8 +154,8 @@ residuals.gllvm <- function(object, ...) {
         ds.res <- matrix(qnorm(u), n, p)
       }
       if (object$family == "ZINB") {
-        b <- pzinb(as.vector(y), mu = as.vector(mu), sigma = rep(object$params$phi, each = n))
-        a <- pmin(b, pzinb(as.vector(y) - 1, mu = as.vector(mu), sigma = rep(object$params$phi, each = n)))
+        b <- pzinb(as.vector(y), mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n))
+        a <- pmin(b, pzinb(as.vector(y) - 1, mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$phi, each = n)))
         u <- runif(n*p, min = a, max = b)
         if(any(u==1))u[u==1] <- 1-1e-16
         if(any(u==0))u[u==0] <- 1e-16
