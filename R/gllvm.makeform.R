@@ -153,7 +153,9 @@ mkModMlist <- function (x, frloc) {
   if("(Intercept)" %in% colnames(mm)){
     colnames(mm)[colnames(mm)%in%"(Intercept)"] <- ""
   }
-  
+  if(length(levels(ff))==1 && levels(ff)==as.character(1)){
+    levels(ff) <-""
+  }
   dimnames(sm) <- list(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm), fm = fm)
 }
