@@ -124,6 +124,11 @@ mkModMlist <- function (x, frloc) {
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
   fm <- NULL
+  
+  if((nrow(sm) != nrow(mm)) && (nrow(sm) == 1) && (ncol(sm) == 1)){ #catch 1s in RE on RHS (i.e., random slopes)
+    sm <- matrix(1, ncol = nrow(mm))
+  }
+  
   # design matrix for RE means
   if(any(colnames(mm)!="(Intercept)")){
     fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
@@ -138,10 +143,7 @@ mkModMlist <- function (x, frloc) {
     row.names(fm2) <- levels(ff2)
     fm <- rbind(fm, fm2)
   }
-  
-  if((nrow(sm) != nrow(mm)) && (nrow(sm) == 1) && (ncol(sm) == 1)){ #catch 1s in RE on RHS (i.e., random slopes)
-    sm <- matrix(1, ncol = nrow(mm))
-  }
+
   sm <- Matrix::KhatriRao(sm, t(mm))
   
   dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
