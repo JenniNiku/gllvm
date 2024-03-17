@@ -134,16 +134,14 @@ mkModMlist <- function (x, frloc) {
     fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
     row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
   }
+  fm2 <- NULL
   # now intercept part if present
   if("(Intercept)"%in%colnames(mm)){
     ff2 <- ff
+    levels(ff2)[1]<- NA # exclude reference category for identifiability
     if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
-      if(length(levels(ff2))>1)levels(ff2)[1]<- NA # exclude reference category for identifiability
       fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
-    }else if(length(levels(ff2)) == 1){
-      fm2 <- matrix(1, 1, nrow(mm))
     }
-    
     fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
     row.names(fm2) <- levels(ff2)
     fm <- rbind(fm, fm2)
@@ -151,7 +149,12 @@ mkModMlist <- function (x, frloc) {
 
   sm <- Matrix::KhatriRao(sm, t(mm))
   
-  dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
+  #dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
+  if("(Intercept)" %in% colnames(mm)){
+    colnames(mm)[colnames(mm)%in%"(Intercept)"] <- ""
+  }
+  
+  dimnames(sm) <- list(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm), fm = fm)
 }
 #
@@ -182,7 +185,7 @@ mkReTrms1 <- function (bars, fr)
   }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
-  try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
+  # try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
   names(Ztlist) <- term.names
   
   # Design matrix RE means

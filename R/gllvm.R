@@ -705,7 +705,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
       
       X.col.eff <- as.matrix(t(RElist$Xt))
-      # Final check to remove column with only 1s
+      # Final safety check to remove column with only 1s
+      # though they shouldn't occur
       X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1)), drop = FALSE]
       # Keep gllvm.TMB from removing intercept column in REs
       if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
