@@ -137,8 +137,13 @@ mkModMlist <- function (x, frloc) {
   # now intercept part if present
   if("(Intercept)"%in%colnames(mm)){
     ff2 <- ff
-    levels(ff2)[1]<- NA # exclude reference category for identifiability
-    fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
+    if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
+      if(length(levels(ff2))>1)levels(ff2)[1]<- NA # exclude reference category for identifiability
+      fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
+    }else if(length(levels(ff2)) == 1){
+      fm2 <- matrix(1, 1, nrow(mm))
+    }
+    
     fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
     row.names(fm2) <- levels(ff2)
     fm <- rbind(fm, fm2)
