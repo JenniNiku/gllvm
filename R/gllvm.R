@@ -713,11 +713,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # build formula argument for RE means
       if(is.null(X)){
         X <- as.matrix(X.col.eff)
-        colnames(X) <- paste0("RE_mean_", make.unique(colnames(X.col.eff)))
-        formula <- as.formula(paste0("~", paste0(colnames(X), collapse = "+")))
+        colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
+        formula <- reformulate(colnames(X))
       }else{
         X <- cbind(X, X.col.eff)
-        colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  paste0("RE_mean_", make.unique(colnames(X.col.eff)))
+        colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
         formula <- update(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
       }
     }

@@ -128,22 +128,26 @@ mkModMlist <- function (x, frloc) {
   if((nrow(sm) != nrow(mm)) && (nrow(sm) == 1) && (ncol(sm) == 1)){ #catch 1s in RE on RHS (i.e., random slopes)
     sm <- matrix(1, ncol = nrow(mm))
   }
-  
+  ff2 <- ff
   # design matrix for RE means
   if(any(colnames(mm)!="(Intercept)")){
     fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
-    row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
+    # row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
+    if(length(levels(ff))==1 && levels(ff)==as.character(1)){
+      levels(ff) <- ""
+    }    
+    row.names(fm) <- make.names(paste0(rep(colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm))))
+    
   }
   fm2 <- NULL
   # now intercept part if present
   if("(Intercept)"%in%colnames(mm)){
-    ff2 <- ff
     levels(ff2)[1]<- NA # exclude reference category for identifiability
     if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
       fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
     }
     fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
-    row.names(fm2) <- levels(ff2)
+    row.names(fm2) <- make.names(levels(ff2))
     fm <- rbind(fm, fm2)
   }
 
@@ -156,7 +160,7 @@ mkModMlist <- function (x, frloc) {
   if(length(levels(ff))==1 && levels(ff)==as.character(1)){
     levels(ff) <-""
   }
-  dimnames(sm) <- list(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm))), row.names(mm))
+  dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm), fm = fm)
 }
 #
