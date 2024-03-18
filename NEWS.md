@@ -1,3 +1,24 @@
+Version 1.4.5
+=============
+* Separated "n.init" functionality into gllvm.iter.R
+  * Prep for parallelisation
+  * Enabled parallelisation (see TMB::openmp)
+* Largely vectorized "residuals.gllvm", and residuals in "gllvm.aux"
+* Added covariance of random effects to summary
+
+Version 1.4.4
+=============
+* Removed "dependent.row" feature
+* Added possibility for multiple random row intercepts
+* Added possibility for (correlated) random species random effects
+  * Can be plotted with "randomCoefPlot"
+* Added possibility to Phylogenetically structure the random species effects
+  * Phylogenetic signal parameter is included as object$params$rho.sp
+  * Can be covariate specific
+* num.RR and num.lv.c can now be larger than the number of predictors if randomB!=FALSE
+* Added "iid" option for "randomB"
+* Added a "getEnvironCov" function to extract species associations due to random covariate effects
+
 Version 1.4.3
 ==============
 * For CRAN release 1.4.3 see updates for versions 1.4.2 and 1.4.3

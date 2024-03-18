@@ -58,6 +58,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   r0 <- NULL
   newdata <- newX
   p <- ncol(object$y)
+  if(object$family == "betaH")p <- p*2
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -84,9 +85,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if(all.vars(object$call$row.eff) %in% colnames(newX)) {
         warning("Using row effects for predicting new sites does not work yet.")
       }
-    } else if ((length(object$params$row.params) != nrow(object$y)) & is.null(newX)) 
-      object$params$row.params = c(object$TMBfn$env$data$dr0 %*% 
-                                     object$params$row.params)
+    }
   }
   b0 <- object$params$beta0
   eta <- matrix(b0, n, p, byrow = TRUE)
@@ -96,8 +95,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if (is.null(colnames(object$y))) {
     colnames(object$y) <- paste("y", 1:p, sep = "")
   }
-  if (!is.null(object$X) && is.null(object$TR)) {
+  if (!is.null(object$X) && is.null(object$TR) && any(!grepl("RE_mean_", colnames(object$params$Xcoef)))) {
     B <- object$params$Xcoef
+    if(object$col.eff$col.eff=="random"){
+      B <- B[, subset(colnames(B),!grepl("RE_mean_",colnames(B))), drop = FALSE]
+    }
     if (is.null(newdata)) {
       X.d <- Xnew <- object$X
     }
@@ -117,7 +119,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         formula1 <- formula(formula1)
         Xnew <- as.matrix(model.matrix(formula1, data = data.frame(newdata)))
       }
-      formula <- formula(object$formula)
+      formula <- nobars1_(object$call$formula) # due to potential REs
       xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
       X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")), 
                           drop = F])
@@ -125,7 +127,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                         c("(Intercept)"))]
     }
     else {
-      X.d <- object$X.design
+      X.d <- object$X.design[, subset(colnames(object$X.design),!grepl("RE_mean_",colnames(object$X.design))), drop = FALSE]
     }
     eta <- eta + X.d %*% t(B)
   }
@@ -308,13 +310,28 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0) & is.null(newX)) {
     if(!is.null(object$params$row.params)){
-      if(length(object$params$row.params)!=n) object$params$row.params = c(object$TMBfn$env$data$dr0%*%object$params$row.params) # !!!
+     object$params$row.params = object$TMBfn$env$data$dr0%*%object$params$row.params # !!!
     }
-    if(nrow(eta) == length(object$params$row.params)){
     r0 <- object$params$row.params
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
-    eta <- eta + r0
-    }
+    eta <- eta + r0%*%rep(1,ncol(model$y))
+  }
+  
+  if (object$col.eff$col.eff == "random" && is.null(newX)) {
+    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
+    X.col.eff <- object$col.eff$spdr
+    colnames(X.col.eff) <- make.unique(colnames(X.col.eff))
+    Xcoef <- t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
+    row.names(Xcoef) <- gsub("RE_mean_","",row.names(Xcoef))
+    eta <- eta + object$col.eff$Xt%*%Xcoef[colnames(object$col.eff$Xt),,drop=FALSE]
+  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
+    stop("Prediction with column effects not yet implemented.")
+      # bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
+      # mf <- model.frame(subbars1(object$col.eff$col.eff.formula),data=data.frame(newX))
+      # RElist <- mkReTrms1(bar.f,mf)
+      # newspdr <- Matrix::t(RElist$Zt)
+      # eta <- eta + as.matrix(newspdr%*%object$params$Br)
+      # eta <- eta + model.matrix(as.formula(paste0("~", paste0(all.vars(object$col.eff$col.eff.formula), collapse = "+"))), newX)[,-1, drop = FALSE]%*%t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
   }
 
   if(!is.null(object$offset)){

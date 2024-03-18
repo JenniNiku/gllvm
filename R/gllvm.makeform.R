@@ -105,20 +105,69 @@ subbars1<-function (term)
   term
 }
 
-
 mkModMlist <- function (x, frloc) {
   frloc <- factorize(x, frloc)
+  # safeguard for issues with numeric in factor levels
+  # There is probably a better way to do this
+  if(suppressWarnings(any(!is.na(as.numeric(unlist(frloc[,all.vars(x[[3]])])))))){
+    for(i in which(suppressWarnings(apply(frloc[,all.vars(x[[3]]), drop = FALSE], 2, function(x)any(!is.na(as.numeric(x))))))){
+      ilev <- levels(frloc[,colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i]])
+      ilev <- paste0(colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i], ilev)
+      levels(frloc[,colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i]]) <- ilev
+    }
+  }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
   mm <- model.matrix(eval(base::substitute(~foo, list(foo = x[[2]]))), 
                      frloc)
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
-  sm <- Matrix::KhatriRao(sm, t(mm))
-  dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
-  list(ff = ff, sm = sm, nl = nl, cnms = colnames(mm))
-}
+  
+  fm <- NULL
+  
+  if((nrow(sm) != nrow(mm)) && (nrow(sm) == 1) && (ncol(sm) == 1)){ #catch 1s in RE on RHS (i.e., random slopes)
+    sm <- matrix(1, ncol = nrow(mm))
+  }
+  # row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
+  if(length(levels(ff))==1 && levels(ff)==as.character(1)){
+    levels(ff) <- ""
+  }
 
+  # design matrix for RE means
+  if(any(colnames(mm)!="(Intercept)")){
+    fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
+    row.names(fm) <- make.names(paste0(rep(colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm[,colnames(mm)!="(Intercept)", drop = FALSE]))))
+  }
+  
+  fm2 <- NULL
+  ff2 <- ff
+  # now intercept part if present
+  if("(Intercept)"%in%colnames(mm)){
+    levels(ff2)[1]<- NA # exclude reference category for identifiability
+    if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
+      fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
+    }else{
+      fm2 <- matrix(1, ncol = nrow(mm))
+    }
+    fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
+    if(length(levels(ff2))>0){
+      row.names(fm2) <- make.names(levels(ff2))  
+    }
+    fm <- rbind(fm, fm2)
+  }
+
+  sm <- Matrix::KhatriRao(sm, t(mm))
+  
+  #dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
+  if(length(levels(ff))==1 && levels(ff)==""){
+    colnames(mm)[colnames(mm) == "(Intercept)"] <- "Intercept"
+  }else if("(Intercept)" %in% colnames(mm)){
+    colnames(mm)[colnames(mm)%in%"(Intercept)"] <- ""
+  }
+  
+  dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
+  list(ff = ff, sm = sm, nl = nl, cnms = row.names(sm), fm = fm)
+}
 #
 mkReTrms1 <- function (bars, fr) 
 {
@@ -138,15 +187,25 @@ mkReTrms1 <- function (bars, fr)
   #
   blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
   nl <- vapply(blist, `[[`, 0L, "nl")
-  
+  cnms <- lapply(blist,`[[`,"cnms")
+  grps <- unlist(lapply(cnms,length))
+  if(any(grps>1)){
+  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
+  }else{
+    cs <- NULL
+  }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
+  # try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
   names(Ztlist) <- term.names
   
-  ll <- list(Zt = Zt)
+  # Design matrix RE means
+  Xtlist <- lapply(blist, `[[`, "fm")
+  Xt <- do.call(rbind, Xtlist)
+  
+  ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
   ll
 }
-
 
 factorize <- function (x, frloc, char.only = FALSE) {
   for (i in all.vars(x[[length(x)]])) {
@@ -181,5 +240,73 @@ expandDoubleVerts1 <- function (term) {
         term[[3]] <- expandDoubleVerts1(term[[3]])
     }
   }
+  term
+}
+
+anyBars <- function (term) 
+{
+  any(c("|", "||") %in% all.names(term))
+}
+
+isAnyArgBar <- function (term) 
+{
+  if ((term[[1]] != as.name("~")) && (term[[1]] != as.name("("))) {
+    for (i in seq_along(term)) {
+      if (isBar(term[[i]])) 
+        return(TRUE)
+    }
+  }
+  FALSE
+}
+
+isBar <- function (term) 
+{
+  if (is.call(term)) {
+    if ((term[[1]] == as.name("|")) || (term[[1]] == as.name("||"))) {
+      return(TRUE)
+    }
+  }
+  FALSE
+}
+
+nobars1 <- function (term) 
+{
+  e <- environment(term)
+  nb <- nobars1_(term)
+  if (is(term, "formula") && length(term) == 3 && is.symbol(nb)) {
+    nb <- reformulate("1", response = deparse(nb))
+  }
+  if (is.null(nb)) {
+    nb <- if (is(term, "formula")) 
+      ~1
+    else 1
+  }
+  environment(nb) <- e
+  nb
+}
+
+nobars1_ <- function (term) 
+{
+  if (!anyBars(term)) 
+    return(term)
+  if (isBar(term)) 
+    return(NULL)
+  if (isAnyArgBar(term)) 
+    return(NULL)
+  if (length(term) == 2) {
+    nb <- nobars1_(term[[2]])
+    if (is.null(nb)) 
+      return(NULL)
+    term[[2]] <- nb
+    return(term)
+  }
+  nb2 <- nobars1_(term[[2]])
+  nb3 <- nobars1_(term[[3]])
+  if (is.null(nb2)) 
+    return(nb3)
+  if (is.null(nb3)) 
+    return(nb2)
+  term[[2]] <- nb2
+  term[[3]] <- nb3
   term
 }

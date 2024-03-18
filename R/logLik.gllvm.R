@@ -40,9 +40,13 @@ logLik.gllvm <- function(object, ...)
     object$params$row.params <- object$params$row.params[-1]
   if (object$row.eff == "random")
     object$params$row.params <- NULL
-  if (!is.null(object$randomX)){
+  if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
+    object$params$sigmaB <- unique(object$params$sigmaB[object$params$sigmaB!=0])
+    if(object$col.eff$col.eff == "random"){
+      object$params$Xcoef[1:(ncol(object$y)-1),grepl("RE_mean_",colnames(object$params$Xcoef))] <- NA
+    }
   }
   if(object$randomB!=FALSE){
     object$params$LvXcoef <- NULL

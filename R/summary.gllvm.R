@@ -80,6 +80,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   sumry$num.RR <- num.RR
   sumry$quadratic <- quadratic
   sumry$formula <- object$formula
+  if(object$col.eff$col.eff=="random")sumry$formula <- object$call$formula
   sumry$lv.formula <- object$lv.formula
   sumry$'log-likelihood' <- object$logL
   crit <- inf.criteria(object)
@@ -94,6 +95,19 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if((num.lv+num.lv.c+num.RR)>0 && Lvcoefs){
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
+  if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
+    REcovs <- data.frame(Name = colnames(object$params$sigmaB), Variance = format(round(diag(object$params$sigmaB), digits), nsmall = digits), Std.Dev = format(round(sqrt(diag(object$params$sigmaB)), digits), nsmall = digits))
+    if(!is.null(object$params$rho.sp)){
+      REcovs <- do.call(cbind, list(data.frame(Name = REcovs$Name), data.frame(Signal = format(round(object$params$rho.sp, digits), nsmall = digits), row.names = NULL), REcovs[,-1]))
+    }
+    if(!all(object$params$sigmaB[row(object$params$sigmaB)!=col(object$params$sigmaB)]==0)){
+      cors <- format(round(cov2cor(object$params$sigmaB), digits), nsmall = digits)
+      cors[upper.tri(cors, diag = TRUE)] <- ""
+      REcovs <- cbind(REcovs, cors, deparse.level = 0L)
+      colnames(REcovs)[tail(1:ncol(REcovs), ncol(cors))] <- c("Corr", rep("", ncol(cors) - 1))
+    }
+    sumry$REcovs <- REcovs
+  }
   
   if (!is.logical(object$sd)&!is.null(object$X)&is.null(object$TR)) {
     pars <- c(object$params$Xcoef)
@@ -102,6 +116,10 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    if(object$col.eff$col.eff == "random"){
+      coef.table<- coef.table[!duplicated(coef.table),,drop=FALSE]
+      row.names(coef.table)[grepl("RE_mean_", row.names(coef.table))] <- sub("RE_mean_", "RE mean:",grep("RE_mean_",colnames(object$X.design), value = TRUE))
+    }
   }else if(!is.logical(object$sd)&!is.null(object$X)){
     pars <- c(object$params$B)
     se <- c(object$sd$B)
@@ -303,8 +321,13 @@ print.summary.gllvm <- function (x, ...)
   #only print SD from LV if model is quadratic or if (hybrid) concurrent
   if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
-  cat("Formula: ", paste(x$formula,collapse=""), "\n")
+  cat("Formula: ", paste(x$formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
+  
+  if(!is.null(x$REcovs)){
+    cat("\nRandom effects:\n")
+    print(x$REcovs, row.names = FALSE, right = FALSE)
+  }
   
   df <- x[["df"]]
   if(!is.null(x$Coef.tableX)){
