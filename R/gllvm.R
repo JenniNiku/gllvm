@@ -405,14 +405,14 @@
 #'@importFrom mvabund manyglm
 #'@importFrom graphics abline axis par plot segments text points boxplot panel.smooth lines polygon arrows 
 #'@importFrom grDevices rainbow hcl
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict cov2cor reformulate update.formula aggregate
 #'@importFrom Matrix bdiag chol2inv diag
 #'@importFrom MASS ginv polr mvrnorm
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
 #'@importFrom alabama auglag
-#'@importFrom utils combn tail relist
-#'@importFrom methods cbind2 rbind2
+#'@importFrom utils combn tail relist head
+#'@importFrom methods cbind2 rbind2 is as
 #'
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,
@@ -718,7 +718,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }else{
         X <- cbind(X, X.col.eff)
         colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-        formula <- update(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
+        formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
       }
     }
 
@@ -1104,7 +1104,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       num.lv.cor = 0
     }
     if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
-      NN<-t(apply(as.matrix(dist(distLv, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
+      NN<-t(apply(as.matrix(dist(distLV, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
       i1<-rep(1:nrow(NN), each=ncol(NN))
       i2<-c(t(NN))
       indM<-cbind(i1,i2)

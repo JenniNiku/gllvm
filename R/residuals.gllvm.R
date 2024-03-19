@@ -86,7 +86,7 @@ residuals.gllvm <- function(object, ...) {
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
         b <- pgamma(as.vector(y), shape = rep(phis, each = n), scale = as.vector(mu)/rep(phis, each = n))
-        a <- pmin(b, pgamma(as.vector(y)), shape = rep(phis, each = n), scale = mas.vector(mu)/rep(phis, each = n))
+        a <- pmin(b, pgamma(as.vector(y)), shape = rep(phis, each = n), scale = as.vector(mu)/rep(phis, each = n))
         
         u <- runif(n*p, min = a, max = b)
         if(any(u==1))u[u==1] <- 1-1e-16
