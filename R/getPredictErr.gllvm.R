@@ -70,7 +70,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
       if(object$row.eff == "random"){
         out$row.effects <- object$prediction.errors$row.params
-        out$row.effects[[re]] <- lapply(out$row.effects,function(x)sqrt(diag(x)))
+        out$row.effects <- lapply(out$row.effects,function(x)sqrt(diag(x)))
       }
       if(object$col.eff$col.eff=="random"){
       out$Br <- object$prediction.errors$Br
