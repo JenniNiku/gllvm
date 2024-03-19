@@ -42,12 +42,12 @@
 #'# As proportion of variance in the model
 #'envcov$trace.randomB/sum(envcov$trace.randomB)
 #'}
-#'@aliases getEnvironCov getEnvironCor
+#'@aliases getEnvironCov getEnvironCor getEnvironCor.gllvm
 #'@method getEnvironCov gllvm
 #'@export
 #'@export getEnvironCov.gllvm
 
-getEnvironCov.gllvm <- function(object, x = NULL){
+getEnvironCov.gllvm <- function(object, x = NULL, ...){
   
   if(isFALSE(object$randomB) & isFALSE(object$col.eff$col.eff)& is.null(object$randomX)){
     stop("Canot calculate correlations without random effects for covariates in the model.")
@@ -96,7 +96,7 @@ if(object$col.eff$col.eff=="random"){
   
   if(!isFALSE(object$quadratic)){
     # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-    Sigmaz <- diag(rep(x%*%diag(model2$params$sigmaLvXcoef^2)%*%x,object$num.lv.c+object$num.RR))
+    Sigmaz <- diag(rep(x%*%diag(object$params$sigmaLvXcoef^2)%*%x,object$num.lv.c+object$num.RR))
     theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
     cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))

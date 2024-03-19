@@ -127,7 +127,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
 
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(num.RR>0&object$randomB!=FALSE){
-        if(object$randomB=="P"|object$randomB=="single"|randomB=="iid"){
+        if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
         }else if(object$randomB=="LV"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
@@ -146,7 +146,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       sdb <- list(Ab_lv = 0)
       
       if(num.RR>0&object$randomB!=FALSE){
-        if(object$randomB=="P"|object$randomB=="single"|randomB=="iid"){
+        if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
         }else if(object$randomB=="LV"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
