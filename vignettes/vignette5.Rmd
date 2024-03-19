@@ -27,6 +27,7 @@ Y <- spider$abund
 load(file = "ftEqTol.RData")
 load(file = "ftComTol.RData")
 load(file = "ftUneqTol.RData")
+ftEqTol$col.eff$col.eff <- ftComTol$col.eff$col.eff <- ftUneqTol$col.eff$col.eff <- FALSE
 ```
 
 The unique thing about the quadratic response model, is that specifying a quadratic term for each species separately, coincides with the assumption that species have their own ecological tolerances. A more simple more, would be to assume that species have the same tolerance, in essence that all species are a generalist or specialist to the same degree. This can be done using a linear response model, with random row-effects:

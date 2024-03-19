@@ -38,6 +38,7 @@ ftNULL$num.RR <- ftNULL$num.lv.c <- 0
 ftXi$quadratic<-ftXph$quadratic<-ftX$quadratic<-ftNULL$quadratic<-FALSE
 #ftXi$num.lvcor<-ftXph$num.lvcor<-ftX$num.lvcor<-ftNULL$num.lvcor<-0
 ftNULL$TMBfn$env$data$dr0=model.matrix(~Site-1, Xenv)
+ftXi$col.eff$col.eff<-ftXph$col.eff$col.eff<-ftX$col.eff$col.eff<-ftNULL$col.eff$col.eff<-FALSE
 ```
 
 

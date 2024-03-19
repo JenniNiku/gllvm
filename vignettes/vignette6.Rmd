@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=
 ```{r, echo=FALSE, message=F, warning=F, result="hide"}
 library(gllvm)
 load(file = "ftCGLLVM.RData")
+CGLLVM$col.eff$col.eff <-FALSE
 ```
 
 Until recently, the `gllvm` R-package only supported unconstrained ordination. When including predictor variables, the interpretation of the ordination would shift to a residual ordination, conditional on the predictors.
@@ -68,6 +69,7 @@ round(sweep(RRGLM$params$LvXcoef,2,apply(RRGLM$params$LvXcoef,2,function(x)sqrt(
 The predictor slopes (called canonical coefficients in e.g., CCA or RDA) are available under `RRGLM$params$LvXcoef` or can be retrieved with `coef(RRGLM)` or by `summary(RRGLM)`:
 ```{r eval=TRUE, echo=FALSE}
 load("RRGLM.RData")
+RRGLM$col.eff$col.eff <- FALSE
 ```
 ```{r eval=TRUE, echo=TRUE}
 summary(RRGLM, rotate = TRUE)
@@ -95,6 +97,7 @@ RRGLMb1 <- gllvm(Y, X = X, family="poisson", num.RR = 2, randomB = "P")
 ```
 ```{r eval=T, echo=F}
 load("RRGLMb1.RData")
+RRGLMb1$col.eff$col.eff <-FALSE
 ```
 where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
 
