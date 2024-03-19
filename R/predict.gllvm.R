@@ -420,5 +420,6 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     dimnames(preds)[[3]] <- colnames(object$y)
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)
+  if(any(class(out) %in% "dgeMatrix")) out <- as.matrix(out)
   return(out)
 }
