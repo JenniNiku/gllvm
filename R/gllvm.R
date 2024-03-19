@@ -456,13 +456,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
     pp.pars <- list(...)
     
-    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
-      stop("Selected family not permitted...sorry!")
-    
     if (inherits(family,"family")) {
       link <- family$link
       family <- family$family
     }
+
+    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
+      stop("Selected family not permitted...sorry!")
     
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
