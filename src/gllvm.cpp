@@ -542,7 +542,7 @@ Type objective_function<Type>::operator() ()
       }
     }
     
-    if(random(1)>0 | random(3)>0){
+    if((random(1)>0) | (random(3)>0)){
       eta += xb*Br;
       matrix <Type> Spr;
       
@@ -2805,7 +2805,7 @@ Type objective_function<Type>::operator() ()
       eta += r0*xr;
     }
     
-    if(random(1)>0 | random(3)>0){
+    if((random(1)>0) | (random(3)>0)){
       eta += xb*Br;
       matrix <Type> Spr;
       
