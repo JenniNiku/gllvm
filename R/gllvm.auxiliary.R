@@ -2131,7 +2131,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
       if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(random[3]==0&type!="residual",1,0))>1){
         se <- aperm(se,c(3,2,1))
       }else if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(random[3]==0&type!="residual",1,0))>0){
-        se <- as.matrix(se)
+        se <- array(se, dim=c(length(se),1,1))
       }
       
       #add error for Bs if random
