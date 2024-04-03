@@ -2522,7 +2522,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                   
                 for(j in 1:Abranks[cb]){
                   for(r in (j+1):(blocksp[cb]*ncol(spdr))){
-                    if(j<r && r<=blocksp[cb]){
+                    if(j<r && r<=(blocksp[cb]*ncol(spdr))){
                     spArs[[cb]][r,j] = spAr[1];
                     spAr <- spAr[-1]
                     }

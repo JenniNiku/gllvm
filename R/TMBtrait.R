@@ -1933,7 +1933,7 @@ trait.TMB <- function(
               
               for(j in 1:Abranks[cb]){
                 for(r in (j+1):(blocksp[cb]*ncol(xb))){
-                  if(j<r && r<=blocksp[cb]){
+                  if(j<r && r<=(blocksp[cb]*ncol(xb))){
                   Abs[[cb]][r,j] = Ab[1];
                   Ab <- Ab[-1]
                   }
