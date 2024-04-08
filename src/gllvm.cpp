@@ -337,11 +337,9 @@ Type objective_function<Type>::operator() ()
       // Add VA terms to logL
       //Go this route if no random Bs
       matrix <Type> Atemp(nlvr,nlvr);
-      vector <Type> Adiag(nlvr);
       for(int i=0; i<n; i++){
         Atemp = A(i).topLeftCorner(nlvr,nlvr);//to exlcude the 0 rows & columns for num_RR
-        Adiag = Atemp.diagonal();
-        nll -= Adiag.log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
+        nll -= Atemp.diagonal().array().log().sum() - 0.5*((Atemp*Atemp.transpose()).trace()+(u.row(i)*u.row(i).transpose()).sum());
       }
       nll -= 0.5*n*nlvr;
       
