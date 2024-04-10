@@ -1879,8 +1879,7 @@ getFourthCorner<- function(object){
   n2=colnames(object$TR)
   
   nams=names(object$params$B)
-  fx<-cbind(apply(sapply(n1,function(x){grepl(x, nams)}),1,any), apply(sapply(n2,function(x){grepl(x, nams)}),1,any))
-  fourth.index<-rowSums(fx)>1
+  fourth.index <- grepl(":",nams) & grepl(paste(n1,collapse="|"),nams)
   nams2=nams[fourth.index]
   fourth.corner=object$params$B[fourth.index]
   
@@ -1888,8 +1887,8 @@ getFourthCorner<- function(object){
   isinvec <- function(vec, ob =""){
     ob %in% vec
   }
-  n1 <- n1[(n1 %in% unlist(splitsnam))]
-  n2 <- n2[(n2 %in% unlist(splitsnam))]
+  n1 <- unique(unlist(splitsnam)[grep(paste0(n1,collapse="|"),unlist(splitsnam))])
+  n2 <- unique(unlist(splitsnam)[grep(paste0(n2,collapse="|"),unlist(splitsnam))])
   i=1; j=1;
   fourth<-matrix(0,length(n1),length(n2))
   for (i in 1:length(n1)) {
