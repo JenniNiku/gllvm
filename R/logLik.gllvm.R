@@ -44,7 +44,7 @@ logLik.gllvm <- function(object, ...)
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
     object$params$sigmaB <- unique(object$params$sigmaB[object$params$sigmaB!=0])
-    if(object$col.eff$col.eff == "random"){
+    if(object$col.eff$col.eff == "random" && any(grepl("RE_mean_",colnames(object$params$Xcoef)))){
       object$params$Xcoef[1:(ncol(object$y)-1),grepl("RE_mean_",colnames(object$params$Xcoef))] <- NA
     }
   }

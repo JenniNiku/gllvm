@@ -638,7 +638,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(!is.null(X)){Xd <- cbind(1,X)} else {Xd <- matrix(1,n)}
   
     # map species common effects for REs
-    if(col.eff == "random"){
+    if(col.eff == "random" && any(grepl("RE_mean_", colnames(Xd)))){
       if(is.null(map.list[["b"]])){
         map.list$b <- 1:(p*ncol(Xd))
         map.list$b[grepl("RE_mean_", rep(colnames(Xd), each = p))] <- rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)
@@ -649,13 +649,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         map.list$b <- factor(c(map.list$b[rep(1:(num.X+1),p)], rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)))
       }
       if(starting.val %in% c("res","random")){
-      betas <- matrix(betas, p, num.X)
-      betas[,grepl("RE_mean_", colnames(Xd)[-1])] <- t(replicate(p, apply(betas[,grepl("RE_mean_", colnames(Xd)[-1]),drop=FALSE],2,mean)))
-      fit$params[, 2:(num.X + 1)] <- betas
-      betas <- c(betas)
+        betas <- matrix(betas, p, num.X)
+        betas[,grepl("RE_mean_", colnames(Xd)[-1])] <- t(replicate(p, apply(betas[,grepl("RE_mean_", colnames(Xd)[-1]),drop=FALSE],2,mean)))
+        fit$params[, 2:(num.X + 1)] <- betas
+        betas <- c(betas)
       }
       map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
     }
+    
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
     extra <- c(0,0,0)
     

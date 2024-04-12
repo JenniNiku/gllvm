@@ -699,7 +699,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       spdr <- Matrix::t(RElist$Zt)
       cs <- RElist$cs # covariances of REs
       # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
-
+      
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
@@ -711,17 +711,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # Keep gllvm.TMB from removing intercept column in REs
       if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
       # build formula argument for RE means
-      if(is.null(X)){
+      
+      if(is.null(X) && ncol(X.col.eff) > 0){
         X <- as.matrix(X.col.eff)
         colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
         formula <- reformulate(colnames(X))
-      }else{
+      }else if(ncol(X.col.eff) > 0){
         X <- cbind(X, X.col.eff)
         colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
         formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
       }
     }
-
     
     if (!is.null(y)) {
       y <- as.matrix(y)
