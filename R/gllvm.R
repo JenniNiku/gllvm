@@ -33,7 +33,7 @@
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.
-#' @param beta0com logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.
+#' @param beta0com logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, column-specific intercepts are collected to a common value.
 #' @param scale.X logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical. If \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
@@ -226,7 +226,7 @@
 #'  \item{convergence }{ convergence code of optimizer}
 #'  \item{quadratic }{ flag for quadratic model}
 #'  \item{Hess }{ List holding matrices of second derivatives}
-#'  \item{beta0com }{ Flag for common intercept in fourth corner models}
+#'  \item{beta0com }{ Flag for common intercept}
 #'  \item{cstruc }{ Correlation structure for row effects}
 #'  \item{cstruclv }{ Correlation structure for LVs}
 #'  \item{dist }{ Matrix of coordinates or time points used for row effects}
@@ -1389,6 +1389,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             disp.group = disp.group,
             spdr = spdr,
             cs = cs,
+            beta0com = beta0com,
             model = "gllvm.TMB"
         )
         if(is.null(formula)) {

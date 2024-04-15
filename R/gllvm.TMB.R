@@ -8,7 +8,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
                       seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
                       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, spdr = NULL, cs = NULL, dr=NULL, dLV=NULL, cstruc = "diag", cstruclv = "diag", dist =list(matrix(0)), distLV = matrix(0),
                       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
-                      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL, Ntrials = 1) { 
+                      Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL, Ntrials = 1, beta0com = FALSE) { 
   # , Dthreshold=0
   # If there is no random effects/LVs set diag iter to zero:
   # if(!is.null(dr) && ncol(dr) != length(Ar.struc) && length(Ar.struc==1)){
@@ -534,7 +534,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     
     current.loglik <- -1e6; iter <- 1; err <- 10;
     if(!is.null(row.params)){ r0 <- row.params} else {r0 <- rep(0,n)}
-    a <- c(beta0)
+    if(beta0com) a <- rep(mean(beta0), p)
+    if(!beta0com) a <- c(beta0)
     lambda=0
     if((num.lv+(num.lv.c))==0)u <- matrix(0)
     if((num.lv+num.RR+num.lv.c)==0)lambda2 <- matrix(0)
@@ -641,12 +642,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     if(col.eff == "random" && any(grepl("RE_mean_", colnames(Xd)))){
       if(is.null(map.list[["b"]])){
         map.list$b <- 1:(p*ncol(Xd))
+        if(beta0com)map.list$b[1:p] <- 1
         map.list$b[grepl("RE_mean_", rep(colnames(Xd), each = p))] <- rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)
         map.list$b <- factor(map.list$b)
       }else{
         # order of b in template is per species, here first order to covariate
         # for easier construction of map
         map.list$b <- factor(c(map.list$b[rep(1:(num.X+1),p)], rep((p*sum(!grepl("RE_mean_",colnames(Xd)))+1):(p*sum(!grepl("RE_mean_",colnames(Xd)))+sum(grepl("RE_mean_",colnames(Xd)))), each = p)))
+        if(beta0com)map.list$b[1:p]<-1
       }
       if(starting.val %in% c("res","random")){
         betas <- matrix(betas, p, num.X)
@@ -655,6 +658,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         betas <- c(betas)
       }
       map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
+    }else if(beta0com){
+      if(is.null(map.list[["b"]])){
+      map.list$b <- 1:(p*ncol(Xd))
+      map.list$b[1:p] <- 1
+      map.list$b <- factor(map.list$b)
+      map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
+      }else{
+        map.list$b[1:p]<-1
+        map.list$b <- factor(map.list$b)
+        map.list$b <- map.list$b[order(rep(1:p,num.X+1))] # back to correct ordering
+      }
     }
     
     b <- NULL; if(!is.null(X)) b <- matrix(betas, ncol(X), p,byrow = TRUE)
