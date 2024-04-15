@@ -4,9 +4,10 @@
 \alias{getEnvironCov.gllvm}
 \alias{getEnvironCov}
 \alias{getEnvironCor}
+\alias{getEnvironCor.gllvm}
 \title{Extract species covariances due to environmental random effects from gllvm object}
 \usage{
-\method{getEnvironCov}{gllvm}(object, x = NULL)
+\method{getEnvironCov}{gllvm}(object, x = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}

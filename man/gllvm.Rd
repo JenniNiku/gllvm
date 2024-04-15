@@ -105,7 +105,7 @@ gllvm(
 
 \item{randomX}{formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, when random slopes are not included.}
 
-\item{beta0com}{logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, a common intercept is used which is allowed only for fourth corner models.}
+\item{beta0com}{logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, column-specific intercepts are collected to a common value.}
 
 \item{zeta.struc}{structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".}
 
@@ -137,7 +137,7 @@ gllvm(
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
- \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of , defaults to of species. If set to the number of columns in the response data, a standard inverse is used instead.}
+ \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 30 percent of species. If set to the number of columns in the response data, a standard inverse is used instead.}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
@@ -222,7 +222,7 @@ An object of class "gllvm" includes the following components:
  \item{convergence }{ convergence code of optimizer}
  \item{quadratic }{ flag for quadratic model}
  \item{Hess }{ List holding matrices of second derivatives}
- \item{beta0com }{ Flag for common intercept in fourth corner models}
+ \item{beta0com }{ Flag for common intercept}
  \item{cstruc }{ Correlation structure for row effects}
  \item{cstruclv }{ Correlation structure for LVs}
  \item{dist }{ Matrix of coordinates or time points used for row effects}
@@ -233,7 +233,6 @@ An object of class "gllvm" includes the following components:
  \item{Ab.struct.rank }{fitted rank of variational covariance matrix}
  \item{col.eff }{flag indicating if column random effects are included}
  \item{spdr }{ design matrix}
- \item{nsp }{ vector of levels per random effect}
  \item{colMat.rho.struct }{ character vector for signal parameter}
  
  }
