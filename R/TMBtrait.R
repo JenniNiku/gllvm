@@ -137,7 +137,6 @@ trait.TMB <- function(
   
   y <- as.data.frame(y)
   formula1 <- formula
-  beta0com0 = beta0com
   if(method=="VA" && (family =="binomial")){ link <- "probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
@@ -373,7 +372,7 @@ trait.TMB <- function(
     
     #### Calculate starting values
     res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed,starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
-                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com0, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
+                                  yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
     if(family=="tweedie"){
@@ -682,11 +681,14 @@ trait.TMB <- function(
     
     # Common intercept
     if(beta0com){
-      extra[2] <- 0
-      Xd<-cbind(1,Xd)
-      a <- a*0
-      B<-c(mean(a),B)
-      map.list$b<-factor(rep(NA,length(a)))
+      # extra[2] <- 0
+      # Xd<-cbind(1,Xd)
+      # print(a)
+      # a <- a*0
+      # B<-c(mean(a),B)
+      # map.list$b<-factor(rep(NA,length(a)))
+      map.list$b <- factor(rep(1, p))
+      a <- rep(mean(a), p)
     }
     
     
@@ -1134,7 +1136,7 @@ trait.TMB <- function(
       param1 <- optr$par
       nam <- names(param1)
       if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
-      if(length(param1[nam=="b"])>0){ b1 <- rbind(param1[nam=="b"])} else {b1 <- rbind(rep(0,p))}
+      if(length(param1[nam=="b"])>0){ b1 <- matrix(param1[nam=="b"], ncol = p)} else {b1 <- rbind(rep(0,p))}
       B1 <- matrix(param1[nam=="B"])
       
       if(!is.null(randomX)) {
@@ -1271,7 +1273,7 @@ trait.TMB <- function(
       param1 <- optr$par
       nam <- names(param1)
       if(length(param1[nam=="r0"])>0){ r1 <- matrix(param1[nam=="r0"])} else {r1 <- matrix(r0)}
-      b1 <- rbind(param1[nam=="b"])
+      b1 <- matrix(param1[nam=="b"], ncol = p)
       B1 <- matrix(param1[nam=="B"])
       sigma.lv1 <- param1[nam=="sigmaLV"]
       
@@ -1464,6 +1466,7 @@ trait.TMB <- function(
     }
     
     beta0 <- param[bi]
+    if(beta0com)beta0 <- beta0[map.list$b]
     B <- param[Bi]
     # if(family %in% "betaH"){
     #   bHi <- names(param)=="bH"
@@ -1474,13 +1477,6 @@ trait.TMB <- function(
     # }
     
     cn<-colnames(Xd)
-    if(beta0com){
-      beta0=B[1]
-      B = B[-1]
-      cn<-colnames(Xd)
-      Xd<-as.matrix(Xd[,-1])
-      colnames(Xd)<-cn[-1]
-    }
     new.loglik<-objr$env$value.best[1]
     
     
@@ -1500,8 +1496,9 @@ trait.TMB <- function(
         }
         names(out$params$sigma.lv) <-  paste("LV", 1:num.lv, sep="");
       }
-      if(!beta0com) names(beta0) <- colnames(out$y); 
-      if(beta0com) names(beta0) <- "Community intercept";
+      names(beta0) <- colnames(out$y); 
+      # if(!beta0com) names(beta0) <- colnames(out$y); 
+      # if(beta0com) names(beta0) <- "Community intercept";
       out$params$beta0 <- beta0;
       out$params$B <- B; names(out$params$B)=colnames(Xd)
       

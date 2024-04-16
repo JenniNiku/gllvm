@@ -39,6 +39,11 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
   if(object$col.eff$col.eff == "random" | !is.null(object$randomX))object$params$Br <- NULL
+  if(object$beta0com){
+    object$params$beta0 <- unique(object$params$beta0)
+    names(object$params$beta0) <- "Community intercept"
+    object$sd$beta0 <- unique(object$sd$beta0)
+  }
   if(is.null(parm)){
     if (object$family == "negative.binomial") {
       object$params$phi <- NULL

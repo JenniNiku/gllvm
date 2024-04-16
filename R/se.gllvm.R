@@ -97,7 +97,7 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="u"] <- FALSE; 
       
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
-      if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
+      # if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
       if(familyn!=7 & familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
       if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
@@ -238,7 +238,8 @@ se.gllvm <- function(object, ...){
       #   diag(out$sd$theta) <- c(out$sd$sigma.lv)
       # }
       out$sd$beta0 <- se.beta0; 
-      if(!object$beta0com){ names(out$sd$beta0)  <-  colnames(object$y);}
+      # if(!object$beta0com){ names(out$sd$beta0)  <-  colnames(object$y);}
+      names(out$sd$beta0)  <-  colnames(object$y);
       out$sd$B <- c(se.B); 
       names(out$sd$B) <- names(object$params$B)
       if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
