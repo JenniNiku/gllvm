@@ -262,7 +262,7 @@ trait.TMB <- function(
       #
       if(num.lv>0 && randomX.start == "res" && starting.val == "res") {randomXb <- randomX}
       #
-      xb <- as.matrix(model.matrix(randomX, data = data[data$species==1, ]))
+      xb <- as.matrix(model.matrix(randomX, data = data[data$species==1, ,drop=FALSE]))
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
