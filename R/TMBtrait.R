@@ -262,7 +262,7 @@ trait.TMB <- function(
       #
       if(num.lv>0 && randomX.start == "res" && starting.val == "res") {randomXb <- randomX}
       #
-      xb <- as.matrix(model.matrix(randomX, data = data.frame(X)))
+      xb <- as.matrix(model.matrix(randomX, data = data[data$species==1, ]))
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
@@ -361,7 +361,6 @@ trait.TMB <- function(
       Abstruc <- Abranks <- 0
       blocks <- list(matrix(0))
       rhoSP <- FALSE
-  
     }
     
     num.X <- dim(X)[2]
@@ -371,7 +370,7 @@ trait.TMB <- function(
     sigma <- 1
     
     #### Calculate starting values
-    res <- start.values.gllvm.TMB(y = y, X = X1, TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed,starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
+    res <- start.values.gllvm.TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed,starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
