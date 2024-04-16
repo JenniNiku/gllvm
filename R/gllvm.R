@@ -1170,7 +1170,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   method = "VA"
     # }
     if (p < 2 && !is.null(TR)) {
-      stop("Fourth corner model can not be fitted with less than tvo response variables.\n")
+      stop("Fourth corner model can not be fitted with less than two response variables.\n")
     }
     if (row.eff == "random" && !TMB) {
       cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
