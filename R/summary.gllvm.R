@@ -72,7 +72,6 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   sumry$digits <- digits
   sumry$signif.stars <- signif.stars
   sumry$dispersion <- dispersion
-  sumry$spp.intercepts <- spp.intercepts
   sumry$row.intercepts <- row.intercepts
   sumry$Lvcoefs <- Lvcoefs
   sumry$num.lv <- num.lv
@@ -138,6 +137,22 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
   }else{
     coef.table <- NULL
+  }
+  
+  if(spp.intercepts&!is.logical(object$sd)){
+      pars <- unique(object$params$beta0)
+      se <- unique(object$sd$beta0)
+      zval <- pars/se
+      pvalue <- 2 * pnorm(-abs(zval))
+      coef.table.int <- cbind(pars, se, zval, pvalue)
+      if(!object$beta0com){
+        newnam <- colnames(object$y)
+      }else if(object$beta0com){
+        newnam <- "Community intercept"
+      }
+      dimnames(coef.table.int) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+
+      coef.table <- rbind(coef.table.int, coef.table)
   }
   
   if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
@@ -355,10 +370,6 @@ print.summary.gllvm <- function (x, ...)
     
     printCoefmat(coefs, digits = x$digits, signif.stars = x$signif.stars, 
                  na.print = "")
-  }
-  if(x$spp.intercepts){
-    cat("\n Species Intercepts: \n")
-    print(zapsmall(x$Coefficients[,1],x$digits))
   }
   if(x$row.intercepts){
     if(!is.null(x$`Row intercepts`)){
