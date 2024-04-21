@@ -632,29 +632,33 @@ Type objective_function<Type>::operator() ()
                 // colCorMatIblocks(cb-1) = Eigen::SparseMatrix<Type>(colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols());
                 matrix<Type> AL(colMatBlocksI(cb).cols(), colMatBlocksI(cb).cols());
                 AL.setZero();
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Di(colMatBlocksI(cb).cols());
-                Di.diagonal()(0)=1;
+                AL(0,0) = 1;
                 for(int j=0; j<(colCorMatIblocks(cb-1).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
                   matrix<Type> C(k,k);
                   C.setIdentity();
-                  matrix<Type> C2(k,1);
                   for(int i=0; i<k; i++){
                     for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
                       C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
                       C(i2,i) = C(i,i2);
                     }
-                    C2(i,0) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,j+1)*rhoSP(0);
                   }
-                  matrix <Type> b =  C.llt().solve(C2);
+                  matrix <Type> b(k,k);
+                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  {
+                    b = C.inverse();
+                  }else{//invert larger matrices via cholesky
+                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
+                    CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(C));
+                    b = atomic::vec2mat(res,b.rows(),b.cols(),1);
+                    //b = C.llt().matrixL().solve(Ir);
+                  }
                   for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i);
+                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
                   }
-                  Di.diagonal()(j+1) = 1/(colMatBlocksI(cb)(j+1,j+1) - (C2.transpose()*b).value());
                 }
-                AL.diagonal().array() -= 1;//I-AL
-                colCorMatIblocks(cb-1) = AL.transpose()*Di*AL;
-                logdetColCorMat -= Di.diagonal().array().log().sum();
+                colCorMatIblocks(cb-1) = AL.transpose()*AL;
+                logdetColCorMat -= 2*AL.diagonal().array().log().sum();
               }else{ //no neighbours, must be only 1 species in this "block"
                 logdetColCorMat += log(colMatBlocksI(cb)(0,0));
                 colCorMatIblocks(cb-1)(0,0) = 1/colMatBlocksI(cb)(0,0);
@@ -672,30 +676,32 @@ Type objective_function<Type>::operator() ()
                 // colCorMatIblocks(cb-1) = Eigen::SparseMatrix<Type>(colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols());
                 matrix<Type> AL(colMatBlocksI(cb).cols(), colMatBlocksI(cb).cols());
                 AL.setZero();
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Di(colMatBlocksI(cb).cols());
-                Di.diagonal()(0)=1;
+                AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
                   matrix<Type> C(k,k);
                   C.setIdentity();
-                  matrix<Type> C2(k,1);
                   for(int i=0; i<k; i++){
                     for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
                       C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(re);
                       C(i2,i) = C(i,i2);
                     }
-                    C2(i,0) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,j+1)*rhoSP(re);
                   }
                   
-                  matrix <Type> b =  C.llt().solve(C2);
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i);
+                  matrix <Type> b(k,k);
+                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  {
+                    b = C.inverse();
+                  }else{//invert larger matrices via cholesky
+                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
+                    b = C.llt().matrixL().solve(Ir);
                   }
-                  Di.diagonal()(j+1) = 1/(colMatBlocksI(cb)(j+1,j+1) - (C2.transpose()*b).value());
+                  for(int i=0; i<k; i++){
+                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
+                  }
                 }
-                AL.diagonal().array() -= 1;//I-AL
-                colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()) = AL.transpose()*Di*AL;
-                logdetColCorMat -= Di.diagonal().array().log().sum();
+                colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()) = AL.transpose()*AL;
+                logdetColCorMat -= 2*AL.diagonal().array().log().sum();
               }else{ //no neighbours, must be only 1 species in this "block"
                 logdetColCorMat += log(colMatBlocksI(cb)(0,0));
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols())(0,0) = 1/colMatBlocksI(cb)(0,0);
@@ -727,7 +733,7 @@ Type objective_function<Type>::operator() ()
         SprIL.setZero();
         //Spr is not diagonal
         matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        SprIL = Spr.llt().matrixL().solve(Ir);
+        SprIL = atomic::sqrtm(Spr).inverse();//.llt().matrixL().solve(Ir);
         logdetSpr = -2*SprIL.diagonal().array().log().sum();
         SprI = SprIL.transpose()*SprIL;
       }else{
@@ -2855,7 +2861,7 @@ Type objective_function<Type>::operator() ()
           SprIL.setZero();
           //Spr is not diagonal
           matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-          SprIL = Spr.llt().matrixL().solve(Ir);
+          SprIL = atomic::sqrtm(Spr).inverse();
           logdetSpr = -2*SprIL.diagonal().array().log().sum();
           SprI = SprIL.transpose()*SprIL;
         }else{
@@ -2922,30 +2928,32 @@ Type objective_function<Type>::operator() ()
               if(colMatBlocksI(cb).cols()>1){
                 matrix<Type> AL(colMatBlocksI(cb).cols(), colMatBlocksI(cb).cols());
                 AL.setZero();
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Di(colMatBlocksI(cb).cols());
-                Di.diagonal()(0)=1;
+                AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
                   matrix<Type> C(k,k);
                   C.setIdentity();
-                  matrix<Type> C2(k,1);
                   for(int i=0; i<k; i++){
                     for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
                       C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
                       C(i2,i) = C(i,i2);
                     }
-                    C2(i,0) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,j+1)*rhoSP(0);
                   }
                   
-                  matrix <Type> b =  C.llt().solve(C2);
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i);
+                  matrix <Type> b(k,k);
+                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  {
+                    b = C.inverse();
+                  }else{//invert larger matrices via cholesky
+                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
+                    b = C.llt().matrixL().solve(Ir);
                   }
-                  Di.diagonal()(j+1) = 1/(colMatBlocksI(cb)(j+1,j+1) - (C2.transpose()*b).value());
+                  for(int i=0; i<k; i++){
+                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
+                  }
                 }
-                AL.diagonal().array() -= 1;//I-AL
-                colCorMatI = (AL.transpose()*Di*AL).sparseView();
-                logdetColCorMat -= Di.diagonal().array().log().sum();
+                colCorMatI = (AL.transpose()*AL).sparseView();
+                logdetColCorMat -= 2*AL.diagonal().array().log().sum();
                 nll += 0.5*(Br.middleCols(sp-cb, colCorMatI.cols())*colCorMatI*Br.middleCols(sp-cb, colCorMatI.cols()).transpose()*SprI).trace();
               }else{ //no neighbours, must be only 1 species in this "block"
                 logdetColCorMat += log(colMatBlocksI(cb)(0,0));
@@ -2968,30 +2976,32 @@ Type objective_function<Type>::operator() ()
               if(colMatBlocksI(cb).cols()>1){
                 matrix<Type> AL(colMatBlocksI(cb).cols(), colMatBlocksI(cb).cols());
                 AL.setZero();
-                Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Di(colMatBlocksI(cb).cols());
-                Di.diagonal()(0)=1;
+                AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
                   matrix<Type> C(k,k);
                   C.setIdentity();
-                  matrix<Type> C2(k,1);
                   for(int i=0; i<k; i++){
                     for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
                       C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(re);
                       C(i2,i) = C(i,i2);
                     }
-                    C2(i,0) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,j+1)*rhoSP(re);
                   }
                   
-                  matrix <Type> b =  C.llt().solve(C2);
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i);
+                  matrix <Type> b(k,k);
+                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  {
+                    b = C.inverse();
+                  }else{//invert larger matrices via cholesky
+                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
+                    b = C.llt().matrixL().solve(Ir);
                   }
-                  Di.diagonal()(j+1) = 1/(colMatBlocksI(cb)(j+1,j+1) - (C2.transpose()*b).value());
+                  for(int i=0; i<k; i++){
+                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
+                  }
                 }
-                AL.diagonal().array() -= 1;//I-AL
-                colCorMatI = (AL.transpose()*Di*AL).sparseView();
-                logdetColCorMat -= Di.diagonal().array().log().sum();
+                colCorMatI = (AL.transpose()*AL).sparseView();
+                logdetColCorMat -= 2*AL.diagonal().array().log().sum();
                 
                 //formulate MVNORM manually because we have all the components
                 nll += 0.5*(Br.block(re,sp-cb, 1,colCorMatI.cols())*colCorMatI*Br.block(re,sp-cb, 1,colCorMatI.cols()).transpose()).sum();
