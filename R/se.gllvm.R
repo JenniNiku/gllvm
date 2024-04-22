@@ -412,7 +412,6 @@ se.gllvm <- function(object, ...){
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
     incl[names(objrFinal$par)=="ePower"] <- FALSE
     # Not used for this model
-    incl[names(objrFinal$par)=="B"] <- FALSE
     incl[names(objrFinal$par)%in%c("sigmaij")] <- FALSE
     
     # Variational params not included for incl
@@ -473,6 +472,7 @@ se.gllvm <- function(object, ...){
       incld[names(objrFinal$par)=="Br"] <- TRUE
     } else {
       incl[names(objrFinal$par)=="sigmaB"] <- FALSE
+      incl[names(objrFinal$par)=="B"] <- FALSE
     }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
@@ -665,7 +665,7 @@ se.gllvm <- function(object, ...){
     #   diag(out$sd$theta) <- c(out$sd$sigma.lv)
     # }
     out$sd$beta0 <- sebetaM[,1]; names(out$sd$beta0) <- colnames(object$y);
-    if(!is.null(object$X) || object$col.eff$col.eff == "random" && !is.null(object$X.design)){
+    if(!is.null(object$X)){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));
       rownames(out$sd$Xcoef) <- colnames(object$y); colnames(out$sd$Xcoef) <- colnames(object$X.design);
     }
@@ -730,6 +730,8 @@ se.gllvm <- function(object, ...){
         sigma.sp[object$TMBfn$env$data$cs] <- sigma.sp[object$TMBfn$env$data$cs[,c(2,1),drop=F]] <- covsigma.sp
       }
       out$sd$sigmaB <- sigma.sp
+      out$sd$B <- se$B
+      names(out$sd$B) <- names(out$params$B)
     }
     if(object$row.eff=="random") { 
       iter = 1 # keep track of index

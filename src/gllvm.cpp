@@ -52,7 +52,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(r0); // site/row effects
   PARAMETER_MATRIX(b); // matrix of species specific intercepts and coefs
   // PARAMETER_MATRIX(bH); // matrix of species specific intercepts and coefs for beta hurdle model
-  PARAMETER_MATRIX(B); // coefs of 4th corner model
+  PARAMETER_MATRIX(B); // coefs of 4th corner model for TMBtrait, RE means for gllvm.TMB
   PARAMETER_MATRIX(Br); // random slopes for env species
   PARAMETER_MATRIX(b_lv); //slopes for RRR and constrained ord, VA means for random slopes
   //Left columns are for constrained ordination, Right for RRR
@@ -541,7 +541,13 @@ Type objective_function<Type>::operator() ()
     }
     
     if((random(1)>0) | (random(3)>0)){
-      eta += xb*Br;
+      if(random(1)>0){
+        // random slopes in TMBtrait.R
+        eta += xb*Br;  
+      }else if(random(3)>0){
+        //random slopes in gllvm.TMB
+        eta += xb*(Br.colwise()+B.col(0));//add RE means
+      }
       matrix <Type> Spr;
       
       if(random(1)>0){
@@ -733,7 +739,7 @@ Type objective_function<Type>::operator() ()
         SprIL.setZero();
         //Spr is not diagonal
         matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        SprIL = atomic::sqrtm(Spr).inverse();//.llt().matrixL().solve(Ir);
+        SprIL = Spr.llt().matrixL().solve(Ir);
         logdetSpr = -2*SprIL.diagonal().array().log().sum();
         SprI = SprIL.transpose()*SprIL;
       }else{
@@ -2810,7 +2816,13 @@ Type objective_function<Type>::operator() ()
     }
     
     if((random(1)>0) | (random(3)>0)){
-      eta += xb*Br;
+      if(random(1)>0){
+        // random slopes in TMBtrait.R
+        eta += xb*Br;  
+      }else if(random(3)>0){
+        //random slopes in gllvm.TMB
+        eta += xb*(Br.colwise()+B.col(0));
+      }
       matrix <Type> Spr;
       
       if(random(1)>0){
@@ -2861,7 +2873,7 @@ Type objective_function<Type>::operator() ()
           SprIL.setZero();
           //Spr is not diagonal
           matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-          SprIL = atomic::sqrtm(Spr).inverse();
+          SprIL = Spr.llt().matrixL().solve(Ir);
           logdetSpr = -2*SprIL.diagonal().array().log().sum();
           SprI = SprIL.transpose()*SprIL;
         }else{

@@ -207,7 +207,7 @@
 #'    \item{LvXcoef }{ Predictor coefficients (or predictions for random slopes) related to latent variables, i.e. canonical coefficients}
 #'    \item{beta0 }{ column specific intercepts}
 #'    \item{Xcoef }{ coefficients related to environmental covariates X}
-#'    \item{B }{ coefficients in fourth corner model}
+#'    \item{B }{ coefficients in fourth corner model, and RE means}
 #'    \item{Br}{ column random effects}
 #'    \item{sigmaB}{ scale parameters for column-specific random effects}
 #'    \item{rho.sp}{ (positive) correlation parameter for influence strength of "colMat"}
@@ -685,7 +685,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(anyBars(formula) && is.null(X.col.eff)){
       stop("Covariates for species random effects must be provided.")
     }
-    col.eff <- FALSE;col.eff.formula = ~0; cs = NULL; spdr = NULL; cstruc = "diag"
+    col.eff <- FALSE;col.eff.formula = ~0;RElistSP <- list(Zt = NULL)# cs = NULL; spdr = NULL;
     # Species random effects    
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
@@ -695,32 +695,32 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
       mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
-      RElist <- mkReTrms1(bar.f,mf) #still add find double bars
-      spdr <- Matrix::t(RElist$Zt)
-      cs <- RElist$cs # covariances of REs
+      RElistSP<- mkReTrms1(bar.f,mf) #still add find double bars
+      # spdr <- Matrix::t(RElist$Zt)
+      # cs <- RElist$cs # covariances of REs
       # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
-      
-      X.col.eff <- as.matrix(Matrix::t(RElist$Xt))
-      # Final safety check to remove column with only 1s
-      # though they shouldn't occur
-      X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1)), drop = FALSE]
-      # Keep gllvm.TMB from removing intercept column in REs
-      if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
-      # build formula argument for RE means
-      
-      if(is.null(X) && ncol(X.col.eff) > 0){
-        X <- as.matrix(X.col.eff)
-        colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-        formula <- reformulate(colnames(X))
-      }else if(ncol(X.col.eff) > 0){
-        X <- cbind(X, X.col.eff)
-        colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-        formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
-      }
+      # 
+      # X.col.eff <- as.matrix(Matrix::t(RElist$Xt))
+      # # Final safety check to remove column with only 1s
+      # # though they shouldn't occur
+      # X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1)), drop = FALSE]
+      # # Keep gllvm.TMB from removing intercept column in REs
+      # if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
+      # # build formula argument for RE means
+      # 
+      # if(is.null(X) && ncol(X.col.eff) > 0){
+      #   X <- as.matrix(X.col.eff)
+      #   colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
+      #   formula <- reformulate(colnames(X))
+      # }else if(ncol(X.col.eff) > 0){
+      #   X <- cbind(X, X.col.eff)
+      #   colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
+      #   formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
+      # }
     }
     
     if (!is.null(y)) {
@@ -1239,7 +1239,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = spdr, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
 
@@ -1387,8 +1387,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
-            spdr = spdr,
-            cs = cs,
+            RElist = RElistSP,
+            # spdr = spdr,
+            # cs = cs,
             beta0com = beta0com,
             model = "gllvm.TMB"
         )

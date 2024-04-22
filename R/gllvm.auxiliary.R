@@ -2181,6 +2181,7 @@ start.values.randomX <- function(y, X, family, formula =NULL, starting.val, Powe
       if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB")){
         if(family == "ZIP") family <- "poisson"
         f1 <- gllvm.TMB(y=y, X=X, family = family, formula=formula, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
+        B <- attr(scale(f1$params$Xcoef),"scaled:center")
         coefs0 <- as.matrix(scale((f1$params$Xcoef), scale = FALSE))
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)
@@ -2193,26 +2194,30 @@ start.values.randomX <- function(y, X, family, formula =NULL, starting.val, Powe
             coefs0 <- rbind(coefs0, fitj$coefficients[-1])
           } else { coefs0 <- rbind(coefs0,rnorm(dim(Xb)[2])); }
         }
+        B <- attr(scale(coefs0, scale = FALSE), "scaled:center")
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)
         Br <- t(Br)
       } else {
         Br <- matrix(0, ncol(Xb), p)
         sigmaB <- diag(ncol(Xb))
+        B <- rep(1,ncol(Xb))
       }
     } else {
       Br <- matrix(0, ncol(Xb), p)
       sigmaB <- diag(ncol(Xb))
+      B <- rep(1,ncol(Xb))
     }
   }, silent = TRUE)
   
   if(inherits(tr0, "try-error")){
     Br <- matrix(0, ncol(Xb), p)
     sigmaB <- diag(ncol(Xb))
+    B <- rep(1,ncol(Xb))
   }
   
   
-  return(list(Br = Br, sigmaB = sigmaB))
+  return(list(Br = Br, sigmaB = sigmaB, B = B))
 }
 
 

@@ -158,7 +158,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       rnames[(cal + 1)] <- paste("Intercept",names(object$params$beta0), sep = ".")
       cal <- cal + 1
     }
-    if (!is.null(object$TR)) {
+    if (!is.null(object$TR) | object$col.eff$col.eff == "random") {
       nr <- names(object$params$B)
       rnames[(cal + 1):(cal + length(nr))] <- nr
       cal <- cal + length(nr)
