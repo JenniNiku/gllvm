@@ -641,27 +641,30 @@ Type objective_function<Type>::operator() ()
                 AL(0,0) = 1;
                 for(int j=0; j<(colCorMatIblocks(cb-1).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
-                  matrix<Type> C(k,k);
-                  C.setIdentity();
-                  for(int i=0; i<k; i++){
-                    for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
-                      C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
-                      C(i2,i) = C(i,i2);
-                    }
-                  }
+                  // matrix<Type> C(k,k);
+                  // C.setIdentity();
+                  // matrix<Type> C(k,k);
+                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k).array()-1);
+                  C *= rhoSP(0);
+                  C.diagonal().fill(1.0);
+                  // for(int i=0; i<k; i++){
+                  //   for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
+                  //     C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
+                  //     C(i2,i) = C(i,i2);
+                  //   }
+                  // }
+                  
                   matrix <Type> b(k,k);
                   if(k<4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via cholesky
-                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
                     CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(C));
-                    b = atomic::vec2mat(res,b.rows(),b.cols(),1);
-                    //b = C.llt().matrixL().solve(Ir);
+                    b = atomic::vec2mat(res,k,k,1);
                   }
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
-                  }
+                  // for(int i=0; i<k; i++){
+                  AL(j+1,(nncolMat.col(sp+j)).head(k).array()-1) = b.col(k-1)/sqrt(b(k-1,k-1));
+                  // }
                 }
                 colCorMatIblocks(cb-1) = AL.transpose()*AL;
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
@@ -685,26 +688,30 @@ Type objective_function<Type>::operator() ()
                 AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
-                  matrix<Type> C(k,k);
-                  C.setIdentity();
-                  for(int i=0; i<k; i++){
-                    for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
-                      C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(re);
-                      C(i2,i) = C(i,i2);
-                    }
-                  }
+                  // matrix<Type> C(k,k);
+                  // C.setIdentity();
+                  // matrix<Type> C(k,k);
+                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k).array()-1);
+                  C *= rhoSP(re);
+                  C.diagonal().fill(1.0);
+                  // for(int i=0; i<k; i++){
+                  //   for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
+                  //     C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
+                  //     C(i2,i) = C(i,i2);
+                  //   }
+                  // }
                   
                   matrix <Type> b(k,k);
                   if(k<4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
-                  }else{//invert larger matrices via cholesky
-                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
-                    b = C.llt().matrixL().solve(Ir);
+                  }else{//invert larger matrices via invpd
+                    CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(C));
+                    b = atomic::vec2mat(res,k,k,1);
                   }
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
-                  }
+                  // for(int i=0; i<k; i++){
+                  AL(j+1,(nncolMat.col(sp+j)).head(k).array()-1) = b.col(k-1)/sqrt(b(k-1,k-1));
+                  // }
                 }
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()) = AL.transpose()*AL;
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
@@ -1665,8 +1672,7 @@ Type objective_function<Type>::operator() ()
             CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
             logdetSr = res[0];
             invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
-          
-          
+
           if(re==0){
               nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
           }else{
@@ -2943,26 +2949,30 @@ Type objective_function<Type>::operator() ()
                 AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
-                  matrix<Type> C(k,k);
-                  C.setIdentity();
-                  for(int i=0; i<k; i++){
-                    for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
-                      C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
-                      C(i2,i) = C(i,i2);
-                    }
-                  }
+                  // matrix<Type> C(k,k);
+                  // C.setIdentity();
+                  // matrix<Type> C(k,k);
+                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k).array()-1);
+                  C *= rhoSP(0);
+                  C.diagonal().fill(1.0);
+                  // for(int i=0; i<k; i++){
+                  //   for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
+                  //     C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
+                  //     C(i2,i) = C(i,i2);
+                  //   }
+                  // }
                   
                   matrix <Type> b(k,k);
                   if(k<4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
-                  }else{//invert larger matrices via cholesky
-                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
-                    b = C.llt().matrixL().solve(Ir);
+                  }else{//invert larger matrices via invpd
+                    CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(C));
+                    b = atomic::vec2mat(res,k,k,1);
                   }
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
-                  }
+                  // for(int i=0; i<k; i++){
+                    AL(j+1,(nncolMat.col(sp+j)).head(k).array()-1) = b.col(k-1)/sqrt(b(k-1,k-1));
+                  // }
                 }
                 colCorMatI = (AL.transpose()*AL).sparseView();
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
@@ -2991,26 +3001,30 @@ Type objective_function<Type>::operator() ()
                 AL(0,0) = 1;
                 for(int j=0; j<(colMatBlocksI(cb).cols()-1); j++){
                   int k = (nncolMat.col(sp+j).array()>0).count();
-                  matrix<Type> C(k,k);
-                  C.setIdentity();
-                  for(int i=0; i<k; i++){
-                    for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
-                      C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(re);
-                      C(i2,i) = C(i,i2);
-                    }
-                  }
+                  // matrix<Type> C(k,k);
+                  // C.setIdentity();
+                  // matrix<Type> C(k,k);
+                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k)).array()-1;
+                  C *= rhoSP(re);
+                  C.diagonal().fill(1.0);
+                  // for(int i=0; i<k; i++){
+                  //   for(int i2=(i+1); i2<k; i2++){//skip diagonal, it's 1
+                  //     C(i,i2) = colMatBlocksI(cb)(nncolMat(i,sp+j)-1,nncolMat(i2,sp+j)-1)*rhoSP(0);
+                  //     C(i2,i) = C(i,i2);
+                  //   }
+                  // }
                   
                   matrix <Type> b(k,k);
                   if(k<4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via cholesky
-                    matrix<Type> Ir = Eigen::MatrixXd::Identity(k,k);
-                    b = C.llt().matrixL().solve(Ir);
+                    CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(C));
+                    b = atomic::vec2mat(res,k,k,1);
                   }
-                  for(int i=0; i<k; i++){
-                    AL(j+1, nncolMat(i,sp+j)-1) = b(i,k-1)/sqrt(b(k-1,k-1));
-                  }
+                  // for(int i=0; i<k; i++){
+                  AL(j+1,(nncolMat.col(sp+j)).head(k).array()-1) = b.col(k-1)/sqrt(b(k-1,k-1));
+                  // }
                 }
                 colCorMatI = (AL.transpose()*AL).sparseView();
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
