@@ -685,7 +685,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(anyBars(formula) && is.null(X.col.eff)){
       stop("Covariates for species random effects must be provided.")
     }
-    col.eff <- FALSE;col.eff.formula = ~0;RElistSP <- list(Zt = NULL)# cs = NULL; spdr = NULL;
+    col.eff <- FALSE;col.eff.formula = ~0;RElistSP <- list(Zt = matrix(0))# cs = NULL; spdr = NULL;
     # Species random effects    
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
