@@ -116,7 +116,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         formula1 <- formula(formula1)
         Xnew <- as.matrix(model.matrix(formula1, data = data.frame(newdata)))
       }
-      formula <- nobars1_(object$call$formula) # due to potential REs
+      formula <- as.formula(nobars1_(object$call$formula)) # due to potential REs
       xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
       X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")), 
                           drop = F])
