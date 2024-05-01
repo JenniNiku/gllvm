@@ -43,6 +43,7 @@ residuals.gllvm <- function(object, ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
   y <- object$y
+  Ntrials <- object$Ntrials
   args <- list(...)
   if(!all(c("mu", "eta.mat")%in%names(args))){
     eta.mat = predict(object, type = "link")
@@ -162,8 +163,8 @@ residuals.gllvm <- function(object, ...) {
         ds.res <- matrix(qnorm(u), n, p)
       }
       if (object$family == "binomial") {
-        b <- pbinom(as.vector(y), 1, as.vector(mu))
-        a <- pmin(b, pbinom(as.vector(y) - 1, 1, as.vector(mu)))
+        b <- pbinom(as.vector(y), Ntrials, as.vector(mu))
+        a <- pmin(b, pbinom(as.vector(y) - 1, Ntrials, as.vector(mu)))
         u <- runif(n*p, min = a, max = b)
         if(any(u==1))u[u==1] <- 1-1e-16
         if(any(u==0))u[u==0] <- 1e-16
