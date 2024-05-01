@@ -136,6 +136,7 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |		          |		           |		     |		    | where $\phi_j$ is a shape parameter |
 |Non-negative continuous| Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
 |Percent cover| beta    	   | LA/EVA | probit/logit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
+|Percent cover with zeros/ones| ordered beta    	   | EVA | probit | details in Korhonen et al (2024) |
 
 ## Model-based ordination
 
