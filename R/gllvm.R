@@ -814,7 +814,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             labterm<-labterm[labterm!=1&labterm!=0]
           }
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
-          lv.X <- model.frame(lv.formula, data=datayx)[,-1,drop=F]
+          lv.X <- model.frame(lv.formula, data=datayx)
           lv.X.design <- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
           term <- terms(m1)
         }
