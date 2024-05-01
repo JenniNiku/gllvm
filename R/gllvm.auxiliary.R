@@ -640,7 +640,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         phis <- phis + 1e-05
         
         if(family!="betaH"){
-          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials, params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
         }else{
           for(i in 1:n){
             for(j in 1:p){
@@ -785,7 +785,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       phis <- phis + 1e-05
       
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
@@ -885,7 +885,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       phis <- phis + 1e-05
       
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
@@ -982,7 +982,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       colnames(ds.res) <- colnames(y)
       phis <- phis + 1e-05
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
@@ -2529,7 +2529,7 @@ mlm <- function(y, X = NULL, index = NULL){
   out
 }
 
-RRse <- function(object){
+RRse <- function(object, return.covb = FALSE){
   if(object$quadratic!=FALSE){
     warning("Coefplot for quadratic coefficients not yet implemented.")
   }
@@ -2694,6 +2694,7 @@ RRse <- function(object){
     }
 
   }
+  if(!return.covb){
   #all ordered by LV, so LV11 LV12 LV13 etc
   for(k in 1:K){
     for(j in 1:p){
@@ -2712,6 +2713,30 @@ RRse <- function(object){
   }
   betaSE<-sqrt(abs(betaSE))
   return(betaSE)
+  }else{
+  betaCovMat<-matrix(0,ncol=K*ncol(object$y),nrow=K*ncol(object$y))
+
+  for(k in 1:K){
+   for(l in 1:K){
+    for(j in 1:p){
+     for(j2 in 1:p){
+      for(q in 1:d){
+       for(r in 1:d){
+          betaCovMat[(j+p*(k-1)),(j2+p*(l-1))] <-  betaCovMat[(j+p*(k-1)),(j2+p*(l-1))]+object$params$LvXcoef[k,q]*object$params$LvXcoef[l,r]*covL[(q-1)*p+j,(r-1)*p+j2]+
+            object$params$LvXcoef[k,q]*object$params$theta[j2,r]*covLB[(q-1)*p+j,(r-1)*K+l]+
+            object$params$LvXcoef[l,r]*object$params$theta[j,q]*covLB[(r-1)*p+j2,(q-1)*K+k]+
+            object$params$theta[j,q]*object$params$theta[j2,r]*covB[(r-1)*K+l,(q-1)*K+k]+
+            covB[(r-1)*K+l,(q-1)*K+k]*covL[(q-1)*p+j,(r-1)*p+j2]+
+            covLB[(r-1)*p+j2,(q-1)*K+k]*covLB[(q-1)*p+j,(r-1)*K+l]
+        }
+      }
+      
+    }
+    }
+    }
+  }
+      return(betaCovMat)
+  }
 }
 
 #functions for optimization with equality constraints using alabama
