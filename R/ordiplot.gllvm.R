@@ -374,7 +374,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
   
             for(i in 1:Nlv){
-              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
               temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
               temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
               A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
@@ -497,7 +497,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
               }
               
               for(i in 1:Nlv){
-                Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+                Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
                 temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
                 temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
                 A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
@@ -611,7 +611,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     
     #Only draw arrows when no unconstrained LVs are present currently: diffcult otherwise due to rotation
     #Could alternatively post-hoc regress unconstrained LVs..but then harder to distinguish which is post-hoc in the plot..
-    #still add special clause for num.RR=ncol(lv.X) & num.lv>0, since then LVs are uncorrelated with predictors and we can add arrows anyway
+    #still add special clause for num.RR=ncol(lv.X.design) & num.lv>0, since then LVs are uncorrelated with predictors and we can add arrows anyway
     if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal"){
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)[,which.lvs]
       
@@ -636,26 +636,26 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             
           }
         }
-        rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
+        rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X.design)) 
         #using svd_rotmat_sites instead of B so that uncertainty of the predictors is not affected by the scaling using alpha and sigma.lv
-        for(i in 1:ncol(object$lv.X)){
-          rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
+        for(i in 1:ncol(object$lv.X.design)){
+          rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
         }
         rotSD <- rotSD[,which.lvs]
         cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD
         ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*rotSD
-        lty <- rep(arrow.lty,ncol(object$lv.X))
-        col <- rep("red", ncol(object$lv.X))
+        lty <- rep(arrow.lty,ncol(object$lv.X.design))
+        col <- rep("red", ncol(object$lv.X.design))
         lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
         col[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- hcl(0, 100, 80)#rgb(1,0,0,alpha=0.3)
         
       }else{
-        lty <- rep("solid",ncol(object$lv.X))
-        col<-rep("red",ncol(object$lv.X))
+        lty <- rep("solid",ncol(object$lv.X.design))
+        col<-rep("red",ncol(object$lv.X.design))
       }
       
       #account for variance of the predictors
-      LVcoef <- LVcoef/apply(object$lv.X,2,sd)
+      LVcoef <- LVcoef/apply(object$lv.X.design,2,sd)
       marg<-par("usr")
       
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))

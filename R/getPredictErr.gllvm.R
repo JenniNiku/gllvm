@@ -134,7 +134,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         }
         
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
           temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
           temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
           A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
@@ -153,7 +153,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         }
         
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X[i,,drop=F],simplify=F)))
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
           temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
           # temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
           A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
@@ -194,7 +194,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
-      if(object$randomB%in%c("P","single","iid")) out$b.lv <- (abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
+      if(object$randomB%in%c("P","single","iid")) out$b.lv <- (abs(out$b.lv + t(sapply(1:ncol(object$lv.X.design), function(k)diag(object$Ab.lv[k,,])))))
       if(object$randomB=="LV") out$b.lv <- (abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
 
@@ -228,7 +228,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
-      if(object$randomB%in%c("P","single","iid"))out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X), function(k)diag(object$Ab.lv[k,,])))))
+      if(object$randomB%in%c("P","single","iid"))out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X.design), function(k)diag(object$Ab.lv[k,,])))))
       if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
     

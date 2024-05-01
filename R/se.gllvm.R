@@ -50,7 +50,7 @@ se.gllvm <- function(object, ...){
   num.lv.c <- object$num.lv.c
   num.lv.cor <- object$num.lvcor
   num.RR <- object$num.RR
-  lv.X <- object$lv.X
+  lv.X.design <- object$lv.X.design
   
   quadratic <- object$quadratic
   nlvr <- num.lv + num.lv.c 
@@ -406,7 +406,7 @@ se.gllvm <- function(object, ...){
     if((object$num.RR+object$num.lv.c)>1 && isFALSE(object$randomB)){
       b_lvHE <- sdr[names(pars)=="b_lv",names(pars)=="b_lv"]
       Lmult <- lambda(pars,objrFinal) #estimates  lagranian multiplier
-      sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(object$lv.X), d = object$num.lv.c+object$num.RR)
+      sdr[names(pars)=="b_lv",names(pars)=="b_lv"] = b_lvHE + b_lvHEcorrect(Lmult,K = ncol(object$lv.X.design), d = object$num.lv.c+object$num.RR)
     }
     
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
@@ -569,9 +569,9 @@ se.gllvm <- function(object, ...){
     
     
     if((num.lv.c+num.RR)>0&isFALSE(object$randomB)){
-      se.LvXcoef <- matrix(se$b_lv,ncol=num.lv.c+num.RR,nrow=ncol(lv.X))
+      se.LvXcoef <- matrix(se$b_lv,ncol=num.lv.c+num.RR,nrow=ncol(lv.X.design))
       colnames(se.LvXcoef) <- paste("CLV",1:(num.lv.c+num.RR),sep="")
-      row.names(se.LvXcoef) <- colnames(lv.X)
+      row.names(se.LvXcoef) <- colnames(lv.X.design)
       out$sd$LvXcoef <- se.LvXcoef
     }
     
@@ -713,8 +713,8 @@ se.gllvm <- function(object, ...){
         out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
       }
       if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
-      if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X)
-      # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
+      if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X.design)
+      # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X.design),each=num.RR+num.lv.c),sep=".")
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){

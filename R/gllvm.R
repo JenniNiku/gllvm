@@ -183,7 +183,9 @@
 #'  \item{call }{ function call}
 #'  \item{y}{ (n x m) matrix of responses.}
 #'  \item{X}{ matrix or data.frame of environmental covariates.}
-#'  \item{lv.X}{ matrix or data.frame of environmental covariates for latent variables.}
+#'  \item{X.design}{ design matrix of environmental covariates.}
+#'  \item{lv.X}{ design matrix or data.frame of environmental covariates for latent variables.}
+#'  \item{lv.X.design}{ design matrix or data.frame of environmental covariates for latent variables.}
 #'  \item{TR}{ Trait matrix}
 #'  \item{formula}{ Formula for predictors}
 #'  \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
@@ -453,7 +455,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     term <- NULL
     term2 <- NULL
     datayx <- NULL
-    if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0)lv.X <- NULL
+    if(is.null(X)|!is.null(X)&(num.lv.c+num.RR)==0){lv.X <- NULL;lv.X.design=NULL}
     pp.pars <- list(...)
     
     if (inherits(family,"family")) {
@@ -740,37 +742,37 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           m1 <- model.frame(y ~ X, data = datayx)
           term <- terms(m1)
         } else if(is.null(formula)&is.null(lv.formula)&(num.lv.c+num.RR)>0){
-
+          
           if(inherits(row.eff,"formula")){
             if(any(colnames(X)==all.vars(row.eff))){
               lv.formula <- formula(paste("~", paste(colnames(X[,-which(colnames(X)==all.vars(row.eff))]), collapse = "+")))              
             }else{
               lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
             }
-
-            if (is.data.frame(X)) {
-              datayx <- list(X = model.matrix(lv.formula, X)[,-1,drop=F])
-            } else {
-              datayx <- list(X = X)
-            }
-            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            
+            lv.X <- model.frame(lv.formula, data.frame(X, check.names = FALSE))
+            lv.X.design <- model.matrix(lv.formula, data = lv.X)[,-1,drop=FALSE]
+            datayx <- NULL#list(X = lv.X.design)
+            
             if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
             if(any(colnames(X)==all.vars(row.eff))){
               X <-  X[,all.vars(row.eff),drop=F]
             }else{
-             X <- NULL 
+              X <- NULL 
             }
           }else{
             lv.formula <- formula(paste("~", paste(colnames(X), collapse = "+")))
-            if (is.data.frame(X)) {
-              datayx <- list(X = model.matrix(lv.formula, X)[,-1],drop=F)
-            } else {
-              datayx <- list(X = X)
-            }
-            lv.X <- as.matrix(model.frame(~ X, data = datayx))
+            lv.X <- model.frame(lv.formula, data.frame(X, check.names = FALSE))
+            # if (is.data.frame(X)) {
+            #   datayx <- list(X = model.matrix(lv.formula, X)[,-1],drop=F)
+            # } else {
+            #   datayx <- list(X = X)
+            # }
+            lv.X.design <- model.matrix(lv.formula, data = lv.X)[,-1,drop=FALSE]
+            datayx <- NULL#list(X = lv.X.design)
             if(!is.null(row.names(lv.X)))row.names(lv.X)<-row.names(X)
-            colnames(lv.X)  <- gsub("X.","",colnames(lv.X))
-            lv.formula <- formula(paste("~", paste(colnames(lv.X), collapse = "+")))
+            # colnames(lv.X)  <- gsub("X.","",colnames(lv.X))
+            # lv.formula <- formula(paste("~", paste(colnames(lv.X), collapse = "+")))
             X <- NULL
           }
           
@@ -800,9 +802,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
           }
-
+          
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
-          lv.X<- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
+          lv.X <- model.frame(lv.formula, data = datayx)
+          lv.X.design <- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
@@ -811,17 +814,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             labterm<-labterm[labterm!=1&labterm!=0]
           }
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
-          lv.X<- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
+          lv.X <- model.frame(lv.formula, data=datayx)[,-1,drop=F]
+          lv.X.design <- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
           term <- terms(m1)
         }
-
+        
       } 
       if(!is.null(X)&(num.lv.c+num.RR)>0|!is.null(data)&(num.lv.c+num.RR)>0){
-      if(!is.null(formula)&!is.null(lv.formula)){
-        if(any(attr(term,"term.labels")==labterm)){
-          stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+        if(!is.null(formula)&!is.null(lv.formula)){
+          if(any(attr(term,"term.labels")==labterm)){
+            stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
+          }
         }
-      }
       }
       p <- NCOL(y)
       n <- NROW(y)
@@ -932,29 +936,29 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     
     #check for redundant predictors
     
-    if(!is.null(lv.X)){
-      if((num.RR+num.lv.c)>ncol(lv.X) && isFALSE(randomB)){
+    if(!is.null(lv.X.design)){
+      if((num.RR+num.lv.c)>ncol(lv.X.design) && isFALSE(randomB)){
         stop("Cannot have more reduced dimensions than the number of predictor variables. Please reduce num.RR or num.lv.c \n")
       }
       if((num.RR+num.lv.c)>p){
         stop("num.RR and num.lv.c should be less than, or equal to, the number of species.")
       }
       #check for redundant predictors
-      QR<-qr(lv.X)
-      if(QR$rank<ncol(lv.X)){
+      QR<-qr(lv.X.design)
+      if(QR$rank<ncol(lv.X.design)){
         warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
-        if(num.lv.c>ncol(lv.X)&num.RR==0){
+        if(num.lv.c>ncol(lv.X.design)&num.RR==0){
           num.lv.c <- QR$rank
           warning("Setting num.lv.c to number of non-redunant predictors")
-        }else if(num.RR>ncol(lv.X)&num.lv.c==0){
+        }else if(num.RR>ncol(lv.X.design)&num.lv.c==0){
           num.RR <- QR$rank
           warning("Setting num.RR to number of non-redunant predictors")
         }
-        if(num.RR>ncol(lv.X)|num.lv.c>ncol(lv.X)){
+        if(num.RR>ncol(lv.X.design)|num.lv.c>ncol(lv.X.design)){
           stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of non-redundant predictor variables.")
         }
-        lv.X.red <- colnames(lv.X)[QR$pivot[-c(1:QR$rank)]]
-        lv.X<-lv.X[,QR$pivot[1:QR$rank],drop=F]
+        lv.X.red <- colnames(lv.X.design)[QR$pivot[-c(1:QR$rank)]]
+        lv.X.design<-lv.X.design[,QR$pivot[1:QR$rank],drop=F]
         
         #remove redundant terms from formulas
         if(!is.null(lv.formula)){
@@ -1204,8 +1208,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # RRR with num.lv is a special (weird) case
     # where unconstrained LVs are not uncorrelated with predictors
     # better inform the user this might be a bad idea
-    if(!is.null(lv.X)){
-      if(num.lv.c>0&(num.lv>0)&((num.RR+num.lv.c)<ncol(lv.X))){
+    if(!is.null(lv.X.design)){
+      if(num.lv.c>0&(num.lv>0)&((num.RR+num.lv.c)<ncol(lv.X.design))){
         warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. \n")
       }
     }
@@ -1238,7 +1242,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     n.i <- 1
 
 
-    out <- list( y = y, X = X, lv.X = lv.X, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
+    out <- list( y = y, X = X, lv.X = lv.X, lv.X.design = lv.X.design, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
         method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
     if(return.terms) {out$terms = term} #else {terms <- }
@@ -1343,7 +1347,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         fitg <- gllvm.iter(
             y = y,
             X = X,
-            lv.X = lv.X,
+            lv.X = lv.X.design,
             formula = formula,
             lv.formula = lv.formula,
             num.lv = num.lv,

@@ -96,7 +96,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     
     if((object$num.lv.c+object$num.RR)>0){
       Xcoef <- cbind(Xcoef,as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,which.Xcoef,drop=F])
-      cnames <- c(cnames, colnames(object$lv.X[,which.Xcoef,drop=F]))
+      cnames <- c(cnames, colnames(object$lv.X.design[,which.Xcoef,drop=F]))
       sdXcoef <- cbind(sdXcoef, RRse(object)[,which.Xcoef,drop=F])
     }
     if(object$col.eff$col.eff=="random"){

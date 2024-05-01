@@ -276,7 +276,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if ((object$num.lv.c + object$num.RR) > 0 & !is.null(newdata)) {
         lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
       } else {
-        lv.X <- object$lv.X
+        lv.X <- object$lv.X.design
       }
       theta <- (object$params$theta[, 1:(object$num.lv + 
                                           (object$num.lv.c + object$num.RR)), drop = F])

@@ -155,7 +155,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
       coef.table <- rbind(coef.table.int, coef.table)
   }
   
-  if (!is.logical(object$sd)&!is.null(object$lv.X)&object$randomB==FALSE) {
+  if (!is.logical(object$sd)&!is.null(object$lv.X.design)&object$randomB==FALSE) {
     if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
       pars <- c(object$params$LvXcoef)
       se <- c(object$sd$LvXcoef)
@@ -164,30 +164,30 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
       zval <- pars/se
       pvalue <- 2 * pnorm(-abs(zval))
       coef.table.constrained <- cbind(pars, se, zval, pvalue)
-      dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+      dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
       }else if(by=="terms"){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
-        for(i in 1:ncol(object$lv.X)){
-          idx <- seq(i,ncol(object$lv.X)*(object$num.lv.c+object$num.RR),ncol(object$lv.X))
+        for(i in 1:ncol(object$lv.X.design)){
+          idx <- seq(i,ncol(object$lv.X.design)*(object$num.lv.c+object$num.RR),ncol(object$lv.X.design))
           b <- object$params$LvXcoef[i,]
           zval[i] <- b%*%MASS::ginv(covB[idx,idx])%*%b
           pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
-        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
       }else if(by=="LV"){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
         covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv"]
         for(i in 1:(object$num.RR+object$num.lv.c)){
           b <- object$params$LvXcoef[,i]
-          zval[1+ncol(object$lv.X)*(i-1)] <- b%*%MASS::ginv(covB[(1:ncol(object$lv.X))+ncol(object$lv.X)*(i-1),(1:ncol(object$lv.X))+ncol(object$lv.X)*(i-1)])%*%b
-          pvalue[1+ncol(object$lv.X)*(i-1)] <- 1-pchisq(zval[1+ncol(object$lv.X)*(i-1)],ncol(object$lv.X))
+          zval[1+ncol(object$lv.X.design)*(i-1)] <- b%*%MASS::ginv(covB[(1:ncol(object$lv.X.design))+ncol(object$lv.X.design)*(i-1),(1:ncol(object$lv.X.design))+ncol(object$lv.X.design)*(i-1)])%*%b
+          pvalue[1+ncol(object$lv.X.design)*(i-1)] <- 1-pchisq(zval[1+ncol(object$lv.X.design)*(i-1)],ncol(object$lv.X.design))
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
-        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
       }
     }else{
       LVcoef <- (object$params$LvXcoef%*%svd_rotmat_sites)
@@ -196,9 +196,9 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
       colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
       covB <- covB[row.names(covB)=="b_lv",colnames(covB)=="b_lv", drop=FALSE]
       zval <- pvalue <- rep(NA,length(pars))
-      rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X)) 
-      for(i in 1:ncol(object$lv.X)){
-        rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X),by=ncol(object$lv.X))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
+      rotSD <- matrix(0,ncol=num.RR+num.lv.c,nrow=ncol(object$lv.X.design)) 
+      for(i in 1:ncol(object$lv.X.design)){
+        rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
       }
       se <- c(rotSD)
       if(by=="all"){
@@ -206,17 +206,17 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
         zval <- pars/se
         pvalue <- 2 * pnorm(-abs(zval))
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
-        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
       }else if(by=="terms"){
         # This test is invariant to rotation, but the rotation matrix is included for posterity
-        for(i in 1:ncol(object$lv.X)){
-          idx <- seq(i,ncol(object$lv.X)*(object$num.lv.c+object$num.RR),ncol(object$lv.X))
+        for(i in 1:ncol(object$lv.X.design)){
+          idx <- seq(i,ncol(object$lv.X.design)*(object$num.lv.c+object$num.RR),ncol(object$lv.X.design))
           b <- LVcoef[i,]
           zval[i] <- b%*%MASS::ginv(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[idx,idx]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%b
           pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
-        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
       }else if(by=="LV"){
         covB <- object$Hess$cov.mat.mod
         colnames(covB) <- row.names(covB) <- names(object$TMBfn$par)[object$Hess$incl]
@@ -224,9 +224,9 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
 
         for(q in 1:(object$num.RR+object$num.lv.c)){
          # Rotated cov matrix for the qth LV
-          covBnew <- matrix(0,ncol=ncol(object$lv.X),nrow=ncol(object$lv.X))        
-        for(k in 1:ncol(object$lv.X)){
-          for(k2 in 1:ncol(object$lv.X)){
+          covBnew <- matrix(0,ncol=ncol(object$lv.X.design),nrow=ncol(object$lv.X.design))        
+        for(k in 1:ncol(object$lv.X.design)){
+          for(k2 in 1:ncol(object$lv.X.design)){
             for(q2 in 1:(object$num.RR+object$num.lv.c)){
               for(q3 in 1:(object$num.RR+object$num.lv.c)){
                 covBnew[k,k2] <- covBnew[k,k2]+svd_rotmat_sites[1:(object$num.RR+object$num.lv.c),1:(object$num.RR+object$num.lv.c)][q2,q]*svd_rotmat_sites[1:(object$num.RR+object$num.lv.c),1:(object$num.RR+object$num.lv.c)][q3,q]*covB[(object$num.RR+object$num.lv.c)*(k-1)+q2,(object$num.RR+object$num.lv.c)*(k2-1)+q3]
@@ -235,11 +235,11 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
           }
         }
           b <- LVcoef[,q]
-          zval[1+ncol(object$lv.X)*(q-1)] <- b%*%solve(covBnew)%*%b
-          pvalue[1+ncol(object$lv.X)*(q-1)] <- 1-pchisq(zval[1+ncol(object$lv.X)*(q-1)],ncol(object$lv.X))
+          zval[1+ncol(object$lv.X.design)*(q-1)] <- b%*%solve(covBnew)%*%b
+          pvalue[1+ncol(object$lv.X.design)*(q-1)] <- 1-pchisq(zval[1+ncol(object$lv.X.design)*(q-1)],ncol(object$lv.X.design))
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
-        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
+        dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
         }
       }
   }else{

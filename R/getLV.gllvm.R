@@ -61,12 +61,12 @@ getLV.gllvm <- function(object, type = NULL, ...)
   }else if(type=="conditional"&object$num.lv.c>0){
       lvs <- object$lvs
       lvs[,1:object$num.lv.c] <- t(t(lvs[,1:object$num.lv.c,drop=F])*object$params$sigma.lv[1:object$num.lv.c])
-      lvs[,1:object$num.lv.c] <- lvs[,1:object$num.lv.c]+object$lv.X%*%object$params$LvXcoef[,1:object$num.lv.c,drop=F]
+      lvs[,1:object$num.lv.c] <- lvs[,1:object$num.lv.c]+object$lv.X.design%*%object$params$LvXcoef[,1:object$num.lv.c,drop=F]
       if(object$num.RR>0){
-        lvs <- cbind(lvs[,1:object$num.lv.c,drop=F],object$lv.X%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F], lvs[,-c(1:object$num.lv.c),drop=F])
+        lvs <- cbind(lvs[,1:object$num.lv.c,drop=F],object$lv.X.design%*%object$params$LvXcoef[,-c(1:object$num.lv.c),drop=F], lvs[,-c(1:object$num.lv.c),drop=F])
       }
   }else if(type=="marginal"){
-    lvs <- object$lv.X%*%object$params$LvXcoef
+    lvs <- object$lv.X.design%*%object$params$LvXcoef
   }
   
   #only allow residual or marginal with RR + num.lv, since num.lv is not uncorrelated with predictors

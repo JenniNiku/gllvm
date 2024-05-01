@@ -55,13 +55,13 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
 
-  if (is.null(object$X) & is.null(object$lv.X))
+  if (is.null(object$X) & is.null(object$lv.X.design))
     stop("No X covariates in the model.")
   if(is.null(object$X) && !isFALSE(object$randomB))
     stop("No predictor effects to plot in the model.")
 
   #Calculate standard errors of species-effects for reduced rank terms
-  if(!is.null(object$lv.X) && isFALSE(object$randomB)){
+  if(!is.null(object$lv.X.design) && isFALSE(object$randomB)){
     beta <- object$params$theta[,1:(object$num.lv.c+object$num.RR), drop=FALSE]%*%t(object$params$LvXcoef)
     betaSE <- RRse(object)
     object$params$Xcoef<-cbind(object$params$Xcoef,beta)

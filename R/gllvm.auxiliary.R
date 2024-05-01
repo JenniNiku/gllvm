@@ -2536,14 +2536,14 @@ RRse <- function(object, return.covb = FALSE){
   if(!is.list(object$sd)){
     stop("Cannot construct coefplot without standard errors in the model.")
   }
-  K <- ncol(object$lv.X)
+  K <- ncol(object$lv.X.design)
   d <- object$num.RR+object$num.lv.c
   p <- ncol(object$y)
   #still add RR or num.lv.c or something to predictor names
   beta <- object$params$theta[,1:d,drop=F]%*%t(object$params$LvXcoef)
   
   betaSE<-matrix(0,ncol=K,nrow=ncol(object$y))
-  colnames(betaSE)<-colnames(object$lv.X)
+  colnames(betaSE)<-colnames(object$lv.X.design)
   row.names(betaSE)<-colnames(object$y)
   
   if(isFALSE(object$randomB)){

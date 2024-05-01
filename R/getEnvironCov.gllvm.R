@@ -71,7 +71,7 @@ if(object$col.eff$col.eff=="random"){
   if(!isFALSE(object$randomB)){
     if(is.null(x)){
       x <- rep(1,nrow(object$params$LvXcoef))
-    }else if(length(x)!=ncol(object$lv.X)){
+    }else if(length(x)!=ncol(object$lv.X.design)){
       stop("Supplied 'x' of  incorrect length.")
     }
   if(object$randomB=="LV"){
@@ -127,7 +127,7 @@ if(object$col.eff$col.eff=="random"){
   if(object$randomB=="LV"){
     names(out$trace.randomB) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
   }else if(object$randomB=="P"){
-    names(out$trace.randomB) <- colnames(object$lv.X)
+    names(out$trace.randomB) <- colnames(object$lv.X.design)
   }
   names(out$trace.randomB)
     if(!isFALSE(object$quadratic)){
@@ -136,7 +136,7 @@ if(object$col.eff$col.eff=="random"){
       if(object$randomB=="LV"){
         names(out$trace.randomB.quad) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
       }else if(object$randomB=="P"){
-        names(out$trace.randomB.quad) <- colnames(object$lv.X)
+        names(out$trace.randomB.quad) <- colnames(object$lv.X.design)
       }
     }
   }
