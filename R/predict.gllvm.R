@@ -222,7 +222,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     if (object$num.lv > 0 | (object$num.lv.c + object$num.RR) > 
         0) {
       
-      if(!is.null(object$lvs)){
+      if(!is.null(object$lvs) && inherits(model$lvCor,"formula")){
         if(nrow(object$lvs)!=n) object$lvs = object$TMBfn$env$data$dLV%*%object$lvs # !!!
       }
       
