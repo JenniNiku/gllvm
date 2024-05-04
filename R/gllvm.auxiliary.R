@@ -2281,6 +2281,8 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   num.RR <- fit$num.RR
   num.lv.cor <- fit$num.lvcor
   randomB <- fit$randomB
+  if(!is.null(fit$lv.X) && is.null(fit$lv.X.design))fit$lv.X.design <- fit$lv.X #for backward compatibility
+  
   incla<-rep(FALSE, length(fit$Hess$incl))
   if(fit$col.eff$col.eff == "random") incla[names(fit$TMBfn$par)%in%c("Br")] <- TRUE
   if(fit$row.eff == "random") incla[names(fit$TMBfn$par)%in%c("r0")] <- TRUE
@@ -2314,6 +2316,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   if(!is.null(fit$randomX)){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
   }
+  
   if(!is.null(fit$lv.X.design)&randomB!=FALSE){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="b_lv"]) 
   }

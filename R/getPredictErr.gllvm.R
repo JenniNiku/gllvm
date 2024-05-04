@@ -38,7 +38,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   if(!is.list(object$sd)){
     stop("Cannot calculate prediction errors without standard errors in the model.")
   }
-  
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   n <- nrow(object$y)
   p <- ncol(object$y)
   num.lv <- object$num.lv

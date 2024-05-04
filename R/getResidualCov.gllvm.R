@@ -88,6 +88,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
       site.index <- rep(site.index,2)
     }
   }
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   
   if((object$num.lv+object$num.lv.c)==0){
     stop("No latent variables present in model.")

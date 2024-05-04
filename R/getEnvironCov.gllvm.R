@@ -68,6 +68,7 @@ if(object$col.eff$col.eff=="random"){
   cov.environ.col <- C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%t(C)
   trace.environ.col <- sum(diag(cov.environ.col))
 }
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   if(!isFALSE(object$randomB)){
     if(is.null(x)){
       x <- rep(1,nrow(object$params$LvXcoef))

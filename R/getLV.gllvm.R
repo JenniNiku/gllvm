@@ -29,7 +29,7 @@ getLV.gllvm <- function(object, type = NULL, ...)
   if((object$num.RR+object$num.lv.c+object$num.lv)==0){
     stop("No latent variables in model.")
   }
-  
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   if(!is.null(type)){
     if(!type%in%c("residual","conditional","marginal")){
     stop("Type should be one of: residual, conditional, or marginal.")

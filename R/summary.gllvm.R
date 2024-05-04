@@ -155,6 +155,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
       coef.table <- rbind(coef.table.int, coef.table)
   }
   
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   if (!is.logical(object$sd)&!is.null(object$lv.X.design)&object$randomB==FALSE) {
     if(!rotate|num.lv>0&(num.lv.c+num.RR)>0){
       pars <- c(object$params$LvXcoef)

@@ -50,6 +50,7 @@ se.gllvm <- function(object, ...){
   num.lv.c <- object$num.lv.c
   num.lv.cor <- object$num.lvcor
   num.RR <- object$num.RR
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   lv.X.design <- object$lv.X.design
   
   quadratic <- object$quadratic

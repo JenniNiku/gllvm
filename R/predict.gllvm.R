@@ -55,6 +55,9 @@
 #'@export
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
+
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
+  
   r0 <- NULL
   newdata <- newX
   p <- ncol(object$y)

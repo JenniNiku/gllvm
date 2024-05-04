@@ -36,6 +36,8 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
   quadratic <- object$quadratic
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
+  
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
   if(object$col.eff$col.eff == "random" | !is.null(object$randomX))object$params$Br <- NULL

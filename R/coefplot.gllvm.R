@@ -54,7 +54,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
 
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   if (is.null(object$X) & is.null(object$lv.X.design))
     stop("No X covariates in the model.")
   if(is.null(object$X) && !isFALSE(object$randomB))
