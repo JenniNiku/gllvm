@@ -545,7 +545,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.start <- fill_control.start(c(pp.pars, control.start))
     
   #some checks for optimizer
-
+  if(!is.null(X) && !is.null(y) && any(colnames(X)%in%colnames(y)))stop("Same column name detected in 'y' and 'X' please make sure column names are unique.")
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
