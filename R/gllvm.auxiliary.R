@@ -1940,7 +1940,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   }
   n <- nrow(obj$env$data$y)
   p <- ncol(obj$env$data$y)
-  lv.X <- obj$env$data$x_lv
+  lv.X.design <- obj$env$data$x_lv
   
   if((num.lv+num.lv.c)>0){
     sigma.lv <- abs(obj$par[names(obj$par)=="sigmaLV"])  
@@ -1955,7 +1955,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0){
       for(q in 1:(num.lv.c+num.RR)){
-        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X)-(q-1)))+(q-1)*ncol(lv.X)-(q-1)*(q-2)/2]] <- lv.X[,1:ncol(lv.X)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X.design)-(q-1)))+(q-1)*ncol(lv.X.design)-(q-1)*(q-2)/2]] <- lv.X.design[,1:ncol(lv.X.design)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
       }
     }
   } else {
@@ -2004,7 +2004,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     if((num.lv.c+num.lv+radidx)==0)A<-Q
     if((num.lv.c+num.RR)>0&random[3]==0){
       for(q in 1:(num.lv.c+num.RR)){
-        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X)-(q-1)))+(q-1)*ncol(lv.X)-(q-1)*(q-2)/2]] <- lv.X[,1:ncol(lv.X)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
+        Q[(1:n)+n*(q-1)+radidx,which(names(obj$par[incl])=="b_lv")[(1:(ncol(lv.X.design)-(q-1)))+(q-1)*ncol(lv.X.design)-(q-1)*(q-2)/2]] <- lv.X.design[,1:ncol(lv.X.design)-(q-1),drop=F]#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
       }
     }
     
@@ -2147,7 +2147,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
         }
         
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,lv.X[i,,drop=F],simplify=F)))
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,lv.X.design[i,,drop=F],simplify=F)))
           temp <- Q%*%covsB%*%t(Q)
           temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
           se[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- se[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
@@ -2314,7 +2314,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   if(!is.null(fit$randomX)){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="Br"]) 
   }
-  if(!is.null(fit$lv.X)&randomB!=FALSE){
+  if(!is.null(fit$lv.X.design)&randomB!=FALSE){
     radidx <-radidx+ length(fit$TMBfn$par[names(fit$TMBfn$par)=="b_lv"]) 
   }
   if((num.lv+num.lv.c+radidx)>0){
@@ -2379,7 +2379,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
   
   if((num.lv.c+num.RR)>0&randomB==FALSE){
     for(q in 1:(num.lv.c+num.RR)){
-      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X))+(ncol(fit$lv.X)*(q-1))]] <- fit$lv.X#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
+      Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X.design))+(ncol(fit$lv.X.design)*(q-1))]] <- fit$lv.X.design#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
   }
   
@@ -2467,7 +2467,7 @@ CMSEPf <- function(fit, return.covb = F, type = NULL){
         }
         
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,fit$lv.X[i,,drop=F],simplify=F)))
+          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,fit$lv.X.design[i,,drop=F],simplify=F)))
           temp <- Q%*%covsB%*%t(Q)
           temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
           se[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- se[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
