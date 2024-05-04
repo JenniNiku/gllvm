@@ -1814,7 +1814,7 @@ trait.TMB <- function(
           k=1;
           
           for(j in 1:p){
-            Abs[[j]] <- diag(Ar.sds[1:xdr])
+            Abs[[j]] <- diag(Ar.sds[1:xdr], ncol = ncol(xb))
             Ar.sds <- Ar.sds[-c(1:xdr)]
             if(Ab.struct == "blockdiagonal"){
               if(length(Ab)>0){
