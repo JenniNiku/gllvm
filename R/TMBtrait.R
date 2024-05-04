@@ -1616,6 +1616,7 @@ trait.TMB <- function(
         }
         out$corr <- sigmaB_ #!!!!
         rownames(out$params$Br) <- rownames(out$params$sigmaB) <- colnames(out$params$sigmaB) <- colnames(xb)
+        colnames(out$params$Br) <- colnames(y)
       }
       if(family %in% c("binomial", "beta")) out$link <- link;
       out$row.eff <- row.eff
