@@ -5,6 +5,7 @@ Version 1.4.5
   * Enabled parallelisation (see TMB::openmp)
 * Largely vectorized "residuals.gllvm", and residuals in "gllvm.aux"
 * Added covariance of random effects to summary
+* In preparation of emmeans support: moved the design matrix in "lv.X" to "lv.X.design". "lv.X" now stores the original supplied data.frame
 
 Version 1.4.4
 =============
