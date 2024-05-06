@@ -85,7 +85,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   if (object$row.eff != FALSE) {
     if(!is.null(newX) & length(all.vars(object$call$row.eff))>0){
-      if(all.vars(object$call$row.eff) %in% colnames(newX)) {
+      if(any(all.vars(object$call$row.eff) %in% colnames(newX))) {
         warning("Using row effects for predicting new sites does not work yet.")
       }
     }
