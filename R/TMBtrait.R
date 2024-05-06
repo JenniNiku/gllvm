@@ -329,10 +329,10 @@ trait.TMB <- function(
             E = E+1;
           }
           # save block
-          if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E])
+          if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
           if(nn.colMat<p){
-            blocks[[length(blocks)+1]] = colMat[B:E,B:E]
-            nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E]),function(i)sort(head(order(colMat.dist[B:E,B:E][i,])[order(colMat.dist[B:E,B:E][i,])<=i],min(i, nn.colMat)))[1:p]))
+            blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+            nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)sort(head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<=i],min(i, nn.colMat)))[1:p]))
           }
           E = E+1;
           B = E;
