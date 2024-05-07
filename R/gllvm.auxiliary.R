@@ -640,7 +640,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         phis <- phis + 1e-05
         
         if(family!="betaH"){
-          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials, params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials, params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
         }else{
           for(i in 1:n){
             for(j in 1:p){
@@ -785,7 +785,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       phis <- phis + 1e-05
       
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
@@ -885,7 +885,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       phis <- phis + 1e-05
       
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
@@ -982,7 +982,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       colnames(ds.res) <- colnames(y)
       phis <- phis + 1e-05
       if(family!="betaH"){
-        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phis = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
+        ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials,  params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta)$resi
       }else{
         for(i in 1:n){
           for(j in 1:p){
