@@ -3444,14 +3444,14 @@ Type objective_function<Type>::operator() ()
       // REPORT(etaH);
     } else if(family==11) {//zero-infl-NB
       iphi=iphi/(1+iphi);
-      vector<Type> iphiZINB = exp(lg_phiZINB);
+      // vector<Type> iphiZINB = exp(lg_phiZINB);
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
           if(!isNA(y(i,j))){
             if(y(i,j)>0){
-              nll -= log(1-iphi(j)) + dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - iphiZINB(j), 1);
+              nll -= log(1-iphi(j)) + dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phiZINB(j), 1);
             }else{
-              nll -= log(iphi(j) + (Type(1)-iphi(j))*dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - iphiZINB(j), 0)); 
+              nll -= log(iphi(j) + (Type(1)-iphi(j))*dnbinom_robust(y(i,j), eta(i,j), 2*eta(i,j) - lg_phiZINB(j), 0)); 
             }
           }
         }
