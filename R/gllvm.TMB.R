@@ -649,7 +649,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       map.list$B[!colnames(spdr)%in%colnames(Xt)] <- NA
       map.list$B <- factor(map.list$B)
       B <- as.matrix(B)
-      B[!colnames(spdr)%in%colnames(spdr)] <- 0
+      B[!colnames(spdr)%in%colnames(Xt)] <- 0
     }
     if(beta0com){
       if(is.null(map.list[["b"]])){
