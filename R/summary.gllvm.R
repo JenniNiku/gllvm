@@ -79,6 +79,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   sumry$num.RR <- num.RR
   sumry$quadratic <- quadratic
   sumry$formula <- object$formula
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if(object$col.eff$col.eff=="random")sumry$formula <- object$call$formula
   sumry$lv.formula <- object$lv.formula
   sumry$'log-likelihood' <- object$logL

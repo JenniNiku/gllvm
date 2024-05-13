@@ -41,6 +41,7 @@ logLik.gllvm <- function(object, ...)
   if (object$row.eff == "random")
     object$params$row.params <- NULL
   if(object$beta0com) object$params$beta0 <- 1
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]

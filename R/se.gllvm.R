@@ -41,7 +41,7 @@ se.gllvm <- function(object, ...){
     Y01 = (object$y>0)*1; colnames(Y01) = paste("H01",colnames(object$y), sep = "_")
     object$y = cbind(object$y, Y01)
   }
-  
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
   n <- nrow(object$y)
   p <- ncol(object$y)

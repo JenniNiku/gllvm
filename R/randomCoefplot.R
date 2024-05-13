@@ -35,7 +35,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
-  
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if ((is.null(object$Xrandom) || is.null(object$randomX)) && isFALSE(object$randomB)  && object$col.eff$col.eff!="random")
     stop("No random covariates in the model.")
   if(is.null(object$TR) && object$col.eff$col.eff=="random") object$Xr <- as.matrix(object$col.eff$spdr)
