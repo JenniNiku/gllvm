@@ -25,6 +25,7 @@
   arrow.spp.scale = 0.8,
   arrow.ci = TRUE,
   arrow.lty = "solid",
+  fac.center = FALSE,
   spp.arrows = NULL,
   spp.arrows.lty = "dashed",
   cex.env = 0.7,
@@ -75,6 +76,8 @@
 \item{arrow.ci}{represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}}
 
 \item{arrow.lty}{linetype for arrows in constrained}
+
+\item{fac.center}{logical. If \code{TRUE} place labels for binary variables at their estimated location.}
 
 \item{spp.arrows}{plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.}
 

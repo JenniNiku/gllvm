@@ -22,6 +22,7 @@
 #' @param arrow.spp.scale positive value, to scale arrows of species
 #' @param arrow.ci represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}
 #' @param arrow.lty linetype for arrows in constrained
+#' @param fac.center logical. If \code{TRUE} place labels for binary variables at their estimated location.
 #' @param predict.region if \code{TRUE} or \code{"sites"} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}. EXTENSION UNDER DEVELOPMENT: if \code{"species"} uncertainty estimate regions for the estimated latent variable loadings are plotted. Works only if \code{biplot = TRUE}.
 #' @param level level for prediction regions.
 #' @param lty.ellips line type for prediction ellipses. See graphical parameter lty.
@@ -95,7 +96,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", fac.center = FALSE, spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(isFALSE(object$sd) & !isFALSE(predict.region)){
@@ -672,16 +673,30 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       yi = with(units, pin[2L]/diff(usr[3:4]))
       # idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) >.001
       idx <-  apply(ends,1,function(x)if(all(abs(x)<0.001)){FALSE}else{TRUE})
+      if(fac.center){
+      cats <- apply(object$lv.X.design,2,function(x) { all(x %in% 0:1) })
+      }else{
+        cats <- rep(FALSE, ncol(object$lv.X.design))
+      }
+      idx <- idx & !cats
       if(any(!idx)){
-        for(i in which(!idx)){
+        for(i in which(idx)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
         }
         ends <- ends[idx,,drop=F]
-        LVcoef <- LVcoef[idx,,drop=F]
       }
       if(nrow(ends)>0){
-      arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col,length=0.1,lty=lty)
-      text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef),col=col, cex = cex.env)}
+      arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col[!cats],length=0.1,lty=lty)
+      text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef)[idx],col=col[!cats], cex = cex.env)}
+      
+      # add points for categorical variables
+      if(any(cats)){
+        LVcoef <- object$params$LvXcoef
+        pts<- ((t(t(LVcoef[cats,, drop = FALSE]) / sqrt(colSums(lv^2)) * (bothnorms^alpha)))%*%svd_rotmat_sites)[,which.lvs]
+        points(pts[,1], pts[,2], pch = gr_par_list$pch, col=col[cats], cex = cex.env)
+        text(pts[,1]*(1+lab.dist),y=pts[,2]*(1+lab.dist),labels = row.names(pts), col=col[cats], cex = cex.env)
+      }
+      
     }else if(num.lv>0&(num.lv.c+num.RR)>0){warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
   }
   
