@@ -651,7 +651,7 @@ trait.TMB <- function(
     } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB")){
       map.list$lg_phi <- factor(disp.group)
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
-      if(family=="ZINB")map.list$lg_phiZINB <- factor(disp.group)
+      if(family=="ZINB" & is.null(map.list$lg_phiZINB))map.list$lg_phiZINB <- factor(disp.group)
     }
     
     if(!(family %in% c("ordinal", "orderedBeta"))) map.list$zeta <- factor(NA)
@@ -1225,7 +1225,7 @@ trait.TMB <- function(
       
       if(num.lv==0) {lambda1 <- 0; }
       if(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
-      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][disp.group]}else{lg_phiZINB1<-log(ZINBphi)}
+      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
       if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
       if(row.eff == "random"){
         log_sigma1 <- ifelse(param1[nam=="log_sigma"]==0,1e-3,param1[nam=="log_sigma"])
@@ -1292,7 +1292,7 @@ trait.TMB <- function(
       lambda2 <- abs(matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = p))
       
       if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
-      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_ZINBphi"][disp.group]}else{lg_phiZINB1<-log(ZINBphi)}
+      if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_ZINBphi"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
       if(row.eff == "random"){
         log_sigma1 <- param1[nam=="log_sigma"]
         if(!is.null(map.list$log_sigma)) log_sigma1 = log_sigma1[map.list$log_sigma]
@@ -1343,7 +1343,7 @@ trait.TMB <- function(
       }
     }
     if(family %in% c("ZIP","ZINB")) {
-      if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[disp.group]
+      if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
       lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0=lp0
       phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
     }
