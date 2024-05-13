@@ -293,7 +293,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if(object$family == "gaussian"){
     sumry$'Standard deviations' <- object$params$phi
   }
-  if(!is.null(object$X)){
+  if(!is.null(object$X) | spp.intercepts){
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
@@ -404,4 +404,31 @@ print.summary.gllvm <- function (x, ...)
   }
   
   invisible(x)
+}
+
+#'@export
+#'@rdname plot.summary.gllvm 
+plot.summary.gllvm <- function (x, component = c("main", "LV"), ...) 
+{
+  args <- list(...)
+  
+  component <- match.arg(component, c("Intercepts", "main", "LV"))
+
+  if(component == "main" && !is.null(x$Coef.tableX)){
+    coefs <- x$Coef.tableX
+  }else if(component == "LV" && !is.null(x$Coef.tableLV)){
+    coefs <- x$Coef.tableLV
+  }else{
+    stop("Either nothing to plot, or forgot to select 'component' of either 1) 'main' or 2) 'LV'.")
+  }
+  
+  if(!"mar"%in%names(args)){
+    par(mar = c(4,7,2,1))
+  }
+  plot(x = coefs[,1], y = 1:nrow(coefs), yaxt = "n", ylab = "", xlab = "Estimate", pch = "x", ...)
+  lower = coefs[,1]+ qnorm(0.95)*coefs[,2]
+  upper = coefs[,1]+ qnorm(1-0.95)*coefs[,2]
+  segments( x0 = lower, y0 = 1:nrow(coefs), x1 = upper, y1 = 1:nrow(coefs))
+  axis( 2, at = 1:nrow(coefs), labels = row.names(coefs), las = 1)
+  abline(v = 0, lty = 1)
 }
