@@ -1,3 +1,10 @@
+Version 1.4.6
+=============
+
+* Added a 'getLoadings' function for retrieving species' loadings
+* Added 'fac.center' argument in ordiplot to plot canonical coefficients of binary variables as points
+* Added a simple plotting function for the gllvm summary
+
 Version 1.4.5
 =============
 * Separated "n.init" functionality into gllvm.iter.R
@@ -6,8 +13,6 @@ Version 1.4.5
 * Largely vectorized "residuals.gllvm", and residuals in "gllvm.aux"
 * Added covariance of random effects to summary
 * In preparation of emmeans support: moved the design matrix in "lv.X" to "lv.X.design". "lv.X" now stores the original supplied data.frame
-* Added a 'getLoadings' function for retrieving species' loadings
-* Added 'fac.center' argument in ordiplot to plot canonical coefficients of binary variables as points
 
 ## Bug Fixes
 * Bug in ZINB fixed
