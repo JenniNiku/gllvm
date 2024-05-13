@@ -678,13 +678,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }else{
         cats <- rep(FALSE, ncol(object$lv.X.design))
       }
-      idx <- idx & !cats
-      if(any(!idx)){
-        for(i in which(idx)){
+      if(any(!idx&!cats)){
+        for(i in which(!idx&!cats)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
         }
-        ends <- ends[idx,,drop=F]
       }
+      ends <- ends[idx &!cats ,, drop=FALSE]
+      
       if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col[!cats],length=0.1,lty=lty)
       text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef)[idx],col=col[!cats], cex = cex.env)}
