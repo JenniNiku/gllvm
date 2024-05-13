@@ -318,7 +318,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
     eta <- eta + r0%*%rep(1,ncol(object$y))
   }
-  
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" && is.null(newX)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
     eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
