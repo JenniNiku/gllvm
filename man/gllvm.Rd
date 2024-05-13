@@ -179,7 +179,9 @@ An object of class "gllvm" includes the following components:
  \item{call }{ function call}
  \item{y}{ (n x m) matrix of responses.}
  \item{X}{ matrix or data.frame of environmental covariates.}
- \item{lv.X}{ matrix or data.frame of environmental covariates for latent variables.}
+ \item{X.design}{ design matrix of environmental covariates.}
+ \item{lv.X}{ design matrix or data.frame of environmental covariates for latent variables.}
+ \item{lv.X.design}{ design matrix or data.frame of environmental covariates for latent variables.}
  \item{TR}{ Trait matrix}
  \item{formula}{ Formula for predictors}
  \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
