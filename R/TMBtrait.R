@@ -1942,6 +1942,9 @@ trait.TMB <- function(
         }
         out$Ab <- Abs
       }
+    }else{
+      objrFinal <- list()
+      optrFinal <- list()
     }
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}

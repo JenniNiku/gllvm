@@ -2533,6 +2533,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           out$Ab <- spArs
         }
       }
+    }else{
+      objrFinal <- list()
+      optrFinal <- list()
     }
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
