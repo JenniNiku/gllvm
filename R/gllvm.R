@@ -858,7 +858,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       term <- attr(mf, "terms")
       abundances <- model.response(mf, "numeric")
       if (any(is.na(abundances)))
-        stop("There are NA values in the response.")
+        warning("There are NA values in the response.")
       y <- abundances
       #
       X <- model.matrix(term, mf)
