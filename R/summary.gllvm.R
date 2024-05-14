@@ -408,11 +408,17 @@ print.summary.gllvm <- function (x, ...)
 
 #'@export
 #'@rdname plot.summary.gllvm 
-plot.summary.gllvm <- function (x, component = c("main", "LV"), ...) 
+plot.summary.gllvm <- function (x, component = NULL, ...) 
 {
   args <- list(...)
   
-  component <- match.arg(component, c("Intercepts", "main", "LV"))
+  if(!is.null(component)){
+    component <- match.arg(component, c("main", "LV"))
+  }else if(!is.null(x$Coef.tableX)){
+    component <- "main"
+  }else if(!is.null(x$Coef.tableLV)){
+    component <- "LV"
+  }
 
   if(component == "main" && !is.null(x$Coef.tableX)){
     coefs <- x$Coef.tableX
@@ -428,7 +434,7 @@ plot.summary.gllvm <- function (x, component = c("main", "LV"), ...)
   plot(x = coefs[,1], y = 1:nrow(coefs), yaxt = "n", ylab = "", xlab = "Estimate", pch = "x", ...)
   lower = coefs[,1]+ qnorm(0.95)*coefs[,2]
   upper = coefs[,1]+ qnorm(1-0.95)*coefs[,2]
-  segments( x0 = lower, y0 = 1:nrow(coefs), x1 = upper, y1 = 1:nrow(coefs))
-  axis( 2, at = 1:nrow(coefs), labels = row.names(coefs), las = 1)
+  segments(x0 = lower, y0 = 1:nrow(coefs), x1 = upper, y1 = 1:nrow(coefs))
+  axis( 2, at = 1:nrow(coefs), labels = row.names(coefs), las = 1, ...)
   abline(v = 0, lty = 1)
 }
