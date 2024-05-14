@@ -51,7 +51,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     # generate new latent variables
     lvsNew = matrix(rnorm(nsim*nRows*(object$num.lv+object$num.lv.c)),ncol=(object$num.lv+object$num.lv.c))
   }else{
-    lvsNew = object$lvs[rep(1:nRows,nsim),]
+    lvsNew = object$lvs[rep(1:nRows,nsim),,drop=FALSE]
   }
   if(is.null(object$X))   {
     prs = predict.gllvm(object,newLV = lvsNew,type="response")

@@ -60,7 +60,7 @@ if(is.null(args$seed)&args$starting.val!="zero"){
 
 n.i.i <- 0;n.i <- 1
 
-while(n.i <= args$n.init){
+while(n.i <= args$n.init && n.i.i<args$n.init.max){
   args$seed = seed[n.i]
 
   if(args$n.init > 1 && args$trace)
@@ -90,7 +90,7 @@ while(n.i <= args$n.init){
   n.i.i <- n.i.i +1
   grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
   grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
-  if(n.i.i>args$n.init.max){
+  if(n.i.i>=args$n.init.max){
     n.init <- n.i
     warning("n.init.max reached after ", n.i, " iterations.")
   }
