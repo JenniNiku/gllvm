@@ -431,9 +431,11 @@ plot.summary.gllvm <- function (x, component = NULL, ...)
   if(!"mar"%in%names(args)){
     par(mar = c(4,7,2,1))
   }
-  plot(x = coefs[,1], y = 1:nrow(coefs), yaxt = "n", ylab = "", xlab = "Estimate", pch = "x", ...)
-  lower = coefs[,1]+ qnorm(0.95)*coefs[,2]
-  upper = coefs[,1]+ qnorm(1-0.95)*coefs[,2]
+  
+  upper = coefs[,1]+ qnorm(0.95)*coefs[,2]
+  lower = coefs[,1]+ qnorm(1-0.95)*coefs[,2]
+  
+  plot(x = coefs[,1], y = 1:nrow(coefs), yaxt = "n", ylab = "", xlab = "Estimate", pch = "x", xlim = c(min(lower), max(upper)), ...)
   segments(x0 = lower, y0 = 1:nrow(coefs), x1 = upper, y1 = 1:nrow(coefs))
   axis( 2, at = 1:nrow(coefs), labels = row.names(coefs), las = 1, ...)
   abline(v = 0, lty = 1)
