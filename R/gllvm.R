@@ -1411,6 +1411,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }
         if(col.eff == "random" && is.null(randomX)) out$col.eff$Xt <- X.col.eff
         out$col.eff$nsp <- fitg$nsp
+        # check if phylogenetic signal is on the boundary
+        if(!is.null(out$params$rho.sp) && (object$params$rho.sp < 1e-5 || object$params$rho.sp < (1-1e-5))){
+          warning("Phylogenetic signal parameter is on the boundary of the parameter space. Try another set of initial values or a different optimizer.")
+        }
       }
 }
       out$disp.group <- disp.group
