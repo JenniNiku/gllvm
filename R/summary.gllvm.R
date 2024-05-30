@@ -136,6 +136,16 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }else if(!is.logical(object$sd)&object$col.eff$col.eff=="random"){
+  pars <- c(object$params$B)
+  se <- c(object$sd$B)
+  nX <- dim(object$col.eff$Xt)[2]
+  newnam <- names(object$params$B)
+  
+  zval <- pars/se
+  pvalue <- 2 * pnorm(-abs(zval))
+  coef.table <- cbind(pars, se, zval, pvalue)
+  dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
   }else{
     coef.table <- NULL
   }
@@ -293,7 +303,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if(object$family == "gaussian"){
     sumry$'Standard deviations' <- object$params$phi
   }
-  if(!is.null(object$X) | spp.intercepts){
+  if(!is.null(object$X) | spp.intercepts | object$col.eff$col.eff == "random"){
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
