@@ -208,7 +208,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     if(num.lv==1){
       plot(1:Nlv, lv, ylab = "LV1", xlab = "Row index", type="n") 
       if (symbols) {
-        points(lv, col = s.colors, ...)
+        points(lv, col = s.colors, cex = s.cex, ...)
       } else {
         if(is.null(row.names(lv))){
           text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
@@ -221,7 +221,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     if((num.lv.c+num.RR)==1){
       plot(1:Nlv, lv, ylab = "CLV1", xlab = "Row index", type="n") 
       if (symbols) {
-        points(lv, col = s.colors, ...)
+        points(lv, col = s.colors, cex = s.cex, ...)
       } else {
         if(is.null(row.names(lv))){
           text(lv, label = 1:Nlv, cex = s.cex, col = s.colors)
@@ -403,7 +403,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       if (!jitter)
         if (symbols) {
-          points(choose.lvs[, which.lvs], col = s.colors, ...)
+          points(choose.lvs[, which.lvs], col = s.colors, cex = s.cex, ...)
         } else {
           if(is.null(row.names(lv))){
             text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
@@ -414,7 +414,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (jitter)
         if (symbols) {
           points(choose.lvs[, which.lvs][, 1] + runif(Nlv,-a,a), choose.lvs[, which.lvs][, 2] + runif(Nlv,-a,a), col =
-                   s.colors, ...)
+                   s.colors, cex = s.cex, ...)
         } else {
           if(is.null(row.names(lv))){
             text(
@@ -541,7 +541,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       if (!jitter){
         if (symbols) {
-          points(choose.lvs[, which.lvs], col = s.colors, ...)
+          points(choose.lvs[, which.lvs], col = s.colors, cex = s.cex, ...)
         } else {
           if(is.null(row.names(lv))){
             text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
@@ -557,7 +557,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       if (jitter){
         if (symbols) {
           points(choose.lvs[, which.lvs[1]] + runif(Nlv,-a,a), (choose.lvs[, which.lvs[2]] + runif(Nlv,-a,a)), col =
-                   s.colors, ...)
+                   s.colors, cex = s.cex, ...)
         } else {
           if(is.null(row.names(lv))){
             text(

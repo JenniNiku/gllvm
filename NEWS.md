@@ -5,6 +5,9 @@ Version 1.4.6
 * Added 'fac.center' argument in ordiplot to plot canonical coefficients of binary variables as points
 * Added a simple plotting function for the gllvm summary
 
+## Bug Fixes
+* Bug fixed that prevented increasing he point size of sites in ordiplot with symbols = TRUE
+
 Version 1.4.5
 =============
 * Separated "n.init" functionality into gllvm.iter.R
