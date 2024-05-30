@@ -85,23 +85,24 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   }
   
   if((object$num.lv.c+object$num.RR)>0 || object$col.eff$col.eff == "random"){
+
     if((object$num.lv.c+object$num.RR)>0 && object$col.eff$col.eff == "random"){
-      if(is.null(which.Xcoef))which.Xcoef <- c(1:(NROW(object$params$LvXcoef)+NROW(object$params$Br)))      
+      if(is.null(which.Xcoef))which.Xcoef <- c(colnames(object$lv.X.design), colnames(object$col.eff$spdr))
     } else if((object$num.lv.c+object$num.RR)>0){
-      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$LvXcoef))      
+      if(is.null(which.Xcoef))which.Xcoef <- colnames(object$lv.X.design)
     }else if(object$col.eff$col.eff=="random"){
-      if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))      
+      if(is.null(which.Xcoef))which.Xcoef <- colnames(object$col.eff$spdr)
     }
     Xcoef <- cnames <- sdXcoef <- NULL
     
-    if((object$num.lv.c+object$num.RR)>0){
+    if((object$num.lv.c+object$num.RR)>0 && any(which.Xcoef %in% colnames(object$lv.X.design))){
       if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
-      Xcoef <- cbind(Xcoef,as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,which.Xcoef,drop=F])
-      cnames <- c(cnames, colnames(object$lv.X.design[,which.Xcoef,drop=F]))
-      sdXcoef <- cbind(sdXcoef, RRse(object)[,which.Xcoef,drop=F])
+      Xcoef <- cbind(Xcoef,as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,colnames(object$lv.X.design)%in%which.Xcoef,drop=F])
+      cnames <- c(cnames, colnames(object$lv.X.design[,colnames(object$lv.X.design)%in%which.Xcoef,drop=F]))
+      sdXcoef <- cbind(sdXcoef, RRse(object)[,colnames(object$lv.X.design)%in%which.Xcoef,drop=F])
     }
     if(object$col.eff$col.eff=="random"){
-      Xcoef <- cbind(Xcoef, t(object$params$Br)[,which.Xcoef,drop=F])
+      Xcoef <- cbind(Xcoef, t(object$params$Br)[,colnames(object$col.eff$spdr)%in%which.Xcoef,drop=F])
       cnames <- c(cnames, row.names(object$params$Br))
       sdXcoef <- cbind(sdXcoef, t(getPredictErr(object)$Br)) 
     }
