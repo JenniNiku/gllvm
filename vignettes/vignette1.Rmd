@@ -126,15 +126,17 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
 |             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
-|Binary       | Bernoulli 	 | VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
-|             |              | LA 		 |logit   |                            |
+|             | binomial     | VA/LA   |probit  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
+|             | binomial     |    LA   |logit   | 
+|Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
+|             |              | EVA/LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | LA/EVA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
 |		          |		           |		     |		    | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
 |Ordinal 	    | Multinomial  | VA      |probit  | Cumulative probit model|
 |Normal       | Gaussian     | VA/LA   |identity| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$|
 |Positive continuous| Gamma     | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$|
 |		          |		           |		     |		    | where $\phi_j$ is a shape parameter |
-|Non-negative continuous| Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
+|Positive continuous | Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
 |Percent cover| beta    	   | LA/EVA | probit/logit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
 |Percent cover with zeros/ones| ordered beta    	   | EVA | probit | details in Korhonen et al (2024) |
 
