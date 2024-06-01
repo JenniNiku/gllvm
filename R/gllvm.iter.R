@@ -41,22 +41,24 @@ gllvm.iter <- function(...){
   model <- args$model
   args <- args[-which(names(args)=="model")]
 
+  ### Seeds
+  # If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
+  if((length(args$seed) >1) & (length(args$seed) < args$n.init)) {
+    stop("Seed length doesn't match with the number of initial starts.")
+  }
+  if(!is.null(args$seed) & (length(args$seed) ==1) & (length(args$seed) < args$n.init)) {
+    set.seed(args$seed)
+    seed <- sample(1:10000, args$n.init)
+  }
+  # If no seed is sampled it is randomly drawn
+  if(is.null(args$seed) & args$starting.val!="zero"){
+    seed <- sample(1:10000, args$n.init)
+  }else{
+    seed <- NULL
+  }
+  
 if(args$n.init>1){
   fitFinal <- NULL
-### Seeds
-# If number of seeds is less than n.init, sample the seeds randomly, but using the given seed
-if((length(args$seed) >1) & (length(args$seed) < args$n.init)) {
-  stop("Seed length doesn't match with the number of initial starts.")
-}
-if(!is.null(args$seed) & (length(args$seed) ==1) & (length(args$seed) < args$n.init)) {
-  set.seed(args$seed)
-  seed <- sample(1:10000, args$n.init)
-}
-# If no seed is sampled it is randomly drawn
-if(is.null(args$seed)&args$starting.val!="zero"){
-  seed <- sample(1:10000, args$n.init)
-}
-
 
 n.i.i <- 0;n.i <- 1
 
@@ -67,7 +69,6 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     cat("Initial run ", n.i, "\n")
   
   if(model == "gllvm.TMB"){
-
   fit <- do.call(gllvm.TMB, args)
   }else if(model == "trait.TMB"){
     fit <- do.call(trait.TMB, args)
@@ -83,7 +84,7 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     gr1 <- NaN
     norm.gr1 <- NaN
   }
-  
+  if(!is.null(fit$TMBfn$gr)){
   gr2 <- fit$TMBfn$gr()
   gr2 <- as.matrix(gr2/length(gr2))
   norm.gr2 <- norm(gr2)
@@ -94,11 +95,13 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     n.init <- n.i
     warning("n.init.max reached after ", n.i, " iterations.")
   }
-  
+  }else{
+    norm.gr2 <- NaN
+  }
   if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && fit$logL > (fitFinal$logL)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(fit$logL)){
     fitFinal <- fit
     #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
-    fitFinal$seed <- seed
+    fitFinal$seed <- seed[n.i]
   }
 
 n.i <- n.i+1;
@@ -106,11 +109,13 @@ n.i <- n.i+1;
 }
 
 }else{
+  if(is.null(args$seed))args$seed = seed
   if(model == "gllvm.TMB"){
     fitFinal <- do.call(gllvm.TMB, args)
   }else if(model == "trait.TMB"){
     fitFinal <- do.call(trait.TMB, args)
   }
+  fitFinal$seed = args$seed
 }
 
 return(fitFinal)

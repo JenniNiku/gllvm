@@ -113,8 +113,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }
   
   if(is.null(object$num.lvcor)) object$num.lvcor=0 # For now.
-  # stop("Prediction intervals don't yet correspond with type. Need to talk to Jenni about this. Also fix spp.arrows
-  #      when they are too small")
   
   arrow.scale <- abs(arrow.scale)
   a <- jitter.amount
@@ -204,9 +202,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
 
   lv <- getLV(object, type = type)
   
-  if ((num.lv+(num.lv.c+num.RR)) == 1|ncol(lv) == 1) {
-    if(num.lv==1){
-      plot(1:Nlv, lv, ylab = "LV1", xlab = "Row index", type="n") 
+  if ((num.lv+(num.lv.c+num.RR)) == 1|ncol(lv) == 1|length(which.lvs)==1) {
+    if(ncol(lv)>1 && length(which.lvs) == 1){
+      lv <- lv[, which.lvs,drop=FALSE]
+    }
+    if(length(which.lvs)>1)which.lvs <- 1
+    if(which.lvs>(num.RR+num.lv.c)){
+      plot(1:Nlv, lv, ylab = paste0("LV", which.lvs-(num.lv.c+num.RR)), xlab = "Row index", type="n") 
       if (symbols) {
         points(lv, col = s.colors, cex = s.cex, ...)
       } else {
@@ -217,9 +219,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         }
         
       }
-    }
-    if((num.lv.c+num.RR)==1){
-      plot(1:Nlv, lv, ylab = "CLV1", xlab = "Row index", type="n") 
+    }else{
+      plot(1:Nlv, lv, ylab = paste0("CLV",which.lvs), xlab = "Row index", type="n") 
       if (symbols) {
         points(lv, col = s.colors, cex = s.cex, ...)
       } else {
@@ -232,7 +233,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }    
   }
   
-  if ((num.lv+num.lv.c+num.RR) > 1 & ncol(lv) > 1) {
+  if ((num.lv+num.lv.c+num.RR) > 1 & ncol(lv) > 1 & length(which.lvs)>1) {
    #unconstrained ordination always gets unscaled LVs, for correct prediction intervals.
     #prediction intervals don't yet account for the scaling of the residual term in 
     #num.lv.c
