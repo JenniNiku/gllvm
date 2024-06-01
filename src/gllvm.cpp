@@ -2277,9 +2277,9 @@ Type objective_function<Type>::operator() ()
                 }
                 
                 //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
-                BiQL = BiQ.llt().matrixL();
-                logdetC = BiQL.diagonal().array().log().sum();
-                cQ(i,j) += 0.5*vBinvv+logdetC - sign*(D(j)*Acov).trace() - sign*(u.row(i)*D(j)*u.row(i).transpose()).sum();
+                // BiQL = BiQ.ldlt().matrixL();
+                logdetC = BiQ.ldlt().vectorD().array().abs().log().sum();
+                cQ(i,j) += 0.5*(vBinvv+logdetC) - sign*(D(j)*Acov).trace() - sign*(u.row(i)*D(j)*u.row(i).transpose()).sum();
               }
             }
           }
