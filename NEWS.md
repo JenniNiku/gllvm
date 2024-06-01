@@ -7,6 +7,7 @@ Version 1.4.6
 
 ## Bug Fixes
 * Bug fixed that prevented increasing he point size of sites in ordiplot with symbols = TRUE
+* Bug fixed in optima.gllvm for models with a single LV
 
 Version 1.4.5
 =============

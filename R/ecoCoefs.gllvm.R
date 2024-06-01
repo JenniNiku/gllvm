@@ -28,7 +28,7 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
     num.lv <- object$num.lv
     num.lv.c <- object$num.lv.c+object$num.RR
     p <- ncol(object$y)
-    opt<-object$params$theta[,1:(num.lv+num.lv.c)]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c))]))
+    opt<-object$params$theta[,1:(num.lv+num.lv.c),drop=FALSE]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=FALSE]))
     if(!isFALSE(object$randomB))sd.errors = FALSE
     if(sd.errors==TRUE){
       if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
@@ -47,11 +47,14 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       #add first row and column of zeros
       V<-rbind(0,cbind(0,V))
 
+      if((num.lv+num.lv.c)>1){
       #add zeros where necessary
       for(q in 1:length(idx)){
         V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
         V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
       }
+      }
+      
       if(num.lv>0&num.lv.c>0){
         idx<-which(c(upper.tri(object$params$theta[,(num.lv.c+1):(num.lv.c+num.lv)],diag=T)))[-1]
       #add a zero infront of second set of  parameters
