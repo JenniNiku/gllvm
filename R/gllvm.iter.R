@@ -91,13 +91,7 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   n.i.i <- n.i.i +1
   grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
   grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
-  if(n.i.i>=args$n.init.max){
-    n.init <- n.i
-    message("n.init.max reached after ", n.i, " iterations.")
-  }
-  }else{
-    norm.gr2 <- NaN
-  }
+
   if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && fit$logL > (fitFinal$logL)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(fit$logL)){
     n.i.i <- 0
     fitFinal <- fit
@@ -105,6 +99,15 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     fitFinal$seed <- seed[n.i]
   }
 
+  if(n.i.i>=args$n.init.max){
+    n.init <- n.i
+    message("n.init.max reached after ", n.i, " iterations.")
+    break
+  }
+  }else{
+    norm.gr2 <- NaN
+  }
+  
 n.i <- n.i+1;
 
 }
