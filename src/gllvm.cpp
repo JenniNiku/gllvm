@@ -2250,7 +2250,6 @@ Type objective_function<Type>::operator() ()
             Type logdetC;
             Type vBinvv;
             matrix <Type> BiQ(nlvr,nlvr);
-            matrix <Type> BiQL(nlvr,nlvr);
             matrix <Type> Id(nlvr,nlvr);
             Id.setZero();Id.diagonal().fill(1.0);
             //this implementation does not follow calculation from van der Veen et al. 2021
@@ -2277,8 +2276,8 @@ Type objective_function<Type>::operator() ()
                 }
                 
                 //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
-                // BiQL = BiQ.ldlt().matrixL();
-                logdetC = BiQ.ldlt().vectorD().array().abs().log().sum();
+                // partialPivLU because BiQ is asymmetric, and it ensures that it is invertible.
+                logdetC = BiQ.partialPivLu().matrixLU().diagonal().array().log().sum();
                 cQ(i,j) += 0.5*(vBinvv+logdetC) - sign*(D(j)*Acov).trace() - sign*(u.row(i)*D(j)*u.row(i).transpose()).sum();
               }
             }
