@@ -112,7 +112,7 @@ sapply(1:ncol(ftComTol$y), function(j)lines(sort(newLV[,1]), preds[order(newLV[,
 LVs = getLV(ftComTol)
 newLV = cbind(LV1 = 0, LV2 =  seq(min(LVs[,2]), max(LVs[,2]), length.out=1000))
 preds <- predict(ftComTol, type = "response", newLV = newLV)
-plot(NA, ylim = range(preds), xlim = c(range(getLV(ftComTol))), ylab  = "Predicted response", xlab = "LV1")
+plot(NA, ylim = range(preds), xlim = c(range(getLV(ftComTol))), ylab  = "Predicted response", xlab = "LV2")
 segments(x0=optima(ftComTol, sd.errors = FALSE)[,2],x1 = optima(ftComTol, sd.errors = FALSE)[,2], y0 = rep(0, ncol(ftComTol$y)), y1 = apply(preds,2,max), col = "red", lty = "dashed", lwd = 2)
 rug(getLV(ftComTol)[,2])
 sapply(1:ncol(ftComTol$y), function(j)lines(sort(newLV[,2]), preds[order(newLV[,2]),j], lwd = 2))
