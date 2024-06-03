@@ -248,9 +248,9 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
     if(num.lv>0){
       tol.cov[(num.lv.c*p+1):ncol(tol.cov),(num.lv.c*p+1):ncol(tol.cov)] = tol.cov[(num.lv.c*p+1):ncol(tol.cov),(num.lv.c*p+1):ncol(tol.cov)]+ dsig%*%t(dsig)*Vsig[colnames(Vsig)=="sigmaLV",colnames(Vsig)=="sigmaLV",drop=FALSE][rep(1:num.lv,each=p),rep(1:num.lv,each=p)] + dsig%*%t(tail(dt,num.lv*p))*cov.mat.sig.quad
     }
+    tol.sd = sqrt(abs(matrix(diag(tol.cov), ncol = num.lv+num.lv.c)))
   }
   
-  tol.sd = sqrt(abs(matrix(diag(tol.cov), ncol = num.lv+num.lv.c)))
   
   if((num.lv+num.lv.c)>1){
     if(num.lv.c==0)colnames(tol) <- paste("LV",1:num.lv,sep="")
