@@ -129,7 +129,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   # If both scales are not given, use MASS::eqscplot
-  if(("ylim" %in% names(gr_par_list)) & ("xlim" %in% names(gr_par_list))){
+  if(("ylim" %in% names(gr_par_list)) | ("xlim" %in% names(gr_par_list))){
     plotfun <- plot
   } else {
     plotfun <- MASS::eqscplot
