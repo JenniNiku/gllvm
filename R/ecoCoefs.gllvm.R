@@ -29,7 +29,7 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
   num.lv.c <- object$num.lv.c+object$num.RR
   p <- ncol(object$y)
   
-  opt<-object$params$theta[,1:(num.lv+num.lv.c)]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c))]))
+  opt<-object$params$theta[,1:(num.lv+num.lv.c),drop=FALSE]/(2*abs(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=FALSE]))
   if(num.lv>0){
     #correct for sig
     theta <- object$params$theta[,(num.lv.c+1):(num.lv.c+num.lv)]
@@ -62,10 +62,12 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
     #add first row and column of zeros
     V<-rbind(0,cbind(0,V))
     
+    if(length(idx)>0){
     #add zeros where necessary
     for(q in 1:length(idx)){
       V <- rbind(V[1:(idx[q]-1),],0,V[idx[q]:ncol(V),])
       V <- cbind(V[,1:(idx[q]-1)],0,V[,idx[q]:ncol(V)])
+    }
     }
     if(num.lv>0&num.lv.c>0){
       idx<-which(c(upper.tri(object$params$theta[,(num.lv.c+1):(num.lv.c+num.lv)],diag=T)))[-1]
@@ -98,9 +100,9 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       sigm <- tail(object$params$sigma.lv, num.lv)
       for(i in 1:num.lv){
         for (j in 1:p) {
-          du1 <- c(du1, 0.5*(object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]*sigm[i])^-1)
-          du2 <- c(du2, 0.5*(object$params$theta[j, num.lv.c+i]*sigm[i]^3) / (object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]^2*sigm[i]^4))
-          du3 <- c(du3, object$params$theta[j, num.lv.c+i]*(-0.5/(object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]*sigm[i]^2) + object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]*sigm[i]^2/(object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]^2*sigm[i]^4))*sign(tail(object$TMBfn$par[names(object$TMBfn$par)=="sigmaLV"],num.lv))[i])
+          du1 <- c(du1, 0.5*(object$params$theta[j, (num.lv+2*num.lv.c) + i]*sigm[i])^-1)
+          du2 <- c(du2, 0.5*(object$params$theta[j, num.lv.c+i]*sigm[i]^3) / (object$params$theta[j, (num.lv+2*num.lv.c) + i]^2*sigm[i]^4))
+          du3 <- c(du3, object$params$theta[j, num.lv.c+i]*(-0.5/(object$params$theta[j, (num.lv+2*num.lv.c) + i]*sigm[i]^2) + object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]*sigm[i]^2/(object$params$theta[j, (num.lv+num.lv.c+num.lv.c) + i]^2*sigm[i]^4))*sign(tail(object$TMBfn$par[names(object$TMBfn$par)=="sigmaLV"],num.lv))[i])
         }
       }
     }
@@ -131,11 +133,11 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       # idx vector for repeating sig
       idx <- rep(1:num.lv,each=p)
       # sig covariances
-      cov.sig <- Vsig[which(colnames(Vsig)=="sigmaLV"),which(colnames(Vsig)=="sigmaLV")]
+      cov.sig <- Vsig[which(colnames(Vsig)=="sigmaLV"),which(colnames(Vsig)=="sigmaLV"),drop=FALSE]
       # sig cov with lin.coef
-      cov.mat.sig.lin <- Vsig[which(colnames(Vsig)=="sigmaLV"),tail(which(colnames(Vsig)=="lambda"),num.lv*p)]
+      cov.mat.sig.lin <- Vsig[which(colnames(Vsig)=="sigmaLV"),tail(which(colnames(Vsig)=="lambda"),num.lv*p),drop=FALSE]
       # sig cov with quad.coef
-      cov.mat.sig.quad <- Vsig[which(colnames(Vsig)=="sigmaLV"),tail(which(colnames(Vsig)=="lambda2"),num.lv*p)]
+      cov.mat.sig.quad <- Vsig[which(colnames(Vsig)=="sigmaLV"),tail(which(colnames(Vsig)=="lambda2"),num.lv*p),drop=FALSE]
       
       cov.mat.optima[(num.lv.c*p+1):ncol(cov.mat.optima),(num.lv.c*p+1):ncol(cov.mat.optima)] <-
         cov.mat.optima[(num.lv.c*p+1):ncol(cov.mat.optima),(num.lv.c*p+1):ncol(cov.mat.optima)] + 
@@ -183,17 +185,31 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
   num.lv.c <- object$num.lv.c+object$num.RR
   p <- ncol(object$y)
   quadratic <- object$quadratic
-  tol<-1/sqrt(-2*object$params$theta[,-c(1:(num.lv+num.lv.c))])
+  theta <- object$params$theta[,-c(1:(num.lv.c+num.lv)),drop=FALSE]
+  if(num.lv>0){
+    theta[,(num.lv.c+1):(num.lv+num.lv.c)] <- theta[,(num.lv.c+1):(num.lv+num.lv.c)]%*%diag(tail(object$params$sigma.lv^2,num.lv), num.lv)
+  }
+  
+  tol<-1/sqrt(-2*theta)
+  
   if(!isFALSE(object$randomB))sd.errors = FALSE
   if(sd.errors==TRUE){
     if(is.null(object$sd)|all(unlist(object$sd)==FALSE)){
       cat("Standard errors not present in model, calculating...\n")
       object$Hess<-se.gllvm(object)$Hess 
     }
+    thetasig = sign(matrix(object$TMBfn$par[names(object$TMBfn$par)=="lambda2"], ncol = num.lv.c+num.lv, byrow=TRUE))
+    if(quadratic=="LV"){
+      thetasig <- thetasig[rep(1,p),,drop=FALSE]
+    }
     V <- object$Hess$cov.mat.mod
-    idx <- names(object$TMBfn$par[object$Hess$incl])%in%c("lambda2")
+    colnames(V) <- row.names(V) <- names(object$TMBfn$par)[object$Hess$incl]
+    # Place sigmaLV at the end
+    V <- V[c((1:ncol(V))[-which(colnames(V)=="sigmaLV")],(1:ncol(V))[which(colnames(V)=="sigmaLV")]),c((1:ncol(V))[-which(colnames(V)=="sigmaLV")],(1:ncol(V))[which(colnames(V)=="sigmaLV")])]
+    idx <- colnames(V)%in%c("lambda2")
+    if(num.lv>0)idx[tail(1:ncol(V),num.lv)] <- TRUE
+    
     V <- V[idx,idx,drop=F]
-    colnames(V) <- row.names(V) <- names(object$TMBfn$par[object$Hess$incl])[idx]
     
     #re-arrange V for easier access
     if(quadratic==TRUE){
@@ -201,18 +217,40 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
     }else{
       idx <- rep(1:(num.lv+num.lv.c),each=p)
     }
+    if(num.lv>0)Vsig <- V[c(idx, tail(1:ncol(V),num.lv)), c(idx, tail(1:ncol(V),num.lv)),drop=FALSE]
     V<-V[idx,idx]
     
-    tol.sd<-matrix(0,nrow=p,ncol=(num.lv+num.lv.c))
-    dt<-matrix(0,nrow=p,ncol=(num.lv+num.lv.c))
-    for (j in 1:p) {
-      for (i in 1:(num.lv+num.lv.c)) {
-        dt[j,i] <- -0.5*2^-0.5*abs(object$params$theta[,-c(1:(num.lv+num.lv.c)),drop=F][j,i])^-1.5
+    dt<- NULL
+    if(num.lv.c>0){
+    for (i in 1:(num.lv.c)) {
+      for (j in 1:p) {
+          dt <- c(dt, -thetasig[j,i]*0.5*2^-0.5*abs(object$params$theta[j,num.lv+num.lv.c+i])^-1.5)
+        }
       }
     }
-    tol.sd <- sqrt(abs(dt^2*matrix(diag(V),ncol=(num.lv+num.lv.c),nrow=p)))
+    
+    if(num.lv>0){
+      dsig <- NULL
+      sig <- tail(object$params$sig,num.lv)
+      for (i in 1:(num.lv)) {
+      for (j in 1:p) {
+          dt <- c(dt,  -thetasig[j,num.lv.c+i]*0.5*2^-0.5*abs(object$params$theta[j,(num.lv+2*num.lv.c)+i]*sig[i]^2)^-1.5)
+          dsig <- c(dsig, -(sig[i]^2*2^0.5*abs(object$params$theta[j,(num.lv+2*num.lv.c)+i])^0.5)^-1)
+        }
+      }
+      
+      cov.mat.sig.quad <- Vsig[which(colnames(Vsig)=="sigmaLV"),tail(which(colnames(Vsig)=="lambda2"),num.lv*p),drop=FALSE][rep(1:num.lv,each=p),]
+      
+    }
+
+    tol.cov <- dt%*%t(dt)*V
+    #for sig
+    if(num.lv>0){
+      tol.cov[(num.lv.c*p+1):ncol(tol.cov),(num.lv.c*p+1):ncol(tol.cov)] = tol.cov[(num.lv.c*p+1):ncol(tol.cov),(num.lv.c*p+1):ncol(tol.cov)]+ dsig%*%t(dsig)*Vsig[colnames(Vsig)=="sigmaLV",colnames(Vsig)=="sigmaLV",drop=FALSE][rep(1:num.lv,each=p),rep(1:num.lv,each=p)] + dsig%*%t(tail(dt,num.lv*p))*cov.mat.sig.quad
+    }
   }
   
+  tol.sd = sqrt(abs(matrix(diag(tol.cov), ncol = num.lv+num.lv.c)))
   
   if((num.lv+num.lv.c)>1){
     if(num.lv.c==0)colnames(tol) <- paste("LV",1:num.lv,sep="")
