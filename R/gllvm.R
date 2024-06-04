@@ -1453,10 +1453,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (family == "tweedie") {
         out$Power <- fitg$Power
       }
-      
-      if(family == "ordinal"){
-        out$zeta.struc = zeta.struc
-      }
+
       if ((method %in% c("VA", "EVA"))) {
         out$A <- fitg$A
         out$Ar <- fitg$Ar
