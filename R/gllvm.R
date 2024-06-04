@@ -1428,6 +1428,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       
       out$params <- fitg$params
       
+      if(!TMB&family=="ordinal"){
+        out$zeta.struc <- "species"
+      }else if(TMB & family == "ordinal"){
+        out$zeta.struc = fitg$zeta.struc
+      }
+      
       #### Try to calculate sd errors
       if (!is.infinite(out$logL) && sd.errors) {
         trsd <- try({
@@ -1556,6 +1562,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(row.eff == "random"){
       out$dr = fitg$dr
     }
+    
+    
     if (is.finite(out$logL) && row.eff == "random" && FALSE){
       if(method == "LA"){
         if(abs(out$params$sigma)<0.02)
@@ -1582,7 +1590,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
 
-
     if(is.null(out$sd)){
       out$sd <- FALSE
     }
@@ -1606,11 +1613,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     }else{
       out$quadratic <- FALSE
-    }
-    if(!TMB&family=="ordinal"){
-      out$zeta.struc <- "species"
-    }else if(TMB & family == "ordinal"){
-      out$zeta.struc = fitg$zeta.struc
     }
 
     out$call <- match.call()
