@@ -18,6 +18,10 @@ gllvm.iter <- function(...){
     max.levels <- apply(args$y,2,function(x) length(min(x):max(x)))
     if(any(max.levels == 1)&args$zeta.struc=="species" || all(max.levels == 2)&args$zeta.struc=="species")
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead.")
+    if(any(!apply(args$y,2,function(x)all(diff(sort(unique(x)))==1)))&args$zeta.struc=="species"){
+      warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'.")
+      args$zeta.struc = "common"
+    }
     if(!all(min(args$y)==apply(args$y,2,min))&args$zeta.struc=="species"){
       warning("For ordinal data and zeta.struc=`species` all species must have the same minimum category. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
