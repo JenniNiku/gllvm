@@ -93,11 +93,20 @@ Alternatively, we can also calculate it following the definition of van der Veen
 tol <- tolerances(ftComTol, sd.errors = FALSE)
 gradLength <- 4/tol[1,]
 turn <- 2*qnorm(.999, sd = tol[1,])
+```
+
+```{r grad_length_res}
 cat("Gradient length:", gradLength)
+```
+
+This measure of gradient length tells us that the second LVs represents a short gradient. That is also visible from the figure below, as most species responses are estimated to be (near) linear.
+To visually inspect the rate of turnover we will plot the species curves.
+
+```{r turn}
 cat("Turnover rate:", turn)
 ```
 
-To visually inspect the rate of turnover we will plot the species curves.
+The turnover rate is naturally quicker on the longer gradient, so shorter for the second latent variable than the first. This means that we expect the community to change faster along the first latent variable; about every 3.26 units of the latent variable we encounter a completely different community, while on the second latent variable this takes much more, about 14 units. That corresponds with having a short gradient; if species response are nearly linear they virtually occur everywhere along the gradient, in contrast to when responses are unimodal.
 
 ```{r curves, results = "hide", fig.height = 10}
 par(mfrow=c(2,1))
@@ -117,7 +126,6 @@ segments(x0=optima(ftComTol, sd.errors = FALSE)[,2],x1 = optima(ftComTol, sd.err
 rug(getLV(ftComTol)[,2])
 sapply(1:ncol(ftComTol$y), function(j)lines(sort(newLV[,2]), preds[order(newLV[,2]),j], lwd = 2))
 ```
-
 
 # References
 
