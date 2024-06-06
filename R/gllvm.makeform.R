@@ -118,8 +118,8 @@ mkModMlist <- function (x, frloc) {
   }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
-  mm <- model.matrix(eval(base::substitute(~foo, list(foo = x[[2]]))), 
-                     frloc)
+  trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
+  mm <- model.matrix(trms, frloc)
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
@@ -132,11 +132,17 @@ mkModMlist <- function (x, frloc) {
   if(length(levels(ff))==1 && levels(ff)==as.character(1)){
     levels(ff) <- ""
   }
+  
+  ## design matrix for RE means always needs to have the reference category included in the design matrix
+  ## So that the RE means are properly contrasted
+  ## IF a categorical variables is included LHS
+  if(!attr(trms, "intercept"))attr(trms,"intercept") <- 1
+  mm2 <- model.matrix(trms, frloc)
 
   # design matrix for RE means
-  if(any(colnames(mm)!="(Intercept)")){
-    fm <- Matrix::KhatriRao(sm, t(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]))
-    row.names(fm) <- make.names(paste0(rep(colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm[,colnames(mm)!="(Intercept)", drop = FALSE]))))
+  if(any(colnames(mm2)!="(Intercept)")){
+    fm <- Matrix::KhatriRao(sm, t(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]))
+    row.names(fm) <- make.names(paste0(rep(colnames(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm2[,colnames(mm2)!="(Intercept)", drop = FALSE]))))
   }
   
   fm2 <- NULL

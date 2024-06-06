@@ -646,6 +646,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     # map species common effects for REs
     if(col.eff == "random"){
       map.list$B <- 1:ncol(spdr)
+      if(any(!colnames(Xt)%in%colnames(spdr))){
+        stop("There was a problem with the model. Did you use ordered constrasts in the random effect perhaps?")
+      }
       map.list$B[!colnames(spdr)%in%colnames(Xt)] <- NA
       map.list$B <- factor(map.list$B)
       B <- as.matrix(B)
@@ -1137,7 +1140,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           Ab_lv1 <- 0
         }
         if(col.eff == 'random'){
-          B1 <- as.matrix(param1[names(param1)=="B"])
+          B1 <- matrix(0, ncol = 1, nrow = ncol (spdr))
+          B1[!is.na(map.list$B)] <- param1[names(param1)=="B"]
           Br1 <- matrix(param1[nam=="Br"],nrow=ncol(spdr))
           sigmaB1 <- ifelse(round(param1[nam=="sigmaB"],8)==0,1e-3,param1[nam=="sigmaB"])
           # if(!is.null(colMat))param1[nam=="sigmaB"][length(param1[nam=="sigmaB"])] <- ifelse(tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,ncol(spdr)))>0.5,0.5,tail(param1[nam=="sigmaB"], ifelse(colMat.rho.struct == "single",1,ncol(spdr))))
