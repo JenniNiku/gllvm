@@ -666,19 +666,23 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       Xlength<-sum(abs(marg[1:2]))/2
       Ylength<-sum(abs(marg[3:4]))/2
       
-      ends <- LVcoef/max(abs(LVcoef))*min(Xlength,Ylength)*arrow.scale
+      if(fac.center){
+        cats <- apply(object$lv.X.design,2,function(x) { all(x %in% 0:1) })
+      }else{
+        cats <- rep(FALSE, ncol(object$lv.X.design))
+      }
+      if(any(!cats)){
+      ends <- LVcoef[,,drop=FALSE]/max(abs(LVcoef[!cats,,drop=FALSE]))*min(Xlength,Ylength)*arrow.scale
+      }
       
       #double check if all arrows are long enough to draw
       units = par(c('usr', 'pin'))
       xi = with(units, pin[1L]/diff(usr[1:2]))
       yi = with(units, pin[2L]/diff(usr[3:4]))
+      if(any(!cats)){
       # idx <- sqrt((xi * diff(c(origin[1],ends[,1]+origin[1])))**2 + (yi * diff(c(origin[2],ends[,2]+origin[2])))**2) >.001
       idx <-  apply(ends,1,function(x)if(all(abs(x)<0.001)){FALSE}else{TRUE})
-      if(fac.center){
-      cats <- apply(object$lv.X.design,2,function(x) { all(x %in% 0:1) })
-      }else{
-        cats <- rep(FALSE, ncol(object$lv.X.design))
-      }
+
       if(any(!idx&!cats)){
         for(i in which(!idx&!cats)){
           cat("The effect for", paste(row.names(LVcoef)[i],collapse=",", sep = " "), "was too small to draw an arrow. \n")  
@@ -688,8 +692,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       
       if(nrow(ends)>0){
       arrows(x0=origin[1],y0=origin[2],x1=ends[,1]+origin[1],y1=ends[,2]+origin[2],col=col[!cats],length=0.1,lty=lty)
-      text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef)[idx&!cats],col=col[!cats], cex = cex.env)}
-      
+      text(x=origin[1]+ends[,1]*(1+lab.dist),y=origin[2]+ends[,2]*(1+lab.dist),labels = row.names(LVcoef)[idx&!cats],col=col[!cats], cex = cex.env)
+      }
+      }
       # add points for categorical variables
       if(any(cats)){
         LVcoef <- object$params$LvXcoef
