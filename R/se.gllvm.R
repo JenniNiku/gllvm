@@ -548,8 +548,8 @@ se.gllvm <- function(object, ...){
         }else{
           se.new <- c(se.new, se[names(se)==nm][map[[nm]]])
         }
-        
       }
+      if(any(is.na(se.new)))se.new[is.na(se.new)] <- 0 # Can happen if a parameter is fixed to its startig value
       se <- se.new
     }
     # reformat SEs based on the list that went into TMB

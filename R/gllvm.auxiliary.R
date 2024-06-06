@@ -2936,6 +2936,7 @@ relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton"))
 {
   ind <- 1L
   nam = unique(names(flesh))
+  nam = nam[!is.na(nam)] #for variables that are fixed
   skeleton <- result <- skeleton[nam]
   for (i in nam) {
     skel_i <- result[[i]]
