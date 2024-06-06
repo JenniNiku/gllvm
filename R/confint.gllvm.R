@@ -95,9 +95,9 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       nr <- rep(1:(num.lv.c+num.RR), each = p)
       nc <- rep(1:p, (num.lv.c+num.RR))
       if(quadratic == FALSE)
-        rnames[1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
+        rnames[grepl("theta",rnames)][1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
+        rnames[grepl("theta",rnames)][1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
                                                                                                                       sep = ""
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
@@ -107,9 +107,9 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
       if(quadratic == FALSE)
-        rnames[1:(num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
+        rnames[grepl("theta",rnames)][1:(num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[1:(num.lv * p *2)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
+        rnames[grepl("theta",rnames)][1:(num.lv * p *2)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
                                                                                                           sep = ""
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + num.lv * p
@@ -119,9 +119,9 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       nr <- rep(1:(num.lv.c+num.RR), each = p)
       nc <- rep(1:p, (num.lv.c+num.RR))
       if(quadratic == FALSE)
-        rnames[1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
+        rnames[grepl("theta",rnames)][1:((num.lv.c+num.RR) * p)] <- paste(paste("theta.CLV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
+        rnames[grepl("theta",rnames)][1:((num.lv.c+num.RR) * p *2)] <- c(paste(paste("theta.CLV", nr, sep = ""), nc, sep = "."), paste(paste("theta.CLV", nr, "^2",
                                                                                                                       sep = ""
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
@@ -131,23 +131,13 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
       if(quadratic == FALSE)
-        rnames[((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
+        rnames[grepl("theta",rnames)][((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- paste(paste("theta.LV", nr, sep = ""), nc, sep = ".")
       if(quadratic != FALSE)
-        rnames[((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
+        rnames[grepl("theta",rnames)][((num.lv.c+num.RR)*p+1):((num.lv.c+num.RR)*p+num.lv * p)] <- c(paste(paste("theta.LV", nr, sep = ""), nc, sep = "."), paste(paste("theta.LV", nr, "^2",
                                                                                                                                                  sep = ""
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
-    }
-    if((num.lv+num.lv.c)>0){
-      if(num.lv>0&num.lv.c>0){
-        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.CLV", 1:num.lv.c, sep=""),paste("sigma.LV", 1:num.lv, sep=""))
-      }else if(num.lv>0){
-        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.LV", 1:num.lv, sep=""))
-      }else if(num.lv.c>0){
-        rnames[-c(1:cal)][1:(num.lv+num.lv.c)] <-  c(paste("sigma.CLV", 1:num.lv.c, sep=""))
-      }
-      cal <- cal+num.lv+num.lv.c
     }
     if((num.lv.c+num.RR)>0&object$randomB==FALSE){
       rnames[-c(1:cal)][1:(ncol(object$lv.X.design)*(num.lv.c+num.RR))] <- paste(colnames(object$lv.X.design),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X.design)),sep=".")
