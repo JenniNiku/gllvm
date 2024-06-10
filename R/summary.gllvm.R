@@ -440,6 +440,8 @@ plot.summary.gllvm <- function (x, component = NULL, ...)
   
   if(!"mar"%in%names(args)){
     par(mar = c(4,7,2,1))
+  }else{
+    par(mar = args$mar)
   }
   
   upper = coefs[,1]+ qnorm(0.95)*coefs[,2]
