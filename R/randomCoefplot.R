@@ -32,7 +32,7 @@
 #'@export randomCoefplot.gllvm
 randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex.ylab = 0.5, mfrow = NULL, mar = c(4,6,2,1), xlim.list = NULL, order = FALSE, ...)
 {
-  
+  if(is.null(object$lv.X.design) && !is.null(object$lv.X))object$lv.X.design <- object$lv.X # backward compatibility
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
