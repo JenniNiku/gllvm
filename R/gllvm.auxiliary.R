@@ -713,7 +713,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }
       
       index.lm <- lm(index~0+lv.X)
-      b.lv <- coef(index.lm)
+      if(isFALSE(randomB)){
+        b.lv <- coef(index.lm)
+      }else{
+        fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "single", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+        b.lv <- fit$params$LvXcoef
+        # RRgamma <- fit$params$theta
+        # eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
+      }
       
       #Ensures independence of LVs with predictors
       index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
@@ -863,7 +870,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
   }else if(num.RR>0 && !isFALSE(randomB)){
-    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "iid", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "zero", sd.errors = FALSE, optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "single", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
     RRcoef <- fit$params$LvXcoef
     RRgamma <- fit$params$theta
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
@@ -2628,6 +2635,12 @@ RRse <- function(object, return.covb = FALSE){
         # bottom-left block of covariance matrix via block inversion
         incl = row.names(jointPrecision)%in%names(object$TMBfn$env$last.par.best[-r][object$Hess$incl])
         incld = row.names(jointPrecision)[r]
+        
+        sds <- diag(sqrt(abs(jointPrecision)))
+        if(any(sds<1e-12))sds[sds<1e-12]<-1
+        
+        jointPrecision <- sweep(sweep(jointPrecision,1,sds,"/"),2,sds,"/")
+        
         covMat <- try(-solve(as.matrix(jointPrecision[incld,incld]),as.matrix(jointPrecision[incld,incl]))%*%object$Hess$cov.mat.mod,silent=T)
         if(inherits(covMat,"try-error")){
           # Via fixed-effects part of Hessian if random-effects part is singular
@@ -2636,6 +2649,8 @@ RRse <- function(object, return.covb = FALSE){
           D.mat <- as.matrix(jointPrecision[incld,incld])
           covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
         }
+        suppressWarnings(try(covMat <- sweep(sweep(covMat, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
+        
         row.names(covMat) <- names(object$TMBfn$env$last.par.best)[r]
         colnames(covMat) <- names(object$TMBfn$env$par)[-r][object$Hess$incl]
         covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
@@ -2666,7 +2681,12 @@ RRse <- function(object, return.covb = FALSE){
       
       # covariance of parameters via block inversion
       incl=object$Hess$incl;incld=object$Hess$incld
-      covMat <- -solve(object$Hess$Hess.full[incld,incld], object$Hess$Hess.full[incld,incl])%*%object$Hess$cov.mat.mod
+      
+      sdr = object$Hess$Hess.full
+      sds <- diag(sqrt(abs(sdr)))
+      if(any(sds<1e-12))sds[sds<1e-12]<-1
+      
+      covMat <- -solve(sdr[incld,incld], sdr[incld,incl])%*%object$Hess$cov.mat.mod
       if(inherits(covMat,"try-error")){
         # Via fixed-effects part of Hessian if random-effects part is singular
         Ai <- solve(object$Hess$Hess.full[incl,incl])
@@ -2674,6 +2694,8 @@ RRse <- function(object, return.covb = FALSE){
         D.mat <- object$Hess$Hess.full[incld,incld]
         covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
       }
+      suppressWarnings(try(covMat <- sweep(sweep(covMat, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
+      
       row.names(covMat) <- names(object$TMBfn$par)[incld]
       colnames(covMat) <- names(object$TMBfn$par)[incl]
       covMat <- covMat[row.names(covMat)=="b_lv",colnames(covMat) == "lambda"]
