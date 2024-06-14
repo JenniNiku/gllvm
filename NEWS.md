@@ -6,6 +6,7 @@ Version 1.4.6
 * Added a simple plotting function for the gllvm summary
 * Improved scaling for ordiplot with quadratic model and with biplot = FALSE
 * optima.gllvm and tolerances.gllvm for num.lv now correctly provide tolerances w.r.t. the scaled LV
+* Improved starting values for models with 'randomB'
 
 ## Bug Fixes
 * Bug fixed that prevented increasing he point size of sites in ordiplot with symbols = TRUE
