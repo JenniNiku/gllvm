@@ -153,7 +153,7 @@ mkModMlist <- function (x, frloc) {
     if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
       fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
     }else{
-      fm2 <- matrix(1, ncol = nrow(mm))
+      fm2 <- matrix(ncol = nrow(mm),nrow=0) # no categorical variables, nothing should be happening here
     }
     fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
     if(length(levels(ff2))>0){
