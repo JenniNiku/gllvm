@@ -4,6 +4,29 @@
 #include<math.h>
 #include "distrib.h"
 
+// Constructs lower cholesky of correlation matrix from off-diagonal entries
+// need this because unstructured_corr does not return cholesky
+// which we need for easy access to the determinant and for phylo effects
+template<class Type>
+matrix<Type> constructL(vector<Type> theta){
+    int n = (1 + sqrt(1 + 8 *  theta.size())) / 2;
+
+    matrix<Type> L = Eigen::MatrixXd::Zero(n, n);  // Initialize Cholesky factor
+    L.diagonal().fill(1.0);
+    int covscounter = 0;
+    for (int j = 0; j < n; ++j) {
+      for (int i = j + 1; i < n; ++i) {
+        L(i, j) = theta[covscounter];
+        covscounter++;
+      }
+    }
+    for (int i = 1; i < n; ++i) {
+      L.row(i) /= L.row(i).norm();
+    }
+    return L;
+  }
+  
+
 template<class Type>
 struct dclist : vector<matrix<Type>> {
   dclist(SEXP x){  /* x = List passed from R */
@@ -543,34 +566,51 @@ Type objective_function<Type>::operator() ()
         //random slopes in gllvm.TMB
         eta += xb*(Br.colwise()+B.col(0));//add RE means
       }
-      matrix <Type> Spr;
+      matrix <Type> Spr(xb.cols(),xb.cols());
+      matrix <Type> SprI(xb.cols(),xb.cols());
+      matrix <Type> SprIL(xb.cols(),xb.cols());
+      Type logdetSpr;
       
       if(random(1)>0){
         int l = xb.cols();
-        matrix<Type> sds(l,l);sds.setZero();
-        sds.diagonal() =  exp(sigmaB.segment(0,l));
-        Spr=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+        sds.diagonal() = exp(sigmaB.segment(0,l));
+        matrix<Type> SprL = sds*constructL(sigmaij);
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
+        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+        SprI = SprIL.transpose()*SprIL;
+        Spr=SprL*SprL.transpose();
+        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
-      
       if(random(3)>0){
-        // random species effects for gllvm.TMB
-        vector<Type> sigmaSP = exp(sigmaB.segment(0,xb.cols()));
-        Spr = matrix<Type>(xb.cols(), xb.cols());Spr.setZero();
-        
-        int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-        for(int re=0; re<xb.cols(); re++){
-            Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
-            sprdiagcounter++;
+        int l = xb.cols();
+        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+        sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
+
+        vector<Type>sigmaSPij((l*l-l)/2);
+        sigmaSPij.fill(0.0);
+        //covariances of random effects
+        matrix<Type> SprL;
+        if(cs.cols()>1){
+          //need a vector with covariances and zeros in the right places
+          for(int i=0; i<cs.rows(); i++){
+            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaB(xb.cols()+i);
+          }
+        REPORT(sigmaSPij);
+        SprL = sds*constructL(sigmaSPij);
+        REPORT(SprL);
+        }else{
+        SprL = sds;
         }
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
+        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+        SprI = SprIL.transpose()*SprIL;
+        Spr=SprL*SprL.transpose();
+        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
-      //covariances of random effects
-      if(cs.cols()>1){
-        vector<Type> sigmaSPij = sigmaB.segment(xb.cols(),cs.rows());
-        for(int rec=0; rec<cs.rows(); rec++){
-          Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-          Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
-        }
-      }
+
       
       vector<matrix<Type>> colCorMatIblocks(colMatBlocksI.size()-1);
       Type logdetColCorMat =0;
@@ -579,11 +619,10 @@ Type objective_function<Type>::operator() ()
       if(colMatBlocksI(0)(0,0) == p){
         rhoSP.fill(1.0);
         if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
-          rhoSP = sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+          rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
           for(int re=0; re<rhoSP.size(); re++){
-            rhoSP(re) = CppAD::CondExpGt(rhoSP(re), Type(3.3), Type(3.3), rhoSP(re));
+            rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
           }
-          rhoSP = exp(-exp(rhoSP));
         }
         
         if(nncolMat.rows() <p){
@@ -650,7 +689,7 @@ Type objective_function<Type>::operator() ()
                   // }
                   
                   matrix <Type> b(k,k);
-                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  if(k<=4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via cholesky
@@ -697,7 +736,7 @@ Type objective_function<Type>::operator() ()
                   // }
                   
                   matrix <Type> b(k,k);
-                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  if(k<=4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via invpd
@@ -721,9 +760,6 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      matrix <Type> SprI(xb.cols(),xb.cols());
-      matrix <Type> SprIL(xb.cols(),xb.cols()); //only used if rhoSP.size()>1
-      Type logdetSpr;
       //could/should build in detection of block matrices based on entries in cs.
       // if(rhoSP.size()==1){
       //   if((cs.cols()>1)|(random(1)>0)){
@@ -737,20 +773,20 @@ Type objective_function<Type>::operator() ()
       //     SprI = Spr.diagonal().cwiseInverse().asDiagonal();
       //   }
       // }else{
-      if((cs.cols()>1)|(random(1)>0)){
-        SprIL.setZero();
-        //Spr is not diagonal
-        matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        SprIL = Spr.llt().matrixL().solve(Ir);
-        logdetSpr = -2*SprIL.diagonal().array().log().sum();
-        SprI = SprIL.transpose()*SprIL;
-      }else{
-        //Spr is diagonal
-        SprIL.setZero();
-        logdetSpr = Spr.diagonal().array().log().sum();
-        SprI = Spr.diagonal().cwiseInverse().asDiagonal();
-        SprIL.diagonal() = SprI.diagonal().cwiseSqrt();
-      }
+      // if((cs.cols()>1)|(random(1)>0)){
+      //   SprIL.setZero();
+      //   //Spr is not diagonal
+      //   matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
+      //   SprIL = Spr.llt().matrixL().solve(Ir);
+      //   logdetSpr = -2*SprIL.diagonal().array().log().sum();
+      //   SprI = SprIL.transpose()*SprIL;
+      // }else{
+      //   //Spr is diagonal
+      //   SprIL.setZero();
+      //   logdetSpr = Spr.diagonal().array().log().sum();
+      //   SprI = Spr.diagonal().cwiseInverse().asDiagonal();
+      //   SprIL.diagonal() = SprI.diagonal().cwiseSqrt();
+      // }
       // }
       REPORT(SprIL);
       REPORT(colCorMatIblocks);
@@ -2353,6 +2389,9 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
+      REPORT(mu);
+      REPORT(eta);
+      REPORT(cQ);
     } else if ((family == 2) && (method>1)) { // Binomial EVA
       if (extra(0) == 0) { // logit
         Type mu_prime;
@@ -2371,6 +2410,9 @@ Type objective_function<Type>::operator() ()
             z[3] = exp(z[0])/(exp(z[0])+1);
             
             mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            
             mu_prime = mu(i,j) * (1-mu(i,j));
             if(!isNA(y(i,j))){
               nll -= y(i,j) * eta(i,j) + log(1-mu(i,j));
@@ -2858,11 +2900,10 @@ Type objective_function<Type>::operator() ()
         vector <Type> rhoSP(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
         rhoSP.fill(1.0);
         if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
-          rhoSP = sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+          rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
           for(int re=0; re<rhoSP.size(); re++){
-            rhoSP(re) = CppAD::CondExpGt(rhoSP(re), Type(3.3), Type(3.3), rhoSP(re));
+            rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
           }
-          rhoSP = exp(-exp(rhoSP));
         }
         
         matrix <Type> SprI(xb.cols(),xb.cols());
@@ -2957,7 +2998,7 @@ Type objective_function<Type>::operator() ()
                   // }
                   
                   matrix <Type> b(k,k);
-                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  if(k<=4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via invpd
@@ -3009,7 +3050,7 @@ Type objective_function<Type>::operator() ()
                   // }
                   
                   matrix <Type> b(k,k);
-                  if(k<4)//Eigen can probably do an efficient/analytic inverse here
+                  if(k<=4)//Eigen can probably do an efficient/analytic inverse here
                   {
                     b = C.inverse();
                   }else{//invert larger matrices via cholesky
