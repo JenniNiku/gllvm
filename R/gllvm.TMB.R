@@ -5,7 +5,7 @@
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
                       method="VA",Lambda.struc="unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
-                      seed = NULL,maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,
+                      maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL,
                       trace=FALSE,link="logit",n.init=1,n.init.max = 10, restrict=30,start.params=NULL, RElist = NULL, dr=NULL, dLV=NULL, cstruc = "diag", cstruclv = "diag", dist =list(matrix(0)), distLV = matrix(0),
                       optimizer="optim",starting.val="res",Power=1.5,diag.iter=1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
                       Lambda.start=c(0.1,0.5), quad.start=0.01, jitter.var=0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap=NULL, Ntrials = 1, beta0com = FALSE) { 
@@ -49,6 +49,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   if(col.eff != "random"){
     # nsp <- 0
     spdr <- colMat <- cs <- matrix(0)
+    RElist <- colMat.old <- NULL
     Abstruc <- Abranks <- 0
     blocks = list(matrix(0))
     nncolMat <- matrix(0)
@@ -56,6 +57,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     spdr <- Matrix::t(RElist$Zt)
     cs <- RElist$cs
     Xt <- Matrix::t(RElist$Xt)
+    colMat.old <- colMat
     if(!is.null(colMat) && is.list(colMat)){
       if(length(colMat)!=2 && !is.null(nn.colMat)){
         stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (named) distance matrix.")
@@ -107,8 +109,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           E = E+1;
         }
         # save block
-        if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
+        # here we work with blocks of the inverse of the correlation matrix
+        if(nn.colMat==p){
+          if(colMat[B:E,B:E,drop=FALSE])
+          blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
+        }
         if(nn.colMat<p){
+          # here we work with blocks of the correlation matrix
           blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
           nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)sort(head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<=i],min(i, nn.colMat)))[1:p]))
         }
@@ -119,7 +126,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       blocksp <- unlist(lapply(blocks, ncol))
       # store total species and nr of species per block in first column, 0 and log determinants of each block in second column
       blocks = append(list(cbind(c(p,blocksp),c(0,unlist(lapply(blocks,function(x)-determinant(x)$modulus))))), blocks)
-
       if(sp.Ar.struc!="unstructured"){
         Abranks <- ifelse(sp.Ar.struc.rank>blocksp,blocksp,sp.Ar.struc.rank)
       }else{
@@ -296,7 +302,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
     #### Calculate starting values
-    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, seed = seed, starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials)
+    if((num.lv.c+num.lv+num.RR)==0 && !is.null(RElist) && starting.val == "res" && randomX.start == "res") RElist <- NULL # calculating starting values for REs and LVs
+    fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials, Ab.struct = sp.Ar.struc, Ab.struct.rank = sp.Ar.struc.rank, colMat = colMat.old, nn.colMat = nn.colMat, RElist = RElist, beta0com = beta0com)
     
     if(is.null(fit$Power) && family == "tweedie")fit$Power=1.1
     if(family=="tweedie"){
@@ -363,18 +370,30 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       }
       
       if(col.eff == "random"){
-      bstart <- start.values.randomX(y, as.matrix(spdr), family, formula=formula(paste0("~",paste0(make.unique(colnames(spdr)),collapse="+"))), starting.val = randomX.start, Power = Power, link = link)
-      B <- bstart$B
-      Br <- bstart$Br
-      sigmaB <- log(sqrt(diag(bstart$sigmaB)))
-      if(ncol(cs)==2){
-        sigmaB <- c(sigmaB,bstart$sigmaB[cs])
-      }
-      fit$Br <- bstart$Br
-      fit$B <- bstart$B
-      fit$sigmaB <- bstart$sigmaB
+        if(!is.null(RElist) && starting.val == "res" && randomX.start=="res" && (num.lv.c+num.RR+num.lv)>0){ # getting some improved starting values
+          B <- rep(0, ncol(spdr))
+          B[colnames(spdr)%in%colnames(Xt)] <- fit$fitstart$B
+          sigmaB <- log(sqrt(diag(fit$fitstart$sigmaB)))
+          if(ncol(cs)==2){
+            sigmaB <- c(sigmaB, fit$fitstart$TMBfnpar[names(fit$fitstart$TMBfnpar) == "sigmaB"][(ncol(spdr)+1):(ncol(spdr)+nrow(cs))])
+          }
+          Br <- fit$fitstart$Br
+        }else{
+        bstart <- start.values.randomX(y, as.matrix(spdr), family, formula=formula(paste0("~",paste0(make.unique(colnames(spdr)),collapse="+"))), starting.val = randomX.start, Power = Power, link = link)
+        B <- bstart$B
+        Br <- bstart$Br
+        bstart$sigmaB <- t(chol(bstart$sigmaB))
+        sigmaB <- log(diag(bstart$sigmaB))
+          if(ncol(cs)==2){
+            sigmaB <- c(sigmaB,bstart$sigmaB[cs])
+          }
+        }
+        
+      fit$Br <- Br
+      fit$B <- B
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, ncol(spdr))))
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(log(-log(0.5)),ifelse(colMat.rho.struct == "single", 1, ncol(spdr))))
+      fit$sigmaB <- sigmaB
       }else{
         sigmaB <- 0;Br <- matrix(0);B<-matrix(0)
       }
@@ -855,6 +874,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(sp.Ar.struc == "diagonal" || sp.Ar.struc== "blockdiagonal"){
           Abstruc <- 0
           spAr <- rep(log(Lambda.start[2]), sum(p*ncol(spdr)))
+          if(!is.null(fit$fitstart$Ab)){
+          spAr <- log(sqrt(unlist(lapply(fit$fitstart$Ab,diag))))
+          fit <- fit[names(fit)!="fitstart"]
+          fit$Ab <- exp(spAr)
+          }
           if(sp.Ar.struc == "blockdiagonal" && Ab.diag.iter == 0){
             spAr<-c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2))
           }
@@ -862,6 +886,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           Abstruc <- 1
           #matrix normal VA matrix
           spAr <- rep(log(Lambda.start[2]), ncol(spdr)+p-1)
+          if(!is.null(fit$fitstart$Ab)){
+            spAr <- log(sqrt(unlist(lapply(fit$fitstart$Ab,diag))[c(1:ncol(spdr),(ncol(spdr)+2):(ncol(spdr)+p))]))
+            fit <- fit[names(fit)!="fitstart"]
+            fit$Ab <- exp(spAr)
+          }
           if(sp.Ar.struc == "MNunstructured" && Ab.diag.iter == 0){
               spAr<-c(spAr, c(rep(1e-2, ncol(spdr)*(ncol(spdr)-1)/2)))
           }
@@ -869,14 +898,31 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
           Abstruc <- 3
           spAr <- rep(log(Lambda.start[2]), p*ncol(spdr)+p-length(blocksp))# variances
+          if(!is.null(fit$fitstart$Ab)){
+            spAr <- log(sqrt(unlist(lapply(fit$fitstart$Ab,diag))))
+            fit <- fit[names(fit)!="fitstart"]
+            fit$Ab <- exp(spAr)
+          }
           if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2)) # rest blockdiagonal
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(sp.Ar.struc == "spblockdiagonal" ||  (sp.Ar.struc=="unstructured" && Ab.diag.iter==1)){
           Abstruc <- 2
-          spAr <- c(rep(log(Lambda.start[2]), p*ncol(spdr)),rep(1e-3, ncol(spdr)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+          spAr <- rep(log(Lambda.start[2]), p*ncol(spdr))
+          if(!is.null(fit$fitstart$Ab)){
+            spAr <- log(sqrt(unlist(lapply(fit$fitstart$Ab,diag))))
+            fit <- fit[names(fit)!="fitstart"]
+            fit$Ab <- exp(spAr)
+          }
+          spAr <- c(spAr, rep(1e-3, ncol(spdr)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
       }else if(sp.Ar.struc == "unstructured"){
             Abstruc <- 4  
-            spAr <- c(rep(log(Lambda.start[2]), p*ncol(spdr)),rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
+            spAr <- rep(log(Lambda.start[2]), p*ncol(spdr))
+            if(!is.null(fit$fitstart$Ab)){
+              spAr <- log(sqrt(unlist(lapply(fit$fitstart$Ab,diag))))
+              fit <- fit[names(fit)!="fitstart"]
+              fit$Ab <- exp(spAr)
+            }
+            spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
       }
           } else {spAr <- 0}
       # Variational covariances for  random rows
@@ -890,13 +936,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
       #quadratic model starting values
       if(quadratic == TRUE && start.struc == "LV"){
-        start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+        start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = starting.val, Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
         if(inherits(start.fit,"try-error")&starting.val!="zero"){
-          start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+          start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
         }
         if(!inherits(start.fit,"try-error")&starting.val!="zero"){
           if(is.null(start.fit$lvs)){
-            start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, seed =  seed, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, sd.errors = FALSE, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
+            start.fit <- try(gllvm.TMB(y=y, X=X, lv.X = lv.X, num.lv=num.lv, num.lv.c = num.lv.c, num.RR = num.RR, family = family, Lambda.struc = Lambda.struc, row.eff=row.eff, reltol=reltol, maxit = maxit, start.lvs = start.lvs, offset = offset, n.init = 1, diag.iter=diag.iter, dependent.row=dependent.row, quadratic="LV", starting.val = "zero", Lambda.start = Lambda.start, quad.start = quad.start, jitter.var = jitter.var, zeta.struc = zeta.struc, optimizer = optimizer, optim.method = optim.method, max.iter=max.iter, start.struc="all", disp.group = disp.group, randomB = randomB, Ntrials = Ntrials),silent=T)
           }
         }
         if(!inherits(start.fit,"try-error")){
@@ -1454,7 +1500,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          rho.sp = pmax(exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr))))), 1e-12)
           covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"
@@ -1884,7 +1930,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          rho.sp = pmax(exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr))))), 1e-12)
           covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"
@@ -2130,7 +2176,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         out$params$Br <- Br
         out$params$B <- B
         names(out$params$B) <- colnames(Xt)
-        out$params$sigmaB <- diag(sigma.sp[1:ncol(spdr)]^2, ncol(spdr))
+        out$params$sigmaB <- diag(sigma.sp[1:ncol(spdr)], ncol(spdr))
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
           if(colMat.rho.struct == "term"){
             names(rho.sp) <- colnames(spdr)
@@ -2140,7 +2186,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           out$params$rho.sp <- rho.sp
         }
         if(ncol(cs)==2){
-          out$params$sigmaB[cs] <- out$params$sigmaB[cs[,c(2,1),drop=F]] <- covsigma.sp
+          sigmaSPij <- rep(0,(ncol(spdr)^2-ncol(spdr))/2)
+          if(ncol(cs)>1){
+            for(i in 1:nrow(cs)){
+              sigmaSPij[(cs[i,1] - 1) * (cs[i,1] - 2) / 2 + cs[i,2]] = covsigma.sp[i]
+            }
+          }
+          SprL <- out$params$sigmaB%*%constructL(sigmaSPij)
+          out$params$sigmaB <- SprL%*%t(SprL)
         }
         colnames(out$params$sigmaB) <- colnames(spdr)
         out$spdr <- spdr
