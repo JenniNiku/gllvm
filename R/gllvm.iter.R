@@ -52,15 +52,19 @@ gllvm.iter <- function(...){
   if((length(args$seed) >1) & (length(args$seed) < args$n.init)) {
     stop("Seed length doesn't match with the number of initial starts.")
   }
+  seed = NULL
   if(!is.null(args$seed) & (length(args$seed) ==1) & (length(args$seed) < args$n.init)) {
     set.seed(args$seed)
     seed <- sample(1:10000, args$n.init)
+  }else if(!is.null(args$seed)){
+    seed = args$seed
   }
-  # If no seed is sampled it is randomly drawn
-  if(is.null(args$seed) & args$starting.val!="zero"){
+  
+  if("seed" %in% names(args))args <- args[!names(args)=="seed"]
+  
+  # If no seed is provided it is randomly drawn
+  if(is.null(seed) & args$starting.val!="zero"){
     seed <- sample(1:10000, args$n.init)
-  }else{
-    seed <- NULL
   }
   
 if(args$n.init>1){
@@ -69,10 +73,10 @@ if(args$n.init>1){
 n.i.i <- 0;n.i <- 1
 
 while(n.i <= args$n.init && n.i.i<args$n.init.max){
-  args$seed = seed[n.i]
-
   if(args$n.init > 1 && args$trace)
     cat("Initial run ", n.i, "\n")
+  
+  set.seed(seed[n.i])
   
   if(model == "gllvm.TMB"){
   fit <- do.call(gllvm.TMB, args)
@@ -119,13 +123,14 @@ n.i <- n.i+1;
 }
 
 }else{
-  if(is.null(args$seed))args$seed = seed
+  set.seed(seed)
+  
   if(model == "gllvm.TMB"){
     fitFinal <- do.call(gllvm.TMB, args)
   }else if(model == "trait.TMB"){
     fitFinal <- do.call(trait.TMB, args)
   }
-  fitFinal$seed = args$seed
+  fitFinal$seed = seed
 }
 
 return(fitFinal)
