@@ -110,10 +110,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         # save block
         # here we work with blocks of the inverse of the correlation matrix
-        if(nn.colMat==p){
-          if(colMat[B:E,B:E,drop=FALSE])
-          blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
-        }
+        if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
         if(nn.colMat<p){
           # here we work with blocks of the correlation matrix
           blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]

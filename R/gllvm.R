@@ -1403,16 +1403,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
-      if(col.eff == "random" || isFALSE(col.eff) && !is.null(randomX)){
+      if(col.eff == "random" || (isFALSE(col.eff) && !is.null(randomX))){
         if(!is.null(colMat)){
           out$col.eff$colMat <- fitg$colMat
         }
         if(col.eff == "random" && is.null(randomX)) out$col.eff$Xt <- X.col.eff
-        out$col.eff$nsp <- fitg$nsp
+        # out$col.eff$nsp <- fitg$nsp
         # check if phylogenetic signal is on the boundary
-        if(!is.null(out$params$rho.sp) && (object$params$rho.sp < 1e-5 || object$params$rho.sp < (1-1e-5))){
-          warning("Phylogenetic signal parameter is on the boundary of the parameter space. Try another set of initial values or a different optimizer.")
-        }
+        # lack of convergence often dsiguises as phylo signal 0/1
+        # for colMat.struc="term" might look like multiple as 0/1 and some away from the boundary
+        if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp < (1-1e-5)))){
+          warning("Phylogenetic signal parameter is on the boundary. Try different optimizer or increase convergence tolerance ('reltol').")
+          }
       }
 }
       out$disp.group <- disp.group
