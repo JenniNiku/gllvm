@@ -16,7 +16,7 @@ getLoadings.gllvm <- function(object, ...)
   if(inherits(object, "gllvm.quadratic"))stop("For the quadratic response model, please use 'optima.gllvm' instead.")
   sploads <- object$params$theta
   
-  if(object$num.lv>0)sploads[,(ncol(sploads)-object$num.lv):ncol(sploads)] <- sploads[,(ncol(sploads)-object$num.lv):ncol(sploads)]%*%diag(tail(object$params$sigma.lv, object$num.lv))
+  if(object$num.lv>0)sploads[,(ncol(sploads)-object$num.lv+1):ncol(sploads)] <- sploads[,(ncol(sploads)-object$num.lv+1):ncol(sploads)]%*%diag(tail(object$params$sigma.lv, object$num.lv))
   # if(object$num.lv.c>0 & scale)sploads[,1:object$num.lv.c] <- sploads[,1:object$num.lv.c]%*%diag(head(object$params$sigma.lv, object$num.lv.c))
   
   return(sploads)
