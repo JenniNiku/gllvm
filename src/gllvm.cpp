@@ -598,9 +598,7 @@ Type objective_function<Type>::operator() ()
           for(int i=0; i<cs.rows(); i++){
             sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaB(xb.cols()+i);
           }
-        REPORT(sigmaSPij);
         SprL = sds*constructL(sigmaSPij);
-        REPORT(SprL);
         }else{
         SprL = sds;
         }
@@ -706,7 +704,7 @@ Type objective_function<Type>::operator() ()
                 colCorMatIblocks(cb-1) = AL.transpose()*AL;
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
               }else{ //no neighbours, must be only 1 species in this "block"
-                logdetColCorMat += log(colMatBlocksI(cb)(0,0));
+                // logdetColCorMat += log(colMatBlocksI(cb)(0,0));
                 colCorMatIblocks(cb-1)(0,0) = 1/colMatBlocksI(cb)(0,0);
               }
               sp += colMatBlocksI(cb).cols()-1;
@@ -753,7 +751,7 @@ Type objective_function<Type>::operator() ()
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols()) = AL.transpose()*AL;
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
               }else{ //no neighbours, must be only 1 species in this "block"
-                logdetColCorMat += log(colMatBlocksI(cb)(0,0));
+                // logdetColCorMat += log(colMatBlocksI(cb)(0,0));
                 colCorMatIblocks(cb-1).block(re*colMatBlocksI(cb).cols(),re*colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols(),colMatBlocksI(cb).cols())(0,0) = 1/colMatBlocksI(cb)(0,0);
               }
               }
@@ -762,37 +760,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-      
-      //could/should build in detection of block matrices based on entries in cs.
-      // if(rhoSP.size()==1){
-      //   if((cs.cols()>1)|(random(1)>0)){
-      //     //Spr is not diagonal
-      //     CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Spr));
-      //     logdetSpr = res[0];
-      //     SprI = atomic::vec2mat(res,Spr.rows(),Spr.cols(),1);
-      //   }else{
-      //     //Spr is diagonal
-      //     logdetSpr = Spr.diagonal().array().log().sum();
-      //     SprI = Spr.diagonal().cwiseInverse().asDiagonal();
-      //   }
-      // }else{
-      // if((cs.cols()>1)|(random(1)>0)){
-      //   SprIL.setZero();
-      //   //Spr is not diagonal
-      //   matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-      //   SprIL = Spr.llt().matrixL().solve(Ir);
-      //   logdetSpr = -2*SprIL.diagonal().array().log().sum();
-      //   SprI = SprIL.transpose()*SprIL;
-      // }else{
-      //   //Spr is diagonal
-      //   SprIL.setZero();
-      //   logdetSpr = Spr.diagonal().array().log().sum();
-      //   SprI = Spr.diagonal().cwiseInverse().asDiagonal();
-      //   SprIL.diagonal() = SprI.diagonal().cwiseSqrt();
-      // }
-      // }
-      REPORT(SprIL);
-      REPORT(colCorMatIblocks);
+
       //Variational components
       
       if(Abstruc == 0){
@@ -2868,35 +2836,49 @@ Type objective_function<Type>::operator() ()
         //random slopes in gllvm.TMB
         eta += xb*(Br.colwise()+B.col(0));
       }
-      matrix <Type> Spr;
+      
+      matrix <Type> Spr(xb.cols(),xb.cols());
+      matrix <Type> SprI(xb.cols(),xb.cols());
+      matrix <Type> SprIL(xb.cols(),xb.cols());
+      Type logdetSpr;
       
       if(random(1)>0){
         int l = xb.cols();
-        matrix<Type> sds(l,l);sds.setZero();
-        sds.diagonal() =  exp(sigmaB.segment(0,l));
-        Spr=sds*density::UNSTRUCTURED_CORR(sigmaij).cov()*sds;
+        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+        sds.diagonal() = exp(sigmaB.segment(0,l));
+        matrix<Type> SprL = sds*constructL(sigmaij);
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
+        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+        SprI = SprIL.transpose()*SprIL;
+        Spr=SprL*SprL.transpose();
+        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
-      
       if(random(3)>0){
-        // random species effects for gllvm.TMB
-        vector<Type> sigmaSP = exp(sigmaB.segment(0,xb.cols()));
-        Spr = matrix<Type>(xb.cols(),xb.cols());Spr.setZero();
+        int l = xb.cols();
+        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+        sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
         
-        int sprdiagcounter = 0; // tracking diagonal entries covariance matrix
-        for(int re=0; re<xb.cols(); re++){
-            Spr.diagonal()(sprdiagcounter) += pow(sigmaSP(re),2);
-            sprdiagcounter++;
+        vector<Type>sigmaSPij((l*l-l)/2);
+        sigmaSPij.fill(0.0);
+        //covariances of random effects
+        matrix<Type> SprL;
+        if(cs.cols()>1){
+          //need a vector with covariances and zeros in the right places
+          for(int i=0; i<cs.rows(); i++){
+            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaB(xb.cols()+i);
+          }
+          SprL = sds*constructL(sigmaSPij);
+        }else{
+          SprL = sds;
         }
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
+        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+        SprI = SprIL.transpose()*SprIL;
+        Spr=SprL*SprL.transpose();
+        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
-      //covariances of random effects
-      if(cs.cols()>1){
-        vector<Type> sigmaSPij = sigmaB.segment(xb.cols(),cs.rows());
-        for(int rec=0; rec<cs.rows(); rec++){
-          Spr(cs(rec,0)-1,cs(rec,1)-1) = sigmaSPij(rec);
-          Spr(cs(rec,1)-1,cs(rec,0)-1) = sigmaSPij(rec);
-        }
-      }
-      
 
       if(colMatBlocksI(0)(0,0)==p){
         Type logdetColCorMat = 0;
@@ -2910,24 +2892,6 @@ Type objective_function<Type>::operator() ()
             rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
           }
         }
-        }
-        matrix <Type> SprI(xb.cols(),xb.cols());
-        matrix <Type> SprIL(xb.cols(),xb.cols());
-        Type logdetSpr;
-        //could/should build in detection of block matrices based on entries in cs.
-        if((cs.cols()>1)|(random(1)>0)){
-          SprIL.setZero();
-          //Spr is not diagonal
-          matrix<Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-          SprIL = Spr.llt().matrixL().solve(Ir);
-          logdetSpr = -2*SprIL.diagonal().array().log().sum();
-          SprI = SprIL.transpose()*SprIL;
-        }else{
-          //Spr is diagonal
-          SprIL.setZero();
-          logdetSpr = Spr.diagonal().array().log().sum();
-          SprI = Spr.diagonal().cwiseInverse().asDiagonal();
-          SprIL.diagonal() = SprI.diagonal().cwiseSqrt();
         }
         
         int sp = 0;
@@ -3016,11 +2980,12 @@ Type objective_function<Type>::operator() ()
                 }
                 colCorMatI = (AL.transpose()*AL).sparseView();
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
-                nll += 0.5*(Br.middleCols(sp-cb, colCorMatI.cols())*colCorMatI*Br.middleCols(sp-cb, colCorMatI.cols()).transpose()*SprI).trace();
-              }else{ //no neighbours, must be only 1 species in this "block"
-                logdetColCorMat += log(colMatBlocksI(cb)(0,0));
-                nll += 0.5*(Br.middleCols(sp-cb, 1)*colMatBlocksI(cb).inverse()*Br.middleCols(sp-cb, 1).transpose()).sum();
-                
+                nll += 0.5*(Br.middleCols(sp-1, colCorMatI.cols())*colCorMatI*Br.middleCols(sp-1, colCorMatI.cols()).transpose()*SprI).trace();
+              }else{ 
+                //no neighbours, must be only 1 species in this "block"
+                //logdetis zero and colMatBlocksI is 1, but included anyway for good measure
+                // logdetColCorMat += log(colMatBlocksI(cb)(0,0));
+                nll += 0.5*(Br.middleCols(sp-1, 1)*colMatBlocksI(cb).inverse()*Br.middleCols(sp-1, 1).transpose()).sum();
               }
 
               sp += colCorMatI.cols()-1;
@@ -3044,7 +3009,7 @@ Type objective_function<Type>::operator() ()
                   // matrix<Type> C(k,k);
                   // C.setIdentity();
                   // matrix<Type> C(k,k);
-                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k)).array()-1;
+                  matrix <Type> C = colMatBlocksI(cb)(nncolMat.col(sp+j).head(k).array()-1,nncolMat.col(sp+j).head(k).array()-1);
                   C *= rhoSP(re);
                   C.diagonal().fill(1.0);
                   // for(int i=0; i<k; i++){
@@ -3070,12 +3035,12 @@ Type objective_function<Type>::operator() ()
                 logdetColCorMat -= 2*AL.diagonal().array().log().sum();
                 
                 //formulate MVNORM manually because we have all the components
-                nll += 0.5*(Br.block(re,sp-cb, 1,colCorMatI.cols())*colCorMatI*Br.block(re,sp-cb, 1,colCorMatI.cols()).transpose()).sum();
-                
+                nll += 0.5*(Br.block(re,sp-1, 1,colCorMatI.cols())*colCorMatI*Br.block(re,sp-1, 1,colCorMatI.cols()).transpose()).sum();
               }else{ //no neighbours, must be only 1 species in this "block"
-                logdetColCorMat += log(colMatBlocksI(cb)(0,0));
+                // logdetColCorMat += log(colMatBlocksI(cb)(0,0));
                 //formulate MVNORM manually because we have all the components
-                nll += 0.5*(Br.block(re,sp-cb, 1,colCorMatI.cols())*colMatBlocksI(cb).inverse()*Br.block(re,sp-cb, 1,colCorMatI.cols()).transpose()).sum();
+                // nll += 0.5*(Br(re,sp-1)*colMatBlocksI(cb).inverse()*Br(re,sp-1)).sum();
+                nll += 0.5*(Br.block(re,sp-1, 1,colMatBlocksI.cols())*colMatBlocksI(cb).inverse()*Br.block(re,sp-1, 1,colMatBlocksI.cols()).transpose()).sum();
               }
             }
               sp += colCorMatI.cols()-1;
