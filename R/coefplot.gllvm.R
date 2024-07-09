@@ -114,9 +114,15 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
         axis( 2, at = At.y, labels = names(Xc), las = 1, cex.axis = cex.ylab)
     }
   } else{
-    Xcoef <- object$params$B
-    xnames <- names(object$params$B)
-    sdXcoef <- object$sd$B
+    if(object$beta0com){
+      object$params$B <- c(setNames(object$params$beta0[1], "Intercept"), object$params$B)
+      object$sd$B <- c(setNames(object$sd$beta0[1], "Intercept"),object$sd$B)
+    }
+    if (is.null(which.Xcoef))
+      which.Xcoef <- 1:length(object$params$B)
+    Xcoef <- object$params$B[which.Xcoef]
+    xnames <- names(object$params$B)[which.Xcoef]
+    sdXcoef <- object$sd$B[which.Xcoef]
     if(object$family=="betaH"){
       if(is.null(which.Xcoef)){
         Xcoef <- c(Xcoef,object$params$betaH)
