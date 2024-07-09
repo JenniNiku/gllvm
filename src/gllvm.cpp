@@ -620,9 +620,12 @@ Type objective_function<Type>::operator() ()
         rhoSP.fill(1.0);
         if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
           rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+          if(nncolMat.rows()<p){
+            //need to cap this on the lower end for numerical stability
           for(int re=0; re<rhoSP.size(); re++){
             rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
           }
+        }
         }
         
         if(nncolMat.rows() <p){
@@ -2901,11 +2904,13 @@ Type objective_function<Type>::operator() ()
         rhoSP.fill(1.0);
         if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
           rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+          if(nncolMat.rows()<p){
+            //need to cap this for numerical stability
           for(int re=0; re<rhoSP.size(); re++){
             rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
           }
         }
-        
+        }
         matrix <Type> SprI(xb.cols(),xb.cols());
         matrix <Type> SprIL(xb.cols(),xb.cols());
         Type logdetSpr;

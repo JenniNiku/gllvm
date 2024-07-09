@@ -138,9 +138,13 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
   }else if(!is.logical(object$sd)&object$col.eff$col.eff=="random"){
   pars <- c(object$params$B)
-  se <- c(object$sd$B)
-  nX <- dim(object$col.eff$Xt)[2]
+  se <- c(object$sd$B)[object$sd$B!=0]
   newnam <- names(object$params$B)
+  if(object$beta0com){
+    pars <- c(object$params$beta0[1], pars)
+    se <- c(object$sd$beta0[1], se)
+    newnam <- c("Intercept", newnam)
+  }
   
   zval <- pars/se
   pvalue <- 2 * pnorm(-abs(zval))

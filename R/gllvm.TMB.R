@@ -103,7 +103,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       E = B
       if(nn.colMat == p)nncolMat <- matrix(0)
       if(nn.colMat < p)nncolMat <- NULL
-      while(B<p){
+      while(B<=p){
         while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
           # expand block
           E = E+1;
@@ -299,7 +299,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   out <- list( y = y, X = X, logL = Inf, num.lv = num.lv, num.lv.c = num.lv.c, row.eff = row.eff, col.eff = col.eff, colMat = colMat, family = family, X.design = X, method = method, zeta.struc = zeta.struc, Ntrials = Ntrials)
   
     #### Calculate starting values
-    if((num.lv.c+num.lv+num.RR)==0 && !is.null(RElist) && starting.val == "res" && randomX.start == "res") RElist <- NULL # calculating starting values for REs and LVs
+    if((num.lv.c+num.lv+num.RR)==0 && !is.null(RElist) && starting.val == "res" && randomX.start == "res" || randomX.start=="zero") RElist <- NULL # calculating starting values for REs and LVs
     fit <- start.values.gllvm.TMB(y = y, X = Xorig, formula = formula, lv.X = lv.X, TR = NULL, family = family, offset= offset, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, start.lvs = start.lvs, starting.val = starting.val, Power = Power, jitter.var = jitter.var, row.eff = row.eff, TMB=TRUE, link=link, zeta.struc = zeta.struc, disp.group = disp.group, method=method, randomB = randomB, Ntrials = Ntrials, Ab.struct = sp.Ar.struc, Ab.struct.rank = sp.Ar.struc.rank, colMat = colMat.old, nn.colMat = nn.colMat, RElist = RElist, beta0com = beta0com)
     
     if(is.null(fit$Power) && family == "tweedie")fit$Power=1.1
@@ -1497,7 +1497,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = pmax(exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr))))), 1e-12)
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"
@@ -1927,7 +1928,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         sigma.sp = exp(param[names(param)=="sigmaB"])[1:ncol(spdr)]
         covsigma.sp  = param[names(param)=="sigmaB"][-c(1:ncol(spdr))]
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
-          rho.sp = pmax(exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr))))), 1e-12)
+          rho.sp = exp(-exp(tail(param[names(param)=="sigmaB"], ifelse(colMat.rho.struct=="single",1,ncol(spdr)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           covsigma.sp  = head(covsigma.sp, -ifelse(colMat.rho.struct=="single",1,ncol(spdr)))
         }
         Bri = names(param)=="Br"

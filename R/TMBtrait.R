@@ -323,7 +323,7 @@ trait.TMB <- function(
         E = B
         if(nn.colMat == p)nncolMat <- matrix(0)
         if(nn.colMat < p)nncolMat <- NULL
-        while(B<p){
+        while(B<=p){
           while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
             # expand block
             E = E+1;
@@ -1442,7 +1442,8 @@ trait.TMB <- function(
       if(ncol(xb)>1){
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp = pmax(exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb))))), 1e-12)
+          rho.sp = exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- diag(exp(sigmaB), length(sigmaB))
@@ -1454,7 +1455,8 @@ trait.TMB <- function(
         D <- 1
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp = pmax(exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb))))), 1e-12)
+          rho.sp = exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- (exp(sigmaB))

@@ -1051,7 +1051,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         RElist <- mkReTrms1(bar.f,mf.new)
         dr <- Matrix::t(RElist$Zt)
         colnames(dr) <- rep(names(RElist$nl),RElist$nl)
-        
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
@@ -1412,7 +1411,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # check if phylogenetic signal is on the boundary
         # lack of convergence often dsiguises as phylo signal 0/1
         # for colMat.struc="term" might look like multiple as 0/1 and some away from the boundary
-        if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp < (1-1e-5)))){
+        if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp > (1-1e-5)))){
           warning("Phylogenetic signal parameter is on the boundary. Try different optimizer or increase convergence tolerance ('reltol').")
           }
       }
