@@ -1883,7 +1883,7 @@ trait.TMB <- function(
               }
             }
             # build second matrix, first diagonal entry fixed for identifiability
-            SArmC = diag(c(1, Ar.sds[1:(blocksp[cb]-1)]))
+            SArmC = diag(c(1, if(blocksp[cb]>1)Ar.sds[1:(blocksp[cb]-1)]))
             Ar.sds <- Ar.sds[-c(1:(blocksp[cb]-1))]
             
             for (j in 1:Abranks[cb]){
