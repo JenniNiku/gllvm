@@ -15,7 +15,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
   #   Ar.struc <- rep(Ar.struc, ncol(dr))
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   if(((num.lv+num.lv.c)==0) & (row.eff!="random" || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
-  if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
+  if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal","diagonalCL1")) Ab.diag.iter <- 0
   
   if(is.null(colMat) && !(sp.Ar.struc %in% c("diagonal","blockdiagonal")))sp.Ar.struc <- "blockdiagonal"
   
@@ -879,7 +879,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
           if(sp.Ar.struc == "blockdiagonal" && Ab.diag.iter == 0){
             spAr<-c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2))
           }
-        }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"  || (sp.Ar.struc=="spblockdiagonal" && Ab.diag.iter == 1)  || (sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 1)){
+        }else if(sp.Ar.struc == "MNdiagonal" || sp.Ar.struc == "MNunstructured"  || (sp.Ar.struc=="spblockdiagonal" && Ab.diag.iter == 1)  || (sp.Ar.struc=="CL1" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
           spAr <- rep(log(Lambda.start[2]), ncol(spdr)+p-1)
@@ -892,7 +892,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
               spAr<-c(spAr, c(rep(1e-2, ncol(spdr)*(ncol(spdr)-1)/2)))
           }
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-        }else if(sp.Ar.struc %in%c("blockdiagonalsp","diagonalsp")){
+        }else if(sp.Ar.struc %in%c("CL1","diagonalCL1")){
           Abstruc <- 3
           spAr <- rep(log(Lambda.start[2]), p*ncol(spdr)+p-length(blocksp))# variances
           if(!is.null(fit$fitstart$Ab)){
@@ -900,7 +900,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             fit <- fit[names(fit)!="fitstart"]
             fit$Ab <- exp(spAr)
           }
-          if(sp.Ar.struc=="blockdiagonalsp" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2)) # rest blockdiagonal
+          if(sp.Ar.struc=="CL1" && Ab.diag.iter == 0)spAr <- c(spAr, rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2)) # rest blockdiagonal
           spAr <- c(spAr, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(sp.Ar.struc == "spblockdiagonal" ||  (sp.Ar.struc=="unstructured" && Ab.diag.iter==1)){
           Abstruc <- 2
@@ -1164,7 +1164,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       
       
       ### Now diag.iter, improves the model fit sometimes
-      if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","blockdiagonalsp")))){
+      if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","CL1")))){
         objr1 <- objr
         optr1 <- optr
         param1 <- optr$par
@@ -1197,7 +1197,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             }else if(sp.Ar.struc == "spblockdiagonal"){# "MNdiagonal" was previous iteration
               Abstruc <- 2
               spAr1 <- c(rep(log(Lambda.start[2]), ncol(spdr)*p),rep(1e-3, ncol(spdr)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-            }else if(sp.Ar.struc == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
+            }else if(sp.Ar.struc == "CL1"){# "MNdiagonal" was previous iteration
               Abstruc <- 3
               spAr1 <- c(rep(log(Lambda.start[2]), p*ncol(spdr)+p-length(blocksp)), rep(1e-3, p*ncol(spdr)*(ncol(spdr)-1)/2),rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
             }else if(sp.Ar.struc == "unstructured"){# "spblockdiagonal" was previous iteration
@@ -2510,7 +2510,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
 
                 spArs[[1]] <- spArs[[1]]%*%t(spArs[[1]])
                 spArs[[2]] <- spArs[[2]]%*%t(spArs[[2]])
-          }else if(sp.Ar.struc %in% c("diagonalsp", "blockdiagonalsp")){
+          }else if(sp.Ar.struc %in% c("diagonalCL1", "CL1")){
             spArs <- list(length(blocks[-1]))
             Ar.sds <- exp(spAr[1:(sum(blocksp*ncol(spdr))+p-length(blocksp))])
             spAr <- spAr[-c(1:(sum(blocksp*ncol(spdr))+p-length(blocksp)))]
@@ -2520,7 +2520,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             for(j in 1:blocksp[cb]){
               SArmbs[[j]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
               Ar.sds <- Ar.sds[-c(1:ncol(spdr))]
-              if(sp.Ar.struc == "blockdiagonalsp" && ncol(spdr)>1){
+              if(sp.Ar.struc == "CL1" && ncol(spdr)>1){
                   for(d in 1:(ncol(spdr)-1)){
                     for(r in (d+1):ncol(spdr)){
                       SArmbs[[j]][r,d] = spAr[1];

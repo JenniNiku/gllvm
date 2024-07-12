@@ -13,7 +13,7 @@ trait.TMB <- function(
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
 
-  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
+  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalCL1")) Ab.diag.iter <- 0
   
   if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
   
@@ -863,7 +863,7 @@ trait.TMB <- function(
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="CL1" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
           Abb <- log(sqrt(unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]))
@@ -875,10 +875,10 @@ trait.TMB <- function(
           Abstruc <- 2
           Abb <- log(sqrt(unlist(lapply(res$fitstart$Ab,diag))))
           Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+          }else if(Ab.struct %in%c("CL1","diagonalCL1")){
           Abstruc <- 3
           Abb <- c(log(sqrt(unlist(lapply(res$fitstart$Ab,diag)))),rep(log(a.var), p*ncol(xb)+p-length(blocksp)))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          if(Ab.struct=="CL1" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
@@ -898,7 +898,7 @@ trait.TMB <- function(
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="CL1" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
           Abb <- rep(log(a.var), ncol(xb)+p-1)  
@@ -909,10 +909,10 @@ trait.TMB <- function(
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter == 1)){
           Abstruc <- 2
           Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-        }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+        }else if(Ab.struct %in%c("CL1","diagonalCL1")){
           Abstruc <- 3
           Abb <- rep(log(a.var),sum(p*ncol(xb))+p-length(blocksp))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          if(Ab.struct=="CL1" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
@@ -1129,7 +1129,7 @@ trait.TMB <- function(
   
     ### Now diag.iter, improves the model fit sometimes
     
-    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","blockdiagonalsp")))){
+    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","CL1")))){
       objr1 <- objr
       optr1 <- optr
       param1 <- optr$par
@@ -1153,7 +1153,7 @@ trait.TMB <- function(
           }else if(Ab.struct == "spblockdiagonal"){# "MNdiagonal" was previous iteration
             Abstruc <- 2
             Abb <- c(rep(log(0.5), ncol(xb)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else if(Ab.struct == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
+          }else if(Ab.struct == "CL1"){# "MNdiagonal" was previous iteration
             Abstruc <- 3
             Abb <- c(rep(log(0.5), p*ncol(xb)+p-length(blocksp)), rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
           }else if(Ab.struct == "unstructured"){# "spblockdiagonal" was previous iteration
@@ -1864,7 +1864,7 @@ trait.TMB <- function(
 
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
-        }else if(Ab.struct %in% c("diagonalsp", "blockdiagonalsp")){
+        }else if(Ab.struct %in% c("diagonalCL1", "CL1")){
           Abs <- list(length(blocks[-1]))
           Ar.sds <- exp(Ab[1:(sum(blocksp*ncol(xb))+p-length(blocksp))])
           Ab <- Ab[-c(1:(sum(blocksp*ncol(xb))+p-length(blocksp)))]
@@ -1874,7 +1874,7 @@ trait.TMB <- function(
             for(j in 1:blocksp[cb]){
               SArmbs[[j]] <- diag(Ar.sds[1:ncol(xb)], xdr)
               Ar.sds <- Ar.sds[-c(1:ncol(xb))]
-              if(Ab.struct == "blockdiagonalsp" && ncol(xb)>1){
+              if(Ab.struct == "CL1" && ncol(xb)>1){
                 for(d in 1:(ncol(xb)-1)){
                   for(r in (d+1):ncol(xb)){
                     SArmbs[[j]][r,d] = Ab[1];
