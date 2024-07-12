@@ -73,7 +73,7 @@ if(object$col.eff$col.eff=="random"){
   }else if(length(object$params$rho.sp)>1){
     L=t(chol(object$params$sigmaB))
     Sig=kronecker(as(diag(object$params$rho.sp),"TsparseMatrix"),object$col.eff$colMat)+as(diag(rep(1-object$params$rho.sp,each=ncol(object$y))),"TsparseMatrix")
-    cov.environ.col <- kronecker(x%*%L,diag(ncol(object$y)))%*%Sig%*%kronecker(t(L)%*%x,diag(ncol(object$y)))
+    cov.environ.col <- as.matrix(kronecker(x%*%L,diag(ncol(object$y)))%*%Sig%*%kronecker(t(L)%*%x,diag(ncol(object$y))))
   }
   trace.environ.col <- sum(diag(cov.environ.col))
 }
