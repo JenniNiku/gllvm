@@ -280,7 +280,7 @@ trait.TMB <- function(
       # sigmaB <- diag(ncol(xb))
       colMat.old <- colMat
       if(!is.null(colMat) && is.list(colMat)){
-        if(length(colMat)!=2 && !is.null(nn.colMat)){
+        if(length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat)){
           stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (named) distance matrix.")
         }else if(length(colMat)==1 && is.null(nn.colMat)){
           colMat <- colMat[[1]]
@@ -298,6 +298,10 @@ trait.TMB <- function(
       }
       
       if(!is.null(colMat) && all(dim(colMat)!=1)){
+        if(!all(colnames(colMat) %in% colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
+        colMat <- colMat[colnames(y), colnames(y)]
+        if(exists("colMat.dist"))colMat.dist <- colMat.dist[colnames(y), colnames(y)]
+        
         #is left empty, set to maximum number of columns
         if(Ab.struct%in%c("diagonal","blockdiagonal")){
           Ab.struct.rank = 0

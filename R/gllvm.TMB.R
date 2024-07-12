@@ -59,13 +59,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     Xt <- Matrix::t(RElist$Xt)
     colMat.old <- colMat
     if(!is.null(colMat) && is.list(colMat)){
-      if(length(colMat)!=2 && !is.null(nn.colMat)){
-        stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (named) distance matrix.")
+      if(length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat)){
+        stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (dist-named) distance matrix.")
       }else if(length(colMat)==1 && is.null(nn.colMat)){
          colMat <- colMat[[1]]
       }else{
       colMat.dist <- colMat$dist  
       colMat <- colMat[[which(names(colMat)!="dist")]]
+      
       if(is.null(nn.colMat)){
         nn.colMat <- round(.3*p)
       }
@@ -78,6 +79,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
     # nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
     
     if(!is.null(colMat)  && all(dim(colMat)!=1)){
+      if(!all(colnames(colMat) %in% colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
+      colMat <- colMat[colnames(y), colnames(y)]
+      if(exists("colMat.dist"))colMat.dist <- colMat.dist[colnames(y), colnames(y)]
+      
       if(sp.Ar.struc%in%c("diagonal","blockdiagonal")){
         sp.Ar.struc.rank = 0
       }else if(is.null(sp.Ar.struc.rank) && sp.Ar.struc != "unstructured"){
@@ -94,8 +99,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(!isSymmetric(colMat, tol = 1e-12)){
         stop("Matrix for column effects is not symmetric.")
       }
-      if(!all(colnames(colMat) == colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
-      
+
       colMat <- try(cov2cor(colMat),silent = TRUE)
       # find blockstructure in colMat
       blocks = list()
