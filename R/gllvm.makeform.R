@@ -36,7 +36,7 @@ corstruc<-function (term)
 }
 
 # Make random formula following lme4 codes
-findbars1<-function (term) {
+findbars1 <- function (term) {
   fb <- function(term) {
     if (is.name(term) || !is.language(term)) 
       return(NULL)
@@ -175,7 +175,7 @@ mkModMlist <- function (x, frloc) {
   list(ff = ff, sm = sm, nl = nl, cnms = row.names(sm), fm = fm)
 }
 #
-mkReTrms1 <- function (bars, fr) 
+mkReTrms1 <- function (bars, fr, ...) 
 {
   # drop.unused.levels = TRUE; 
   reorder.vars = FALSE
@@ -196,7 +196,14 @@ mkReTrms1 <- function (bars, fr)
   cnms <- lapply(blist,`[[`,"cnms")
   grps <- unlist(lapply(cnms,length))
   if(any(grps>1)){
-  cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
+  # diag enters to remove any potential correlations
+  if(!"diag"%in%names(list(...))){
+    cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
+  }else{
+  nocorr <- list(...)$diag
+  cs <- which(as.matrix(Matrix::bdiag(mapply(function(x, nc)lower.tri(matrix(ncol=length(x),nrow=length(x)))*(nc!="diag"), cnms, nocorr, SIMPLIFY=FALSE)))==1, arr.ind = TRUE)
+  if(nrow(cs)==0)cs<-matrix(0)
+  }
   }else{
     cs <- NULL
   }
@@ -249,6 +256,35 @@ expandDoubleVerts1 <- function (term) {
   term
 }
 
+# for diag in col eff
+expandDoubleVerts2 <- function (term) {
+  expandDoubleVert <- function(term) {
+    frml <- formula(substitute(~x, list(x = term[[2]])))
+    newtrms <- paste0("0+", attr(terms(frml), "term.labels"))
+    if (attr(terms(frml), "intercept") != 0) 
+      newtrms <- c("1", newtrms)
+    as.formula(paste("~(", paste(vapply(newtrms, function(trm) paste0(trm, 
+                                                                      "|", deparse(term[[3]])), ""), collapse = ")+("), 
+                     ")"))[[2]]
+  }
+  if (!is.name(term) && is.language(term)) {
+    if (term[[1]] == as.name("(")) {
+      term[[2]] <- expandDoubleVerts2(term[[2]])
+    }
+    stopifnot(is.call(term))
+    if (term[[1]] == as.name("||")) 
+      return(expandDoubleVert(term))
+    term[[2]] <- expandDoubleVerts2(term[[2]])
+    if(term[[1]]=="diag")
+      term <- substitute(foo, list(foo=parse(text=paste0("diag(", findbars1(expandDoubleVerts2(term[[2]])), ")",collapse="+"))[[1]]))
+    if (length(term) != 2) {
+      if (length(term) == 3) 
+        term[[3]] <- expandDoubleVerts2(term[[3]])
+    }
+  }
+  term
+}
+
 anyBars <- function (term) 
 {
   any(c("|", "||") %in% all.names(term))
@@ -273,6 +309,48 @@ isBar <- function (term)
     }
   }
   FALSE
+}
+
+allbars_ <- function (term) 
+{
+  if (!anyBars(term)) 
+    return(NULL)
+  if (isBar(term)) 
+    return(term)
+  if (isAnyArgBar(term)) 
+    return(term)
+  if (length(term) == 2) {
+    nb <- allbars_(term[[2]])
+    if (is.null(nb)) 
+      return(NULL)
+    term[[2]] <- nb
+    return(term)
+  }
+  nb2 <- allbars_(term[[2]])
+  nb3 <- allbars_(term[[3]])
+  if (is.null(nb2)) 
+    return(nb3)
+  if (is.null(nb3)) 
+    return(nb2)
+  term[[2]] <- nb2
+  term[[3]] <- nb3
+  term
+}
+
+allbars <- function (term) 
+{
+  e <- environment(term)
+  nb <- allbars_(term)
+  if (is(term, "formula") && length(term) == 3 && is.symbol(nb)) {
+    nb <- reformulate("1", response = deparse(nb))
+  }
+  if (is.null(nb)) {
+    nb <- if (is(term, "formula")) 
+      ~1
+    else 1
+  }
+  environment(nb) <- e
+  nb
 }
 
 nobars1 <- function (term) 

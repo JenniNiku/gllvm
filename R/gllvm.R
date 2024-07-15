@@ -691,9 +691,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
       col.eff <- "random"
-      col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
-      formula <- nobars1_(formula) # take out random effects
-      
+      # col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
+      # keep RE part of formula unchanged
+      col.eff.formula = allbars(formula)
+      formula = nobars1_(formula)
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
       
       if(anyBars(formula) && is.null(X.col.eff) && (length(bar.f)>1 & bar.f[[1]]!=bquote(1|1))){
@@ -702,33 +703,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         X.col.eff <- cbind(Intercept=rep(1,nrow(y)))
       }
       
-      mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
-      RElistSP<- mkReTrms1(bar.f,mf) #still add find double bars
-      # spdr <- Matrix::t(RElist$Zt)
-      # cs <- RElist$cs # covariances of REs
-      # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
+      mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(col.eff.formula), deparse1)))),data=data.frame(X.col.eff))
+      RElistSP<- mkReTrms1(bar.f,mf, diag=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
-      # 
-      # X.col.eff <- as.matrix(Matrix::t(RElist$Xt))
-      # # Final safety check to remove column with only 1s
-      # # though they shouldn't occur
-      # X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1)), drop = FALSE]
-      # # Keep gllvm.TMB from removing intercept column in REs
-      # if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
-      # # build formula argument for RE means
-      # 
-      # if(is.null(X) && ncol(X.col.eff) > 0){
-      #   X <- as.matrix(X.col.eff)
-      #   colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-      #   formula <- reformulate(colnames(X))
-      # }else if(ncol(X.col.eff) > 0){
-      #   X <- cbind(X, X.col.eff)
-      #   colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-      #   formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
-      # }
     }
     
     if (!is.null(y)) {
@@ -1416,7 +1396,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # lack of convergence often dsiguises as phylo signal 0/1
         # for colMat.struc="term" might look like multiple as 0/1 and some away from the boundary
         if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp > (1-1e-5)))){
-          warning("Phylogenetic signal parameter is on the boundary. Try different optimizer or increase convergence tolerance ('reltol').")
+          warning("Phylogenetic signal parameter is on the boundary. Considering trying a different optimizer or increasing the convergence tolerance ('reltol').")
           }
       }
 }
