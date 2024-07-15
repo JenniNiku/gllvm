@@ -2203,7 +2203,7 @@ start.values.randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB")){
+      if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB","gaussian")){
         if(family == "ZIP") family <- "poisson"
         f1 <- gllvm.TMB(y=y, X=X, family = family, formula=formula, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
         B <- attr(scale(f1$params$Xcoef),"scaled:center")
