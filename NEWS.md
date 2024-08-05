@@ -1,3 +1,19 @@
+Version 1.4.6
+=============
+
+* Added a 'getLoadings' function for retrieving species' loadings
+* Added 'fac.center' argument in ordiplot to plot canonical coefficients of binary variables as points
+* Added a simple plotting function for the gllvm summary
+* Improved scaling for ordiplot with quadratic model and with biplot = FALSE
+* optima.gllvm and tolerances.gllvm for num.lv now correctly provide tolerances w.r.t. the scaled LV
+* Improved starting values for models with 'randomB'
+* 'which.Xcoef' in coefplot.gllvm now also works for fourth-corner models
+* Added intercept if beta0com=TRUE to coefplot.gllvm for fourth-corner models
+
+## Bug Fixes
+* Bug fixed that prevented increasing he point size of sites in ordiplot with symbols = TRUE
+* Bug fixed in optima.gllvm for models with a single LV
+
 Version 1.4.5
 =============
 * Separated "n.init" functionality into gllvm.iter.R

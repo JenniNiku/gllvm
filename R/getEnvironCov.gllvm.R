@@ -16,10 +16,15 @@
 #' Covariances due to the covariates can only be calculated when random effects are included in the model, and are thus limited to reduced rank models (those including constrained and concurrent ordinations) fitted with random slopes, models fitted with random effects via the formula interface, or the fourth corner model fitted with random slopes.
 #' For full rank models with random slopes, i.e., with the formula interface or the fourth corner model, the covariances of species are formulated as:
 #' 
-#'  \deqn{\Sigma_e = C*kronecker(P\rho + (1-\rho)I_p, R)*C',}
+#'  \deqn{\Sigma_e = I*kronecker(C\rho + (1-\rho)I_p, R)*I',}
 #'  
-#' where P is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho_{sp}} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{C = kronecker(I_p, 1_r)}, with 1_r a vector of 1s equal to the number of random effects.
+#' where C is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{I = kronecker(I_p, x)}, with x a vector of covariate values for each of the random effects, which defaults to a vector of 1s.
+#' when there are covariate-specific phylogenetic signal parameters in the model, this is instead:
+#'
+#' \deqn{\Sigma_e = kronecker(x_i'L, I_p)*\Sigma*kronecker(L'x_i, I_p),}
 #' 
+#' where \eqn{\Sigma} is the block matrix defined in van der Veen et al. (in prep), and \eqn{L} is the lower cholesky factor from the random effects (covariates) covariance matrix.
+#'
 #' For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
 #' 
 #'  \deqn{\Sigma_e = \Theta*S*\Theta',}
@@ -62,10 +67,14 @@ if(object$col.eff$col.eff=="random"){
   C <- kronecker(diag(ncol(object$y)),t(x))
   if(is.null(object$col.eff$colMat)){
     object$col.eff$colMat <- diag(ncol(object$y))
-  }else{
+  }else if(length(object$params$rho.sp)==1){
     object$col.eff$colMat <- as.matrix(object$col.eff$colMat*object$params$rho.sp+(1-object$params$rho.sp)*diag(ncol(object$y)))
+    cov.environ.col <- C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%t(C)
+  }else if(length(object$params$rho.sp)>1){
+    L=t(chol(object$params$sigmaB))
+    Sig=kronecker(as(diag(object$params$rho.sp),"TsparseMatrix"),object$col.eff$colMat)+as(diag(rep(1-object$params$rho.sp,each=ncol(object$y))),"TsparseMatrix")
+    cov.environ.col <- as.matrix(kronecker(x%*%L,diag(ncol(object$y)))%*%Sig%*%kronecker(t(L)%*%x,diag(ncol(object$y))))
   }
-  cov.environ.col <- C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%t(C)
   trace.environ.col <- sum(diag(cov.environ.col))
 }
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility

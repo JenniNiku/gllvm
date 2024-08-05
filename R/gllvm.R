@@ -9,7 +9,7 @@
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).
 #' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (only with \code{"VA"}-method), and \code{"orderedBeta"} (only with \code{"EVA"}-method.
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.
-#' @param num.lv.c  number of latent variables, d, in gllvm model to constrain, with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
+#' @param num.lv.c  number of latent variables, d, in gllvm model to inform, i.e., with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
 #' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
 #' @param lvCor (Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
@@ -45,8 +45,8 @@
 #'  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
 #'  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
 #'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
-#'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 4000.}
-#'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 4000.}
+#'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 6000.}
+#'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 #'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
 #'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 30 percent of species. If set to the number of columns in the response data, a standard inverse is used instead.}
@@ -54,8 +54,8 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalsp" ,"blockdiagonalsp" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
-#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalsp", "blockdiagonalsp","spblockdiagonal", and "unstructured".}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
+#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","spblockdiagonal", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -686,45 +686,29 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }else{
       X.col.eff <- NULL
     }
-    if(anyBars(formula) && is.null(X.col.eff)){
-      stop("Covariates for species random effects must be provided.")
-    }
     col.eff <- FALSE;col.eff.formula = ~0;RElistSP <- list(Zt = matrix(0))# cs = NULL; spdr = NULL;
     # Species random effects    
     if(anyBars(formula)){
       if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
       col.eff <- "random"
-      col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
-      formula <- nobars1_(formula) # take out random effects
-      
+      # col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
+      # keep RE part of formula unchanged
+      col.eff.formula = allbars(formula)
+      formula = nobars1_(formula)
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
-      mf <- model.frame(subbars1(col.eff.formula),data=data.frame(X.col.eff))
-      RElistSP<- mkReTrms1(bar.f,mf) #still add find double bars
-      # spdr <- Matrix::t(RElist$Zt)
-      # cs <- RElist$cs # covariances of REs
-      # colnames(spdr) <- rep(names(RElist$nms),RElist$nms)
+      
+      if(anyBars(formula) && is.null(X.col.eff) && (length(bar.f)>1 & bar.f[[1]]!=bquote(1|1))){
+        stop("Covariates for species random effects must be provided.")
+      }else if(length(bar.f)==1 & bar.f[[1]]==bquote(1|1)){
+        X.col.eff <- cbind(Intercept=rep(1,nrow(y)))
+      }
+      
+      mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(col.eff.formula), deparse1)))),data=data.frame(X.col.eff))
+      RElistSP<- mkReTrms1(bar.f,mf, diag=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
       }
-      # 
-      # X.col.eff <- as.matrix(Matrix::t(RElist$Xt))
-      # # Final safety check to remove column with only 1s
-      # # though they shouldn't occur
-      # X.col.eff <- X.col.eff[, !apply(X.col.eff, 2, function(x)all(x==1)), drop = FALSE]
-      # # Keep gllvm.TMB from removing intercept column in REs
-      # if(any(colnames(X.col.eff)=="(Intercept)"))colnames(X.col.eff)[colnames(X.col.eff) == "(Intercept)"] <- "Intercept"
-      # # build formula argument for RE means
-      # 
-      # if(is.null(X) && ncol(X.col.eff) > 0){
-      #   X <- as.matrix(X.col.eff)
-      #   colnames(X) <- make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-      #   formula <- reformulate(colnames(X))
-      # }else if(ncol(X.col.eff) > 0){
-      #   X <- cbind(X, X.col.eff)
-      #   colnames(X)[tail(1:ncol(X),ncol(X.col.eff))] <-  make.names(paste0("RE_mean_", make.unique(colnames(X.col.eff))))
-      #   formula <- update.formula(as.formula(formula), as.formula(paste0("~. + ", paste0("RE_mean_", make.unique(colnames(X.col.eff)), collapse = "+"))))
-      # }
     }
     
     if (!is.null(y)) {
@@ -858,7 +842,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       term <- attr(mf, "terms")
       abundances <- model.response(mf, "numeric")
       if (any(is.na(abundances)))
-        stop("There are NA values in the response.")
+        warning("There are NA values in the response.")
       y <- abundances
       #
       X <- model.matrix(term, mf)
@@ -1051,7 +1035,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         RElist <- mkReTrms1(bar.f,mf.new)
         dr <- Matrix::t(RElist$Zt)
         colnames(dr) <- rep(names(RElist$nl),RElist$nl)
-        
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
@@ -1219,11 +1202,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     if(!is.null(colMat) && Ab.struct %in% c("diagonal", "blockdiagonal") && method %in% c("VA", "EVA")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalsp","blockdiagonalsp","spblockdiagonal", "MNunstructured","MNdiagonal") && method %in% c("VA","EVA")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalCL1","CL1","spblockdiagonal", "MNunstructured","MNdiagonal") && method %in% c("VA","EVA")){
       warning("So many variational parameters are not required for your model. Setting Ab.struct = 'blockdiagonal'.\n")
       Ab.struct <- "blockdiagonal"
     }
-    if(!is.null(colMat) && method%in%c("VA","EVA") && !Ab.struct%in%c("unstructured","diagonalsp","blockdiagonalsp","spblockdiagonal","blockdiagonal","diagonal","MNunstructured","MNdiagonal"))stop("Selected 'Ab.struct' not allowed.")
+    if(!is.null(colMat) && method%in%c("VA","EVA") && !Ab.struct%in%c("unstructured","diagonalCL1","CL1","spblockdiagonal","blockdiagonal","diagonal","MNunstructured","MNdiagonal"))stop("Selected 'Ab.struct' not allowed.")
     
     if (is.null(offset))
       O <- matrix(0, nrow = n, ncol = p)
@@ -1264,6 +1247,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     if(link == "logit" && method == "VA"){
       message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
+      method  = "EVA"
+      out$method = "EVA"
     }
     if (family == "orderedbeta") {
       out$link <- "probit"
@@ -1312,7 +1297,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quad.start = quad.start,
             start.lvs = start.lvs,
             offset = O,
-            sd.errors = sd.errors,
             trace = trace,
             link = link,
             n.init = n.init,
@@ -1371,7 +1355,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quad.start = quad.start,
             start.lvs = start.lvs,
             offset = O,
-            sd.errors = sd.errors,
             trace = trace,
             link = link,
             Ntrials = Ntrials,
@@ -1403,12 +1386,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
-      if(col.eff == "random" || isFALSE(col.eff) && !is.null(randomX)){
+      if(col.eff == "random" || (isFALSE(col.eff) && !is.null(randomX))){
         if(!is.null(colMat)){
           out$col.eff$colMat <- fitg$colMat
         }
         if(col.eff == "random" && is.null(randomX)) out$col.eff$Xt <- X.col.eff
-        out$col.eff$nsp <- fitg$nsp
+        # out$col.eff$nsp <- fitg$nsp
+        # check if phylogenetic signal is on the boundary
+        # lack of convergence often dsiguises as phylo signal 0/1
+        # for colMat.struc="term" might look like multiple as 0/1 and some away from the boundary
+        if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp > (1-1e-5)))){
+          warning("Phylogenetic signal parameter is on the boundary. Considering trying a different optimizer or increasing the convergence tolerance ('reltol').")
+          }
       }
 }
       out$disp.group <- disp.group
@@ -1421,6 +1410,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # out$X <- fitg$X
       
       out$params <- fitg$params
+      
+      if(!TMB&family=="ordinal"){
+        out$zeta.struc <- "species"
+      }else if(TMB & family == "ordinal"){
+        out$zeta.struc = fitg$zeta.struc
+      }
       
       #### Try to calculate sd errors
       if (!is.infinite(out$logL) && sd.errors) {
@@ -1441,10 +1436,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (family == "tweedie") {
         out$Power <- fitg$Power
       }
-      
-      if(family == "ordinal"){
-        out$zeta.struc = zeta.struc
-      }
+
       if ((method %in% c("VA", "EVA"))) {
         out$A <- fitg$A
         out$Ar <- fitg$Ar
@@ -1550,6 +1542,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(row.eff == "random"){
       out$dr = fitg$dr
     }
+    
+    
     if (is.finite(out$logL) && row.eff == "random" && FALSE){
       if(method == "LA"){
         if(abs(out$params$sigma)<0.02)
@@ -1576,7 +1570,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
 
-
     if(is.null(out$sd)){
       out$sd <- FALSE
     }
@@ -1600,11 +1593,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     }else{
       out$quadratic <- FALSE
-    }
-    if(!TMB&family=="ordinal"){
-      out$zeta.struc <- "species"
-    }else if(TMB & family == "ordinal"){
-      out$zeta.struc = fitg$zeta.struc
     }
 
     out$call <- match.call()

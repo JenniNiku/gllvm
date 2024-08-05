@@ -136,6 +136,20 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  }else if(!is.logical(object$sd)&object$col.eff$col.eff=="random"){
+  pars <- c(object$params$B)
+  se <- c(object$sd$B)[object$sd$B!=0]
+  newnam <- names(object$params$B)
+  if(object$beta0com){
+    pars <- c(object$params$beta0[1], pars)
+    se <- c(object$sd$beta0[1], se)
+    newnam <- c("Intercept", newnam)
+  }
+  
+  zval <- pars/se
+  pvalue <- 2 * pnorm(-abs(zval))
+  coef.table <- cbind(pars, se, zval, pvalue)
+  dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
   }else{
     coef.table <- NULL
   }
@@ -293,7 +307,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if(object$family == "gaussian"){
     sumry$'Standard deviations' <- object$params$phi
   }
-  if(!is.null(object$X)){
+  if(!is.null(object$X) | spp.intercepts | object$col.eff$col.eff == "random"){
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
@@ -404,4 +418,41 @@ print.summary.gllvm <- function (x, ...)
   }
   
   invisible(x)
+}
+
+#'@export
+#'@rdname plot.summary.gllvm 
+plot.summary.gllvm <- function (x, component = NULL, ...) 
+{
+  args <- list(...)
+  
+  if(!is.null(component)){
+    component <- match.arg(component, c("main", "LV"))
+  }else if(!is.null(x$Coef.tableX)){
+    component <- "main"
+  }else if(!is.null(x$Coef.tableLV)){
+    component <- "LV"
+  }
+
+  if(component == "main" && !is.null(x$Coef.tableX)){
+    coefs <- x$Coef.tableX
+  }else if(component == "LV" && !is.null(x$Coef.tableLV)){
+    coefs <- x$Coef.tableLV
+  }else{
+    stop("Either nothing to plot, or forgot to select 'component' of either 1) 'main' or 2) 'LV'.")
+  }
+  
+  if(!"mar"%in%names(args)){
+    par(mar = c(4,7,2,1))
+  }else{
+    par(mar = args$mar)
+  }
+  
+  upper = coefs[,1]+ qnorm(0.95)*coefs[,2]
+  lower = coefs[,1]+ qnorm(1-0.95)*coefs[,2]
+  
+  plot(x = coefs[,1], y = 1:nrow(coefs), yaxt = "n", ylab = "", xlab = "Estimate", pch = "x", xlim = c(min(lower), max(upper)), ...)
+  segments(x0 = lower, y0 = 1:nrow(coefs), x1 = upper, y1 = 1:nrow(coefs))
+  axis( 2, at = 1:nrow(coefs), labels = row.names(coefs), las = 1, ...)
+  abline(v = 0, lty = 1)
 }

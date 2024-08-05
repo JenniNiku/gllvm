@@ -4,8 +4,8 @@
 ##########################################################################################
 trait.TMB <- function(
       y, X = NULL,TR=NULL,formula=NULL, num.lv = 2, family = "poisson", num.lv.cor=0, corWithinLV = FALSE,
-      Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6, seed = NULL,
-      maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, sd.errors = FALSE,trace=FALSE,
+      Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc="diagonal", row.eff = FALSE, reltol = 1e-6,
+      maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, trace=FALSE,
       link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, dLV=NULL, cstruc = "diag", cstruclv  ="diag", dist = list(matrix(0)), distLV = matrix(0), scalmax=10, MaternKappa = 1.5,
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.rho.struct = "single",
       Lambda.start=c(0.2, 0.5), jitter.var=0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL,
@@ -13,7 +13,7 @@ trait.TMB <- function(
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
 
-  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalsp")) Ab.diag.iter <- 0
+  if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalCL1")) Ab.diag.iter <- 0
   
   if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
   
@@ -270,7 +270,7 @@ trait.TMB <- function(
       Br <- bstart$Br
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
       # colMat signal strength
-      if(!is.null(colMat))sigmaB <- c(sigmaB, rep(.5,ifelse(colMat.rho.struct == "single", 1, ncol(xb))))
+      if(!is.null(colMat))sigmaB <- c(sigmaB, rep(log(0.5),ifelse(colMat.rho.struct == "single", 1, ncol(xb))))
       sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
       
       # method <- "LA"
@@ -280,7 +280,7 @@ trait.TMB <- function(
       # sigmaB <- diag(ncol(xb))
       colMat.old <- colMat
       if(!is.null(colMat) && is.list(colMat)){
-        if(length(colMat)!=2 && !is.null(nn.colMat)){
+        if(length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat)){
           stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (named) distance matrix.")
         }else if(length(colMat)==1 && is.null(nn.colMat)){
           colMat <- colMat[[1]]
@@ -298,6 +298,10 @@ trait.TMB <- function(
       }
       
       if(!is.null(colMat) && all(dim(colMat)!=1)){
+        if(!all(colnames(colMat) %in% colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
+        colMat <- colMat[colnames(y), colnames(y)]
+        if(exists("colMat.dist"))colMat.dist <- colMat.dist[colnames(y), colnames(y)]
+        
         #is left empty, set to maximum number of columns
         if(Ab.struct%in%c("diagonal","blockdiagonal")){
           Ab.struct.rank = 0
@@ -323,7 +327,7 @@ trait.TMB <- function(
         E = B
         if(nn.colMat == p)nncolMat <- matrix(0)
         if(nn.colMat < p)nncolMat <- NULL
-        while(B<p){
+        while(B<=p){
           while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
             # expand block
             E = E+1;
@@ -370,7 +374,7 @@ trait.TMB <- function(
     sigma <- 1
     
     #### Calculate starting values
-    res <- start.values.gllvm.TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, seed = seed,starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
+    res <- start.values.gllvm.TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT=yXT, row.eff = row.eff, TMB=TRUE, link=link, randomX=randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
@@ -408,7 +412,7 @@ trait.TMB <- function(
           sigmaB <- (res$sigmaB)
           if(length(sigmaB)>1) sigmaij <- rep(1e-3,length(res$sigmaij))
           sigmaB <- log(sqrt(diag(sigmaB)))
-          if(rhoSP){sigmaB <- c(sigmaB, 1)}
+          if(rhoSP){sigmaB <- c(sigmaB, rep(log(-log(0.5)),ifelse(colMat.rho.struct == "single", 1, ncol(xb))))}
           if(randomX.start == "res" && !is.null(res$fitstart)) { ##!!!
             res$sigmaij <- sigmaij <- res$fitstart$TMBfnpar[names(res$fitstart$TMBfnpar) == "sigmaij"] 
           }
@@ -859,30 +863,30 @@ trait.TMB <- function(
       if(randomX.start == "res" && !is.null(res$fitstart$Ab)){ # !!!! && !is.null(res$fitstart$Ab)
         if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal"){
           Abstruc <- 0
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          Abb <- sqrt(unlist(lapply(res$fitstart$Ab,diag)))
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="CL1" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]
+          Abb <- log(sqrt(unlist(lapply(res$fitstart$Ab,diag))[c(1:ncol(xb),(ncol(xb)+2):(ncol(xb+1)+p))]))
           if(Ab.struct == "MNunstructured" && Ab.diag.iter == 0){
               Abb<-c(Abb, c(rep(1e-2, ncol(xb)*(ncol(xb)-1)/2)))
           }
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter==1)){
           Abstruc <- 2
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          Abb <- log(sqrt(unlist(lapply(res$fitstart$Ab,diag))))
           Abb <- c(Abb,rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+          }else if(Ab.struct %in%c("CL1","diagonalCL1")){
           Abstruc <- 3
-          Abb <- c(unlist(lapply(res$fitstart$Ab,diag)),rep(log(a.var), p*ncol(xb)+p-length(blocksp)))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          Abb <- c(log(sqrt(unlist(lapply(res$fitstart$Ab,diag)))),rep(log(a.var), p*ncol(xb)+p-length(blocksp)))
+          if(Ab.struct=="CL1" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
-          Abb <- unlist(lapply(res$fitstart$Ab,diag))
+          Abb <- log(sqrt(unlist(lapply(res$fitstart$Ab,diag))))
           if(ncol(colMat)==p){
             Abb <- c(Abb,rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
           }else{
@@ -890,7 +894,7 @@ trait.TMB <- function(
           } 
         }
         res$Br <- Br
-        res$Ab <- c(unlist(lapply(res$fitstart$Ab,diag)))
+        res$Ab <- c(sqrt(unlist(lapply(res$fitstart$Ab,diag))))
       }else{
         if(Ab.struct == "diagonal" || Ab.struct== "blockdiagonal"){
           Abstruc <- 0
@@ -898,7 +902,7 @@ trait.TMB <- function(
           if(Ab.struct == "blockdiagonal" && Ab.diag.iter == 0){
             Abb<-c(Abb, rep(1e-3, p*ncol(xb)*(ncol(xb)-1)/2))
           }
-        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 1)){
+        }else if(Ab.struct == "MNdiagonal" || Ab.struct == "MNunstructured" || (Ab.struct=="spblockdiagonal" && Ab.diag.iter == 1) || (Ab.struct=="CL1" && Ab.diag.iter == 1)){
           Abstruc <- 1
           #matrix normal VA matrix
           Abb <- rep(log(a.var), ncol(xb)+p-1)  
@@ -909,10 +913,10 @@ trait.TMB <- function(
         }else if(Ab.struct == "spblockdiagonal" || (Ab.struct=="unstructured" && Ab.diag.iter == 1)){
           Abstruc <- 2
           Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-        }else if(Ab.struct %in%c("blockdiagonalsp","diagonalsp")){
+        }else if(Ab.struct %in%c("CL1","diagonalCL1")){
           Abstruc <- 3
           Abb <- rep(log(a.var),sum(p*ncol(xb))+p-length(blocksp))
-          if(Ab.struct=="blockdiagonalsp" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
+          if(Ab.struct=="CL1" && Ab.diag.iter == 0)Abb <- c(Abb, rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2)) # rest blockdiagonal
           Abb <- c(Abb, rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest p*p
         }else if(Ab.struct == "unstructured"){
           Abstruc <- 4
@@ -1129,7 +1133,7 @@ trait.TMB <- function(
   
     ### Now diag.iter, improves the model fit sometimes
     
-    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","blockdiagonalsp")))){
+    if(diag.iter>0 && (!(Lambda.struc %in% c("diagonal", "diagU")) && (method %in% c("VA", "EVA")) && (num.lv>1) && !inherits(optr,"try-error") | (row.eff=="random" & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (!is.null(randomX) && Ab.struct%in%c("blockdiagonal","MNunstructured","unstructured","spblockdiagonal","CL1")))){
       objr1 <- objr
       optr1 <- optr
       param1 <- optr$par
@@ -1153,7 +1157,7 @@ trait.TMB <- function(
           }else if(Ab.struct == "spblockdiagonal"){# "MNdiagonal" was previous iteration
             Abstruc <- 2
             Abb <- c(rep(log(0.5), ncol(xb)*p),rep(1e-3, ncol(xb)*sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
-          }else if(Ab.struct == "blockdiagonalsp"){# "MNdiagonal" was previous iteration
+          }else if(Ab.struct == "CL1"){# "MNdiagonal" was previous iteration
             Abstruc <- 3
             Abb <- c(rep(log(0.5), p*ncol(xb)+p-length(blocksp)), rep(1e-2, p*ncol(xb)*(ncol(xb)-1)/2), rep(1e-3, sum(blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks))) # rest blockdiagonal
           }else if(Ab.struct == "unstructured"){# "spblockdiagonal" was previous iteration
@@ -1442,25 +1446,28 @@ trait.TMB <- function(
       if(ncol(xb)>1){
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp <- exp(-exp(tail(sigmaB,ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          rho.sp = exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- diag(exp(sigmaB), length(sigmaB))
         Srij <- names(param)=="sigmaij"
         Sr <- param[Srij]
-        L[upper.tri(L)] <- Sr
-        D <- diag(diag(t(L)%*%L))
+        L <- constructL(Sr)
+        D <- L%*%t(L)
       } else{
         D <- 1
         sigmaB <- param[Sri]
         if(rhoSP){
-          rho.sp <- exp(-exp(tail(sigmaB,ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          rho.sp = exp(-exp(tail(sigmaB, ifelse(colMat.rho.struct=="single",1,ncol(xb)))))
+          if(nrow(nncolMat)<p)rho.sp = pmax(rho.sp, 1e-12)
           sigmaB <- head(sigmaB,-ifelse(colMat.rho.struct=="single",1,ncol(xb)))
         }
         sigmaB <- (exp(sigmaB))
       }
-      sigmaB_ <- solve(sqrt(D))%*%(t(L)%*%L)%*%solve(sqrt(D))
-      sigmaB <- sigmaB%*%sigmaB_%*%t(sigmaB)
+      sigmaB = sigmaB%*%D%*%sigmaB
+      sigmaB_ <- cov2cor(sigmaB)
+      # sigmaB <- sigmaB%*%sigmaB_%*%t(sigmaB)
       
     }
     
@@ -1861,7 +1868,7 @@ trait.TMB <- function(
 
             Abs[[1]] <- Abs[[1]]%*%t(Abs[[1]])
             Abs[[2]] <- cov2cor(Abs[[2]]%*%t(Abs[[2]]))
-        }else if(Ab.struct %in% c("diagonalsp", "blockdiagonalsp")){
+        }else if(Ab.struct %in% c("diagonalCL1", "CL1")){
           Abs <- list(length(blocks[-1]))
           Ar.sds <- exp(Ab[1:(sum(blocksp*ncol(xb))+p-length(blocksp))])
           Ab <- Ab[-c(1:(sum(blocksp*ncol(xb))+p-length(blocksp)))]
@@ -1871,7 +1878,7 @@ trait.TMB <- function(
             for(j in 1:blocksp[cb]){
               SArmbs[[j]] <- diag(Ar.sds[1:ncol(xb)], xdr)
               Ar.sds <- Ar.sds[-c(1:ncol(xb))]
-              if(Ab.struct == "blockdiagonalsp" && ncol(xb)>1){
+              if(Ab.struct == "CL1" && ncol(xb)>1){
                 for(d in 1:(ncol(xb)-1)){
                   for(r in (d+1):ncol(xb)){
                     SArmbs[[j]][r,d] = Ab[1];
@@ -1880,7 +1887,7 @@ trait.TMB <- function(
               }
             }
             # build second matrix, first diagonal entry fixed for identifiability
-            SArmC = diag(c(1, Ar.sds[1:(blocksp[cb]-1)]))
+            SArmC = diag(c(1, if(blocksp[cb]>1)Ar.sds[1:(blocksp[cb]-1)]))
             Ar.sds <- Ar.sds[-c(1:(blocksp[cb]-1))]
             
             for (j in 1:Abranks[cb]){
@@ -1942,6 +1949,9 @@ trait.TMB <- function(
         }
         out$Ab <- Abs
       }
+    }else{
+      objrFinal <- list()
+      optrFinal <- list()
     }
   
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}

@@ -138,16 +138,21 @@ Unlike in other R-packages, we can now formulate a ordination where additional r
 CGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2)
 ```
 
-where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). It is also possible to combine those arguments with full-rank predictor effects. To combine concurrent ordination with full-rank predictor effects you need to use the formula interface:
+where the `num.lv.c` argument is used to specify the number of latent variables for the concurrent ordination (i.e. latent variables informed by the predictors but not constrained), where previously the `num.RR` argument was used to specify the number of constrained latent variables. The number of constrained, informed, and unconstrained latent variables can be freely combined using the `num.RR`, `num.lv.c` and `num.lv` arguments (but be careful not to overparameterize or overfit your model!). 
+
+## Partial constrained or concurrent ordination
+
+It is also possible to combine constrained or concurrent ordination with full-rank predictor effects. To combine concurrent ordination with full-rank predictor effects you need to additionally use the formula interface:
 
 ```{r eval=FALSE}
 PCGLLVM <- gllvm(Y, X = X, family = "poisson", num.lv.c = 2, 
                  lv.formula = ~bare.sand + fallen.leaves + moss+herb.layer + reflection, 
                  formula = ~soil.dry)
 ```
-where `lv.formula` is the formula for the ordination with predictors (concurrent or constrained), and `X.formula` is the formula which tells the model which predictors should be modelled in full-rank. Note, that those two formulas cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. In essence, this performs a partial concurrent ordination. Constrained ordination should not include an (additional) intercept as it can be re-parameterized into a model with only $\beta_{0j}$.
 
-Though we did not do so here, information criteria can be used to determine the correct number of latent variables. Results of the model can be examined in more details using the `summary(\cdot)` function:
+where `lv.formula` is the formula for the ordination with predictors (concurrent or constrained), and `formula` is the formula which tells the model which predictors should be partialled out of the ordination. Note, that those two formula arguments cannot include the same predictor variables, and all predictor variables should be provided in the `X` argument. In essence, this performs a partial concurrent ordination, or with `num.RR` a partial constrained ordination. These effects that are partialled out of the ordination (that the ordination is conditioned on) can also be treated as random effects, which is sometimes preferable. Partialled out here means that the effects are taken out of the ordination: the effect of `soil.dry` is no longer visible in the ordination, and no arrow will be drawn for its effect. It is possible to inspect its effect on the species with the `coefplot` function, as it is for all covariate effects in the model, inside the ordination and outside.
+
+Information criteria can be used to determine the correct number of latent variables, though we did not demonstrate this here. Results of the model can be examined in more details using the `summary(\cdot)` function:
 
 ```{r}
 summary(CGLLVM)
@@ -158,6 +163,7 @@ Finally, we can use all the other tools in the \texttt{gllvm} R-package for infe
 ```{r}
 ordiplot(CGLLVM, biplot = TRUE)
 ```
+
 Arrows that show as less intense red (pink), are predictors of which the confidence interval for the slope includes zero, for at least one of the two plotted dimensions. There are various arguments included in the function to improve readability of the figure, have a look at its documentation. The arrows are always proportional to the size of the plot, so that the predictor with the largest slope estimate is the largest arrow. If the predictors have no effect, the slopes $\boldsymbol{B}$ will be close to zero.
 
 It is also possible to use the `quadratic` flag to fit a quadratic response model though we will not demonstrate that here, or to partition variance per latent variable and for specific predictors.

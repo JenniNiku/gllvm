@@ -86,6 +86,47 @@ ordiplot(ftUneqTol, biplot=TRUE, spp.arrows = TRUE)
 
 The standard deviation of the latent variables, presented in the summary information of the model, can serve as a measure of gradient length. This measure is different to that presented in @vanderVeen2021a, and not directly comparable to e.g. the output of axis length by Detrended Correspondence Analysis (DCA).
 
+Alternatively, we can also calculate it following the definition of van der Veen et al (2021), with a minor correction. This also allows us to calculate the rate of turnover along the gradient. It is most straightforward to do this with the "common tolerances" model, although we can do it with the unequal tolerances model. But, then we need to decide how to standardise the species curves (e.g., so that the mean or median tolerance is one).
+
+```{r grad_length}
+# Extract tolerances
+tol <- tolerances(ftComTol, sd.errors = FALSE)
+gradLength <- 4/tol[1,]
+turn <- 2*qnorm(.999, sd = tol[1,])
+```
+
+```{r grad_length_res}
+cat("Gradient length:", gradLength)
+```
+
+This measure of gradient length tells us that the second LVs represents a short gradient. That is also visible from the figure below, as most species responses are estimated to be (near) linear.
+To visually inspect the rate of turnover we will plot the species curves.
+
+```{r turn}
+cat("Turnover rate:", turn)
+```
+
+The turnover rate is naturally quicker on the longer gradient, so shorter for the second latent variable than the first. This means that we expect the community to change faster along the first latent variable; about every 3.26 units of the latent variable we encounter a completely different community, while on the second latent variable this takes much more, about 14 units. That corresponds with having a short gradient; if species response are nearly linear they virtually occur everywhere along the gradient, in contrast to when responses are unimodal.
+
+```{r curves, results = "hide", fig.height = 10}
+par(mfrow=c(2,1))
+LVs = getLV(ftComTol)
+newLV = cbind(LV1 = seq(min(LVs[,1]), max(LVs[,1]), length.out=1000), LV2 = 0)
+preds <- predict(ftComTol, type = "response", newLV = newLV)
+plot(NA, ylim = range(preds), xlim = c(range(getLV(ftComTol))), ylab  = "Predicted response", xlab = "LV1")
+segments(x0=optima(ftComTol, sd.errors = FALSE)[,1],x1 = optima(ftComTol, sd.errors = FALSE)[,1], y0 = rep(0, ncol(ftComTol$y)), y1 = apply(preds,2,max), col = "red", lty = "dashed", lwd = 2)
+rug(getLV(ftComTol)[,1])
+sapply(1:ncol(ftComTol$y), function(j)lines(sort(newLV[,1]), preds[order(newLV[,1]),j], lwd = 2))
+
+LVs = getLV(ftComTol)
+newLV = cbind(LV1 = 0, LV2 =  seq(min(LVs[,2]), max(LVs[,2]), length.out=1000))
+preds <- predict(ftComTol, type = "response", newLV = newLV)
+plot(NA, ylim = range(preds), xlim = c(range(getLV(ftComTol))), ylab  = "Predicted response", xlab = "LV2")
+segments(x0=optima(ftComTol, sd.errors = FALSE)[,2],x1 = optima(ftComTol, sd.errors = FALSE)[,2], y0 = rep(0, ncol(ftComTol$y)), y1 = apply(preds,2,max), col = "red", lty = "dashed", lwd = 2)
+rug(getLV(ftComTol)[,2])
+sapply(1:ncol(ftComTol$y), function(j)lines(sort(newLV[,2]), preds[order(newLV[,2]),j], lwd = 2))
+```
+
 # References
 
 ---
