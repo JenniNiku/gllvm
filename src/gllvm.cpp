@@ -1636,7 +1636,7 @@ Type objective_function<Type>::operator() ()
               Arm(r,d)=lg_Ar(covscounter);
               covscounter++;
             }}
-
+          
           // add terms to cQ
           matrix<Type> ArmMat = Arm*Arm.transpose();
           cQ += (0.5*(dr0.middleCols(nr.head(re).sum(), nr(re))*ArmMat*dr0.middleCols(nr.head(re).sum(), nr(re)).transpose()).diagonal()).replicate(1,p);
