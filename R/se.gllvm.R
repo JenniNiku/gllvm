@@ -161,15 +161,22 @@ se.gllvm <- function(object, ...){
         
         out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       } else {
-        A.mat <- sdr[incl,incl] # a x a
-        D.mat <- sdr[incld,incld] # d x d
-        B.mat <- sdr[incl,incld] # a x d
+        sds <- sqrt(abs(diag(sdr)))
+        if(any(sds<1e-12))sds[sds<1e-12]<-1
+        
+        sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
+        
+        A.mat <- sdr.s[incl,incl] # a x a
+        D.mat <- sdr.s[incld,incld] # d x d
+        B.mat <- sdr.s[incl,incld] # a x d
         cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
         if(inherits(cov.mat.mod,"try-error")){
           # block inversion via inverse of fixed-effects block
           Ai <- try(solve(A.mat),silent=T)
           cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
         }
+        suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
+        
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- sqrt(diag(abs(cov.mat.mod)))
         names(se) = names(object$TMBfn$par[incl])
@@ -515,10 +522,17 @@ se.gllvm <- function(object, ...){
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       
     } else {
+      # cnrm <- apply(sdr,2,function(x)sqrt(sum(x^2)))
+      # rnrm <- apply(sdr,1,function(x)sqrt(sum(x^2)))
+      # sdr.s <- sweep(sweep(sdr,2,cnrm,"/"),1,rnrm,"/")
+      sds <- sqrt(abs(diag(sdr)))
+      if(any(sds<1e-12))sds[sds<1e-12]<-1
       
-      A.mat <- sdr[incl, incl] # a x a
-      D.mat <- sdr[incld, incld] # d x d
-      B.mat <- sdr[incl, incld] # a x d
+      sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
+      
+      A.mat <- sdr.s[incl, incl] # a x a
+      D.mat <- sdr.s[incld, incld] # d x d
+      B.mat <- sdr.s[incl, incld] # a x d
       
       cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
       if(inherits(cov.mat.mod,"try-error")){
@@ -526,6 +540,7 @@ se.gllvm <- function(object, ...){
         Ai <- try(solve(A.mat),silent=T)
         cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
       }
+      suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
       
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- sqrt(diag(abs(cov.mat.mod)))

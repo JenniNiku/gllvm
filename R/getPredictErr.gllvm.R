@@ -124,6 +124,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           object$Ab <- matrix(diag(sdb$Ab+object$Ab[[1]]), ncol = p)
         }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
           object$Ab <- matrix(diag(sdb$Ab + kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])), ncol = p)
+        }else if(object$col.eff$Ab.struct %in% c("diagonalCL1", "CL1", "CL2")){
+          object$Ab <- matrix(diag(sdb$Ab),ncol=p)+matrix(diag(object$Ab),byrow=TRUE,ncol=p)
         }
       }
 
@@ -223,7 +225,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     }
     
     if(!is.null(object$randomX)){
-      out$Br <- sqrt(object$Ab)
+      out$Br <- sqrt(abs(object$Ab))
       colnames(out$Br) <- colnames(object$y)
       row.names(out$Br) <- row.names(object$params$Br)
     }
