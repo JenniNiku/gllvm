@@ -767,8 +767,8 @@ Type objective_function<Type>::operator() ()
             }
             // determinant of kronecker product of two matrices based on their cholesky factors: second part
             nll -= SArmR.rows()*(SArmC.diagonal().array().log().sum() + SArmCD.array().tail(blocksize-SArmC.cols()).log().sum());
-            matrix<Type>SArmP = SArmC*SArmC.transpose();
-            SArmP.diagonal() += SArmCD.array().pow(2).matrix();
+            // matrix<Type>SArmP = SArmC*SArmC.transpose();
+            // SArmP.diagonal() += SArmCD.array().pow(2).matrix();
             
             //tr(S⁻¹A) and Br'S⁻¹Br
             if((rhoSP.size()==1)){
@@ -776,7 +776,7 @@ Type objective_function<Type>::operator() ()
                 //not sparse
                 matrix<Type>colCorMatI(colMatBlocksI(cb+1).cols(),colMatBlocksI(cb+1).cols());
                 gllvmutils::rank1inv(colCorMatI, colMatBlocksI(cb+1), logdetColCorMat, rhoSP(0));
-                nll -= -0.5*((colCorMatI*SArmP).trace()*(SprI*SArmR).trace()+(Br.middleCols(sp, blocksize)*colCorMatI*Br.middleCols(sp, blocksize).transpose()*SprI).trace());
+                nll -= -0.5*(((SArmC.transpose()*colCorMatI*SArmC).trace()+(SArmCD.array().pow(2)*colCorMatI.diagonal().array()).sum())*(SprI*SArmR).trace()+(Br.middleCols(sp, blocksize)*colCorMatI*Br.middleCols(sp, blocksize).transpose()*SprI).trace());
               }else{
                 //NN sparse approximation
                 Eigen::SparseMatrix<Type> colCorMatUI(blocksize, blocksize);
@@ -840,7 +840,7 @@ Type objective_function<Type>::operator() ()
             }
             //retrieve diagonal outside loop for more efficient memory handling
             //calling it inside the loop constructs a temporary for each i
-            matrix<Type>SArmPdiag = SArmP.diagonal();
+            matrix<Type>SArmPdiag = SArmC.rowwise().squaredNorm().array()+SArmCD.array().pow(2);
             cQ.middleCols(sp, blocksize) += 0.5*xbSArmxb*SArmPdiag.transpose();
             // for (int i=0; i<n;i++){
             //   cQ.row(i).middleCols(sp, blocksize) += 0.5*SArmPdiag*xbSArmxb(i);
@@ -1376,14 +1376,16 @@ Type objective_function<Type>::operator() ()
                 nll -= -0.5*(Br.middleCols(sp, blocksize)*colCorMatI*Br.middleCols(sp, blocksize).transpose()*SprI).trace();
                 
                 //write trace separately so we don't need to compute the whole product
+                vector<Type> colCorMatIDiag = colCorMatI.diagonal();
                 for (int d=0; d<ncov;d++){
                   for (int d2=d+1; d2<ncov;d2++){
                     // nll -= -(colCorMatI*(SArmPs(d2)*SArmPs(d).transpose()+(SArmCDs(d)*SArmCDs(d2)).matrix().asDiagonal().toDenseMatrix())).trace()*SprI(d,d2)*SArmRc(d,d2);
                     nll -= -(SArmPs(d).transpose()*colCorMatI*SArmPs(d2)).trace()*SprI(d,d2)*SArmRc(d,d2);
-                    nll -= -(colCorMatI*(SArmCDs(d)*SArmCDs(d2)).matrix().asDiagonal().toDenseMatrix()).trace()*SprI(d,d2)*SArmRc(d,d2);
+                    // nll -= -(colCorMatI*(SArmCDs(d)*SArmCDs(d2)).matrix().asDiagonal().toDenseMatrix()).trace()*SprI(d,d2)*SArmRc(d,d2);
+                    nll -= -(colCorMatIDiag*SArmCDs(d)*SArmCDs(d2)).sum()*SprI(d,d2)*SArmRc(d,d2);
                   }
                   nll -= -0.5*(SArmPs(d).transpose()*colCorMatI*SArmPs(d)).trace()*SprI(d,d);
-                  nll -= -0.5*(colCorMatI*(SArmCDs(d)*SArmCDs(d)).matrix().asDiagonal().toDenseMatrix()).trace()*SprI(d,d);
+                  nll -= -0.5*(colCorMatIDiag*SArmCDs(d)*SArmCDs(d)).sum()*SprI(d,d)*SArmRc(d,d);
                 }
               }else if(nncolMat.rows()==p){
                 Eigen::SparseMatrix<Type> colCorMatUI(blocksize, blocksize);
@@ -1636,10 +1638,9 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               matrix<Type>colCorMatUIs(ncov*blocksize,ncov*blocksize);
-              colCorMatUIs.setZero();
-              Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
               //NN sparse approximation
               for (int d=0; d<(ncov); d++){
+                Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
                 gllvmutils::nngp(colCorMatUI, colMatBlocksI(cb+1), logdetColCorMat, rhoSP(d), nncolMat.middleCols(sp, blocksize));
                 Br.row(d).middleCols(sp,blocksize) *= colCorMatUI;
                 colCorMatUIs.block(d*blocksize,d*blocksize,blocksize,blocksize) = colCorMatUI;
@@ -1660,8 +1661,7 @@ Type objective_function<Type>::operator() ()
               matrix<Type> Ip(blocksize,blocksize);
               Ip.setIdentity();
               Eigen::SparseMatrix<Type> kronSprI= tmbutils::kronecker(SprI,Ip).sparseView();
-              Eigen::SparseMatrix<Type> colCorMatUIsm = tmbutils::asSparseMatrix(colCorMatUIs);
-              Eigen::SparseMatrix<Type> SprMNI = colCorMatUIsm*kronSprI*colCorMatUIsm.transpose();
+              Eigen::SparseMatrix<Type> SprMNI = tmbutils::asSparseMatrix(colCorMatUIs)*kronSprI*tmbutils::asSparseMatrix(colCorMatUIs).transpose();
               SprMNI = SprMNI.twistedBy(perm.transpose());
               nll -= -0.5*(SprMNI*SArmb).trace();
             }
@@ -1709,9 +1709,9 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               matrix<Type>colCorMatUIs(ncov*blocksize,ncov*blocksize);
-              Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
               //NN sparse approximation
               for (int d=0; d<(ncov); d++){
+                Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
                 gllvmutils::nngp(colCorMatUI, colMatBlocksI(cb+1), logdetColCorMat, rhoSP(d), nncolMat.middleCols(sp, blocksize));
                 Br.row(d).middleCols(sp,blocksize) *= colCorMatUI;
                 colCorMatUIs.block(d*blocksize,d*blocksize,blocksize,blocksize) = colCorMatUI;
@@ -1732,8 +1732,7 @@ Type objective_function<Type>::operator() ()
               matrix<Type> Ip(blocksize,blocksize);
               Ip.setIdentity();
               Eigen::SparseMatrix<Type> kronSprI= tmbutils::kronecker(SprI,Ip).sparseView();
-              Eigen::SparseMatrix<Type> colCorMatUIsm = tmbutils::asSparseMatrix(colCorMatUIs);
-              Eigen::SparseMatrix<Type> SprMNI = colCorMatUIsm*kronSprI*colCorMatUIsm.transpose();
+              Eigen::SparseMatrix<Type> SprMNI = tmbutils::asSparseMatrix(colCorMatUIs)*kronSprI*tmbutils::asSparseMatrix(colCorMatUIs).transpose();
               SprMNI = SprMNI.twistedBy(perm.transpose());
               nll -= -0.5*(SprMNI*SArm).trace();
             }
