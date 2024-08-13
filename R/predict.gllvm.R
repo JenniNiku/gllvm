@@ -321,7 +321,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" && is.null(newX)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
-    eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(length(object$params$B)>0)eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
     stop("Prediction with column effects not yet implemented.")
       # bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms

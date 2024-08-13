@@ -79,10 +79,10 @@ if(object$col.eff$col.eff=="random"){
     cov.environ.col <- diag(c(x%*%object$params$sigmaB%*%t(x)), ncol(object$y))
   }else if(length(object$params$rho.sp)==1){
     object$col.eff$colMat <- as.matrix(object$col.eff$colMat*object$params$rho.sp+(1-object$params$rho.sp)*diag(ncol(object$y)))
-    cov.environ.col <- as.matrix(C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%t(C))
+    cov.environ.col <- as.matrix(C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%Matrix::t(C))
   }else if(length(object$params$rho.sp)>1){
     Ls<-sapply(object$params$rho.sp,function(rho)t(chol(object$col.eff$colMat*rho+diag(1-rho,ncol(object$col.eff$colMat)))),simplify=FALSE)
-    cov.environ.col = C%*%Matrix::bdiag(Ls)%*%kronecker(object$params$sigmaB,diag(ncol(object$col.eff$colMat)))%*%t(Matrix::bdiag(Ls))%*%t(C)
+    cov.environ.col = as.matrix(C%*%Matrix::bdiag(Ls)%*%kronecker(object$params$sigmaB,diag(ncol(object$col.eff$colMat)))%*%Matrix::t(Matrix::bdiag(Ls))%*%Matrix::t(C))
   }
   trace.environ.col <- sum(diag(cov.environ.col))
 }
