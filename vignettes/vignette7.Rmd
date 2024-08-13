@@ -1,0 +1,266 @@
+---
+title: 'Phylogenetic random effects'
+author: "Bert van der Veen"
+date: "`r Sys.Date()`"
+output:  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Phylogenetic random effects}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
+```
+
+This vignette is divided into two parts, the first part related to models with environment covariates only, and the second part for models that additionally incorporate trait covariates, so called "fourth corner" models. This is for convenience, as the interface for fitting fourth corner models slightly differs from the models without traits. Both models are detailed in @vanderVeen2024, and the fourth corner model in more detail in @Niku2021.
+
+__For more information about fitting trait models with random effects, see also vignette 1__.
+
+# Phylogenetically structured environmental responses
+
+In this vignette we demonstrate how to fit models that incorporate phylogenetic information into the random effects. For this, we make use of an adjusted version of the familiar \texttt{lme4}-formula interface [@lme4].
+
+Here, we will use the data by @Abrego2022a. It includes information of 215 fungal species at 1666 *European beech* logs, and was analyzed by the original authors using a similar model. We start by loading the data:
+
+```{r, warning=FALSE, message=FALSE}
+library(gllvm)
+
+data(fungi)
+Y <- fungi$Y
+X <- fungi$X
+tree <- fungi$tree # the tree
+colMat <- fungi$C # e.g., from ape::vcv(tree)
+dist <- fungi$dist # e.g., from ape::cophenetic.phylo(tree)
+
+# Scale the predictors
+covs <- c("DBH.CM","AVERDP","CONNECT10","TEMPR","PRECIP","log.AREA")
+X[,covs] <- scale(X[, covs])
+```
+
+The included version of the package does not contain all available environmental covariates, only those used in the original analysis. This includes diameter at breast height (DBH.CM), decay stage (AVERDP), connectivity of the surrounding forest (CONNECT10), annual temperature range, annual precipitation, and the logarithm of the reserve's area.
+
+We can think of the model as having two covariance matrices: one with correlation between covariate effects, and another that incorporates the correlation between species due to the phylogeny. The former is specified via the formula interface, the form of the latter is (more or less) fixed at present. 
+
+```{r, warning=FALSE, eval = FALSE}
+TMB::openmp(parallel::detectCores()-1) # set parallel computation
+model1 <- gllvm(y = Y, X = X,
+        formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA|1), beta0com = TRUE,
+                     family = "binomial", num.lv = 0, sd.errors = FALSE, 
+                     studyDesign = X[,c("REGION", "RESERVE")], row.eff = ~(1 | REGION/RESERVE),
+                     colMat = list(colMat, dist = dist), colMat.rho.struct = "term", nn.colMat = 10,
+        optim.method = "L-BFGS-B")
+```
+
+Let's walk through some of the specified arguments.
+
+The first line enables parallel computation, to speed up model fitting.
+
+  Note that an intercept term is included in the random effects, which can be excluded by incorporating a zero in the formula term. Correlations are included between covariates inside the brackets, so we could have uncorrelated effects by including them all in separately bracketed terms. We specify `num.lv = 0` for now, although we could just as well include latent variables (e.g., we could fit a model with phylogenetically structured random intercepts and a (un)constrained ordination), and `beta0comm` to have a single (fixed) intercept for the whole community (species-specific intercepts enter via the random effects). `sd.errors` is here for convenience set to false, as it can take a (much) longer time to calculate standard errors than to fit the model, and we should really only calculate the standard errors when we need them (e.g., for visualization). The `gllvm::se.gllvm` function can post-hoc calculate the standard errors, so that we do not need to refit the model.
+  
+  The `studyDesign` matrix is specified to additionally incorporated random intercepts for the nested study design. and a formula `row.eff` to specify the random intercept structure.
+  The `colMat` term is how we pass the phylogenetic information to the model, which is usually a list of length two, where one argument is called `dist` and the other is the covariance matrix from the tree. Note that these two matrices need to have the same column names as `Y`. `nn.colMat` is the number of nearest neighbours to consider for each species on the tree, which is fixed to 10 by default. Smaller numbers usually result in a faster fitting model, but one that is potentially less accurate. @vanderVeen2024 showed that 10-15 neighbours is usually a good choice, although fewer can also still lead to accurate estimates for the phylogenetic signal. `colMat.rho.struct` has two options, `single` fitting a model with the same phylogenetic signal parameter for all covariates (default) and `term` fitting a model with a phylogenetic signal parameter per covariate.
+  Finally, the last line changes the optimisation method to one that seems to usually do well with this model type, and changes the starting values of the random effect (which was needed to fit this model succesfully).
+
+After model fitting, the random effect estimates can be found in `model1$params$Br`, and prediction errors can be extracted with `gllvm::getPredictErr`. This requires the standard errors, so let's calculate thosefirst:
+
+```{r, echo=FALSE}
+load("vignette7model1.RData")
+```
+
+```{r, eval = FALSE}
+# calculate standard errors
+ses <- se.gllvm(model1) # this can take a few minutes
+model1$sd <- ses$sd
+model1$Hess <- ses$Hess
+```
+
+Here is some code to visualize the model results (from @vanderVeen2024):
+
+```{r, bigplot, fig.width=7}
+row.names(model1$params$Br) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation","ln(Reserve area)")
+
+# strike REs that are not significant
+PEs <- gllvm::getPredictErr(model1)
+PIs <- data.frame(cbind(LI = c(model1$params$Br)-c(PEs$Br*1.96), UI = c(model1$params$Br)+c(PEs$Br*1.96)))
+model1$params$Br[-which((PIs$LI>0 & PIs$UI>0) | (PIs$LI<0 & PIs$UI<0))]<-NA
+
+layout(cbind(rbind(2,1),c(3,3)), respect = TRUE, heights = c(1.25,1), widths=c(2,0.5))
+par(mar=c(5,5,0,0))
+image(1L:ncol(model1$y), 1:ncol(model1$col.eff$spdr), t(model1$params$Br[,tree$tip.label]), col = colorRampPalette(c("#E69F00","white","#009E73"))(28), axes=FALSE, ylim = 0.5+c(0,ncol(model1$col.eff$spdr)),xlim=0.5+c(0,ncol(model1$y)),xlab=NA, breaks = seq(-3.5,3.5,by=.25), ylab=NA)
+mtext(side=1, text="Species-specific random effect",padj=4, cex = 0.6)
+axis(2, at= 1:ncol(model1$col.eff$spdr), labels=colnames(t(model1$params$Br)),las=1, cex.axis = 0.6, lwd=0)
+par(xpd=TRUE)
+for(i in 1:ncol(model1$col.eff$spdr)){
+  lines(x=c(-2,0),y=c(i,i))
+}
+
+par(mar=c(0,1,2,0))
+library(ape)
+plot(tree, show.tip.label = FALSE, direction = "downwards",xaxs="i")
+# caterpillar
+coefs <- c(model1$params$beta0[1],model1$params$B[1:(ncol(model1$col.eff$spdr)-1)])
+sds <- c(model1$sd$beta0[1],model1$sd$B[1:(ncol(model1$col.eff$spdr)-1)])
+CIs <- data.frame(cbind(LI=coefs+sds*qnorm(1-0.95), UI=coefs+sds*qnorm(0.95)))
+names(coefs) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation", "ln(Reserve area)")
+cols <- rep("black", 8)
+cols[-which((CIs$LI>0 & CIs$UI>0) | (CIs$LI<0 & CIs$UI<0))] <- "grey"
+
+par(mar=c(5,0.5,2,5), xpd=FALSE)
+
+plot(coefs, y = 1:length(coefs), yaxt="n",ylab="", pch="x", col = cols, xlab = NA, cex.axis = 0.6, xlim = c(-max(abs(coefs)),max(abs(coefs))))
+mtext(side = 1, text = "Community mean response", padj = 4, cex = 0.6)
+segments(x0 = CIs$LI, y0 = 1:length(coefs), x1 = CIs$UI, y1 = 1:length(coefs), col = cols)
+abline(v = 0, lty="dashed")
+axis(4, at = 1:length(coefs), labels = names(coefs), las = 1, cex.axis = 0.6,lwd=0)
+```
+
+The random effects with a prediction interval including zero are crossed out in the plot. The `getResidualCov` and `getResidualCor` functions extract the residual covariance and correlation matrix, respectively, for visualizing species associations. 
+
+```{r}
+corrplot::corrplot(getEnvironCor(model1), 
+                   type = "lower", diag = FALSE, order = "AOE",
+                   tl.pos = "n", addgrid.col=NA, col.lim=c(0,1))
+```
+
+The `randomCoefPlot` function constructs caterpillar plots of species deviations from the community mean responses, which can be extracted via the summary method, or found via `coef` and in `model1$params$B`.
+
+Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, for details see @vanderVeen2024.
+
+Finally, we can look at the summary information of the model:
+
+```{r}
+summary(model1)
+```
+
+which gives us an overview of the community mean responses, as well as the variance and correlation of random effects, and the phylogenetic signal parameter in the column `signal`. This parameter ranges between zero and one, at zero the species responses are not phylogenetically structured, and at one they are fully phylogenetically structured.
+
+<!-- The `confint` function returns (approximate asysmptotic) confidence intervals for all parameters, including the phylogenetic signal. We might instead want to use TMB's functionality for calculating a profile confidence interval instead (since it will be more accurate and appropriate, though it tends to take quite a lot of time) for the phylogenetic signal parameters: -->
+
+<!-- ```{r, cache = TRUE, message=FALSE, warning=FALSE, echo = -6, eval = FALSE} -->
+<!-- profs <- list() -->
+<!-- # This may take a few minutes -->
+<!-- for(i in 1:ncol(model1$col.eff$spdr)){ -->
+<!--   profs[[i]] <- TMB::tmbprofile(model1$TMBfn, name = tail(which(names(model1$TMBfn$par)=="sigmaB"), ncol(model1$col.eff$spdr))[i], h = 1, parm.range = c(-12,3.5)) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- load("model1profs.RData") -->
+<!-- library(TMB) -->
+<!-- ``` -->
+
+<!-- ```{r, warning=FALSE, error=FALSE} -->
+<!-- for(i in 1:length(profs)){ -->
+<!--   profs[[i]][,1] <- exp(-exp(profs[[i]][,1])) -->
+<!--   plot(profs[[i]][!apply(profs[[i]],1,anyNA),]) -->
+<!-- } -->
+<!-- ``` -->
+
+# Phylogenetic fourth corner model
+
+The fourth corner model extends the previous model with functional traits. The interface is still a little difference, so that correlation between random effects are always included. Otherwise the tools are similar, so we just present some example code here for fitting such a model, but do not discuss it further (see other vignettes in the gllvm R-package for discussion of the fourth corner model).
+
+```{r, eval = FALSE}
+TR <- fungi$TR # the functional traits
+
+model2 <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR,
+                     formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + 
+  TEMPR + PRECIP + log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA):(PC1.1 + PC1.2 + PC1.3), 
+                      family = "binomial", num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")], 
+                      colMat = list(C, dist = dist), 
+                      colMat.rho.struct = "term", row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, 
+                      randomX = ~int + DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA, 
+                      beta0com = TRUE, Ab.struct = "MNunstructured", nn.colMat = 10, max.iter = 20000, maxit = 20000, optim.method = "L-BFGS-B", 
+randomX.start = "res")
+```
+
+# References
+
+---
+references:
+- id: vanderVeen2024
+  title: Fast fitting of phylogenetic mixed effects models
+  author: 
+  - family: van der Veen
+    given: B.
+  - family: O'Hara
+    given: R.B.
+  publisher: 
+  volume: 
+  page: 
+  type: article-journal
+  issued: 
+    year: 2024
+
+- id: lme4
+  title: Fitting Linear Mixed-effects Models using lme4
+  author: 
+  - family: Bates
+    given: D.
+  - family: Mächler
+    given: M.
+  - family: Bolker
+    given: B.
+  - family: Walker
+    given: S.
+  publisher: Journal of Statistical Software
+  volume: 67
+  page: 1--48
+  type: article-journal
+  issued:
+    year: 2015
+
+- id: Abrego2022a
+  title: "Data and code from: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales [Dataset]"
+  author: 
+  - family: Abrego
+    given: N.
+  - family: Bässler
+    given: C.
+  - family: Christensen
+    given: M.
+  - family: Heilmann-Clausen
+    given: J.
+  publisher: Dryad
+  doi: https://doi.org/10.5061/dryad.t76hdr82r
+
+- id: Abrego2022b
+  title: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales
+  author: 
+  - family: Abrego
+    given: N.
+  - family: Bässler
+    given: C.
+  - family: Christensen
+    given: M.
+  - family: Heilmann-Clausen
+    given: J.
+  publisher: Journal of Ecology
+  volume: 110
+  page: 784-798
+  type: article-journal
+  issued:
+    year: 2022
+
+- id: Niku2021
+  title: Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models
+  author: 
+  - family: Niku
+    given: J.
+  - family: Hui
+    given: F.K.C.
+  - family: Taskinen
+    given: S.
+  - family: Warton
+    given: D.I.
+  publisher: Environmetrics
+  volume: 32.6
+  page: e2683
+  type: article-journal
+  issued:
+    year: 2021
+
+---
