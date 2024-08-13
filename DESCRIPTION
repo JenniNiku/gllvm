@@ -17,16 +17,16 @@ Description: Analysis of multivariate data using generalized linear latent varia
       Estimation is performed using either the Laplace method, variational approximations, or extended variational appoximations, implemented via TMB (Kristensen et al. (2016), <doi:10.18637/jss.v070.i05>). 
 License: GPL-2
 Imports: MASS, Matrix, statmod, fishMod, mgcv, alabama, nloptr, methods
-Depends: R (>= 3.5.0), TMB, mvabund
+Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 LazyData: true
 LinkingTo: TMB, RcppEigen
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 NeedsCompilation: yes
 URL: https://jenniniku.github.io/gllvm/, https://github.com/JenniNiku/gllvm
 BugReports: https://github.com/JenniNiku/gllvm/issues
 Suggests: 
-    knitr,
-    rmarkdown,
-    testthat, gclus, corrplot, lattice
+    knitr, rmarkdown, testthat, 
+    gclus, corrplot, lattice, 
+    mvabund, ape, parallel
 VignetteBuilder: knitr
