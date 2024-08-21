@@ -1,3 +1,9 @@
+Version 1.4.7
+=============
+
+* Added "fungi" dataset by Abrego et al. 2022
+* New vignette for phylogenetic random effects
+
 Version 1.4.6
 =============
 
