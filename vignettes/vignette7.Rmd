@@ -127,7 +127,7 @@ corrplot::corrplot(getEnvironCor(model1),
 
 The `randomCoefPlot` function constructs caterpillar plots of species deviations from the community mean responses, which can be extracted via the summary method, or found via `coef` and in `model1$params$B`.
 
-Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, for details see @vanderVeen2024.
+Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, for details see @vanderVeen2024 (but, note that changing both of these options will likely cause a significant increase in memory use when combined with parallel computation).
 
 Finally, we can look at the summary information of the model:
 
