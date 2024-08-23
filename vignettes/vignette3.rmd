@@ -122,8 +122,7 @@ library(gllvm)
 
 Fitting basic GLLVM $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ with **gllvm**: 
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
-library(mvabund)
-data("spider")
+data("spider", package = "mvabund")
 library(gllvm)
 fitnb <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
@@ -161,8 +160,7 @@ Try to do these exercises for the next 10 minutes, as many as time is enough for
 <span style="color:blue"> E1. Load spider data from **mvabund** package and take a look at the dataset. </span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 library(gllvm)
-#Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.
-data("spider")
+data("spider", package = "mvabund")
 # more info: 
 # ?spider
 ```
@@ -194,9 +192,9 @@ boxplot(spider$abund)
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may also differ slightly.</span>
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data
-fitp <- gllvm(y=spider$abund, family = poisson(), num.lv = 2)
+fitp <- gllvm(y = spider$abund, family = poisson(), num.lv = 2)
 fitp
-fitnb <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 2)
+fitnb <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
 ```
 Based on AIC, NB distribution suits better. How about residual analysis:
@@ -209,9 +207,9 @@ plot(fitnb)
 
 You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
 ```{r, eval = FALSE, echo=TRUE, warning=FALSE}
-fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA", num.lv = 2)
-fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA", num.lv = 2)
-fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA", num.lv = 2)
+fitLAp <- gllvm(y = spider$abund, family = poisson(), method = "LA", num.lv = 2)
+fitLAnb <- gllvm(y = spider$abund, family = "negative.binomial", method = "LA", num.lv = 2)
+fitLAzip <- gllvm(y = spider$abund, family = "ZIP", method = "LA", num.lv = 2)
 AIC(fitLAp)
 AIC(fitLAnb)
 AIC(fitLAzip)
@@ -248,10 +246,10 @@ fitnb$sd
 # In exercise 2, we fitted GLLVM with two latent variables 
 fitnb
 # How about 1 or 3 LVs
-fitnb1 <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 1)
+fitnb1 <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 1)
 fitnb1
 getLV(fitnb1)
-fitnb3 <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 3)
+fitnb3 <- gllvm(y = spider$abund, family = "negative.binomial", num.lv = 3)
 fitnb3
 getLV(fitnb3)
 ```

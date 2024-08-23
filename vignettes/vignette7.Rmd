@@ -45,7 +45,7 @@ The included version of the package does not contain all available environmental
 We can think of the model as having two covariance matrices: one with correlation between covariate effects, and another that incorporates the correlation between species due to the phylogeny. The former is specified via the formula interface, the form of the latter is (more or less) fixed at present. 
 
 ```{r, warning=FALSE, eval = FALSE}
-TMB::openmp(parallel::detectCores()-1) # set parallel computation
+TMB::openmp(parallel::detectCores()-1, autopar = TRUE) # set parallel computation
 model1 <- gllvm(y = Y, X = X,
         formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA|1), beta0com = TRUE,
                      family = "binomial", num.lv = 0, sd.errors = FALSE, 
@@ -127,7 +127,9 @@ corrplot::corrplot(getEnvironCor(model1),
 
 The `randomCoefPlot` function constructs caterpillar plots of species deviations from the community mean responses, which can be extracted via the summary method, or found via `coef` and in `model1$params$B`.
 
-Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, for details see @vanderVeen2024 (but, note that changing both of these options will likely cause a significant increase in memory use when combined with parallel computation).
+Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, for details see @vanderVeen2024. NOTE: Use `Ab.struct = "CL1"` or `Ab.struct="CL2"` only in parallel when using `TMB::openmp(.., autopar=TRUE)`. Without TMB's "automatic" parallelization feature, memory use is excessively and your computer will probably run out of memory (for a moderately large number of sites and species) so that your R session will crash.
+
+<!--(but, note that changing both of these options will likely cause a significant increase in memory use when combined with parallel computation).-->
 
 Finally, we can look at the summary information of the model:
 
@@ -193,7 +195,8 @@ references:
   page: 
   type: article-journal
   issued: 
-    year: 2024
+  year: 2024
+  doi: https://www.arxiv.org/abs/2408.05333
 
 - id: lme4
   title: Fitting Linear Mixed-effects Models using lme4
