@@ -323,7 +323,7 @@ fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 1,
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Canopy.cover`, `Pilosity3` with `Canopy.cover` have the strongest effects on ant abundances.
 ```{r, echo=FALSE, warning = TRUE}
-load(file = "fit_4th.RData")
+load(file = "fit_4th.Rdata")
 ```
 ```{r, fig.show='hold', out.width='49%', warning = TRUE}
 library(lattice)
