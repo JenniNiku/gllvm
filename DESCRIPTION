@@ -1,7 +1,7 @@
 Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
-Version: 1.4.3
+Version: 1.4.7
 Date: 2023-9-18
 Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.niku@jyu.fi"),
              person("Wesley", "Brooks", role = "aut"),
@@ -21,7 +21,7 @@ Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 LazyData: true
 LinkingTo: TMB, RcppEigen
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 NeedsCompilation: yes
 URL: https://jenniniku.github.io/gllvm/, https://github.com/JenniNiku/gllvm
 BugReports: https://github.com/JenniNiku/gllvm/issues
