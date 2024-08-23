@@ -1668,6 +1668,7 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               matrix<Type>colCorMatUIs(ncov*blocksize,ncov*blocksize);
+              colCorMatUIs.setZero();
               //NN sparse approximation
               for (int d=0; d<(ncov); d++){
                 Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
@@ -1739,6 +1740,7 @@ Type objective_function<Type>::operator() ()
               }
             }else{
               matrix<Type>colCorMatUIs(ncov*blocksize,ncov*blocksize);
+              colCorMatUIs.setZero();
               //NN sparse approximation
               for (int d=0; d<(ncov); d++){
                 Eigen::SparseMatrix<Type>colCorMatUI(blocksize,blocksize);
