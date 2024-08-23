@@ -21,7 +21,7 @@ __For more information about fitting trait models with random effects, see also 
 
 # Phylogenetically structured environmental responses
 
-In this vignette we demonstrate how to fit models that incorporate phylogenetic information into the random effects. For this, we make use of an adjusted version of the familiar \texttt{lme4}-formula interface [@lme4].
+In this vignette we demonstrate how to fit models that incorporate phylogenetic information into the random effects. For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4].
 
 Here, we will use the data by @Abrego2022a. It includes information of 215 fungal species at 1666 *European beech* logs, and was analyzed by the original authors using a similar model. We start by loading the data:
 
@@ -195,7 +195,7 @@ references:
   page: 
   type: article-journal
   issued: 
-  year: 2024
+    year: 2024
   doi: https://www.arxiv.org/abs/2408.05333
 
 - id: lme4
@@ -229,6 +229,8 @@ references:
     given: J.
   publisher: Dryad
   doi: https://doi.org/10.5061/dryad.t76hdr82r
+  issued:
+    year: 2015
 
 - id: Abrego2022b
   title: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales

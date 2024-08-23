@@ -114,7 +114,8 @@ that additionally incorporate trait covariates, so called “fourth
 corner” models. This is for convenience, as the interface for fitting
 fourth corner models slightly differs from the models without traits.
 Both models are detailed in <span class="citation">van der Veen and
-O’Hara</span>, and the fourth corner model in more detail in <span class="citation">Niku et al. (2021)</span>.</p>
+O’Hara (2024)</span>, and the fourth corner model in more detail in
+<span class="citation">Niku et al. (2021)</span>.</p>
 <p><strong>For more information about fitting trait models with random
 effects, see also vignette 1</strong>.</p>
 <div class="section level2">
@@ -122,9 +123,9 @@ effects, see also vignette 1</strong>.</p>
 </h2>
 <p>In this vignette we demonstrate how to fit models that incorporate
 phylogenetic information into the random effects. For this, we make use
-of an adjusted version of the familiar -formula interface <span class="citation">(Bates et al. 2015)</span>.</p>
+of an adjusted version of the familiar lme4-formula interface <span class="citation">(Bates et al. 2015)</span>.</p>
 <p>Here, we will use the data by <span class="citation">Abrego et al.
-(n.d.)</span>. It includes information of 215 fungal species at 1666
+(2015)</span>. It includes information of 215 fungal species at 1666
 <em>European beech</em> logs, and was analyzed by the original authors
 using a similar model. We start by loading the data:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -188,15 +189,15 @@ names as <code>Y</code>. <code>nn.colMat</code> is the number of nearest
 neighbours to consider for each species on the tree, which is fixed to
 10 by default. Smaller numbers usually result in a faster fitting model,
 but one that is potentially less accurate. <span class="citation">van
-der Veen and O’Hara</span> showed that 10-15 neighbours is usually a
-good choice, although fewer can also still lead to accurate estimates
-for the phylogenetic signal. <code>colMat.rho.struct</code> has two
-options, <code>single</code> fitting a model with the same phylogenetic
-signal parameter for all covariates (default) and <code>term</code>
-fitting a model with a phylogenetic signal parameter per covariate.
-Finally, the last line changes the optimisation method to one that seems
-to usually do well with this model type, and changes the starting values
-of the random effect (which was needed to fit this model
+der Veen and O’Hara (2024)</span> showed that 10-15 neighbours is
+usually a good choice, although fewer can also still lead to accurate
+estimates for the phylogenetic signal. <code>colMat.rho.struct</code>
+has two options, <code>single</code> fitting a model with the same
+phylogenetic signal parameter for all covariates (default) and
+<code>term</code> fitting a model with a phylogenetic signal parameter
+per covariate. Finally, the last line changes the optimisation method to
+one that seems to usually do well with this model type, and changes the
+starting values of the random effect (which was needed to fit this model
 succesfully).</p>
 <p>After model fitting, the random effect estimates can be found in
 <code>model1$params$Br</code>, and prediction errors can be extracted
@@ -207,7 +208,7 @@ errors, so let’s calculate thosefirst:</p>
 <span><span class="va">ses</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/se.gllvm.html">se.gllvm</a></span><span class="op">(</span><span class="va">model1</span><span class="op">)</span> <span class="co"># this can take a few minutes</span></span>
 <span><span class="va">model1</span><span class="op">$</span><span class="va">sd</span> <span class="op">&lt;-</span> <span class="va">ses</span><span class="op">$</span><span class="va">sd</span></span>
 <span><span class="va">model1</span><span class="op">$</span><span class="va">Hess</span> <span class="op">&lt;-</span> <span class="va">ses</span><span class="op">$</span><span class="va">Hess</span></span></code></pre></div>
-<p>Here is some code to visualize the model results (from <span class="citation">van der Veen and O’Hara</span>):</p>
+<p>Here is some code to visualize the model results (from <span class="citation">van der Veen and O’Hara (2024)</span>):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/row.names.html" class="external-link">row.names</a></span><span class="op">(</span><span class="va">model1</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">Br</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Intercept"</span>, <span class="st">"Deadwood size"</span>, <span class="st">"Decay stage"</span>, <span class="st">"Decay stage²"</span>, <span class="st">"Connectivity"</span>, <span class="st">"Temperature range"</span>, <span class="st">"Precipitation"</span>,<span class="st">"ln(Reserve area)"</span><span class="op">)</span></span>
 <span></span>
@@ -260,7 +261,7 @@ of species deviations from the community mean responses, which can be
 extracted via the summary method, or found via <code>coef</code> and in
 <code>model1$params$B</code>.</p>
 <p>Arguments to control the VA approximation are <code>Ab.struct</code>
-and <code>Ab.struct.rank</code>, for details see <span class="citation">van der Veen and O’Hara</span>. NOTE: Use
+and <code>Ab.struct.rank</code>, for details see <span class="citation">van der Veen and O’Hara (2024)</span>. NOTE: Use
 <code>Ab.struct = "CL1"</code> or <code>Ab.struct="CL2"</code> only in
 parallel when using <code>TMB::openmp(.., autopar=TRUE)</code>. Without
 TMB’s “automatic” parallelization feature, memory use is excessively and
@@ -374,7 +375,7 @@ R-package for discussion of the fourth corner model).</p>
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
 <div id="ref-Abrego2022a" class="csl-entry">
-Abrego, N., C. Bässler, M. Christensen, and J. Heilmann-Clausen. n.d.
+Abrego, N., C. Bässler, M. Christensen, and J. Heilmann-Clausen. 2015.
 <span>“Data and Code from: Traits and Phylogenies Module the
 Environmental Responses of Wood-Inhabiting Fungal Communities Across
 Spatial Scales [Dataset].”</span> Dryad. https://doi.org/<a href="https://doi.org/10.5061/dryad.t76hdr82r" class="external-link">https://doi.org/10.5061/dryad.t76hdr82r</a>.
@@ -390,8 +391,8 @@ Communities with Fourth-Corner Latent Variable Models”</span> 32.6:
 e2683.
 </div>
 <div id="ref-vanderVeen2024" class="csl-entry">
-Veen, B. van der, and R.B. O’Hara. <span>“Fast Fitting of Phylogenetic
-Mixed Effects Models.”</span> https://doi.org/<a href="https://www.arxiv.org/abs/2408.05333" class="external-link">https://www.arxiv.org/abs/2408.05333</a>.
+Veen, B. van der, and R.B. O’Hara. 2024. <span>“Fast Fitting of
+Phylogenetic Mixed Effects Models.”</span> https://doi.org/<a href="https://www.arxiv.org/abs/2408.05333" class="external-link">https://www.arxiv.org/abs/2408.05333</a>.
 </div>
 </div>
 </div>
