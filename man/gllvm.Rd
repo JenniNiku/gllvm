@@ -364,7 +364,7 @@ fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(),
 
 ## Load a dataset from the mvabund package
 library(mvabund)
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 X <- as.matrix(antTraits$env)
 TR <- antTraits$traits

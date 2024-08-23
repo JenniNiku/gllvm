@@ -20,7 +20,7 @@
 #' @examples
 #' \donttest{
 #'# Load a dataset from the mvabund package
-#'data(antTraits)
+#'data(antTraits, package = "mvabund")
 #'y <- as.matrix(antTraits$abund)
 #'X <- scale(antTraits$env[, 1:3])
 #'# Fit gllvm model

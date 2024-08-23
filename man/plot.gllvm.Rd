@@ -49,7 +49,7 @@ plot.gllvm is used for model diagnostics. Dunn-Smyth residuals (randomized quant
 \examples{
 \dontrun{
 ## Load a dataset from the mvabund package
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model with Poisson family
 fit <- gllvm(y, family = poisson())

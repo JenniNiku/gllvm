@@ -147,7 +147,7 @@ fit$logL
 ordiplot(fit, predict.region = TRUE)
 \dontrun{
 #'## Load a dataset from the mvabund package
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 fit <- gllvm(y, family = poisson())
 # Ordination plot:

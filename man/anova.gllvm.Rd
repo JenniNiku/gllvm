@@ -24,7 +24,7 @@ the P-value should be treated as very approximate.
 \examples{
 \donttest{
 ## Load a dataset from the mvabund package
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- antTraits$abund
 X <- antTraits$env
 TR <- antTraits$traits
