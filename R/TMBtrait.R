@@ -1956,7 +1956,7 @@ trait.TMB <- function(
           for(d in 1:ncol(xb)){
             Abs[[d]] <- Matrix::bdiag(sapply(SArmPs, "[[", d,simplify=FALSE)) # get every dth element for each block
           }
-          Abs <- Matrix::bdiag(Abs)%*%kronecker(cov2cor(SArmR%*%t(SArmR)),diag(p))%*%t(Matrix::bdiag(Abs))
+          Abs <- Matrix::bdiag(Abs)%*%kronecker(cov2cor(SArmR%*%t(SArmR)),diag(p))%*%Matrix::t(Matrix::bdiag(Abs))
         }else if(Ab.struct == "spblockdiagonal"){
           Abs <- vector("list", 1)
           for(d in 1:ncol(xb)){

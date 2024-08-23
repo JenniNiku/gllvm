@@ -2606,7 +2606,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
             for(d in 1:ncol(spdr)){
               spArs[[d]] <- Matrix::bdiag(sapply(SArmPs, "[[", d,simplify=FALSE)) # get every dth element for each block
             }
-            spArs <- Matrix::bdiag(spArs)%*%kronecker(cov2cor(SArmR%*%t(SArmR)),diag(p))%*%t(Matrix::bdiag(spArs))
+            spArs <- Matrix::bdiag(spArs)%*%kronecker(cov2cor(SArmR%*%t(SArmR)),diag(p))%*%Matrix::t(Matrix::bdiag(spArs))
           }else if(sp.Ar.struc == "spblockdiagonal"){
             spArs <- vector("list", 1)
             for(d in 1:ncol(spdr)){
