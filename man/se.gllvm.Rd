@@ -23,8 +23,8 @@ Calculates Hessian and standard errors for gllvm model.
 Computes Hessian and standard errors for gllvm model.
 }
 \examples{
-data(spider)
-mod <- gllvm(spider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
+data(eSpider)
+mod <- gllvm(eSpider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
 # Calculate standard errors after fitting
 sdErr <- se(mod)
 # Store the standard errors in the right place

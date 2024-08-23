@@ -12,7 +12,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{x}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.}
+\item{x}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s. If both 'randomX' and random species effects are present in the model this should be a list of length two.}
 
 \item{...}{not used}
 }
@@ -32,9 +32,14 @@ Species covariance matrix due to the environment is calculated.
 Covariances due to the covariates can only be calculated when random effects are included in the model, and are thus limited to reduced rank models (those including constrained and concurrent ordinations) fitted with random slopes, models fitted with random effects via the formula interface, or the fourth corner model fitted with random slopes.
 For full rank models with random slopes, i.e., with the formula interface or the fourth corner model, the covariances of species are formulated as:
 
- \deqn{\Sigma_e = C*kronecker(P\rho + (1-\rho)I_p, R)*C',}
+ \deqn{\Sigma_e = kronecker(C\rho + (1-\rho)I_p, R),}
  
-where P is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho_{sp}} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{C = kronecker(I_p, 1_r)}, with 1_r a vector of 1s equal to the number of random effects.
+where \eqn{C} is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{I = kronecker(I_p, x)}, with x a vector of covariate values for each of the random effects, which defaults to a vector of 1s.
+when there are covariate-specific phylogenetic signal parameters in the model, this is instead:
+
+\deqn{\Sigma_e = kronecker(x_i', I_m)*bdiag(L_k)*kronecker(\Sigma_r, I_m)*bdiag(L_k')*kronecker(x_i, I_m),}
+
+where \eqn{bdiag(L_k)} is a block-diagonal lower triangular matrix, and each \eqn{L_k} the lower triangular matrix of the covariance matrix for each covariate.
 
 For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
 
@@ -49,8 +54,10 @@ with I_d an identity matrix for the number of constrained and informed latent va
 \examples{
 \dontrun{
 # Example with the spider dataset
-data(spider)
-fit <- gllvm(spider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
+data(eSpider)
+y = eSpider$abund[eSpider$nonNA,]
+X = eSpider$X[eSpider$nonNA,]
+fit <- gllvm(eSpider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
 envcov <- getEnvironCov(fit)
 envcov$trace.randomB
 # As proportion of variance in the model

@@ -40,8 +40,10 @@
 #' @examples
 #' \dontrun{
 #'# Example with the spider dataset
-#'data(spider)
-#'fit <- gllvm(spider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
+#'data(eSpider)
+#'y = eSpider$abund[eSpider$nonNA,]
+#'X = eSpider$X[eSpider$nonNA,]
+#'fit <- gllvm(eSpider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
 #'envcov <- getEnvironCov(fit)
 #'envcov$trace.randomB
 #'# As proportion of variance in the model
