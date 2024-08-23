@@ -43,6 +43,17 @@ bibentry(bibtype="Article",
 )
 
 bibentry(bibtype="Article",
+         title = "Fast fitting of phylogenetic mixed effects models",
+         author = c(as.person("Bert van der Veen"), as.person("Robert B. O'Hara")),
+         journal = "arxiv",
+         year     = "2024",
+         textVersion =
+         paste("van der Veen, B. and O'Hara, R.B. (2024).",
+         "Fast fitting of phylogenetic mixed effects models.",
+               "arxiv.")
+)
+
+bibentry(bibtype="Article",
          title = "Model-based ordination for species with unequal niche widths",
          author = c(as.person("Bert van der Veen"), as.person("Francis K. C. Hui"), as.person("Knut A. Hovstad"), as.person("Erik B. Solbu"), as.person("Robert B. O'Hara")),
          journal = "Methods in Ecology and Evolution",
