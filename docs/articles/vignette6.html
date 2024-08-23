@@ -6,20 +6,19 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ordination with predictors • gllvm</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Ordination with predictors">
-<meta property="og:description" content="gllvm">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -33,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
       </span>
     </div>
 
@@ -45,7 +44,7 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -67,6 +66,9 @@
     <li>
       <a href="../articles/vignette6.html">Ordination with predictors</a>
     </li>
+    <li>
+      <a href="../articles/vignette7.html">Phylogenetic random effects</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -77,7 +79,7 @@
 <li>
   <a href="https://github.com/JenniNiku/gllvm/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
@@ -88,7 +90,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -97,7 +99,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2023-09-19</h4>
+            <h4 data-toc-skip class="date">2024-08-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette6.Rmd" class="external-link"><code>vignettes/vignette6.Rmd</code></a></small>
       <div class="hidden name"><code>vignette6.Rmd</code></div>
@@ -122,11 +124,11 @@ combination of the predictor variables.</p>
 <p>In this vignette, we demonstrate how to include predictors directly
 in an ordination with the <code>gllvm</code> R-package. Methods are
 explained with details in <span class="citation">van der Veen et al.
-(2022)</span>. We start by loading the hunting spider dataset:</p>
+(2023)</span>. We start by loading the hunting spider dataset:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/JenniNiku/gllvm" class="external-link">gllvm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">spider</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"spider"</span>, package <span class="op">=</span> <span class="st">"mvabund"</span><span class="op">)</span></span>
 <span><span class="va">Y</span> <span class="op">&lt;-</span> <span class="va">spider</span><span class="op">$</span><span class="va">abund</span></span>
 <span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">spider</span><span class="op">$</span><span class="va">x</span></span>
 <span></span>
@@ -142,41 +144,57 @@ explained with details in <span class="citation">van der Veen et al.
 <p>Let us first consider what constrained ordination actually is. We
 will do that by first shortly explaining reduced rank regression (RRR).
 First, consider the model:</p>
-<p><span class="math display">\[
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐗</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{\beta}_j.
-\]</span></p>
-<p>Here, <span class="math inline">\(\boldsymbol{\beta}_j\)</span> are
-the slopes that represent a species responses to <span class="math inline">\(p\)</span> predictor variables at site <span class="math inline">\(i\)</span>, <span class="math inline">\(\boldsymbol{X}_i\)</span>. In the
-<code>gllvm</code> R-package, the code to fit this model is:</p>
+</annotation></semantics></math></p>
+<p>Here,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\beta}_j</annotation></semantics></math>
+are the slopes that represent a species responses to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
+predictor variables at site
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐗</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\boldsymbol{X}_i</annotation></semantics></math>.
+In the <code>gllvm</code> R-package, the code to fit this model is:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MGLM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, num.lv <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 <p>where we set the number of unconstrained latent variables to zero, as
-it defaults to two. The “rank” of <span class="math inline">\(\boldsymbol{X}_i^\top\boldsymbol{\beta}_j\)</span>
-is <span class="math inline">\(p\)</span>. Constrained ordination
-introduces a constraint on the species slopes matrix, namely on the
-number of independent columns in <span class="math inline">\(\boldsymbol{\beta}_j\)</span> (a column is not
-independent when it can be formulated as a linear combination of
-another). The reduced ranks are in community ecology referred to as
-ecological gradients, but can also be understood as ordination axes or
-latent variables. If we define a latent variable <span class="math inline">\(\boldsymbol{z}_i =
-\boldsymbol{B}^\top\boldsymbol{X}_{i,lv} +
-\boldsymbol{\epsilon}_i\)</span>, for a <span class="math inline">\(p\times d\)</span> matrix of slopes, we can
-understand constrained ordination as a regression of the latent variable
-or ecological gradient, except that the residual <span class="math inline">\(\boldsymbol{\epsilon}_i\)</span> is omitted,
-i.e. we assume that the ecological gradient can be represented perfectly
-by the predictor variables, so that the model becomes: <span class="math display">\[\begin{equation}
-\eta_{ij} = \beta_{0j} +
-\boldsymbol{X}_i^\top\boldsymbol{B}\boldsymbol{\gamma}_j.
-\end{equation}\]</span></p>
-<p>Where <span class="math inline">\(\boldsymbol{B}\)</span> is a <span class="math inline">\(d \times K\)</span> matrix of slopes per predictor
-and latent variable, and <span class="math inline">\(\boldsymbol{\gamma}_j\)</span> is a set of slopes
-for each species per latent variable. This parametrization is
-practically useful, as it drastically reduces the number of parameters
-compared to multivariate regression. The rank, number of latent
-variables or ordination axes, can be determined by cross-validation, or
-alternatively by using information criteria. The code for this in the
-<code>gllvm</code> R-package, for an arbitrary choice of two latent
-variables, is:</p>
+it defaults to two. The “rank” of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐗</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">\boldsymbol{X}_i^\top\boldsymbol{\beta}_j</annotation></semantics></math>
+is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>.
+Constrained ordination introduces a constraint on the species slopes
+matrix, namely on the number of independent columns in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\beta}_j</annotation></semantics></math>
+(a column is not independent when it can be formulated as a linear
+combination of another). The reduced ranks are in community ecology
+referred to as ecological gradients, but can also be understood as
+ordination axes or latent variables. If we define a latent variable
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐳</mi><mi>i</mi></msub><mo>=</mo><msup><mi>𝐁</mi><mi>⊤</mi></msup><msub><mi>𝐗</mi><mrow><mi>i</mi><mo>,</mo><mi>l</mi><mi>v</mi></mrow></msub><mo>+</mo><msub><mi>𝛜</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\boldsymbol{z}_i = \boldsymbol{B}^\top\boldsymbol{X}_{i,lv} + \boldsymbol{\epsilon}_i</annotation></semantics></math>,
+for a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>×</mo><mi>d</mi></mrow><annotation encoding="application/x-tex">p\times d</annotation></semantics></math>
+matrix of slopes, we can understand constrained ordination as a
+regression of the latent variable or ecological gradient, except that
+the residual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛜</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\epsilon}_i</annotation></semantics></math>
+is omitted, i.e. we assume that the ecological gradient can be
+represented perfectly by the predictor variables, so that the model
+becomes:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐗</mi><mi>i</mi><mi>⊤</mi></msubsup><mi>𝐁</mi><msub><mi>𝛄</mi><mi>j</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">\begin{equation}
+\eta_{ij} = \beta_{0j} + \boldsymbol{X}_i^\top\boldsymbol{B}\boldsymbol{\gamma}_j.
+\end{equation}</annotation></semantics></math></p>
+<p>Where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐁</mi><annotation encoding="application/x-tex">\boldsymbol{B}</annotation></semantics></math>
+is a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>×</mo><mi>K</mi></mrow><annotation encoding="application/x-tex">d \times K</annotation></semantics></math>
+matrix of slopes per predictor and latent variable, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛄</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\gamma}_j</annotation></semantics></math>
+is a set of slopes for each species per latent variable. This
+parametrization is practically useful, as it drastically reduces the
+number of parameters compared to multivariate regression. The rank,
+number of latent variables or ordination axes, can be determined by
+cross-validation, or alternatively by using information criteria. The
+code for this in the <code>gllvm</code> R-package, for an arbitrary
+choice of two latent variables, is:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">RRGLM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, num.RR <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p>The predictor slopes (called canonical coefficients in e.g., CCA or
@@ -356,26 +374,38 @@ number of constrained latent variables. The number of constrained,
 informed, and unconstrained latent variables can be freely combined
 using the <code>num.RR</code>, <code>num.lv.c</code> and
 <code>num.lv</code> arguments (but be careful not to overparameterize or
-overfit your model!). It is also possible to combine those arguments
+overfit your model!).</p>
+</div>
+<div class="section level3">
+<h3 id="partial-constrained-or-concurrent-ordination">Partial constrained or concurrent ordination<a class="anchor" aria-label="anchor" href="#partial-constrained-or-concurrent-ordination"></a>
+</h3>
+<p>It is also possible to combine constrained or concurrent ordination
 with full-rank predictor effects. To combine concurrent ordination with
-full-rank predictor effects you need to use the formula interface:</p>
+full-rank predictor effects you need to additionally use the formula
+interface:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">PCGLLVM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">X</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, num.lv.c <span class="op">=</span> <span class="fl">2</span>, </span>
 <span>                 lv.formula <span class="op">=</span> <span class="op">~</span><span class="va">bare.sand</span> <span class="op">+</span> <span class="va">fallen.leaves</span> <span class="op">+</span> <span class="va">moss</span><span class="op">+</span><span class="va">herb.layer</span> <span class="op">+</span> <span class="va">reflection</span>, </span>
 <span>                 formula <span class="op">=</span> <span class="op">~</span><span class="va">soil.dry</span><span class="op">)</span></span></code></pre></div>
 <p>where <code>lv.formula</code> is the formula for the ordination with
-predictors (concurrent or constrained), and <code>X.formula</code> is
-the formula which tells the model which predictors should be modelled in
-full-rank. Note, that those two formulas cannot include the same
-predictor variables, and all predictor variables should be provided in
-the <code>X</code> argument. In essence, this performs a partial
-concurrent ordination. Constrained ordination should not include an
-(additional) intercept as it can be re-parameterized into a model with
-only <span class="math inline">\(\beta_{0j}\)</span>.</p>
-<p>Though we did not do so here, information criteria can be used to
-determine the correct number of latent variables. Results of the model
-can be examined in more details using the <code>summary(\cdot)</code>
-function:</p>
+predictors (concurrent or constrained), and <code>formula</code> is the
+formula which tells the model which predictors should be partialled out
+of the ordination. Note, that those two formula arguments cannot include
+the same predictor variables, and all predictor variables should be
+provided in the <code>X</code> argument. In essence, this performs a
+partial concurrent ordination, or with <code>num.RR</code> a partial
+constrained ordination. These effects that are partialled out of the
+ordination (that the ordination is conditioned on) can also be treated
+as random effects, which is sometimes preferable. Partialled out here
+means that the effects are taken out of the ordination: the effect of
+<code>soil.dry</code> is no longer visible in the ordination, and no
+arrow will be drawn for its effect. It is possible to inspect its effect
+on the species with the <code>coefplot</code> function, as it is for all
+covariate effects in the model, inside the ordination and outside.</p>
+<p>Information criteria can be used to determine the correct number of
+latent variables, though we did not demonstrate this here. Results of
+the model can be examined in more details using the
+<code>summary(\cdot)</code> function:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">CGLLVM</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
@@ -414,14 +444,16 @@ function:</p>
 inference, such as creating an ordination diagram with arrows:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">CGLLVM</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette6_files/figure-html/unnamed-chunk-15-1.png" width="480" style="display: block; margin: auto;">
-Arrows that show as less intense red (pink), are predictors of which the
-confidence interval for the slope includes zero, for at least one of the
-two plotted dimensions. There are various arguments included in the
+<p><img src="vignette6_files/figure-html/unnamed-chunk-15-1.png" width="480" style="display: block; margin: auto;"></p>
+<p>Arrows that show as less intense red (pink), are predictors of which
+the confidence interval for the slope includes zero, for at least one of
+the two plotted dimensions. There are various arguments included in the
 function to improve readability of the figure, have a look at its
 documentation. The arrows are always proportional to the size of the
 plot, so that the predictor with the largest slope estimate is the
-largest arrow. If the predictors have no effect, the slopes <span class="math inline">\(\boldsymbol{B}\)</span> will be close to zero.</p>
+largest arrow. If the predictors have no effect, the slopes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐁</mi><annotation encoding="application/x-tex">\boldsymbol{B}</annotation></semantics></math>
+will be close to zero.</p>
 <p>It is also possible to use the <code>quadratic</code> flag to fit a
 quadratic response model though we will not demonstrate that here, or to
 partition variance per latent variable and for specific predictors.</p>
@@ -429,9 +461,9 @@ partition variance per latent variable and for specific predictors.</p>
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
 <div id="ref-vanderVeen2021b" class="csl-entry">
-Veen, B. van der, F.K.C. Hui, K.A. Hovstad, and R.B. O’Hara. 2022.
+Veen, B. van der, F.K.C. Hui, K.A. Hovstad, and R.B. O’Hara. 2023.
 <span>“Concurrent Ordination - Simultaneous Unconstrained and
 Constrained Latent Variable Modelling”</span> 14: 683–95.
 </div>
@@ -441,9 +473,7 @@ Constrained Latent Variable Modelling”</span> 14: 683–95.
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
@@ -456,16 +486,16 @@ Constrained Latent Variable Modelling”</span> 14: 683–95.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>

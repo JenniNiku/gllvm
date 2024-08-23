@@ -6,23 +6,20 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Generalized Linear Latent Variable Models • gllvm</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Generalized Linear Latent Variable Models">
-<meta property="og:description" content="Analysis of multivariate data using generalized linear latent variable models (gllvm). 
-      Estimation is performed using either Laplace approximation method or variational approximation method implemented via TMB (Kristensen et al., (2016), &lt;doi:10.18637/jss.v070.i05&gt;). 
-      For details see Niku et al. (2019a) &lt;doi:10.1371/journal.pone.0216129&gt; and 
-      Niku et al. (2019b) &lt;doi:10.1111/2041-210X.13303&gt;.">
+<meta property="og:description" content="Analysis of multivariate data using generalized linear latent variable models (gllvm). Estimation is performed using either the Laplace method, variational approximations, or extended variational appoximations, implemented via TMB (Kristensen et al. (2016), &lt;doi:10.18637/jss.v070.i05&gt;).">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -36,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
       </span>
     </div>
 
@@ -48,7 +45,7 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -70,6 +67,9 @@
     <li>
       <a href="articles/vignette6.html">Ordination with predictors</a>
     </li>
+    <li>
+      <a href="articles/vignette7.html">Phylogenetic random effects</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -80,7 +80,7 @@
 <li>
   <a href="https://github.com/JenniNiku/gllvm/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
@@ -91,7 +91,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="contents col-md-9">
@@ -113,6 +113,25 @@
 <h1 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
 </h1>
 <p>For getting started with <code>gllvm</code> we recommend to read vignette <a href="https://jenniniku.github.io/gllvm/articles/vignette1.html" class="external-link">Analysing multivariate abundance data using gllvm</a> or introductions for using <code>gllvm</code> for <a href="https://jenniniku.github.io/gllvm/articles/vignette3.html" class="external-link">ordination</a> and for <a href="https://jenniniku.github.io/gllvm/articles/vignette4.html" class="external-link">analysing species correlations</a>.</p>
+<p>Other available vignettes are: <a href="https://cran.r-project.org/web/packages/gllvm/vignettes/vignette2.html" class="external-link">Analysing microbial community data</a>, <a href="https://cran.r-project.org/web/packages/gllvm/vignettes/vignette5.html" class="external-link">How to use the quadratic response model</a>, and <a href="https://cran.r-project.org/web/packages/gllvm/vignettes/vignette6.html" class="external-link">Ordination with predictors</a>.</p>
+</div>
+<div class="section level1">
+<h1 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h1>
+<p>The <code>citation</code> function in R provides information on how to cite the methods in this package. Please remember to cite the software (version) separately from any relevent research articles to provide the appropriate credit to all associated contributors. The reference for the software package is: Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Korhonen, P., Taskinen, S., van der Veen, B., and Warton, D. I. (YYYY). gllvm: Generalized Linear Latent Variable Models.R package version XXX, where YYYY represents the publication date of the used version of the package represented by XXX.</p>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p><a href="https://www.tandfonline.com/doi/abs/10.1080/10618600.2016.1164708" class="external-link">Hui, F.K.C., Warton, D., Ormerod, J., Haapaniemi, V., &amp; Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics, 26(1), 35 - 43.</a></p>
+<p><a href="https://link.springer.com/article/10.1007/s13253-017-0304-7" class="external-link">Niku, J., Warton, D., Hui, F.K.C., &amp; Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological and Environmental Statistics, 22(4), 498 - 522.</a></p>
+<p><a href="https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210X.13303" class="external-link">Niku, J., Hui, F.K.C., Taskinen, S., &amp; Warton, D. (2019). gllvm: Fast analysis of multivariate abundance data with generalized linear latent variable models in r. Methods in Ecology and Evolution, 10(12), 2173 - 2182.</a></p>
+<p><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0216129" class="external-link">Niku, J., Brooks, W., Herliansyah, R., Hui, F.K.C., Taskinen, S., &amp; Warton, D. (2019). Efficient estimation of generalized linear latent variable models. PloS one, 14(5), e0216129.</a></p>
+<p><a href="https://doi.org/10.1002/env.2683" class="external-link">Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2021). Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models. Environmetrics, 32(6), 1-17.</a></p>
+<p><a href="https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210X.13595" class="external-link">van der Veen, B., Hui, F.K.C., Hovstad, K.A., Solbu, E.B., &amp; O’Hara, R.B. (2021). Model-based ordination for species with unequal niche widths. Methods in Ecology and Evolution, 12(7), 1288 - 1300.</a></p>
+<p><a href="https://doi.org/10.1111/2041-210X.14035" class="external-link">van der Veen, B., Hui, F. K. C., Hovstad, K.A., and O’Hara, R.B. (2023). Concurrent ordination: simultaneous unconstrained and constrained latent variable modelling. Methods in Ecology and Evolution, 14(2), 683-695.</a></p>
+<p><a href="https://www.arxiv.org/abs/2408.05333" class="external-link">van der Veen, B. and O’Hara, R.B. (2024). Fast fitting of phylogenetic mixed effects models. arxiv.</a></p>
+<p><a href="https://doi.org/10.1007/s11222-022-10189-w" class="external-link">Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2023). Fast and universal estimation of latent variable models using extended variational approximations. Statistics and Computing, 33(1), 1-16.</a></p>
+</div>
 </div>
 
   </div>
@@ -169,16 +188,16 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>
