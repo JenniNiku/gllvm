@@ -811,9 +811,12 @@ Type objective_function<Type>::operator() ()
               //which is much more friendly in memory
               //based on the formulation A_m = LL'+D, where D is diagonal given by SArmCD^2
               // trace: tr((LL'+D)UU')*Ar(d,d2)*SprI(d,d2), split over the addition for efficiency
-              matrix<Type>tempMat(CppAD::Integer(Abranks(cb)),blocksize);
+              matrix<Type>ones = Eigen::MatrixXd::Ones(blocksize,CppAD::Integer(Abranks(cb)));
+              matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
               Eigen::SparseMatrix<Type> tempMat2(blocksize, blocksize);
+              vector<Type> rowSums(blocksize);
               vector<Type> temp(blocksize);
+              
               for (int d=0; d<ncov;d++){
                 tempMat = SArmC.transpose()*colCorMatUIBlocks(d);
                 for (int d2=d+1; d2<ncov;d2++){
@@ -821,8 +824,12 @@ Type objective_function<Type>::operator() ()
                   //reduced rank part: L
                   nll -= -((tempMat*(colCorMatUIBlocks(d2).transpose()*SArmC)).trace())*SArmR(d,d2)*SprI(d,d2);
                   //remaining diagonal entries
-                  tempMat2 = colCorMatUIBlocks(d)*colCorMatUIBlocks(d2).transpose();
-                  nll -= -(SArmCD.array().pow(2)*tempMat2.diagonal().array()).sum()*SArmR(d,d2)*SprI(d,d2);
+                  // tempMat2 = colCorMatUIBlocks(d)*colCorMatUIBlocks(d2).transpose();
+                  tempMat2 = colCorMatUIBlocks(d).cwiseProduct(colCorMatUIBlocks(d2));
+
+                  // Compute row-wise sums
+                  rowSums = tempMat2*ones;
+                  nll -= -(SArmCD.array().pow(2)*rowSums).sum()*SArmR(d,d2)*SprI(d,d2);
                 }
                 //reduced rank part
                 nll -= -0.5*(tempMat).rowwise().squaredNorm().sum()*SArmR(d,d)*SprI(d,d);
@@ -1376,14 +1383,14 @@ Type objective_function<Type>::operator() ()
                 
                 //write trace separately so we don't need to compute the whole product
                 vector<Type> colCorMatIDiag = colCorMatI.diagonal();
-                matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
+                vector<Type> temp(blocksize);
+                matrix <Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
                 for (int d=0; d<ncov;d++){
                   tempMat = SArmPs(d).transpose()*colCorMatI;
+                  temp = colCorMatIDiag*SArmCDs(d);
                   for (int d2=d+1; d2<ncov;d2++){
-                    // nll -= -(colCorMatI*(SArmPs(d2)*SArmPs(d).transpose()+(SArmCDs(d)*SArmCDs(d2)).matrix().asDiagonal().toDenseMatrix())).trace()*SprI(d,d2)*SArmRc(d,d2);
                     nll -= -(tempMat*SArmPs(d2)).trace()*SprI(d,d2)*SArmRc(d,d2);
-                    // nll -= -(colCorMatI*(SArmCDs(d)*SArmCDs(d2)).matrix().asDiagonal().toDenseMatrix()).trace()*SprI(d,d2)*SArmRc(d,d2);
-                    nll -= -(colCorMatIDiag*SArmCDs(d)*SArmCDs(d2)).sum()*SprI(d,d2)*SArmRc(d,d2);
+                    nll -= -(temp*SArmCDs(d2)).sum()*SprI(d,d2)*SArmRc(d,d2);
                   }
                   nll -= -0.5*(SArmPs(d).transpose()*colCorMatI*SArmPs(d)).trace()*SprI(d,d);
                   nll -= -0.5*(colCorMatIDiag*SArmCDs(d)*SArmCDs(d)).sum()*SprI(d,d)*SArmRc(d,d);
@@ -1398,13 +1405,17 @@ Type objective_function<Type>::operator() ()
                 //write trace separately so we don't need to compute the whole product
                 //this is the same as in matrix normal, except the m by m matrix is d-specific
                 matrix<Type>tempMat(blocksize,blocksize);
+                vector<Type> colCorMatIDiag = colCorMatI.diagonal();
+                vector<Type>temp(blocksize);
+                vector<Type> temp2(blocksize);
                 for (int d=0; d<ncov;d++){
                   tempMat = SArmPs(d).transpose()*colCorMatUI;
+                  temp2 = colCorMatIDiag*SArmCDs(d);
                   for (int d2=d+1; d2<ncov;d2++){
                     //reduced rank part: L
                     nll -= -(((tempMat)*(colCorMatUI.transpose()*SArmPs(d))).trace())*SArmRc(d,d2)*SprI(d,d2);
                     //remaining diagonal entries
-                    nll -= -((SArmCDs(d)*SArmCDs(d2))*colCorMatI.diagonal().array()).sum()*SArmRc(d,d2)*SprI(d,d2);
+                    nll -= -(temp2*SArmCDs(d2)).sum()*SArmRc(d,d2)*SprI(d,d2);
                   }
                   //reduced rank part
                   nll -= -0.5*(SArmPs(d).transpose()*colCorMatUI).rowwise().squaredNorm().sum()*SprI(d,d);
@@ -1413,7 +1424,7 @@ Type objective_function<Type>::operator() ()
                   //need to do this column-wise so I do not need to compute the whole product
                   //similar to above, trace via squared norm
                   for (int j=0; j<blocksize; j++){
-                    vector<Type> temp = colCorMatUI.col(j);
+                    temp = colCorMatUI.col(j);
                     trace += (temp*SArmCDs(d)).pow(2).sum();
                   }
                   nll -= -0.5*trace*SprI(d,d);//no SArmRc because it has 1s on the diagonal
@@ -1433,18 +1444,21 @@ Type objective_function<Type>::operator() ()
               
               //write trace separately so we don't need to compute the whole product
               //this is the same as in matrix normal, except the m by m matrix is d-specific
+              matrix<Type>ones = Eigen::MatrixXd::Ones(blocksize,CppAD::Integer(Abranks(cb)));
               Eigen::SparseMatrix<Type> tempMat2(blocksize, blocksize);
               matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
               vector<Type> temp(blocksize);
+              vector<Type> rowSums(blocksize);
               for (int d=0; d<ncov;d++){
                 tempMat = SArmPs(d).transpose()*colCorMatUIs(d);
                 for (int d2=d+1; d2<ncov;d2++){
-                  // nll -= -(SArmP*colCorMatUIBlocks(d)*colCorMatUIBlocks(d2).transpose()).trace()*SArmR(d,d2)*SprI(d,d2);
                   //reduced rank part: L
                   nll -= -(tempMat*(colCorMatUIs(d2).transpose()*SArmPs(d2))).trace()*SArmRc(d,d2)*SprI(d,d2);
                   //remaining diagonal entries
-                  tempMat2 = colCorMatUIs(d)*colCorMatUIs(d2).transpose();
-                  nll -= -((SArmCDs(d)*SArmCDs(d2))*tempMat2.diagonal().array()).sum()*SArmRc(d,d2)*SprI(d,d2);
+                  tempMat2 = colCorMatUIs(d).cwiseProduct(colCorMatUIs(d2));
+                  // Compute row-wise sums for diagonal
+                  rowSums = tempMat2*ones;
+                  nll -= -((SArmCDs(d)*SArmCDs(d2))*rowSums).sum()*SArmRc(d,d2)*SprI(d,d2);
                 }
                 //reduced rank part
                 nll -= -0.5*(tempMat).rowwise().squaredNorm().sum()*SprI(d,d);
@@ -1482,7 +1496,7 @@ Type objective_function<Type>::operator() ()
             
             Type sum_diag = 0;
             Type sum_off_diag = 0;
-            
+          
             for (int j=0; j<blocksize;j++){
             for (int d = 0; d < ncov; d++) {
               Type SArmCDsdj = SArmCDs(d)(j);
