@@ -811,25 +811,22 @@ Type objective_function<Type>::operator() ()
               //which is much more friendly in memory
               //based on the formulation A_m = LL'+D, where D is diagonal given by SArmCD^2
               // trace: tr((LL'+D)UU')*Ar(d,d2)*SprI(d,d2), split over the addition for efficiency
-              matrix<Type>ones = Eigen::MatrixXd::Ones(blocksize,CppAD::Integer(Abranks(cb)));
               matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
-              Eigen::SparseMatrix<Type> tempMat2(blocksize, blocksize);
-              vector<Type> rowSums(blocksize);
               vector<Type> temp(blocksize);
-              
               for (int d=0; d<ncov;d++){
                 tempMat = SArmC.transpose()*colCorMatUIBlocks(d);
                 for (int d2=d+1; d2<ncov;d2++){
                   // nll -= -(SArmP*colCorMatUIBlocks(d)*colCorMatUIBlocks(d2).transpose()).trace()*SArmR(d,d2)*SprI(d,d2);
                   //reduced rank part: L
                   nll -= -((tempMat*(colCorMatUIBlocks(d2).transpose()*SArmC)).trace())*SArmR(d,d2)*SprI(d,d2);
-                  //remaining diagonal entries
-                  // tempMat2 = colCorMatUIBlocks(d)*colCorMatUIBlocks(d2).transpose();
-                  tempMat2 = colCorMatUIBlocks(d).cwiseProduct(colCorMatUIBlocks(d2));
-
-                  // Compute row-wise sums
-                  rowSums = tempMat2*ones;
-                  nll -= -(SArmCD.array().pow(2)*rowSums).sum()*SArmR(d,d2)*SprI(d,d2);
+                  // apparently faster than "just" computing the diagonal entries via an elementwise product
+                  // I suppose Eigen can do some optimization with this
+                  vector<Type> diags(blocksize);
+                  diags.setZero();
+                  for (int j=0; j<blocksize; j++){
+                    diags += colCorMatUIBlocks(d).col(j).cwiseProduct(colCorMatUIBlocks(d2).col(j));
+                  }
+                  nll -= -(SArmCD.array().pow(2)*diags).sum()*SArmR(d,d2)*SprI(d,d2);
                 }
                 //reduced rank part
                 nll -= -0.5*(tempMat).rowwise().squaredNorm().sum()*SArmR(d,d)*SprI(d,d);
@@ -1444,21 +1441,21 @@ Type objective_function<Type>::operator() ()
               
               //write trace separately so we don't need to compute the whole product
               //this is the same as in matrix normal, except the m by m matrix is d-specific
-              matrix<Type>ones = Eigen::MatrixXd::Ones(blocksize,CppAD::Integer(Abranks(cb)));
-              Eigen::SparseMatrix<Type> tempMat2(blocksize, blocksize);
               matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
               vector<Type> temp(blocksize);
-              vector<Type> rowSums(blocksize);
               for (int d=0; d<ncov;d++){
                 tempMat = SArmPs(d).transpose()*colCorMatUIs(d);
                 for (int d2=d+1; d2<ncov;d2++){
                   //reduced rank part: L
                   nll -= -(tempMat*(colCorMatUIs(d2).transpose()*SArmPs(d2))).trace()*SArmRc(d,d2)*SprI(d,d2);
-                  //remaining diagonal entries
-                  tempMat2 = colCorMatUIs(d).cwiseProduct(colCorMatUIs(d2));
-                  // Compute row-wise sums for diagonal
-                  rowSums = tempMat2*ones;
-                  nll -= -((SArmCDs(d)*SArmCDs(d2))*rowSums).sum()*SArmRc(d,d2)*SprI(d,d2);
+                  // apparently faster than "just" computing the diagonal entries via an elementwise product
+                  // I suppose Eigen can do some optimization with this
+                  vector<Type> diags(blocksize);
+                  diags.setZero();
+                  for (int j=0; j<blocksize; j++){
+                    diags += colCorMatUIs(d).col(j).cwiseProduct(colCorMatUIs(d2).col(j));
+                  }
+                  nll -= -(SArmCDs(d)*SArmCDs(d2)*diags).sum()*SArmRc(d,d2)*SprI(d,d2);
                 }
                 //reduced rank part
                 nll -= -0.5*(tempMat).rowwise().squaredNorm().sum()*SprI(d,d);
@@ -1476,60 +1473,46 @@ Type objective_function<Type>::operator() ()
             }
           
           //species-specific submatrices in A
-          // vector<matrix<Type>>Aspp(blocksize);
-          //   for (int j=0; j<blocksize;j++){
-          //     Aspp(j).resize(ncov,ncov);
-          //     //need to build the dxd species-specific matrix in A
-          //     for (int d=0; d<ncov;d++){
-          //       for (int d2=d+1; d2<ncov;d2++){
-          //         Aspp(j)(d2,d) = ((SArmPs(d).row(j).cwiseProduct(SArmPs(d2).row(j))).sum()+(SArmCDs(d)(j)*SArmCDs(d2)(j)))*SArmRc(d2,d);
-          //         Aspp(j)(d,d2) = Aspp(j)(d2,d);
-          //       }
-          //       Aspp(j)(d,d) = ((SArmPs(d).row(j).cwiseProduct(SArmPs(d).row(j))).sum()+(SArmCDs(d)(j)*SArmCDs(d)(j)));
-          //     }
-          //   }
-          //   REPORT(Aspp);
-          
+            matrix<Type>Aspp(ncov,ncov);
+            for (int j=0; j<blocksize;j++){
+              //need to build the dxd species-specific matrix in A
+              for (int d=0; d<ncov;d++){
+                for (int d2=d+1; d2<ncov;d2++){
+                  Aspp(d2,d) = ((SArmPs(d).row(j).cwiseProduct(SArmPs(d2).row(j))).sum()+(SArmCDs(d)(j)*SArmCDs(d2)(j)))*SArmRc(d2,d);
+                  Aspp(d,d2) = Aspp(d2,d);
+                }
+                Aspp(d,d) = ((SArmPs(d).row(j).cwiseProduct(SArmPs(d).row(j))).sum()+(SArmCDs(d)(j)*SArmCDs(d)(j)));
+              }
+              cQ.col(sp+j).noalias() += 0.5*(xb*Aspp).cwiseProduct(xb).rowwise().sum();
+            }
           //instead compute cholesky factors of the species-specific submatrices in A
-            matrix<Type>Aspp(ncov, ncov*blocksize);
-            Aspp.setZero();
-            
-            Type sum_diag = 0;
-            Type sum_off_diag = 0;
-          
-            for (int j=0; j<blocksize;j++){
-            for (int d = 0; d < ncov; d++) {
-              Type SArmCDsdj = SArmCDs(d)(j);
-              sum_diag = SArmPs(d).row(j).array().pow(2).sum() + pow(SArmCDsdj, 2);
-              if (d > 0) {
-                sum_diag -= (Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d).cwiseProduct(Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d))).sum();
-              }
-              Aspp.block(0,j*ncov,ncov,ncov)(d, d) = sqrt(sum_diag);
-              
-              vector<Type> SArmPsdj = SArmPs(d).row(j);
-              matrix<Type> Asppdd = Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d);
-              for (int d2 =d+1; d2 < ncov; d2++) {
-                  sum_off_diag = (SArmPs(d2).row(j).array() * SArmPsdj).sum() + SArmCDs(d2)(j) * SArmCDsdj;
-                  sum_off_diag *= SArmRc(d2, d);
-                  if (d > 0) {
-                    sum_off_diag -= (Aspp.block(0,j*ncov,ncov,ncov).row(d2).head(d).cwiseProduct(Asppdd)).sum();
-                  }
-                  Aspp.block(0,j*ncov,ncov,ncov)(d2, d) = sum_off_diag / Aspp.block(0,j*ncov,ncov,ncov)(d, d);
-              }
-            }
-            }
-
-            //auxiliary matrix used for vectorizing the sum to cQ
-            matrix<Type>Itemp(ncov*blocksize,blocksize);
-            Itemp.setZero();
-            for (int j=0; j<blocksize;j++){
-              Itemp.col(j).middleRows(j*ncov,ncov).setOnes();
-            }
-            
-            //vectorized version
-            matrix<Type> xbAspp = xb*Aspp;
-            cQ.middleCols(sp,blocksize).noalias() += 0.5*xbAspp.cwiseProduct(xbAspp)*Itemp.sparseView();
-            
+            // matrix<Type>Aspp(ncov, ncov*blocksize);
+            // Aspp.setZero();
+            // 
+            // Type sum_diag = 0;
+            // Type sum_off_diag = 0;
+            // 
+            // for (int j=0; j<blocksize;j++){
+            // for (int d = 0; d < ncov; d++) {
+            //   Type SArmCDsdj = SArmCDs(d)(j);
+            //   sum_diag = SArmPs(d).row(j).array().pow(2).sum() + pow(SArmCDsdj, 2);
+            //   if (d > 0) {
+            //     sum_diag -= (Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d).cwiseProduct(Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d))).sum();
+            //   }
+            //   Aspp.block(0,j*ncov,ncov,ncov)(d, d) = sqrt(sum_diag);
+            //   
+            //   vector<Type> SArmPsdj = SArmPs(d).row(j);
+            //   matrix<Type> Asppdd = Aspp.block(0,j*ncov,ncov,ncov).row(d).head(d);
+            //   for (int d2 =d+1; d2 < ncov; d2++) {
+            //       sum_off_diag = (SArmPs(d2).row(j).array() * SArmPsdj).sum() + SArmCDs(d2)(j) * SArmCDsdj;
+            //       sum_off_diag *= SArmRc(d2, d);
+            //       if (d > 0) {
+            //         sum_off_diag -= (Aspp.block(0,j*ncov,ncov,ncov).row(d2).head(d).cwiseProduct(Asppdd)).sum();
+            //       }
+            //       Aspp.block(0,j*ncov,ncov,ncov)(d2, d) = sum_off_diag / Aspp.block(0,j*ncov,ncov,ncov)(d, d);
+            //   }
+            // }
+            // }
           }else{
             for (int d=0; d<(ncov); d++){
               SArmPs(d).resize(blocksize,blocksize);
