@@ -64,6 +64,7 @@ void nngp(Eigen::SparseMatrix<Type> &covMatLI, const matrix<Type> matI, Type &lo
     for(int j=1; j<matI.cols(); j++){
       matrix <Type> C = matI(neighbours.col(j).head(k(j)).array()-1,neighbours.col(j).head(k(j)).array()-1);
       C *= rho;
+      C.diagonal().fill(1.0);
       matrix<Type>C2(k(j),1);
       C2.col(0) = matI(neighbours.col(j).head(k(j)).array()-1, j)*rho;
       matrix<Type>b = C.ldlt().solve(C2);
@@ -163,3 +164,9 @@ void nngp(Eigen::SparseMatrix<Type> &covMatLI, const matrix<Type> matI, Type &lo
 }
 
 
+// needed to use ldlt see tmb issue #398
+namespace std {
+template<>
+struct
+  numeric_limits<TMBad::ad_aug> : numeric_limits<double> {};
+}
