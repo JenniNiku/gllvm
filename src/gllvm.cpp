@@ -78,7 +78,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(ePower);
   DATA_VECTOR(extra); // extra values, power of 
   DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
-  DATA_INTEGER(Abstruc); //0 = diagonal, blockdiagonal, 1 = MNdiagonal, MNunstructured, 2 = spblockdiagonal, 3 = diagonalCL1, CL1, 4 = CL2, 5 = unstructured
+  DATA_INTEGER(Abstruc); //0 = diagonal, blockdiagonal, 1 = MNdiagonal, MNunstructured, 2 = diagonalCL2, 3 = diagonalCL1, CL1, 4 = CL2, 5 = unstructured
   DATA_INTEGER(model);// which model, basic or 4th corner
   DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for Br: (3) 1 = random
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
@@ -612,7 +612,7 @@ Type objective_function<Type>::operator() ()
           SArm(j).resize(ncov,ncov);
           SArm(j).setZero();
           for (int d=0; d<ncov; d++){ // diagonals of varcov
-            SArm(j).diagonal()(d)=exp(Abb(sdcounter));
+            SArm(j)(d,d)=exp(Abb(sdcounter));
             sdcounter++;
           }
           
@@ -648,9 +648,9 @@ Type objective_function<Type>::operator() ()
               gllvmutils::nngp(colCorMatUI, colMatBlocksI(cb+1), logdetColCorMat, rhoSP(0), nncolMat.middleCols(sp, colMatBlocksI(cb+1).cols()));
               Eigen::SparseMatrix<Type> colCorMatI = colCorMatUI*colCorMatUI.transpose();
               nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatI*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()*SprI).trace();
-              
+              vector<Type>colCorMatIdiag = colCorMatI.diagonal();
               for(int j=0; j<(colMatBlocksI(cb+1).cols()); j++){
-                nll -= -0.5*colCorMatI.diagonal()(j)*(SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace();  
+                nll -= -0.5*colCorMatIdiag(j)*(SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace();  
               }
               sp += colMatBlocksI(cb+1).cols();
             }
@@ -679,12 +679,12 @@ Type objective_function<Type>::operator() ()
             for(int j=0; j<blocksize; j++){
               for (int d=0; d<ncov; d++){
                 for (int d2=d+1; d2<ncov; d2++){
-                  tempMat(d2,d) = (colCorMatUI(d).col(j).cwiseProduct(colCorMatUI(d2).col(j))).sum()*SprI(d,d2);
+                  tempMat(d2,d) = (colCorMatUI(d).col(j).transpose()*colCorMatUI(d2).col(j)).sum()*SprI(d,d2);
                   tempMat(d,d2) = tempMat(d2,d);
                 }
-                tempMat(d,d) = (colCorMatUI(d).col(j).cwiseProduct(colCorMatUI(d).col(j))).sum()*SprI(d,d);
+                tempMat(d,d) = (colCorMatUI(d).col(j).transpose()*colCorMatUI(d).col(j)).sum()*SprI(d,d);
               }
-              nll -= -0.5*(tempMat*SArm(sp+j)).trace();
+              nll -= -0.5*(tempMat*SArm(sp+j)*SArm(sp+j).transpose()).trace();
             }
             sp += colMatBlocksI(cb+1).cols();
           }
@@ -692,7 +692,7 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-logdetColCorMat);
         }else{
           for(int j=0; j<p; j++){
-            nll -= -0.5*(SprI*SArm(j)).trace();
+            nll -= -0.5*(SprI*SArm(j)*SArm(j).transpose()).trace();
           }
           nll -= 0.5*(p*ncov-p*logdetSpr); 
           nll -= -0.5*(Br*Br.transpose()*SprI).trace();
@@ -811,6 +811,7 @@ Type objective_function<Type>::operator() ()
               //which is much more friendly in memory
               //based on the formulation A_m = LL'+D, where D is diagonal given by SArmCD^2
               // trace: tr((LL'+D)UU')*Ar(d,d2)*SprI(d,d2), split over the addition for efficiency
+              
               matrix<Type> tempMat(CppAD::Integer(Abranks(cb)), blocksize);
               vector<Type> temp(blocksize);
               for (int d=0; d<ncov;d++){
@@ -839,7 +840,6 @@ Type objective_function<Type>::operator() ()
                   trace += temp.pow(2).sum();
                 }
                 nll -= -0.5*trace*SArmR(d,d)*SprI(d,d);
-                // nll -= -0.5*(SArmP*colCorMatUIBlocks(d).transpose()).trace()*SArmR(d,d)*SprI(d,d);
               }
               //nll -= -0.5*(SprIL.transpose()*Br.middleCols(sp, blocksize)).rowwise().squaredNorm().sum();//is slower it seems
               nll -= -0.5*(Br.middleCols(sp, blocksize)*Br.middleCols(sp, blocksize).transpose()*SprI).trace();
@@ -933,7 +933,7 @@ Type objective_function<Type>::operator() ()
         
       }else if(Abstruc == 2){
         //(Abb.size() == ((ncov*p +ncov*p*(p-1)/2))) || (Abb.size()==(ncov*p+sum(nsp)*(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
-        // Ab.struct == "spblockdiagonal" with block structure due to phylogeny
+        // Ab.struct == "diagonalCL2" with block structure due to phylogeny
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         
         Type logdetColCorMat = 0;
@@ -1127,7 +1127,7 @@ Type objective_function<Type>::operator() ()
             
             //determinant of this matrix is nsp*sum(log(diag(SArmC)))+2*sum(log(diags(SArmb)))
             nll -=  ncov*SArmC.diagonal().array().log().sum() + ncov*SArmCD.tail(blocksize-SArmC.cols()).log().sum();
-            for (int j=0; j<colMatBlocksI(0)(cb+1,0); j++){
+            for (int j=0; j<blocksize; j++){
               nll -= SArmb(j).diagonal().array().log().sum();
             }
             
@@ -1185,14 +1185,22 @@ Type objective_function<Type>::operator() ()
               matrix<Type>tempMat(ncov,ncov);
               //this trace cannot be separated further due to element-wise product..
               for (int j=0; j<blocksize;j++){
-                for (int j2=0; j2<blocksize;j2++){
+                for (int j2=j+1; j2<blocksize;j2++){
                   for (int d=0; d<(ncov); d++){
                     for (int d2=0; d2<(ncov); d2++){
-                      tempMat(d,d2) = (colCorMatUIs(d).col(j).cwiseProduct(colCorMatUIs(d2).col(j2))).sum()*SprI(d,d2);
+                      tempMat(d,d2) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d2).col(j2)).sum()*SprI(d,d2);
                     }
                   }
-                  nll-= -0.5*(tempMat.cwiseProduct(SArmb(j)*SArmb(j2).transpose())*SArmP(j,j2)).trace();
+                  nll-= -(tempMat.cwiseProduct(SArmb(j)*SArmb(j2).transpose())*SArmP(j,j2)).trace();
                 }
+                for (int d=0; d<(ncov); d++){
+                  for (int d2=d+1; d2<(ncov); d2++){
+                    tempMat(d,d2) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d2).col(j)).sum()*SprI(d,d2);
+                    tempMat(d2,d) = tempMat(d,d2);
+                  }
+                  tempMat(d,d) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d).col(j)).sum()*SprI(d,d);
+                }
+                nll-= -0.5*(tempMat.cwiseProduct(SArmb(j)*SArmb(j).transpose())).trace();
               }
             }
             
@@ -1270,18 +1278,27 @@ Type objective_function<Type>::operator() ()
               
               //write trace separately so we don't need to compute the whole product
               matrix<Type>tempMat(ncov,ncov);
+              //this trace cannot be separated further due to element-wise product..
               for (int j=0; j<blocksize;j++){
-                for (int j2=0; j2<blocksize;j2++){
+                for (int j2=j+1; j2<blocksize;j2++){
                   for (int d=0; d<(ncov); d++){
                     for (int d2=0; d2<(ncov); d2++){
-                      tempMat(d,d2) = (colCorMatUIs(d).col(j).cwiseProduct(colCorMatUIs(d2).col(j2))).sum()*SprI(d,d2);
+                      tempMat(d,d2) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d2).col(j2)).sum()*SprI(d,d2);
                     }
                   }
-                  nll -= -0.5*(tempMat.cwiseProduct(SArmb(j)*SArmb(j2).transpose())*SArmP(j,j2)).trace();
+                  nll-= -(tempMat.cwiseProduct(SArmb(j)*SArmb(j2).transpose())*SArmP(j,j2)).trace();
                 }
+                for (int d=0; d<(ncov); d++){
+                  for (int d2=d+1; d2<(ncov); d2++){
+                    tempMat(d,d2) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d2).col(j)).sum()*SprI(d,d2);
+                    tempMat(d2,d) = tempMat(d,d2);
+                  }
+                  tempMat(d,d) = (colCorMatUIs(d).col(j).transpose()*colCorMatUIs(d).col(j)).sum()*SprI(d,d);
+                }
+                nll-= -0.5*(tempMat.cwiseProduct(SArmb(j)*SArmb(j).transpose())).trace();
               }
             }
-            
+
             //remaining likelihood terms
             matrix<Type>SArmB(ncov, ncov);
             for (int j=0; j<blocksize;j++){
