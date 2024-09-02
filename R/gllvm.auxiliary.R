@@ -2704,13 +2704,13 @@ RRse <- function(object, return.covb = FALSE){
       sds <- diag(sqrt(abs(sdr)))
       if(any(sds<1e-12))sds[sds<1e-12]<-1
       
-      covMat <- -solve(sdr[incld,incld], sdr[incld,incl])%*%object$Hess$cov.mat.mod
+      covMat <- -as.matrix(solve(as(sdr[incld,incld],"TsparseMatrix"), sdr[incld,incl])%*%object$Hess$cov.mat.mod)
       if(inherits(covMat,"try-error")){
         # Via fixed-effects part of Hessian if random-effects part is singular
         Ai <- solve(object$Hess$Hess.full[incl,incl])
         B.mat <- object$Hess$Hess.full[incld,incl]
-        D.mat <- object$Hess$Hess.full[incld,incld]
-        covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
+        D.mat <- as(object$Hess$Hess.full[incld,incld], "TsparseMatrix")
+        covMat<- -MASS::ginv(-as.matrix(D.mat-B.mat%*%Ai%*%t(B.mat)))%*%B.mat%*%Ai
       }
       suppressWarnings(try(covMat <- sweep(sweep(covMat, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
       

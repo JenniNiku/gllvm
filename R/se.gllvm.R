@@ -167,13 +167,13 @@ se.gllvm <- function(object, ...){
         sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
         
         A.mat <- sdr.s[incl,incl] # a x a
-        D.mat <- sdr.s[incld,incld] # d x d
+        D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
         B.mat <- sdr.s[incl,incld] # a x d
-        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
         if(inherits(cov.mat.mod,"try-error")){
           # block inversion via inverse of fixed-effects block
           Ai <- try(solve(A.mat),silent=T)
-          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
         }
         suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
         
@@ -531,14 +531,14 @@ se.gllvm <- function(object, ...){
       sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
       
       A.mat <- sdr.s[incl, incl] # a x a
-      D.mat <- sdr.s[incld, incld] # d x d
+      D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
       B.mat <- sdr.s[incl, incld] # a x d
       
-      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
       if(inherits(cov.mat.mod,"try-error")){
         # block inversion via inverse of fixed-effects block
         Ai <- try(solve(A.mat),silent=T)
-        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
       }
       suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
       
