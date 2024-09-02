@@ -122,8 +122,9 @@ mkModMlist <- function (x, frloc) {
   }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
+
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
-  mm <- model.matrix(trms, frloc)
+  mm <- model.matrix(trms, frloc, contrasts.arg = lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character)],as.factor)),contrasts,contrasts=FALSE))
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
@@ -165,7 +166,7 @@ mkModMlist <- function (x, frloc) {
     }
     fm <- rbind(fm, fm2)
   }
-
+  # design matrix REs
   sm <- Matrix::KhatriRao(sm, t(mm))
   
   #dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
