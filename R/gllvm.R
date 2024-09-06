@@ -49,13 +49,13 @@
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 #'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
-#'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 30 percent of species. If set to the number of columns in the response data, a standard inverse is used instead.}
+#'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 10. If set to the number of columns in the response data, a standard inverse is used instead.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \itemize{
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
-#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
-#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","spblockdiagonal", and "unstructured".}
+#'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat)}.
+#'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -70,6 +70,7 @@
 #'   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
 #'   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
 #'   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
+#'   \item{\emph{jitter.var.br}: }{ jitter variance for starting values of random slopes. Defaults to 0, meaning no jittering.}
 #'   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
 #'   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
 #'   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
@@ -286,7 +287,7 @@
 #'
 #'## Load a dataset from the mvabund package
 #'library(mvabund)
-#'data(antTraits)
+#'data(antTraits, package = "mvabund")
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env)
 #'TR <- antTraits$traits
@@ -425,9 +426,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   plot = FALSE, link = "probit", Ntrials = 1,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = NULL), 
+                  control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
+                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
   if(!method%in%c("LA","VA","EVA"))stop("Selected method is not supported.")
@@ -489,7 +490,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("trace" %in% names(x))) 
         x$trace = FALSE
       if(!("nn.colMat" %in% names(x)))
-        x$nn.colMat = NULL
+        x$nn.colMat = 10
       x
     }
     
@@ -523,6 +524,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$n.init.max = 10
       if (!("jitter.var" %in% names(x))) 
         x$jitter.var = 0
+      if (!("jitter.var.br" %in% names(x))) 
+        x$jitter.var.br = 0
       if (!("start.fit" %in% names(x))) 
         x$start.fit = NULL
       if (!("start.lvs" %in% names(x))) 
@@ -601,12 +604,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(!colMat.rho.struct %in% c("single","term")){
       stop("Wrong input for 'colMat.rho.struct'. Must be one of 'single','term'.")
     }
+    if(!is.null(colMat) && (colMat.rho.struct == "term" && !is.list(colMat) || colMat.rho.struct == "term" && length(colMat)!=2)){
+      stop("Covariate-specific phylogenetic signal requires providing both the phylogenetic correlation matrix and the distance matrix.")
+    }
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
-    starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
+    starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
@@ -704,7 +710,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
       
       mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(col.eff.formula), deparse1)))),data=data.frame(X.col.eff))
-      RElistSP<- mkReTrms1(bar.f,mf, diag=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
+      RElistSP<- mkReTrms1(bar.f,mf, nocorr=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
@@ -772,9 +778,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.formula <- ~ 1
         } else if(is.null(formula)&!is.null(lv.formula)){
           if(inherits(row.eff,"formula")){
-            if(any(colnames(X)==all.vars(row.eff))){
+            if(any(colnames(X)%in%all.vars(row.eff))){
               datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
-              X <-  X[,all.vars(row.eff),drop=F]
+              if(!is.null(studyDesign) && any(colnames(studyDesign)%in%all.vars(row.eff))){
+                X <-  data.frame(X,studyDesign)[,all.vars(row.eff),drop=F]
+              }else{
+                X <-  X[,all.vars(row.eff),drop=F]  
+              }
             } else {
               datayx <- data.frame(y, X)
               X <- NULL
@@ -1202,11 +1212,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     if(!is.null(colMat) && Ab.struct %in% c("diagonal", "blockdiagonal") && method %in% c("VA", "EVA")){
       warning("This is probably not a good thing to try; the Phylogenetic signal parameter will be poorly estimated due to the structure in the variational covariance matrix.\n")
-    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalCL1","CL1","spblockdiagonal", "MNunstructured","MNdiagonal") && method %in% c("VA","EVA")){
+    }else if(is.null(colMat) && col.eff == "random" && Ab.struct %in% c("unstructured", "diagonalCL1","CL1","diagonalCL2", "MNunstructured","MNdiagonal") && method %in% c("VA","EVA")){
       warning("So many variational parameters are not required for your model. Setting Ab.struct = 'blockdiagonal'.\n")
       Ab.struct <- "blockdiagonal"
     }
-    if(!is.null(colMat) && method%in%c("VA","EVA") && !Ab.struct%in%c("unstructured","diagonalCL1","CL1","spblockdiagonal","blockdiagonal","diagonal","MNunstructured","MNdiagonal"))stop("Selected 'Ab.struct' not allowed.")
+    if(!is.null(colMat) && method%in%c("VA","EVA") && !Ab.struct%in%c("unstructured","diagonalCL1","CL1","CL2","diagonalCL2","blockdiagonal","diagonal","MNunstructured","MNdiagonal"))stop("Selected 'Ab.struct' not allowed.")
     
     if (is.null(offset))
       O <- matrix(0, nrow = n, ncol = p)
@@ -1311,6 +1321,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
+            jitter.var.br = jitter.var.br,
             randomX = randomX,
             randomX.start = randomX.start,
             beta0com = beta0com, 
@@ -1368,6 +1379,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             diag.iter = diag.iter,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
+            jitter.var.br = jitter.var.br,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             randomB = randomB,

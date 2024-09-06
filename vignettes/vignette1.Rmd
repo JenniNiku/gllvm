@@ -284,7 +284,7 @@ Residual correlations can also be visualized in a residual biplot, where highly 
 ```{r fig.height=7, fig.show='hold', fig.width=7, message=FALSE, warning=FALSE, out.width='49%'}
 fit_env2 <- gllvm(y, X, family = "negative.binomial", num.lv = 2, 
                   formula = ~ Bare.ground + Canopy.cover + 
-                    Volume.lying.CWD, seed = 1234)
+                    Volume.lying.CWD, seed = 12345)
 rownames(fit_env2$params$theta) <- paste("sp", 1:ncol(fit_env2$y), sep = "")
 ordiplot(fit_ord, biplot = TRUE, ind.spp = 15, jitter = TRUE, cex.spp = 1,
          xlim = c(-4, 3.5), ylim = c(-2.5, 2), main = "(a)")
@@ -323,7 +323,7 @@ fit_4th <- gllvm(y, X, TR, family = "negative.binomial", num.lv = 1,
 
 As previously, coefficients can be plotted using the function `coefplot`. The environmental-trait interaction terms, also known as the fourth corner terms, can be visualized using the function `levelplot` from the package `lattice`, see below. The resulting plots indicate that interactions of the trait variable `Polymorphism` with `Bare.ground` and `Canopy.cover`, `Pilosity3` with `Canopy.cover` have the strongest effects on ant abundances.
 ```{r, echo=FALSE, warning = TRUE}
-load(file = "fit_4th.RData")
+load(file = "fit_4th.Rdata")
 ```
 ```{r, fig.show='hold', out.width='49%', warning = TRUE}
 library(lattice)

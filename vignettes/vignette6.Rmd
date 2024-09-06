@@ -29,7 +29,7 @@ In this vignette, we demonstrate how to include predictors directly in an ordina
 ```{r data, eval=FALSE}
 library(gllvm)
 
-data(spider)
+data("spider", package = "mvabund")
 Y <- spider$abund
 X <- spider$x
 

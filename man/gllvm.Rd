@@ -41,9 +41,9 @@ gllvm(
   return.terms = TRUE,
   gradient.check = FALSE,
   disp.formula = NULL,
-  control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
+  control = list(reltol = 1e-08, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
     + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
-    6000, trace = FALSE, optim.method = NULL, nn.colMat = NULL),
+    6000, trace = FALSE, optim.method = NULL, nn.colMat = 10),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
     "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
     diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
@@ -137,14 +137,14 @@ gllvm(
  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
- \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 30 percent of species. If set to the number of columns in the response data, a standard inverse is used instead.}
+ \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 10. If set to the number of columns in the response data, a standard inverse is used instead.}
 }}
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
 \itemize{
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
- \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalsp" ,"blockdiagonalsp" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
- \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalsp", "blockdiagonalsp","spblockdiagonal", and "unstructured".}
+ \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
+ \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","spblockdiagonal", and "unstructured".}
  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -364,7 +364,7 @@ fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson(),
 
 ## Load a dataset from the mvabund package
 library(mvabund)
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 X <- as.matrix(antTraits$env)
 TR <- antTraits$traits

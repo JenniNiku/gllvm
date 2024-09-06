@@ -11,7 +11,9 @@ corstruc<-function (term)
       return("corCS")
     } else if(c(term) == "corMatern"){
       return("corMatern")
-    } else {return("diag")}
+    } else if(c(term) == "nocorr"){
+      return("nocorr")
+    }else {return("diag")}
   if (length(term) == 2) {
     if(c(term[[1]]) %in% c("corAR1")){
       # term <- corstruc(term[[2]])
@@ -22,6 +24,8 @@ corstruc<-function (term)
       return("corCS")
     } else if(c(term[[1]]) == "corMatern"){
       return("corMatern")
+    } else if(c(term[[1]]) == "nocorr"){
+      return("nocorr")
     } else if(term[[1]] == "("){return("diag")}
     else return(corstruc(term[[2]])) #term[[2]] <- corstruc(term[[2]])
     
@@ -118,8 +122,9 @@ mkModMlist <- function (x, frloc) {
   }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
+
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
-  mm <- model.matrix(trms, frloc)
+  mm <- model.matrix(trms, frloc, contrasts.arg = lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character)],as.factor)),contrasts,contrasts=FALSE))
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
@@ -161,7 +166,7 @@ mkModMlist <- function (x, frloc) {
     }
     fm <- rbind(fm, fm2)
   }
-
+  # design matrix REs
   sm <- Matrix::KhatriRao(sm, t(mm))
   
   #dimnames(sm) <- list(rep(levels(ff), each = ncol(mm)), rownames(mm))
@@ -197,11 +202,11 @@ mkReTrms1 <- function (bars, fr, ...)
   grps <- unlist(lapply(cnms,length))
   if(any(grps>1)){
   # diag enters to remove any potential correlations
-  if(!"diag"%in%names(list(...))){
+  if(!"nocorr"%in%names(list(...))){
     cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
   }else{
-  nocorr <- list(...)$diag
-  cs <- which(as.matrix(Matrix::bdiag(mapply(function(x, nc)lower.tri(matrix(ncol=length(x),nrow=length(x)))*(nc!="diag"), cnms, nocorr, SIMPLIFY=FALSE)))==1, arr.ind = TRUE)
+  nocorr <- list(...)$nocorr
+  cs <- which(as.matrix(Matrix::bdiag(mapply(function(x, nc)lower.tri(matrix(ncol=length(x),nrow=length(x)))*(nc!="nocorr"), cnms, nocorr, SIMPLIFY=FALSE)))==1, arr.ind = TRUE)
   if(nrow(cs)==0)cs<-matrix(0)
   }
   }else{
@@ -275,8 +280,8 @@ expandDoubleVerts2 <- function (term) {
     if (term[[1]] == as.name("||")) 
       return(expandDoubleVert(term))
     term[[2]] <- expandDoubleVerts2(term[[2]])
-    if(term[[1]]=="diag")
-      term <- substitute(foo, list(foo=parse(text=paste0("diag(", findbars1(expandDoubleVerts2(term[[2]])), ")",collapse="+"))[[1]]))
+    if(term[[1]]=="nocorr")
+      term <- substitute(foo, list(foo=parse(text=paste0("nocorr(", findbars1(expandDoubleVerts2(term[[2]])), ")",collapse="+"))[[1]]))
     if (length(term) != 2) {
       if (length(term) == 3) 
         term[[3]] <- expandDoubleVerts2(term[[3]])

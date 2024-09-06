@@ -20,8 +20,8 @@
 #' Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015).  Model-based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6:399-411.
 #'
 #'@examples
-#'data(spider)
-#'mod <- gllvm(spider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
+#'data(eSpider)
+#'mod <- gllvm(eSpider$abund, num.lv = 2, family = "poisson", sd.errors = FALSE)
 #'# Calculate standard errors after fitting
 #'sdErr <- se(mod)
 #'# Store the standard errors in the right place
@@ -161,15 +161,22 @@ se.gllvm <- function(object, ...){
         
         out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       } else {
-        A.mat <- sdr[incl,incl] # a x a
-        D.mat <- sdr[incld,incld] # d x d
-        B.mat <- sdr[incl,incld] # a x d
-        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+        sds <- sqrt(abs(diag(sdr)))
+        if(any(sds<1e-12))sds[sds<1e-12]<-1
+        
+        sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
+        
+        A.mat <- sdr.s[incl,incl] # a x a
+        D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
+        B.mat <- sdr.s[incl,incld] # a x d
+        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
         if(inherits(cov.mat.mod,"try-error")){
           # block inversion via inverse of fixed-effects block
           Ai <- try(solve(A.mat),silent=T)
-          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
         }
+        suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
+        
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- sqrt(diag(abs(cov.mat.mod)))
         names(se) = names(object$TMBfn$par[incl])
@@ -515,17 +522,25 @@ se.gllvm <- function(object, ...){
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
       
     } else {
+      # cnrm <- apply(sdr,2,function(x)sqrt(sum(x^2)))
+      # rnrm <- apply(sdr,1,function(x)sqrt(sum(x^2)))
+      # sdr.s <- sweep(sweep(sdr,2,cnrm,"/"),1,rnrm,"/")
+      sds <- sqrt(abs(diag(sdr)))
+      if(any(sds<1e-12))sds[sds<1e-12]<-1
       
-      A.mat <- sdr[incl, incl] # a x a
-      D.mat <- sdr[incld, incld] # d x d
-      B.mat <- sdr[incl, incld] # a x d
+      sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
       
-      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%solve(D.mat, t(B.mat))),silent=T)
+      A.mat <- sdr.s[incl, incl] # a x a
+      D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
+      B.mat <- sdr.s[incl, incld] # a x d
+      
+      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
       if(inherits(cov.mat.mod,"try-error")){
         # block inversion via inverse of fixed-effects block
         Ai <- try(solve(A.mat),silent=T)
-        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(D.mat-t(B.mat)%*%Ai%*%B.mat)%*%t(B.mat)%*%Ai,silent=T)
+        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
       }
+      suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
       
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- sqrt(diag(abs(cov.mat.mod)))

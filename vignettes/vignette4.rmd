@@ -125,8 +125,8 @@ library(gllvm)
 Fit GLLVM with environmental variables $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ using **gllvm**: 
 ```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 library(gllvm)
-data("spider")
-fitx <- gllvm(y = spider$abund, X=spider$x, family = "negative.binomial", num.lv = 2)
+data("spider", package = "mvabund")
+fitx <- gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", num.lv = 2)
 fitx
 ```
 

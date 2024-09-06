@@ -19,7 +19,7 @@ We will use the hunting spider dataset as an example, which includes 12 species 
 
 ```{r, message=F, warning=F}
 library(gllvm)
-data("spider")
+data("spider", package = "mvabund")
 Y <- spider$abund
 ```
 

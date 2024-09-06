@@ -9,7 +9,7 @@
 #' @examples
 #' \dontrun{
 #'## Load a dataset from the mvabund package
-#'data(antTraits)
+#'data(antTraits, package = "mvabund")
 #'y <- as.matrix(antTraits$abund)
 #'# Fit gllvm model
 #'fit <- gllvm(y = y, family = poisson())
@@ -40,6 +40,7 @@ logLik.gllvm <- function(object, ...)
     object$params$row.params <- object$params$row.params[-1]
   if (object$row.eff == "random")
     object$params$row.params <- NULL
+  if(is.null(object$beta0com))object$beta0com<-FALSE # backward compatibility
   if(object$beta0com) object$params$beta0 <- 1
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){

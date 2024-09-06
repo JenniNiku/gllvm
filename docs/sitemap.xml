@@ -1,108 +1,42 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette1.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette2.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette3.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette4.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette5.html</loc>
-  </url>
-  <url>
-    <loc>/articles/vignette6.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/AICc.html</loc>
-  </url>
-  <url>
-    <loc>/reference/anova.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/coefplot.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/confint.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ecoCoefs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/eSpider.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getLV.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getPredictErr.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getResidualCor.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getResidualCov.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/logLik.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ordiplot.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/predict.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/predictLVs.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/randomCoefplot.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/residuals.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/se.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/simulate.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/Skabbholmen.html</loc>
-  </url>
-  <url>
-    <loc>/reference/summary.gllvm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/vcov.gllvm.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/vignette1.html</loc></url>
+<url><loc>/articles/vignette2.html</loc></url>
+<url><loc>/articles/vignette3.html</loc></url>
+<url><loc>/articles/vignette4.html</loc></url>
+<url><loc>/articles/vignette5.html</loc></url>
+<url><loc>/articles/vignette6.html</loc></url>
+<url><loc>/articles/vignette7.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/AICc.html</loc></url>
+<url><loc>/reference/Skabbholmen.html</loc></url>
+<url><loc>/reference/anova.gllvm.html</loc></url>
+<url><loc>/reference/coefplot.gllvm.html</loc></url>
+<url><loc>/reference/confint.gllvm.html</loc></url>
+<url><loc>/reference/eSpider.html</loc></url>
+<url><loc>/reference/ecoCoefs.html</loc></url>
+<url><loc>/reference/fungi.html</loc></url>
+<url><loc>/reference/getEnvironCov.gllvm.html</loc></url>
+<url><loc>/reference/getLV.gllvm.html</loc></url>
+<url><loc>/reference/getLoadings.gllvm.html</loc></url>
+<url><loc>/reference/getPredictErr.gllvm.html</loc></url>
+<url><loc>/reference/getResidualCor.gllvm.html</loc></url>
+<url><loc>/reference/getResidualCov.gllvm.html</loc></url>
+<url><loc>/reference/gllvm.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/logLik.gllvm.html</loc></url>
+<url><loc>/reference/ordiplot.gllvm.html</loc></url>
+<url><loc>/reference/plot.gllvm.html</loc></url>
+<url><loc>/reference/predict.gllvm.html</loc></url>
+<url><loc>/reference/predictLVs.gllvm.html</loc></url>
+<url><loc>/reference/randomCoefplot.gllvm.html</loc></url>
+<url><loc>/reference/residuals.gllvm.html</loc></url>
+<url><loc>/reference/se.gllvm.html</loc></url>
+<url><loc>/reference/simulate.gllvm.html</loc></url>
+<url><loc>/reference/summary.gllvm.html</loc></url>
+<url><loc>/reference/vcov.gllvm.html</loc></url>
 </urlset>
+

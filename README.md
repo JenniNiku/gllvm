@@ -43,4 +43,6 @@ The `citation` function in R provides information on how to cite the methods in 
 
 [van der Veen, B., Hui, F. K. C., Hovstad, K.A., and O'Hara, R.B. (2023). Concurrent ordination: simultaneous unconstrained and constrained latent variable modelling. Methods in Ecology and Evolution, 14(2), 683-695.](https://doi.org/10.1111/2041-210X.14035)
 
+[van der Veen, B. and O'Hara, R.B. (2024). Fast fitting of phylogenetic mixed effects models. arxiv.](https://www.arxiv.org/abs/2408.05333)
+
 [Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2023). Fast and universal estimation of latent variable models using extended variational approximations. Statistics and Computing, 33(1), 1-16.](https://doi.org/10.1007/s11222-022-10189-w)

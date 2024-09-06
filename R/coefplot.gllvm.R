@@ -24,7 +24,7 @@
 #'coefplot(fit)
 #'\dontrun{
 #'## Load a dataset from the mvabund package
-#'data(antTraits)
+#'data(antTraits, package = "mvabund")
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env)
 #'# Fit model with environmental covariates

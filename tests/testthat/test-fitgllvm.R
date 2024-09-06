@@ -46,7 +46,9 @@ test_that("binomial works", {
 })
 
 test_that("ZIP works", {
-  data(spider)
+  data(eSpider)
+  spider <- eSpider
+  spider$abund <- eSpider$abund[eSpider$nonNA,]
   y <- spider$abund[order(rowSums(spider$abund>0), decreasing = TRUE)[1:20],1:8]
   fz0<-gllvm(y, family = "ZIP", seed = 999, method = "LA", num.lv = 1)
   expect_equal( length(fz0$params$beta0), 8 )
@@ -54,7 +56,10 @@ test_that("ZIP works", {
 })
 
 test_that("quadratic models work", {
-  data(spider)
+  data(eSpider)
+  spider <- eSpider
+  spider$abund <- spider$abund[spider$nonNA,]
+  spider$x <- spider$X[spider$nonNA,]
   X <- scale(spider$x)
   y <- spider$abund
   fq0<-gllvm(y, num.lv = 2, family = "poisson", seed = 999)
@@ -66,7 +71,10 @@ test_that("quadratic models work", {
 })
 
 test_that("constrained ordination models work", {
-  data(spider)
+  data(eSpider)
+  spider <- eSpider
+  spider$abund <- spider$abund[spider$nonNA,]
+  spider$x <- spider$X[spider$nonNA,]
   X <- scale(spider$x)
   y <- spider$abund
   fc0<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999)
@@ -80,7 +88,10 @@ test_that("constrained ordination models work", {
 })
 
 test_that("concurrent ordination models work", {
-  data(spider)
+  data(eSpider)
+  spider <- eSpider
+  spider$abund <- spider$abund[spider$nonNA,]
+  spider$x <- spider$X[spider$nonNA,]
   X <- scale(spider$x)
   y <- spider$abund
   fc0<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999)
@@ -92,4 +103,104 @@ test_that("concurrent ordination models work", {
   expect_true(is.finite(fc1$logL))
   expect_true(is.finite(fc2$logL))
   expect_true(is.finite(fc3$logL))
+})
+
+test_that("phylogenetic models work", {
+  data(eSpider)
+  spider <- eSpider
+  spider$abund <- spider$abund[spider$nonNA,]
+  spider$x <- spider$X[spider$nonNA,]
+  X <- scale(spider$x)
+  y <- spider$abund
+  colMat=matrix(rnorm(12*12),12,12)
+  colMat<-colMat%*%t(colMat)
+  dist=abs(colMat)
+  colnames(dist)<-colnames(colMat)<-1:12
+  
+  expect_error({model<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),num.lv=0, sd.errors = FALSE)})
+  
+  colnames(colMat)<-row.names(colMat)<-colnames(dist)<-row.names(dist)<-colnames(spider$abund)
+  expect_error({model<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=colMat,colMat.rho.struct="term",num.lv=0, sd.errors=FALSE)})
+  
+  expect_warning({model<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=colMat,Ab.struct="diagonal", num.lv=0, sd.errors = FALSE)})
+
+  #trait models are not yet tested in the following, just basic infrastructure for phylogenetic rando effects
+  suppressMessages(invisible(capture.output({
+  model11<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="diagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model12<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="blockdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model13<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="MNdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model14<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="MNunstructured",Ab.struct.rank=12,beta0com=TRUE)
+  model15<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="spblockdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model16<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="diagonalCL1",Ab.struct.rank=12,beta0com=TRUE)
+  model17<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="CL1",Ab.struct.rank=12,beta0com=TRUE)
+  model18<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="CL2",Ab.struct.rank=12,beta0com=TRUE)
+  model19<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="unstructured",Ab.struct.rank=1e3,beta0com=TRUE)
+
+  model21<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="diagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model22<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="blockdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model23<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="MNdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model24<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="MNunstructured",Ab.struct.rank=12,beta0com=TRUE)
+  model25<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="spblockdiagonal",Ab.struct.rank=12,beta0com=TRUE)
+  model26<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="diagonalCL1",Ab.struct.rank=12,beta0com=TRUE)
+  model27<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="CL1",Ab.struct.rank=12,beta0com=TRUE)
+  model28<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="CL2",Ab.struct.rank=12,beta0com=TRUE)
+  model29<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="unstructured",Ab.struct.rank=1e3,beta0com=TRUE)
+
+  model31<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="diagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model32<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="blockdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model33<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="MNdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model34<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="MNunstructured",Ab.struct.rank=1,beta0com=TRUE)
+  model35<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="spblockdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model36<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="diagonalCL1",Ab.struct.rank=1,beta0com=TRUE)
+  model37<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="CL1",Ab.struct.rank=1,beta0com=TRUE)
+  model38<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="CL2",Ab.struct.rank=1,beta0com=TRUE)
+  model39<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="single",Ab.struct="unstructured",Ab.struct.rank=1,beta0com=TRUE)
+
+  model41<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="diagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model42<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="blockdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model43<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="MNdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model44<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="MNunstructured",Ab.struct.rank=1,beta0com=TRUE)
+  model45<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="spblockdiagonal",Ab.struct.rank=1,beta0com=TRUE)
+  model46<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="diagonalCL1",Ab.struct.rank=1,beta0com=TRUE)
+  model47<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="CL1",Ab.struct.rank=1,beta0com=TRUE)
+  model48<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="CL2",Ab.struct.rank=1,beta0com=TRUE)
+  model49<-gllvm(spider$abund,X=spider$x,formula=~nocorr(ConWate+CovMoss|1),family="poisson",colMat=list(colMat,dist=dist),nn.colMat=3,num.lv=0,colMat.rho.struct="term",Ab.struct="unstructured",Ab.struct.rank=1,beta0com=TRUE)
+  })))
+  expect_true(is.finite(model11$logL))
+  expect_true(is.finite(model12$logL))
+  expect_true(is.finite(model13$logL))
+  expect_true(is.finite(model14$logL))
+  expect_true(is.finite(model15$logL))
+  expect_true(is.finite(model16$logL))
+  expect_true(is.finite(model17$logL))
+  expect_true(is.finite(model18$logL))
+  expect_true(is.finite(model19$logL))
+  expect_true(is.finite(model21$logL))
+  expect_true(is.finite(model22$logL))
+  expect_true(is.finite(model23$logL))
+  expect_true(is.finite(model24$logL))
+  expect_true(is.finite(model25$logL))
+  expect_true(is.finite(model26$logL))
+  expect_true(is.finite(model27$logL))
+  expect_true(is.finite(model28$logL))
+  expect_true(is.finite(model29$logL))
+  expect_true(is.finite(model31$logL))
+  expect_true(is.finite(model32$logL))
+  expect_true(is.finite(model33$logL))
+  expect_true(is.finite(model34$logL))
+  expect_true(is.finite(model35$logL))
+  expect_true(is.finite(model36$logL))
+  expect_true(is.finite(model37$logL))
+  expect_true(is.finite(model38$logL))
+  expect_true(is.finite(model39$logL))
+  expect_true(is.finite(model41$logL))
+  expect_true(is.finite(model42$logL))
+  expect_true(is.finite(model43$logL))
+  expect_true(is.finite(model44$logL))
+  expect_true(is.finite(model45$logL))
+  expect_true(is.finite(model46$logL))
+  expect_true(is.finite(model47$logL))
+  expect_true(is.finite(model48$logL))
+  expect_true(is.finite(model49$logL))
+  
 })

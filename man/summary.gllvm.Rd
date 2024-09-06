@@ -55,7 +55,7 @@ Various options are available to include extra parameter estimates in the summar
 \examples{
 \dontrun{
 ## Load a dataset from the mvabund package
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
 fit <- gllvm(y = y, family = poisson())

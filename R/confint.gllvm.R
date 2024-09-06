@@ -11,7 +11,7 @@
 #' @examples
 #' \dontrun{
 #'## Load a dataset from the mvabund package
-#'data(antTraits)
+#'data(antTraits, package = "mvabund")
 #'y <- as.matrix(antTraits$abund)
 #'X <- as.matrix(antTraits$env[,1:2])
 #'# Fit gllvm model
@@ -37,7 +37,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   num.RR <- object$num.RR
   quadratic <- object$quadratic
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
-  
+  if("Intercept"%in%row.names(object$sd$B))object$sd$B<-object$sd$B[-which(row.names(object$sd$B)=="Intercept")]
   alfa <- (1 - level) / 2
   if(object$row.eff == "random") object$params$row.params = NULL
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
@@ -76,13 +76,14 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if("rho.sp"%in%names(object$params[parmincl])){
       object$params$rho.sp <- log(-log(object$params$rho.sp))
     }
+    
     cilow <- unlist(object$params[parmincl]) + qnorm(alfa) * unlist(object$sd[parmincl])
     ciup <- unlist(object$params[parmincl]) + qnorm(1 - alfa) * unlist(object$sd[parmincl])
     
     if("rho.sp"%in%names(object$params[parmincl])){
       a <- exp(-exp(cilow[grepl("rho.sp", names(cilow))])); b <- exp(-exp(ciup[grepl("rho.sp", names(ciup))]))
-      cilow[grepl("rho.sp", names(cilow))] <- min(a,b)
-      ciup[grepl("rho.sp", names(ciup))] <- max(a,b)
+      cilow[grepl("rho.sp", names(cilow))] <- pmin(a,b)
+      ciup[grepl("rho.sp", names(ciup))] <- pmax(a,b)
     }
     
     M <- cbind(cilow, ciup)

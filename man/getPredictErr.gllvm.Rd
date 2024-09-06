@@ -33,7 +33,7 @@ the uncertainty in the estimation of (fixed) parameters.
 \examples{
 \dontrun{
 # Load a dataset from the mvabund package
-data(antTraits)
+data(antTraits, package = "mvabund")
 y <- as.matrix(antTraits$abund)
 # Fit gllvm model
 fit <- gllvm(y = y, family = poisson())

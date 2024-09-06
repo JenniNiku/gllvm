@@ -2,7 +2,7 @@
 #' @description  Calculates the species environment covariance matrix for a gllvm object.
 #'
 #' @param object an object of class 'gllvm'.
-#' @param x (optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s.
+#' @param x (optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s. If both 'randomX' and random species effects are present in the model this should be a list of length two.
 #' @param ... not used
 #' 
 #' @return Function returns the following components:
@@ -16,14 +16,14 @@
 #' Covariances due to the covariates can only be calculated when random effects are included in the model, and are thus limited to reduced rank models (those including constrained and concurrent ordinations) fitted with random slopes, models fitted with random effects via the formula interface, or the fourth corner model fitted with random slopes.
 #' For full rank models with random slopes, i.e., with the formula interface or the fourth corner model, the covariances of species are formulated as:
 #' 
-#'  \deqn{\Sigma_e = I*kronecker(C\rho + (1-\rho)I_p, R)*I',}
+#'  \deqn{\Sigma_e = kronecker(C\rho + (1-\rho)I_p, R),}
 #'  
-#' where C is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{I = kronecker(I_p, x)}, with x a vector of covariate values for each of the random effects, which defaults to a vector of 1s.
+#' where \eqn{C} is a correlation matrix for the columns in the response (e.g., a Phylogenetic matrix), \eqn{\rho} the signal parameter, and R the covariance matrix for the random effects. Here, \deqn{I = kronecker(I_p, x)}, with x a vector of covariate values for each of the random effects, which defaults to a vector of 1s.
 #' when there are covariate-specific phylogenetic signal parameters in the model, this is instead:
 #'
-#' \deqn{\Sigma_e = kronecker(x_i'L, I_p)*\Sigma*kronecker(L'x_i, I_p),}
+#' \deqn{\Sigma_e = kronecker(x_i', I_m)*bdiag(L_k)*kronecker(\Sigma_r, I_m)*bdiag(L_k')*kronecker(x_i, I_m),}
 #' 
-#' where \eqn{\Sigma} is the block matrix defined in van der Veen et al. (in prep), and \eqn{L} is the lower cholesky factor from the random effects (covariates) covariance matrix.
+#' where \eqn{bdiag(L_k)} is a block-diagonal lower triangular matrix, and each \eqn{L_k} the lower triangular matrix of the covariance matrix for each covariate.
 #'
 #' For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
 #' 
@@ -40,8 +40,10 @@
 #' @examples
 #' \dontrun{
 #'# Example with the spider dataset
-#'data(spider)
-#'fit <- gllvm(spider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
+#'data(eSpider)
+#'y = eSpider$abund[eSpider$nonNA,]
+#'X = eSpider$X[eSpider$nonNA,]
+#'fit <- gllvm(eSpider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
 #'envcov <- getEnvironCov(fit)
 #'envcov$trace.randomB
 #'# As proportion of variance in the model
@@ -57,28 +59,40 @@ getEnvironCov.gllvm <- function(object, x = NULL, ...){
   if(isFALSE(object$randomB) & isFALSE(object$col.eff$col.eff)& is.null(object$randomX)){
     stop("Canot calculate correlations without random effects for covariates in the model.")
   }
+x.list <- NULL
 
+if(is.list(x) && length(x) == 2){
+  x.list <- x
+  x <- x.list[[1]]
+}else if(object$col.eff$col.eff=="random" && !isFALSE(object$randomB) && is.null(x)){
+  x.list <- list(rep(1,ncol(object$col.eff$spdr)), rep(1, ncol(object$lv.X.design)))
+  x <- x.list[[1]]
+}else if(object$col.eff$col.eff=="random" && !isFALSE(object$randomB)){
+ stop("x should either be NULL, or a list of length 2 for this model.")
+}
 if(object$col.eff$col.eff=="random"){
   if(is.null(x)){
     x <- rep(1,nrow(object$params$Br))
   }else if(length(x)!=nrow(object$params$Br)){
     stop("Supplied 'x' of  incorrect length.")
   }
-  C <- kronecker(diag(ncol(object$y)),t(x))
-  if(is.null(object$col.eff$colMat)){
-    object$col.eff$colMat <- diag(ncol(object$y))
+  C <- kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
+  if(is.null(object$params$rho.sp)){
+    cov.environ.col <- diag(c(x%*%object$params$sigmaB%*%t(x)), ncol(object$y))
   }else if(length(object$params$rho.sp)==1){
     object$col.eff$colMat <- as.matrix(object$col.eff$colMat*object$params$rho.sp+(1-object$params$rho.sp)*diag(ncol(object$y)))
-    cov.environ.col <- C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%t(C)
+    cov.environ.col <- as.matrix(C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%Matrix::t(C))
   }else if(length(object$params$rho.sp)>1){
-    L=t(chol(object$params$sigmaB))
-    Sig=kronecker(as(diag(object$params$rho.sp),"TsparseMatrix"),object$col.eff$colMat)+as(diag(rep(1-object$params$rho.sp,each=ncol(object$y))),"TsparseMatrix")
-    cov.environ.col <- as.matrix(kronecker(x%*%L,diag(ncol(object$y)))%*%Sig%*%kronecker(t(L)%*%x,diag(ncol(object$y))))
+    Ls<-sapply(object$params$rho.sp,function(rho)t(chol(object$col.eff$colMat*rho+diag(1-rho,ncol(object$col.eff$colMat)))),simplify=FALSE)
+    cov.environ.col = as.matrix(C%*%Matrix::bdiag(Ls)%*%kronecker(object$params$sigmaB,diag(ncol(object$col.eff$colMat)))%*%Matrix::t(Matrix::bdiag(Ls))%*%Matrix::t(C))
   }
   trace.environ.col <- sum(diag(cov.environ.col))
 }
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   if(!isFALSE(object$randomB)){
+    if(!is.null(x.list)){
+      x <- x.list[[2]]
+    }
     if(is.null(x)){
       x <- rep(1,nrow(object$params$LvXcoef))
     }else if(length(x)!=ncol(object$lv.X.design)){
