@@ -124,7 +124,7 @@ mkModMlist <- function (x, frloc) {
   nl <- length(levels(ff))
 
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
-  mm <- model.matrix(trms, frloc, contrasts.arg = lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character)],as.factor)),contrasts,contrasts=FALSE))
+  mm <- model.matrix(trms, frloc, contrasts.arg = lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE))
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
