@@ -245,7 +245,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                              object$params$sigma.lv[1:object$num.lv.c]), 
                          matrix(0, ncol = object$num.RR, nrow = n), 
                          t(t(newLV[, -c(1:object$num.lv.c)]) * 
-                             object$params$sigma.lv[1:object$num.lv]))
+                             object$params$sigma.lv[-(1:object$num.lv.c)]))
           }
           else if (object$num.lv > 0 & object$num.lv.c == 0) {
             lvs <- cbind(matrix(0, ncol = object$num.RR, 
@@ -264,7 +264,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                              object$params$sigma.lv[1:object$num.lv.c]), 
                          matrix(0, ncol = object$num.RR, nrow = n), 
                          t(t(object$lvs[, -c(1:object$num.lv.c)]) * 
-                             object$params$sigma.lv[1:object$num.lv]))
+                             object$params$sigma.lv[-c(1:object$num.lv.c)]))
           }
           else if (object$num.lv > 0 & object$num.lv.c == 
                    0) {
