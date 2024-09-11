@@ -78,7 +78,7 @@ if(object$col.eff$col.eff=="random"){
   }
   C <- kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
   if(is.null(object$params$rho.sp)){
-    cov.environ.col <- diag(c(x%*%object$params$sigmaB%*%t(x)), ncol(object$y))
+    cov.environ.col <- diag(c(x%*%object$params$sigmaB%*%x), ncol(object$y))
   }else if(length(object$params$rho.sp)==1){
     object$col.eff$colMat <- as.matrix(object$col.eff$colMat*object$params$rho.sp+(1-object$params$rho.sp)*diag(ncol(object$y)))
     cov.environ.col <- as.matrix(C%*%kronecker(object$col.eff$colMat,object$params$sigmaB)%*%Matrix::t(C))
