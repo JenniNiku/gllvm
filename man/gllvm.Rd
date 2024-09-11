@@ -48,8 +48,9 @@ gllvm(
     "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
     diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
-    start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start = 0.01,
-    start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP = NULL),
+    jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res",
+    quad.start = 0.01, start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP =
+    NULL),
   setMap = NULL,
   ...
 )
@@ -143,8 +144,8 @@ gllvm(
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
 \itemize{
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
- \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"spblockdiagonal" (only with colMat), or "unstructured" (only with colMat)}.
- \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","spblockdiagonal", and "unstructured".}
+ \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat)}.
+ \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
@@ -160,6 +161,7 @@ gllvm(
   \item{\emph{start.fit}: }{ object of class 'gllvm' which can be given as starting parameters for count data (poisson, NB, or ZIP).}
   \item{\emph{start.lvs}: }{ initialize starting values for latent variables with (n x num.lv) matrix. Defaults to \code{NULL}.}
   \item{\emph{jitter.var}: }{ jitter variance for starting values of latent variables. Defaults to 0, meaning no jittering.}
+  \item{\emph{jitter.var.br}: }{ jitter variance for starting values of random slopes. Defaults to 0, meaning no jittering.}
   \item{\emph{randomX.start}: }{ starting value method for the random slopes. Options are \code{"zero"} and \code{"res"}. Defaults to \code{"res"}.}
   \item{\emph{start.struc}: }{ starting value method for the quadratic term. Options are \code{"LV"} (default) and \code{"all"}.}
   \item{\emph{quad.start}: }{ starting values for quadratic coefficients. Defaults to 0.01.}
