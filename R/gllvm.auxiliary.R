@@ -3049,7 +3049,7 @@ findOrder <- function(covMat, distMat, nn = 10, order = NULL, withinBlock = TRUE
     }
     NN <- sapply(1:ncol(colMatDist[B:E,B:E,drop=FALSE]),function(i)head(order(colMatDist[B:E,B:E,drop=FALSE][i,])[order(colMatDist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn)))
     approxBlocks[[length(blocks)]] <- NNGP(blocks[[length(blocks)]], NN = NN)
-    err <- err +norm(approxBlocks[[length(blocks)]]%*%blocks[[length(blocks)]]-diag(length(B:E)), type="f")
+    err <- err +Matrix::norm(approxBlocks[[length(blocks)]]%*%blocks[[length(blocks)]]-diag(length(B:E)), type="f")
     E = E+1;
     B = E;
   }
