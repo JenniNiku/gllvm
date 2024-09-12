@@ -165,8 +165,9 @@ void nngp(Eigen::SparseMatrix<Type> &covMatLI, const matrix<Type> matI, Type &lo
 
 
 // needed to use ldlt see tmb issue #398
-namespace std {
-template<>
-struct
-  numeric_limits<TMBad::ad_aug> : numeric_limits<double> {};
-}
+// been addressed in TMB
+// namespace std {
+// template<>
+// struct
+//   numeric_limits<TMBad::ad_aug> : numeric_limits<double> {};
+// }
