@@ -16,7 +16,7 @@ Maintainer: Jenni Niku <jenni.m.e.niku@jyu.fi>
 Description: Analysis of multivariate data using generalized linear latent variable models (gllvm). 
       Estimation is performed using either the Laplace method, variational approximations, or extended variational appoximations, implemented via TMB (Kristensen et al. (2016), <doi:10.18637/jss.v070.i05>). 
 License: GPL-2
-Imports: MASS, Matrix, statmod, fishMod, mgcv, alabama, nloptr, methods, mvabund
+Imports: MASS, Matrix, statmod, fishMod, mgcv, alabama, nloptr, methods
 Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 LazyData: true
