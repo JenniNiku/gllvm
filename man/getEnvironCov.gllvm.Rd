@@ -57,7 +57,8 @@ with I_d an identity matrix for the number of constrained and informed latent va
 data(eSpider)
 y = eSpider$abund[eSpider$nonNA,]
 X = eSpider$X[eSpider$nonNA,]
-fit <- gllvm(eSpider$abund, X = scale(spider$x), num.RR = 2, randomB = "P", family = "negative.binomial")
+fit <- gllvm(eSpider$abund, X = scale(spider$x), num.RR = 2, 
+            randomB = "P", family = "negative.binomial")
 envcov <- getEnvironCov(fit)
 envcov$trace.randomB
 # As proportion of variance in the model
