@@ -37,7 +37,7 @@ test_that("row effects works", {
 
 test_that("binomial works", {
   data(microbialdata)
-  y <- microbialdata$Y[1:30, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[21:35]]
+  y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[160:175]]
   y01<-(y>0)*1
   fb0<-gllvm(y01, family = binomial(link = "logit"), seed = 999, method = "LA", num.lv = 1)
   fb2<-gllvm(y01, family = binomial(link = "probit"), seed = 999)
