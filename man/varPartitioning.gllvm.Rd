@@ -44,14 +44,11 @@ data(microbialdata)
 X <- microbialdata$Xenv
 y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
                      decreasing = TRUE)[21:40]]
-fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
-fitr <- gllvm(y, X[,1:3], formula = ~ pH + Phosp, family = poisson(), studyDesign = X[,4:5], row.eff = ~(1|Region)+ (1|Site))
-y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
-                     decreasing = TRUE)[20:40]]
-TR=data.frame(t1=rnorm(ncol(y)), tF = factor(rep(0:2, each=7)))
-fit <- gllvm(y, X, TR, formula = ~ (pH + Region)*(t1+tF), family = poisson())
+fit <- gllvm(y, X[,1:3], formula = ~ pH + Phosp, family = poisson(), 
+             studyDesign = X[,4:5], row.eff = ~(1|Site))
 VP <- varPartitioning(fit)
 plotVarPartitioning(VP)
+
 }
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>
