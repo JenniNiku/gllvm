@@ -142,7 +142,7 @@ start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
       
       if(!is.null(RElist)){
       if(row.eff=="random"){
-        dr = Matrix::fac2sparse(as.factor(row.names(Y)))
+        dr = Matrix::fac2sparse(as.factor(row.names(y)))
         colnames(dr) = rep("site", ncol(dr))
       }else{
         dr = NULL
