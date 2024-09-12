@@ -44,13 +44,116 @@ The included version of the package does not contain all available environmental
 
 We can think of the model as having two covariance matrices: one with correlation between covariate effects, and another that incorporates the correlation between species due to the phylogeny. The former is specified via the formula interface, the form of the latter is (more or less) fixed at present. 
 
+## Species ordering
+
+It is important to note that the error of the NNGP approximation that is used for fitting the models depends somewhat on the order of the species in the data [@Guinness2018]. The software can minimize the number of VA parameters necessary by utilizing block structure in the phylogeny (i.e., full independence due to top splits), so the ideal ordering is often that provided by the tip labels in the phylogeny (__so make sure not to arbitrarily order the response data__). The VA method in the gllvm package retains block structure of the phylogenetic covariance matrix. This is not necessarily optimal in terms of approximation error of the NNGP. 
+
+A less than ideal ordering requires a larger number of nearest neighbours for an accurate approximation. For cases when the ordering in from the phylogenetic tree seems to function poorly, we provide a function (note, not exported) in the package to help evaluate the error due to a certain species ordering `findOrder()`. This calculates the Frobenius norm of the product of the sparse approximation to the inverse of the phylogenetic covariance matrix and the phylogenetic covariance matrix, minus the identity matrix, given a species order and number of nearest neighbours. It returns the error, the approximation, and the ordering (which retains the block structure if `withinBlock = TRUE`, the default). In short: a lower error means a better approximation (but note the trade-off). Here is some code to demonstrate this:
+
+```{r specord, cache = TRUE, fig.width=7}
+# order of species in phylogeny tips
+# with a plot of error vs. nearest neighbours
+err1 <- NULL
+for(i in 1:215){
+approx1 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i)
+err1 <- c(err1, approx1$err)
+}
+plot(y=err1,x=1:215,type="l", xlab = "Neighbours", ylab = "Approximation error")
+abline(v = 10, col = "red", lty = "dotted")
+abline(v = 15, col = "red", lty = "dashed")
+abline(v = 20, col = "red")
+
+# order species alphabetically
+err2 <- NULL
+for(i in 1:215){
+approx2 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order(colnames(Y)))
+err2 <- c(err2, approx2$err)
+}
+lines(y=err2,x=1:215,col="blue")
+
+# order species by sum of squared distances
+err3 <- NULL
+for(i in 1:215){
+approx3 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order(apply(dist,2,function(x)sum(x^2)),decreasing=TRUE))
+err3 <- c(err3, approx3$err)
+}
+lines(y=err3,x=1:215,col="forestgreen")
+
+# order species by distance to the root
+allDists <- ape::dist.nodes(tree)
+err4 <- NULL
+for(i in 1:215){
+approx4 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
+          order = as.integer(names(sort(allDists[1:length(tree$tip.label), nrow(allDists)],decreasing = TRUE))))
+err4 <- c(err4, approx4$err)
+}
+lines(y=err4,x=1:215,col="pink")
+
+# order by internal order of edges 
+order <- ape::reorder.phylo(tree, order = "postorder", index.only=TRUE)
+err5 <- NULL
+for(i in 1:215){
+approx5 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
+          order = order[order<=length(tree$tip.label)])
+err5 <- c(err5, approx5$err)
+}
+lines(y=err5,x=1:215,col="purple")
+
+order <- ape::reorder.phylo(tree, order = "pruningwise", index.only=TRUE)
+err6 <- NULL
+for(i in 1:215){
+approx6 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
+          order = order[order<=length(tree$tip.label)])
+err6 <- c(err6, approx6$err)
+}
+lines(y=err6,x=1:215,col="grey")
+
+# by first eigenvector
+err7 <- NULL
+order=order(eigen(colMat)$vec[,1],decreasing=TRUE)
+for(i in 1:215){
+approx7 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
+          order = order)
+err7 <- c(err7, approx7$err)
+}
+lines(y=err7,x=1:215,col="green")
+
+legend("topright", legend=c("Tips","Alphabetical", "Sum of squared distances", "Distance to root", "Edges 1", "Edges 2", "First eigenvector"), col=c("black","blue", "forestgreen","pink","purple","grey","green"),lty = rep("solid",7))
+```
+
+The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by their sum of squared distances, or by the first eigenvector of the phylogenetic covariance matrix, gives the best approximation here (i.e., most accurate with least neighbouts) for this dataset.
+
+<!-- # The function has a "withinBlock" argument -->
+<!-- # to find if we can find a better ordering while retaining the block diagonal structure -->
+<!-- # try some random permutations within block -->
+<!-- errold <- Inf -->
+<!-- order1 <- NULL -->
+<!-- for(i in 1:10){ -->
+<!-- order <- sample(size=215, x=1:215) -->
+<!-- approx<-findOrder(covMat = colMat, distMat = dist, -->
+<!--           order = order, withinBlock = TRUE) -->
+<!-- errnew<-approx$err -->
+<!-- if(is.null(order1)|errnew<err){ -->
+<!--   order1<-order -->
+<!--   err <- errnew -->
+<!-- } -->
+<!-- } -->
+<!-- err -->
+
+Genneraly, this serves to demonstrate that the species order does matter to the approximation, and a better order may be available. In the plot we can see that the error reduces quickly towards 10-15 neighbours, and levels out after about 50 neighbours. If we plotted the same curve wit the computation time, it would probably exhibit the opposite of the displayed pattern.
+
+## Fit the model
+
 ```{r, warning=FALSE, eval = FALSE}
 TMB::openmp(parallel::detectCores()-1, autopar = TRUE) # set parallel computation
-model1 <- gllvm(y = Y, X = X,
+order <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = 15,
+          order = as.integer(names(sort(allDists[1:length(tree$tip.label), nrow(allDists)],decreasing = TRUE))))$order
+order <- tree$tip.label[order]
+model1 <- gllvm(y = Y[,order], X = X,
         formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA|1), beta0com = TRUE,
                      family = "binomial", num.lv = 0, sd.errors = FALSE, 
                      studyDesign = X[,c("REGION", "RESERVE")], row.eff = ~(1 | REGION/RESERVE),
-                     colMat = list(colMat, dist = dist), colMat.rho.struct = "term", nn.colMat = 10,
+                     colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term", nn.colMat = 15,
         optim.method = "L-BFGS-B")
 ```
 
@@ -61,7 +164,7 @@ The first line enables parallel computation, to speed up model fitting.
   Note that an intercept term is included in the random effects, which can be excluded by incorporating a zero in the formula term. Correlations are included between covariates inside the brackets, so we could have uncorrelated effects by including them all in separately bracketed terms. We specify `num.lv = 0` for now, although we could just as well include latent variables (e.g., we could fit a model with phylogenetically structured random intercepts and a (un)constrained ordination), and `beta0comm` to have a single (fixed) intercept for the whole community (species-specific intercepts enter via the random effects). `sd.errors` is here for convenience set to false, as it can take a (much) longer time to calculate standard errors than to fit the model, and we should really only calculate the standard errors when we need them (e.g., for visualization). The `gllvm::se.gllvm` function can post-hoc calculate the standard errors, so that we do not need to refit the model.
   
   The `studyDesign` matrix is specified to additionally incorporated random intercepts for the nested study design. and a formula `row.eff` to specify the random intercept structure.
-  The `colMat` term is how we pass the phylogenetic information to the model, which is usually a list of length two, where one argument is called `dist` and the other is the covariance matrix from the tree. Note that these two matrices need to have the same column names as `Y`. `nn.colMat` is the number of nearest neighbours to consider for each species on the tree, which is fixed to 10 by default. Smaller numbers usually result in a faster fitting model, but one that is potentially less accurate. @vanderVeen2024 showed that 10-15 neighbours is usually a good choice, although fewer can also still lead to accurate estimates for the phylogenetic signal. `colMat.rho.struct` has two options, `single` fitting a model with the same phylogenetic signal parameter for all covariates (default) and `term` fitting a model with a phylogenetic signal parameter per covariate.
+  The `colMat` term is how we pass the phylogenetic information to the model, which is usually a list of length two, where one argument is called `dist` and the other is the covariance matrix from the tree. Note that these two matrices need to have the same column names as `Y`. `nn.colMat` is the number of nearest neighbours to consider for each species on the tree, which is fixed to 10 by default. Smaller numbers usually result in a faster fitting model, but one that is potentially less accurate. @vanderVeen2024 showed that 10-15 neighbours is usually a good choice, although fewer/more also still lead to accurate estimates for the phylogenetic signal, but this can be quite problem dependent. `colMat.rho.struct` has two options, `single` fitting a model with the same phylogenetic signal parameter for all covariates (default) and `term` fitting a model with a phylogenetic signal parameter per covariate.
   Finally, the last line changes the optimisation method to one that seems to usually do well with this model type, and changes the starting values of the random effect (which was needed to fit this model succesfully).
 
 After model fitting, the random effect estimates can be found in `model1$params$Br`, and prediction errors can be extracted with `gllvm::getPredictErr`. This requires the standard errors, so let's calculate thosefirst:
@@ -102,7 +205,7 @@ library(ape)
 plot(tree, show.tip.label = FALSE, direction = "downwards",xaxs="i")
 # caterpillar
 coefs <- c(model1$params$beta0[1],model1$params$B[1:(ncol(model1$col.eff$spdr)-1)])
-sds <- c(model1$sd$beta0[1],model1$sd$B[1:(ncol(model1$col.eff$spdr)-1)])
+sds <- c(model1$sd$beta0[1],model1$sd$B[2:(ncol(model1$col.eff$spdr))])
 CIs <- data.frame(cbind(LI=coefs+sds*qnorm(1-0.95), UI=coefs+sds*qnorm(0.95)))
 names(coefs) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation", "ln(Reserve area)")
 cols <- rep("black", 8)
@@ -267,5 +370,17 @@ references:
   type: article-journal
   issued:
     year: 2021
+    
+- id: Guinness2018
+  title: Permutation and Grouping Methods for Sharpening Gaussian Process Approximations
+  author: 
+  - family: Guinness
+    given: J.
+  publisher: Technometrics
+  volume: 60
+  page: 415-429
+  type: article-journal
+  issued:
+    year: 2018    
 
 ---
