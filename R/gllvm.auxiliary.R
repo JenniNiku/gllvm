@@ -3009,3 +3009,65 @@ constructL <- function(theta) {
   }
   return(L)
 }
+
+# quantify approximation error of NNGP with a certain species ordering
+# by the Frobenius norm of the difference with the phylogenetic correlation matrix
+findOrder <- function(covMat, distMat, nn = 10, order = NULL, withinBlock = TRUE){
+  
+  p = ncol(covMat)
+  orderres = NULL
+  if(is.null(order)){orderres = order = 1:p}else if(length(order)!=p){stop("'order' must be a vector of length P$tip.label")}else if(!withinBlock){orderres=order}
+  if(ncol(covMat)!=ncol(distMat))
+    if(colnames(covMat)!=colnames(distMat))stop("Column names for both matrices need to be the same")
+  
+  colMat = cov2cor(colMat)
+  colMatDist = distMat
+  if(!withinBlock){
+    colMat = colMat[order,order]
+    colMatDist = colMatDist[order,order]
+  }
+  
+  approxBlocks <- list()
+  # find blockstructure in colMat
+  blocks = list()
+  B = 1
+  E = B
+  blocksp <- err <- 0
+  
+  while(B<=p){
+    while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+      # expand block
+      E = E+1;
+    }
+    # save block
+    blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+    if(withinBlock){
+      blocks[[length(blocks)]] = blocks[[length(blocks)]][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
+      colMatDist[B:E,B:E] <- colMatDist[B:E,B:E][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
+      blocksp <- blocksp + length(B:E)
+      orderres = c(orderres, order[order%in%B:E])
+    }
+    NN <- sapply(1:ncol(colMatDist[B:E,B:E,drop=FALSE]),function(i)head(order(colMatDist[B:E,B:E,drop=FALSE][i,])[order(colMatDist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn)))
+    approxBlocks[[length(blocks)]] <- NNGP(blocks[[length(blocks)]], NN = NN)
+    err <- err +norm(approxBlocks[[length(blocks)]]%*%blocks[[length(blocks)]]-diag(length(B:E)), type="f")
+    E = E+1;
+    B = E;
+  }
+  return(list(approx  = Matrix::bdiag(approxBlocks), err=err, order = orderres, neighbours = nn))
+}
+
+# NNGP R-code
+NNGP <- function(covmat, NN){
+  p = ncol(covmat)
+  
+  A <- matrix(0, ncol = p, nrow = p)
+  D <- diag(p)
+  C <- cov2cor(covmat)
+  
+  for(i in 1:(p-1)) {
+    A[i+1,NN[[i+1]]] = solve(C[NN[[i+1]],NN[[i+1]],drop=FALSE], C[NN[[i+1]],i+1,drop=FALSE])
+    D[i+1,i+1] = 1/(1 - t(C[i+1, NN[[i+1]]])%*%A[i+1,NN[[i+1]]])
+  }
+  approx = as(t(diag(p)-A)%*%D%*%(diag(p)-A),"TsparseMatrix")
+  return(approx)
+}
