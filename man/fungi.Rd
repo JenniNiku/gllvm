@@ -51,11 +51,14 @@ C <- fungi$C
 dist <- fungi$dist
 
 model <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR, 
-        formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA):(FB.type + Sp.log.vol.µ3 + Lifestyle), 
-                     family = "binomial", num.lv = 0, studyDesign = X[,c("REGION", "RESERVE")], 
+        formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + 
+        log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + 
+        log.AREA):(FB.type + Sp.log.vol.µ3 + Lifestyle), 
+        family = "binomial", num.lv = 0, studyDesign = X[,c("REGION", "RESERVE")], 
                      colMat = list(C, dist = dist), colMat.rho.struct = "term", 
                      row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, 
-                     randomX = ~int + DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA, 
+                     randomX = ~int + DBH.CM + AVERDP + I(AVERDP^2) + 
+                                CONNECT10 + TEMPR + PRECIP + log.AREA, 
                      beta0com = TRUE, nn.colMat = 10, maxit = 20000)
 }
 }
