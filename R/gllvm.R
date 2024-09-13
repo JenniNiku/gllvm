@@ -7,7 +7,7 @@
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).
-#' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (only with \code{"VA"}-method), and \code{"orderedBeta"} (only with \code{"EVA"}-method.
+#' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link, for \code{"LA"} and \code{"EVA"}-method), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.                                                   
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.
 #' @param num.lv.c  number of latent variables, d, in gllvm model to inform, i.e., with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
@@ -1139,9 +1139,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")
     }
     
-    if ((method %in% c("LA", "EVA")) && family == "ordinal") {
-      cat("Laplace's (or EVA) method cannot yet handle ordinal data, so VA method is used instead. \n")
-      method <- "VA"
+    if ((method == "LA") && family == "ordinal") {
+      stop("Laplace's method cannot yet handle ordinal data, so use EVA or VA method instead.")
+      #method <- "VA"
     }
     if (method == "LA" && quadratic != FALSE && (num.lv+num.lv.c)>0){
       cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA instead. \n")
@@ -1260,8 +1260,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       method  = "EVA"
       out$method = "EVA"
     }
-    if (family == "orderedbeta") {
-      out$link <- "probit"
+    if (family %in% c("orderedBeta", "ordinal")) {
+      if (method == "VA") {
+        out$link <- "probit"  
+      } else if (method=="EVA") {
+        out$link <- "logit"
+      }
     }
     out$offset <- offset
     if(quadratic=="LV")start.struc <- "LV"
