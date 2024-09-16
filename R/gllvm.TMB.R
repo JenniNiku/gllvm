@@ -993,7 +993,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
       if(num.lv.cor>0){
         if(!corWithinLV) {
           if(nrow(u) != nu){
-            u=as.matrix((Matrix::t(dLV)%*%u/colSums(dLV))[1:nu,, drop=FALSE])
+            u=as.matrix((Matrix::t(dLV)%*%u/Matrix::colSums(dLV))[1:nu,, drop=FALSE])
           }
         }
       }
