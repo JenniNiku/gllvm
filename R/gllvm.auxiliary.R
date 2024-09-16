@@ -3020,7 +3020,7 @@ findOrder <- function(covMat, distMat, nn = 10, order = NULL, withinBlock = TRUE
   if(ncol(covMat)!=ncol(distMat))
     if(colnames(covMat)!=colnames(distMat))stop("Column names for both matrices need to be the same")
   
-  colMat = cov2cor(colMat)
+  colMat = cov2cor(covMat)
   colMatDist = distMat
   if(!withinBlock){
     colMat = colMat[order,order]
