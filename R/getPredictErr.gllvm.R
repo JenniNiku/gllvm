@@ -100,7 +100,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           for (i in 1:dim(A)[1]) {
             A[i,,]<-A[i,,]*object$AQ
           }
-      } else if((object$num.lvcor > 0) & (object$corP$cstruc[2] !="diag")) {
+      } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {
         A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
         for (i in 1:object$num.lvcor) {
           A[,i,i]<- diag(object$A[,,i])

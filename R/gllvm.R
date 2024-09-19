@@ -1096,7 +1096,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
       cstruclv = corstruc(lvCor)[1]
       num.lv.cor = num.lv
-      if(cstruclv == "corAR1") dist = matrix(1:ncol(dLV))
+      if(cstruclv == "corAR1") distLV = matrix(1:ncol(dLV))
       # Have to set this to diagonal to avoid too many parameters:
       # Lambda.struc = "diagonal"
     } else {
