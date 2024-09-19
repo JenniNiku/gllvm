@@ -44,7 +44,10 @@ In the following, we show how to fit the logistic hurdle beta GLLVM using **EVA*
 
 ```{r}
 library(gllvm)
-data("SBC_LTER")
+data("kelpforest")
+Yabund <- kelpforest$Y
+Xenv <- kelpforest$X
+SPinfo <- kelpforest$SPinfo
 
 # Data contains both algae and sessile invertebrates
 table(SPinfo$GROUP)

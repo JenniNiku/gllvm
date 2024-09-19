@@ -1,9 +1,9 @@
 \name{kelpforest}
 \docType{data}
 \alias{kelpforest}
-\title{Kelp Forest community data}
+\title{Kelp Forest community Dynamics: Cover of sessile organisms, Uniform Point Contact}
 \description{
-Dataset of 836 percent cover records for 132 algae and invertebrates, from 2000 to 2020 in the Santa Barbara Channel, California, USA.
+These data describe the cover of sessile invertebrates, understory macroalgae, and bottom substrate types as determined by a uniform point contact method. The presence of over 150 taxa of sessile invertebrates and macroalgae are recorded at 80 uniformly spaced points along permanent 40m x 2m transects. Multiple species can be recorded at any given point. Percent cover of a given species on a transect can be estimated from UPC observations as the fraction of total points at which that species was present x 100. The total percent cover of all species combined using this method can exceed 100\%; however, the percent cover of any single species cannot exceed 100\%. This specific version of the data includes 61 species of macroalgae, 69 species of sessile invertebrates, and two species of plants.
 }
 \usage{
 data(fungi)
@@ -30,11 +30,15 @@ data(fungi)
 
 }
 \details{
-Data consists of the cover of sessile invertebrates and understory macroalgae starting from year 2000 to 2020. The presence of invertebrates and macroalgae are recorded using a point contact method; 80 uniformly spaced points along permanent 40m x 2m transects, such that a percent cover of a given species on a transect is estimated as the fraction of total points at which that species was present. Data are from SBC LTERs kelp forest monitoring program in the Santa Barbara Channel, California, USA. Detailed description of the data available in the reference and the website  https://sbclter.msi.ucsb.edu/data/catalog/package/?package=knb-lter-sbc.15
+These data are part of SBC LTERs kelp forest monitoring program, which began in 2000 and was designed to track long-term patterns in species abundance and diversity of reef-associated organisms in the Santa Barbara Channel, California, USA. The sampling locations in this dataset include nine reef sites along the mainland coast of the Santa Barbara Channel and at two sites on the north side of Santa Cruz Island. These sites reflect several oceanographic regimes in the channel and vary in distance from sources of terrestrial runoff. Data collection began in 2000 and this dataset is updated annually.
+
+The time period of data collection varied among the 11 kelp forest sites. Sampling at BULL, CARP, and NAPL began in 2000, sampling at the other 6 mainland sites (AHND, AQUE, IVEE, GOLB, ABUR, MOHK) began in 2001 (transects 3, 5, 6, 7, 8 at IVEE were added in 2011). Data collection at the two Santa Cruz Island sites (SCTW and SCDI) began in 2004.
+
+Detailed description of the data available in the reference and the website  https://sbclter.msi.ucsb.edu/data/catalog/package/?package=knb-lter-sbc.15
 }
 
 \references{
-Reed, D, R. Miller. 2023. SBC LTER: Reef: Kelp Forest Community Dynamics: Cover of sessile organisms, Uniform Point Contact ver 33. Environmental Data Initiative. https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c. Accessed 2024-09-11.
+Reed, D, R. Miller. 2023. SBC LTER: Reef: Kelp Forest Community Dynamics: Cover of sessile organisms, Uniform Point Contact ver 33. Environmental Data Initiative. https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c. (Accessed: 2023-12-01).
 }
 
 \examples{
