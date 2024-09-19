@@ -23,9 +23,19 @@
 
 plotVarPartitioning <- function(VP, main = "Variance Partitioning", xlab = "Response", ylab = "Variance proportion", legend.text = NULL, ...){
   arglist <- list(...)
-  
-  if(is.null(legend.text)) legend.text <- paste(colnames(VP$PropExplainedVarSp), ", mean ", round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, "%", sep = "")
-  barplot(t(VP$PropExplainedVarSp), legend.text = legend.text, main = main, xlab = xlab, ylab = ylab, ...)
+  if(VP$family == "betaH"){
+    par(mfrow=c(1,2))
+    if(is.null(legend.text)){
+      legend.textH <- paste(colnames(VP$PropExplainedVarHurdleSp), ", mean ", round(colMeans(VP$PropExplainedVarHurdleSp), digits = 3)*100, "%", sep = "")
+    } else {legend.textH <- legend.text}
+    if(is.null(legend.text)) legend.text <- paste(colnames(VP$PropExplainedVarSp), ", mean ", round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, "%", sep = "")
+    barplot(t(VP$PropExplainedVarSp), legend.text = legend.text, main = paste(main, ": Beta"), xlab = xlab, ylab = ylab, ...)
+    barplot(t(VP$PropExplainedVarHurdleSp), legend.text = legend.textH, main = paste(main, ": Hurdle"), xlab = xlab, ylab = ylab, ...)
+  } else {
+    if(is.null(legend.text)) legend.text <- paste(colnames(VP$PropExplainedVarSp), ", mean ", round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, "%", sep = "")
+    barplot(t(VP$PropExplainedVarSp), legend.text = legend.text, main = main, xlab = xlab, ylab = ylab, ...)
+  }
+    
 }
 
 #'@export plotVP

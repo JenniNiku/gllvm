@@ -128,7 +128,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     if (object$num.lv > 0 | (object$num.lv.c + object$num.RR) > 0) {
       
       if(!is.null(object$lvs) && inherits(object$lvCor,"formula")){
-        if(nrow(object$lvs)!=n) object$lvs = object$TMBfn$env$data$dLV%*%object$lvs # !!!
+        if(nrow(object$lvs)!=n) object$lvs = as.matrix(object$TMBfn$env$data$dLV%*%object$lvs) # !!!
       }
       
       theta <- (object$params$theta[, 1:(object$num.lv + (object$num.lv.c + object$num.RR)), drop = F])
@@ -302,7 +302,12 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   # Species specific variance partitioning:
   PropExplainedVarSp <- t(LVpartit)/LtotV
   
-  return(list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=LVpartit, group = group, groupnames))
+  if(object$family == "betaH"){
+    return(list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames, family = object$family))
+  } else {
+    return(list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames, family = object$family))
+  }
+  
 }
 
 
