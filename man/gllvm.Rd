@@ -201,7 +201,7 @@ An object of class "gllvm" includes the following components:
  \item{sd }{ List of standard errors}
  \item{lvs }{ Latent variables}
  \item{params}{ List of parameters
- \itemize{
+ \describe{
    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
    \item{sigma.lv }{ diagonal entries of latent variables' loading matrix}
    \item{LvXcoef }{ Predictor coefficients (or predictions for random slopes) related to latent variables, i.e. canonical coefficients}
@@ -232,7 +232,7 @@ An object of class "gllvm" includes the following components:
  \item{dist }{ Matrix of coordinates or time points used for row effects}
  \item{distLV }{ Matrix of coordinates or time points used for LVs}
  \item{col.eff }{ list of components for column random effects}
- \itemize{
+ \describe{
  \item{Ab.struct }{ variational covariance structure of fitted model}
  \item{Ab.struct.rank }{fitted rank of variational covariance matrix}
  \item{col.eff }{flag indicating if column random effects are included}
@@ -303,10 +303,10 @@ Now we can set random intercept for each group \eqn{t}, (see argument '\code{row
  This model is restricted to the case, where each group has equal number of observations (rows), that is \eqn{n_t=n_{t'}} for all \eqn{t,t' \in \{1,...,T\}}.
  
  The correlation structures available in the package are 
-\itemize{
-  \item{\code{corAR1}} { autoregressive process of order 1.}
-  \item{\code{corExp}} { exponentially decaying, see argument '\code{dist}'.}
-  \item{\code{corCS}} { compound symmetry.}
+\describe{
+  \item{\code{corAR1} }{ autoregressive process of order 1.}
+  \item{\code{corExp} }{ exponentially decaying, see argument '\code{dist}'.}
+  \item{\code{corCS} }{ compound symmetry.}
 }  
 }
 
@@ -323,8 +323,8 @@ With ordinal family response classes must start from 0 or 1.
 \subsection{Distributions}{
 
   Mean and variance for distributions are defined as follows.
-\itemize{
-  \item{For count data \code{family = poisson()}:} {Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
+\describe{
+  \item{For count data \code{family = poisson()}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j}, or}
   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p)}.}
   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
@@ -374,7 +374,7 @@ TR <- antTraits$traits
 fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
             family = poisson())
 ordiplot(fit)
-coefplot(fit)
+coefplot.gllvm(fit)
 
 ## Example 1: Fit model with two unconstrained latent variables
 # Using variational approximation:
@@ -414,7 +414,7 @@ ordiplot(fit.z)
 # Fit model with two latent variables and all environmental covariates,
 fitvX <- gllvm(formula = y ~ X, family = "negative.binomial")
 ordiplot(fitvX, biplot = TRUE)
-coefplot(fitvX)
+coefplot.gllvm(fitvX)
 # Fit model with environmental covariates Bare.ground and Shrub.cover
 fitvX2 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
  family = "negative.binomial")
@@ -424,7 +424,7 @@ coefplot(fitvX2)
 fitvX_5 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
  family = "negative.binomial", control.start=list(n.init = 5, jitter.var = 0.1))
 ordiplot(fitvX_5)
-coefplot(fitvX_5)
+coefplot.gllvm(fitvX_5)
 
 ## Example 3: Data in long format
 # Reshape data to long format:
@@ -437,7 +437,7 @@ fitvLong <- gllvm(data = datalong, formula = y ~ Bare.ground + Shrub.cover,
 ## Example 4: Fourth corner model
 # Fit fourth corner model with two latent variables
 fitF1 <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-coefplot(fitF1)
+coefplot.gllvm(fitF1)
 # Fourth corner can be plotted also with next lines
 #fourth = fitF1$fourth.corner
 #library(lattice)
@@ -453,7 +453,7 @@ fitF2 <- gllvm(y = y, X = X, TR = TR,
  formula = ~ Bare.ground + Canopy.cover * (Pilosity + Webers.length),
  family = "negative.binomial")
 ordiplot(fitF2)
-coefplot(fitF2)
+coefplot.gllvm(fitF2)
 
 ## Include species specific random slopes to the fourth corner model
 fitF3 <- gllvm(y = y, X = X, TR = TR,
@@ -461,7 +461,7 @@ fitF3 <- gllvm(y = y, X = X, TR = TR,
  family = "negative.binomial", randomX = ~ Bare.ground + Canopy.cover, 
  control.start = list(n.init = 3))
 ordiplot(fitF3)
-coefplot(fitF3)
+coefplot.gllvm(fitF3)
 
 
 ## Example 5: Fit Tweedie model

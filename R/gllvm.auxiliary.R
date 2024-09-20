@@ -1,4 +1,5 @@
-start.values.gllvm.TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
+# start.values.gllvm.TMB
+start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
                                    offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, num.RR = 0, start.lvs = NULL, 
                                    Power=NULL,starting.val="res",formula=NULL, lv.formula = NULL,
                                    jitter.var=0,yXT=NULL, row.eff=FALSE, TMB=TRUE, 
@@ -2191,7 +2192,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
 }
 
 
-start.values.randomX <- function(y, X, family, formula =NULL, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = 1, max.iter = 200) {
+# start.values.randomX
+start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = 1, max.iter = 200) {
   y <- as.matrix(y)
   Xb <- as.matrix(model.matrix(formula, data = data.frame(X)))
   rnam <- colnames(Xb)[!(colnames(Xb) %in% c("(Intercept)"))]
@@ -2972,6 +2974,7 @@ pzinb <- function(y, mu, p, sigma)
 # }
 
 # function adapted from utils package to re-order gllvm's parameters and/or standard errors
+# relist.gllvm
 relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton")) 
 {
   ind <- 1L

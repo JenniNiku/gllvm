@@ -168,7 +168,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   }
 }
 
-#'@export
+#'@export coefplot
 coefplot <- function(object, ...)
 {
   UseMethod(generic="coefplot")

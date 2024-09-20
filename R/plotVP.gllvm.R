@@ -1,5 +1,5 @@
 #' @title Plot variance partitioning
-#' @description Plots the results of variance partitioning of a fitted gllvm.
+#' @description Function \code{plotVarPartitioning()} (alias \code{plotVP()}) plots the results of variance partitioning of a fitted gllvm.
 #' 
 #' @param VP 	a variance partitioning object for a gllvm produced by function varPartitioning.
 #' @param main main title
@@ -10,17 +10,10 @@
 #' 
 #' 
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
-#' @seealso  \code{\link{varPartitioning.gllvm}}
-#' @examples
-#' \dontrun{
-#'# Calculate variance partitioning for a fitted model 'fit'
-#'VP <- varPartitioning(fit)
-#'# Plot the result of  variance partitioning
-#'plot(VP, col = palette(hcl.colors(5, "viridis")))
-#'}
 #'@aliases plotVarPartitioning plotVP
 #'@export
 #'@export plotVarPartitioning
+#'@rdname varPartitioning.gllvm 
 
 plotVarPartitioning <- function(VP, main = "Variance Partitioning", xlab = "Response", ylab = "Variance proportion", legend.text = NULL, ...){
   arglist <- list(...)
@@ -40,6 +33,7 @@ plotVarPartitioning <- function(VP, main = "Variance Partitioning", xlab = "Resp
 }
 
 #'@export plotVP
+#'@rdname varPartitioning.gllvm 
 plotVP <- function(VP, ...)
 {
   plotVarPartitioning(VP, ...)

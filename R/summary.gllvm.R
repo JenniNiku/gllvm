@@ -14,6 +14,7 @@
 #' @param Lvcoefs option to return species scores in the ordination, defaults to \code{FALSE}. Returns species optima for quadratic model.
 #' @param rotate defaults to \code{TRUE}. If \code{TRUE} rotates the output of the latent variables to principal direction, so that it coincides with the ordiplot results. If both unconstrained and constrained latent variables are included, predictor slopes are not rotated.
 #' @param type to match "type" in \code{\link{ordiplot.gllvm}}
+#' @param component component to be plotted
 #' @param ...	 not used.
 #'
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>, Bert van der Veen
@@ -421,7 +422,7 @@ print.summary.gllvm <- function (x, ...)
 }
 
 #'@export
-#'@rdname plot.summary.gllvm 
+#'@rdname summary.gllvm 
 plot.summary.gllvm <- function (x, component = NULL, ...) 
 {
   args <- list(...)

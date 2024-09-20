@@ -1,5 +1,5 @@
 #' @title Calculate variance partitioning
-#' @description Calculates variance partitioning for gllvm object.
+#' @description Calculates variance partitioning for gllvm object with function \code{varPartitioning()}.
 #' 
 #' @param object an object of class 'gllvm'.
 #' @param group a vector of integers identifying grouping of X covariates, the default is to use model terms formula and lv.formula.
@@ -20,7 +20,6 @@
 #' 
 #' 
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
-#' @seealso  \code{\link{plotVarPartitioning}}
 #' @examples
 #'# Extract subset of the microbial data to be used as an example
 #'data(microbialdata)
@@ -32,11 +31,17 @@
 #'VP <- varPartitioning(fit)
 #'plotVarPartitioning(VP)
 #'
+#'\dontrun{
+#'# Plot the result of  variance partitioning
+#'plot(VP, col = palette(hcl.colors(5, "viridis")))
+#'}
+#'
 #'@aliases varPartitioning VP varPartitioning.gllvm
 #'@export
 #'@export varPartitioning.gllvm
-varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grouplvs=FALSE) {
-
+varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grouplvs=FALSE, ...) {
+  if (!any(class(object) == "gllvm"))
+    stop("Class of the object isn't 'gllvm'.")
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   Z <- NULL
   CoefMat <- NULL
@@ -312,7 +317,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
 }
 
 
-#'@export
+#'@export varPartitioning
 varPartitioning <- function(object, ...)
 {
   UseMethod(generic="varPartitioning")

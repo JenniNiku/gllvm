@@ -3,6 +3,7 @@
 \name{summary.gllvm}
 \alias{summary.gllvm}
 \alias{print.summary.gllvm}
+\alias{plot.summary.gllvm}
 \title{Summarizing gllvm model fits}
 \usage{
 \method{summary}{gllvm}(
@@ -20,6 +21,8 @@
 )
 
 \method{print}{summary.gllvm}(x, ...)
+
+\method{plot}{summary.gllvm}(x, component = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'}
@@ -45,6 +48,8 @@
 \item{...}{not used.}
 
 \item{x}{a summary object}
+
+\item{component}{component to be plotted}
 }
 \description{
 A summary of the fitted 'gllvm' object, including function call, distribution family and model parameters.
