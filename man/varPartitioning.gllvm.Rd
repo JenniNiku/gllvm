@@ -50,6 +50,9 @@ VP <- varPartitioning(fit)
 plotVarPartitioning(VP)
 
 }
+\seealso{
+\code{\link{plotVarPartitioning}}
+}
 \author{
 Jenni Niku <jenni.m.e.niku@jyu.fi>
 }

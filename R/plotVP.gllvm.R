@@ -10,6 +10,7 @@
 #' 
 #' 
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @seealso  \code{\link{varPartitioning.gllvm}}
 #' @examples
 #' \dontrun{
 #'# Calculate variance partitioning for a fitted model 'fit'

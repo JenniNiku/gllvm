@@ -20,6 +20,7 @@
 #' 
 #' 
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
+#' @seealso  \code{\link{plotVarPartitioning}}
 #' @examples
 #'# Extract subset of the microbial data to be used as an example
 #'data(microbialdata)
