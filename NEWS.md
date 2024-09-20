@@ -2,7 +2,10 @@ Version 1.4.7
 =============
 
 * Added "fungi" dataset by Abrego et al. 2022
+* Added "kelpforest" dataset by Reed and Miller 2023
 * New vignette for phylogenetic random effects
+* New vignette for percent cover data analysis
+* Function for calculating and plotting variance partitioning (varPartitioning.gllvm and plotVP)
 
 Version 1.4.6
 =============
