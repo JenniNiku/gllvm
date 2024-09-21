@@ -21,7 +21,7 @@ or introductions for using `gllvm` for [ordination](https://jenniniku.github.io/
 
 Other available vignettes are:  [Analysing microbial community data](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette2.html),
 [How to use the quadratic response model](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette5.html),
-[Ordination with predictors](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette6.html) and [Analysing percent cover data](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette8.html).
+[Ordination with predictors](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette6.html) and [Analysing percent cover data](https://jenniniku.github.io/gllvm/articles/vignette8.html).
 
 # Citation
 The `citation` function in R provides information on how to cite the methods in this package. Please remember to cite the software (version) separately from any relevent research articles to provide the appropriate credit to all associated contributors. The reference for the software package is: Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Korhonen, P., Taskinen, S., van der Veen, B., and Warton, D. I.
