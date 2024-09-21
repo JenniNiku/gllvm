@@ -23,25 +23,6 @@
 #'fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
 #'coefplot(fit)
 #'\dontrun{
-#'## Load a dataset from the mvabund package
-#'data(antTraits, package = "mvabund")
-#'y <- as.matrix(antTraits$abund)
-#'X <- as.matrix(antTraits$env)
-#'# Fit model with environmental covariates
-#'fit <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
-#'             family = poisson())
-#'coefplot.gllvm(fit)
-#'
-#'# Fit model with all environmental covariates
-#'fitx <- gllvm(y, X, family = "negative.binomial")
-#'coefplot(fitx, mfrow = c(3,2))
-#'coefplot(fitx, which.Xcoef = 1:2)
-#'
-#'# Fit gllvm model with environmental and trait covariates
-#'TR <- antTraits$traits
-#'fitT <- gllvm(y = y, X = X, TR = TR, family = "negative.binomial")
-#'coefplot(fitT)
-#'
 #'# Fit  gllvm model with environmental covariances and reduced rank
 #'fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
 #'coefplot(fitRR)

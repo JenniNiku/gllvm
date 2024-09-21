@@ -340,7 +340,7 @@
 #'fitvX2 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial")
 #'ordiplot(fitvX2)
-#'coefplot(fitvX2)
+#'coefplot.gllvm(fitvX2)
 #'# Use 5 initial runs and pick the best one
 #'fitvX_5 <- gllvm(y, X, formula = ~ Bare.ground + Shrub.cover,
 #'  family = "negative.binomial", control.start=list(n.init = 5, jitter.var = 0.1))
