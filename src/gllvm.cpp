@@ -537,7 +537,7 @@ Type objective_function<Type>::operator() ()
       matrix <Type> SprI(xb.cols(),xb.cols());
       matrix <Type> SprIL(xb.cols(),xb.cols());
       
-      Type logdetSpr;
+      Type logdetSpr = 0;
       
       if(random(1)>0){
         int l = xb.cols();
@@ -1067,7 +1067,7 @@ Type objective_function<Type>::operator() ()
         Type logdetColCorMat = 0;
         int sdcounter = 0;
         int covscounter = p*ncov+p-(colMatBlocksI.size()-1);
-        int idx = 0; int sp = 0;
+        int sp = 0;
         
         for(int cb=0; cb<(colMatBlocksI.size()-1); cb++){
           int blocksize = colMatBlocksI(cb+1).cols();
@@ -1327,7 +1327,7 @@ Type objective_function<Type>::operator() ()
         Type logdetColCorMat = 0;
         int sdcounter = 0;
         int covscounter = ncov-1+p*ncov;//(p-(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()==1).count())*ncov;
-        int idx = 0; int sp = 0;
+        int sp = 0;
         
         matrix<Type> SArmR(ncov, ncov);
         SArmR.setZero();
@@ -1909,7 +1909,7 @@ Type objective_function<Type>::operator() ()
           // We build the actual covariance matrix
           // This can straightforwardly be extended to estimate correlation between effects
           matrix <Type> invSr(nr(re), nr(re));invSr.setZero();
-          Type logdetSr;
+          Type logdetSr = 0;
           // diagonal row effect
           if(cstruc(re) == 0){
             // inverse and log determinant are straighforwardly available here
@@ -3284,7 +3284,7 @@ Type objective_function<Type>::operator() ()
       
       matrix <Type> Spr(xb.cols(),xb.cols());
       matrix <Type> SprI(xb.cols(),xb.cols());
-      Type logdetSpr;
+      Type logdetSpr = 0;
       
       if(random(1)>0){
         int l = xb.cols();
