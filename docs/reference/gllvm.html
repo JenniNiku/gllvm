@@ -56,6 +56,9 @@ approximation method."><!-- mathjax --><script src="https://cdnjs.cloudflare.com
     <li>
       <a href="../articles/vignette8.html">Analysing sparse ecological percent cover data using gllvm</a>
     </li>
+    <li>
+      <a href="../articles/vignette9.html">Correlation structures for latent variables and row effects</a>
+    </li>
   </ul></li>
 <li>
   <a href="../news/index.html">Changelog</a>
@@ -309,7 +312,7 @@ approximation method.</p>
 <dd><p>logical, if <code>TRUE</code> in each iteration step information on current step will be printed. Defaults to <code>FALSE</code>. Only with <code>TMB = FALSE</code>.</p></dd>
 
  <dt><em>optim.method</em>: </dt>
-<dd><p>optimization method to be used if optimizer is <code>"<a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a>"</code>,<code>"alabama"</code>, or  <code>"nloptr"</code>, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c&gt;1). Defaults to <code>"BFGS"</code>, but to <code>"L-BFGS-B"</code> for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any <code>"<a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a>"</code> method, or  <code>"<a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a>"</code>. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".</p></dd>
+<dd><p>optimization method to be used if optimizer is <code>"<a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a>"</code>,<code>"alabama"</code>, or  <code>"<a href="https://astamm.github.io/nloptr/reference/nloptr.html" class="external-link">nloptr</a>"</code>, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c&gt;1). Defaults to <code>"BFGS"</code>, but to <code>"L-BFGS-B"</code> for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any <code>"<a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a>"</code> method, or  <code>"<a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a>"</code>. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".</p></dd>
 
  <dt><em>nn.colMat</em>: </dt>
 <dd><p>number of nearest neighbours for calculating inverse of "colMat", defaults to 10. If set to the number of columns in the response data, a standard inverse is used instead.</p></dd>
@@ -323,8 +326,8 @@ approximation method.</p>
 <dd><p>covariance structure of VA distributions for latent variables when <code>method = "VA"</code>, "unstructured" or "diagonal".</p></dd>
 
  <dt><em>Ab.struct</em>: </dt>
-<dd><p>covariance structure of VA distributions for random slopes when <code>method = "VA"</code>, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat)</p></dd>
-.
+<dd><p>covariance structure of VA distributions for random slopes when <code>method = "VA"</code>, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat).</p></dd>
+
  <dt><em>Ab.struct.rank</em>: </dt>
 <dd><p>number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".</p></dd>
 
@@ -1000,15 +1003,16 @@ However, sometimes this is computationally too demanding, and default option
 <span class="r-in"><span><span class="va">fitvX2</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Shrub.cover</span>,</span></span>
 <span class="r-in"><span> family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitvX2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fitvX2</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in UseMethod("coefplot"):</span> no applicable method for 'coefplot' applied to an object of class "gllvm"</span>
+<span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fitvX2</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="gllvm-10.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-11.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># Use 5 initial runs and pick the best one</span></span></span>
 <span class="r-in"><span><span class="va">fitvX_5</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Shrub.cover</span>,</span></span>
 <span class="r-in"><span> family <span class="op">=</span> <span class="st">"negative.binomial"</span>, control.start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n.init <span class="op">=</span> <span class="fl">5</span>, jitter.var <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitvX_5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fitvX_5</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-10.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="gllvm-11.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-12.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-13.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 3: Data in long format</span></span></span>
 <span class="r-in"><span><span class="co"># Reshape data to long format:</span></span></span>
@@ -1036,7 +1040,7 @@ However, sometimes this is computationally too demanding, and default option
 <span class="r-in"><span><span class="co"># Fit fourth corner model with two latent variables</span></span></span>
 <span class="r-in"><span><span class="va">fitF1</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, X <span class="op">=</span> <span class="va">X</span>, TR <span class="op">=</span> <span class="va">TR</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fitF1</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-12.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-14.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># Fourth corner can be plotted also with next lines</span></span></span>
 <span class="r-in"><span><span class="co">#fourth = fitF1$fourth.corner</span></span></span>
 <span class="r-in"><span><span class="co">#library(lattice)</span></span></span>
@@ -1052,9 +1056,9 @@ However, sometimes this is computationally too demanding, and default option
 <span class="r-in"><span> formula <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">*</span> <span class="op">(</span><span class="va">Pilosity</span> <span class="op">+</span> <span class="va">Webers.length</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span> family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitF2</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-13.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-15.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fitF2</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-14.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-16.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Include species specific random slopes to the fourth corner model</span></span></span>
 <span class="r-in"><span><span class="va">fitF3</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, X <span class="op">=</span> <span class="va">X</span>, TR <span class="op">=</span> <span class="va">TR</span>,</span></span>
@@ -1062,9 +1066,9 @@ However, sometimes this is computationally too demanding, and default option
 <span class="r-in"><span> family <span class="op">=</span> <span class="st">"negative.binomial"</span>, randomX <span class="op">=</span> <span class="op">~</span> <span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span>, </span></span>
 <span class="r-in"><span> control.start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n.init <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitF3</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-15.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-17.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fitF3</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-16.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-18.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 5: Fit Tweedie model</span></span></span>
@@ -1078,12 +1082,12 @@ However, sometimes this is computationally too demanding, and default option
 <span class="r-in"><span><span class="co"># Fit Tweedie model for coral data (this line may take few minutes to run)</span></span></span>
 <span class="r-in"><span><span class="va">fit.twe</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span>y <span class="op">=</span> <span class="va">ycoral</span>, family <span class="op">=</span> <span class="st">"tweedie"</span>, method <span class="op">=</span> <span class="st">"LA"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit.twe</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-17.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-19.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 6: Random row effects</span></span></span>
 <span class="r-in"><span><span class="va">fitRand</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, row.eff <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitRand</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="gllvm-18.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="gllvm-20.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

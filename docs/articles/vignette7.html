@@ -72,6 +72,9 @@
     <li>
       <a href="../articles/vignette8.html">Analysing sparse ecological percent cover data using gllvm</a>
     </li>
+    <li>
+      <a href="../articles/vignette9.html">Correlation structures for latent variables and row effects</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -102,7 +105,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2024-09-21</h4>
+            <h4 data-toc-skip class="date">2024-09-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette7.Rmd" class="external-link"><code>vignettes/vignette7.Rmd</code></a></small>
       <div class="hidden name"><code>vignette7.Rmd</code></div>
@@ -111,6 +114,7 @@ Veen</h4>
 
     
     
+<!-- Pre-Computed vignette using knitr::knit("vignettes/vignette7.Rmd.orig", output = "vignettes/vignette7.Rmd") -->
 <p>This vignette is divided into two parts, the first part related to
 models with environment covariates only, and the second part for models
 that additionally incorporate trait covariates, so called “fourth
@@ -250,7 +254,11 @@ some code to demonstrate this:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">err7</span>,x<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">215</span>,col<span class="op">=</span><span class="st">"green"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Tips"</span>,<span class="st">"Alphabetical"</span>, <span class="st">"Sum of squared distances"</span>, <span class="st">"Distance to root"</span>, <span class="st">"Edges 1"</span>, <span class="st">"Edges 2"</span>, <span class="st">"First eigenvector"</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"black"</span>,<span class="st">"blue"</span>, <span class="st">"forestgreen"</span>,<span class="st">"pink"</span>,<span class="st">"purple"</span>,<span class="st">"grey"</span>,<span class="st">"green"</span><span class="op">)</span>,lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"solid"</span>,<span class="fl">7</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette7_files/figure-html/specord-1.png" width="672" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="specord-1.png" alt="plot of chunk specord"><p class="caption">
+plot of chunk specord
+</p>
+</div>
 <p>The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering
 the species by their sum of squared distances, or by the first
 eigenvector of the phylogenetic covariance matrix, gives the best
@@ -378,7 +386,11 @@ errors, so let’s calculate thosefirst:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/segments.html" class="external-link">segments</a></span><span class="op">(</span>x0 <span class="op">=</span> <span class="va">CIs</span><span class="op">$</span><span class="va">LI</span>, y0 <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span>, x1 <span class="op">=</span> <span class="va">CIs</span><span class="op">$</span><span class="va">UI</span>, y1 <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span>, col <span class="op">=</span> <span class="va">cols</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">0</span>, lty<span class="op">=</span><span class="st">"dashed"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">4</span>, at <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span>, las <span class="op">=</span> <span class="fl">1</span>, cex.axis <span class="op">=</span> <span class="fl">0.6</span>,lwd<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette7_files/figure-html/bigplot-1.png" width="672" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="bigplot-1.png" alt="plot of chunk bigplot"><p class="caption">
+plot of chunk bigplot
+</p>
+</div>
 <p>The random effects with a prediction interval including zero are
 crossed out in the plot. The <code>getResidualCov</code> and
 <code>getResidualCor</code> functions extract the residual covariance
@@ -388,7 +400,11 @@ associations.</p>
 <code class="sourceCode R"><span><span class="fu">corrplot</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot</a></span><span class="op">(</span><span class="fu"><a href="../reference/getEnvironCov.gllvm.html">getEnvironCor</a></span><span class="op">(</span><span class="va">model1</span><span class="op">)</span>, </span>
 <span>                   type <span class="op">=</span> <span class="st">"lower"</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, order <span class="op">=</span> <span class="st">"AOE"</span>,</span>
 <span>                   tl.pos <span class="op">=</span> <span class="st">"n"</span>, addgrid.col<span class="op">=</span><span class="cn">NA</span>, col.lim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette7_files/figure-html/unnamed-chunk-5-1.png" width="480" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="corrplot-1.png" alt="plot of chunk corrplot"><p class="caption">
+plot of chunk corrplot
+</p>
+</div>
 <p>The <code>randomCoefPlot</code> function constructs caterpillar plots
 of species deviations from the community mean responses, which can be
 extracted via the summary method, or found via <code>coef</code> and in
@@ -425,24 +441,24 @@ number of sites and species) so that your R session will crash.</p>
 <span><span class="co">## LV formula:  ~ 0 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Random effects:</span></span>
-<span><span class="co">##  Name        Signal Variance Std.Dev Corr                                   </span></span>
-<span><span class="co">##  Intercept   0.2106 0.5218   0.7224                                         </span></span>
-<span><span class="co">##  DBH.CM      0.5031 0.0052   0.0722   0.7524                                </span></span>
-<span><span class="co">##  AVERDP      0.9711 0.3825   0.6185   0.1015 -0.0181                        </span></span>
-<span><span class="co">##  I.AVERDP.2. 0.8007 0.0122   0.1105  -0.4874 -0.4696 -0.4871                </span></span>
-<span><span class="co">##  CONNECT10   0.0613 0.0270   0.1642  -0.1800 -0.1082  0.1563 -0.1128        </span></span>
-<span><span class="co">##  TEMPR       0.0499 0.0436   0.2087  -0.1579 -0.2858 -0.0683  0.7212  0.3666</span></span>
-<span><span class="co">##  PRECIP      0.0000 0.0324   0.1799   0.2290  0.6520 -0.3145  0.0977 -0.5629</span></span>
-<span><span class="co">##  log.AREA    0.0310 0.0158   0.1258  -0.1418 -0.1302  0.0928 -0.6283  0.4803</span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##                  </span></span>
-<span><span class="co">##  -0.2123         </span></span>
-<span><span class="co">##  -0.5604 -0.5228 </span></span>
+<span><span class="co">##  Name        Signal Variance Std.Dev Corr                                           </span></span>
+<span><span class="co">##  Intercept   0.2106 0.5218   0.7224                                                 </span></span>
+<span><span class="co">##  DBH.CM      0.5031 0.0052   0.0722   0.7524                                        </span></span>
+<span><span class="co">##  AVERDP      0.9711 0.3825   0.6185   0.1015 -0.0181                                </span></span>
+<span><span class="co">##  I.AVERDP.2. 0.8007 0.0122   0.1105  -0.4874 -0.4696 -0.4871                        </span></span>
+<span><span class="co">##  CONNECT10   0.0613 0.0270   0.1642  -0.1800 -0.1082  0.1563 -0.1128                </span></span>
+<span><span class="co">##  TEMPR       0.0499 0.0436   0.2087  -0.1579 -0.2858 -0.0683  0.7212  0.3666        </span></span>
+<span><span class="co">##  PRECIP      0.0000 0.0324   0.1799   0.2290  0.6520 -0.3145  0.0977 -0.5629 -0.2123</span></span>
+<span><span class="co">##  log.AREA    0.0310 0.0158   0.1258  -0.1418 -0.1302  0.0928 -0.6283  0.4803 -0.5604</span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##          </span></span>
+<span><span class="co">##  -0.5228 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Coefficients predictors:</span></span>
 <span><span class="co">##             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
