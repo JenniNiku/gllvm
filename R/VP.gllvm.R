@@ -151,7 +151,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
         rownames(Bt) <- paste("CLV:",rownames(Bt), sep = "")
         CoefMat <- rbind(CoefMat, Bt)
       } else if((object$num.lv.c + object$num.RR) > 0) {
-        LVCLV = ftRRC2_$lv.X.design %*% ftRRC2_$params$LvXcoef
+        LVCLV = object$lv.X.design %*% object$params$LvXcoef
         Z <- cbind(Z, LVCLV)
         Bt <- t((theta[, 1:(object$num.lv.c + object$num.RR), drop = F]))
         rownames(Bt) <- paste(rownames(Bt),":X", sep = "")
