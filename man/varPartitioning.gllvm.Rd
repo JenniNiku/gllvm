@@ -79,7 +79,7 @@ plotVarPartitioning(VP)
 
 \dontrun{
 # Plot the result of  variance partitioning
-plot(VP, col = palette(hcl.colors(5, "viridis")))
+plotVP(VP, col = palette(hcl.colors(5, "Roma")))
 }
 
 }

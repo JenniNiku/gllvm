@@ -33,7 +33,7 @@
 #'
 #'\dontrun{
 #'# Plot the result of  variance partitioning
-#'plot(VP, col = palette(hcl.colors(5, "viridis")))
+#'plotVP(VP, col = palette(hcl.colors(5, "Roma")))
 #'}
 #'
 #'@aliases varPartitioning VP varPartitioning.gllvm
@@ -65,6 +65,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     colnames(object$y) <- paste("y", 1:p, sep = "")
   }
 
+  groupF <- groupnamesF <- NULL
   # Basec env model:
   if (!is.null(object$X) && is.null(object$TR)) {
     groupnamesF <- labels(terms(formula))
@@ -129,7 +130,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     CoefMat <- rbind(CoefMat, as.matrix(BBr))
   }
   
-  
+  LVgroups = NULL
   # Inclusion of lvs
     if (object$num.lv > 0 | (object$num.lv.c + object$num.RR) > 0) {
       
@@ -141,13 +142,21 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
 
       # X:s for Constrained lvs/RR
       lv.X <- object$lv.X.design
-      if ((object$num.lv.c + object$num.RR) > 0) {
+      # lv.X variances Separated only if quaratic = FALSE
+      if ((object$num.lv.c + object$num.RR) > 0 & object$quadratic == FALSE) {
         groupnamesF <- c(groupnamesF, paste("CLV:",labels(terms(object$lv.formula)), sep = ""))
-        groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = object$X), "assign")[-1] + max(groupF))
+        groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = object$lv.X), "assign")[-1] + max(groupF,0))
         Z <- cbind(Z, lv.X)
         Bt <- object$params$LvXcoef %*% t((theta[, 1:(object$num.lv.c + object$num.RR), drop = F]))
         rownames(Bt) <- paste("CLV:",rownames(Bt), sep = "")
         CoefMat <- rbind(CoefMat, Bt)
+      } else if((object$num.lv.c + object$num.RR) > 0) {
+        LVCLV = ftRRC2_$lv.X.design %*% ftRRC2_$params$LvXcoef
+        Z <- cbind(Z, LVCLV)
+        Bt <- t((theta[, 1:(object$num.lv.c + object$num.RR), drop = F]))
+        rownames(Bt) <- paste(rownames(Bt),":X", sep = "")
+        CoefMat <- rbind(CoefMat, Bt)
+        LVgroups = c(LVgroups, 1:(object$num.lv.c + object$num.RR))
       }
       
       # lvs/unconstr. part
@@ -155,13 +164,14 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
         lvs <- t(t(object$lvs) * object$params$sigma.lv)
         Z <- cbind(Z, lvs)
         CoefMat <- rbind(CoefMat, t(theta))
+        LVgroups = c(1:ncol(lvs))
       } else {
         # To be checked:
         if (object$num.lv.c > 0) {
-            lvs <- cbind(t(t(object$lvs[, 1:object$num.lv.c]) * 
+            lvs <- cbind(t(t(object$lvs[, 1:object$num.lv.c, drop =FALSE]) * 
                              object$params$sigma.lv[1:object$num.lv.c]), 
                          matrix(0, ncol = object$num.RR, nrow = n), 
-                         t(t(object$lvs[, -c(1:object$num.lv.c)]) * 
+                         t(t(object$lvs[, -c(1:object$num.lv.c), drop =FALSE]) * 
                              object$params$sigma.lv[-(1:object$num.lv.c)]))
         } else if (object$num.lv > 0 & object$num.lv.c == 0) {
             lvs <- cbind(matrix(0, ncol = object$num.RR, 
@@ -173,30 +183,42 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
         lv0 = !(colSums(lvs==0)==n)
         Z <- cbind(Z, lvs[, lv0, drop=FALSE])
         CoefMat <- rbind(CoefMat, t(theta[, lv0, drop=FALSE]))
+        LVgroups = c(LVgroups, (1:ncol(lvs))[lv0])
       }
       # eta <- eta + lvs %*% t(theta)
       
-      
-      
-      # TO DO: Quadratic
+      # Quadratic
       if (object$quadratic != FALSE) {
-        stop(paste("VP for quadratic model not implemented yet"))
+        # stop(paste("VP for quadratic model not implemented yet"))
         
-        # if(object$num.lv>0){
-        #   theta2 <- (object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F])
-        #   theta2 <- (theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F])
-        #   eta <- eta + (lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs), drop = F])^2 %*% t(theta2)
-        # }
-        # if ((object$num.lv.c + object$num.RR) > 0) {
-        #   theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
-        #   theta2C <- abs(theta2[, 1:(object$num.lv.c + 
-        #                                object$num.RR), drop = F])
-        #   lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
-        #   for (j in 1:p) {
-        #     eta[, j] <- eta[, j] - lvs^2%*%theta2C[j, ]
-        #   }
-        # }
+        if(object$num.lv>0){
+          theta2 <- (object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F])
+          theta2 <- (theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F])
+          Z <- cbind(Z, (lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs), drop = F])^2)
+          CoefMat <- rbind(CoefMat, t(theta2))
+          
+          LVgroups = c(LVgroups, (1:ncol(lvs))[(ncol(lvs)-object$num.lv+1):ncol(lvs)])
+        }
+        if ((object$num.lv.c + object$num.RR) > 0) {
+          theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
+          theta2C <- abs(theta2[, 1:(object$num.lv.c +
+                                       object$num.RR), drop = F])
+          lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
+          Z <- cbind(Z, (lvs)^2)
+          CoefMat <- rbind(CoefMat, t(-theta2C))
+          
+          LVgroups = c(LVgroups, (1:ncol(lvs)))
+          
+          # for (j in 1:p) {
+          #   eta[, j] <- eta[, j] - lvs^2%*%theta2C[j, ]
+          # }
+        }
       }
+      if(!all(sort(unique(LVgroups)) == 1:length(unique(LVgroups)))){
+        LVgroups = as.numeric(factor(LVgroups))
+      }
+      groupF <- c(groupF, LVgroups+max(groupF,0))
+      
     }
   
 
@@ -233,25 +255,27 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   # each of those separately may not be wise, so they could be grouped together.
   if(is.null(group)) {
     if(!is.null(groupF)){
-      group <- c(groupF, max(groupF) + 1:(ncol(Zcov)-length(groupF)))
+      if(length(groupF) < ncol(Zcov)){
+        group <- c(groupF, max(groupF,0) + 1:(ncol(Zcov)-length(groupF)))
+      } else {
+        group <- groupF[1:ncol(Zcov)]
+      }
     } else {
       group <- 1:ncol(Zcov)
     }
   } else if(length(group) < ncol(Zcov)){
     if(num.lv>0) {
       if(grouplvs){
-        group = c(group,max(group) + rep(1,(num.lv+object$num.lv.c)))
+        group = c(group,max(group) + rep(1,length(LVgroups)))
+        # group = c(group,max(group) + rep(1,(num.lv+object$num.lv.c)))
       } else {
-        group = c(group,max(group) + 1:(1+(num.lv+object$num.lv.c)-1))
+        group = c(group,max(group) + LVgroups)
+        # group = c(group,max(group) + 1:(1+(num.lv+object$num.lv.c)-1))
       }
-    } else {
-      group = group
     }
     if((object$row.eff %in% c("random", "fixed", "TRUE"))){
       group = c(group,max(group) + 1:ncol(r0))
     }
-  } else {
-    group = group
   }
   
   if(is.null(groupnames)) {
