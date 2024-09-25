@@ -115,16 +115,19 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             formula1 <- paste(formula1, n1[i1], sep = "+")
           }
         }
-        formula1 <- paste(formula1, "1", sep = "-")
+        # formula1 <- paste(formula1, "1", sep = "-")
         formula1 <- formula(formula1)
         Xnew <- as.matrix(model.matrix(formula1, data = data.frame(newdata)))
+        X.d <- as.matrix(Xnew[, !(colnames(Xnew) %in% c("(Intercept)")), 
+                            drop = F])
+      } else {
+        formula <- as.formula(nobars1_(object$call$formula)) # due to potential REs
+        xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
+        X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")), 
+                            drop = F])
+        colnames(X.d) <- colnames(xb)[!(colnames(xb) %in% 
+                                          c("(Intercept)"))]
       }
-      formula <- as.formula(nobars1_(object$call$formula)) # due to potential REs
-      xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
-      X.d <- as.matrix(xb[, !(colnames(xb) %in% c("(Intercept)")), 
-                          drop = F])
-      colnames(X.d) <- colnames(xb)[!(colnames(xb) %in% 
-                                        c("(Intercept)"))]
     }
     else {
       X.d <- object$X.design
