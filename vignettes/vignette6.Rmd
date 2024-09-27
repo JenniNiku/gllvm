@@ -106,7 +106,6 @@ A plot of species-specific effects can be constructed with the  `randomCoefplot`
 randomCoefplot(RRGLMb1, cex.ylab = 0.5, mar = c(4,2,2,1))
 ```
 
-
 When using a random-effects formulation, there is no summary table and there are no confidence intervals available for the canonical coefficients. It is possible to construct a summary table with the prediction of the random-effects and the association prediction errors as follows:
 
 ```{r eval=T, echo=T}
@@ -129,6 +128,19 @@ coefsTab[,-4]
 ```
 
 There is a range of potential use cases for random canonical coefficients, but pragmatically, inducing some shrinkage on the predictor effects can result in more better "behaved" (fewer outliers) ordination plots. 
+
+Incorporating correlation between the canonical coefficients is (currently) only possible in combination with `randomB="P"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
+
+```{r eval=FALSE}
+RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2, randomB = "P")
+summary(RRGLMb2)
+```
+```{r eval=TRUE, echo=FALSE}
+load("RRGLMb2.RData")
+summary(RRGLMb2)
+```
+
+This is equivalent to assuming that the matrix of species coefficients follows a matrix normal distribution $\boldsymbol{\beta} \sim \mathcal{MN}(\textbf{0}, \boldsymbol{\Sigma}, \boldsymbol{\Gamma}\boldsymbol{\Gamma}^\top)$, so that the correlations are indeed the correlation of the predictor effects, estimated in reduced rank, and the species loadings form the column-covariance matrix, i.e., provide the species correlations in reduced rank.
 
 ## Concurrent ordination
 
