@@ -127,7 +127,7 @@ legend("topright", legend=c("Tips","Alphabetical", "Sum of squared distances", "
 <p class="caption">plot of chunk specord</p>
 </div>
 
-The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by their sum of squared distances, or by the first eigenvector of the phylogenetic covariance matrix, gives the best approximation here (i.e., most accurate with least neighbouts) for this dataset.
+The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by their sum of squared distances, or by the first eigenvector of the phylogenetic covariance matrix, gives the best approximation here (i.e., most accurate with least neighbours) for this dataset.
 
 <!-- # The function has a "withinBlock" argument -->
 <!-- # to find if we can find a better ordering while retaining the block diagonal structure -->
