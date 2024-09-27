@@ -131,11 +131,11 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
 
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(num.RR>0&object$randomB!=FALSE){
-        if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
-          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
-        }else if(object$randomB=="LV"){
+        # if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
+        #   covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+        # }else if(object$randomB=="LV"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
-        }
+        # }
         
         for(i in 1:n){
           Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
@@ -150,11 +150,11 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       sdb <- list(Ab_lv = 0)
       
       if(num.RR>0&object$randomB!=FALSE){
-        if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
-          covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
-        }else if(object$randomB=="LV"){
+        # if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
+        #   covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+        # }else if(object$randomB=="LV"){
           covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
-        }
+        # }
         
         for(i in 1:n){
           Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
@@ -198,8 +198,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
-      if(object$randomB%in%c("P","single","iid")) out$b.lv <- (abs(out$b.lv + t(sapply(1:ncol(object$lv.X.design), function(k)diag(object$Ab.lv[k,,])))))
-      if(object$randomB=="LV") out$b.lv <- (abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
+      out$b.lv <- (abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
 
   } else {
@@ -232,8 +231,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     
     if(object$randomB!=FALSE){
       out$b.lv <- sdb$Ab_lv
-      if(object$randomB%in%c("P","single","iid"))out$b.lv <- sqrt(abs(out$b.lv + t(sapply(1:ncol(object$lv.X.design), function(k)diag(object$Ab.lv[k,,])))))
-      if(object$randomB=="LV")out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
+      out$b.lv <- sqrt(abs(out$b.lv + sapply(1:(object$num.RR+object$num.lv.c), function(k)diag(object$Ab.lv[k,,]))))
     }
     
   }
