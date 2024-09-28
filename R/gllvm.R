@@ -548,7 +548,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
-  #some checks for optimizer
+  # some checks for optimizer
   if(!is.null(X) && !is.null(y) && any(colnames(X)%in%colnames(y)))stop("Same column name detected in 'y' and 'X' please make sure column names are unique.")
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
@@ -809,8 +809,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
             lv.X.design = t(as.matrix(RElistLV$Zt))
             csBlv = RElistLV$cs
-            if(randomB!="P")warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            if(randomB%in%c("LV","iid","single"))warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
             randomB = "P"
+            # in case "lv.formula" is specified with random effects, but randomB is not specified
+            if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+              optimizer = control$optimizer = "optim"
+            }
           }
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
@@ -830,8 +834,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             RElistLV<- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
             lv.X.design = (as.matrix(RElistLV$Zt))
             csBlv = RElistLV$cs
-            if(randomB!="P")warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            if(randomB%in%c("LV","iid","single"))warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
             randomB = "P"
+            if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+              optimizer = control$optimizer = "optim"
+            }
           }
           term <- terms(m1)
         }
