@@ -449,9 +449,10 @@ Type objective_function<Type>::operator() ()
       //   }
       // }else 
       // if(sbl3 == (num_lv_c+num_RR)){//variance per LV
+      for(int q=0; q<(num_RR+num_lv_c); q++){
+        matrix<Type>Ablv = AB_lv(q)*AB_lv(q).transpose();
         for(int i=0; i<n; i++){
-          for(int q=0; q<(num_RR+num_lv_c); q++){
-            Ab_lvcov(i)(q,q) = (x_lv.row(i)*AB_lv(q)*AB_lv(q).transpose()*x_lv.row(i).transpose()).sum();
+            Ab_lvcov(i)(q,q) = (x_lv.row(i)*Ablv*x_lv.row(i).transpose()).sum();
           }
         }
       // }
