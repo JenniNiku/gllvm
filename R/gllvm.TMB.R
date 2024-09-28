@@ -336,7 +336,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(randomB!=FALSE & randomB!="iid"){
           sigmab_lv <- fit$sigmab_lv
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, fit$sigmab_lv[csBlv])
+          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, t(chol(fit$sigmab_cors))[csBlv])
         }
         if(num.lv>1&(num.lv.c+num.RR)==0){
           lambdas[upper.tri(lambdas)] <- 0  
@@ -432,10 +432,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(start.params$randomB!=FALSE && randomB !=FALSE && randomB!="iid"){
           sigmab_lv <- start.params$params$sigmaLvXcoef
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, start.params$params$sigmaLvXcoef[cs])
+          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, start.params$params$corsLvXcoef[csBlv])
         }else if(randomB!=FALSE && randomB!="iid"){
           sigmab_lv <- fit$sigmab_lv
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, fit$params$sigmab_lv[csBlv])
+          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, fit$sigmab_cors[csBlv])
         }
         if((start.params$num.lv.c+start.params$num.RR)==0){
           b.lv <- matrix(0)
