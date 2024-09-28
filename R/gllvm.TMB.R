@@ -336,7 +336,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         }
         if(randomB!=FALSE & randomB!="iid"){
           sigmab_lv <- fit$sigmab_lv
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, t(chol(fit$sigmab_cors))[csBlv])
+          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, fit$sigmab_cors[csBlv])
         }
         if(num.lv>1&(num.lv.c+num.RR)==0){
           lambdas[upper.tri(lambdas)] <- 0  
