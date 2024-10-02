@@ -26,7 +26,7 @@ However, if the number of predictor variables is large and so is the number of s
 
 In this vignette, we demonstrate how to include predictors directly in an ordination with the `gllvm` R-package. Methods are explained with details in @vanderVeen2021b. We start by loading the hunting spider dataset:
 
-```{r data, eval=FALSE}
+```{r data, eval=TRUE}
 library(gllvm)
 
 data("spider", package = "mvabund")
@@ -131,14 +131,11 @@ There is a range of potential use cases for random canonical coefficients, but p
 
 Incorporating correlation between the canonical coefficients is (currently) only possible in combination with `randomB="P"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2)
 summary(RRGLMb2)
 ```
-```{r eval=TRUE, echo=FALSE}
-load("RRGLMb2.RData")
-summary(RRGLMb2)
-```
+
 
 For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4, @lme4_software]. This is equivalent to assuming that the matrix of species coefficients follows a matrix normal distribution $\boldsymbol{\beta} \sim \mathcal{MN}(\textbf{0}, \boldsymbol{\Sigma}, \boldsymbol{\Gamma}\boldsymbol{\Gamma}^\top)$, so that the correlations are indeed the correlation of the predictor effects, estimated in reduced rank, and the species loadings form the column-covariance matrix, i.e., provide the species correlations in reduced rank.
 
