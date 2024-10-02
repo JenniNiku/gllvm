@@ -725,8 +725,13 @@ se.gllvm <- function(object, ...){
     }
     if(!isFALSE(object$randomB)&(num.lv.c+num.RR)>0){
       if(object$randomB!="iid"){
+        if(is.null(object$params$corsLvXcoef)){
         se.lsigmab.lv <-  se$sigmab_lv;
         out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
+        }else{
+          se.lsigmab.lv <- head(se$sigmab_lv, ncol(object$lv.X.design));
+          out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
+        }
       }
       if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
       if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X.design)

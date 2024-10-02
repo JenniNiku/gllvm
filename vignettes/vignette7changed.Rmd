@@ -1,7 +1,7 @@
 ---
 title: 'Phylogenetic random effects'
 author: "Bert van der Veen"
-date: "2024-09-24"
+date: "`r Sys.Date()`"
 output:  rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Phylogenetic random effects}
@@ -11,8 +11,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-<!-- Pre-Computed vignette using knitr::knit("vignettes/vignette7.Rmd.orig", output = "vignettes/vignette7.Rmd") -->
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
+```
 
 This vignette is divided into two parts, the first part related to models with environment covariates only, and the second part for models that additionally incorporate trait covariates, so called "fourth corner" models. This is for convenience, as the interface for fitting fourth corner models slightly differs from the models without traits. Both models are detailed in @vanderVeen2024, and the fourth corner model in more detail in @Niku2021.
 
@@ -24,8 +25,7 @@ In this vignette we demonstrate how to fit models that incorporate phylogenetic 
 
 Here, we will use the data by @Abrego2022a. It includes information of 215 fungal species at 1666 *European beech* logs, and was analyzed by the original authors using a similar model. We start by loading the data:
 
-
-``` r
+```{r, warning=FALSE, message=FALSE}
 library(gllvm)
 
 data(fungi)
@@ -50,8 +50,7 @@ It is important to note that the error of the NNGP approximation that is used fo
 
 A less than ideal ordering requires a larger number of nearest neighbours for an accurate approximation. For cases when the ordering in from the phylogenetic tree seems to function poorly, we provide a function (note, not exported) in the package to help evaluate the error due to a certain species ordering `findOrder()`. This calculates the Frobenius norm of the product of the sparse approximation to the inverse of the phylogenetic covariance matrix and the phylogenetic covariance matrix, minus the identity matrix, given a species order and number of nearest neighbours. It returns the error, the approximation, and the ordering (which retains the block structure if `withinBlock = TRUE`, the default). In short: a lower error means a better approximation (but note the trade-off). Here is some code to demonstrate this:
 
-
-``` r
+```{r specord, cache = TRUE, fig.width=7}
 # order of species in phylogeny tips
 # with a plot of error vs. nearest neighbours
 err1 <- NULL
@@ -227,12 +226,8 @@ legend("topright", legend=c("Tips","Alphabetical", "Total distance", "Distance t
 #plot(y=apply(cbind(err1,err2,err3,err4,err7,err8,err9,err10,err11),1,which.min),x=1:215)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="specord-1.png" alt="plot of chunk specord"  />
-<p class="caption">plot of chunk specord</p>
-</div>
-
 The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by the sum of distances, sum of squared covariances, or by the first eigenvector of the phylogenetic covariance matrix, give good approximations (i.e., most accurate with least neighbours) for this dataset.
+
 <!-- # The function has a "withinBlock" argument -->
 <!-- # to find if we can find a better ordering while retaining the block diagonal structure -->
 <!-- # try some random permutations within block -->
@@ -250,12 +245,11 @@ The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species 
 <!-- } -->
 <!-- err -->
 
-This serves to demonstrate that the species order does matter to the approximation, and a better order may be available. In the plot we can see that the error reduces quickly towards 10-15 neighbours, and levels out after about 50 neighbours. If we plotted the same curve wit the computation time, it would probably exhibit the opposite of the displayed pattern.
+Generaly, this serves to demonstrate that the species order does matter to the approximation, and a better order may be available. In the plot we can see that the error reduces quickly towards 10-15 neighbours, and levels out after about 50 neighbours. If we plotted the same curve wit the computation time, it would probably exhibit the opposite of the displayed pattern.
 
 ## Fit the model
 
-
-``` r
+```{r, warning=FALSE, eval = FALSE}
 TMB::openmp(parallel::detectCores()-1, autopar = TRUE) # set parallel computation
 order <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = 15,
           order = as.integer(names(sort(allDists[1:length(tree$tip.label), nrow(allDists)],decreasing = TRUE))))$order
@@ -280,10 +274,11 @@ The first line enables parallel computation, to speed up model fitting.
 
 After model fitting, the random effect estimates can be found in `model1$params$Br`, and prediction errors can be extracted with `gllvm::getPredictErr`. This requires the standard errors, so let's calculate thosefirst:
 
+```{r, echo=FALSE}
+load("vignette7model1.RData")
+```
 
-
-
-``` r
+```{r, eval = FALSE}
 # calculate standard errors
 ses <- se.gllvm(model1) # this can take a few minutes
 model1$sd <- ses$sd
@@ -292,8 +287,7 @@ model1$Hess <- ses$Hess
 
 Here is some code to visualize the model results (from @vanderVeen2024):
 
-
-``` r
+```{r, bigplot, fig.width=7}
 row.names(model1$params$Br) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation","ln(Reserve area)")
 
 # strike REs that are not significant
@@ -331,24 +325,13 @@ abline(v = 0, lty="dashed")
 axis(4, at = 1:length(coefs), labels = names(coefs), las = 1, cex.axis = 0.6,lwd=0)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="bigplot-1.png" alt="plot of chunk bigplot"  />
-<p class="caption">plot of chunk bigplot</p>
-</div>
-
 The random effects with a prediction interval including zero are crossed out in the plot. The `getResidualCov` and `getResidualCor` functions extract the residual covariance and correlation matrix, respectively, for visualizing species associations. 
 
-
-``` r
+```{r}
 corrplot::corrplot(getEnvironCor(model1), 
                    type = "lower", diag = FALSE, order = "AOE",
                    tl.pos = "n", addgrid.col=NA, col.lim=c(0,1))
 ```
-
-<div class="figure" style="text-align: center">
-<img src="corrplot-1.png" alt="plot of chunk corrplot"  />
-<p class="caption">plot of chunk corrplot</p>
-</div>
 
 The `randomCoefPlot` function constructs caterpillar plots of species deviations from the community mean responses, which can be extracted via the summary method, or found via `coef` and in `model1$params$B`.
 
@@ -358,64 +341,8 @@ Arguments to control the VA approximation are `Ab.struct` and `Ab.struct.rank`, 
 
 Finally, we can look at the summary information of the model:
 
-
-``` r
+```{r}
 summary(model1)
-```
-
-```
-## 
-## Call:
-## gllvm(y = Y[, order], X = X, formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + 
-##     CONNECT10 + TEMPR + PRECIP + log.AREA | 1), family = "binomial", 
-##     num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")], colMat = list(colMat[order, 
-##         order], dist = dist[order, order]), colMat.rho.struct = "term", 
-##     row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, beta0com = TRUE, 
-##     nn.colMat = 15, optim.method = "L-BFGS-B")
-## 
-## Family:  binomial 
-## 
-## AIC:  103080 AICc:  103080 BIC:  103662.6 LL:  -51486 df:  54 
-## 
-## Informed LVs:  0 
-## Constrained LVs:  0 
-## Unconstrained LVs:  0 
-## 
-## Formula:  ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA | 1) 
-## LV formula:  ~ 0 
-## 
-## Random effects:
-##  Name        Signal Variance Std.Dev Corr                                           
-##  Intercept   0.2106 0.5218   0.7224                                                 
-##  DBH.CM      0.5031 0.0052   0.0722   0.7524                                        
-##  AVERDP      0.9711 0.3825   0.6185   0.1015 -0.0181                                
-##  I.AVERDP.2. 0.8007 0.0122   0.1105  -0.4874 -0.4696 -0.4871                        
-##  CONNECT10   0.0613 0.0270   0.1642  -0.1800 -0.1082  0.1563 -0.1128                
-##  TEMPR       0.0499 0.0436   0.2087  -0.1579 -0.2858 -0.0683  0.7212  0.3666        
-##  PRECIP      0.0000 0.0324   0.1799   0.2290  0.6520 -0.3145  0.0977 -0.5629 -0.2123
-##  log.AREA    0.0310 0.0158   0.1258  -0.1418 -0.1302  0.0928 -0.6283  0.4803 -0.5604
-##          
-##          
-##          
-##          
-##          
-##          
-##          
-##          
-##  -0.5228 
-## 
-## Coefficients predictors:
-##             Estimate Std. Error z value Pr(>|z|)    
-## Intercept   -2.05756    0.13590 -15.140  < 2e-16 ***
-## DBH.CM       0.10583    0.01936   5.465 4.62e-08 ***
-## AVERDP      -0.08548    0.22763  -0.376 0.707278    
-## I.AVERDP.2. -0.12467    0.03344  -3.728 0.000193 ***
-## CONNECT10   -0.03260    0.04141  -0.787 0.431209    
-## TEMPR        0.03646    0.04454   0.818 0.413120    
-## PRECIP      -0.02091    0.03726  -0.561 0.574756    
-## log.AREA     0.05643    0.02976   1.896 0.057952 .  
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 which gives us an overview of the community mean responses, as well as the variance and correlation of random effects, and the phylogenetic signal parameter in the column `signal`. This parameter ranges between zero and one, at zero the species responses are not phylogenetically structured, and at one they are fully phylogenetically structured.
@@ -446,8 +373,7 @@ which gives us an overview of the community mean responses, as well as the varia
 
 The fourth corner model extends the previous model with functional traits. The interface is still a little difference, so that correlation between random effects are always included. Otherwise the tools are similar, so we just present some example code here for fitting such a model, but do not discuss it further (see other vignettes in the gllvm R-package for discussion of the fourth corner model).
 
-
-``` r
+```{r, eval = FALSE}
 TR <- fungi$TR # the functional traits
 
 model2 <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR,
@@ -479,9 +405,8 @@ references:
   issued: 
     year: 2024
   doi: https://www.arxiv.org/abs/2408.05333
-
 - id: lme4_software
-  title: Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4
+  title: "Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4"
   author: 
     - family: Bates
       given: Douglas
@@ -514,14 +439,14 @@ references:
     - family: Jagan
       given: Mikael
   publisher: CRAN
-  URL: https://cran.r-project.org/web/packages/lme4/index.html
+  URL: "https://cran.r-project.org/web/packages/lme4/index.html"
   type: software
   issued:
     year: 2024
     month: 07
     day: 03
   version: 1.1-35.5
-  
+
 - id: lme4
   title: Fitting Linear Mixed-effects Models using lme4
   author: 

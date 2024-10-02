@@ -259,6 +259,17 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
         dimnames(coef.table.constrained) <- list(paste(colnames(object$lv.X.design),"(CLV",rep(1:(object$num.lv.c+object$num.RR),each=ncol(object$lv.X.design)),")",sep=""), c("Estimate", "Std. Error", "X2 value", "Pr(>X2)"))
         }
       }
+  }else if(!isFALSE(object$randomB)){
+    coef.table.constrained <- NULL
+    
+    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef), Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits), Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits))
+    if(!is.null(object$params$corsLvXcoef)){
+      cors <- format(round(object$params$corsLvXcoef, digits), nsmall = digits)
+      cors[upper.tri(cors, diag = TRUE)] <- ""
+      REbcovs <- cbind(REbcovs, cors, deparse.level = 0L)
+      colnames(REbcovs)[tail(1:ncol(REbcovs), ncol(cors))] <- c("Corr", rep("", ncol(cors) - 1))
+    }
+    sumry$REbcovs <- REbcovs
   }else{
     coef.table.constrained <- NULL
   }
@@ -379,6 +390,11 @@ print.summary.gllvm <- function (x, ...)
       
       print(x$Coefficients[,-1,drop=F])
     }
+  }
+  
+  if(!is.null(x$REbcovs)){
+    cat("\nRandom effects LV predictors:\n")
+    print(x$REbcovs, row.names = FALSE, right = FALSE)
   }
   
   if(!is.null(x$Coef.tableLV)){

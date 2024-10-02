@@ -572,9 +572,11 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, family,
         out$sigmab_lv <- rep(0.01,num.lv.c+num.RR)
       }else if(randomB=="P"&starting.val!="zero"&(num.lv.c+num.RR)>1){
         out$sigmab_lv <- log(apply(b.lv,1,sd))
+        out$sigmab_cors <- cov(t(b.lv))
         out$b.lv <- t(scale(t(b.lv),center = FALSE))
       }else if(randomB=="P"&starting.val=="zero"|randomB=="P"&(num.lv.c+num.RR)==1){
         out$sigmab_lv <- rep(0.01,ncol(lv.X)) 
+        out$sigmab_cors <- rep(0.001, ncol(lv.X))
       }else if(starting.val!="zero"&randomB=="single"){
         out$sigmab_lv <- log(sd(b.lv))
         out$b.lv <- b.lv/sd(b.lv)
@@ -2689,11 +2691,11 @@ RRse <- function(object, return.covb = FALSE){
         row.names(covMat)[row.names(covMat)==""]<-colnames(covMat)[colnames(covMat)==""]<-"lambda"
         covLB <- t(covMat)
     }else{
-    if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
-      covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
-    }else if(object$randomB=="LV"){
+    # if(object$randomB=="P"|object$randomB=="single"|object$randomB=="iid"){
+    #   covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
+    # }else if(object$randomB=="LV"){
       covB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
-    }
+    # }
       covsB <- CMSEPf(object, return.covb = T)
       covB = covB + covsB[row.names(covsB)=="b_lv",colnames(covsB)=="b_lv"]
       # covariance matrix of loadings

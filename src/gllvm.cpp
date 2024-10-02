@@ -27,6 +27,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(y); // matrix of responses
   DATA_MATRIX(x); // matrix of covariates
   DATA_MATRIX(x_lv); // matrix of covariates for Reduced Rank and/or constrained ord
+  DATA_IMATRIX(csb_lv);
   DATA_MATRIX(xr); 
   DATA_MATRIX(xb); // design matrix for random species effects, (n, spnr)
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
@@ -154,36 +155,73 @@ Type objective_function<Type>::operator() ()
   newlam.setZero();  
   
   //K*K*d or d*d*K
-  int sbl12 = 0;
-  int sbl3 = 0;
-  if((sigmab_lv.size()==Klv) || (sigmab_lv.size()==Type(1))){
-    sbl12 = num_lv_c + num_RR;
-    sbl3 = Klv;
-  }else if(sigmab_lv.size()==(num_lv_c+num_RR)){
-    sbl12 = Klv;
-    sbl3 = num_lv_c + num_RR;
+  // int sbl12 = 0;
+  // int sbl3 = 0;
+  // if((sigmab_lv.size()==Klv) || (sigmab_lv.size()==Type(1))){
+  //   sbl12 = num_lv_c + num_RR;
+  //   sbl3 = Klv;
+  // }else if(sigmab_lv.size()==(num_lv_c+num_RR)){
+  //   sbl12 = Klv;
+  //   sbl3 = num_lv_c + num_RR;
+  // }else{
+  //   sbl12 = num_lv_c + num_RR;
+  //   sbl3 = Klv;
+  // }
+  
+  vector<matrix<Type>> Sigmab_lv(num_lv_c+num_RR);
+  for (int q=0; q<(num_lv_c+num_RR); q++){
+    Sigmab_lv(q).resize(Klv,Klv);
+    Sigmab_lv(q).setIdentity();
   }
   
-  vector<matrix<Type>> Sigmab_lv(sbl3);
   if(random(2)>0){
-    sigmab_lv = exp(sigmab_lv);
-    sigmab_lv *= sigmab_lv;
+    // sigmab_lv = exp(sigmab_lv);
+    // sigmab_lv *= sigmab_lv;
     
-    if(sigmab_lv.size()>Type(1)){//Sigma_q = sigma_q I_klv
-      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
-      Sigmab_lvtemp.setZero();
-      for (int q=0; q<sbl3; q++){
-        Sigmab_lv(q) = Sigmab_lvtemp;
-        Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
+    if(sigmab_lv.size()>Type(1) && (sigmab_lv.size()==Klv)){//Sigma_q = sigma_q I_klv
+      //randomB="P"
+      for (int q=0; q<(num_lv_c+num_RR); q++){
+      Sigmab_lv(q).diagonal().array() = exp(sigmab_lv)*exp(sigmab_lv);
+      }
+      // matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
+      // Sigmab_lvtemp.setZero();
+      // for (int q=0; q<sbl3; q++){
+      //   Sigmab_lv(q) = Sigmab_lvtemp;
+      //   Sigmab_lv(q).diagonal().array() = sigmab_lv(q);
+      // }
+    }else if(sigmab_lv.size() == (num_lv_c+num_RR)){
+      //randomB="LV"
+      for (int q=0; q<(num_lv_c+num_RR); q++){
+        Sigmab_lv(q).diagonal().array() = exp(sigmab_lv(q))*exp(sigmab_lv(q));
       }
     }else if(sigmab_lv.size()==Type(1)){
-      matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
-      Sigmab_lvtemp.setZero();
-      for (int klv=0; klv<Klv; klv++){
-        Sigmab_lv(klv) = Sigmab_lvtemp;
-        Sigmab_lv(klv).diagonal().array() = sigmab_lv(0);
+      // matrix<Type> Sigmab_lvtemp(sbl12,sbl12);
+      // Sigmab_lvtemp.setZero();
+      // for (int klv=0; klv<Klv; klv++){
+      //   Sigmab_lv(klv) = Sigmab_lvtemp;
+      //   Sigmab_lv(klv).diagonal().array() = sigmab_lv(0);
+      // }
+      for (int q=0; q<(num_lv_c+num_RR); q++){
+        Sigmab_lv(q).diagonal().array() = exp(sigmab_lv(0))*exp(sigmab_lv(0));
       }
+    }else{
+      matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
+      sds.diagonal() = exp(sigmab_lv.segment(0,x_lv.cols()));
+      vector<Type>corsb_lv((x_lv.cols()*x_lv.cols()-x_lv.cols())/2);
+      corsb_lv.fill(0.0);
+      matrix<Type>Sigmab_lvL(x_lv.cols(),x_lv.cols());
+      Sigmab_lvL.setIdentity();
+      if(csb_lv.cols()>1){
+        //need a vector with covariances and zeros in the right places
+        for(int i=0; i<csb_lv.rows(); i++){
+          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(x_lv.cols()+i);
+        }
+        Sigmab_lvL = sds*gllvmutils::constructL(corsb_lv);
     }
+      for (int q=0; q<(num_lv_c+num_RR); q++){
+      Sigmab_lv(q) = Sigmab_lvL;
+      }
+  }
   }
   
   if((nlvr>0)||(num_RR>0)){
@@ -354,33 +392,45 @@ Type objective_function<Type>::operator() ()
     vector<matrix<Type>> Ab_lvcov;  //covariance of LVs due to random slopes
     if((random(2)>0) && ((num_RR+num_lv_c)>0)){
       // Variational covariance for random slopes
-      vector<matrix<Type>> AB_lv(sbl3);
-      for(int d=0; d<sbl3; d++){
-        AB_lv(d).resize(sbl12,sbl12);
+      vector<matrix<Type>> AB_lv(num_lv_c+num_RR);
+      for(int d=0; d<(num_lv_c+num_RR); d++){
+        AB_lv(d).resize(Klv,Klv);
         AB_lv(d).setZero();
       }
       
-      for (int q=0; q<(sbl12); q++){
-        for(int d=0; d<sbl3; d++){
-          AB_lv(d)(q,q)=exp(Ab_lv(q*sbl3+d));
+      for (int q=0; q<Klv; q++){
+        for(int d=0; d<(num_lv_c+num_RR); d++){
+          AB_lv(d)(q,q)=exp(Ab_lv(q*(num_lv_c+num_RR)+d));
         }
       }
-      if(Ab_lv.size()>((sbl12)*sbl3)){
+      if(Ab_lv.size()>((num_lv_c+num_RR)*Klv)){
         int k=0;
-        for (int c=0; c<(sbl12); c++){
-          for (int r=c+1; r<(sbl12); r++){
-            for(int d=0; d<sbl3; d++){
-              AB_lv(d)(r,c)=Ab_lv((sbl12)*sbl3+k*sbl3+d);
+        for (int c=0; c<Klv; c++){
+          for (int r=c+1; r<Klv; r++){
+            for(int d=0; d<(num_lv_c+num_RR); d++){
+              AB_lv(d)(r,c)=Ab_lv(Klv*(num_lv_c+num_RR)+k*(num_lv_c+num_RR)+d);
               // Ab(c,r,j)=Ab(r,c,j);
             }
             k++;
           }}
       }
+
       //VA likelihood parts for random slope
-      for(int klv=0; klv<sbl3; klv++){
-        if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lv(klv).diagonal().array().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-        if(sbl3==Klv) nll -= (AB_lv(klv).diagonal().array().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
-        nll -= 0.5*(sbl12- Sigmab_lv(klv).diagonal().array().log().sum());
+      if(csb_lv.cols()<2){
+      for(int q=0; q<(num_lv_c+num_RR); q++){
+        nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).sum());
+        // if(sbl3==(num_lv_c+num_RR)) nll -= (AB_lv(klv).diagonal().array().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.col(klv).transpose()*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.col(klv)).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        // if(sbl3==Klv) nll -= (AB_lv(klv).diagonal().array().log().sum() - 0.5*(Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*AB_lv(klv)*AB_lv(klv).transpose()).trace()-0.5*(b_lv.row(klv)*Sigmab_lv(klv).diagonal().cwiseInverse().asDiagonal()*b_lv.row(klv).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        nll -= 0.5*(Klv- Sigmab_lv(q).diagonal().array().log().sum());
+      }
+        }else{
+          matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
+          matrix<Type>Sigmab_lvI = (Sigmab_lv(0)*Sigmab_lv(0).transpose()).ldlt().solve(Iblv);
+          for(int q=0; q<(num_lv_c+num_RR); q++){
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lvI*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*Sigmab_lvI*b_lv.col(q)).sum());
+          nll -= 0.5*Klv- Sigmab_lv(0).diagonal().array().log().sum();
+        }
+        
       }
       
       //resize ab_lvcov to correct size
@@ -391,19 +441,21 @@ Type objective_function<Type>::operator() ()
       }
       
       //fill ab_lvcov
-      if(sbl3 == Klv){//variance per predictor
+      // if(sbl3 == Klv){//variance per predictor
+      //   for(int i=0; i<n; i++){
+      //     for(int klv=0; klv<Klv; klv++){
+      //       Ab_lvcov(i) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+      //     }
+      //   }
+      // }else 
+      // if(sbl3 == (num_lv_c+num_RR)){//variance per LV
+      for(int q=0; q<(num_RR+num_lv_c); q++){
+        matrix<Type>Ablv = AB_lv(q)*AB_lv(q).transpose();
         for(int i=0; i<n; i++){
-          for(int klv=0; klv<Klv; klv++){
-            Ab_lvcov(i) += x_lv(i,klv)*x_lv(i,klv)*AB_lv(klv)*AB_lv(klv).transpose();//cholesky of variance block for num_lv_c
+            Ab_lvcov(i)(q,q) = (x_lv.row(i)*Ablv*x_lv.row(i).transpose()).sum();
           }
         }
-      }else if(sbl3 == (num_lv_c+num_RR)){//variance per LV
-        for(int i=0; i<n; i++){
-          for(int q=0; q<(num_RR+num_lv_c); q++){
-            Ab_lvcov(i)(q,q) = (x_lv.row(i)*AB_lv(q)*AB_lv(q).transpose()*x_lv.row(i).transpose()).sum();
-          }
-        }
-      }
+      // }
       
       if(num_lv_c>0){
         RRgamma.conservativeResize(num_RR+num_lv_c,Eigen::NoChange);
@@ -476,10 +528,10 @@ Type objective_function<Type>::operator() ()
               Ab_lvcov(i).topLeftCorner(num_lv_c,num_lv_c) = tempCN;
             }
             //assign covariances of random slopes. There is no covariance if slb3==num_lv_c+num_RR
-            if((num_RR>0)&&(num_lv_c>0)&&(sbl3 == Klv)){
-              Ab_lvcov(i).block(nlvr-num_RR,nlvr-num_lv_c-num_RR-num_lv,num_RR,num_lv_c) = tempRRCN;
-              Ab_lvcov(i).block(nlvr-num_lv_c-num_RR-num_lv,nlvr-num_RR,num_lv_c,num_RR) = tempRRCN.transpose();
-            }
+            // if((num_RR>0)&&(num_lv_c>0)&&(sbl3 == Klv)){
+            //   Ab_lvcov(i).block(nlvr-num_RR,nlvr-num_lv_c-num_RR-num_lv,num_RR,num_lv_c) = tempRRCN;
+            //   Ab_lvcov(i).block(nlvr-num_lv_c-num_RR-num_lv,nlvr-num_RR,num_lv_c,num_RR) = tempRRCN.transpose();
+            // }
             
           }
         }
@@ -3213,15 +3265,15 @@ Type objective_function<Type>::operator() ()
     if(random(2)>0){
       // REPORT(Sigmab_lv); //!!!!
       //MVNORM_t<Type> mvnorm(Sigmab_lv);
-      if(sbl3==Klv){
-        for (int klv=0; klv<Klv; klv++) {
-          nll += MVNORM(Sigmab_lv(klv))(b_lv.row(klv));
-        }
-      }else{
+      // if(sbl3==Klv){
+      //   for (int klv=0; klv<Klv; klv++) {
+      //     nll += MVNORM(Sigmab_lv(klv))(b_lv.row(klv));
+      //   }
+      // }else{
         for (int q=0; q<(num_lv_c+num_RR); q++) {
           nll += MVNORM(Sigmab_lv(q))(b_lv.col(q));
         }
-      }
+      // }
       
     }
     

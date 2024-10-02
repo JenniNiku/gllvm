@@ -1,9 +1,9 @@
 #' @title Extract residual covariance matrix from gllvm object
 #' @description  Calculates the residual covariance matrix for gllvm model.
 #'
-#' @param object  an object of class 'gllvm'.
-#' @param adjust  The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.
-#' @param site.index A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.
+#' @param object an object of class 'gllvm'.
+#' @param adjust The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.
+#' @param x (optional) vector of covariate values to calculate the covariance for, when applicable.
 #' @param ...  not used.
 #'
 #' @return Function returns following components:
@@ -76,18 +76,23 @@
 #'@method getResidualCov gllvm
 #'@export
 #'@export getResidualCov.gllvm
-getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
+getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
 {
-  if(object$quadratic!=FALSE&&is.null(site.index)&object$num.lv.c>0){
-    stop("Please provide a site index for which the residual covariances should be calculated. \n")
-  }else if(object$quadratic!=FALSE&&!is.null(site.index)){
-    if(length(site.index)>2&object$num.lv.c>0&object$quadratic!=FALSE){
-      stop("Site.index should be a vector of length 1 or 2. \n")
-    }
-    if(length(site.index)==1){
-      site.index <- rep(site.index,2)
+  #backward compatibility
+  opts <- list(...)
+  if("site.index"%in%names(opts)){
+    site.index <- opts$site.index
+    x <- object$lv.X.design[site.index[1],]
+  }
+  
+  if(object$quadratic!=FALSE&&is.null(x)&object$num.lv.c>0){
+    x <- rep(1,nrow(object$params$LvXcoef))
+  }else if(object$quadratic!=FALSE&&!is.null(x)){
+    if(length(x)!=ncol(object$lv.X.design)){
+    stop("Supplied 'x' of incorrect length.")
     }
   }
+    
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   
   if((object$num.lv+object$num.lv.c)==0){
@@ -122,13 +127,13 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
   } 
 
   ResCov <- matrix(0,ncol=ncol(object$y),nrow=ncol(object$y))
-  if(any(class(object)=="gllvm.quadratic")){
+  if(inherits(object,"gllvm.quadratic")){
     ResCov <- ResCov + object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% Sigma %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% Sigma) + 2 * object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% Sigma^2 %*% t(object$params$theta[, -c(1:(object$num.lv+object$num.lv.c)), drop = F] %*% Sigma^2)
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) object$params$sigma.lv[q]^2*object$params$theta[, q] %*% t(object$params$theta[, q]), simplify = F)
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) 2*object$params$sigma.lv[q]^4*object$params$theta[, q+(object$num.lv+object$num.lv.c)] %*% t(object$params$theta[, q+(object$num.lv+object$num.lv.c)]), simplify = F)
     if(object$num.lv.c>0 && isFALSE(object$randomB)){
-      ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F))
-      ResCov.q2[1:object$num.lv.c] <- sapply(1:object$num.lv.c, function(q)ResCov.q2[[q]]+4*c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F)
+      ResCov <- ResCov + Reduce("+",sapply(1:object$num.lv.c,function(q)4*c(x%*%object$params$LvXcoef[,q,drop=F]*x%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])-2*c(x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F))
+      ResCov.q2[1:object$num.lv.c] <- sapply(1:object$num.lv.c, function(q)ResCov.q2[[q]]+4*c(x%*%object$params$LvXcoef[,q,drop=F]*x%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F)#what follows is a covariance term..-2*c(x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F)
     }
     #if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
   }else{
@@ -162,7 +167,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
   if(object$num.lv.c==0)names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
   if(object$num.lv==0)names(ResCov.q) <- paste("CLV", 1:object$num.lv.c, sep = "")
   if(object$num.lv.c>0&object$num.lv>0)names(ResCov.q) <-c( paste("CLV", 1:object$num.lv.c, sep = ""), paste("LV", 1:object$num.lv, sep = ""))
-  if(any(class(object)=="gllvm.quadratic")){
+  if(inherits(object,"gllvm.quadratic")){
     ResCov.q2 <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q2[[q]])))
     if(object$num.lv.c==0)names(ResCov.q2) <- paste("LV", 1:object$num.lv, "^2",sep = "")
     if(object$num.lv==0)names(ResCov.q2) <- paste("CLV", 1:object$num.lv.c, "^2",sep = "")
@@ -186,7 +191,7 @@ getResidualCov.gllvm = function(object, adjust = 1, site.index = NULL, ...)
   
   colnames(ResCov) <- colnames(object$y)
   rownames(ResCov) <- colnames(object$y)
-  if(any(class(object)=="gllvm.quadratic")){
+  if(inherits(object,"gllvm.quadratic")){
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, var.q2 = ResCov.q2)
   }else{
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q)  

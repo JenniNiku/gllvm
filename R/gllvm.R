@@ -548,7 +548,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control.va <- fill_control.va(c(pp.pars, control.va))
     control.start <- fill_control.start(c(pp.pars, control.start))
     
-  #some checks for optimizer
+  # some checks for optimizer
   if(!is.null(X) && !is.null(y) && any(colnames(X)%in%colnames(y)))stop("Same column name detected in 'y' and 'X' please make sure column names are unique.")
   # Cannot use nloptr or alabama with randomB
   if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
@@ -715,7 +715,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         X <- NULL
       }
     }
-    
+    csBlv = matrix(0)
     if (!is.null(y)) {
       y <- as.matrix(y)
       if (is.null(X) && is.null(TR)) {
@@ -793,6 +793,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             X <- NULL
           }
           m1 <- model.frame(y ~ NULL, data = datayx)
+          if(!anyBars(lv.formula)){
           labterm <- labels(terms(lv.formula))
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
@@ -801,9 +802,24 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
           lv.X <- model.frame(lv.formula, data = datayx)
           lv.X.design <- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
+          }else{
+            if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and rando effects at the same time.")
+            bar.f <- findbars1(lv.formula) # list with 3 terms
+            lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
+            RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
+            lv.X.design = t(as.matrix(RElistLV$Zt))
+            csBlv = RElistLV$cs
+            if(randomB%in%c("LV","iid","single"))warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            randomB = "P"
+            # in case "lv.formula" is specified with random effects, but randomB is not specified
+            if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+              optimizer = control$optimizer = "optim"
+            }
+          }
         }else if(!is.null(formula)&!is.null(lv.formula)){
           datayx <- data.frame(y, X)
           m1 <- model.frame(formula, data = datayx)
+          if(!anyBars(lv.formula)){
           labterm <- labels(terms(lv.formula))
           if(any(labterm==1)|any(labterm==0)){
             labterm<-labterm[labterm!=1&labterm!=0]
@@ -811,6 +827,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.formula <- formula(paste("~", paste(labterm, collapse = "+")))
           lv.X <- model.frame(lv.formula, data=datayx)
           lv.X.design <- model.matrix(lv.formula,data=datayx)[,-1,drop=F]
+          }else{
+            if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and rando effects at the same time.")
+            bar.f <- findbars1(lv.formula) # list with 3 terms
+            lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
+            RElistLV<- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
+            lv.X.design = (as.matrix(RElistLV$Zt))
+            csBlv = RElistLV$cs
+            if(randomB%in%c("LV","iid","single"))warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            randomB = "P"
+            if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+              optimizer = control$optimizer = "optim"
+            }
+          }
           term <- terms(m1)
         }
         
@@ -1392,6 +1421,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
             RElist = RElistSP,
+            csBlv = csBlv,
             # spdr = spdr,
             # cs = cs,
             beta0com = beta0com,

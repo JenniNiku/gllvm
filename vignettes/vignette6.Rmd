@@ -106,7 +106,6 @@ A plot of species-specific effects can be constructed with the  `randomCoefplot`
 randomCoefplot(RRGLMb1, cex.ylab = 0.5, mar = c(4,2,2,1))
 ```
 
-
 When using a random-effects formulation, there is no summary table and there are no confidence intervals available for the canonical coefficients. It is possible to construct a summary table with the prediction of the random-effects and the association prediction errors as follows:
 
 ```{r eval=T, echo=T}
@@ -129,6 +128,19 @@ coefsTab[,-4]
 ```
 
 There is a range of potential use cases for random canonical coefficients, but pragmatically, inducing some shrinkage on the predictor effects can result in more better "behaved" (fewer outliers) ordination plots. 
+
+Incorporating correlation between the canonical coefficients is (currently) only possible in combination with `randomB="P"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
+
+```{r eval=FALSE}
+RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2)
+summary(RRGLMb2)
+```
+```{r eval=TRUE, echo=FALSE}
+load("RRGLMb2.RData")
+summary(RRGLMb2)
+```
+
+For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4, @lme4_software]. This is equivalent to assuming that the matrix of species coefficients follows a matrix normal distribution $\boldsymbol{\beta} \sim \mathcal{MN}(\textbf{0}, \boldsymbol{\Sigma}, \boldsymbol{\Gamma}\boldsymbol{\Gamma}^\top)$, so that the correlations are indeed the correlation of the predictor effects, estimated in reduced rank, and the species loadings form the column-covariance matrix, i.e., provide the species correlations in reduced rank.
 
 ## Concurrent ordination
 
@@ -189,5 +201,62 @@ references:
   type: article-journal
   issued:
     year: 2023
-
+- id: lme4_software
+  title: "Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4"
+  author: 
+    - family: Bates
+      given: Douglas
+    - family: Maechler
+      given: Martin
+    - family: Bolker
+      given: Ben
+    - family: Walker
+      given: Steven
+    - family: Christensen
+      given: Rune Haubo Bojesen
+    - family: Singmann
+      given: Henrik
+    - family: Dai
+      given: Bin
+    - family: Scheipl
+      given: Fabian
+    - family: Grothendieck
+      given: Gabor
+    - family: Green
+      given: Peter
+    - family: Fox
+      given: John
+    - family: Bauer
+      given: Alexander
+    - family: Krivitsky
+      given: Pavel N.
+    - family: Tanaka
+      given: Emi
+    - family: Jagan
+      given: Mikael
+  publisher: CRAN
+  URL: "https://cran.r-project.org/web/packages/lme4/index.html"
+  type: software
+  issued:
+    year: 2024
+    month: 07
+    day: 03
+  version: 1.1-35.5
+- id: lme4
+  title: Fitting Linear Mixed-effects Models using lme4
+  author: 
+  - family: Bates
+    given: D.
+  - family: Mächler
+    given: M.
+  - family: Bolker
+    given: B.
+  - family: Walker
+    given: S.
+  publisher: Journal of Statistical Software
+  volume: 67
+  page: 1--48
+  type: article-journal
+  issued:
+    year: 2015
 ---

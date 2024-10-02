@@ -144,8 +144,14 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
       lv.X <- object$lv.X.design
       # lv.X variances Separated only if quaratic = FALSE
       if ((object$num.lv.c + object$num.RR) > 0 & object$quadratic == FALSE) {
+        if(is.null(object$params$corsLvXcoef)){
         groupnamesF <- c(groupnamesF, paste("CLV:",labels(terms(object$lv.formula)), sep = ""))
         groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = object$lv.X), "assign")[-1] + max(groupF,0))
+        }else{
+          # cannot use formula for this..
+          groupnamesF <- c(groupnamesF, paste("CLV:",colnames(object$lv.X.design), sep = ""))
+          groupF <- c(groupF, attr(object$lv.X.design, "assign")[-1] + max(groupF,0))
+        }
         Z <- cbind(Z, lv.X)
         Bt <- object$params$LvXcoef %*% t((theta[, 1:(object$num.lv.c + object$num.RR), drop = F]))
         rownames(Bt) <- paste("CLV:",rownames(Bt), sep = "")

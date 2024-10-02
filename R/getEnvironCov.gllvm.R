@@ -33,7 +33,12 @@
 #' 
 #' \deqn{\Sigma_e = \sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',}
 #'
-#' with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients.
+#' with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients. When correlations are included, we have:
+#' 
+#'  \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m).}
+#' 
+#' Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
+#' 
 #' @author Bert van der Veen
 #'
 #'@seealso  \code{\link{getEnvironCor}} ,\code{\link{getResidualCov.gllvm}}, \code{\link{getResidualCor.gllvm}},.
@@ -97,7 +102,7 @@ if(object$col.eff$col.eff=="random"){
     if(is.null(x)){
       x <- rep(1,nrow(object$params$LvXcoef))
     }else if(length(x)!=ncol(object$lv.X.design)){
-      stop("Supplied 'x' of  incorrect length.")
+      stop("Supplied 'x' of incorrect length.")
     }
   if(object$randomB=="LV"){
     # x_i^\top\beta_j, where \beta_k \sim N(0,\Gamma \Sigma \Gamma^\top)
@@ -112,7 +117,7 @@ if(object$col.eff$col.eff=="random"){
     cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q],simplify=F)
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
   }
-  }else if(object$randomB=="P"){
+  }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
     # x_i^\top\beta_j, where \beta_j \sim N(0,\Gamma \Gamma^\top) and \beta_k \sim N(0, \Sigma), i.e., \beta \sim MN(0,\Sigma, \Gamma \Gamma^\top)
     # so, x_i^\top \beta \sim MN(0,x_i^\top \Sigma x_i, \Gamma \Gamma^\top)
     
@@ -126,6 +131,21 @@ if(object$col.eff$col.eff=="random"){
     cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
   }
+  }else if(object$randomB=="P" && !is.null(object$params$corsLvXcoef)){
+    # matrix normal
+    Sigma = diag(object$params$sigmaLvXcoef)
+    Sigma = Sigma%*%object$params$corsLvXcoef%*%Sigma
+    C <- kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
+    cov.environ.randomB <- as.matrix(C%*%kronecker(object$params$theta[,1:sum(object$num.lv.c,object$num.RR),drop=FALSE]%*%t(object$params$theta[,1:sum(object$num.lv.c,object$num.RR),drop=FALSE]), Sigma)%*%Matrix::t(C))
+    trace.environ.randomB <- sum(diag(cov.environ.randomB)) 
+    
+    if(!isFALSE(object$quadratic)){
+      # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
+      Sigmaz <- diag(rep(x%*%Sigma%*%x,object$num.lv.c+object$num.RR))
+      theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
+      cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
+      trace.environ.randomB.quad <- sum(diag(cov.environ.randomB.quad))
+    }
   }else if(object$randomB=="single" | object$randomB=="iid"){
     cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef^2,simplify=F)
     cov.environ.randomB.trace <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
@@ -147,11 +167,17 @@ if(object$col.eff$col.eff=="random"){
   }
   
   if(!isFALSE(object$randomB)){
-  covMat <- covMat + Reduce("+",cov.environ.randomB)
-  out$trace.randomB <- unlist(trace.environ.randomB)
+  if(is.null(object$params$corsLvXcoef)){
+    covMat <- covMat + Reduce("+",cov.environ.randomB)
+    out$trace.randomB <- unlist(trace.environ.randomB)
+  }else{
+    covMat <- cov.environ.randomB
+    out$trace.randomB <- trace.environ.randomB
+  }
+  
   if(object$randomB=="LV"){
     names(out$trace.randomB) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
-  }else if(object$randomB=="P"){
+  }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
     names(out$trace.randomB) <- colnames(object$lv.X.design)
   }
   names(out$trace.randomB)
