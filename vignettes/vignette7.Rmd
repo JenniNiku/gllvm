@@ -1,22 +1,21 @@
 ---
 title: 'Phylogenetic random effects'
 author: "Bert van der Veen"
-date: "2024-09-24"
+date: "2024-10-02"
 output:  rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Phylogenetic random effects}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
-<!-- Pre-Computed vignette using knitr::knit("vignettes/vignette7.Rmd.orig", output = "vignettes/vignette7.Rmd") -->
 
 
 This vignette is divided into two parts, the first part related to models with environment covariates only, and the second part for models that additionally incorporate trait covariates, so called "fourth corner" models. This is for convenience, as the interface for fitting fourth corner models slightly differs from the models without traits. Both models are detailed in @vanderVeen2024, and the fourth corner model in more detail in @Niku2021.
 
-__For more information about fitting trait models with random effects, see also vignette 1__.
+__For more information about fitting trait models with random effects, see also vignette 1.__
 
 # Phylogenetically structured environmental responses
 
@@ -42,11 +41,11 @@ X[,covs] <- scale(X[, covs])
 
 The included version of the package does not contain all available environmental covariates, only those used in the original analysis. This includes diameter at breast height (DBH.CM), decay stage (AVERDP), connectivity of the surrounding forest (CONNECT10), annual temperature range, annual precipitation, and the logarithm of the reserve's area.
 
-We can think of the model as having two covariance matrices: one with correlation between covariate effects, and another that incorporates the correlation between species due to the phylogeny. The former is specified via the formula interface, the form of the latter is (more or less) fixed at present. 
+We can think of the model as having two covariance matrices: one with correlation between covariate effects, and another that incorporates the correlation between species due to the phylogeny. The former is specified via the formula interface, the form of the latter is (more or less) fixed at present.
 
 ## Species ordering
 
-It is important to note that the error of the NNGP approximation that is used for fitting the models depends somewhat on the order of the species in the data [@Guinness2018]. The software can minimize the number of VA parameters necessary by utilizing block structure in the phylogeny (i.e., full independence due to top splits), so the ideal ordering is often that provided by the tip labels in the phylogeny (__so make sure not to arbitrarily order the response data__). The VA method in the gllvm package retains block structure of the phylogenetic covariance matrix. This is not necessarily optimal in terms of approximation error of the NNGP. 
+It is important to note that the error of the NNGP approximation that is used for fitting the models depends somewhat on the order of the species in the data [@Guinness2018]. The software can minimize the number of VA parameters necessary by utilizing block structure in the phylogeny (i.e., full independence due to top splits), so the ideal ordering is often that provided by the tip labels in the phylogeny (__so make sure not to arbitrarily order the response data__). The VA method in the gllvm package retains block structure of the phylogenetic covariance matrix. This is not necessarily optimal in terms of approximation error of the NNGP.
 
 A less than ideal ordering requires a larger number of nearest neighbours for an accurate approximation. For cases when the ordering in from the phylogenetic tree seems to function poorly, we provide a function (note, not exported) in the package to help evaluate the error due to a certain species ordering `findOrder()`. This calculates the Frobenius norm of the product of the sparse approximation to the inverse of the phylogenetic covariance matrix and the phylogenetic covariance matrix, minus the identity matrix, given a species order and number of nearest neighbours. It returns the error, the approximation, and the ordering (which retains the block structure if `withinBlock = TRUE`, the default). In short: a lower error means a better approximation (but note the trade-off). Here is some code to demonstrate this:
 
@@ -73,7 +72,7 @@ err2 <- c(err2, approx2$err)
 lines(y=err2,x=1:215,col="blue")
 
 # order species by sum of distances
-order = order(colSums(dist),decreasing=TRUE) 
+order = order(colSums(dist),decreasing=TRUE)
 err3 <- NULL
 for(i in 1:215){
 approx3 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order)
@@ -90,7 +89,7 @@ err4 <- c(err4, approx4$err)
 }
 lines(y=err4,x=1:215,col="pink")
 
-# order by internal order of edges 
+# order by internal order of edges
 # order <- ape::reorder.phylo(tree, order = "postorder", index.only=TRUE)
 # err5 <- NULL
 # for(i in 1:215){
@@ -98,7 +97,7 @@ lines(y=err4,x=1:215,col="pink")
 # err5 <- c(err5, approx5$err)
 # }
 # lines(y=err5,x=1:215,col="purple")
-# 
+#
 # order <- ape::reorder.phylo(tree, order = "pruningwise", index.only=TRUE)
 # err6 <- NULL
 # for(i in 1:215){
@@ -222,9 +221,6 @@ lines(1:215,err11, col="grey")
 
 
 legend("topright", legend=c("Tips","Alphabetical", "Total distance", "Distance to root", "First eigenvector","Sum of squared covariances","Total distance (nn)", "minsum", "maxmin"), col=c("black","blue", "forestgreen","pink", "green", "brown","orange","purple","grey"),lty = rep("solid",9))
-
-#low number of neighbours: 3 is best.
-#plot(y=apply(cbind(err1,err2,err3,err4,err7,err8,err9,err10,err11),1,which.min),x=1:215)
 ```
 
 <div class="figure" style="text-align: center">
@@ -232,7 +228,13 @@ legend("topright", legend=c("Tips","Alphabetical", "Total distance", "Distance t
 <p class="caption">plot of chunk specord</p>
 </div>
 
+``` r
+#low number of neighbours: 3 is best.
+#plot(y=apply(cbind(err1,err2,err3,err4,err7,err8,err9,err10,err11),1,which.min),x=1:215)
+```
+
 The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by the sum of distances, sum of squared covariances, or by the first eigenvector of the phylogenetic covariance matrix, give good approximations (i.e., most accurate with least neighbours) for this dataset.
+
 <!-- # The function has a "withinBlock" argument -->
 <!-- # to find if we can find a better ordering while retaining the block diagonal structure -->
 <!-- # try some random permutations within block -->
@@ -262,7 +264,7 @@ order <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = 15,
 order <- tree$tip.label[order]
 model1 <- gllvm(y = Y[,order], X = X,
         formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA|1), beta0com = TRUE,
-                     family = "binomial", num.lv = 0, sd.errors = FALSE, 
+                     family = "binomial", num.lv = 0, sd.errors = FALSE,
                      studyDesign = X[,c("REGION", "RESERVE")], row.eff = ~(1 | REGION/RESERVE),
                      colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term", nn.colMat = 15,
         optim.method = "L-BFGS-B")
@@ -273,7 +275,7 @@ Let's walk through some of the specified arguments.
 The first line enables parallel computation, to speed up model fitting.
 
   Note that an intercept term is included in the random effects, which can be excluded by incorporating a zero in the formula term. Correlations are included between covariates inside the brackets, so we could have uncorrelated effects by including them all in separately bracketed terms. We specify `num.lv = 0` for now, although we could just as well include latent variables (e.g., we could fit a model with phylogenetically structured random intercepts and a (un)constrained ordination), and `beta0comm` to have a single (fixed) intercept for the whole community (species-specific intercepts enter via the random effects). `sd.errors` is here for convenience set to false, as it can take a (much) longer time to calculate standard errors than to fit the model, and we should really only calculate the standard errors when we need them (e.g., for visualization). The `gllvm::se.gllvm` function can post-hoc calculate the standard errors, so that we do not need to refit the model.
-  
+
   The `studyDesign` matrix is specified to additionally incorporated random intercepts for the nested study design. and a formula `row.eff` to specify the random intercept structure.
   The `colMat` term is how we pass the phylogenetic information to the model, which is usually a list of length two, where one argument is called `dist` and the other is the covariance matrix from the tree. Note that these two matrices need to have the same column names as `Y`. `nn.colMat` is the number of nearest neighbours to consider for each species on the tree, which is fixed to 10 by default. Smaller numbers usually result in a faster fitting model, but one that is potentially less accurate. @vanderVeen2024 showed that 10-15 neighbours is usually a good choice, although fewer/more also still lead to accurate estimates for the phylogenetic signal, but this can be quite problem dependent. `colMat.rho.struct` has two options, `single` fitting a model with the same phylogenetic signal parameter for all covariates (default) and `term` fitting a model with a phylogenetic signal parameter per covariate.
   Finally, the last line changes the optimisation method to one that seems to usually do well with this model type, and changes the starting values of the random effect (which was needed to fit this model succesfully).
@@ -336,11 +338,11 @@ axis(4, at = 1:length(coefs), labels = names(coefs), las = 1, cex.axis = 0.6,lwd
 <p class="caption">plot of chunk bigplot</p>
 </div>
 
-The random effects with a prediction interval including zero are crossed out in the plot. The `getResidualCov` and `getResidualCor` functions extract the residual covariance and correlation matrix, respectively, for visualizing species associations. 
+The random effects with a prediction interval including zero are crossed out in the plot. The `getResidualCov` and `getResidualCor` functions extract the residual covariance and correlation matrix, respectively, for visualizing species associations.
 
 
 ``` r
-corrplot::corrplot(getEnvironCor(model1), 
+corrplot::corrplot(getEnvironCor(model1),
                    type = "lower", diag = FALSE, order = "AOE",
                    tl.pos = "n", addgrid.col=NA, col.lim=c(0,1))
 ```
@@ -364,56 +366,56 @@ summary(model1)
 ```
 
 ```
-## 
+##
 ## Call:
-## gllvm(y = Y[, order], X = X, formula = ~(DBH.CM + AVERDP + I(AVERDP^2) + 
-##     CONNECT10 + TEMPR + PRECIP + log.AREA | 1), family = "binomial", 
-##     num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")], colMat = list(colMat[order, 
-##         order], dist = dist[order, order]), colMat.rho.struct = "term", 
-##     row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, beta0com = TRUE, 
+## gllvm(y = Y[, order], X = X, formula = ~(DBH.CM + AVERDP + I(AVERDP^2) +
+##     CONNECT10 + TEMPR + PRECIP + log.AREA | 1), family = "binomial",
+##     num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")], colMat = list(colMat[order,
+##         order], dist = dist[order, order]), colMat.rho.struct = "term",
+##     row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, beta0com = TRUE,
 ##     nn.colMat = 15, optim.method = "L-BFGS-B")
-## 
-## Family:  binomial 
-## 
-## AIC:  103080 AICc:  103080 BIC:  103662.6 LL:  -51486 df:  54 
-## 
-## Informed LVs:  0 
-## Constrained LVs:  0 
-## Unconstrained LVs:  0 
-## 
-## Formula:  ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA | 1) 
-## LV formula:  ~ 0 
-## 
+##
+## Family:  binomial
+##
+## AIC:  103080 AICc:  103080 BIC:  103662.6 LL:  -51486 df:  54
+##
+## Informed LVs:  0
+## Constrained LVs:  0
+## Unconstrained LVs:  0
+##
+## Formula:  ~(DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA | 1)
+## LV formula:  ~ 0
+##
 ## Random effects:
-##  Name        Signal Variance Std.Dev Corr                                           
-##  Intercept   0.2106 0.5218   0.7224                                                 
-##  DBH.CM      0.5031 0.0052   0.0722   0.7524                                        
-##  AVERDP      0.9711 0.3825   0.6185   0.1015 -0.0181                                
-##  I.AVERDP.2. 0.8007 0.0122   0.1105  -0.4874 -0.4696 -0.4871                        
-##  CONNECT10   0.0613 0.0270   0.1642  -0.1800 -0.1082  0.1563 -0.1128                
-##  TEMPR       0.0499 0.0436   0.2087  -0.1579 -0.2858 -0.0683  0.7212  0.3666        
-##  PRECIP      0.0000 0.0324   0.1799   0.2290  0.6520 -0.3145  0.0977 -0.5629 -0.2123
-##  log.AREA    0.0310 0.0158   0.1258  -0.1418 -0.1302  0.0928 -0.6283  0.4803 -0.5604
-##          
-##          
-##          
-##          
-##          
-##          
-##          
-##          
-##  -0.5228 
-## 
+##  Name        Signal Variance Std.Dev Corr
+##  Intercept   0.2106 0.5218   0.7224
+##  DBH.CM      0.5031 0.0052   0.0722   0.7524
+##  AVERDP      0.9711 0.3825   0.6185   0.1015 -0.0181
+##  I.AVERDP.2. 0.8007 0.0122   0.1105  -0.4874 -0.4696 -0.4871
+##  CONNECT10   0.0613 0.0270   0.1642  -0.1800 -0.1082  0.1563 -0.1128
+##  TEMPR       0.0499 0.0436   0.2087  -0.1579 -0.2858 -0.0683  0.7212  0.3666
+##  PRECIP      0.0000 0.0324   0.1799   0.2290  0.6520 -0.3145  0.0977 -0.5629
+##  log.AREA    0.0310 0.0158   0.1258  -0.1418 -0.1302  0.0928 -0.6283  0.4803
+##
+##
+##
+##
+##
+##
+##
+##  -0.2123
+##  -0.5604 -0.5228
+##
 ## Coefficients predictors:
-##             Estimate Std. Error z value Pr(>|z|)    
+##             Estimate Std. Error z value Pr(>|z|)
 ## Intercept   -2.05756    0.13590 -15.140  < 2e-16 ***
 ## DBH.CM       0.10583    0.01936   5.465 4.62e-08 ***
-## AVERDP      -0.08548    0.22763  -0.376 0.707278    
+## AVERDP      -0.08548    0.22763  -0.376 0.707278
 ## I.AVERDP.2. -0.12467    0.03344  -3.728 0.000193 ***
-## CONNECT10   -0.03260    0.04141  -0.787 0.431209    
-## TEMPR        0.03646    0.04454   0.818 0.413120    
-## PRECIP      -0.02091    0.03726  -0.561 0.574756    
-## log.AREA     0.05643    0.02976   1.896 0.057952 .  
+## CONNECT10   -0.03260    0.04141  -0.787 0.431209
+## TEMPR        0.03646    0.04454   0.818 0.413120
+## PRECIP      -0.02091    0.03726  -0.561 0.574756
+## log.AREA     0.05643    0.02976   1.896 0.057952 .
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -451,13 +453,13 @@ The fourth corner model extends the previous model with functional traits. The i
 TR <- fungi$TR # the functional traits
 
 model2 <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR,
-                     formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + 
-  TEMPR + PRECIP + log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA):(PC1.1 + PC1.2 + PC1.3), 
-                      family = "binomial", num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")], 
-                      colMat = list(C, dist = dist), 
-                      colMat.rho.struct = "term", row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE, 
-                      randomX = ~int + DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA, 
-                      beta0com = TRUE, Ab.struct = "MNunstructured", nn.colMat = 10, max.iter = 20000, maxit = 20000, optim.method = "L-BFGS-B", 
+                     formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 +
+  TEMPR + PRECIP + log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA):(PC1.1 + PC1.2 + PC1.3),
+                      family = "binomial", num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")],
+                      colMat = list(C, dist = dist),
+                      colMat.rho.struct = "term", row.eff = ~(1 | REGION/RESERVE), sd.errors = FALSE,
+                      randomX = ~int + DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA,
+                      beta0com = TRUE, Ab.struct = "MNunstructured", nn.colMat = 10, max.iter = 20000, maxit = 20000, optim.method = "L-BFGS-B",
 randomX.start = "res")
 ```
 
@@ -467,22 +469,22 @@ randomX.start = "res")
 references:
 - id: vanderVeen2024
   title: Fast fitting of phylogenetic mixed effects models
-  author: 
+  author:
   - family: van der Veen
     given: B.
   - family: O'Hara
     given: R.B.
-  publisher: 
-  volume: 
-  page: 
+  publisher:
+  volume:
+  page:
   type: article-journal
-  issued: 
+  issued:
     year: 2024
   doi: https://www.arxiv.org/abs/2408.05333
 
 - id: lme4_software
-  title: Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4
-  author: 
+  title: "Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4"
+  author:
     - family: Bates
       given: Douglas
     - family: Maechler
@@ -521,10 +523,11 @@ references:
     month: 07
     day: 03
   version: 1.1-35.5
-  
+
+
 - id: lme4
   title: Fitting Linear Mixed-effects Models using lme4
-  author: 
+  author:
   - family: Bates
     given: D.
   - family: Mächler
@@ -541,8 +544,8 @@ references:
     year: 2015
 
 - id: Abrego2022a
-  title: "Data and code from: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales [Dataset]"
-  author: 
+  title: "Data and code from: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales"
+  author:
   - family: Abrego
     given: N.
   - family: Bässler
@@ -551,14 +554,15 @@ references:
     given: M.
   - family: Heilmann-Clausen
     given: J.
-  publisher: Dryad
-  doi: https://doi.org/10.5061/dryad.t76hdr82r
+  type: dataset
   issued:
     year: 2015
+  publisher: Dryad
+  doi: https://doi.org/10.5061/dryad.t76hdr82r
 
 - id: Abrego2022b
   title: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales
-  author: 
+  author:
   - family: Abrego
     given: N.
   - family: Bässler
@@ -576,7 +580,7 @@ references:
 
 - id: Niku2021
   title: Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models
-  author: 
+  author:
   - family: Niku
     given: J.
   - family: Hui
@@ -591,10 +595,10 @@ references:
   type: article-journal
   issued:
     year: 2021
-    
+
 - id: Guinness2018
   title: Permutation and Grouping Methods for Sharpening Gaussian Process Approximations
-  author: 
+  author:
   - family: Guinness
     given: J.
   publisher: Technometrics
@@ -602,6 +606,7 @@ references:
   page: 415-429
   type: article-journal
   issued:
-    year: 2018    
+    year: 2018
 
 ---
+

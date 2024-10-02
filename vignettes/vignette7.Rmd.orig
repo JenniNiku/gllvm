@@ -21,7 +21,7 @@ __For more information about fitting trait models with random effects, see also 
 
 # Phylogenetically structured environmental responses
 
-In this vignette we demonstrate how to fit models that incorporate phylogenetic information into the random effects. For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4].
+In this vignette we demonstrate how to fit models that incorporate phylogenetic information into the random effects. For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4, @lme4_software].
 
 Here, we will use the data by @Abrego2022a. It includes information of 215 fungal species at 1666 *European beech* logs, and was analyzed by the original authors using a similar model. We start by loading the data:
 
@@ -66,15 +66,16 @@ abline(v = 20, col = "red")
 # order species alphabetically
 err2 <- NULL
 for(i in 1:215){
-approx2 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order(colnames(Y)))
+approx2 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order(tree$tip.label))
 err2 <- c(err2, approx2$err)
 }
 lines(y=err2,x=1:215,col="blue")
 
-# order species by sum of squared distances
+# order species by sum of distances
+order = order(colSums(dist),decreasing=TRUE) 
 err3 <- NULL
 for(i in 1:215){
-approx3 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order(apply(dist,2,function(x)sum(x^2)),decreasing=TRUE))
+approx3 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order)
 err3 <- c(err3, approx3$err)
 }
 lines(y=err3,x=1:215,col="forestgreen")
@@ -83,45 +84,149 @@ lines(y=err3,x=1:215,col="forestgreen")
 allDists <- ape::dist.nodes(tree)
 err4 <- NULL
 for(i in 1:215){
-approx4 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
-          order = as.integer(names(sort(allDists[1:length(tree$tip.label), nrow(allDists)],decreasing = TRUE))))
+approx4 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = as.integer(names(sort(allDists[1:length(tree$tip.label), nrow(allDists)],decreasing = TRUE))))
 err4 <- c(err4, approx4$err)
 }
 lines(y=err4,x=1:215,col="pink")
 
 # order by internal order of edges 
-order <- ape::reorder.phylo(tree, order = "postorder", index.only=TRUE)
-err5 <- NULL
-for(i in 1:215){
-approx5 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
-          order = order[order<=length(tree$tip.label)])
-err5 <- c(err5, approx5$err)
-}
-lines(y=err5,x=1:215,col="purple")
-
-order <- ape::reorder.phylo(tree, order = "pruningwise", index.only=TRUE)
-err6 <- NULL
-for(i in 1:215){
-approx6 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
-          order = order[order<=length(tree$tip.label)])
-err6 <- c(err6, approx6$err)
-}
-lines(y=err6,x=1:215,col="grey")
+# order <- ape::reorder.phylo(tree, order = "postorder", index.only=TRUE)
+# err5 <- NULL
+# for(i in 1:215){
+# approx5 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order[order<=length(tree$tip.label)])
+# err5 <- c(err5, approx5$err)
+# }
+# lines(y=err5,x=1:215,col="purple")
+# 
+# order <- ape::reorder.phylo(tree, order = "pruningwise", index.only=TRUE)
+# err6 <- NULL
+# for(i in 1:215){
+# approx6 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order[order<=length(tree$tip.label)])
+# err6 <- c(err6, approx6$err)
+# }
+# lines(y=err6,x=1:215,col="grey")
 
 # by first eigenvector
 err7 <- NULL
 order=order(eigen(colMat)$vec[,1],decreasing=TRUE)
 for(i in 1:215){
-approx7 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i,
-          order = order)
+approx7 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order)
 err7 <- c(err7, approx7$err)
 }
 lines(y=err7,x=1:215,col="green")
 
-legend("topright", legend=c("Tips","Alphabetical", "Sum of squared distances", "Distance to root", "Edges 1", "Edges 2", "First eigenvector"), col=c("black","blue", "forestgreen","pink","purple","grey","green"),lty = rep("solid",7))
+# squared covariances
+order = order(sapply(1:215,function(i, colMat)sum(colMat[i,][-1]^2), colMat = colMat),decreasing=FALSE)
+err8 <- NULL
+for(i in 1:215){
+    approx8 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order)
+    err8 <- c(err8, approx8$err)
+}
+lines(y=err8,x=1:215,col="brown")
+
+# order by the distance of the n nearest neighbours
+err9 <- NULL
+for(i in 1:215){
+    order = order(sapply(1:215,function(j,dist,nn)sum(dist[j,-j][order(dist[j,-j],decreasing=FALSE)[1:nn]]),nn=i,dist=dist),decreasing=TRUE)
+    approx9 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = order)
+    err9 <- c(err9, approx9$err)
+}
+lines(y=err9,x=1:215,col="orange")
+
+# minium sum to preceding species
+#get colMat blocks first
+p=215
+blocks = list()
+  B = 1
+  E = B
+  while(B<=p){
+    while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+      # expand block
+      E = E+1;
+    }
+    # save block
+    blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+    E = E+1;
+    B = E;
+  }
+  err10 <- NULL
+for(i in 1:215){
+  ord <- NULL
+  blocksp <- 0
+  for(k in 1:length(blocks)){
+    idx <- 1:nrow(blocks[[k]])
+    ordnew <- which.max(apply(blocks[[k]],2,max))
+    idx <- idx[idx!=ordnew]
+for(l in 2:nrow(blocks[[k]])){
+  #add entry of next species with min(i,nn) largest neighbour entries
+  spec <- idx[which.min(sapply(idx,function(j,nn){
+    x <- sum(blocks[[k]][ordnew,j])
+    # x <- x[x!=0]
+    # sum(x[order(x,decreasing=TRUE)[1:min(i,nn)]])
+  }, nn = i))]
+  ordnew <- c(ordnew,spec)
+  idx <- idx[idx!=spec]
+}
+    ord <- c(ord, ordnew+blocksp)
+    blocksp <- blocksp + nrow(blocks[[k]])
+  }
+
+approx10 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = ord)
+err10 <- c(err10, approx10$err)
+}
+lines(1:215,err10, col="purple")
+
+# species with minimum of maximum distance to preceding species
+# similar to algorithm maxmin from guiness2018?
+p=215
+blocks = list()
+  B = 1
+  E = B
+  while(B<=p){
+    while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+      # expand block
+      E = E+1;
+    }
+    # save block
+    blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+    E = E+1;
+    B = E;
+  }
+  err11 <- NULL
+for(i in 1:215){
+  ord <- NULL
+  blocksp <- 0
+  for(k in 1:length(blocks)){
+    idx <- 1:nrow(blocks[[k]])
+    ordnew <- which.max(apply(blocks[[k]],2,max))
+    idx <- idx[idx!=ordnew]
+for(l in 2:nrow(blocks[[k]])){
+  #add entry of next species with min(i,nn) largest neighbour entries
+  spec <- idx[which.min(sapply(idx,function(j,nn){
+    x <- max(blocks[[k]][ordnew,j])
+    # x <- x[x!=0]
+    # sum(x[order(x,decreasing=TRUE)[1:min(i,nn)]])
+  }, nn = i))]
+  ordnew <- c(ordnew,spec)
+  idx <- idx[idx!=spec]
+}
+    ord <- c(ord, ordnew+blocksp)
+    blocksp <- blocksp + nrow(blocks[[k]])
+  }
+
+approx11 <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = i, order = ord)
+err11 <- c(err11, approx11$err)
+}
+lines(1:215,err11, col="grey")
+
+
+legend("topright", legend=c("Tips","Alphabetical", "Total distance", "Distance to root", "First eigenvector","Sum of squared covariances","Total distance (nn)", "minsum", "maxmin"), col=c("black","blue", "forestgreen","pink", "green", "brown","orange","purple","grey"),lty = rep("solid",9))
+
+#low number of neighbours: 3 is best.
+#plot(y=apply(cbind(err1,err2,err3,err4,err7,err8,err9,err10,err11),1,which.min),x=1:215)
 ```
 
-The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by their sum of squared distances, or by the first eigenvector of the phylogenetic covariance matrix, gives the best approximation here (i.e., most accurate with least neighbouts) for this dataset.
+The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species by the sum of distances, sum of squared covariances, or by the first eigenvector of the phylogenetic covariance matrix, give good approximations (i.e., most accurate with least neighbours) for this dataset.
 
 <!-- # The function has a "withinBlock" argument -->
 <!-- # to find if we can find a better ordering while retaining the block diagonal structure -->
@@ -140,7 +245,7 @@ The red lines indicate 10, 15, and 20 neighbours. Clearly, ordering the species 
 <!-- } -->
 <!-- err -->
 
-Genneraly, this serves to demonstrate that the species order does matter to the approximation, and a better order may be available. In the plot we can see that the error reduces quickly towards 10-15 neighbours, and levels out after about 50 neighbours. If we plotted the same curve wit the computation time, it would probably exhibit the opposite of the displayed pattern.
+This serves to demonstrate that the species order does matter to the approximation, and a better order may be available. In the plot we can see that the error reduces quickly towards 10-15 neighbours, and levels out after about 50 neighbours. If we plotted the same curve wit the computation time, it would probably exhibit the opposite of the displayed pattern.
 
 ## Fit the model
 
@@ -301,6 +406,48 @@ references:
     year: 2024
   doi: https://www.arxiv.org/abs/2408.05333
 
+- id: lme4_software
+  title: "Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4"
+  author: 
+    - family: Bates
+      given: Douglas
+    - family: Maechler
+      given: Martin
+    - family: Bolker
+      given: Ben
+    - family: Walker
+      given: Steven
+    - family: Christensen
+      given: Rune Haubo Bojesen
+    - family: Singmann
+      given: Henrik
+    - family: Dai
+      given: Bin
+    - family: Scheipl
+      given: Fabian
+    - family: Grothendieck
+      given: Gabor
+    - family: Green
+      given: Peter
+    - family: Fox
+      given: John
+    - family: Bauer
+      given: Alexander
+    - family: Krivitsky
+      given: Pavel N.
+    - family: Tanaka
+      given: Emi
+    - family: Jagan
+      given: Mikael
+  publisher: CRAN
+  URL: https://cran.r-project.org/web/packages/lme4/index.html
+  type: software
+  issued:
+    year: 2024
+    month: 07
+    day: 03
+  version: 1.1-35.5
+  
 - id: lme4
   title: Fitting Linear Mixed-effects Models using lme4
   author: 
@@ -320,7 +467,7 @@ references:
     year: 2015
 
 - id: Abrego2022a
-  title: "Data and code from: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales [Dataset]"
+  title: "Data and code from: Traits and phylogenies module the environmental responses of wood-inhabiting fungal communities across spatial scales"
   author: 
   - family: Abrego
     given: N.
@@ -330,6 +477,7 @@ references:
     given: M.
   - family: Heilmann-Clausen
     given: J.
+  type: dataset
   publisher: Dryad
   doi: https://doi.org/10.5061/dryad.t76hdr82r
   issued:
