@@ -6,7 +6,7 @@
 These data describe the cover of sessile invertebrates, understory macroalgae, and bottom substrate types as determined by a uniform point contact method. The presence of over 150 taxa of sessile invertebrates and macroalgae are recorded at 80 uniformly spaced points along permanent 40m x 2m transects. Multiple species can be recorded at any given point. Percent cover of a given species on a transect can be estimated from UPC observations as the fraction of total points at which that species was present x 100. The total percent cover of all species combined using this method can exceed 100\%; however, the percent cover of any single species cannot exceed 100\%. This specific version of the data includes 61 species of macroalgae, 69 species of sessile invertebrates, and two species of plants.
 }
 \usage{
-data(fungi)
+data(kelpforest)
 }
 \format{
 \describe{
