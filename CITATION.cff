@@ -1,0 +1,20 @@
+cff-version: 1.1.0
+message: "Citation for github release."
+authors:
+- family-names: Niku
+  given-names: Jenni
+- family-names: van der Veen
+  given-names: Bert
+- family-names: Hui
+  given-names: Francis K.C.
+- family-names: Korhonen
+  given-names: Pekka
+- family-names: Taskinen
+  given-names: Sara
+- family-names: Wesley
+  given-names: Brooks
+- family-names: Warton
+  given-names: David I.
+title: gllvm: v1.4.8
+version: v1.4.8
+date-released: 2024-10-02
