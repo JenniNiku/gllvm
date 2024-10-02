@@ -5,14 +5,14 @@
 \alias{getResidualCov}
 \title{Extract residual covariance matrix from gllvm object}
 \usage{
-\method{getResidualCov}{gllvm}(object, adjust = 1, site.index = NULL, ...)
+\method{getResidualCov}{gllvm}(object, adjust = 1, x = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{adjust}{The type of adjustment used for  negative binomial, binomial and normal distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution), see details.}
 
-\item{site.index}{A site index, vector of length one or 1, that is used in the calculation of a GLLVM with quadratic response model.}
+\item{x}{(optional) vector of covariate values to calculate the covariance for, when applicable.}
 
 \item{...}{not used.}
 }

@@ -5,14 +5,14 @@
 \alias{getResidualCor}
 \title{Extract residual correlations from gllvm object}
 \usage{
-\method{getResidualCor}{gllvm}(object, adjust = 1, site.index = NULL, ...)
+\method{getResidualCor}{gllvm}(object, adjust = 1, x = NULL, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{adjust}{The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.}
 
-\item{site.index}{A site index used used in the calculation of a GLLVM with quadratic response model, for which the residual correlations are calculated.}
+\item{x}{(optional) vector of covariate values to calculate the covariance for, when applicable.}
 
 \item{...}{not used}
 }

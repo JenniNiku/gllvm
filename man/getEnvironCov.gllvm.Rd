@@ -49,7 +49,11 @@ where \eqn{\Theta} is the matrix of loadings, and S the (diagonal) covariance ma
 
 \deqn{\Sigma_e = \sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',}
 
-with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients.
+with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients. When correlations are included, we have:
+
+ \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m).}
+
+Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
 }
 \examples{
 \dontrun{
