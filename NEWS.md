@@ -3,6 +3,7 @@ Version 1.4.8
 
 * Added functionality for correlated random canonical coefficients
 * Changed "site.index" argument in getResidualCov.gllvm to "x", in line with getEnvironCov.gllvm
+* New vignette for the correlation structures of random effects and latent variables.
 
 ## Bug Fixes
 * Bug fixed for calculating residual covariances of quadratic concurrent ordination
