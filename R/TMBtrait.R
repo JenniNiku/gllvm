@@ -8,7 +8,7 @@ trait.TMB <- function(
       maxit = 3000, max.iter=200, start.lvs = NULL, offset=NULL, trace=FALSE,
       link="logit",n.init=1,n.init.max = 10, start.params=NULL,start0=FALSE,optimizer="optim", dr=NULL, dLV=NULL, cstruc = "diag", cstruclv  ="diag", dist = list(matrix(0)), distLV = matrix(0), scalmax=10, MaternKappa = 1.5,
       starting.val="res",method="VA",randomX=NULL,Power=1.5,diag.iter=1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.rho.struct = "single",
-      Lambda.start=c(0.2, 0.5), jitter.var=0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL,
+      Lambda.start=c(0.2, 0.5), jitter.var=0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL, zetacutoff = NULL,
       zeta.struc = "species", quad.start=0.01, start.struc="LV",quadratic=FALSE, optim.method = "BFGS", disp.group = NULL, NN=matrix(0), setMap = NULL, Ntrials = 1) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   if(!is.null(start.params)) starting.val <- "zero"
@@ -594,9 +594,14 @@ trait.TMB <- function(
       }
       
     } else if(family=="orderedBeta") {
-      zeta <- rep(0,p)
-      # if(any(y==1)) 
-      zeta <- c(zeta,rep(log(3),p))
+      if(is.null(zetacutoff)){
+        zeta <- rep(0,p)
+        zeta <- c(zeta,rep(log(3),p))
+      } else {
+        zetacutoff<- matrix(zetacutoff, ncol=2)
+        zeta <- rep(zetacutoff[,1],p)[1:p]
+        zeta <- c(zeta,rep(log(zetacutoff[,2]),p)[1:p])
+      }
     } else {
       zeta = 0
     }
@@ -668,12 +673,13 @@ trait.TMB <- function(
         if(!all(colSums(y==1, na.rm = TRUE)>0))
           zetamap[-(1:p)] <- max(zetamap[1:p])+1
         map.list$zeta = factor( zetamap)
-        
+        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
       }else{
         zetamap <- c(rep(1,p))
         # if(any(y==1))
         zetamap <- c(zetamap,rep(max(zetamap)+1,p))
         map.list$zeta <- factor( c(zetamap) )
+        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
       }
     }
     if(family != "tweedie"){map.list$ePower = factor(NA)}
@@ -1395,6 +1401,7 @@ trait.TMB <- function(
     }
     if(family == "orderedBeta") {
       zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+      if(any(is.na(map.list$zeta))) zetas[is.na(map.list$zeta)] = attr(objr$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
       zetas[,2] = exp(zetas[,2])
       colnames(zetas) = c("cutoff0","cutoff1")
     }
