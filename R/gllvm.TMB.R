@@ -1321,7 +1321,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, formula = NULL, family = "poisso
         if(family %in% c("ordinal")){
           zeta <- param1[nam=="zeta"] 
         } else if(family %in% c("orderedBeta")){
-          zeta <- c(rep(0,p),rep(param1[nam=="zeta"] ,p)[1:p])
+          zeta <- matrix((param1[names(param1)=="zeta"])[map.list$zeta],p,2)
+          if(any(is.na(map.list$zeta))) zeta[is.na(map.list$zeta)] = attr(objr1$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
         } else {
           zeta <- 0 
         }
