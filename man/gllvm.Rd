@@ -50,7 +50,7 @@ gllvm(
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
     jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res",
     quad.start = 0.01, start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP =
-    NULL),
+    NULL, zetacutoff = NULL),
   setMap = NULL,
   ...
 )
@@ -168,9 +168,10 @@ gllvm(
   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
   \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
   \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
+  \item{\emph{zetacutoff}: }{ Either vector of length 2 or a matrix of dimension (a number of species x 2). Sets starting value for the cutoff parameters of the ordered beta model.}
 }}
 
-\item{setMap}{UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed. Parameters to be fixed need to be defined with factors. Other arguments may overwrite these definitions.}
+\item{setMap}{under development, not properly tested, except for ordinal beta cutoffs (zeta) and for rho_lvc. a list of a set of parameters to be fixed. Parameters to be fixed need to be defined with factors. Other arguments may overwrite these definitions.}
 
 \item{...}{Not used.}
 }

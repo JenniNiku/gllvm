@@ -4,10 +4,10 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
-                      method = "VA",Lambda.struc = "unstructured", Ar.struc="diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
+                      method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL,
                       trace = FALSE, link = "logit", n.init = 1, n.init.max = 10, restrict = 30, start.params = NULL, RElist = NULL, dr = matrix(0), dLV=NULL, cstruc = "diag", cstruclv = "diag", dist = list(matrix(0)), distLV = matrix(0),
-                      optimizer = "optim", starting.val = "res", Power = 1.5, diag.iter = 1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL,
+                      optimizer = "optim", starting.val = "res", Power = 1.5, diag.iter = 1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL, zetacutoff = NULL,
                       Lambda.start = c(0.1,0.5), quad.start = 0.01, jitter.var = 0, jitter.var.br = 0, zeta.struc = "species", quadratic = FALSE, start.struc = "LV", optim.method = "BFGS", disp.group = NULL, NN = matrix(0), setMap = NULL, Ntrials = 1, beta0com = FALSE, csBlv = matrix(0)) { 
 
   # , Dthreshold=0
@@ -574,9 +574,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       
     } else if(family=="orderedBeta") {
-      zeta <- rep(0,p)
-      # if(any(y==1)) 
-      zeta <- c(zeta,rep(log(3),p))
+      if(is.null(zetacutoff)){
+        zeta <- rep(0,p)
+        zeta <- c(zeta,rep(log(3),p))
+      } else {
+        zetacutoff<- matrix(zetacutoff, ncol=2)
+        zeta <- rep(zetacutoff[,1],p)[1:p]
+        zeta <- c(zeta,rep(log(zetacutoff[,2]),p)[1:p])
+      }
     } else {
       zeta = 0
     }
@@ -669,13 +674,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(!all(colSums(y==1, na.rm = TRUE)>0))
           zetamap[-(1:p)] <- max(zetamap[1:p])+1
         map.list$zeta = factor( zetamap)
-        
+        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
         # map.list$zeta <- factor(c(rep(NA,p),1:p))
       }else{
         zetamap <- c(rep(1,p))
         # if(any(y==1))
         zetamap <- c(zetamap,rep(max(zetamap)+1,p))
         map.list$zeta <- factor( c(zetamap) )
+        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
       }
     }
     if(family != "tweedie"){map.list$ePower = factor(NA)}
@@ -1345,7 +1351,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(family %in% c("ordinal")){
           zeta <- param1[nam=="zeta"] 
         } else if(family %in% c("orderedBeta")){
-          zeta <- c(rep(0,p),rep(param1[nam=="zeta"] ,p)[1:p])
+          zeta <- matrix((param1[names(param1)=="zeta"])[map.list$zeta],p,2)
+          if(any(is.na(map.list$zeta))) zeta[is.na(map.list$zeta)] = attr(objr1$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
         } else {
           zeta <- 0 
         }
@@ -1453,6 +1460,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       if(family == "orderedBeta"){
         zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+        if(any(is.na(map.list$zeta))) zetas[is.na(map.list$zeta)] = attr(objr$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
         zetas[,2] = exp(zetas[,2])
         colnames(zetas) = c("cutoff0","cutoff1")
       }
@@ -2059,6 +2067,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       if(family == "orderedBeta"){
         zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
+        if(any(is.na(map.list$zeta))) zetas[is.na(map.list$zeta)] = attr(objr$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
         zetas[,2] = exp(zetas[,2])
         colnames(zetas) = c("cutoff0","cutoff1")
       }

@@ -12,10 +12,10 @@
 #' @param num.lv.c  number of latent variables, d, in gllvm model to inform, i.e., with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
 #' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
-#' @param lvCor (Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.
+#' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
-#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
+#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
 #' @param corWithin logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param corWithinLV logical. For LVs with correlation, If \code{TRUE}, correlation is set between rows of the observation units within group. Defaults to \code{FALSE}, when correlation is set for rows between groups.
 #' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
@@ -38,7 +38,7 @@
 #' @param return.terms logical. If \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
 #' @param disp.formula formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.
-#' @param setMap UNDER DEVELOPMENT, DO NOT USE! list of a set of parameters to be fixed. Parameters to be fixed need to be defined with factors. Other arguments may overwrite these definitions.
+#' @param setMap under development, not properly tested, except for ordinal beta cutoffs (zeta) and for rho_lvc. a list of a set of parameters to be fixed. Parameters to be fixed need to be defined with factors. Other arguments may overwrite these definitions.
 #' @param control A list with the following arguments controlling the optimization:
 #' \describe{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
@@ -77,6 +77,7 @@
 #'   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter kappa of Matern covariance function. Defaults to 3/2.}
 #'   \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
 #'   \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
+#'   \item{\emph{zetacutoff}: }{ Either vector of length 2 or a matrix of dimension (a number of species x 2). Sets starting value for the cutoff parameters of the ordered beta model.}
 #' }
 #' @param ... Not used.
 #'
@@ -429,7 +430,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
-                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL), setMap=NULL, ...
+                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
   if(!method%in%c("LA","VA","EVA"))stop("Selected method is not supported.")
@@ -543,6 +544,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$rangeP = NULL
       if (!("MaternKappa" %in% names(x))) 
         x$MaternKappa = 1.5
+      if (!("zetacutoff" %in% names(x))) 
+        x$zetacutoff = NULL
       x
     }
     
@@ -614,7 +617,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
       stop("Cannot fit model with traits and reduced rank predictors. \n")
@@ -1408,6 +1411,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
             Ntrials = Ntrials,
+            zetacutoff = zetacutoff,
             model = "trait.TMB"
             )
         if(length(all.vars(col.eff.formula))>0){
@@ -1472,6 +1476,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             # spdr = spdr,
             # cs = cs,
             beta0com = beta0com,
+            zetacutoff = zetacutoff,
             model = "gllvm.TMB"
         )
         if(is.null(formula)) {
