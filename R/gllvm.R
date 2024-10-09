@@ -781,22 +781,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.X <- NULL
           lv.formula <- ~ 1
         } else if(is.null(formula)&!is.null(lv.formula)){
-          if(inherits(row.eff,"formula")){
-            if(any(colnames(X)%in%all.vars(row.eff))){
-              datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
-              if(!is.null(studyDesign) && any(colnames(studyDesign)%in%all.vars(row.eff))){
-                X <-  data.frame(X,studyDesign)[,all.vars(row.eff),drop=F]
-              }else{
-                X <-  X[,all.vars(row.eff),drop=F]  
-              }
-            } else {
-              datayx <- data.frame(y, X)
-              X <- NULL
-            }
-          }else{
+          # if(inherits(row.eff,"formula")){
+          #   if(any(colnames(X)%in%all.vars(row.eff))){
+          #     datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
+          #     if(!is.null(studyDesign) && any(colnames(studyDesign)%in%all.vars(row.eff))){
+          #       X <-  data.frame(X,studyDesign)[,all.vars(row.eff),drop=F]
+          #     }else{
+          #       X <-  X[,all.vars(row.eff),drop=F]  
+          #     }
+          #   } else {
+          #     datayx <- data.frame(y, X)
+          #     X <- NULL
+          #   }
+          # }else{
             datayx <- data.frame(y, X)
             X <- NULL
-          }
+          # }
           m1 <- model.frame(y ~ NULL, data = datayx)
           if(!anyBars(lv.formula)){
           labterm <- labels(terms(lv.formula))
@@ -1028,23 +1028,14 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           studyDesign<-cbind(studyDesign, xgrps)
         }
           
-      } else if(all(grps %in% colnames(X))) {
-        if (!is.null(studyDesign)){ 
-          studyDesign=cbind(studyDesign, X)
-        } else {
-          studyDesign=X
-        }
-        xnames <- colnames(X)[!(colnames(X) %in% grps)]
-        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
-        colnames(X)<-xnames
-        if(ncol(X)==0) X<-NULL
-      } else if(is.null(studyDesign)){
-        stop("Grouping variable needs to be included in 'studyDesign'")
+      } else {
+        stop("Covariates for row effects must be included in 'studyDesign'")
       }
-      } else if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
-        X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
-        if(ncol(X)==0)X<-NULL
       }
+      # else if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
+      #   X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
+      #   if(ncol(X)==0)X<-NULL
+      # }
       
       # if(is.null(bar.f)) {
       #   stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
