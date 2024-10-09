@@ -28,7 +28,7 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(x); // matrix of covariates
   DATA_MATRIX(x_lv); // matrix of covariates for Reduced Rank and/or constrained ord
   DATA_IMATRIX(csb_lv);
-  DATA_MATRIX(xr); 
+  DATA_MATRIX(xr); // design matrix for fixed row effects
   DATA_MATRIX(xb); // design matrix for random species effects, (n, spnr)
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
@@ -40,7 +40,8 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(offset); //offset matrix
   DATA_IVECTOR(Ntrials);
   
-  PARAMETER_MATRIX(r0); // site/row effects
+  PARAMETER_MATRIX(r0f); // fixed site/row effects
+  PARAMETER_MATRIX(r0r); // random site/row effects
   PARAMETER_MATRIX(b); // matrix of species specific intercepts and coefs
   // PARAMETER_MATRIX(bH); // matrix of species specific intercepts and coefs for beta hurdle model
   PARAMETER_MATRIX(B); // coefs of 4th corner model for TMBtrait, RE means for gllvm.TMB
@@ -70,7 +71,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(quadratic); // quadratic model, 0=no, 1=yes
   
   PARAMETER_VECTOR(Au); // variational covariances for u
-  PARAMETER_VECTOR(lg_Ar); // variational covariances for r0
+  PARAMETER_VECTOR(lg_Ar); // variational covariances for r0r
   PARAMETER_VECTOR(Abb);  // variational covariances for Br
   // PARAMETER_VECTOR(scaledc);// scale parameters for dc, of length of dc.cols()
   PARAMETER_VECTOR(Ab_lv); //variational covariances for b_lv
@@ -105,7 +106,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> iphi = exp(lg_phi);
   
   // Set first row param to zero, if row effects are fixed
-  if(random(0)<1){  r0(0,0) = 0;}
+  // if(random(0)==0 && xr.rows() != n && r0f.rows() == n && r0f.cols() == 1){  r0f(0,0) = 0;}
   int nlvr = num_lv+num_lv_c;//treating constr. ord random slopes as a LV, to use existing infrastructure for integration
   
   matrix<Type> ucopy = u;
@@ -315,8 +316,10 @@ Type objective_function<Type>::operator() ()
     // add offset
     eta += offset;
     // add fixed row effects
-    if((random(0)==0)){
-      eta += r0*xr;
+    // if(r0f.size() == n && (random(0)==0) && xr.rows() != n && r0f.rows() == n && r0f.cols() == 1){
+    //   eta += r0f.replicate(1,p);
+    if(xr.rows()==n){
+      eta += (xr*r0f).replicate(1,p);
     }
     
     matrix<Type> cQ(n,p);
@@ -583,7 +586,11 @@ Type objective_function<Type>::operator() ()
         eta += xb*Br;  
       }else if(random(3)>0){
         //random slopes in gllvm.TMB
-        eta += xb*(Br.colwise()+B.col(0));//add RE means
+        if(B.rows()==xb.cols()){
+          //RE means or community-level effects
+          eta += (xb*B).replicate(1,p);
+        }
+        eta += xb*Br;
       }
       matrix <Type> Spr(xb.cols(),xb.cols());
       matrix <Type> SprI(xb.cols(),xb.cols());
@@ -591,20 +598,34 @@ Type objective_function<Type>::operator() ()
       
       Type logdetSpr = 0;
       
+      int l = xb.cols();
       if(random(1)>0){
-        int l = xb.cols();
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
-        sds.diagonal() = exp(sigmaB.segment(0,l));
-        matrix<Type> SprL = sds*gllvmutils::constructL(sigmaij);
+        sds.diagonal() =  exp(sigmaB);
+        
+        vector<Type>sigmaSPij((l*l-l)/2);
+        sigmaSPij.fill(0.0);
+        //covariances of random effects
+        matrix<Type> SprL(l,l);
+        SprL.fill(0.0);
+        if(cs.cols()>1){
+          //need a vector with covariances and zeros in the right places
+          for(int i=0; i<cs.rows(); i++){
+            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaij(i);
+          }
+          SprL = sds*gllvmutils::constructL(sigmaSPij);
+        }else{
+          SprL = sds;
+        }
         matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
         SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
         SprI = SprIL.transpose()*SprIL;
         Spr=SprL*SprL.transpose();
         logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
+      
       if(random(3)>0){
-        int l = xb.cols();
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
         sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
@@ -632,7 +653,12 @@ Type objective_function<Type>::operator() ()
       
       // vector<matrix<Type>> colCorMatIblocks(colMatBlocksI.size()-1);
       // Type logdetColCorMat =0;
-      vector <Type> rhoSP(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+      vector <Type> rhoSP(1);
+      if(random(1)>0 && sigmaB.size()>xb.cols()){
+        rhoSP.resize(sigmaB.size()-xb.cols());
+      }else if(random(3)>0){
+        rhoSP.resize(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+      }
       
       if(colMatBlocksI(0)(0,0) == p){
         rhoSP.fill(1.0);
@@ -1876,7 +1902,7 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      eta += (dr0*r0).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
+      eta += (dr0*r0r).replicate(1,p);//*matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       
@@ -1941,9 +1967,9 @@ Type objective_function<Type>::operator() ()
           invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
           
           if(re==0){
-            nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+            nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(0,nr(re)).transpose()*(invSr*r0r.col(0).segment(0,nr(re)))).sum());
           }else{
-            nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+            nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0r.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
           }
           // determinants of each block of the covariance matrix
           nll -= 0.5*(nr(re)-logdetSr);
@@ -1999,15 +2025,15 @@ Type objective_function<Type>::operator() ()
           
           if(re==0){
             if(cstruc(re)==0){
-              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0.col(0).segment(0,nr(re)).transpose()*r0.col(0).segment(0,nr(re))).sum());              
+              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0r.col(0).segment(0,nr(re)).transpose()*r0r.col(0).segment(0,nr(re))).sum());              
             }else{
-              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0.col(0).segment(0,nr(re)).transpose()*(invSr*r0.col(0).segment(0,nr(re)))).sum());
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0r.col(0).segment(0,nr(re)).transpose()*(invSr*r0r.col(0).segment(0,nr(re)))).sum());
             }
           }else{
             if(cstruc(re)==0){
-              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*r0.col(0).segment(nr.head(re).sum(),nr(re))).sum());
+              nll -= Arm.diagonal().array().log().sum() - 0.5*pow(sigma(sigmacounter-1), -2)*(Arm.diagonal().array().pow(2).sum()+(r0r.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*r0r.col(0).segment(nr.head(re).sum(),nr(re))).sum());
             }else{
-              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
+              nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*Arm*Arm).trace()+(r0r.col(0).segment(nr.head(re).sum(),nr(re)).transpose()*(invSr*r0r.col(0).segment(nr.head(re).sum(),nr(re)))).sum());
             }
           }
           // determinants of each block of the covariance matrix
@@ -2588,7 +2614,7 @@ Type objective_function<Type>::operator() ()
         for (int j=0; j<p;j++){
           if(!gllvmutils::isNA(y(i,j)))nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
       }
     } else if((family == 1) && (method<1)){//NB VA
       for (int i=0; i<n; i++) {
@@ -2836,7 +2862,7 @@ Type objective_function<Type>::operator() ()
               nll += cQ(i,j);
             }
           }
-          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
         }
       } else if (method>1) {
         if (extra(0)==0) {
@@ -3321,8 +3347,10 @@ Type objective_function<Type>::operator() ()
     
     // add offset to lin. predictor 
     eta += offset;
-    if(random(0)==0){
-      eta += r0*xr;
+    // if(r0f.size() == n && (random(0)==0) && xr.rows() != n && r0f.rows() == n && r0f.cols() == 1){
+    //   eta += r0f.replicate(1,p);
+    if(xr.rows()==n){
+      eta += (xr*r0f).replicate(1,p);
     }
     
     if((random(1)>0) | (random(3)>0)){
@@ -3338,12 +3366,26 @@ Type objective_function<Type>::operator() ()
       matrix <Type> SprI(xb.cols(),xb.cols());
       Type logdetSpr = 0;
       
+      int l = xb.cols();
       if(random(1)>0){
-        int l = xb.cols();
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
-        sds.diagonal() = exp(sigmaB.segment(0,l));
-        matrix<Type> SprL = sds*gllvmutils::constructL(sigmaij);
+        sds.diagonal() =  exp(sigmaB);
+        
+        vector<Type>sigmaSPij((l*l-l)/2);
+        sigmaSPij.fill(0.0);
+        //covariances of random effects
+        matrix<Type> SprL(l,l);
+        SprL.fill(0.0);
+        if(cs.cols()>1){
+          //need a vector with covariances and zeros in the right places
+          for(int i=0; i<cs.rows(); i++){
+            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaij(i);
+          }
+          SprL = sds*gllvmutils::constructL(sigmaSPij);
+        }else{
+          SprL = sds;
+        }
         matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
         matrix <Type> SprIL(xb.cols(),xb.cols());
         SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
@@ -3351,8 +3393,8 @@ Type objective_function<Type>::operator() ()
         Spr=SprL*SprL.transpose();
         logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
+      
       if(random(3)>0){
-        int l = xb.cols();
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
         sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
@@ -3471,7 +3513,7 @@ Type objective_function<Type>::operator() ()
     // Row/Site effects
     if((random(0)>0)){
       vector<Type> sigma = exp(log_sigma);
-      eta += (dr0*r0).replicate(1,p);//matrix<Type>(Eigen::MatrixXd::Ones(1,p));
+      eta += (dr0*r0r).replicate(1,p);//matrix<Type>(Eigen::MatrixXd::Ones(1,p));
       
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
@@ -3508,12 +3550,12 @@ Type objective_function<Type>::operator() ()
         
         if(cstruc(re)==0){
           //independence of REs
-          vector<Type> r0s = r0.col(0).segment(0,nr(re));
+          vector<Type> r0s = r0r.col(0).segment(0,nr(re));
           for(int ir=0; ir<nr(re); ir++){
             nll -= dnorm(r0s(ir), Type(0), sigma(sigmacounter-1), true);
           }
         }else{
-          nll += MVNORM(Sr)(r0.col(0).segment(0,nr(re)));
+          nll += MVNORM(Sr)(r0r.col(0).segment(0,nr(re)));
         }
         
       }
@@ -3788,7 +3830,7 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0(i)/sigma,2))*random(0);
+        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
       }
     } else if(family==8) {// exponential family
       for (int i=0; i<n; i++) {

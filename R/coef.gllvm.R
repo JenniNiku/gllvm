@@ -12,16 +12,23 @@ coef.gllvm <- function(object, parm = NULL, ...)
     parm[parm%in%c("beta0","Intercept")] <- "Intercept"
   }
   
+  # backward compatibility
   
-  if (object$row.eff %in% c(TRUE, "fixed") && any(c("row.params","Row.Intercept") %in% parm)){
-    names(pars)[names(pars) == "row.params"] = "Row.Intercept"
-    parm[parm %in% c("row.params","Row.Intercept")] <- "Row.Intercept"
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "random") object$params$row.params.random <- object$params$row.params
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "fixed") object$params$row.params.fixed <- object$params$row.params[-1]
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE
+  
+  # end backward compatibility
+  
+  if (!is.null(object$params$row.params.fixed) && any(c("row.params","Row.Intercept","Fixed.Row.effect") %in% parm)){
+    names(pars)[names(pars) == "row.params.fixed"] = "Fixed.Row.effect"
+    parm[parm %in% c("row.params.fixed","Fixed.Row.Intercept")] <- "Fixed.Row.effect"
   }
 
   
-  if (object$row.eff == "random" && any(c("row.params","Row.Intercept","Random.Row.Intercept") %in% parm)){
-    names(pars)[names(pars) == "row.params"] = "Random.Row.Intercept"
-    parm[parm %in% c("row.params","Row.Intercept","Random.Row.Intercept") ] <- "Random.Row.Intercept"
+  if (!is.null(object$params$row.params.random) && any(c("row.params","Row.Intercept","Random.Row.Intercept", "Random.Row.effect") %in% parm)){
+    names(pars)[names(pars) == "row.params.random"] = "Random.Row.effect"
+    parm[parm %in% c("row.params.random","Random.Row.Intercept") ] <- "Random.Row.effect"
   }
     
     

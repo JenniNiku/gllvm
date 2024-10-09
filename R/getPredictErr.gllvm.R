@@ -38,8 +38,13 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   if(!is.list(object$sd)){
     stop("Cannot calculate prediction errors without standard errors in the model.")
   }
-  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
-  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
+  # backward compatibility
+  
+  if(is.null(object$params$row.params.random) && !inherits(object$row.eff, "formula") && object$row.eff == "random")object$params$row.params.random <- object$params$row.params
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE
+  
+  # end backward compatibility
   
   n <- nrow(object$y)
   p <- ncol(object$y)
@@ -47,7 +52,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
   
-  if((num.lv.c+num.lv)==0&object$randomB==FALSE&object$row.eff!="random"&is.null(object$randomX)&object$col.eff$col.eff!="random"){
+  if((num.lv.c+num.lv)==0&object$randomB==FALSE&is.null(object$params$row.params.random)&is.null(object$randomX)&object$col.eff$col.eff!="random"){
     stop("Cannot calculate prediction errors without random-effects in the model.")
   }
     
@@ -56,7 +61,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   if(object$method == "LA"){
     if(cov){
       if((num.lv+num.RR+num.lv.c)>0) out$lvs <- object$prediction.errors$lvs
-      if(object$row.eff == "random") out$row.effects <- lapply(object$prediction.errors$row.params,diag)
+      if(!is.null(object$params$row.params.random)) out$row.effects <- lapply(object$prediction.errors$row.params,diag)
       if(object$col.eff$col.eff == "random") {
         out$Br <- object$prediction.errors$col.eff
         row.names(out$Br) <- row.names(object$params$Br)
@@ -70,7 +75,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       }
     } else {
       if((num.lv+num.RR+num.lv.c)>0) out$lvs <- sqrt(apply(object$prediction.errors$lvs,1,diag))
-      if(object$row.eff == "random"){
+      if(!is.null(object$params$row.params.random)){
         out$row.effects <- object$prediction.errors$row.params
         out$row.effects <- lapply(out$row.effects,function(x)sqrt(diag(x)))
       }
@@ -111,7 +116,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         if((num.lv.c+num.lv)==1) A <- A[,1,1]
       }
       
-      if(object$row.eff == "random"){
+      if(!is.null(object$params$row.params.random)){
         for(re in 1:length(object$TMBfn$env$data$nr))
         object$Ar[[re]]<-diag(sdb$Ar[[re]]+object$Ar[[re]])
       }
@@ -170,7 +175,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   
   r=0
   if(cov){
-    if(object$row.eff=="random"){
+    if(!is.null(object$params$row.params.random)){
       # r=1
       out$row.effects <- (object$Ar)
     }
@@ -202,7 +207,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
     }
 
   } else {
-    if(object$row.eff=="random"){
+    if(!is.null(object$params$row.params.random)){
       # r=1
       out$row.effects <- object$Ar
       out$row.effects <- lapply(out$row.effects, sqrt)

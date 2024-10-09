@@ -36,11 +36,21 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   num.lv.c <- object$num.lv.c
   num.RR <- object$num.RR
   quadratic <- object$quadratic
-  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
+  
+  # backward compatibility
+  
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "random") object$params$row.params.random <- object$params$row.params
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "fixed") object$params$row.params.fixed <- object$params$row.params[-1]
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE
+  
+  # end backward compatibility
+  
   if("Intercept"%in%row.names(object$sd$B))object$sd$B<-object$sd$B[-which(row.names(object$sd$B)=="Intercept")]
   alfa <- (1 - level) / 2
-  if(object$row.eff == "random") object$params$row.params = NULL
-  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
+  
+  if(!is.null(object$params$row.params.random)) object$params$row.params.random = NULL
+  
   if(object$col.eff$col.eff == "random" | !is.null(object$randomX))object$params$Br <- NULL
   if(object$beta0com){
     object$params$beta0 <- unique(object$params$beta0)
@@ -65,7 +75,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$sd$corrpar <- NULL
     }
     
-    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta", "rho.sp")
+    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params.fixed", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta", "rho.sp")
     if(object$randomB!=FALSE){
       object$params$LvXcoef <- NULL
     }
@@ -103,6 +113,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
       if(quadratic!=FALSE)cal <- cal + (num.lv.c+num.RR) * p * 2
+      cal <- cal + num.lv.c #for sigma.lv
     }
     if (num.lv > 0 & (num.lv.c+num.RR) ==0) {
       nr <- rep(1:num.lv, each = p)
@@ -115,6 +126,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
+      cal <- cal + num.lv #for sigma.lv
     }
     if ((num.lv.c+num.RR) > 0 & num.lv>0) {
       nr <- rep(1:(num.lv.c+num.RR), each = p)
@@ -127,7 +139,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + (num.lv.c+num.RR) * p
       if(quadratic!=FALSE)cal <- cal + (num.lv.c+num.RR) * p * 2
-      
+      cal <- cal + num.lv.c #for sigma.lv
       
       nr <- rep(1:num.lv, each = p)
       nc <- rep(1:p, num.lv)
@@ -139,7 +151,9 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
         ), nc, sep = "."))
       if(quadratic==FALSE)cal <- cal + num.lv * p
       if(quadratic!=FALSE)cal <- cal + num.lv * p * 2
+      cal <- cal + num.lv #for sigma.lv
     }
+    
     if((num.lv.c+num.RR)>0&object$randomB==FALSE){
       rnames[-c(1:cal)][1:(ncol(object$lv.X.design)*(num.lv.c+num.RR))] <- paste(colnames(object$lv.X.design),"LV",rep(1:(num.lv.c+num.RR),each=ncol(object$lv.X.design)),sep=".")
       cal<-cal + ncol(object$lv.X.design)*(num.lv.c+num.RR)
@@ -165,12 +179,13 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       rnames[(cal + 1):(cal + nX * p)] <- paste("Xcoef", newnam, sep = ".")
       cal <- cal + nX * p
     }
-    if (object$row.eff %in% c("fixed",TRUE)) {
-      rnames[(cal + 1):(cal + n)] <- paste("Row.Intercept", 1:n, sep = ".")
-      cal <- cal + n
+    if(!is.null(object$params$row.params.fixed)){
+      nr <- ncol(object$TMBfn$env$data$xr)
+      rnames[(cal + 1):(cal + nr)] <- paste("Fixed.Row.Effect", colnames(object$TMBfn$env$data$xr), sep = ".")
+      cal <- cal + nr
     }
-    if (object$row.eff == "random") {
-      rnames[(cal + 1):(cal+length(object$sd$sigma))] <- "sigma"
+    if (!is.null(object$params$row.params.random)) {
+      rnames[(cal + 1):(cal+length(object$sd$sigma))] <- paste("sigma", names(object$params$sigma), sep=".")
       cal <- cal + length(object$sd$sigma)
       # if(!is.null(object$params$rho)) {
       #   rnames[(cal + 1)] <- "rho"

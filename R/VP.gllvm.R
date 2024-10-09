@@ -226,20 +226,24 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
       groupF <- c(groupF, LVgroups+max(groupF,0))
       
     }
-  
 
-  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0)) {
-    if(!is.null(object$params$row.params) & !(object$row.eff %in% c("fixed", "TRUE"))){
-      rnams <- unique(names(object$params$row.params))
+  if (!isFALSE(object$row.eff) && is.null(r0)) {
+    if(!is.null(object$params$row.params.random)){
+      rnams <- unique(names(object$params$row.params.random))
       for (rn in rnams) {
-        r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params)==rn]%*%object$params$row.params[names(object$params$row.params)==rn]) )
+        r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn]%*%object$params$row.params.random[names(object$params$row.params.random)==rn]) )
         CoefMat <- rbind(CoefMat, rep(1,p))
         rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rn)
       }
-    } else {
-      r0 <- cbind(r0, as.matrix(object$params$row.params))
+    } 
+    if (!is.null(object$params$row.params.fixed)){
+      if(nrow(object$TMBfn$env$data$xr)!=nrow(object$y)){
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
+      }else{
+        r0 <- cbind(r0, object$TMBfn$env$data$xr%*%object$params$row.params.fixed)
+      }
       CoefMat <- rbind(CoefMat, rep(1,p))
-      rownames(CoefMat)[nrow(CoefMat)] = "rowEff"
+      rownames(CoefMat)[nrow(CoefMat)] = "Fixed row effect"        
     }
     Z <- cbind(Z, r0)
   }
@@ -279,7 +283,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
         # group = c(group,max(group) + 1:(1+(num.lv+object$num.lv.c)-1))
       }
     }
-    if((object$row.eff %in% c("random", "fixed", "TRUE"))){
+    if(!isFALSE(object$row.eff)){
       group = c(group,max(group) + 1:ncol(r0))
     }
   }

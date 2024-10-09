@@ -1,3 +1,12 @@
+Version 1.4.9
+=============
+
+* Row.eff can now be used for community-level (species-common) effect
+* Both fixed and random at the same time (i.e., a mixed effects formula)
+  * Does not allow for a single random intercept
+  * Does not yet allow for between random effect correlation
+* New formula interface for phylogenetic model adapted to trait model too
+
 Version 1.4.8
 =============
 
