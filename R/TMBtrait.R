@@ -1207,6 +1207,7 @@ trait.TMB <- function(
       nam <- names(param1)
       if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"])} else {r0r1 <- matrix(0)}
       if(length(param1[nam=="r0f"])>0){ r0f1 <- matrix(param1[nam=="r0f"])} else {r0f1 <- matrix(0)}
+      if(length(param1[nam=="b"])>0){ b1 <- matrix(param1[nam=="b"], ncol = p)} else {b1 <- rbind(rep(0,p))}
       if(nrow(dr)==n){
         log_sigma1 <- ifelse(param1[nam=="log_sigma"]==0,1e-3,param1[nam=="log_sigma"])
         if(!is.null(map.list$log_sigma)) log_sigma1 = log_sigma1[map.list$log_sigma]
