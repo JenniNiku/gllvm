@@ -109,6 +109,24 @@ subbars1<-function (term)
   term
 }
 
+# finding common substrings, adjusted from https://stackoverflow.com/questions/28261825/longest-common-substring-in-r-finding-non-contiguous-matches-between-the-two-str
+auxFun <- function(x) {
+  if(length(x)>1){
+  a <- strsplit(x[[1]], "")[[1]]
+  b  <- strsplit(x[[2]], "")[[1]]
+  lastchar <- suppressWarnings(which(!(a == b)))[1] - 1
+  
+  if(lastchar > 0){
+    out <- paste0(a[1:lastchar], collapse = "")
+  } else {
+    out <- ""
+  }
+  }else{
+    out <- x[[1]]
+  }
+  return(out)
+}
+
 mkModMlist <- function (x, frloc) {
   frloc <- factorize(x, frloc)
   # safeguard for issues with numeric in factor levels
@@ -122,9 +140,10 @@ mkModMlist <- function (x, frloc) {
   }
   ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
-
+  
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
-  mm <- model.matrix(trms, frloc, contrasts.arg = lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE))
+  cntrsts <- lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE)
+  mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[-which(!names(cntrsts)%in%labels(trms))])
   
   sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
   
@@ -143,7 +162,7 @@ mkModMlist <- function (x, frloc) {
   ## IF a categorical variables is included LHS
   if(!attr(trms, "intercept"))attr(trms,"intercept") <- 1
   mm2 <- model.matrix(trms, frloc)
-
+  
   # design matrix for RE means
   if(any(colnames(mm2)!="(Intercept)")){
     fm <- Matrix::KhatriRao(sm, t(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]))
@@ -179,7 +198,7 @@ mkModMlist <- function (x, frloc) {
   dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, cnms = row.names(sm), fm = fm)
 }
-#
+
 mkReTrms1 <- function (bars, fr, ...) 
 {
   # drop.unused.levels = TRUE; 
@@ -199,6 +218,7 @@ mkReTrms1 <- function (bars, fr, ...)
   blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
   nl <- vapply(blist, `[[`, 0L, "nl")
   cnms <- lapply(blist,`[[`,"cnms")
+  names(nl) <- unlist(lapply(cnms, auxFun))
   grps <- unlist(lapply(cnms,length))
   if(any(grps>1)){
   # diag enters to remove any potential correlations

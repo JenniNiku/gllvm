@@ -56,9 +56,19 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
 
+  # backward compatibility
+  if(is.null(object$params$row.params.random) && !inherits(object$row.eff, "formula") && object$row.eff == "random"){
+    object$params$row.params.random <- object$params$row.params
+    object$row.eff <- ~(1|site)
+  }
+  if(is.null(object$params$row.params.fixed) && !inherits(object$row.eff, "formula") && object$row.eff == "fixed"){
+    object$params$row.params.fixed <- object$params$row.params
+    object$xr <- diag(nrow(object$y))
+  }
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   
-  r0 <- NULL
+  # end backward compatibility
+  
   newdata <- newX
   p <- ncol(object$y)
   if(object$family == "betaH")p <- p*2
@@ -83,8 +93,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   else {
     formula <- NULL
   }
-  if (object$row.eff != FALSE) {
-    if(!is.null(newX) & length(all.vars(object$call$row.eff))>0){
+  if (!isFALSE(object$row.eff)) {
+    if(!is.null(newX)){
       if(any(all.vars(object$call$row.eff) %in% colnames(newX))) {
         warning("Using row effects for predicting new sites does not work yet.")
       }
@@ -310,16 +320,18 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  
-  if ((object$row.eff %in% c("random", "fixed", "TRUE")) && is.null(r0) & is.null(newX)) {
-    if(!is.null(object$params$row.params) & !(object$row.eff %in% c("fixed", "TRUE"))){
-     object$params$row.params = object$TMBfn$env$data$dr0%*%object$params$row.params # !!!
-    } else {
-      object$params$row.params = as.matrix(object$params$row.params)
+  r0 <- NULL
+  if (inherits(object$row.eff, "formula") & is.null(newX)) {
+    if(!is.null(object$params$row.params.random)){
+     object$params$row.params.random = object$TMBfn$env$data$dr0%*%object$params$row.params.random # !!!
+     if(level==0)object$params$row.params.random = object$params$row.params.random*0
+     r0 <- cbind(r0, as.matrix(object$params$row.params.random))
+    } 
+    if(!is.null(object$params$row.params.fixed)){
+        object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
+        r0 <- cbind(as.matrix(object$params$row.params.fixed))
     }
-    r0 <- object$params$row.params
-    if((object$row.eff %in% "random") && (level==0)) r0 = r0*0
-    eta <- eta + as.matrix(r0%*%rep(1,ncol(object$y)))
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,ncol(object$y))
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" && is.null(newX)) {

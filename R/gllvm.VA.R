@@ -184,7 +184,10 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
   while(n.i<=n.init){
     if(n.init>1 && trace) cat("initial run ",n.i,"\n");
     set.seed(seed[n.i])
-    res <- start_values_gllvm_TMB(y = y, X = X1, TR = TR1, family = family, formula = formula, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val, jitter.var=jitter.var, yXT=yXT, row.eff = row.eff, TMB=FALSE, link="probit",zeta.struc="species")
+    xr = dr = matrix(0)
+    if(row.eff == "random")dr <- diag(n)
+    if(row.eff == "fixed") xr <- model.matrix(~site, data.frame(site = factor(1:n)))[,-1,drop=FALSE]
+    res <- start_values_gllvm_TMB(y = y, X = X1, TR = TR1, family = family, formula = formula, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val, jitter.var=jitter.var, yXT=yXT, TMB=FALSE, link="probit",zeta.struc="species")
     if(is.null(start.params)){
       new.beta0 <- beta0 <- res$params[,1]
       # common env params or different env response for each spp

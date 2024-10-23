@@ -182,28 +182,29 @@
 #' @return An object of class "gllvm" includes the following components:
 #'
 #'
-#'  \item{call }{ function call}
+#'  \item{call }{ function call.}
 #'  \item{y}{ (n x m) matrix of responses.}
 #'  \item{X}{ matrix or data.frame of environmental covariates.}
 #'  \item{X.design}{ design matrix of environmental covariates.}
 #'  \item{lv.X}{ design matrix or data.frame of environmental covariates for latent variables.}
 #'  \item{lv.X.design}{ design matrix or data.frame of environmental covariates for latent variables.}
-#'  \item{TR}{ Trait matrix}
-#'  \item{formula}{ Formula for predictors}
-#'  \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
-#'  \item{randomX }{ Formula for species specific random effects in fourth corner model}
-#'  \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination}
-#'  \item{num.lv}{ Number of unconstrained latent variables}
-#'  \item{num.lv.c}{ Number of latent variables in concurrent ordination}
-#'  \item{num.RR}{ Number of latent variables in constrained ordination}
-#'  \item{Ntrials}{ Number of trials in a binomial model}
-#'  \item{method}{ Method used for integration}
-#'  \item{family}{ Response distribution}
-#'  \item{row.eff}{ Type of row effect used}
-#'  \item{n.init}{ Number of model runs for best fit}
-#'  \item{disp.group}{ Groups for dispersion parameters}
-#'  \item{sd }{ List of standard errors}
-#'  \item{lvs }{ Latent variables}
+#'  \item{TR}{ Trait matrix.}
+#'  \item{formula}{ Formula for predictors.}
+#'  \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination.}
+#'  \item{randomX }{ Formula for species specific random effects in fourth corner model.}
+#'  \item{Xd}{ design matrix for species specific random effects in fourth corner model.}
+#'  \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination.}
+#'  \item{num.lv}{ Number of unconstrained latent variables.}
+#'  \item{num.lv.c}{ Number of latent variables in concurrent ordination.}
+#'  \item{num.RR}{ Number of latent variables in constrained ordination.}
+#'  \item{Ntrials}{ Number of trials in a binomial model.}
+#'  \item{method}{ Method used for integration.}
+#'  \item{family}{ Response distribution.}
+#'  \item{row.eff}{ Type of row effect used.}
+#'  \item{n.init}{ Number of model runs for best fit.}
+#'  \item{disp.group}{ Groups for dispersion parameters.}
+#'  \item{sd }{ List of standard errors.}
+#'  \item{lvs }{ Latent variables.}
 #'  \item{params}{ List of parameters
 #'  \describe{
 #'    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
@@ -215,7 +216,8 @@
 #'    \item{Br}{ column random effects}
 #'    \item{sigmaB}{ scale parameters for column-specific random effects}
 #'    \item{rho.sp}{ (positive) correlation parameter for influence strength of "colMat"}
-#'    \item{row.params }{ row-specific intercepts}
+#'    \item{row.params.random }{ row-specific random effects}
+#'    \item{row.params.fixed }{ row-specific fixed effects}
 #'    \item{sigma }{ scale parameters for row-specific random effects}
 #'    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
 #'    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
@@ -697,7 +699,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     col.eff <- FALSE;col.eff.formula = ~0;RElistSP <- list(Zt = matrix(0))# cs = NULL; spdr = NULL;
     # Species random effects    
     if(anyBars(formula)){
-      if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
+      # if(!is.null(TR))stop("For random-effects with traits, see 'randomX' argument instead.")
       col.eff <- "random"
       # col.eff.formula <- reformulate(sprintf("(%s)", sapply(findbars1(formula), deparse1)))# take out fixed effects
       # keep RE part of formula unchanged
@@ -779,22 +781,22 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           lv.X <- NULL
           lv.formula <- ~ 1
         } else if(is.null(formula)&!is.null(lv.formula)){
-          if(inherits(row.eff,"formula")){
-            if(any(colnames(X)%in%all.vars(row.eff))){
-              datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
-              if(!is.null(studyDesign) && any(colnames(studyDesign)%in%all.vars(row.eff))){
-                X <-  data.frame(X,studyDesign)[,all.vars(row.eff),drop=F]
-              }else{
-                X <-  X[,all.vars(row.eff),drop=F]  
-              }
-            } else {
-              datayx <- data.frame(y, X)
-              X <- NULL
-            }
-          }else{
+          # if(inherits(row.eff,"formula")){
+          #   if(any(colnames(X)%in%all.vars(row.eff))){
+          #     datayx <- data.frame(y, X[,-which(colnames(X)==all.vars(row.eff)),drop=F])
+          #     if(!is.null(studyDesign) && any(colnames(studyDesign)%in%all.vars(row.eff))){
+          #       X <-  data.frame(X,studyDesign)[,all.vars(row.eff),drop=F]
+          #     }else{
+          #       X <-  X[,all.vars(row.eff),drop=F]  
+          #     }
+          #   } else {
+          #     datayx <- data.frame(y, X)
+          #     X <- NULL
+          #   }
+          # }else{
             datayx <- data.frame(y, X)
             X <- NULL
-          }
+          # }
           m1 <- model.frame(y ~ NULL, data = datayx)
           if(!anyBars(lv.formula)){
           labterm <- labels(terms(lv.formula))
@@ -999,19 +1001,24 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (p == 1)
       y <- as.matrix(y)
 
-    if(!inherits(row.eff, "formula") && row.eff == "random"){
+    if(!inherits(row.eff, "formula") && !isFALSE(row.eff)){
+    if(row.eff=="random"){
       row.eff <- ~(1|site)
+    }else if(row.eff %in% c("fixed", TRUE))row.eff  <- ~site
       if(is.null(studyDesign)){
-        studyDesign <- data.frame(site = 1:n)
+        studyDesign <- data.frame(site = factor(1:n))
       }else{
-        studyDesign <- cbind(studyDesign, data.frame(site = 1:n)) 
+        studyDesign <- cbind(studyDesign, data.frame(site = factor(1:n)) )
       }
     }
     
 # Structured row parameters
-    dr = NULL; cstruc = "diag"
+    RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff
     if(inherits(row.eff,"formula")) {
-      bar.f <- findbars1(row.eff) # list with 3 terms
+      # first, random effects part
+      if(anyBars(row.eff)){
+      row.form <- allbars(row.eff)
+      bar.f <- findbars1(row.form) # list with 3 terms
       grps <- unique(unlist(lapply(bar.f, all.vars)))
       if(is.null(studyDesign)){
         if(!is.null(data)) {
@@ -1021,51 +1028,42 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           studyDesign<-cbind(studyDesign, xgrps)
         }
           
-      } else if(all(grps %in% colnames(X))) {
-        if (!is.null(studyDesign)){ 
-          studyDesign=cbind(studyDesign, X)
-        } else {
-          studyDesign=X
-        }
-        xnames<-colnames(X)[!(colnames(X) %in% grps)]
-        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
-        colnames(X)<-xnames
-        if(ncol(X)==0) X<-NULL
-      } else if(is.null(studyDesign)){
-        stop("Grouping variable needs to be included in 'studyDesign'")
+      } else {
+        stop("Covariates for row effects must be included in 'studyDesign'")
       }
-      } else if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
-        X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
-        if(ncol(X)==0)X<-NULL
       }
+      # else if(!is.null(studyDesign) && any(colnames(studyDesign) %in% colnames(X))){
+      #   X <- X[,-which(colnames(X)%in%colnames(studyDesign)),drop=F]
+      #   if(ncol(X)==0)X<-NULL
+      # }
       
-      if(is.null(bar.f)) {
-        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
-        # } else if(!all(grps %in% colnames(X))) {
-        # stop("Grouping variable need to be included in 'X'")
-      }
+      # if(is.null(bar.f)) {
+      #   stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
+      #   # } else if(!all(grps %in% colnames(X))) {
+      #   # stop("Grouping variable need to be included in 'X'")
+      # }
       # else if(!all(apply(studyDesign[,(colnames(studyDesign) %in% grps)],2,order)==c(1:n)) && (corWithin)) {
       #   stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
       # } 
       # if there are nested components, the formula needs to be expanded to ensure 
       # a correct number of entries in corstruc
-      form.parts <- strsplit(deparse1(row.eff),split="\\+")[[1]]
+      form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
       nested.parts <- grepl("/",form.parts)
       if(any(nested.parts)){
-      form.parts <- strsplit(deparse1(row.eff),split="\\+")[[1]]
+      form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
       
       for(i in which(nested.parts))
         form.parts[i] <- paste0("(", findbars1(formula(paste0("~",form.parts[i]))),")",collapse="+")
       
       corstruc.form <- as.formula(paste0("~", paste0(form.parts,collapse="+")))
       }else{
-      corstruc.form <- row.eff
+      corstruc.form <- row.form
       }
       cstruc <- corstruc(corstruc.form)
       corWithin <- ifelse(cstruc == "diag", FALSE, corWithin)
       
       if(!is.null(bar.f)) {
-        mf <- model.frame(subbars1(row.eff),data=studyDesign)
+        mf <- model.frame(subbars1(row.form),data=studyDesign)
         # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
         # consequence: we can use Zt everywhere
         mf.new <- mf
@@ -1073,9 +1071,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
         }
         colnames(mf.new) <- colnames(mf)
-        RElist <- mkReTrms1(bar.f,mf.new)
-        dr <- Matrix::t(RElist$Zt)
-        colnames(dr) <- rep(names(RElist$nl),RElist$nl)
+        RElistRow <- mkReTrms1(bar.f, mf.new)
+        dr <- Matrix::t(RElistRow$Zt)
+        # This line errs for formulations such as (cov|1), which includes an intercept
+        # Can be easily fixed by adding a try(..., silent = TRUE) but probably needs something more robust
+        # The bigger problem is that (cov|1) only generates a single "cstruc" entry anove, while it requires two
+        # So that the term needs to be expanded to (1|1)+(0+cov|1) first, which is not yet implemented
+        colnames(dr) <- rep(names(RElistRow$nl),RElistRow$nl)
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
@@ -1089,7 +1091,39 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         cstruc <- cstrucNew
       }
       }
-      row.eff <- "random"
+      row.eff <- nobars1_(row.eff)
+      }
+      # second, fixed effects part
+      if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
+        # warning(still check about intercept)
+          xr <- model.matrix(row.eff, studyDesign)[,-1,drop=FALSE]
+          
+          if(nrow(dr)!=n){
+            if(!TMB)stop("Mixed effects row effects can only be fitted with 'TMB = TRUE'.")
+          }else{
+            if(!TMB)stop("Structured row effects can only be fitted with 'TMB = TRUE'.")
+          }
+          if(col.eff == "random"){
+            RElistSP$Xt <- matrix(0)
+          }
+          # if there are fixed row-effects set RE means to zero to safeguard identifiability
+          if(col.eff == "random"){
+            RElistSP$Xt <- matrix(0)
+          }  
+          }else if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))==0){
+        # set RE means to zero if one so chooses by keeping the formula intercept-only
+        if(col.eff == "random"){
+          RElistSP$Xt <- matrix(0)
+        }
+        row.eff.formula = row.eff = FALSE
+      }
+    }
+  
+    # check if formula and row.eff contain any covariates that are the same..
+    if(length(all.vars(nobars1_(formula)))>0 && !is.null(row.eff.formula)){
+      if(any(all.vars(nobars1_(formula))%in%all.vars(nobars1_(row.eff.formula)))){
+        stop("You cannot include the same covariates in 'formula' and 'row.eff' for identifiability reasons.")
+      }
     }
     
     dLV = NULL;cstruclv = "diag"
@@ -1166,7 +1200,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # }
     if( any(!is.finite(y[!is.na(y)])) ) stop("Infinite values are not allowed in 'y'")
     if(any(is.na(y)))y[is.na(y)]<-NA_real_
-    if (row.eff == "random" && family == "ordinal" && TMB==FALSE) {
+    if (anyBars(row.eff.formula) && family == "ordinal" && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")
     }
     
@@ -1202,7 +1236,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (p < 2 && !is.null(TR)) {
       stop("Fourth corner model can not be fitted with less than two response variables.\n")
     }
-    if (row.eff == "random" && !TMB) {
+    if (anyBars(row.eff.formula) && !TMB) {
       cat("Random row effect model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
       TMB <- TRUE
     }
@@ -1269,8 +1303,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
 
     out <- list( y = y, X = X, lv.X = lv.X, lv.X.design = lv.X.design, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
-        method = method, family = family, row.eff = row.eff, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
+        method = method, family = family, row.eff = row.eff.formula, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
+    if(inherits(row.eff.formula, "formula"))out$row.eff <- row.eff.formula
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
@@ -1316,13 +1351,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         O = cbind(O,O)
       }
       
-      # trace = FALSE
-      if (row.eff == TRUE)
-        row.eff <- "fixed"
       if (!is.null(TR)) {
         fitg <- gllvm.iter(
             y = y,
             X = X,
+            xr = xr,
             # lv.X = lv.X,
             TR = TR,
             formula = formula,
@@ -1332,7 +1365,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             num.lv.cor=num.lv.cor,
             family = family,
             Lambda.struc = Lambda.struc,
-            row.eff = row.eff,
             reltol = reltol,
             # reltol.c = reltol.c,
             seed = seed,
@@ -1358,6 +1390,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             jitter.var = jitter.var,
             jitter.var.br = jitter.var.br,
             randomX = randomX,
+            RElist = RElistSP,
             randomX.start = randomX.start,
             beta0com = beta0com, 
             scale.X = scale.X,
@@ -1372,6 +1405,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zetacutoff = zetacutoff,
             model = "trait.TMB"
             )
+        if(length(all.vars(col.eff.formula))>0){
+          randomX <- out$randomX <- paste0("~",paste(colnames(out$col.eff$spdr)),collapse="+")
+          out$Xrandom <- as.matrix(out$col.eff$spdr)
+        }
         out$X <- fitg$X
         out$TR <- fitg$TR
         out$formula <- fitg$formula
@@ -1380,6 +1417,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         fitg <- gllvm.iter(
             y = y,
             X = X,
+            xr = xr,
             lv.X = lv.X.design,
             formula = formula,
             lv.formula = lv.formula,
@@ -1391,7 +1429,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, 
-            row.eff = row.eff,
+            row.eff = row.eff.formula,
             col.eff = col.eff, colMat = colMat, nn.colMat = nn.colMat, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
@@ -1466,7 +1504,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }else if(TMB & family == "ordinal"){
         out$zeta.struc = fitg$zeta.struc
       }
-      
+      if(!isFALSE(row.eff.formula)){
+        # need to restore the row-effect names
+        # because grouped names in dr are used to share variances in gllvm.TMB and traitTMB
+        if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
+          names(out$params$row.params.random) <- row.names(RElistRow$Zt)
+        }
+      }
       #### Try to calculate sd errors
       if (!is.infinite(out$logL) && sd.errors) {
         trsd <- try({
@@ -1474,7 +1518,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$sd <- ses$sd
           out$Hess <- ses$Hess
           out$prediction.errors <- ses$prediction.errors
-        if(!is.null(out$sd)&(num.lv.c+num.lv)>0|!is.null(out$sd)&row.eff=="random"){
+        if(!is.null(out$sd)&(num.lv.c+num.lv)>0|!is.null(out$sd)&anyBars(row.eff.formula)){
           if(!is.finite(determinant(out$Hess$cov.mat.mod)$modulus)){
             warning("Determinant of the variance-covariance matix is zero. Please double check your model for e.g. overfitting or lack of convergence. \n")
           }
@@ -1506,8 +1550,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$start <- fitg$start
 
     } else {
-      if (row.eff == "fixed")
-        row.eff <- TRUE
+      if(anyBars(row.eff.formula))row.eff <- "random"
+      if(length(all.vars(nobars1_(row.eff.formula)))>0) row.eff = "fixed"
+      if(anyBars(row.eff.formula) && length(all.vars(nobars1_(row.eff.formula)))>0)stop("Mixed row effects only allowed with 'TMB = TRUE'.")
 
       fitg <- gllvm.VA(
           y,
@@ -1589,17 +1634,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {
       out$fourth.corner <- try(getFourthCorner(out),silent = TRUE)
     }
-    if(row.eff == "random"){
+    if(anyBars(row.eff.formula)){
       out$dr = fitg$dr
     }
     
     
-    if (is.finite(out$logL) && row.eff == "random" && FALSE){
+    if (is.finite(out$logL) && anyBars(row.eff.formula) && FALSE){
       if(method == "LA"){
-        if(abs(out$params$sigma)<0.02)
+        if(any(abs(out$params$sigma)<0.02))
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")
       } else{
-        if(abs(out$params$sigma)<0.02 && max(abs(out$params$sigma-sqrt(out$Ar))) < 1e-3)
+        if(any(abs(out$params$sigma)<0.02) && max(abs(out$params$sigma-sqrt(out$Ar))) < 1e-3)
           cat("Random row effects ended up to almost zero. Might be a false convergence or local maxima. You can try simpler model, less latent variables or change the optimizer. \n")
       }
     }
