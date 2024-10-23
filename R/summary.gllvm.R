@@ -138,7 +138,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
-  }else if(!is.null(object$sd[["B"]])&object$col.eff$col.eff=="random"){
+  }else if(("B" %in% names(object$sd)) & object$col.eff$col.eff=="random"){
   pars <- c(object$params$B)
   se <- c(object$sd$B)[object$sd$B!=0]
   newnam <- names(object$params$B)
