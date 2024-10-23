@@ -85,7 +85,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     # groupF <- attr(model.matrix(formula, data = X.d), "assign")
     # groupF <- groupF[groupF!=0]
     # strsplit(colnames(X.d), split = ":")
-    warning("Note: Automatic grouping based on formula in fourth corner model not yet implemented, group manually using 'group' and 'groupnames' arguments.")
+    # warning("Note: Automatic grouping based on formula in fourth corner model not yet implemented, group manually using 'group' and 'groupnames' arguments.")
     
     X.d <- object$X #X.d[1:n,rownames(object$fourth.corner)]
     x_in_model = colnames(X.d)
@@ -110,10 +110,10 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   # Phylogen/random 
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" ) {
-    # groupnamesF <- labels(terms(object$col.eff$col.eff.formula))
-    # groupF <- attr(model.matrix(object$col.eff$col.eff.formula, data = object$col.eff$Xt), "assign")
-    # groupF <- groupF[groupF!=0]
-    warning("Note: Automatic grouping based on formula for Phylogenetic random effect model not yet implemented, group manually using 'group' and 'groupnames' arguments.")
+    groupnamesF <- labels(terms(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1))))))
+    groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
+    groupF <- groupF[groupF!=0]
+    # warning("Note: Automatic grouping based on formula for Phylogenetic random effect model not yet implemented, group manually using 'group' and 'groupnames' arguments.")
 
     X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept"]
     x_in_model = colnames(X.d)
