@@ -1167,8 +1167,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     } else {
       num.lv.cor = 0
     }
-    if(!is.null(StudyDesign)){
-      if(nrow(StudyDesign) != nrow(y)) stop("A number of rows in studyDesign must be same as for response matrix.")
+    if(!is.null(studyDesign)){
+      if(nrow(studyDesign) != nrow(y)) stop("A number of rows in studyDesign must be same as for response matrix.")
     }
     if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
       NN<-t(apply(as.matrix(dist(distLV, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
