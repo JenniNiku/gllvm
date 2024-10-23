@@ -428,9 +428,9 @@ trait.TMB <- function(
       row.params <- row.params.random <- row.params.fixed <- NULL
       
       if ((nrow(xr)==n) || (nrow(dr)==n)) {
-        row.params.random <- fit$row.params.random
-        row.params.fixed <- fit$row.params.fixed
-        sigma <- fit$sigma
+        row.params.random <- res$row.params.random
+        row.params.fixed <- res$row.params.fixed
+        sigma <- res$sigma
       }
       
       vameans <- theta <- lambda <- NULL
@@ -507,7 +507,7 @@ trait.TMB <- function(
       }
       
     } else{
-      if(all(dim(start.params$y)==dim(y)) && is.null(X)==is.null(start.params$X) && is.null(T)==is.null(start.params$TR) && isTRUE(all.equal(row.eff, start.params$row.eff))){
+      if(all(dim(start.params$y)==dim(y)) && is.null(X)==is.null(start.params$X) && is.null(TR)==is.null(start.params$TR) && isTRUE(all.equal(row.eff, start.params$row.eff))){
         beta0 <- start.params$params$beta0
         # common env params or different env response for each spp
         B <- NULL
@@ -570,7 +570,11 @@ trait.TMB <- function(
         #   sigmaij <- sigmaij[lower.tri(sigmaij)]
         #   if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
         # }
-      } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other.");}
+      } else { 
+        findproblem = c("y","X","TR", "row.eff")[!c(all(dim(start.params$y)==dim(y)), is.null(X)==is.null(start.params$X), is.null(TR)==is.null(start.params$TR), isTRUE(all.equal(row.eff, start.params$row.eff)))]
+        stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other. Problem in: ", findproblem);
+        
+        }
     }
     if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
     
