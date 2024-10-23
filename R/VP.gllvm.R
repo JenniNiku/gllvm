@@ -113,7 +113,6 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     groupnamesF <- labels(terms(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1))))))
     groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
     groupF <- groupF[groupF!=0]
-    # warning("Note: Automatic grouping based on formula for Phylogenetic random effect model not yet implemented, group manually using 'group' and 'groupnames' arguments.")
 
     X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept"]
     x_in_model = colnames(X.d)
