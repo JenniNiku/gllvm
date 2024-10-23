@@ -33,16 +33,21 @@ logLik.gllvm <- function(object, ...)
     object$params$inv.phi <- NULL
   }
     if(object$family=="ordinal"){
-      if(object$zeta.struc=="species")object$params$zeta<-object$params$zeta[,-1]
-      if(object$zeta.struc=="common")object$params$zeta<-object$params$zeta[-1]
+      if(object$zeta.struc=="species")object$params$zeta <-object$params$zeta[,-1]
+      if(object$zeta.struc=="common")object$params$zeta <-object$params$zeta[-1]
     }
-  if (object$row.eff %in% c("fixed", TRUE))
-    object$params$row.params <- object$params$row.params[-1]
-  if (object$row.eff == "random")
-    object$params$row.params <- NULL
-  if(is.null(object$beta0com))object$beta0com<-FALSE # backward compatibility
+  
+    # backward compatibility
+    
+    if(is.null(object$params$row.params.random) && !inherits(object$row.eff, "formula") && object$row.eff == "random")object$params$row.params.random <- object$params$row.params
+    if(is.null(object$beta0com))object$beta0com<-FALSE 
+    if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE
+    
+    # end backward compatibility
+    
+  if (!is.null(object$params$row.params.random))
+    object$params$row.params.random <- NULL
   if(object$beta0com) object$params$beta0 <- 1
-  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
     object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]

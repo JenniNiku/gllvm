@@ -70,6 +70,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   
   
   sumry <- list()
+  sumry$row.eff <- object$row.eff
   sumry$digits <- digits
   sumry$signif.stars <- signif.stars
   sumry$dispersion <- dispersion
@@ -137,7 +138,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
     dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
-  }else if(!is.logical(object$sd)&object$col.eff$col.eff=="random"){
+  }else if(!is.null(object$sd[["B"]])&object$col.eff$col.eff=="random"){
   pars <- c(object$params$B)
   se <- c(object$sd$B)[object$sd$B!=0]
   newnam <- names(object$params$B)
@@ -153,6 +154,20 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   dimnames(coef.table) <- list(newnam, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
   }else{
     coef.table <- NULL
+  }
+  if(!is.null(object$params$row.params.fixed) && !is.null(object$sd$row.params.fixed)){
+  pars <- c(object$params$row.params.fixed)
+  se <- c(object$sd$row.params.fixed)
+  zval <- pars/se
+  pvalue <- 2 * pnorm(-abs(zval))
+  coef.table2 <- cbind(pars, se, zval, pvalue)
+  dimnames(coef.table2) <- list(names(object$params$row.params.fixed), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+  coef.table <- rbind(coef.table, coef.table2)
+  }
+  
+  if(object$col.eff$col.eff == "random" && !is.null(object$sd[["B"]])){
+    coef.table<- coef.table[!duplicated(coef.table),,drop=FALSE]
+    row.names(coef.table)[grepl("RE_mean_", row.names(coef.table))] <- sub("RE_mean_", "RE mean:",grep("RE_mean_",colnames(object$X.design), value = TRUE))
   }
   
   if(spp.intercepts&!is.logical(object$sd)){
@@ -294,12 +309,12 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     #   sumry$'Environmental coefficients' <- object$params$Xcoef
     # }
   }
-  if (!is.null(object$params$row.params)) {
-    sumry$'Row intercepts' <- object$params$row.params
+  if (!is.null(object$params$row.params.random)) {
+    sumry$'Row intercepts' <- object$params$row.params.random
   }
   sumry$rstruc <- object$rstruc
-  if (object$row.eff == "random") {
-    object$params$sigma2 = object$params$sigma[1] ^ 2
+  if (!is.null(object$params$row.params.random)) {
+    object$params$sigma2 = object$params$sigma ^ 2
     names(object$params$sigma2) = "sigma^2"
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
@@ -319,7 +334,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   if(object$family == "gaussian"){
     sumry$'Standard deviations' <- object$params$phi
   }
-  if(!is.null(object$X) | spp.intercepts | object$col.eff$col.eff == "random"){
+  if(!is.null(coef.table)){
     sumry$'Coef.tableX' <- coef.table
   }
   if((num.lv+num.lv.c)>0){
@@ -366,6 +381,7 @@ print.summary.gllvm <- function (x, ...)
   
   cat("Formula: ", paste(x$formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
+  cat("Row effect: ", ifelse(isFALSE(x$row.eff),"~ 1", paste(x$row.eff,collapse="")), "\n")
   
   if(!is.null(x$REcovs)){
     cat("\nRandom effects:\n")
@@ -406,7 +422,7 @@ print.summary.gllvm <- function (x, ...)
   }
   if(x$row.intercepts){
     if(!is.null(x$`Row intercepts`)){
-      cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',x$digits), ":\n")
+      cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row effects',x$digits), ":\n")
       print(zapsmall(x$`Row intercepts`,x$digits))
     }
   }

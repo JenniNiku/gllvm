@@ -40,9 +40,16 @@ se.gllvm <- function(object, ...){
   if(object$family =="betaH"){
     Y01 = (object$y>0)*1; colnames(Y01) = paste("H01",colnames(object$y), sep = "_")
     object$y = cbind(object$y, Y01)
-  }
-  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
+  } 
   
+  # backward compatibility
+  
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "random") object$params$row.params.random <- object$params$row.params
+  if(!inherits(object$row.eff, "formula") && object$row.eff == "fixed") object$params$row.params.fixed <- object$params$row.params[-1]
+  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X
+  if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE
+  
+  # end backward compatibility
   n <- nrow(object$y)
   p <- ncol(object$y)
   method <- object$method
@@ -50,7 +57,6 @@ se.gllvm <- function(object, ...){
   num.lv.c <- object$num.lv.c
   num.lv.cor <- object$num.lvcor
   num.RR <- object$num.RR
-  if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   lv.X.design <- object$lv.X.design
   
   quadratic <- object$quadratic
@@ -111,14 +117,18 @@ se.gllvm <- function(object, ...){
         incl[names(objrFinal$par)=="lambda"] <- FALSE;
       }
       
-      if(object$row.eff=="random") {
+      if(!is.null(object$params$row.params.random)) {
         incld[names(objrFinal$par)=="lg_Ar"] <- TRUE
-        incld[names(objrFinal$par)=="r0"] <- TRUE
-        incl[names(objrFinal$par)=="r0"] <- FALSE; 
+        incld[names(objrFinal$par)=="r0r"] <- TRUE
+        incl[names(objrFinal$par)=="r0r"] <- FALSE; 
       } else {
         incl[names(objrFinal$par)=="log_sigma"] <- FALSE
-        if(object$row.eff==FALSE) incl[names(objrFinal$par)=="r0"] <- FALSE
-        if(object$row.eff=="fixed") incl[1] <- FALSE
+        incl[names(objrFinal$par)=="r0r"] <- FALSE
+      }
+      if(!is.null(object$params$row.params.fixed)){
+        if(object$params$row.params.fixed[1]==0) incl[names(objrFinal$par)=="r0f"][1] <- FALSE
+      }else{
+        incl[names(objrFinal$par)=="r0f"] <- FALSE
       }
       
       if(is.null(object$randomX)) {
@@ -130,18 +140,18 @@ se.gllvm <- function(object, ...){
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
       }
       
-      if(method=="LA" || (num.lv==0 && (object$row.eff!="random" && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
+      if(method=="LA" || (num.lv==0 && (is.null(object$params$row.params.random) && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
         covM <- try(MASS::ginv(sdr[incl,incl]))
         if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         se <- try(sqrt(diag(abs(covM))))
         names(se) = names(object$TMBfn$par[incl])
         
         trpred<-try({
-          if(num.lv > 0 || object$row.eff == "random" || !is.null(object$randomX) || object$col.eff$col.eff == "random") {
+          if(num.lv > 0 || !is.null(object$params$row.params.random) || !is.null(object$randomX) || object$col.eff$col.eff == "random") {
             sd.random <- sdrandom(objrFinal, covM, incl)
             prediction.errors <- list()
             
-            if(object$row.eff=="random"){
+            if(!is.null(object$params$row.params.random)){
               prediction.errors$row.params <- sd.random$row
             }
             if(object$col.eff$col.eff == "random"){
@@ -205,9 +215,12 @@ se.gllvm <- function(object, ...){
       # reformat SEs based on the list that went into TMB
       se <- relist.gllvm(se, object$TMBfn$env$parList())
       
-      if(object$row.eff=="fixed") {
-        se.row.params <- c(0,se$r0); 
-        names(se.row.params)  = rownames(object$y);
+      if(!is.null(object$params$row.params.fixed)) {
+        se.row.params <- se$r0f;
+        if(object$params$row.params.fixed[1]==0) {
+          se.row.params <- c(0, se.row.params)
+        }
+        names(se.row.params)  = names(object$params$row.params.fixed);
       }
       se.beta0 <- se$b[1,]
       
@@ -250,7 +263,7 @@ se.gllvm <- function(object, ...){
       names(out$sd$beta0)  <-  colnames(object$y);
       out$sd$B <- c(se.B); 
       names(out$sd$B) <- names(object$params$B)
-      if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
+      if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
       
       if(family %in% c("ZINB")) {
         se.ZINB.lphis <- se$lg_phiZINB[disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
@@ -318,7 +331,7 @@ se.gllvm <- function(object, ...){
         }
       }
       
-      if(object$row.eff=="random") { 
+      if(!is.null(object$params$row.params.random)) { 
         iter = 1 # keep track of index
         sigma <- se$log_sigma
         for(re in 1:length(cstrucn)){
@@ -464,37 +477,42 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="sigmaLV"] <- FALSE;
     }
     
-    if(object$row.eff=="random") {
+    if(!is.null(object$params$row.params.random)) {
       incld[names(objrFinal$par) == "lg_Ar"] <- TRUE
-      incld[names(objrFinal$par) == "r0"] <- TRUE
-      inclr[names(objrFinal$par) == "r0"] <- TRUE;
-      incl[names(objrFinal$par) == "r0"] <- FALSE; 
+      incld[names(objrFinal$par) == "r0r"] <- TRUE
+      inclr[names(objrFinal$par) == "r0r"] <- TRUE;
+      incl[names(objrFinal$par) == "r0r"] <- FALSE; 
     } else {
       incl[names(objrFinal$par)=="log_sigma"] <- FALSE
-      if(object$row.eff==FALSE) { incl[names(objrFinal$par)=="r0"] <- FALSE }
-      if(object$row.eff=="fixed"){ incl[1] <- FALSE }
+      incl[names(objrFinal$par)=="r0r"] <- FALSE
+    }
+    if(!is.null(object$params$row.params.fixed)){
+      if(object$params$row.params.fixed[1]==0) incl[names(objrFinal$par)=="r0f"][1] <- FALSE
+    }else{
+      incl[names(objrFinal$par)=="r0f"] <- FALSE
     }
     
     if(object$col.eff$col.eff=="random") {
       incld[names(objrFinal$par)=="Abb"] <- TRUE
       incld[names(objrFinal$par)=="Br"] <- TRUE
+      if(is.null(object$params$B))incl[names(objrFinal$par)=="B"] <- FALSE
     } else {
       incl[names(objrFinal$par)=="sigmaB"] <- FALSE
       incl[names(objrFinal$par)=="B"] <- FALSE
     }
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && object$row.eff!="random" && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
       names(se) = names(object$TMBfn$par[incl])
       
       trpred<-try({
-        if((num.lv+num.lv.c) > 0 || object$row.eff == "random" || object$col.eff$col.eff == "random"){
+        if((num.lv+num.lv.c) > 0 || !is.null(object$params$row.params.random) || object$col.eff$col.eff == "random"){
           sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)
           prediction.errors <- list()
           
-          if(object$row.eff=="random"){
+          if(!is.null(object$params$row.params.random)){
             prediction.errors$row.params <- sd.random$row
           }
           if(object$col.eff$col.eff == "random"){
@@ -571,9 +589,12 @@ se.gllvm <- function(object, ...){
     se <- relist.gllvm(se, object$TMBfn$env$parList())
     
     num.X <- 0; if(!is.null(object$X) || !isFALSE(object$col.eff$col.eff) && !is.null(object$X.design)) num.X <- dim(object$X.design)[2]
-    if(object$row.eff == "fixed") { 
-      se.row.params <- c(0,se$r0); 
-      names(se.row.params) <- rownames(object$y);
+    if(!is.null(object$params$row.params.fixed)) {
+      se.row.params <- se$r0f;
+      if(object$params$row.params.fixed[1]==0) {
+        se.row.params <- c(0, se.row.params)
+      }
+      names(se.row.params)  = names(object$params$row.params.fixed);
     }
     # if(family %in% "betaH"){
     #   # out$sd$betaH <- matrix(se$bH,p,num.X+1,byrow=TRUE);
@@ -685,7 +706,7 @@ se.gllvm <- function(object, ...){
       out$sd$Xcoef <- matrix(sebetaM[,-1],nrow = nrow(sebetaM));
       rownames(out$sd$Xcoef) <- colnames(object$y); colnames(out$sd$Xcoef) <- colnames(object$X.design);
     }
-    if(object$row.eff=="fixed") {out$sd$row.params <- se.row.params}
+    if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
     
     if(family %in% c("negative.binomial")) {
       se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
@@ -751,10 +772,12 @@ se.gllvm <- function(object, ...){
         sigma.sp[object$TMBfn$env$data$cs] <- sigma.sp[object$TMBfn$env$data$cs[,c(2,1),drop=F]] <- covsigma.sp
       }
       out$sd$sigmaB <- sigma.sp
+      if(!is.null(object$params[["B"]])){
       out$sd$B <- se$B
       names(out$sd$B) <- names(out$params$B)
+      }
     }
-    if(object$row.eff=="random") { 
+    if(!is.null(object$params$row.params.random)) { 
       iter = 1 # keep track of index
       sigma <- se$log_sigma
       for(re in 1:length(cstrucn)){
