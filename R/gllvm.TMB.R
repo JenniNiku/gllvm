@@ -509,7 +509,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           sigmaB <- 0;Br <- matrix(0);B<-matrix(0)
         }
       } else {
-        stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other.")
+        findproblem = c("y","X", "row.eff", "col.eff")[!c(dim(start.params$y)==dim(y), is.null(X)==is.null(start.params$X), isTRUE(all.equal(row.eff, start.params$row.eff)), (col.eff == start.params$col.eff$col.eff)  )]
+
+        stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other. Problem in: ", findproblem)
       }
     }
     
