@@ -76,7 +76,7 @@ gllvm(
 
 \item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{lvCor}{(Under development, not to be used at the moment!) correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in 'X' or 'studyDesign'. Works at the moment only with unconstrained ordination without quadratic term.}
+\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.}
 
 \item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 
@@ -94,7 +94,7 @@ gllvm(
 
 \item{quadratic}{either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.}
 
-\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{X}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
+\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
 
 \item{sd.errors}{logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.}
 
@@ -179,28 +179,29 @@ gllvm(
 An object of class "gllvm" includes the following components:
 
 
- \item{call }{ function call}
+ \item{call }{ function call.}
  \item{y}{ (n x m) matrix of responses.}
  \item{X}{ matrix or data.frame of environmental covariates.}
  \item{X.design}{ design matrix of environmental covariates.}
  \item{lv.X}{ design matrix or data.frame of environmental covariates for latent variables.}
  \item{lv.X.design}{ design matrix or data.frame of environmental covariates for latent variables.}
- \item{TR}{ Trait matrix}
- \item{formula}{ Formula for predictors}
- \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination}
- \item{randomX }{ Formula for species specific random effects in fourth corner model}
- \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination}
- \item{num.lv}{ Number of unconstrained latent variables}
- \item{num.lv.c}{ Number of latent variables in concurrent ordination}
- \item{num.RR}{ Number of latent variables in constrained ordination}
- \item{Ntrials}{ Number of trials in a binomial model}
- \item{method}{ Method used for integration}
- \item{family}{ Response distribution}
- \item{row.eff}{ Type of row effect used}
- \item{n.init}{ Number of model runs for best fit}
- \item{disp.group}{ Groups for dispersion parameters}
- \item{sd }{ List of standard errors}
- \item{lvs }{ Latent variables}
+ \item{TR}{ Trait matrix.}
+ \item{formula}{ Formula for predictors.}
+ \item{lv.formula}{ Formula of latent variables in constrained and concurrent ordination.}
+ \item{randomX }{ Formula for species specific random effects in fourth corner model.}
+ \item{Xd}{ design matrix for species specific random effects in fourth corner model.}
+ \item{randomB }{ Boolean flag for random slopes in constrained and concurrent ordination.}
+ \item{num.lv}{ Number of unconstrained latent variables.}
+ \item{num.lv.c}{ Number of latent variables in concurrent ordination.}
+ \item{num.RR}{ Number of latent variables in constrained ordination.}
+ \item{Ntrials}{ Number of trials in a binomial model.}
+ \item{method}{ Method used for integration.}
+ \item{family}{ Response distribution.}
+ \item{row.eff}{ Type of row effect used.}
+ \item{n.init}{ Number of model runs for best fit.}
+ \item{disp.group}{ Groups for dispersion parameters.}
+ \item{sd }{ List of standard errors.}
+ \item{lvs }{ Latent variables.}
  \item{params}{ List of parameters
  \describe{
    \item{theta }{ latent variables' loadings relative to the diagonal entries of loading matrix}
@@ -212,7 +213,8 @@ An object of class "gllvm" includes the following components:
    \item{Br}{ column random effects}
    \item{sigmaB}{ scale parameters for column-specific random effects}
    \item{rho.sp}{ (positive) correlation parameter for influence strength of "colMat"}
-   \item{row.params }{ row-specific intercepts}
+   \item{row.params.random }{ row-specific random effects}
+   \item{row.params.fixed }{ row-specific fixed effects}
    \item{sigma }{ scale parameters for row-specific random effects}
    \item{phi }{ dispersion parameters \eqn{\phi} for negative binomial or Tweedie family, probability of zero inflation for ZIP family, standard deviation for gaussian family or shape parameter for gamma/beta family}
    \item{inv.phi }{ dispersion parameters \eqn{1/\phi} for negative binomial}
