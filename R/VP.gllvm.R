@@ -230,7 +230,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     if(!is.null(object$params$row.params.random)){
       rnams <- unique(names(object$params$row.params.random))
       for (rn in rnams) {
-        r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn]%*%object$params$row.params.random[names(object$params$row.params.random)==rn]) )
+        r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn])%*%object$params$row.params.random[names(object$params$row.params.random)==rn])
         CoefMat <- rbind(CoefMat, rep(1,p))
         rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rn)
       }
