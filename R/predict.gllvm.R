@@ -331,7 +331,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
         r0 <- cbind(as.matrix(object$params$row.params.fixed))
     }
-    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,ncol(object$y))
+    
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" && is.null(newX)) {

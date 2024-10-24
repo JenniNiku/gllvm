@@ -117,7 +117,12 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     zval <- pars/se
     pvalue <- 2 * pnorm(-abs(zval))
     coef.table <- cbind(pars, se, zval, pvalue)
-    dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    if(nrow(object$y)==nrow(object$params$Xcoef)){
+      dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=ncol(object$y)),colnames(object$y),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))  
+    }else{
+      dimnames(coef.table) <- list(paste(rep(colnames(object$X.design),each=nrow(object$params$Xcoef)),row.names(object$params$Xcoef),sep=":"), c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))  
+    }
+    
     if(object$col.eff$col.eff == "random"){
       coef.table<- coef.table[!duplicated(coef.table),,drop=FALSE]
       row.names(coef.table)[grepl("RE_mean_", row.names(coef.table))] <- sub("RE_mean_", "RE mean:",grep("RE_mean_",colnames(object$X.design), value = TRUE))
@@ -295,7 +300,11 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   }
   
   colnames(M) <- newnams
-  rownames(M) <- colnames(object$y)
+  if(nrow(M)==ncol(object$y)){
+    rownames(M) <- colnames(object$y)
+  }else{
+    row.names(M) <- c(colnames(object$y), paste("H01",colnames(object$y), sep="_"))
+  }
   sumry$Call <- object$call
   sumry$family <- object$family
   sumry$Coefficients <- M
