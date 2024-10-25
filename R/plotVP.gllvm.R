@@ -7,7 +7,7 @@
 #' @param ylab a label for the y axis.
 #' @param legend.text a vector of names for the groups, as a default 'groupnames' from varPartitioning. If FALSE, legend not printed.
 #' @param args.legend a list of additional arguments to pass to \code{legend()}.
-#' @param mar = c(4,4,6,2)
+#' @param mar Margins of the plot. Default \code{c(4,4,6,2)}
 #' @param ... additional graphical arguments passed to the barplot function
 #' 
 #' 

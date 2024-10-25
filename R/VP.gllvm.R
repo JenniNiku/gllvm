@@ -35,8 +35,6 @@
 #'# Plot the result of  variance partitioning
 #'plotVP(VP, col = palette(hcl.colors(5, "Roma")))
 #'
-#'args.legend = list(x = "topright",
-#' inset = c(-0.2, 0))
 #'}
 #'
 #'@aliases varPartitioning VP varPartitioning.gllvm
@@ -113,8 +111,8 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   # Phylogen/random 
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" ) {
-    groupnamesF <- labels(terms(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1))))))
-    groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
+    groupnamesF <- labels(terms(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1))))))
+    groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
     groupF <- groupF[groupF!=0]
 
     X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept", drop=FALSE]
@@ -240,7 +238,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
           rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rg)
         }
       } else {
-        for (rg in rnams) {
+        for (rn in rnams) {
           r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn, drop=FALSE]%*%object$params$row.params.random[names(object$params$row.params.random)==rn, drop=FALSE]) )
           CoefMat <- rbind(CoefMat, rep(1,p))
           rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rn)

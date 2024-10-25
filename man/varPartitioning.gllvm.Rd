@@ -23,6 +23,8 @@ plotVarPartitioning(
   xlab = "Response",
   ylab = "Variance proportion",
   legend.text = NULL,
+  args.legend = list(cex = 0.7, x = "topright", bty = "n", inset = c(0, -0.15)),
+  mar = c(4, 4, 6, 2),
   ...
 )
 
@@ -50,6 +52,10 @@ plotVP(VP, ...)
 \item{ylab}{a label for the y axis.}
 
 \item{legend.text}{a vector of names for the groups, as a default 'groupnames' from varPartitioning. If FALSE, legend not printed.}
+
+\item{args.legend}{a list of additional arguments to pass to \code{legend()}.}
+
+\item{mar}{Margins of the plot. Default \code{c(4,4,6,2)}}
 }
 \description{
 Calculates variance partitioning for gllvm object with function \code{varPartitioning()}.
@@ -80,6 +86,7 @@ plotVarPartitioning(VP)
 \dontrun{
 # Plot the result of  variance partitioning
 plotVP(VP, col = palette(hcl.colors(5, "Roma")))
+
 }
 
 }
