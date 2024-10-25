@@ -1508,10 +1508,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         out$zeta.struc = fitg$zeta.struc
       }
       if(!isFALSE(row.eff.formula)){
+        out$grps.row = RElistRow$grps # Needed for VP !
+        
         # need to restore the row-effect names
         # because grouped names in dr are used to share variances in gllvm.TMB and traitTMB
         if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
           names(out$params$row.params.random) <- row.names(RElistRow$Zt)
+          if(!is.null(out$grps.row)) {
+            if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
+            names(out$params$sigma) = paste(names(out$params$sigma),names(out$grps.row), sep="|")
+            names(out$grps.row) = names(out$params$sigma)
+            }
         }
       }
       #### Try to calculate sd errors

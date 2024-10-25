@@ -34,6 +34,9 @@
 #'\dontrun{
 #'# Plot the result of  variance partitioning
 #'plotVP(VP, col = palette(hcl.colors(5, "Roma")))
+#'
+#'args.legend = list(x = "topright",
+#' inset = c(-0.2, 0))
 #'}
 #'
 #'@aliases varPartitioning VP varPartitioning.gllvm
@@ -114,7 +117,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(model1$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
     groupF <- groupF[groupF!=0]
 
-    X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept"]
+    X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept", drop=FALSE]
     x_in_model = colnames(X.d)
     
     # Species specific effects total:
@@ -205,10 +208,10 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
           LVgroups = c(LVgroups, (1:ncol(lvs))[(ncol(lvs)-object$num.lv+1):ncol(lvs)])
         }
         if ((object$num.lv.c + object$num.RR) > 0) {
-          theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))]
+          theta2 <- object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR)), drop=FALSE]
           theta2C <- abs(theta2[, 1:(object$num.lv.c +
                                        object$num.RR), drop = F])
-          lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
+          lvs <- lvs[,1:(object$num.lv.c+object$num.RR), drop=FALSE] + lv.X%*%object$params$LvXcoef
           Z <- cbind(Z, (lvs)^2)
           CoefMat <- rbind(CoefMat, t(-theta2C))
           
@@ -229,10 +232,19 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   if (!isFALSE(object$row.eff) && is.null(r0)) {
     if(!is.null(object$params$row.params.random)){
       rnams <- unique(names(object$params$row.params.random))
-      for (rn in rnams) {
-        r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn]%*%object$params$row.params.random[names(object$params$row.params.random)==rn]) )
-        CoefMat <- rbind(CoefMat, rep(1,p))
-        rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rn)
+      if(!is.null(object$grps.row)){
+        rgroups <- rep(names(object$grps.row),object$grps.row)
+        for (rg in unique(rgroups)) {
+          r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,rgroups==rg, drop=FALSE]%*%object$params$row.params.random[rgroups==rg, drop=FALSE]) )
+          CoefMat <- rbind(CoefMat, rep(1,p))
+          rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rg)
+        }
+      } else {
+        for (rg in rnams) {
+          r0 <- cbind(r0, as.matrix(object$TMBfn$env$data$dr0[,names(object$params$row.params.random)==rn, drop=FALSE]%*%object$params$row.params.random[names(object$params$row.params.random)==rn, drop=FALSE]) )
+          CoefMat <- rbind(CoefMat, rep(1,p))
+          rownames(CoefMat)[nrow(CoefMat)] = paste("Random effect:",rn)
+        }
       }
     } 
     if (!is.null(object$params$row.params.fixed)){
