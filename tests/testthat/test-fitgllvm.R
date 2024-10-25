@@ -29,10 +29,27 @@ test_that("row effects works", {
   y <- microbialdata$Y[1:30, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[21:35]]
   fr0<-gllvm(y, family = "negative.binomial", seed = 999, row.eff = "fixed", num.lv = 1)
   fr1<-gllvm(y, family = "negative.binomial", seed = 999, row.eff = "random", num.lv = 0)
-  result<-c(-0.34, 0.29)
-  names(result)<-c("AB3", "sigma")
-  expect_true(round(fr0$params$row.params[2], digits = 2)- result[1]<0.1)
+
+  # Structured
+  X <- microbialdata$Xenv[1:30,1:3]
+  StudyDesign = data.frame(Site = factor(microbialdata$Xenv$Site[1:30]), Soiltype = microbialdata$Xenv$Soiltype[1:30])
+  fr2<-gllvm(y, family = "negative.binomial", seed = 999, studyDesign = StudyDesign, row.eff = ~(1|Site), num.lv = 1)
+  fr3<-gllvm(y, family = "negative.binomial", seed = 999, studyDesign = StudyDesign, row.eff = ~(1|Site)+(1|Soiltype), num.lv = 1)
+  StudyDesign = data.frame(Site = factor(microbialdata$Xenv$Site[1:30]), pH = microbialdata$Xenv$pH[1:30])
+  fr4<-gllvm(y,X, family = "negative.binomial", seed = 999, studyDesign = StudyDesign,  row.eff = ~pH, num.lv = 1)
+  fr5<-gllvm(y,X, family = "negative.binomial", seed = 999, studyDesign = StudyDesign,  row.eff = ~(0+pH|Site), num.lv = 1)
+  
+  result<-c(-0.34, 0.29, 0.41, -0.02, 0)
+  names(result)<-c("AB3", "1|site", "1|Site", "pH", "pH|Site")
+  resultf3<-c(0.30, 0.29)
+  names(resultf3)<-c("1|Site", "1|Soiltype")
+  
+  expect_true(round(fr0$params$row.params[1], digits = 2)- result[1]<0.1)
   expect_true(round(fr1$params$sigma, digits = 2)- result[2]<0.1)
+  expect_true(round(fr2$params$sigma, digits = 2)- result[3]<0.1)
+  expect_true(all(round(fr3$params$sigma, digits = 2)- resultf3<0.1))
+  expect_true(round(fr4$params$row.params.fixed, digits = 2)- result[4]<0.1)
+  expect_true(round(fr5$params$sigma, digits = 2)- result[5]<0.1)
 })
 
 test_that("binomial works", {
