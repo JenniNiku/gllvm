@@ -139,6 +139,22 @@ summary(RRGLMb2)
 
 For this, we make use of an adjusted version of the familiar lme4-formula interface [@lme4, @lme4_software]. This is equivalent to assuming that the matrix of species coefficients follows a matrix normal distribution $\boldsymbol{\beta} \sim \mathcal{MN}(\textbf{0}, \boldsymbol{\Sigma}, \boldsymbol{\Gamma}\boldsymbol{\Gamma}^\top)$, so that the correlations are indeed the correlation of the predictor effects, estimated in reduced rank, and the species loadings form the column-covariance matrix, i.e., provide the species correlations in reduced rank.
 
+### Group-level unconstrained ordination
+
+Frequently, ecological datasets contain some kind of grouping structure. In these cases we might want to define the ordination at the group-level, rather than having a score for each row in the response matrix. An ordination where the scores are grouped based on (e.g., areas, plots or other groups) is also a constrained (or concurrent, see below) ordination. If there are only grouping variables, and no other predictors, the ordination is constrained relative to an ordination where the scores are defined per row in the response matrix, but the group-level scores themselves are unconstrained. If there are also other (continuous) predictors that is also fine, it just meansn that we end up with a concurrent ordination where the LV-level error is defined at the group-level.
+
+Here is an example with four artificial groups:
+
+```{r, groupord, results = "hide", eval = FALSE}
+groupUGLLVM <- gllvm(Y, X = data.frame(group = rep(1:4, 7)), lv.formula = ~(1|group), family="poisson", num.RR = 2, starting.val = "zero") # starting.val added because it gave a better fit here
+ordiplot(groupUGLLVM, arrow.lty = NA)
+```
+
+```{r, echo = FALSE, eval = TRUE, results = "hide"}
+load("groupUGLLVM.RData")
+ordiplot(groupUGLLVM, arrow.lty = NA)
+```
+
 ## Concurrent ordination
 
 Unlike in other R-packages, we can now formulate a ordination where additional random-effects are included that act like LV-level residuals (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
