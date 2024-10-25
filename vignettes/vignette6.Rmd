@@ -132,7 +132,7 @@ There is a range of potential use cases for random canonical coefficients, but p
 Incorporating correlation between the canonical coefficients is (currently) only possible in combination with `randomB="P"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
 
 ```{r eval=TRUE}
-RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2)
+RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2, randomB = "P")
 summary(RRGLMb2)
 ```
 
@@ -146,7 +146,7 @@ Frequently, ecological datasets contain some kind of grouping structure. In thes
 Here is an example with four artificial groups:
 
 ```{r, groupord, results = "hide", eval = FALSE}
-groupUGLLVM <- gllvm(Y, X = data.frame(group = rep(1:4, 7)), lv.formula = ~(1|group), family="poisson", num.RR = 2, starting.val = "zero") # starting.val added because it gave a better fit here
+groupUGLLVM <- gllvm(Y, X = data.frame(group = rep(1:4, 7)), lv.formula = ~(1|group), family="poisson", num.RR = 2, randomB = "LV", starting.val = "zero") # starting.val added because it gave a better fit here
 ordiplot(groupUGLLVM, arrow.lty = NA)
 ```
 
