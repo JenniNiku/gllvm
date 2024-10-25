@@ -1,5 +1,5 @@
 # start.values.gllvm.TMB
-start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matrix(0), dr = matrix(0), family,
+start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matrix(0), dr = matrix(0), cstruc = NULL, family,
                                    offset= NULL, trial.size = 1, num.lv = 0, num.lv.c = 0, num.RR = 0, start.lvs = NULL, 
                                    Power=NULL,starting.val="res",formula=NULL, lv.formula = NULL,
                                    jitter.var=0,yXT=NULL, TMB=TRUE, 
@@ -38,7 +38,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     stop("inputed family not allowed...sorry =(")
 
   if((nrow(dr) == n) || (nrow(xr) == n)){
-    rowstart <- start_values_rows(y, family, dr, xr, starting.val, Power, link, method, Ntrials)
+    rowstart <- start_values_rows(y, family, dr, cstruc, xr, starting.val, Power, link, method, Ntrials)
     
     if(nrow(dr)==n){
       out$row.params.random=rowstart$row.params.random
@@ -95,6 +95,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         if(family!="gaussian") {
           if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, formula = formula, lv.X = lv.X, family = family, num.lv=0, starting.val = "zero", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
           if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials)#mvabund::manyglm(y ~ 1, family = family, K = trial.size)
+
           coef = cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
           fit.mva$phi = fit.mva$params$phi
           if(family == "orderedBeta") {zetaOB = fit.mva$zeta = fit.mva$params$zeta}
@@ -128,7 +129,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         }
       
       if(!is.null(RElist)){
-      fit.mvaR <- gllvm.TMB(y, X = X, formula=formula(formula), family = family, num.lv = 0, RElist = RElist, xr = xr, dr = dr, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero", diag.iter = 0, optimizer = "nlminb", link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, sp.Ar.struc = Ab.struct, sp.Ar.struc.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat, col.eff = "random", beta0com = beta0com)
+      fit.mvaR <- gllvm.TMB(y, X = X, formula=formula(formula), family = family, num.lv = 0, RElist = RElist, xr = xr, dr = dr, cstruc = cstruc, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero", diag.iter = 0, optimizer = "nlminb", link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, sp.Ar.struc = Ab.struct, sp.Ar.struc.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat, col.eff = "random", beta0com = beta0com)
       if(!inherits(fit.mvaR,"try-error") && is.finite(fit.mvaR$logL)){
       if(nrow(dr)==n) { # !!!!  
         sigma=c(max(fit.mvaR$params$sigma[1],sigma),fit.mvaR$params$sigma[-1])
@@ -167,9 +168,9 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
           fit.mva <- gllvm.VA(y, X = X, TR = TR, row.eff = row.eff, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, plot = FALSE, sd.errors = FALSE, maxit = 1000, max.iter=200, n.init = 1, starting.val="zero", yXT = yXT)
         } 
         if(TMB) {
-          fit.mva <- try(trait.TMB(y, X = X, dr = dr, xr = xr, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
+          fit.mva <- try(trait.TMB(y, X = X, dr = dr, cstruc = cstruc, xr = xr, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
           if(is.null(randomX) && inherits(fit.mva, "try-error") || is.null(randomX) && !is.finite(fit.mva$logL)){
-            fit.mva <- try(trait.TMB(y, X = X, dr = dr, xr = xr, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="random",yXT = yXT, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
+            fit.mva <- try(trait.TMB(y, X = X, dr = dr, cstruc = cstruc, xr = xr, TR = TR, formula = formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="random",yXT = yXT, diag.iter = 0, optimizer = "nlminb", beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials), silent = TRUE);
           }
           if(is.null(fit.mva$row.eff)) fit.mva$row.eff = FALSE
           fit.mva$method = "VA"
@@ -177,8 +178,8 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
             stop("Calculating starting values has failed.")
           }
           if(!is.null(randomX) && !inherits(fit.mva, "try-error") && is.finite(fit.mva$logL)) {
-            fit.mva <- trait.TMB(y, X = X, dr = dr, xr = xr, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, start.params = fit.mva, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat);
-          } else {fit.mva <- trait.TMB(y, X = X, dr = dr, xr = xr, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat);}
+            fit.mva <- trait.TMB(y, X = X, dr = dr, cstruc = cstruc, xr = xr, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, start.params = fit.mva, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat);
+          } else {fit.mva <- trait.TMB(y, X = X, dr = dr, cstruc = cstruc, xr = xr, TR = TR, formula=formula(formula), family = family, num.lv = 0, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero",yXT = yXT, diag.iter = 0, optimizer = "nlminb", randomX = randomX, beta0com = beta0com, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat);}
           if(is.null(fit.mva$row.eff)) fit.mva$row.eff = FALSE
           fit.mva$coef=fit.mva$params
           if(nrow(dr)==n) { # !!!!  
@@ -2231,7 +2232,7 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
 }
 
 # starting values rows
-start_values_rows <- function(y, family, dr, xr, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = 1, max.iter = 200) {
+start_values_rows <- function(y, family, dr, cstruc, xr, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = 1, max.iter = 200) {
   y <- as.matrix(y)
   n <- NROW(y)
   tr0 <- try({
@@ -2240,9 +2241,9 @@ start_values_rows <- function(y, family, dr, xr, starting.val, Power = NULL, lin
       if(family != "tweedie"){
         if(family == "ZIP") family <- "poisson"
         if(family == "ZINB") family <- "negative.binomial"
-        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
+        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
       } else if(family == "tweedie"){
-        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "L-BFGS-B", max.iter = max.iter) #, method=method
+        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "L-BFGS-B", max.iter = max.iter) #, method=method
       }
     }else{
       

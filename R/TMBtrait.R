@@ -404,7 +404,7 @@ trait.TMB <- function(
       data <- cbind(data,xb)
     }
 
-    res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
+    res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, cstruc = cstruc, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT = yXT, TMB = TRUE, link=link, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
