@@ -184,7 +184,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       rnames[(cal + 1):(cal + nr)] <- paste("Fixed.Row.Effect", colnames(object$TMBfn$env$data$xr), sep = ".")
       cal <- cal + nr
     }
-    if (!is.null(object$params$row.params.random)) {
+    if ("sigma" %in% names(object$params)) {
       rnames[(cal + 1):(cal+length(object$sd$sigma))] <- paste("sigma", names(object$params$sigma), sep=".")
       cal <- cal + length(object$sd$sigma)
       # if(!is.null(object$params$rho)) {
