@@ -431,7 +431,7 @@ print.summary.gllvm <- function (x, ...)
   }
   if(x$row.intercepts){
     if(!is.null(x$`Row intercepts`)){
-      cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row effects',x$digits), ":\n")
+      cat("\n Row intercepts with variance", zapsmall(x$'Variance of random row intercepts',x$digits), ":\n")
       print(zapsmall(x$`Row intercepts`,x$digits))
     }
   }
