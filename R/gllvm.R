@@ -1538,7 +1538,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           if(!is.null(out$grps.row)) {
             if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="" | names(out$params$sigma)=="site")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="" | names(out$params$sigma)=="site")] ="1"
             names(out$params$sigma) = paste(names(out$params$sigma),names(out$grps.row), sep="|")
-            names(out$grps.row) = names(out$params$sigma)
             }
         }
       }

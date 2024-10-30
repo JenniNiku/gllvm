@@ -106,35 +106,43 @@ residuals.gllvm <- function(object, ...) {
       if (object$family == "betaH") {
         for (i in 1:n) {
           for (j in 1:p) {
-        if(y[i, j]==0){
-          b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j])
-          a = 0
-        } else {
-          b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j]) + binomial(link = object$link)$linkinv(eta.mat[i,p+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
-        }
-        u <- runif(n = 1, min = a, max = b)
-        if(u==1) u=1-1e-16
-        if(u==0) u=1e-16
-        ds.res[i, j] <- qnorm(u)
+            # a = 0; b = 1
+            if(!is.na(y[i, j])){
+              if(y[i, j]==0){
+                b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j])
+                a = 0
+              } else {
+                b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j]) + binomial(link = object$link)$linkinv(eta.mat[i,p+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
+              }
+            
+              u <- runif(n = 1, min = a, max = b)
+              if(u==1) u=1-1e-16
+              if(u==0) u=1e-16
+              ds.res[i, j] <- qnorm(u)
+            }
           }
         }
       }
       if (object$family == "orderedBeta") {
         for (i in 1:n) {
           for (j in 1:p) {
-        if(y[i, j]==1){
-          b = 1
-          a = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2])
-        } else if(y[i, j]==0){
-          b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1])
-          a = 0
-        } else {
-          b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) + (binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
-        }
-        u <- try({runif(n = 1, min = a, max = b)})
-        if(u==1) u=1-1e-16
-        if(u==0) u=1e-16
-        ds.res[i, j] <- qnorm(u)
+            # a = 0; b = 1
+            if(!is.na(y[i, j])){
+              if(y[i, j]==1){
+                b = 1
+                a = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2])
+              } else if(y[i, j]==0){
+                b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1])
+                a = 0
+              } else {
+                b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) + (binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,1]) - binomial(link = object$link)$linkinv(eta.mat[i,j] - object$params$zeta[j,2]))*pbeta(as.vector(unlist(y[i, j])), shape1 = object$params$phi[j]*mu[i, j], shape2 = object$params$phi[j]*(1-mu[i, j]))
+              }
+            
+            u <- try({runif(n = 1, min = a, max = b)})
+            if(u==1) u=1-1e-16
+            if(u==0) u=1e-16
+            ds.res[i, j] <- qnorm(u)
+            }
           }
         }
       }
