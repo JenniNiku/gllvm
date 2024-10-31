@@ -126,7 +126,7 @@ gllvm(
 
 \item{gradient.check}{logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.}
 
-\item{disp.formula}{formula, or alternatively a vector of indices, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
+\item{disp.formula}{a vector of indices, or alternatively formula, for the grouping of dispersion parameters (e.g. in a negative-binomial distribution, ZINB, tweedie), shape parameters (gamma, Beta, ordered Beta, hurdle Beta models) or variance parameters (gaussian distribution). Defaults to NULL so that all species have their own dispersion parameter. Is only allowed to include categorical variables. If a formula, data should be included as named rows in y.}
 
 \item{control}{A list with the following arguments controlling the optimization:
 \describe{
