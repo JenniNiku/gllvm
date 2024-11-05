@@ -171,7 +171,7 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
         }
         object$params$Br <- object$params$Br[row.names(object$params$Br)%in%which.Xcoef[[1]],,drop=FALSE]
       }   
-      breaks = seq(min(object$params$Br), max(object$params$Br), by = diff(range(object$params$Br))/15) # arbitrary cut-off for colors
+      breaks <- seq(min(object$params$Br), max(object$params$Br), by = diff(range(object$params$Br))/15) # arbitrary cut-off for colors
       image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label,drop=FALSE]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
       mtext(side = 1, text = "Species-specific random effect", padj = 4, cex = cex)
       axis(2, at = 1:nrow(object$params$Br), labels = colnames(t(object$params$Br)), las = 1, cex.axis = cex, lwd = 0)
@@ -189,7 +189,59 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
   on.exit(par(org.par), add = TRUE)
 }
 
+# This function plots the phylogenetic tree
+# By recursively traversing the branches
+# Starting at the tips, we draw segments
+# The coordinate of the parent node is calculated as the mean of the coordinates of the child branches
 phylogram.gllvm <- function(tree, direction = "right", scale = 0.95, col = "black", lwd = 1, labels = TRUE, ...){
+
+  plot_branch <- function(node, xpos) {
+    children <- which(edge[, 1] == node)
+    
+    if (length(children) == 0) {
+      # Terminal node (tip)
+      return(node_y[node])
+    } else {
+      # Internal node
+      child_y <- numeric(length(children))
+      for (i in seq_along(children)) {
+        child <- edge[children[i], 2]
+        x_next <- xpos + scaled_edge_length[children[i]]
+        
+        # Get the y-coordinate for the child node
+        child_y[i] <- plot_branch(child, x_next)
+        
+        # Draw horizontal line to child
+        if(direction %in% c("right", "left")){
+          segments(xpos, child_y[i], x_next, child_y[i], col = col)  
+        }else if(direction == "down"){
+          segments(child_y[i], xpos, child_y[i], x_next, col = col, lwd = lwd)  
+        }
+        
+      }
+      # Assign and draw vertical line for internal node
+      node_y[node] <- mean(child_y)
+      
+      if(direction %in% c("right", "left")){
+        segments(xpos, min(child_y), xpos, max(child_y), col = col, lwd = lwd)  
+      }else if(direction == "down"){
+        segments(min(child_y), xpos, max(child_y), xpos, col = col, lwd = lwd)  
+      }
+      return(node_y[node])
+    }
+  }
+  
+  calculate_depth <- function(node, current_depth) {
+    children <- which(edge[, 1] == node)
+    node_depths[node] <<- current_depth
+    
+    for (child in children) {
+      child_node <- edge[child, 2]
+      branch_length <- edge.length[child]
+      calculate_depth(child_node, current_depth + branch_length)
+    }
+  }
+  
 # Extract necessary information
 edge <- tree$edge
 edge.length <- tree$edge.length
@@ -202,49 +254,14 @@ y_coords <- setNames(seq_along(tip.labels), tip.labels)
 node_y <- numeric(max(tree$edge))
 node_y[1:length(y_coords)] <- y_coords
 
+root_node <- length(tree$tip.label) +1
+node_depths <- numeric(nrow(tree$edge)+1)
+calculate_depth(root_node, 0) # gets maximum depth
+
 # Calculate the maximum cumulative branch length (root to farthest tip)
-max_depth <- max(node.depth.edgelength(tree))
+max_depth <- max(node_depths)
 # Scale branch lengths to fill the plot width
 scaled_edge_length <- edge.length / max_depth * scale  # Scaling factor for full width
-
-# Initialize vector to store x-coordinates of tips
-
-# Function to plot branches and record end coordinates of tips
-plot_branch <- function(node, xpos) {
-  children <- which(edge[, 1] == node)
-  
-  if (length(children) == 0) {
-    # Terminal node (tip)
-    return(node_y[node])
-  } else {
-    # Internal node
-    child_y <- numeric(length(children))
-    for (i in seq_along(children)) {
-      child <- edge[children[i], 2]
-      x_next <- xpos + scaled_edge_length[children[i]]
-      
-      # Get the y-coordinate for the child node
-      child_y[i] <- plot_branch(child, x_next)
-      
-      # Draw horizontal line to child
-      if(direction %in% c("right", "left")){
-        segments(xpos, child_y[i], x_next, child_y[i], col = col)  
-      }else if(direction == "down"){
-        segments(child_y[i], xpos, child_y[i], x_next, col = col, lwd = lwd)  
-      }
-      
-    }
-    # Assign and draw vertical line for internal node
-    node_y[node] <- mean(child_y)
-
-    if(direction %in% c("right", "left")){
-      segments(xpos, min(child_y), xpos, max(child_y), col = col, lwd = lwd)  
-    }else if(direction == "down"){
-      segments(min(child_y), xpos, max(child_y), xpos, col = col, lwd = lwd)  
-    }
-    return(node_y[node])
-  }
-}
 
 # Initialize plot area with full width and tight y-limits
 xlim = c(0,1)
@@ -259,9 +276,6 @@ if(direction == "down") {
 }
   
 plot(0, 0, type = "n", xlim = xlim, ylim = ylim, xlab = "", ylab = "", axes = FALSE, xaxs = "i", yaxs = "i", ...)
-
-# Start plotting from the root node
-root_node <- Ntip(tree) + 1
 invisible(plot_branch(root_node, 0))
 
 if(labels){
