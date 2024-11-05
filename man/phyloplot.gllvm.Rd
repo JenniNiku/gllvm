@@ -77,9 +77,6 @@ and with community-level effects (i.e., effects that are the same across species
 If standard errors have been calculated for the model, the prediction intervals for
 species random effects are checked, and crossed out (i.e., displayed as white) if
 they cross zero.
-
-#' @references 
-van der Veen, B., O'Hara, R.B. (2024). Fast fitting of Fast fitting of phylogenetic mixed effects models. arXiv.
 }
 \examples{
 \dontrun{
@@ -101,6 +98,9 @@ model <- gllvm(y = Y[,order], X = X,
                 colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term")
 phyloplot(model, tree)
 }
+}
+\references{
+van der Veen, B., O'Hara, R.B. (2024). Fast fitting of Fast fitting of phylogenetic mixed effects models. arXiv.
 }
 \author{
 Bert van der Veen
