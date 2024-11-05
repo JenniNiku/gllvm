@@ -11,8 +11,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
-
 This vignette is divided into two parts, the first part related to models with environment covariates only, and the second part for models that additionally incorporate trait covariates, so called "fourth corner" models. This is for convenience, as the interface for fitting fourth corner models slightly differs from the models without traits. Both models are detailed in @vanderVeen2024, and the fourth corner model in more detail in @Niku2021.
 
 __For more information about fitting trait models with random effects, see also vignette 1.__
@@ -296,41 +294,10 @@ Here is some code to visualize the model results (from @vanderVeen2024):
 
 
 ``` r
+# Making the term namees a bit prettier
 row.names(model1$params$Br) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation","ln(Reserve area)")
-
-# strike REs that are not significant
-PEs <- gllvm::getPredictErr(model1)
-PIs <- data.frame(cbind(LI = c(model1$params$Br)-c(PEs$Br*1.96), UI = c(model1$params$Br)+c(PEs$Br*1.96)))
-model1$params$Br[-which((PIs$LI>0 & PIs$UI>0) | (PIs$LI<0 & PIs$UI<0))]<-NA
-
-layout(cbind(rbind(2,1),c(3,3)), respect = TRUE, heights = c(1.25,1), widths=c(2,0.5))
-par(mar=c(5,5,0,0))
-image(1L:ncol(model1$y), 1:ncol(model1$col.eff$spdr), t(model1$params$Br[,tree$tip.label]), col = colorRampPalette(c("#E69F00","white","#009E73"))(28), axes=FALSE, ylim = 0.5+c(0,ncol(model1$col.eff$spdr)),xlim=0.5+c(0,ncol(model1$y)),xlab=NA, breaks = seq(-3.5,3.5,by=.25), ylab=NA)
-mtext(side=1, text="Species-specific random effect",padj=4, cex = 0.6)
-axis(2, at= 1:ncol(model1$col.eff$spdr), labels=colnames(t(model1$params$Br)),las=1, cex.axis = 0.6, lwd=0)
-par(xpd=TRUE)
-for(i in 1:ncol(model1$col.eff$spdr)){
-  lines(x=c(-2,0),y=c(i,i))
-}
-
-par(mar=c(0,1,2,0))
-library(ape)
-plot(tree, show.tip.label = FALSE, direction = "downwards",xaxs="i")
-# caterpillar
-coefs <- c(model1$params$beta0[1],model1$params$B[1:(ncol(model1$col.eff$spdr)-1)])
-sds <- c(model1$sd$beta0[1],model1$sd$B[2:(ncol(model1$col.eff$spdr))])
-CIs <- data.frame(cbind(LI=coefs+sds*qnorm(1-0.95), UI=coefs+sds*qnorm(0.95)))
-names(coefs) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation", "ln(Reserve area)")
-cols <- rep("black", 8)
-cols[-which((CIs$LI>0 & CIs$UI>0) | (CIs$LI<0 & CIs$UI<0))] <- "grey"
-
-par(mar=c(5,0.5,2,5), xpd=FALSE)
-
-plot(coefs, y = 1:length(coefs), yaxt="n",ylab="", pch="x", col = cols, xlab = NA, cex.axis = 0.6, xlim = c(-max(abs(coefs)),max(abs(coefs))))
-mtext(side = 1, text = "Community mean response", padj = 4, cex = 0.6)
-segments(x0 = CIs$LI, y0 = 1:length(coefs), x1 = CIs$UI, y1 = 1:length(coefs), col = cols)
-abline(v = 0, lty="dashed")
-axis(4, at = 1:length(coefs), labels = names(coefs), las = 1, cex.axis = 0.6,lwd=0)
+model1$params$B[names(model1$params$B)%in%row.names(model1$params$Br)] <- row.names(model1$params$Br)[-1]
+phyloplot(model1, tree)
 ```
 
 <div class="figure" style="text-align: center">
