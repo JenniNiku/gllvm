@@ -9,6 +9,7 @@
 #' @param xlim vector of length two. Limits for the x-axis of the caterpillar plot. Defaults to NULL, in which case the limits are chosen based on the confidence intervals.
 #' @param level the confidence level. Scalar between 0 and 1.
 #' @param col vector of three colors (defaults to \code{c("#E69F00","white","#009E73")}) passed to \code{\link{colorRampPalette}} for species random effects.
+#' @param col.sym logical, defaults to \code{TRUE}. Then, the color scale of the species random effects plot is symmetrical (so that zero is nearly in the middle), so that both the lower and upper limit are determined by the largest absolute value. If \code{FALSE}, the lower and upper limits are determined by the smallest and largest values, respectively.
 #' @param mar.spec vector of length 4, which defines the margins sizes for the species random effects plot. Defaults to \code{c(3, 2, 0, 0)}.
 #' @param mar.phy vector of length 4, which defines the margins sizes for plotting the phylogeny. Defaults to \code{c(0, 2, 2, 0)}.
 #' @param mar.comm vector of length 4, which defines the margins sizes for the caterpillar plot. Defaults to \code{c(3, 0.5, 2, 1.5)}.
@@ -57,7 +58,7 @@
 #'@export
 #'@export phyloplot.gllvm
 
-phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top"){
+phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top"){
 # add option to change the order of the plot
 # graphical pars for every plot
   
@@ -96,7 +97,12 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
     }
     object$params$Br <- object$params$Br[row.names(object$params$Br)%in%which.Xcoef[[1]],,drop=FALSE]
   }
-  breaks = seq(min(object$params$Br), max(object$params$Br), by = diff(range(object$params$Br))/15) # arbitrary cut-off for colors
+  if(col.sym){
+    breaks = seq(-max(abs(object$params$Br)), max(object$params$Br), by = 0.01)
+  }else{
+    breaks = seq(min(object$params$Br), max(object$params$Br), by = 0.01)
+  }
+  
   image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label, drop=FALSE]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
   mtext(side = 1, text = "Species-specific random effect", padj = 4, cex = cex)
   axis(2, at = 1:nrow(object$params$Br), labels = colnames(t(object$params$Br)), las = 1, cex.axis = cex, lwd = 0)
