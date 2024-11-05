@@ -51,7 +51,7 @@
 #'                 formula = ~(DBH.CM|1), beta0com = TRUE,
 #'                 family = "binomial", num.lv = 0, nn.colMat = 15,
 #'                 colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term")
-#' phyloplot.gllvm(model, tree)
+#' phyloplot(model, tree)
 #'}
 #'@aliases phyloplot phyloplot.gllvm
 #'@export
@@ -272,3 +272,8 @@ for (i in seq_along(tip.labels)) {
 }
 }
 
+#'@export phyloplot
+phyloplot <- function(object, ...)
+{
+  UseMethod(generic = "phyloplot")
+}
