@@ -29,7 +29,7 @@
 #' species random effects are checked, and crossed out (i.e., displayed as white) if
 #' they cross zero.
 #' 
-#' #' @references 
+#' @references 
 #' van der Veen, B., O'Hara, R.B. (2024). Fast fitting of Fast fitting of phylogenetic mixed effects models. arXiv.
 #' 
 #' @author Bert van der Veen
