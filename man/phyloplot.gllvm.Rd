@@ -10,6 +10,7 @@ phyloplot.gllvm(
   tree,
   comm.eff = TRUE,
   row.eff = FALSE,
+  which.Xcoef = NULL,
   xlim = NULL,
   level = 0.95,
   col = c("#E69F00", "white", "#009E73"),
@@ -33,6 +34,8 @@ phyloplot.gllvm(
 \item{comm.eff}{logical, defaults to \code{TRUE}. If present in the model, should community effects be plotted?}
 
 \item{row.eff}{logical, defaults to \code{FALSE}. If present in the model, should row effects (e.g., community responses to covariates) be included?}
+
+\item{which.Xcoef}{List of length 2 with names to subset the effects to plot. The first vector is for the species plot, the second for community effects.}
 
 \item{xlim}{vector of length two. Limits for the x-axis of the caterpillar plot. Defaults to NULL, in which case the limits are chosen based on the confidence intervals.}
 
@@ -64,6 +67,16 @@ phyloplot.gllvm(
 }
 \description{
 Plots phylogenetic random effects with the phylogeny, and community effects
+}
+\details{
+Plots phylogenetically structured random effects together with the phylogeny,
+and with community-level effects (i.e., effects that are the same across species).
+If standard errors have been calculated for the model, the prediction intervals for
+species random effects are checked, and crossed out (i.e., displayed as white) if
+they cross zero.
+
+#' @references 
+van der Veen, B., O'Hara, R.B. (2024). Fast fitting of Fast fitting of phylogenetic mixed effects models. arXiv.
 }
 \examples{
 \dontrun{

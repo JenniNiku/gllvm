@@ -5,6 +5,7 @@
 #' @param tree an object of class ''
 #' @param comm.eff logical, defaults to \code{TRUE}. If present in the model, should community effects be plotted? 
 #' @param row.eff logical, defaults to \code{FALSE}. If present in the model, should row effects (e.g., community responses to covariates) be included? 
+#' @param which.Xcoef List of length 2 with names to subset the effects to plot. The first vector is for the species plot, the second for community effects.
 #' @param xlim vector of length two. Limits for the x-axis of the caterpillar plot. Defaults to NULL, in which case the limits are chosen based on the confidence intervals.
 #' @param level the confidence level. Scalar between 0 and 1.
 #' @param col vector of three colors (defaults to \code{c("#E69F00","white","#009E73")}) passed to \code{\link{colorRampPalette}} for species random effects.
@@ -20,6 +21,16 @@
 #' @param phy.place not (yet) in use.
 #' @param ...	additional not in use.
 #'
+#' @details
+#' Plots phylogenetically structured random effects together with the phylogeny,
+#' and with community-level effects (i.e., effects that are the same across species).
+#' If standard errors have been calculated for the model, the prediction intervals for
+#' species random effects are checked, and crossed out (i.e., displayed as white) if
+#' they cross zero.
+#' 
+#' #' @references 
+#' van der Veen, B., O'Hara, R.B. (2024). Fast fitting of Fast fitting of phylogenetic mixed effects models. arXiv.
+#' 
 #' @author Bert van der Veen
 #'
 #' @examples
@@ -46,7 +57,7 @@
 #'@export
 #'@export phyloplot.gllvm
 
-phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top"){
+phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top"){
 # add option to change the order of the plot
 # graphical pars for every plot
   
@@ -59,6 +70,7 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
   if(!inherits(tree, "phylo"))stop("Tree must be of class 'phylo'.")
   if(is.null(object$params$Br))stop("No species random effects present in the model.")
   if(is.null(object$col.eff$colMat))stop("No phylogentic random effects in the model.")
+  if((!is.null(which.Xcoef) && !is.list(which.Xcoef) || is.list(which.Xcoef) && length(which.Xcoef) != 2) && comm.eff)stop("'which.Xcoef' should be a list of length 2.")
   sd.err <- isFALSE(object$sd)||is.null(object$sd)
   if(sd.err && comm.eff)stop("No standard errors in the model.")
   
@@ -77,8 +89,15 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
   
   # start with species REs  
   par(mar = mar.spec)
+  if(is.character(which.Xcoef))which.Xcoef <- list(which.Xcoef)
+  if(is.list(which.Xcoef) && !is.null(which.Xcoef[[1]])) {
+    if(any(!which.Xcoef[[1]]%in%row.names(object$params$Br))){
+      stop(paste0("Some species random effects names are not correctly written. This vector should include any of: ", paste0(row.names(object$params$Br), collapse=", "), "."))
+    }
+    object$params$Br <- object$params$Br[row.names(object$params$Br)%in%which.Xcoef[[1]],,drop=FALSE]
+  }
   breaks = seq(min(object$params$Br), max(object$params$Br), by = diff(range(object$params$Br))/15) # arbitrary cut-off for colors
-  image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
+  image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label, drop=FALSE]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
   mtext(side = 1, text = "Species-specific random effect", padj = 4, cex = cex)
   axis(2, at = 1:nrow(object$params$Br), labels = colnames(t(object$params$Br)), las = 1, cex.axis = cex, lwd = 0)
   par(xpd=TRUE)
@@ -111,6 +130,15 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
   }
   
   CIs <- data.frame(cbind(LI=coefs+sds*qnorm(1-level), UI=coefs+sds*qnorm(level)))
+  
+  if(is.list(which.Xcoef) && !is.null(which.Xcoef[[2]])) {
+    if(any(!which.Xcoef[[1]]%in%names(coefs))){
+      stop(paste0("Some community effect names are not correctly written. This vector should include any of: ", paste0(names(coefs), collapse=", "), "."))
+    }
+    CIs <- CIs[names(coefs)%in%which.Xcoef[[2]],,drop=FALSE]
+    coefs <- coefs[which.Xcoef[[2]]]
+  }
+  
   cols <- rep("black", length(coefs))
   cols[-which((CIs$LI>0 & CIs$UI>0) | (CIs$LI<0 & CIs$UI<0))] <- "grey"
   
@@ -135,9 +163,16 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
       
       # start with species REs  
       par(mar = mar.spec)
-      
+   
+      if(is.character(which.Xcoef))which.Xcoef <- list(which.Xcoef)
+      if(is.list(which.Xcoef) && !is.null(which.Xcoef[[1]])) {
+        if(any(!which.Xcoef[[1]]%in%row.names(object$params$Br))){
+          stop(paste0("Some species random effects names are not correctly written. This vector should include any of: ", paste0(row.names(object$params$Br), collapse=", "), "."))
+        }
+        object$params$Br <- object$params$Br[row.names(object$params$Br)%in%which.Xcoef[[1]],,drop=FALSE]
+      }   
       breaks = seq(min(object$params$Br), max(object$params$Br), by = diff(range(object$params$Br))/15) # arbitrary cut-off for colors
-      image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
+      image(1L:ncol(object$y), 1:nrow(object$params$Br), t(object$params$Br[,tree$tip.label,drop=FALSE]), col = colorRampPalette(col)(length(breaks)-1), axes = FALSE, ylim = 0.5+c(0, nrow(object$params$Br)), xlim = 0.5+c(0,ncol(object$y)), xlab = NA, breaks = breaks, ylab = NA)
       mtext(side = 1, text = "Species-specific random effect", padj = 4, cex = cex)
       axis(2, at = 1:nrow(object$params$Br), labels = colnames(t(object$params$Br)), las = 1, cex.axis = cex, lwd = 0)
       par(xpd=TRUE)
