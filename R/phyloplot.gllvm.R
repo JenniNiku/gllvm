@@ -69,7 +69,6 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
   object$params$Br[-which((PIs$LI>0 & PIs$UI>0) | (PIs$LI<0 & PIs$UI<0))]<-NA
   }
   
-  usr <- par("usr")
   if(is.null(object$params$B) && (!row.eff || is.null(object$params$row.params.fixed)))comm.eff <- FALSE
   if(comm.eff){
     # Arrange 3 plots
@@ -111,7 +110,7 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, xlim
     sds <- c(sds, object$sd$params$row.params.fixed)
   }
   
-  CIs <<- data.frame(cbind(LI=coefs+sds*qnorm(1-level), UI=coefs+sds*qnorm(level)))
+  CIs <- data.frame(cbind(LI=coefs+sds*qnorm(1-level), UI=coefs+sds*qnorm(level)))
   cols <- rep("black", length(coefs))
   cols[-which((CIs$LI>0 & CIs$UI>0) | (CIs$LI<0 & CIs$UI<0))] <- "grey"
   
