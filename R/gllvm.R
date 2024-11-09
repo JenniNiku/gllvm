@@ -994,6 +994,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         stop("num.RR and num.lv.c should be less than, or equal to, the number of species.")
       }
       #check for redundant predictors
+      if(isFALSE(randomB)){
       QR<-qr(lv.X.design)
       if(QR$rank<ncol(lv.X.design)){
         warning("Redundant predictors detected, some have been omitted as they explain similar information. \n")
@@ -1008,12 +1009,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           stop("Please reduce num.RR and/or num.lv.c, to at maximum the number of non-redundant predictor variables.")
         }
         lv.X.red <- colnames(lv.X.design)[QR$pivot[-c(1:QR$rank)]]
-        lv.X.design<-lv.X.design[,QR$pivot[1:QR$rank],drop=F]
+        lv.X.design <- lv.X.design[,QR$pivot[1:QR$rank],drop=F]
         
         #remove redundant terms from formulas
         if(!is.null(lv.formula)){
           lv.formula <- formula(paste("~",paste(attr(terms(lv.formula),"term.labels")[!attr(terms(lv.formula),"term.labels")%in%lv.X.red],collapse="+")))
         }
+      }
       }
     }
     
