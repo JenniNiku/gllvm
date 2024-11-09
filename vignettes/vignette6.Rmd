@@ -147,12 +147,12 @@ Here is an example with four artificial groups:
 
 ```{r, groupord, results = "hide", eval = FALSE}
 groupUGLLVM <- gllvm(Y, X = data.frame(group = rep(1:4, 7)), lv.formula = ~(1|group), family="poisson", num.RR = 2, randomB = "LV", starting.val = "zero") # starting.val added because it gave a better fit here
-ordiplot(groupUGLLVM, arrow.lty = NA)
+ordiplot(groupUGLLVM, arrow.scale = 0)
 ```
 
 ```{r, echo = FALSE, eval = TRUE, results = "hide"}
 load("groupUGLLVM.RData")
-ordiplot(groupUGLLVM, arrow.lty = NA)
+ordiplot(groupUGLLVM, arrow.scale = 0)
 ```
 
 ## Fixed effects unconstrained ordination
