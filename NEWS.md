@@ -7,6 +7,7 @@ Version 1.4.9
   * Does not yet allow for between random effect correlation
 * New formula interface for phylogenetic model adapted to trait model too
 * New phyplot.gllvm function for plotting the phylogenetic random effects
+* Minor adjustment in the behavior of 'caption' in plot.gllvm
 
 Version 1.4.8
 =============

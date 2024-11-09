@@ -27,7 +27,7 @@
 
 \item{var.colors}{colors for responses, vector with length of number of response variables or 1. Defaults to NULL, when different responses have different colors.}
 
-\item{add.smooth}{logical indicating if a smoother should be added.}
+\item{add.smooth}{logical with default \code{TRUE}. Indicates if a smoother should be added.}
 
 \item{envelopes}{logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}}
 
