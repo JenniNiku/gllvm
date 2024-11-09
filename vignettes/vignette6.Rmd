@@ -155,6 +155,19 @@ load("groupUGLLVM.RData")
 ordiplot(groupUGLLVM, arrow.lty = NA)
 ```
 
+## Fixed effects unconstrained ordination
+
+Following the same ideas, we can also abuse the `num.RR` interface to fit a fixed effects unconstrained ordination:
+
+```{r, fixord, results = "hide", eval = FALSE}
+fixUGLLVM <- gllvm(Y, X = data.frame(site = as.factor(1:nrow(Y))), lv.formula = ~site, family="poisson", num.RR = 2) # starting.val added because it gave a better fit here
+ordiplot(fixUGLLVM, arrow.scale = 0)
+```
+```{r fixuGLLVM, echo = FALSE, eval = TRUE, results = "hide"}
+load("fixUGLLVM.RData")
+ordiplot(fixUGLLVM, arrow.scale = 0)
+```
+
 ## Concurrent ordination
 
 Unlike in other R-packages, we can now formulate a ordination where additional random-effects are included that act like LV-level residuals (because let's face it, how often are we 100% confident that we have measured all relevant predictors?), so that we can assume that the ecological gradient is represented by unmeasured and measured predictors (the former is how the residual can be understood). The code for this is:
