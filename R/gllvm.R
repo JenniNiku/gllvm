@@ -855,7 +855,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
             RElistLV<- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
-            lv.X.design = (as.matrix(RElistLV$Zt))
+            lv.X.design = t(as.matrix(RElistLV$Zt))
             if(randomB=="P")csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
             if((ncol(csBlv) == 2) && randomB%in%c("LV","iid","single")){
               warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
