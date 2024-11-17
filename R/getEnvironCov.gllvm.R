@@ -182,7 +182,7 @@ if(object$col.eff$col.eff=="random"){
   }
   names(out$trace.randomB)
     if(!isFALSE(object$quadratic)){
-      covMat <- covMat + Reduce(cov.environ.randomB.quad, "+")
+      covMat <- covMat + Reduce("+", cov.environ.randomB.quad)
       out$trace.randomB.quad <- unlist(trace.environ.randomB.quad)
       if(object$randomB=="LV"){
         names(out$trace.randomB.quad) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
