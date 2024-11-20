@@ -46,19 +46,21 @@
 #' colMat <- fungi$C # e.g., from ape::vcv(tree)
 #' dist <- fungi$dist # e.g., from ape::cophenetic.phylo(tree)
 #' order <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = 15,
-#'                            order = order(dist[1:length(tree$tip.label), nrow(dist)],decreasing = TRUE))$order
+#'                            order = order(dist[1:length(tree$tip.label), nrow(dist)],
+#'                            decreasing = TRUE))$order
 #' order <- tree$tip.label[order]
 #' model <- gllvm(y = Y[,order], X = X,
 #'                 formula = ~(DBH.CM|1), beta0com = TRUE,
 #'                 family = "binomial", num.lv = 0, nn.colMat = 15,
-#'                 colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term")
+#'                 colMat = list(colMat[order,order], dist = dist[order,order]), 
+#'                 colMat.rho.struct = "term")
 #' phyloplot(model, tree)
 #'}
 #'@aliases phyloplot phyloplot.gllvm
 #'@export
 #'@export phyloplot.gllvm
 
-phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top"){
+phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top", ...){
 # add option to change the order of the plot
 # graphical pars for every plot
   

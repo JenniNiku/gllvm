@@ -24,7 +24,8 @@
   pch = "x",
   heights = c(0.55, 0.35),
   widths = c(0.64, 0.1),
-  phy.place = "top"
+  phy.place = "top",
+  ...
 )
 }
 \arguments{
@@ -90,12 +91,14 @@ tree <- fungi$tree # the tree
 colMat <- fungi$C # e.g., from ape::vcv(tree)
 dist <- fungi$dist # e.g., from ape::cophenetic.phylo(tree)
 order <- gllvm:::findOrder(covMat = colMat, distMat = dist, nn = 15,
-                           order = order(dist[1:length(tree$tip.label), nrow(dist)],decreasing = TRUE))$order
+                           order = order(dist[1:length(tree$tip.label), nrow(dist)],
+                           decreasing = TRUE))$order
 order <- tree$tip.label[order]
 model <- gllvm(y = Y[,order], X = X,
                 formula = ~(DBH.CM|1), beta0com = TRUE,
                 family = "binomial", num.lv = 0, nn.colMat = 15,
-                colMat = list(colMat[order,order], dist = dist[order,order]), colMat.rho.struct = "term")
+                colMat = list(colMat[order,order], dist = dist[order,order]), 
+                colMat.rho.struct = "term")
 phyloplot(model, tree)
 }
 }
