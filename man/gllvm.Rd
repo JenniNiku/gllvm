@@ -94,7 +94,7 @@ gllvm(
 
 \item{quadratic}{either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.}
 
-\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
+\item{row.eff}{\code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the community level row effects, indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.}
 
 \item{sd.errors}{logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.}
 
@@ -258,7 +258,7 @@ site related environmental covariates are used, the expectation of response \eqn
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
 
-where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional row effect
+where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional community level row effect
 at site \eqn{i}, and it can be fixed or random effect (also other structures are possible, see below), \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 specific coefficients related to covariates and the latent variables, respectively.
 
@@ -295,7 +295,7 @@ The interaction/fourth corner terms are optional as well as are the main effects
 }
 
 \subsection{Structured row effects}{
-In addition to the site-specific random effects, \eqn{\alpha_i}, it is also possible to set arbitrary structure/design for the row effects. 
+In addition to the sample-specific community level random effects, \eqn{\alpha_i}, it is also possible to set arbitrary structure/design for the row effects. 
 That is, assume that observations / rows \eqn{i=1,...,n} in the data matrix are from groups \eqn{t=1,...,T}, so that each row \eqn{i} belongs to one of the groups, denote \eqn{G(i) \in \{1,...,T\}}. Each group \eqn{t} has a number of observations \eqn{n_t}, so that \eqn{\sum_{t=1}^{T} n_t =n}.
 Now we can set random intercept for each group \eqn{t}, (see argument '\code{row.eff}'):
 

@@ -11,13 +11,13 @@ vignette: >
 
 <!-- This is pre-computed vignette -->
 
-In this example we demonstrate how to set correlation structures for latent variables and random effects in **gllvm**. The species abundances are often correlated in time or spatially in community ecology. In **gllvm**, such correlation structures can now be set either for latent variables or random row effects. 
+In this example we demonstrate how to set correlation structures for latent variables and random effects in **gllvm**. The species abundances are often correlated in time or spatially in community ecology. In **gllvm**, such correlation structures can now be set either for latent variables or comunity level random row effects. 
 
 Denote the abundance of the $j$th species ($j\in \{1,\dots, p\}$) at the $i$th site ($i\in \{1,\dots, n\}$) as $y_{ij}$. A set of k environmental variables, or experimental treatments, may also be recorded at each site and stored in the vector $\boldsymbol{x}_i = (x_{i1}, ..., x_{ik})$. A common form for the GLLVM is then defined for the mean abundance $\mu_{ij}$:
 
 $$g(\mu_{ij}) = \eta_{ij} = r_{s_a(i)} + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_j + \boldsymbol{u}_{s_u(i)}'\boldsymbol{\theta}_j,$$
 
-Now we can specify a correlation structure for latent variables $\boldsymbol{u}_{s_u(i)} = ({u}_{1,s_u(i)}, \dots, {u}_{d,s_u(i)})'$ ($d=$ number of latent variables, defined by `num.lv` in **gllvm**) and/or row effects $r_{s_r(i)}$. The subscripts $s_u(i)$ defines the structure of the latent variables. For instance, assume that we have a hierarchical sampling design with $n_s<n$ sites and sites are sampled $n_t$ times in consecutive years. Thus we could want to include a site level latent variables such that $s_u(i) = k$ if sampling unit $i$ is from site $k$ ($k\in \{1,\dots, n_s\}$). Similarly, we can set a structure for the row effects defining subscript $s_r(i)$, eg. for time $s_r(i) = t$ if sampling unit $i$ is from sampling year $t$ ($t\in \{1,\dots, n_t\}$). Then we can define the correlation structures for latent variables and/or row effects: denote $\boldsymbol{u}_{q.} = (u_{q1}, ..., u_{qn_s})$
+Now we can specify a correlation structure for latent variables $\boldsymbol{u}_{s_u(i)} = ({u}_{1,s_u(i)}, \dots, {u}_{d,s_u(i)})'$ ($d=$ number of latent variables, defined by `num.lv` in **gllvm**) and/or community level row effects $r_{s_r(i)}$. The subscripts $s_u(i)$ defines the structure of the latent variables. For instance, assume that we have a hierarchical sampling design with $n_s<n$ sites and sites are sampled $n_t$ times in consecutive years. Thus we could want to include a site level latent variables such that $s_u(i) = k$ if sampling unit $i$ is from site $k$ ($k\in \{1,\dots, n_s\}$). Similarly, we can set a structure for the row effects defining subscript $s_r(i)$, eg. for time $s_r(i) = t$ if sampling unit $i$ is from sampling year $t$ ($t\in \{1,\dots, n_t\}$). Then we can define the correlation structures for latent variables and/or row effects: denote $\boldsymbol{u}_{q.} = (u_{q1}, ..., u_{qn_s})$
 $$
 {u}_{q.} \sim N(\boldsymbol{0}, \Sigma_q), \,  q=1,\dots, d.
 $$
@@ -144,11 +144,11 @@ hist(Xenv$logKELP_FRONDSsc, main = "log of KELP FRONDS")
 
 For modeling percent cover data, \texttt{gllvm} has three options, beta for values (0,1), ordered beta for [0,1] and beta hurdle model for [0,1). Here we use beta-hurdle response model.
 
-## Structured and correlated random row effects
+## Structured and correlated community level random row effects
 
-The structure for row effects can be defined using argument `row.eff` and defining the study design using argument `studyDesign`. The structure is defined by common formula interface; eg. `row.eff = ~(1|site)` and `site` factor in a `data.frame` given in argument `studyDesign` defines site level random effects. There are four correlation structures available in \texttt{gllvm}, AR(1) `corAR1`, compound symmetry `corCS`, exponentially decaying `corExp` and Matern correlation `corMatern`. If one would like to set eg. spatial correlation structure for the site level random effects, it could be defined for instance by `row.eff = ~corExp(1|site)` and spatial coordinates given to `dist` as a matrix. Multiple row effect structures are allowed.
+The structure for community level row effects can be defined using argument `row.eff` and defining the study design using argument `studyDesign`. The structure is defined by common formula interface; eg. `row.eff = ~(1|site)` and `site` factor in a `data.frame` given in argument `studyDesign` defines site level random effects. There are four correlation structures available in \texttt{gllvm}, AR(1) `corAR1`, compound symmetry `corCS`, exponentially decaying `corExp` and Matern correlation `corMatern`. If one would like to set eg. spatial correlation structure for the site level random effects, it could be defined for instance by `row.eff = ~corExp(1|site)` and spatial coordinates given to `dist` as a matrix. Multiple row effect structures are allowed.
 
-In the next example, we attempt to model species abundances correlation in time using AR(1) correlated random effect for sampling year as well as site level row effects. Latent variables are left out from this model for now.
+In the next example, we attempt to model species abundances correlation in time using AR(1) correlated community level random effect for sampling year as well as site level row effects. Latent variables are left out from this model for now.
 
 
 ``` r
@@ -251,7 +251,7 @@ plotVP(VP1, args.legend = list(cex=0.7), col=hcl.colors(5, "Roma"))
 
 ### Structured latent variables
 
-In the previous example, we did not include latent variables in the model, but let's focus on them now. Similarly to row effects we can now set a structure for the latent variables as well using argument `lvCor`. For instance, we could like to account the variation in transects and sites and possible missing environmental covariates that affect the species abundances. So let's include in the model also transect level latent variables, leave random effect for site out:
+In the previous example, we did not include latent variables in the model, but let's focus on them now. Similarly to community level row effects we can now set a structure for the latent variables as well using argument `lvCor`. For instance, we could like to account the variation in transects and sites and possible missing environmental covariates that affect the species abundances. So let's include in the model also transect level latent variables, leave random effect for site out:
 
 
 ``` r

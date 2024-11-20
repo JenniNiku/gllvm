@@ -98,7 +98,7 @@ gllvm(y = NULL, X = NULL, TR = NULL, family, num.lv = 2,
 - family: distribution for responses
 - num.lv: number of latent variables
 - method: approximation used "VA" or "LA"
-- row.eff: type of row effects
+- row.eff: type of community level row effects
 - n.init: number of random starting points for latent variables
 - starting.val: starting value method
 

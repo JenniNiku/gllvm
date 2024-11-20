@@ -15,7 +15,7 @@
 #' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
-#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the row parameters. Indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
+#' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the community level row effects, indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
 #' @param corWithin logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param corWithinLV logical. For LVs with correlation, If \code{TRUE}, correlation is set between rows of the observation units within group. Defaults to \code{FALSE}, when correlation is set for rows between groups.
 #' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
@@ -88,7 +88,7 @@
 #'
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\theta_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional row effect
+#' where \eqn{g(.)} is a known link function, \eqn{u_i} are \eqn{d}-variate latent variables (\eqn{d}<<\eqn{m}), \eqn{\alpha_i} is an optional community level row effect
 #' at site \eqn{i}, and it can be fixed or random effect (also other structures are possible, see below), \eqn{\beta_{0j}} is an intercept term for species \eqn{j}, \eqn{\beta_j} and \eqn{\theta_j} are column
 #' specific coefficients related to covariates and the latent variables, respectively.
 #'
@@ -125,7 +125,7 @@
 #'}
 #'
 #' \subsection{Structured row effects}{
-#' In addition to the site-specific random effects, \eqn{\alpha_i}, it is also possible to set arbitrary structure/design for the row effects. 
+#' In addition to the sample-specific community level random effects, \eqn{\alpha_i}, it is also possible to set arbitrary structure/design for the row effects. 
 #' That is, assume that observations / rows \eqn{i=1,...,n} in the data matrix are from groups \eqn{t=1,...,T}, so that each row \eqn{i} belongs to one of the groups, denote \eqn{G(i) \in \{1,...,T\}}. Each group \eqn{t} has a number of observations \eqn{n_t}, so that \eqn{\sum_{t=1}^{T} n_t =n}.
 #' Now we can set random intercept for each group \eqn{t}, (see argument '\code{row.eff}'):
 #' 
