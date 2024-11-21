@@ -70,7 +70,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   # Basec env model:
   if (!is.null(object$X) && is.null(object$TR)) {
     groupnamesF <- labels(terms(formula))
-    groupF <- attr(model.matrix(formula, data = object$X), "assign")
+    groupF <- attr(model.matrix(formula, data = as.data.frame(object$X)), "assign")
     groupF <- groupF[groupF!=0]
     B <- object$params$Xcoef
     Z  <- cbind(Z, object$X.design)
@@ -112,7 +112,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if (object$col.eff$col.eff == "random" ) {
     groupnamesF <- labels(terms(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1))))))
-    groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))), data = object$col.eff$Xt), "assign")
+    groupF <- attr(model.matrix(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))), data = as.data.frame(object$col.eff$Xt)), "assign")
     groupF <- groupF[groupF!=0]
 
     X.d <- object$col.eff$spdr[, colnames(object$col.eff$spdr)!= "Intercept", drop=FALSE]
@@ -146,7 +146,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
       if ((object$num.lv.c + object$num.RR) > 0 & object$quadratic == FALSE) {
         if(is.null(object$params$corsLvXcoef)){
         groupnamesF <- c(groupnamesF, paste("CLV:",labels(terms(object$lv.formula)), sep = ""))
-        groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = object$lv.X), "assign")[-1] + max(groupF,0))
+        groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = as.data.frame(object$lv.X)), "assign")[-1] + max(groupF,0))
         }else{
           # cannot use formula for this..
           groupnamesF <- c(groupnamesF, paste("CLV:",colnames(object$lv.X.design), sep = ""))
