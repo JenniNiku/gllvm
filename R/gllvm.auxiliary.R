@@ -3000,7 +3000,7 @@ pzinb <- function(y, mu, p, sigma)
 
 # function adapted from utils package to re-order gllvm's parameters and/or standard errors
 # relist.gllvm
-relist.gllvm <- function (flesh, skeleton = attr(flesh, "skeleton")) 
+relist_gllvm <- function (flesh, skeleton = attr(flesh, "skeleton")) 
 {
   ind <- 1L
   nam = unique(names(flesh))
