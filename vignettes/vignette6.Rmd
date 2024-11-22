@@ -79,7 +79,7 @@ Note the use of the `rotate` argument. This ensures that the solution of the can
 
 Unlike the canonical coefficients, the reconstructed species-specific effects are invariant to rotation, so that it is always good practice to additionally study those for more exhaustive inference;
 
-```{r fig.height=2, fig.width=7, echo=TRUE, eval=TRUE}
+```{r coefsP, fig.height=2, fig.width=7, echo=TRUE, eval=TRUE}
 coefplot(RRGLM, cex.ylab = 0.5, mar = c(4,2,2,1))
 ```
 
@@ -102,7 +102,7 @@ RRGLMb1$col.eff$col.eff <-FALSE
 where the `randomB` argument is additionally used to specify if variances of the random slopes should be unique per latent variable (i.e. assume that the random slopes per predictor come from the same distribution), or per predictor (i.e. assume that the random slopes per latent variable come from the same distribution). Either setting has benefits, the first implies covariance between species responses to a predictor, whereas the latter can serve to shrink effects of a single predictor to near zero. In general, it has the potential to stabilize model fitting and reduce variance of the parameter estimates. Finally, a slope for a categorical predictor is an intercept, so this formulation also allows to include random intercepts in the ordination.
 
 A plot of species-specific effects can be constructed with the  `randomCoefplot` function:
-```{r fig.height=2, fig.width=7}
+```{r rcoefs, fig.height=2, fig.width=7}
 randomCoefplot(RRGLMb1, cex.ylab = 0.5, mar = c(4,2,2,1))
 ```
 
@@ -150,7 +150,7 @@ groupUGLLVM <- gllvm(Y, X = data.frame(group = rep(1:4, 7)), lv.formula = ~(1|gr
 ordiplot(groupUGLLVM, arrow.scale = 0)
 ```
 
-```{r, echo = FALSE, eval = TRUE, results = "hide"}
+```{r ordip6_1, echo = FALSE, eval = TRUE, results = "hide"}
 load("groupUGLLVM.RData")
 ordiplot(groupUGLLVM, arrow.scale = 0)
 ```
@@ -159,7 +159,7 @@ ordiplot(groupUGLLVM, arrow.scale = 0)
 
 Following the same ideas, we can also abuse the `num.RR` interface to fit a fixed effects unconstrained ordination:
 
-```{r, fixord, results = "hide", eval = FALSE}
+```{r ordip6_2, fixord, results = "hide", eval = FALSE}
 fixUGLLVM <- gllvm(Y, X = data.frame(site = as.factor(1:nrow(Y))), lv.formula = ~site, family="poisson", num.RR = 2) # starting.val added because it gave a better fit here
 ordiplot(fixUGLLVM, arrow.scale = 0)
 ```
@@ -198,7 +198,7 @@ summary(CGLLVM)
 
 Finally, we can use all the other tools in the \texttt{gllvm} R-package for inference, such as creating an ordination diagram with arrows:
 
-```{r}
+```{r ordip6_3}
 ordiplot(CGLLVM, biplot = TRUE)
 ```
 
