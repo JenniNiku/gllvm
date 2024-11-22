@@ -1,4 +1,6 @@
 ^Meta$
 ^doc$
+^docs$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^CITATION.cff
