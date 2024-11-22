@@ -118,7 +118,7 @@ gllvm(
 
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental).}
 
-\item{seed}{a single seed value, defaults to \code{NULL}.}
+\item{seed}{a single seed value if \code{n.init=1}, and a seed value vector of length \code{n.init} if \code{n.init>1}. Defaults to \code{NULL}, when new seed is not set for single initial fit and seeds are is randomly generated if multiple initial fits are set.}
 
 \item{scale.X}{logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.}
 

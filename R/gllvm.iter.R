@@ -62,10 +62,10 @@ gllvm.iter <- function(...){
   
   if("seed" %in% names(args))args <- args[!names(args)=="seed"]
   
-  # If no seed is provided it is randomly drawn
-  if(is.null(seed) & args$starting.val!="zero"){
-    seed <- sample(1:10000, args$n.init)
-  }
+  # If no seed, new seed is not set for now on  
+  # if(is.null(seed) & args$starting.val!="zero"){
+  #   seed <- sample(1:10000, args$n.init)
+  # }
   
 if(args$n.init>1){
   fitFinal <- NULL
@@ -76,7 +76,7 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   if(args$n.init > 1 && args$trace)
     cat("Initial run ", n.i, "\n")
   
-  set.seed(seed[n.i])
+  if(!is.null(seed)) set.seed(seed[n.i])
   
   if(model == "gllvm.TMB"){
   fit <- do.call(gllvm.TMB, args)
@@ -123,7 +123,7 @@ n.i <- n.i+1;
 }
 
 }else{
-  set.seed(seed)
+  if(!is.null(seed)) set.seed(seed)
   
   if(model == "gllvm.TMB"){
     fitFinal <- do.call(gllvm.TMB, args)
