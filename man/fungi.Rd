@@ -26,8 +26,6 @@ data(fungi)
 \item{tree}{The phylogenetic tree.}
 \item{C}{The phylogenetic covariance matrix.}
 \item{dist}{The phylogenetic distance matrix.}
-\describe{
-}
 }
 
 }
