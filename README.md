@@ -19,9 +19,9 @@ devtools::install_github("JenniNiku/gllvm")
 For getting started with `gllvm` we recommend to read vignette [Analysing multivariate abundance data using gllvm](https://jenniniku.github.io/gllvm/articles/vignette1.html)
 or introductions for using `gllvm` for [ordination](https://jenniniku.github.io/gllvm/articles/vignette3.html) and for [analysing species correlations](https://jenniniku.github.io/gllvm/articles/vignette4.html).
 
-Other available vignettes are:  [Analysing microbial community data](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette2.html),
-[How to use the quadratic response model](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette5.html),
-[Ordination with predictors](https://cran.r-project.org/web/packages/gllvm/vignettes/vignette6.html), [Analysing percent cover data](https://jenniniku.github.io/gllvm/articles/vignette8.html) and 
+Other available vignettes are:  [Analysing microbial community data](https://CRAN.R-project.org/package=gllvm/vignettes/vignette2.html),
+[How to use the quadratic response model](https://CRAN.R-project.org/package=gllvm/vignettes/vignette5.html),
+[Ordination with predictors](https://CRAN.R-project.org/package=gllvm/vignettes/vignette6.html), [Analysing percent cover data](https://jenniniku.github.io/gllvm/articles/vignette8.html) and 
 [Structured and correlated random effects and latent variables](https://jenniniku.github.io/gllvm/articles/vignette9.html).
 
 # Citation
