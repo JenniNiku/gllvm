@@ -440,7 +440,7 @@ references:
     - family: Jagan
       given: Mikael
   publisher: CRAN
-  URL: https://cran.r-project.org/web/packages/lme4/index.html
+  URL: https://CRAN.R-project.org/package=lme4
   type: software
   issued:
     year: 2024
