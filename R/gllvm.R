@@ -397,8 +397,8 @@
 #'# Exclude species which have observed at less than 4 sites
 #'ycoral <- ycoral[-17, (colSums(ycoral > 0) > 4)]
 #'# Fit Tweedie model for coral data (this line may take few minutes to run)
-#'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "LA")
-#'ordiplot(fit.twe)
+#'fit.twe <- gllvm(y = ycoral, family = "tweedie", method = "EVA", seed=111)
+#'fit.twe
 #'
 #'## Example 6: Random row effects
 #'fitRand <- gllvm(y, family = "negative.binomial", row.eff = "random")

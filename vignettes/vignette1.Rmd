@@ -327,7 +327,7 @@ load(file = "fit_4th.Rdata")
 ```
 ```{r, fig.show='hold', out.width='49%', warning = TRUE}
 library(lattice)
-coefplot(fit_4th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
+coefplot.gllvm(fit_4th, mar = c(4, 11, 1, 1), cex.ylab = 0.8)
 fourth <- fit_4th$fourth.corner
 a <- 1.5
 colort <- colorRampPalette(c("blue", "white", "red"))
