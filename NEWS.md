@@ -1,3 +1,8 @@
+Version 2.0
+=============
+
+* For CRAN release 2.0 see updates for versions 1.4.4 - 1.4.9
+
 Version 1.4.9
 =============
 
