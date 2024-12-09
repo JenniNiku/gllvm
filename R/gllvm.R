@@ -1250,10 +1250,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   cat("VA method cannot handle", family, " family, so LA method is used instead. \n")
     #   method <- "LA"
     # }
-    if (quadratic != FALSE && family %in% c("tweedie", "beta")){
+    if (quadratic != FALSE && family %in% c("beta")){
       stop("The quadratic model is not implemented for ", family, " family yet. \n")
     }
-    if (method == "VA" && family %in% c("tweedie", "beta")){
+    if (method == "VA" && family %in% c("beta")){
       cat("Note that, the", family, "family is implemented using the extended variational approximation method. \n")
     }
     # if (method == "EVA"){

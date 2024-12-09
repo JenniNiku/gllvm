@@ -1,3 +1,8 @@
+Version 2.0.
+=============
+
+* Added VA implementation of Tweedie
+
 Version 2.0
 =============
 
