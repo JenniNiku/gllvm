@@ -2528,9 +2528,9 @@ Type objective_function<Type>::operator() ()
           if((family==0)||(family==1)||(family==4)||(family==6)||(family==8)||(family==11)){
             int sign = 1;
             //sign controls whether it's Poisson or other
-            if((family>0) && (family != 6)){
+            if((family>0) && (family != 6) && (family! = 5)){
               sign = 1;
-            }else if((family==0)||(family==6)){
+            }else if((family==0)||(family==5)||(family==6)){
               sign = -1;
             }
             
