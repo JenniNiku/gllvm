@@ -302,6 +302,7 @@ se.gllvm <- function(object, ...){
       }
       
       if(family%in%c("ZIP","ZINB")) {
+        pars <- object$TMBfn$par
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
       }
