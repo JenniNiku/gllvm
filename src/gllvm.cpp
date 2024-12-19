@@ -2524,13 +2524,15 @@ Type objective_function<Type>::operator() ()
           
           matrix <Type> Acov(nlvr,nlvr);
           
-          //Poisson, NB, gamma, exponential,ZIP
+          //Poisson, NB, gamma, exponential, ZIP
           if((family==0)||(family==1)||(family==4)||(family==6)||(family==8)||(family==11)){
             int sign = 1;
-            //sign controls whether it's Poisson or other
-            if((family>0) && (family != 6) && (family! = 5)){
+            //sign controls the family
+            if((family>0) && (family != 6) && (family != 5)){
+              //NB, gamma, exponential, ZIP
               sign = 1;
             }else if((family==0)||(family==5)||(family==6)){
+              //Poisson, ZIP, Tweedie
               sign = -1;
             }
             
@@ -2726,36 +2728,18 @@ Type objective_function<Type>::operator() ()
       for (int i=0; i<n; i++) {
         for (int j=0; j<p; j++) {
           if(!gllvmutils::isNA(y(i,j))){
-            if(y(i,j) == 0){
-              nll += pow(exp(eta(i,j)+(2-ePower)*cQ(i,j)), 2-ePower) / (iphi(j)*(2-ePower)); // log(prob(y=0))
-            } else if(y(i,j)>0){
+            Type p1 = ePower - 1.0, p2 = 2.0 - ePower;
+            Type ans = -pow(exp(eta(i,j)+p2*cQ(i,j)), p2)/(iphi(j)*p2);
+             if(y(i,j)>0){
               CppAD::vector<Type> tx(4);
               tx[0] = y(i,j);
               tx[1] = iphi(j);
               tx[2] = ePower;
               tx[3] = 0;
-              nll -= atomic::tweedie_logW(tx)[0];
-              nll -= (1/iphi(j)) * (y(i,j)*pow(exp(eta(i,j)+(1-ePower)*cQ(i,j)),1-ePower)/(1-ePower)-pow(exp(eta(i,j)+(2-ePower)*cQ(i,j)),2-ePower)/(2-ePower));
-              nll += log(y(i,j));
+              ans += atomic::tweedie_logW(tx)[0];
+              ans += -y(i,j) / (iphi(j) * p1 * pow(exp(eta(i,j)-p1*cQ(i,j)), p1)) - log(y(i,j));
             }
-            // Type p1 = ePower - 1.0, p2 = 2.0 - ePower;
-            // nll += pow(exp(eta(i,j)+p2*cQ(i,j)), p2) / (iphi(j) * p2); // log(prob(y=0))
-            // if (y(i,j) > 0) {
-            //   CppAD::vector<Type> tx(4);
-            //   tx[0] = y(i,j);
-            //   tx[1] = iphi(j);
-            //   tx[2] = ePower;
-            //   tx[3] = 0;
-            //   nll -= atomic::tweedie_logW(tx)[0];
-            //   nll += y(i,j) / (iphi(j) * p1 * pow(exp(eta(i,j)+p1*cQ(i,j)), p1)) + log(y(i,j));
-            //   // if (CppAD::Variable(y)) {
-            //   //   ans += CppAD::CondExpGt(y, Type(0), ans2, Type(0));
-            //   // } else {
-            //   //   ans += ans2;
-            //   // }
-            // }
-              
-            // }
+             nll -= ans;
           }
         }
       }
