@@ -1,7 +1,10 @@
-Version 2.0.
+Version 2.0.1
 =============
 
 * Added VA implementation of Tweedie
+
+## Bug Fixes
+* Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
 
 Version 2.0
 =============
