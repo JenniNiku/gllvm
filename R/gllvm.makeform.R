@@ -24,7 +24,7 @@ corstruc<-function (term)
       return("corMatern")
     } else if(c(term[[1]]) == "diag"){
       return("diag")
-    } else if(term[[1]] == "("){return("diag")}
+    } else if(term[[1]] == "("){return("ustruc")}
     else return(corstruc(term[[2]])) #term[[2]] <- corstruc(term[[2]])
     
   }

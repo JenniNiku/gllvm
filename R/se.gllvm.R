@@ -67,9 +67,9 @@ se.gllvm <- function(object, ...){
   cstrucn = 0
   cstruc = object$corP$cstruc
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   }
-  cstruclvn = switch(object$corP$cstruclv, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+  cstruclvn = switch(object$corP$cstruclv, "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   corWithinLv <- object$corP$corWithinLV
   
   family = object$family

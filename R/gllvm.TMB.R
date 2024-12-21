@@ -36,9 +36,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   
   cstrucn = 0
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   }
-  cstruclvn = switch(cstruclv, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+  cstruclvn = switch(cstruclv, "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   
   # Structure for row effects
   model = 0

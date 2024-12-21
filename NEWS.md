@@ -5,6 +5,7 @@ Version 2.0.1
 
 ## Bug Fixes
 * Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
+* Fixed a bug that prevented from incorporating correlated random effects via "formula"
 
 Version 2.0
 =============
