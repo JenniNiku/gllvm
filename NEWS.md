@@ -2,6 +2,7 @@ Version 2.0.1
 =============
 
 * Added VA implementation of Tweedie
+* Added "band matrix" as a sparsity pattern for phylogenetic models, as alternative to the NNGP
 
 ## Bug Fixes
 * Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
