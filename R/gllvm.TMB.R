@@ -4,7 +4,7 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
-                      method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
+                      method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL,
                       trace = FALSE, link = "logit", n.init = 1, n.init.max = 10, restrict = 30, start.params = NULL, RElist = NULL, dr = matrix(0), dLV=NULL, cstruc = "diag", cstruclv = "diag", dist = list(matrix(0)), distLV = matrix(0),
                       optimizer = "optim", starting.val = "res", Power = 1.5, diag.iter = 1, dependent.row = FALSE, scalmax = 10, MaternKappa = 1.5, rangeP = NULL, zetacutoff = NULL,
@@ -61,7 +61,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     Xt <- Matrix::t(RElist$Xt)
     colMat.old <- colMat
     if(!is.null(colMat) && is.list(colMat)){
-      if(length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat)){
+      if(colMat.approx == "NNGP" && (length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat))){
         stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (dist-named) distance matrix.")
       }else if(length(colMat)==1 && is.null(nn.colMat)){
          colMat <- colMat[[1]]
@@ -109,22 +109,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       E = B
       if(nn.colMat == p)nncolMat <- matrix(0)
       if(nn.colMat < p)nncolMat <- NULL
-      while(B<=p){
-        while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
-          # expand block
+      if(colMat.approx == "NNGP"){
+        while(B<=p){
+          while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+            # expand block
+            E = E+1;
+          }
+          # save block
+          # here we work with blocks of the inverse of the correlation matrix
+          if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
+          if(nn.colMat<p){
+            # here we work with blocks of the correlation matrix
+            blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+            nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn.colMat))[1:p]))
+          }
           E = E+1;
+          B = E;
         }
-        # save block
-        # here we work with blocks of the inverse of the correlation matrix
-        if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
-        if(nn.colMat<p){
-          # here we work with blocks of the correlation matrix
-          blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
-          nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn.colMat))[1:p]))
+      }else{
+        while(B<=p){
+          while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+            # expand block
+            E = E+1;
+          }
+          # save block
+          if(nn.colMat<p && colMat.approx == "band"){
+            nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat[B:E,B:E,drop=FALSE]),function(i)(((i-1):(i-nn.colMat))[(i-1):(i-nn.colMat)>0])[1:p]))
+          }
+          E = E+1;
+          B = E;
         }
-        E = E+1;
-        B = E;
-      }      
+      }
       nncolMat[is.na(nncolMat)] <- 0 ## using zeros to represent an empty cell
       blocksp <- unlist(lapply(blocks, ncol))
       # store total species and nr of species per block in first column, 0 and log determinants of each block in second column

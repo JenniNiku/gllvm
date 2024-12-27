@@ -7,7 +7,7 @@ trait.TMB <- function(
       Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc = "diagonal", row.eff = FALSE, reltol = 1e-6,
       maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL, trace = FALSE,
       link = "logit", n.init = 1, n.init.max = 10, start.params = NULL, start0 = FALSE, optimizer = "optim", dr = matrix(0), dLV = NULL, cstruc = "diag", cstruclv  = "diag", dist = list(matrix(0)), distLV = matrix(0), scalmax = 10, MaternKappa = 1.5,
-      starting.val = "res", method = "VA", randomX = NULL, RElist = list(Zt = matrix(0)), Power = 1.5, diag.iter = 1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.rho.struct = "single",
+      starting.val = "res", method = "VA", randomX = NULL, RElist = list(Zt = matrix(0)), Power = 1.5, diag.iter = 1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single",
       Lambda.start = c(0.2, 0.5), jitter.var = 0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL, zetacutoff = NULL,
       zeta.struc = "species", quad.start = 0.01, start.struc = "LV", quadratic = FALSE, optim.method = "BFGS", disp.group = NULL, NN = matrix(0), setMap = NULL, Ntrials = 1) {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
@@ -304,7 +304,7 @@ trait.TMB <- function(
     }
       colMat.old <- colMat
       if(!is.null(colMat) && is.list(colMat)){
-        if(length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat)){
+        if(colMat.approx == "NNGP" && (length(colMat)!=2 && !is.null(nn.colMat) || !"dist"%in%names(colMat))){
           stop("if nn.colMat<p 'colMat' must be a list of length 2: one Phylogenetic covariance matrix, and one (named) distance matrix.")
         }else if(length(colMat)==1 && is.null(nn.colMat)){
           colMat <- colMat[[1]]
@@ -351,19 +351,36 @@ trait.TMB <- function(
         E = B
         if(nn.colMat == p)nncolMat <- matrix(0)
         if(nn.colMat < p)nncolMat <- NULL
-        while(B<=p){
-          while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
-            # expand block
+        if(colMat.approx == "NNGP"){
+          while(B<=p){
+            while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+              # expand block
+              E = E+1;
+            }
+            # save block
+            # here we work with blocks of the inverse of the correlation matrix
+            if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
+            if(nn.colMat<p){
+              # here we work with blocks of the correlation matrix
+              blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
+              nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn.colMat))[1:p]))
+            }
             E = E+1;
+            B = E;
           }
-          # save block
-          if(nn.colMat==p)blocks[[length(blocks)+1]] = solve(colMat[B:E,B:E,drop=FALSE])
-          if(nn.colMat<p){
-            blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
-            nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat.dist[B:E,B:E,drop=FALSE]),function(i)head(order(colMat.dist[B:E,B:E,drop=FALSE][i,])[order(colMat.dist[B:E,B:E,drop=FALSE][i,])<i],min(i, nn.colMat))[1:p]))
+        }else{
+          while(B<=p){
+            while(E<p && (any(colMat[(E+1):p,B:E]!=0)|any(colMat[B:E,(E+1):p]!=0))){
+              # expand block
+              E = E+1;
+            }
+            # save block
+            if(nn.colMat<p && colMat.approx == "band"){
+              nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat[B:E,B:E,drop=FALSE]),function(i)(((i-1):(i-nn.colMat))[(i-1):(i-nn.colMat)>0])[1:p]))
+            }
+            E = E+1;
+            B = E;
           }
-          E = E+1;
-          B = E;
         }
         nncolMat[is.na(nncolMat)] <- 0 ## using zeros to represent an empty cell
         blocksp <- unlist(lapply(blocks, ncol))

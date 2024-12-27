@@ -49,7 +49,7 @@
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}. Only with \code{TMB = FALSE}.}
 #'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link[nloptr:nloptr]{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
-#'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat", defaults to 10. If set to the number of columns in the response data, a standard inverse is used instead.}
+#'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat" when \code{colMat.approx = "NNGP"}, defaults to 10. Otherwise, if \code{colMat.approx = "band"}, nn.colMat is the bandwidth of the approximation. If set to the number of columns in the response data, a standard inverse is used instead.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \describe{
@@ -428,7 +428,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   plot = FALSE, link = "probit", Ntrials = 1,
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10), 
+                  control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL), setMap=NULL, ...
                   ) {
@@ -493,6 +493,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$trace = FALSE
       if(!("nn.colMat" %in% names(x)))
         x$nn.colMat = 10
+      if(!("colMat.approx" %in% names(x)))
+        x$colMat.approx = "NNGP"
       x
     }
     
@@ -614,7 +616,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # if(num.RR>0&quadratic>0&(num.lv+num.lv.c)==0){
     #   control.start$start.struc <- "all"
     # }
-    reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat
+    reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat; colMat.approx = control$colMat.approx;
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff
@@ -1410,7 +1412,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            Ab.diag.iter = Ab.diag.iter, colMat = colMat, nn.colMat = nn.colMat, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
+            Ab.diag.iter = Ab.diag.iter, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
             jitter.var = jitter.var,
@@ -1456,7 +1458,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, 
             row.eff = row.eff.formula,
-            col.eff = col.eff, colMat = colMat, nn.colMat = nn.colMat, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
+            col.eff = col.eff, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
             seed = seed,
