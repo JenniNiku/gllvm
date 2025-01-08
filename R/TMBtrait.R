@@ -1665,7 +1665,7 @@ trait.TMB <- function(
         out$params$rho.lv <- rho.lv; 
         if(cstruclv %in% c(2,4)){ 
           names(out$params$rho.lv) <- paste("rho.lv",1:length(out$params$rho.lv), sep = "") #[!is.na(map.list$sigma_lvc)]
-        } else {
+        } else if(!is.null(rho.lv)){
           names(out$params$rho.lv) <- paste("rho.lv",1:num.lv.cor, sep = "") 
         }
       }

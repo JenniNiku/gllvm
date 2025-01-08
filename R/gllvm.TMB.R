@@ -2313,7 +2313,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(cstruclvn %in% c(2,4)){ 
           if(length(out$params$rho.lv)>0) 
             names(out$params$rho.lv) <- paste("rho.lv",1:length(out$params$rho.lv), sep = "") #[!is.na(map.list$rho_lvc)]
-        } else {
+        } else if(!is.null(rho.lv)){
           names(out$params$rho.lv) <- paste("rho.lv",1:num.lv.cor, sep = "") 
         }
       }
