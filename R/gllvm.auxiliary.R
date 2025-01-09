@@ -2189,23 +2189,14 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB","gaussian")){
+      if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB","gaussian", "tweedie")){
+        optimizer = "nlminb"
+        optim.method = "L-BFGS-B"
         if(family == "ZIP") family <- "poisson"
-        f1 <- gllvm.TMB(y=y, X=X, family = family, formula=formula, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
+        if(family == "tweedie")optimizer <- "optim"
+        f1 <- gllvm.TMB(y=y, X=X, family = family, formula=formula, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = optim, optim.method = optim.method, max.iter = max.iter) #, method=method
         B <- attr(scale(f1$params$Xcoef),"scaled:center")
         coefs0 <- as.matrix(scale((f1$params$Xcoef), scale = FALSE))
-        Br <- coefs0/max(apply(coefs0, 2, sd))
-        sigmaB <- cov(Br)
-        Br <- t(Br)
-      } else if(family == "tweedie"){
-        coefs0 <- NULL
-        for(j in 1:p){
-          fitj <- try(glm( y[,j] ~ Xb, family = statmod::tweedie(var.power=Power, link.power=0) ),silent = TRUE)
-          if(!inherits(fitj, "try-error")){
-            coefs0 <- rbind(coefs0, fitj$coefficients[-1])
-          } else { coefs0 <- rbind(coefs0,rnorm(dim(Xb)[2])); }
-        }
-        B <- attr(scale(coefs0, scale = FALSE), "scaled:center")
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)
         Br <- t(Br)
