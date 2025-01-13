@@ -315,7 +315,7 @@ trait.TMB <- function(
             nn.colMat <- round(.3*p)
           }
         }
-      }else if(is.matrix(colMat)){
+      }else if(is.matrix(colMat) && colMat.approx != "band"){
         nn.colMat <- p
       }else{
         nncolMat <- matrix(0)
@@ -376,6 +376,7 @@ trait.TMB <- function(
             }
             # save block
             if(nn.colMat<p && colMat.approx == "band"){
+              blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
               nncolMat <- cbind(nncolMat, sapply(1:ncol(colMat[B:E,B:E,drop=FALSE]),function(i)(((i-1):(i-nn.colMat))[(i-1):(i-nn.colMat)>0])[1:p]))
             }
             E = E+1;
