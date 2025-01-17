@@ -647,18 +647,32 @@ Type objective_function<Type>::operator() ()
       vector <Type> rhoSP(1);
       if(random(1)>0 && sigmaB.size()>xb.cols()){
         rhoSP.resize(sigmaB.size()-xb.cols());
+        
+        if(colMatBlocksI(0)(0,0) == p){ //extra check, just in case
+          rhoSP.fill(1.0);
+          if(sigmaB.size()>xb.cols()){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
+            rhoSP = exp(-exp(sigmaB.segment(xb.cols(),sigmaB.size()-xb.cols())));
+            if(nncolMat.rows()<p){
+              //need to cap this on the lower end for numerical stability
+              for(int re=0; re<rhoSP.size(); re++){
+                rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+              }
+            }
+          }
+        }
+        
       }else if(random(3)>0){
         rhoSP.resize(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
-      }
-      
-      if(colMatBlocksI(0)(0,0) == p){
-        rhoSP.fill(1.0);
-        if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
-          rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
-          if(nncolMat.rows()<p){
-            //need to cap this on the lower end for numerical stability
-            for(int re=0; re<rhoSP.size(); re++){
-              rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+        
+        if(colMatBlocksI(0)(0,0) == p){
+          rhoSP.fill(1.0);
+          if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
+            rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+            if(nncolMat.rows()<p){
+              //need to cap this on the lower end for numerical stability
+              for(int re=0; re<rhoSP.size(); re++){
+                rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+              }
             }
           }
         }
@@ -3435,17 +3449,37 @@ Type objective_function<Type>::operator() ()
       
       if(colMatBlocksI(0)(0,0)==p){
         Type logdetColCorMat = 0;
-        vector <Type> rhoSP(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
-        rhoSP.fill(1.0);
-        if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){
-          rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
-          if(nncolMat.rows()<p){
-            //need to cap this for numerical stability
-            for(int re=0; re<rhoSP.size(); re++){
-              rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+        vector <Type> rhoSP(1);
+        
+        if(random(1)>0 && sigmaB.size()>xb.cols()){
+          rhoSP.resize(sigmaB.size()-xb.cols());
+          
+          rhoSP.fill(1.0);
+            if(sigmaB.size()>xb.cols()){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
+              rhoSP = exp(-exp(sigmaB.segment(xb.cols(),sigmaB.size()-xb.cols())));
+              if(nncolMat.rows()<p){
+                //need to cap this on the lower end for numerical stability
+                for(int re=0; re<rhoSP.size(); re++){
+                  rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+                }
+              }
             }
-          }
+
+        }else if(random(3)>0){
+          rhoSP.resize(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+          
+            rhoSP.fill(1.0);
+            if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
+              rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+              if(nncolMat.rows()<p){
+                //need to cap this on the lower end for numerical stability
+                for(int re=0; re<rhoSP.size(); re++){
+                  rhoSP(re) = CppAD::CondExpLt(rhoSP(re), Type(1e-12), Type(1e-12), rhoSP(re));
+                }
+              }
+            }
         }
+        
         
         int sp = 0;
         
