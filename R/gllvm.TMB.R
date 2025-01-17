@@ -81,7 +81,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     # nsp <- table(factor(colnames(spdr),levels=unique(colnames(spdr))))
     
     if(!is.null(colMat)  && all(dim(colMat)!=1)){
-      if(!all(colnames(colMat) %in% colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
+      if(!all(colnames(colMat) == colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
       colMat <- colMat[colnames(y), colnames(y)]
       if(exists("colMat.dist"))colMat.dist <- colMat.dist[colnames(y), colnames(y)]
       
