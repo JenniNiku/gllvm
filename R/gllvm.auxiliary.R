@@ -3035,7 +3035,7 @@ findOrder <- function(covMat, distMat = NULL, nn = 10, order = NULL, withinBlock
   
   p = ncol(covMat)
   orderres = NULL
-  if(is.null(order)){orderres = order = 1:p}else if(length(order)!=p){stop("'order' must be a vector of length P$tip.label")}else if(!withinBlock){orderres=order}
+  if(is.null(order)){order = 1:p}else if(length(order)!=p){stop("'order' must be a vector of length P$tip.label")}else if(!withinBlock){orderres=order}
   if(ncol(covMat)!=ncol(distMat))
     if(colnames(covMat)!=colnames(distMat))stop("Column names for both matrices need to be the same")
   
@@ -3043,7 +3043,7 @@ findOrder <- function(covMat, distMat = NULL, nn = 10, order = NULL, withinBlock
   colMatDist = distMat
   if(!withinBlock){
     colMat = colMat[order,order]
-    colMatDist = colMatDist[order,order]
+    if(approx == "NNGP")colMatDist = colMatDist[order,order]
   }
   
   approxBlocks <- list()
@@ -3062,7 +3062,7 @@ findOrder <- function(covMat, distMat = NULL, nn = 10, order = NULL, withinBlock
       blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
       if(withinBlock){
         blocks[[length(blocks)]] = blocks[[length(blocks)]][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
-        colMatDist[B:E,B:E] <- colMatDist[B:E,B:E][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
+        if(approx == "NNGP")colMatDist[B:E,B:E] <- colMatDist[B:E,B:E][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
         blocksp <- blocksp + length(B:E)
         orderres = c(orderres, order[order%in%B:E])
       }
