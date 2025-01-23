@@ -10,6 +10,7 @@
 #' @param level the confidence level. Scalar between 0 and 1.
 #' @param col vector of three colors (defaults to \code{c("#E69F00","white","#009E73")}) passed to \code{\link{colorRampPalette}} for species random effects.
 #' @param col.sym logical, defaults to \code{TRUE}. Then, the color scale of the species random effects plot is symmetrical (so that zero is nearly in the middle), so that both the lower and upper limit are determined by the largest absolute value. If \code{FALSE}, the lower and upper limits are determined by the smallest and largest values, respectively.
+#' @param tick.length numerical, defaults to 2. Length of ticks for the species-specific random effects plot.
 #' @param mar.spec vector of length 4, which defines the margins sizes for the species random effects plot. Defaults to \code{c(3, 2, 0, 0)}.
 #' @param mar.phy vector of length 4, which defines the margins sizes for plotting the phylogeny. Defaults to \code{c(0, 2, 2, 0)}.
 #' @param mar.comm vector of length 4, which defines the margins sizes for the caterpillar plot. Defaults to \code{c(3, 0.5, 2, 1.5)}.
@@ -60,7 +61,7 @@
 #'@export
 #'@export phyloplot.gllvm
 
-phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top", ...){
+phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, tick.length = 2, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top", ...){
 # add option to change the order of the plot
 # graphical pars for every plot
   
@@ -79,8 +80,9 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
   
   # strike uncertain REs if possible
   if(sd.err){
+  alpha = (1- level)/2
   PEs <- gllvm::getPredictErr(object)
-  PIs <- data.frame(cbind(LI = c(object$params$Br)+c(PEs$Br*qnorm(1-level)), UI = c(object$params$Br)+c(PEs$Br*qnorm(level))))
+  PIs <- data.frame(cbind(LI = c(object$params$Br)+c(PEs$Br*qnorm(alfa)), UI = c(object$params$Br)+c(PEs$Br*qnorm(1-alfa))))
   object$params$Br[-which((PIs$LI>0 & PIs$UI>0) | (PIs$LI<0 & PIs$UI<0))]<-NA
   }
   
@@ -110,7 +112,7 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
   axis(2, at = 1:nrow(object$params$Br), labels = colnames(t(object$params$Br)), las = 1, cex.axis = cex, lwd = 0)
   par(xpd=TRUE)
   for(i in 1:nrow(object$params$Br)){
-    lines(x = c(-2,0), y = c(i,i))
+    lines(x = c(-tick.length,0), y = c(i,i))
   }
   
   par(mar = mar.phy)

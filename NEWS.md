@@ -3,11 +3,13 @@ Version 2.0.1
 
 * Added VA implementation of Tweedie
 * Added "band matrix" as a sparsity pattern for phylogenetic models, as alternative to the NNGP
+* Added 'tick.length' argument for phyplot.gllvm to control the tick length in the species-specific random effects plot
 
 ## Bug Fixes
 * Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
 * Fixed a bug that prevented from incorporating correlated random effects via "formula"
-* Fixed a bug that prevented succesfully incorporating phylogenetic random effects with traits
+* Fixed a bug that prevented successfully incorporating phylogenetic random effects with traits
+* Fixed a bug in the confidence level of phyloplot.gllvm
 
 Version 2.0
 =============

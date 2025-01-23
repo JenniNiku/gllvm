@@ -15,6 +15,7 @@
   level = 0.95,
   col = c("#E69F00", "white", "#009E73"),
   col.sym = TRUE,
+  tick.length = 2,
   mar.spec = c(3, 2, 0, 0),
   mar.phy = c(0, 2, 2, 0),
   mar.comm = c(3, 0.5, 2, 1.5),
@@ -46,6 +47,8 @@
 \item{col}{vector of three colors (defaults to \code{c("#E69F00","white","#009E73")}) passed to \code{\link{colorRampPalette}} for species random effects.}
 
 \item{col.sym}{logical, defaults to \code{TRUE}. Then, the color scale of the species random effects plot is symmetrical (so that zero is nearly in the middle), so that both the lower and upper limit are determined by the largest absolute value. If \code{FALSE}, the lower and upper limits are determined by the smallest and largest values, respectively.}
+
+\item{tick.length}{numerical, defaults to 2. Length of ticks for the species-specific random effects plot.}
 
 \item{mar.spec}{vector of length 4, which defines the margins sizes for the species random effects plot. Defaults to \code{c(3, 2, 0, 0)}.}
 
