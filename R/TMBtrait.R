@@ -498,7 +498,7 @@ trait.TMB <- function(
         zero.cons <- which(theta == 0)
         if(num.lv.cor>0){ # In correlation model, 
           rho_lvc<- rep(0, num.lv.cor);
-          if((cstruclv == 2) | (cstruclv == 4)) {
+          if((cstruclvn == 2) | (cstruclvn == 4)) {
             if(is.null(rangeP)) {
               rangeP = AD1 = (apply(as.matrix(distLV),2,max)-apply(as.matrix(distLV),2,min))/scalmax
             } else {
@@ -571,8 +571,8 @@ trait.TMB <- function(
           }
         }
         if(num.lv.cor>0){ # sigmas are scale parameters # just diagonal values, not
-          if(is.numeric(start.params$params$rho.lv) & ((cstruclv == 2) | (cstruclv == 4))) {
-            # if(cstruclv == 4) start.params$params$rho.lv <- start.params$params$rho.lv[,-ncol(start.params$params$rho.lv), drop=FALSE]
+          if(is.numeric(start.params$params$rho.lv) & ((cstruclvn == 2) | (cstruclvn == 4))) {
+            # if(cstruclvn == 4) start.params$params$rho.lv <- start.params$params$rho.lv[,-ncol(start.params$params$rho.lv), drop=FALSE]
             scaledc = colMeans(as.matrix(start.params$params$rho.lv)); 
             if(length(scaledc) < ncol(distLV) ) scaledc <- rep(scaledc, ncol(distLV))[1:ncol(distLV)]
           }
@@ -775,16 +775,16 @@ trait.TMB <- function(
     
     
     ## Set up starting values for scale (and shape) parameters for correlated LVs
-    if(num.lv.cor>0 & cstruclv>0){
+    if(num.lv.cor>0 & cstruclvn>0){
       rho_lvc<- matrix(rep(0, num.lv.cor))
-      if(cstruclv==2){
+      if(cstruclvn==2){
         if(is.null(rho.lv)) {
           rho.lv=rep(0, num.lv.cor) 
         } else if(length(rho.lv)==num.lv.cor) {
           rho.lv=c(log(rho.lv))
         }
         rho_lvc<- matrix(c(rep(scaledc, each=num.lv.cor)), num.lv.cor)
-      } else if(cstruclv==4){
+      } else if(cstruclvn==4){
         if(is.null(rho.lv)) {
           rho.lv=rep(log(MaternKappa), each=num.lv.cor)
         } else if(length(rho.lv)==num.lv.cor) {
@@ -797,16 +797,16 @@ trait.TMB <- function(
       #   map.list$scaledc = factor(rep(NA, length(scaledc)))
       # }
       
-      if(cstruclv %in% c(2,4)){
+      if(cstruclvn %in% c(2,4)){
         iv<-rep(1:nrow(rho_lvc), ncol(rho_lvc)); 
         if(!is.null(setMap$rho_lvc)){
           if((length(setMap$rho_lvc)==length(rho_lvc))) 
             iv = (setMap$rho_lvc)
           map.list$rho_lvc = factor(iv)
-        } else if(cstruclv==2){ #cstruc=="corExp"
+        } else if(cstruclvn==2){ #cstruc=="corExp"
           maprho = matrix(iv, nrow(rho_lvc), ncol(rho_lvc))
           map.list$rho_lvc = factor(c(maprho))
-        } else if(cstruclv==4){
+        } else if(cstruclvn==4){
           # Fix matern smoothness by default
           maprho = matrix(iv, nrow(rho_lvc), ncol(rho_lvc))
           maprho[, ncol(maprho)] = NA
@@ -881,7 +881,7 @@ trait.TMB <- function(
             Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
           }
         } else {
-          if(Lambda.struc == "unstructured" && Astruc==1 & cstruclv==0){
+          if(Lambda.struc == "unstructured" && Astruc==1 & cstruclvn==0){
             Au <- c(Au[1:(nu*num.lv.cor)], rep(0, nu*num.lv.cor*(num.lv.cor-1)/2))
           } else  if(Astruc==1){
             Au <- c(Au[1:(nu*num.lv.cor)], rep(0, num.lv.cor*nu*(nu-1)/2) )
@@ -914,7 +914,7 @@ trait.TMB <- function(
       # } else {
       #   u <- as.matrix(u[1:nu,])
       #   Au <- Au[1:(nu*num.lv.cor)]
-      #   if(Lambda.struc == "unstructured" && Astruc==1 & cstruclv==0 & diag.iter==0){
+      #   if(Lambda.struc == "unstructured" && Astruc==1 & cstruclvn==0 & diag.iter==0){
       #     Au <- c(Au[1:(nu*num.lv.cor)], rep(0, nu*num.lv.cor*(num.lv.cor-1)/2))
       #   } else {
       #     Au <- Au[1:(nu*num.lv.cor)]
@@ -1302,7 +1302,7 @@ trait.TMB <- function(
             Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,nrow(NN)*nu), Au1[-(1:n)])
           }
         } else {
-          if(Lambda.struc == "unstructured" && Astruc==1 & cstruclv==0){
+          if(Lambda.struc == "unstructured" && Astruc==1 & cstruclvn==0){
             Au1 <- c(pmax(Au1[1:(nu*num.lv.cor)],log(1e-2)), rep(1e-3, nu*num.lv.cor*(num.lv.cor-1)/2))
           } else  if(Astruc==1){
             Au1 <- c(pmax(Au1[1:(nu*num.lv.cor)],log(1e-2)), rep(1e-3, num.lv.cor*nu*(nu-1)/2) )
@@ -1315,8 +1315,8 @@ trait.TMB <- function(
           }
           
         }
-        if(cstruclv>0){
-          if(cstruclv %in% c(2,4)){ #cstruc=="corExp" || cstruc=="corMatern"
+        if(cstruclvn>0){
+          if(cstruclvn %in% c(2,4)){ #cstruc=="corExp" || cstruc=="corMatern"
             if(num.lv.cor>0){
               rho_lvc <- matrix((param1[nam=="rho_lvc"])[map.list$rho_lvc],nrow(rho_lvc),ncol(rho_lvc)); 
               rho_lvc[is.na(rho_lvc)]=0 
@@ -1508,8 +1508,8 @@ trait.TMB <- function(
         theta <- as.matrix(1)
       }
       rho_lvc = param[names(param)=="rho_lvc"]
-      if((cstruclv %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
-      if((cstruclv %in% c(2,4))){ 
+      if((cstruclvn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
+      if((cstruclvn %in% c(2,4))){ 
         rho.lv<- exp(param[names(param)=="rho_lvc"]);
         # scaledc<- exp(param[names(param)=="scaledc"]);
       }
@@ -1662,9 +1662,9 @@ trait.TMB <- function(
       }
       
       # LV correlation matrix parameters
-      if(num.lv.cor>0 & cstruclv>0){
+      if(num.lv.cor>0 & cstruclvn>0){
         out$params$rho.lv <- rho.lv; 
-        if(cstruclv %in% c(2,4)){ 
+        if(cstruclvn %in% c(2,4)){ 
           names(out$params$rho.lv) <- paste("rho.lv",1:length(out$params$rho.lv), sep = "") #[!is.na(map.list$sigma_lvc)]
         } else if(!is.null(rho.lv)){
           names(out$params$rho.lv) <- paste("rho.lv",1:num.lv.cor, sep = "") 
@@ -1749,7 +1749,7 @@ trait.TMB <- function(
           Au <- param[names(param)=="Au"]
           AQ <- NULL
           
-          if(cstruclv==0){
+          if(cstruclvn==0){
             A <- array(0, dim=c(nu, num.lv.cor, num.lv.cor))
             for (d in 1:(num.lv.cor)){
               for(i in 1:nu){
