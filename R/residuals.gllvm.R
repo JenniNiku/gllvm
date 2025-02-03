@@ -57,12 +57,12 @@ residuals.gllvm <- function(object, ...) {
   
       if (object$family == "poisson") {
         b <- ppois(as.vector(y), as.vector(mu))
-        a <- pmin(b,ppois(as.vector(unlist(y)) - 1, as.vector(mu)))
+        a <- pmin(b, ppois(as.vector(unlist(y)) - 1, as.vector(mu)))
         u <- runif(n*p, min = a, max = b)
         
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "negative.binomial") {
         phis <- object$params$phi + 1e-05
@@ -72,7 +72,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "gaussian") {
         phis <- object$params$phi
@@ -82,7 +82,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
@@ -92,7 +92,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "beta") {
         b <- pbeta(as.vector(y), shape1 = rep(object$params$phi, each = n)*as.vector(mu), shape2 = rep(object$params$phi, each = n)*(1-as.vector(mu)))
@@ -101,7 +101,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "betaH") {
         for (i in 1:n) {
@@ -152,7 +152,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "ZIP") {
         b <- pzip(as.vector(y), mu = as.vector(mu), sigma = rep(object$params$phi, each = n))
@@ -160,7 +160,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "ZINB") {
         b <- pzinb(as.vector(y), mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n))
@@ -168,7 +168,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "binomial") {
         b <- pbinom(as.vector(y), Ntrials, as.vector(mu))
@@ -176,7 +176,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = a, max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
@@ -185,7 +185,7 @@ residuals.gllvm <- function(object, ...) {
         u <- runif(n*p, min = ifelse((as.vector(y) - 1)<0, 0, a), max = b)
         if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
-        ds.res <- matrix(qnorm(u), n, p)
+        ds.res <- matrix(qnorm(u), n, p, byrow=TRUE)
       }
       if (object$family == "ordinal") {
         for (i in 1:n) {
