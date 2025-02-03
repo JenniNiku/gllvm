@@ -10,6 +10,7 @@ Version 2.0.1
 * Fixed a bug that prevented from incorporating correlated random effects via "formula"
 * Fixed a bug that prevented successfully incorporating phylogenetic random effects with traits
 * Fixed a bug in the confidence level of phyloplot.gllvm
+* Fixed a bug in residuals.gllvm
 
 Version 2.0
 =============
