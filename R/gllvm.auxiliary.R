@@ -838,7 +838,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     }
     resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
   }
-  if(num.RR>0 && isFALSE(randomB)){
+  if((num.RR>0 && isFALSE(randomB)) || (num.RR>0&&(num.lv.c+num.lv.c)==0)){
     
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
