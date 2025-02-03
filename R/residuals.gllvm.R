@@ -45,13 +45,16 @@ residuals.gllvm <- function(object, ...) {
   y <- object$y
   Ntrials <- object$Ntrials
   args <- list(...)
+  replace = TRUE
   if(!all(c("mu", "eta.mat")%in%names(args))){
     eta.mat = predict(object, type = "link")
     mu = predict(object, type = "response")
   }else{
     eta.mat <- args$eta.mat
     mu = args$mu
+    if("replace"%in%names(args))replace = args$replace
   }
+  
  
   ds.res = matrix(NA, n, p)
   
@@ -60,8 +63,8 @@ residuals.gllvm <- function(object, ...) {
         a <- pmin(b, ppois(as.vector(unlist(y)) - 1, as.vector(mu)))
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "negative.binomial") {
@@ -71,8 +74,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "gaussian") {
@@ -82,8 +85,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "gamma") {
@@ -93,8 +96,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "beta") {
@@ -103,8 +106,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "betaH") {
@@ -120,8 +123,8 @@ residuals.gllvm <- function(object, ...) {
               }
             
               u <- runif(n = 1, min = a, max = b)
-              if(u==1) u=1-1e-16
-              if(u==0) u=1e-16
+              if(u==1&&replace) u=1-1e-16
+              if(u==0&&replace) u=1e-16
               ds.res[i, j] <- qnorm(u)
             }
           }
@@ -143,8 +146,8 @@ residuals.gllvm <- function(object, ...) {
               }
             
             u <- try({runif(n = 1, min = a, max = b)})
-            if(u==1) u=1-1e-16
-            if(u==0) u=1e-16
+            if(u==1&&replace) u=1-1e-16
+            if(u==0&&replace) u=1e-16
             ds.res[i, j] <- qnorm(u)
             }
           }
@@ -156,8 +159,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "ZIP") {
@@ -166,8 +169,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "ZINB") {
@@ -176,8 +179,8 @@ residuals.gllvm <- function(object, ...) {
 
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
 
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "binomial") {
@@ -186,8 +189,8 @@ residuals.gllvm <- function(object, ...) {
 
         u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
 
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "tweedie") {
@@ -199,8 +202,8 @@ residuals.gllvm <- function(object, ...) {
         
         u = anew+(b-anew)*matrix(runif(n*p),n,p,byrow=TRUE)
         
-        if(any(u==1, na.rm = TRUE))u[u==1] <- 1-1e-16
-        if(any(u==0, na.rm = TRUE))u[u==0] <- 1e-16
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- qnorm(u)
       }
       if (object$family == "ordinal") {

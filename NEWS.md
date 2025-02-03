@@ -11,6 +11,7 @@ Version 2.0.1
 * Fixed a bug that prevented successfully incorporating phylogenetic random effects with traits
 * Fixed a bug in the confidence level of phyloplot.gllvm
 * Fixed a bug in residuals.gllvm
+* Fixed a bug in starting value generation
 
 Version 2.0
 =============
