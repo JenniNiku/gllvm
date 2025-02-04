@@ -7,7 +7,7 @@ gllvm.iter <- function(...){
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
   
   if (!is.numeric(args$y))
-    stop( "y must a numeric. If ordinal data, please convert to numeric with lowest level equal to 1.")
+    stop( "y must be numeric. If ordinal data, please convert to numeric with lowest level equal to 1.")
   # if ((family %in% c("ZIP")) && (method %in% c("VA", "EVA"))) #"tweedie", 
   #   stop("family=\"", family, "\" : family not implemented with VA method, change the method to 'LA'")
   if (is.null(rownames(args$y)))
