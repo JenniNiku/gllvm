@@ -374,7 +374,8 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     if(starting.val=="res"){
       if(!is.null(X)) fit.mva <- gllvm.TMB(y=y, X=X, formula = formula, family = family, num.lv=0, starting.val = "zero", optimizer = "nlminb", link = link, zeta.struc = zeta.struc, maxit = maxit, max.iter = max.iter, method = method, Ntrials = Ntrials)
       if(is.null(X)) fit.mva <- gllvm.TMB(y=y, family = family, num.lv=0, starting.val = "zero", optimizer = "nlminb", link = link, zeta.struc = zeta.struc, maxit = maxit, max.iter = max.iter, method = method, Ntrials = Ntrials)
-      params[,1:ncol(cbind(fit.mva$params$beta0,fit.mva$params$Xcoef))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef)
+      err <- try(params[,1:ncol(cbind(fit.mva$params$beta0,fit.mva$params$Xcoef))] <- cbind(fit.mva$params$beta0,fit.mva$params$Xcoef), silent = TRUE)
+      if(inherits(err, "try-error"))stop("Calculation of starting values has failed. Try changing 'starting.val', 'optimizer', or the model's structure.")
       zeta <- fit.mva$params$zeta
       resi <- NULL
       eta.mat <- cbind(rep(1,n),fit.mva$X.design)%*%t(cbind(fit.mva$params$beta0, fit.mva$params$Xcoef))
