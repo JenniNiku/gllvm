@@ -209,7 +209,9 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
         for(i in 1:ncol(object$lv.X.design)){
           idx <- seq(i,ncol(object$lv.X.design)*(object$num.lv.c+object$num.RR),ncol(object$lv.X.design))
           b <- object$params$LvXcoef[i,]
-          zval[i] <- b%*%MASS::ginv(covB[idx,idx])%*%b
+          S <- MASS::ginv(covB[idx,idx])
+          if(any(diag(S)<0)){warning("Negative diagonal entries detected in the covariance matrix. This might give some odd results.\n")}
+          zval[i] <- b%*%S%*%b
           pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
