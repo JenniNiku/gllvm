@@ -194,7 +194,7 @@ Type objective_function<Type>::operator() ()
       //randomB="LV"
         Sigmab_lv(0).diagonal().array() *= exp(sigmab_lv)*exp(sigmab_lv);
     }
-    }else{
+    }else if((csb_lv.cols()==2) && (randomB<1)){
       matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
       sds.diagonal() = exp(sigmab_lv.segment(0,x_lv.cols()));
       vector<Type>corsb_lv((x_lv.cols()*x_lv.cols()-x_lv.cols())/2);
@@ -211,7 +211,31 @@ Type objective_function<Type>::operator() ()
       for (int q=0; q<(num_lv_c+num_RR); q++){
       Sigmab_lv(q) = Sigmab_lvL;
       }
-  }
+    }else if((csb_lv.cols()==2) && (randomB>0)){
+      Sigmab_lv.resize(num_lv_c+num_RR);//need to change this to same dimension as for randomB="P"
+      
+      for (int q=0; q<(num_lv_c+num_RR); q++){
+        Sigmab_lv(q).resize(x_lv.cols(),x_lv.cols());
+        Sigmab_lv(q).setIdentity();
+      }
+      // 
+      // for (int q=0; q<(num_lv_c+num_RR); q++){
+      //   Sigmab_lv(q).diagonal().array() = exp(sigmab_lv(q));
+      // }
+      // 
+      vector<Type>corsb_lv((x_lv.cols()*x_lv.cols()-x_lv.cols())/2);
+      corsb_lv.fill(0.0);
+      matrix<Type>Sigmab_lvL(x_lv.cols(),x_lv.cols());
+      Sigmab_lvL.setIdentity();
+      if(csb_lv.cols()>1){
+        //need a vector with covariances and zeros in the right places
+        for(int i=0; i<csb_lv.rows(); i++){
+          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(num_lv_c+num_RR+i);
+        }
+        Sigmab_lvL = gllvmutils::constructL(corsb_lv);
+      }
+        Sigmab_lv(0) = Sigmab_lvL;
+    }
   }
   
   if((nlvr>0)||(num_RR>0)){
@@ -409,15 +433,17 @@ Type objective_function<Type>::operator() ()
 
       //VA likelihood parts for random slope
       if(csb_lv.cols()<2){
+      //randomB and no correlation
       for(int q=0; q<sbl3; q++){
         if(randomB<1){
-          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).sum());
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).sum());
           nll -= 0.5*(sbl12- Sigmab_lv(q).diagonal().array().log().sum());
         }
-        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
        }
-      if(randomB>0)nll -= sbl3*0.5*(sbl12- Sigmab_lv(0).diagonal().array().log().sum());
-        }else{
+      if(randomB>0)nll -= 0.5*(sbl3*sbl12- sbl3*Sigmab_lv(0).diagonal().array().log().sum());
+      }else if((csb_lv.cols()==2) && (randomB<1)){
+        //randomB="P" with predictor-wise correlation
           matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
           matrix<Type>Sigmab_lvI = (Sigmab_lv(0)*Sigmab_lv(0).transpose()).ldlt().solve(Iblv);
           for(int q=0; q<(num_lv_c+num_RR); q++){
@@ -425,6 +451,23 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*Klv- Sigmab_lv(0).diagonal().array().log().sum();
         }
         
+      }else if((csb_lv.cols()==2) && (randomB>0)){
+        //randomB="LV" with predictor-wise correlation
+        matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
+        //note that Sigmab_lv(0) is the cholesky of the correlation matrix
+        REPORT(Sigmab_lv);
+        matrix<Type>Sigmab_lvCI = Sigmab_lv(0).template triangularView<Eigen::Lower>().solve(Iblv);
+        Sigmab_lvCI.transpose() *= Sigmab_lvCI;//inverse of correlation matrix via its cholesky
+        for(int q=0; q<sbl3; q++){
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(exp(sigmab_lv.head(num_lv_c+num_RR)).pow(-2).array()*Sigmab_lvCI(q,q)*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum());//need to use sigmab_lv directly here, as Sigmab_lv is now of length x_lv.cols() for the correlation
+        }
+        
+        for(int q=0; q<(num_lv_c+num_RR); q++){
+          nll -= -0.5*(b_lv.col(q).transpose()*Sigmab_lvCI*b_lv.col(q)).sum()*pow(exp(sigmab_lv(q)),-2);
+          nll -= 0.5*Klv- Klv*sigmab_lv(q)-Sigmab_lv(0).diagonal().array().log().sum();
+        }
+        REPORT(sigmab_lv);
+        REPORT(Sigmab_lvCI);
       }
       
       //resize ab_lvcov to correct size
@@ -3317,17 +3360,29 @@ Type objective_function<Type>::operator() ()
     using namespace density;
     if(random(2)>0){
       // REPORT(Sigmab_lv); //!!!!
-      if(randomB>0){
+      if((randomB>0) && (csb_lv.cols()<2)){
+        //randomB == "lv" without correlation
         MVNORM_t<Type> mvnorm(Sigmab_lv(0));
         for (int klv=0; klv<Klv; klv++) {
           nll += mvnorm(b_lv.row(klv));
         }
-      }else{
+      }else if((randomB>0) && (csb_lv.cols()==2)){
+        //randomB == "lv" with correlation
+        matrix<Type> SigmaB_lvC = Sigmab_lv(0)*Sigmab_lv(0).transpose();//correlation matrix
+        for (int q=0; q<(num_lv_c+num_RR); q++) {
+          matrix<Type>SigmaB_lv = SigmaB_lvC*exp(sigmab_lv(q))*exp(sigmab_lv(q));
+          nll += MVNORM(SigmaB_lv)(b_lv.col(q));
+        }
+      }else if((randomB<1) && (csb_lv.cols()<2)){
         for (int q=0; q<(num_lv_c+num_RR); q++) {
           nll += MVNORM(Sigmab_lv(q))(b_lv.col(q));
         }
+      }else if((randomB<1) && (csb_lv.cols()>1)){
+        matrix<Type>SigmaB_lv = Sigmab_lv(0)*Sigmab_lv(0).transpose();
+        for (int q=0; q<(num_lv_c+num_RR); q++) {
+          nll += MVNORM(SigmaB_lv)(b_lv.col(q));
+        }
       }
-      
     }
     
     // REPORT(ucopy);

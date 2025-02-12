@@ -282,8 +282,11 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   }else if(!isFALSE(object$randomB)){
     coef.table.constrained <- NULL
     
-    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef), Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits), Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits))
+    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef))
+    REbcovs$Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits)
+    REbcovs$Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits)
     if(!is.null(object$params$corsLvXcoef)){
+      if(object$randomB=="LV")REbcovs <- rbind(REbcovs, data.frame(Name = rep("", ncol(object$lv.X.design)-object$num.RR+object$num.lv.c), Std.Dev="", Variance = ""))
       cors <- format(round(object$params$corsLvXcoef, digits), nsmall = digits)
       cors[upper.tri(cors, diag = TRUE)] <- ""
       REbcovs <- cbind(REbcovs, cors, deparse.level = 0L)
