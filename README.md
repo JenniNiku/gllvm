@@ -28,7 +28,7 @@ Other available vignettes are:  [Analysing microbial community data](https://CRA
 The `citation` function in R provides information on how to cite the methods in this package. Please remember to cite the software (version) separately from any relevent research articles to provide the appropriate credit to all associated contributors. The reference for the software package is: Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Korhonen, P., Taskinen, S., van der Veen, B., and Warton, D. I.
   (YYYY). gllvm: Generalized Linear Latent Variable Models.R package version XXX, where YYYY represents the publication date of the used version of the package represented by XXX.
 
-## References
+## Package references
 
 [Hui, F.K.C., Warton, D., Ormerod, J., Haapaniemi, V., & Taskinen, S. (2017). Variational approximations for generalized linear latent variable models. Journal of Computational and Graphical Statistics, 26(1), 35 - 43.](https://www.tandfonline.com/doi/abs/10.1080/10618600.2016.1164708)
 
@@ -38,7 +38,7 @@ The `citation` function in R provides information on how to cite the methods in 
 
 [Niku, J., Brooks, W., Herliansyah, R., Hui, F.K.C., Taskinen, S., & Warton, D. (2019). Efficient estimation of generalized linear latent variable models. PloS one, 14(5), e0216129.](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0216129)
 
-[Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2021). Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models.       Environmetrics, 32(6), 1-17.](https://doi.org/10.1002/env.2683)
+[Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2021). Analyzing environmental-trait interactions in ecological communities with fourth-corner latent variable models. Environmetrics, 32(6), 1-17.](https://doi.org/10.1002/env.2683)
 
 [van der Veen, B., Hui, F.K.C., Hovstad, K.A., Solbu, E.B., & O'Hara, R.B. (2021). Model-based ordination for species with unequal niche widths. Methods in Ecology and Evolution, 12(7), 1288 - 1300.](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210X.13595)
 
@@ -47,3 +47,11 @@ The `citation` function in R provides information on how to cite the methods in 
 [van der Veen, B. and O'Hara, R.B. (2024). Fast fitting of phylogenetic mixed effects models. arxiv.](https://www.arxiv.org/abs/2408.05333)
 
 [Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2023). Fast and universal estimation of latent variable models using extended variational approximations. Statistics and Computing, 33(1), 1-16.](https://doi.org/10.1007/s11222-022-10189-w)
+
+## Other references
+
+The package references can be quite technical. Here we list some related references that may be more accessible.
+
+[Warton, D. I., Blanchet, F. G., O’Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., & Hui, F. K. (2015). So many variables: joint modeling in community ecology. Trends in ecology and evolution, 30(12), 766-779.](https://doi.org/10.1016/j.tree.2015.09.007)
+
+[Zuur, A. F., & Ieno, E. N. (2025). The World of Zero-Inflated Models Volume 3: Using GLLVM](https://www.highstat.com/index.php/books2?view=article&id=49&catid=18)
