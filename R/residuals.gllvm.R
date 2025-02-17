@@ -71,7 +71,7 @@ residuals.gllvm <- function(object, ...) {
       if (object$family == "negative.binomial") {
         phis <- object$params$phi + 1e-05
         b <- pnbinom(as.vector(y), mu = as.vector(mu), size = 1 / rep(phis, each = n))
-        a <- pmin(b,pnbinom(as.vector(unlist(y)) - 1, mu = as.vector(mu), size = 1 / as.vector(phis)))
+        a <- pmin(b,pnbinom(as.vector(unlist(y)) - 1, mu = as.vector(mu), size = 1 / rep(phis, each = n)))
         
         u = a+(b-a)*runif(n*p)
         
@@ -185,6 +185,9 @@ residuals.gllvm <- function(object, ...) {
         ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "binomial") {
+        if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
+        if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+        
         b <- pbinom(as.vector(y), Ntrials, as.vector(mu))
         a <- pmin(b, pbinom(as.vector(y) - 1, Ntrials, as.vector(mu)))
 
