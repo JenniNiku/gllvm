@@ -122,7 +122,7 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
     BBr <- matrix(0, nrow = ncol(X.d), ncol = p)
     rownames(BBr) = x_in_model
     # Main effects for X
-    if(length(object$params$B)>0) BBr[x_in_model,] = object$params$B[x_in_model]
+    if(length(object$params$B)>0) BBr[x_in_model[x_in_model%in%names(object$params$B)],] = object$params$B[names(object$params$B)[names(object$params$B)%in%x_in_model]]
     # Species specific random effects
     BBr[rownames(object$params$Br[x_in_model,]),] <- BBr[rownames(object$params$Br[x_in_model,]),] + object$params$Br[x_in_model,]
     
