@@ -16,6 +16,7 @@ Version 2.0.1
 * Fixed a bug in starting value generation
 * Fixed a bug in the number of parameters by logLik.gllvm for 'randomB' models with correlation parameters
 * Fixed a bug in the normalisation constant for randomB="LV"
+* Fixed a bug in the variance partitioning for models with species random effects
 
 Version 2.0
 =============
