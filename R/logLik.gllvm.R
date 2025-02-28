@@ -32,6 +32,9 @@ logLik.gllvm <- function(object, ...)
   if (!is.null(object$params$inv.phi)) {
     object$params$inv.phi <- NULL
   }
+  if (!is.null(object$params$ZINB.inv.phi)) {
+    object$params$ZINB.inv.phi <- NULL
+  }
     if(object$family=="ordinal"){
       if(object$zeta.struc=="species")object$params$zeta <-object$params$zeta[,-1]
       if(object$zeta.struc=="common")object$params$zeta <-object$params$zeta[-1]
