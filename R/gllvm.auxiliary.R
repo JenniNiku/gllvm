@@ -560,20 +560,19 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     out$b.lv <- b.lv
     if(randomB!=FALSE){
       if(starting.val!="zero"&randomB=="LV"){
-        out$b.lv <- scale(b.lv,center = FALSE)
-        out$sigmab_lv <- log(attr(scale(b.lv,center=F),"scaled:scale"))
+        out$sigmab_lv <- log(apply(b.lv,2,function(x)sqrt(sum(x^2))))
+        out$sigmab_cors <- cov(t(b.lv))
       }else if(starting.val=="zero"&randomB=="LV"){
         out$sigmab_lv <- rep(0.01,num.lv.c+num.RR)
       }else if(randomB=="P"&starting.val!="zero"&(num.lv.c+num.RR)>1){
-        out$sigmab_lv <- log(apply(b.lv,1,sd))
+        out$sigmab_lv <- log(apply(b.lv,1,function(x)sqrt(sum(x^2))))
         out$sigmab_cors <- cov(t(b.lv))
-        out$b.lv <- t(scale(t(b.lv),center = FALSE))
       }else if(randomB=="P"&starting.val=="zero"|randomB=="P"&(num.lv.c+num.RR)==1){
         out$sigmab_lv <- rep(0.01,ncol(lv.X)) 
         out$sigmab_cors <- rep(0.001, ncol(lv.X))
       }else if(starting.val!="zero"&randomB=="single"){
-        out$sigmab_lv <- log(sd(b.lv))
-        out$b.lv <- b.lv/sd(b.lv)
+        out$sigmab_lv <- log(sqrt(sum(b.lv^2)))
+        out$sigmab_cors <- cov(t(b.lv))
       }else if(starting.val=="zero"&randomB=="single"){
         out$sigmab_lv <- 0.01
       }
@@ -636,6 +635,13 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       # b.lv <- start.fit$params$LvXcoef
       # gamma <- start.fit$params$theta
       #eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
+      if(isFALSE(randomB)){
+        optimizer <- "alabama"
+      }else{
+        optimizer="optim"
+      }
+      fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "res", optimizer = optimizer, optim.method="BFGS", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = randomB, diag.iter = 0, Lambda.struc = "diagonal", reltol=1e-10, reltol.c=1e-3, maxit=200)
+      b.lv <- fit$params$LvXcoef
       
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
         mu <- exp(eta)
@@ -644,6 +650,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }else {
         mu<-eta
       }
+      
       if(is.null(resi)){
         ds.res <- matrix(NA, n, p)
         rownames(ds.res) <- rownames(y)
@@ -651,7 +658,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         phis <- phis + 1e-05
         
         if(family!="betaH"){
-          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials, params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, Ntrials = Ntrials, link = link, family = family), mu = mu, eta.mat = eta, replace = FALSE)$resi
+          ds.res <- residuals.gllvm(list(y=y, p=p, n=n,  Ntrials = Ntrials, params=list(phi = phis, zeta = zeta, ZINB.phi = ZINB.phi), zeta.struc = zeta.struc, Power = Power, link = link, family = family), mu = mu, eta.mat = eta, replace = FALSE)$resi
         }else{
           for(i in 1:n){
             for(j in 1:p){
@@ -722,19 +729,20 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         index<-as.matrix(fa$loadings)
         gamma <- as.matrix(fa$scores[1:p,,drop=F])
       }
+      index <- residuals(lm(index~0+lv.X%*%b.lv))
       
-      index.lm <- lm(index~0+lv.X)
-      if(isFALSE(randomB)){
-        b.lv <- coef(index.lm)
-      }else{
-        fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "zero", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "single", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
-        b.lv <- fit$params$LvXcoef
-        # RRgamma <- fit$params$theta
-        # eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
-      }
-      
+      # index.lm <- lm(index~0+lv.X)
+      # if(isFALSE(randomB)){
+      #   b.lv <- coef(index.lm)
+      # }else{
+      #   b.lv <- fit$params$LvXcoef
+      #   # RRgamma <- fit$params$theta
+      #   # eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
+      # }
+      # 
       #Ensures independence of LVs with predictors
-      index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
+      # index <- matrix(residuals.lm(index.lm),ncol=num.lv.c)
+      # index <- fa$scores-lv.X%*%b.lv
       colnames(gamma) <- paste("CLV",1:num.lv.c,sep='')
       
       if(num.lv.c>1 && p>2){
@@ -754,6 +762,17 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         gammascale <- diag(x = 1/sdt, nrow = length(sdi))
         gamma <- gamma%*%gammascale  
       }
+      
+      if(num.lv.c>1){
+        mat <- matrix(0,ncol=num.lv.c,nrow=num.lv.c)
+        mat[upper.tri(mat)]<- 0.01
+        diag(mat) <- 1
+        b.lv <- (b.lv%*%mat)
+      }
+      
+      
+      eta <- eta + lv.X%*%b.lv%*%t(gamma/diag(gamma)) + index%*%t(gamma)
+
     } else {
       b.lv <- matrix(1,ncol=num.lv.c,nrow=ncol(lv.X))
       gamma <- matrix(1,p,num.lv.c)
@@ -775,7 +794,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
-    if(num.lv.c>1){
+    if(num.lv.c>1 && isFALSE(randomB)){
       mat <- matrix(0,ncol=num.lv.c,nrow=num.lv.c)
       mat[upper.tri(mat)]<- 0.01
       diag(mat) <- 1
@@ -3063,7 +3082,7 @@ findOrder <- function(covMat, distMat = NULL, nn = 10, order = NULL, withinBlock
       blocks[[length(blocks)+1]] = colMat[B:E,B:E,drop=FALSE]
       if(withinBlock){
         blocks[[length(blocks)]] = blocks[[length(blocks)]][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
-        if(approx == "NNGP")colMatDist[B:E,B:E] <- colMatDist[B:E,B:E][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
+        if(approx == "NNGP")colMatDist[B:E,B:E] <- colMatDist[B:E,B:E,drop=FALSE][order[order%in%B:E]-blocksp,order[order%in%B:E]-blocksp,drop=FALSE]
         blocksp <- blocksp + length(B:E)
         orderres = c(orderres, order[order%in%B:E])
       }
@@ -3089,10 +3108,13 @@ NNGP <- function(covmat, NN){
   A <- matrix(0, ncol = p, nrow = p)
   D <- diag(p)
   C <- cov2cor(covmat)
-  
+  if(p>1){
   for(i in 1:(p-1)) {
     A[i+1,NN[[i+1]]] = solve(C[NN[[i+1]],NN[[i+1]],drop=FALSE], C[NN[[i+1]],i+1,drop=FALSE])
     D[i+1,i+1] = 1/(1 - t(C[i+1, NN[[i+1]]])%*%A[i+1,NN[[i+1]]])
+  }
+  }else{
+    D[1,1] = 1
   }
   approx = as(t(diag(p)-A)%*%D%*%(diag(p)-A),"TsparseMatrix")
   return(approx)

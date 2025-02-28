@@ -25,7 +25,7 @@
 #' 
 #' where \eqn{bdiag(L_k)} is a block-diagonal lower triangular matrix, and each \eqn{L_k} the lower triangular matrix of the covariance matrix for each covariate.
 #'
-#' For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
+#' For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances and without correlations, we have:
 #' 
 #'  \deqn{\Sigma_e = \Theta*S*\Theta',}
 #' 
@@ -35,9 +35,9 @@
 #'
 #' with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients. When correlations are included, we have:
 #' 
-#'  \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m).}
-#' 
-#' Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
+#'  \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m),}
+#'
+#' and similarly for LV-specific variances with correlations. Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
 #' 
 #' @author Bert van der Veen
 #'
@@ -104,7 +104,7 @@ if(object$col.eff$col.eff=="random"){
     }else if(length(x)!=ncol(object$lv.X.design)){
       stop("Supplied 'x' of incorrect length.")
     }
-  if(object$randomB=="LV"){
+  if(object$randomB=="LV" && is.null(object$params$corsLvXcoef)){
     # x_i^\top\beta_j, where \beta_k \sim N(0,\Gamma \Sigma \Gamma^\top)
     # so, x_i^\top \beta \sim MN(0,x_i^\top x_i, \Gamma \Sigma \Gamma^\top) = N(0,\sum^k x_ik^2 \Gamma \Sigma\Gamma^\top)
     
@@ -117,6 +117,21 @@ if(object$col.eff$col.eff=="random"){
     cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q],simplify=F)
     trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
   }
+  }else if(object$randomB=="LV" && !is.null(object$params$corsLvXcoef)){
+    C = kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
+    cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR),function(q)as.matrix(C%*%kronecker(object$params$theta[,q,drop=FALSE]%*%t(object$params$theta[,q,drop=FALSE]), object$params$sigmaLvXcoef[q]^2*object$params$corsLvXcoef)%*%t(C)),simplify=FALSE)
+    trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
+    if(!isFALSE(object$quadratic)){
+      # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
+      I<-matrix(0,ncol=object$num.lv.c+object$num.RR,nrow=(object$num.lv.c+object$num.RR)*ncol(object$lv.X.design))
+      for(q in 1:(object$num.lv.c+object$num.RR)){
+        I[1:ncol(object$lv.X.design)+(q-1)*ncol(object$lv.X.design),q] <- x
+      }
+      Sigmaz <- t(I)%*%kronecker(diag(object$params$sigmaLvXcoef^2),object$params$corsLvXcoef)%*%(I)
+      theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
+      cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q,q],simplify=F)
+      trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
+    }
   }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
     # x_i^\top\beta_j, where \beta_j \sim N(0,\Gamma \Gamma^\top) and \beta_k \sim N(0, \Sigma), i.e., \beta \sim MN(0,\Sigma, \Gamma \Gamma^\top)
     # so, x_i^\top \beta \sim MN(0,x_i^\top \Sigma x_i, \Gamma \Gamma^\top)
@@ -167,7 +182,7 @@ if(object$col.eff$col.eff=="random"){
   }
   
   if(!isFALSE(object$randomB)){
-  if(is.null(object$params$corsLvXcoef)){
+  if(is.list(cov.environ.randomB)){
     covMat <- covMat + Reduce("+",cov.environ.randomB)
     out$trace.randomB <- unlist(trace.environ.randomB)
   }else{
@@ -180,7 +195,7 @@ if(object$col.eff$col.eff=="random"){
   }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
     names(out$trace.randomB) <- colnames(object$lv.X.design)
   }
-  names(out$trace.randomB)
+  
     if(!isFALSE(object$quadratic)){
       covMat <- covMat + Reduce("+", cov.environ.randomB.quad)
       out$trace.randomB.quad <- unlist(trace.environ.randomB.quad)

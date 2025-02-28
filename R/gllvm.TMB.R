@@ -2108,11 +2108,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           row.names(out$params$LvXcoef) <- colnames(lv.X)
           if(!isFALSE(randomB)){
           if(randomB=="LV"|randomB=="single"){
-            out$params$sigmaLvXcoef <- exp(sigmab_lv)
+            out$params$sigmaLvXcoef <- exp(head(sigmab_lv, num.lv.c+num.RR))
           }else if(randomB=="P"){
             out$params$sigmaLvXcoef <- exp(head(sigmab_lv, ncol(lv.X)))
+            }else if(randomB=="iid"){out$params$sigmaLvXcoef <- 1}
+            if(randomB=="LV")names(out$params$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
+            if(randomB=="P")names(out$params$sigmaLvXcoef) <- colnames(lv.X)
+            # if(randomB=="all")names(out$params$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
+            if(randomB=="single")names(out$params$sigmaLvXcoef) <- NULL
             if(ncol(csBlv)==2){
-              covsigmaB <- tail(sigmab_lv, -ncol(lv.X))
+              covsigmaB <- tail(sigmab_lv, -ifelse(randomB=="P", ncol(lv.X), num.lv.c+num.RR))
               sigmaBij <- rep(0,(ncol(lv.X)^2-ncol(lv.X))/2)
               for(i in 1:nrow(csBlv)){
                 sigmaBij[(csBlv[i,1] - 1) * (csBlv[i,1] - 2) / 2 + csBlv[i,2]] = covsigmaB[i]
@@ -2120,12 +2125,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               bL <-  constructL(sigmaBij)
               out$params$corsLvXcoef <- bL%*%t(bL)
             }
-            }else if(randomB=="iid"){out$params$sigmaLvXcoef <- 1}
-            if(randomB=="LV")names(out$params$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
-            if(randomB=="P")names(out$params$sigmaLvXcoef) <- colnames(lv.X)
-            # if(randomB=="all")names(out$params$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
-            if(randomB=="single")names(out$params$sigmaLvXcoef) <- NULL
-            
           }
         }
         

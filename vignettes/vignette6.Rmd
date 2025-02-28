@@ -129,7 +129,7 @@ coefsTab[,-4]
 
 There is a range of potential use cases for random canonical coefficients, but pragmatically, inducing some shrinkage on the predictor effects can result in more better "behaved" (fewer outliers) ordination plots. 
 
-Incorporating correlation between the canonical coefficients is (currently) only possible in combination with `randomB="P"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
+Incorporating correlation between the canonical coefficients, with works in combination with `randomB="P"` or `randomB="LV"`. This assumes that the canonical coefficients per LV are drawn from a covariance matrix that is specified with the `lv.formula` argument:
 
 ```{r eval=TRUE}
 RRGLMb2 <- gllvm(Y, X = X, lv.formula = ~(0+soil.dry+bare.sand+fallen.leaves+moss+herb.layer+reflection|1), family="poisson", num.RR = 2, randomB = "P")

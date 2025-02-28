@@ -57,58 +57,59 @@ residuals.gllvm <- function(object, ...) {
   
  
   ds.res = matrix(NA, n, p)
-  
+
+        
       if (object$family == "poisson") {
-        b <- ppois(as.vector(y), as.vector(mu))
+        b  <- ppois(as.vector(y), as.vector(mu))
         a <- pmin(b, ppois(as.vector(unlist(y)) - 1, as.vector(mu)))
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u), n, p)
       }
       if (object$family == "negative.binomial") {
         phis <- object$params$phi + 1e-05
         b <- pnbinom(as.vector(y), mu = as.vector(mu), size = 1 / rep(phis, each = n))
-        a <- pmin(b,pnbinom(as.vector(unlist(y)) - 1, mu = as.vector(mu), size = 1 / as.vector(phis)))
+        a <- pmin(b,pnbinom(as.vector(unlist(y)) - 1, mu = as.vector(mu), size = 1 / rep(phis, each = n)))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "gaussian") {
         phis <- object$params$phi
         b <- pnorm(as.vector(y), as.vector(mu), sd = rep(phis, each = n))
         a <- pmin(b, pnorm(as.vector(y), as.vector(mu), sd = rep(phis, each = n)))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "gamma") {
         phis <- object$params$phi # - 1
         b <- pgamma(as.vector(y), shape = rep(phis, each = n), scale = as.vector(mu)/rep(phis, each = n))
         a <- pmin(b, pgamma(as.vector(y), shape = rep(phis, each = n), scale = as.vector(mu)/rep(phis, each = n)))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "beta") {
         b <- pbeta(as.vector(y), shape1 = rep(object$params$phi, each = n)*as.vector(mu), shape2 = rep(object$params$phi, each = n)*(1-as.vector(mu)))
         a <- pmin(b, pbeta(as.vector(y), shape1 = rep(object$params$phi, each = n)*as.vector(mu), shape2 = rep(object$params$phi, each = n)*(1-as.vector(mu))))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "betaH") {
         for (i in 1:n) {
@@ -157,41 +158,44 @@ residuals.gllvm <- function(object, ...) {
         b <- pexp(as.vector(y), rate = 1/as.vector(mu))
         a <- pmin(b, pexp(as.vector(y), rate = 1/as.vector(mu)))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "ZIP") {
         b <- pzip(as.vector(y), mu = as.vector(mu), sigma = rep(object$params$phi, each = n))
         a <- pmin(b, pzip(as.vector(y) - 1, mu = as.vector(mu), sigma = rep(object$params$phi, each = n)))
         
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "ZINB") {
         b <- pzinb(as.vector(y), mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n))
         a <- pmin(b, pzinb(as.vector(y) - 1, mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n)))
 
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
 
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "binomial") {
+        if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
+        if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+        
         b <- pbinom(as.vector(y), Ntrials, as.vector(mu))
         a <- pmin(b, pbinom(as.vector(y) - 1, Ntrials, as.vector(mu)))
 
-        u = a+(b-a)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = a+(b-a)*runif(n*p)
 
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
@@ -200,11 +204,11 @@ residuals.gllvm <- function(object, ...) {
         
         anew =  ifelse((as.vector(y) - 1)<0, 0, a)
         
-        u = anew+(b-anew)*matrix(runif(n*p),n,p,byrow=TRUE)
+        u = anew+(b-anew)*runif(n*p)
         
         if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-        ds.res <- qnorm(u)
+        ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "ordinal") {
         for (i in 1:n) {

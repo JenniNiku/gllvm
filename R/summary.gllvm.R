@@ -209,7 +209,9 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
         for(i in 1:ncol(object$lv.X.design)){
           idx <- seq(i,ncol(object$lv.X.design)*(object$num.lv.c+object$num.RR),ncol(object$lv.X.design))
           b <- object$params$LvXcoef[i,]
-          zval[i] <- b%*%MASS::ginv(covB[idx,idx])%*%b
+          S <- MASS::ginv(covB[idx,idx])
+          if(any(diag(S)<0)){warning("Negative diagonal entries detected in the covariance matrix. This might give some odd results.\n")}
+          zval[i] <- b%*%S%*%b
           pvalue[i] <- 1-pchisq(zval[i],object$num.lv.c+object$num.RR)
         }
         coef.table.constrained <- cbind(pars, se, zval, pvalue)
@@ -282,8 +284,11 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   }else if(!isFALSE(object$randomB)){
     coef.table.constrained <- NULL
     
-    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef), Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits), Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits))
+    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef))
+    REbcovs$Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits)
+    REbcovs$Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits)
     if(!is.null(object$params$corsLvXcoef)){
+      if(object$randomB=="LV")REbcovs <- rbind(REbcovs, data.frame(Name = rep("", ncol(object$lv.X.design)-object$num.RR+object$num.lv.c), Std.Dev="", Variance = ""))
       cors <- format(round(object$params$corsLvXcoef, digits), nsmall = digits)
       cors[upper.tri(cors, diag = TRUE)] <- ""
       REbcovs <- cbind(REbcovs, cors, deparse.level = 0L)

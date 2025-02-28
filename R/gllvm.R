@@ -819,18 +819,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           if(any(apply(lv.X.design, 2, function(x) all(x == 1)))){
             lv.X.design <- lv.X.design[,!apply(lv.X.design, 2, function(x) all(x == 1)),drop=FALSE]
           }
-          }else{
+          }else if((num.RR+num.lv.c)>0 && anyBars(lv.formula)){
             if(isFALSE(randomB))stop("You forgot to set the 'randomB' argument.")
             if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and random effects at the same time.")
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
             RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
             lv.X.design = t(as.matrix(RElistLV$Zt))
-            if(randomB=="P")csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
-            if((ncol(csBlv) == 2) && randomB%in%c("LV","iid","single")){
-              warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
+              warning("Correlated random canonical coefficients only allowed with randomB = 'P' or and randomB='LV'. Setting randomB = 'P'.\n")
               randomB = "P"
             }
+            if(randomB%in%c("P","LV"))csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
             
             # in case "lv.formula" is specified with random effects, but randomB is not specified
             if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
@@ -851,19 +851,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           if(any(apply(lv.X.design, 2, function(x) all(x == 1)))){
             lv.X.design <- lv.X.design[,!apply(lv.X.design, 2, function(x) all(x == 1)),drop=FALSE]
           }
-          }else{
+          }else if((num.RR+num.lv.c)>0 && anyBars(lv.formula)){
             if(isFALSE(randomB))stop("You forgot to set the 'randomB' argument.")
             if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and rando effects at the same time.")
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
             RElistLV<- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
             lv.X.design = t(as.matrix(RElistLV$Zt))
-            if(randomB=="P")csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
-            if((ncol(csBlv) == 2) && randomB%in%c("LV","iid","single")){
-              warning("Correlated random canonical coefficients only allowed with randomB = 'P'. Setting randomB='P'.\n")
+            if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
+              warning("Correlated random canonical coefficients only allowed with randomB = 'P' or randomB = 'LV'. Setting randomB = 'P'.\n")
               randomB = "P"
             }
-            
+            if(randomB%in%c("P","LV"))csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
             if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
               optimizer = control$optimizer = "optim"
             }
