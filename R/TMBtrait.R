@@ -272,12 +272,17 @@ trait.TMB <- function(
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
       # colMat signal strength
       if(!is.null(colMat))sigmaB <- c(sigmaB, rep(log(0.5),ifelse(colMat.rho.struct == "single", 1, ncol(xb))))
-      sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
-      # artifical "cs" to uninfy code with other "path" that does not go via the randomX argument in gllvm.R
-      # a bit hacky, but it works..
-      sigmaijL = constructL(sigmaij)!=0
-      diag(sigmaijL) = 0
-      cs <- which(sigmaijL!=0, arr.ind=TRUE)
+      if(ncol(xb)>1){
+        sigmaij <- rep(1e-3,(ncol(xb)-1)*ncol(xb)/2)
+        # artifical "cs" to uninfy code with other "path" that does not go via the randomX argument in gllvm.R
+        # a bit hacky, but it works..
+        sigmaijL = constructL(sigmaij)!=0
+        diag(sigmaijL) = 0
+        cs <- which(sigmaijL!=0, arr.ind=TRUE)
+      } else {
+        sigmaij <- 0
+        cs <- matrix(0)
+      }
     } else if(ncol(RElist$Zt)==n){
       # using lme4 formula
       xb <- as.matrix(Matrix::t(RElist$Zt))
@@ -463,8 +468,10 @@ trait.TMB <- function(
           sigmaB <- log(sqrt(diag(sigmaB)))
           if(rhoSP){sigmaB <- c(sigmaB, rep(log(-log(0.5)),ifelse(colMat.rho.struct == "single", 1, ncol(xb))))}
           if(randomX.start == "res" && !is.null(res$fitstart)){
-            res$sigmaij <- sigmaij <- res$fitstart$TMBfnpar[names(res$fitstart$TMBfnpar) == "sigmaij"] 
-            sigmaij <- constructL(sigmaij)
+            if(sum(names(res$fitstart$TMBfnpar) == "sigmaij")){
+              res$sigmaij <- sigmaij <- res$fitstart$TMBfnpar[names(res$fitstart$TMBfnpar) == "sigmaij"] 
+              sigmaij <- constructL(sigmaij)
+            }
             if(ncol(cs)>1){
               sigmaij <- sigmaij[cs]
             }else{
