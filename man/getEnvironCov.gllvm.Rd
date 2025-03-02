@@ -41,7 +41,7 @@ when there are covariate-specific phylogenetic signal parameters in the model, t
 
 where \eqn{bdiag(L_k)} is a block-diagonal lower triangular matrix, and each \eqn{L_k} the lower triangular matrix of the covariance matrix for each covariate.
 
-For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:
+For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances and without correlations, we have:
 
  \deqn{\Sigma_e = \Theta*S*\Theta',}
 
@@ -51,9 +51,9 @@ where \eqn{\Theta} is the matrix of loadings, and S the (diagonal) covariance ma
 
 with I_d an identity matrix for the number of constrained and informed latent variables, and \eqn{\sigma_k^2} the variance per predictor for the canonical coefficients. When correlations are included, we have:
 
- \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m).}
+ \deqn{\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m),}
 
-Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
+and similarly for LV-specific variances with correlations. Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.
 }
 \examples{
 \dontrun{
