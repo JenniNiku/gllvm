@@ -82,7 +82,7 @@ phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, whic
   if(sd.err){
   alpha = (1- level)/2
   PEs <- gllvm::getPredictErr(object)
-  PIs <- data.frame(cbind(LI = c(object$params$Br)+c(PEs$Br*qnorm(alfa)), UI = c(object$params$Br)+c(PEs$Br*qnorm(1-alfa))))
+  PIs <- data.frame(cbind(LI = c(object$params$Br)+c(PEs$Br*qnorm(alpha)), UI = c(object$params$Br)+c(PEs$Br*qnorm(1-alpha))))
   object$params$Br[-which((PIs$LI>0 & PIs$UI>0) | (PIs$LI<0 & PIs$UI<0))]<-NA
   }
   
