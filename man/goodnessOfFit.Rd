@@ -2,7 +2,7 @@
 % Please edit documentation in R/goodnessOfFit.gllvm.R
 \name{goodnessOfFit}
 \alias{goodnessOfFit}
-\title{Plot Diagnostics for an gllvm Object}
+\title{Goodness of fit measures for a gllvm}
 \usage{
 goodnessOfFit(
   y = NULL,
@@ -24,8 +24,7 @@ goodnessOfFit(
 \item{species}{logical, if \code{TRUE}, goodness-of-fit measures are calculated for each species separately. If FALSE,  goodness-of-fit measures are calculated for all species together.}
 }
 \description{
-Five plots (selectable by which) are currently available: a plot of residuals against
-linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale location plot.
+Several goodness-of-fit measure are currently available and can be calculated for a gllvm model fit and predicted values.
 }
 \details{
 goodnessOfFit is used for evaluating the goodness-of-fit of a model or predictions. Available goodness-of-fit measures are correlation, RMSE, MARNE, and R2 measures. Definitions are below.

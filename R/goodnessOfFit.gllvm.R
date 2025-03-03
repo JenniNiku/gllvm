@@ -1,6 +1,5 @@
-#' @title Plot Diagnostics for an gllvm Object
-#' @description Five plots (selectable by which) are currently available: a plot of residuals against
-#' linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale location plot.
+#' @title Goodness of fit measures for a gllvm
+#' @description Several goodness-of-fit measure are currently available and can be calculated for a gllvm model fit and predicted values.
 #'
 #' @param y a response matrix
 #' @param pred predicted values for response matrix y
