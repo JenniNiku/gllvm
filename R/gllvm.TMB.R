@@ -1261,7 +1261,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(length(param1[nam=="r0f"])>0){ r0f1 <- matrix(param1[nam=="r0f"])} else {r0f1 <- matrix(0)}
         if(nrow(dr)==n){
           log_sigma1 <- ifelse(param1[nam=="log_sigma"]==0,1e-3,param1[nam=="log_sigma"])
-          if(!is.null(map.list$log_sigma)) log_sigma1 = log_sigma1[map.list$log_sigma]
+          if(!is.null(map.list$log_sigma)) {
+            # We need to maintain the fixed parameter for Matern smoothness
+            # Which is omitted in the optimiser
+            log_sigma <- sigma
+            log_sigma <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
+            log_sigma1 <- log_sigma
+          }
           lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(nr)])+1e-3)
           if(Ar.struc=="unstructured"){
             lg_Ar <- c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
