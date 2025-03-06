@@ -1053,26 +1053,37 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(num.RR==0 && num.lv.c==0) map.list$b_lv = factor(NA)
       
       ## Row effect settings
+
       if(nrow(dr)==n){
-        # if(dependent.row&quadratic==F|dependent.row&starting.val=="zero") 
-        sigmanew <- map.list$log_sigma <- NULL
+        if(any(cstrucn==4)){
+          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){1:3}else{1:2}
+          if(length(cstrucn)>1){
+            for(i in 2:length(cstrucn)){
+              map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
+                c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
+              }else if(cstrucn[i]==1){
+                max(map.list$log_sigma, na.rm = TRUE)+1
+              }else if(cstrucn[i]==4){
+                c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2,NA)
+              })
+            }
+          }
+          map.list$log_sigma <- factor(map.list$log_sigma)
+        }
+        sigmanew <- NULL
         iter = 1 # keep track of # spatial structures
         for(re in cstrucn){
           if(re %in% c(1,3)) {
             sigmanew = c(sigmanew, log(sigma[1]),0)
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(2)){
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(4)){
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
             # Fix matern smoothness by default
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2, NA)
-            sigmanew = c(sigmanew, sigma,log(MaternKappa))
+            sigmanew = c(sigmanew, log(MaternKappa))
           } else {
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1)
             sigmanew = c(sigmanew, log(sigma[1]))
           }
         }
@@ -1725,24 +1736,35 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         randoml[1] <- 1
         randomp <- c(randomp,"r0r")
         
-        sigmanew <- map.list$log_sigma <- NULL
+        sigmanew <- NULL
         iter <- 1
+        if(any(cstrucn==4)){
+          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){1:3}else{1:2}
+          if(length(cstrucn)>1){
+         for(i in 2:length(cstrucn)){
+           map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
+            c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
+             }else if(cstrucn[i]==1){
+               max(map.list$log_sigma, na.rm = TRUE)+1
+               }else if(cstrucn[i]==4){
+                 c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2,NA)
+                 })
+         }
+          }
+          map.list$log_sigma <- factor(map.list$log_sigma)
+        }
         for(re in cstrucn){
           if(re %in% c(1,3)) {
             sigmanew = c(sigmanew, log(sigma[1]),0)
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(2)){
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
           } else if(re %in% c(4)){
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
             # Fix matern smoothness by default
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2, NA)
-            sigmanew = c(sigmanew, sigma,log(MaternKappa))
+            sigmanew = c(sigmanew, log(MaternKappa))
           } else {
-            if(is.null(setMap$log_sigma) && any(cstrucn%in%c(4)))map.list$log_sigma <- c(map.list$log_sigma, max(map.list$log_sigma, na.rm = TRUE)+1)
             sigmanew = c(sigmanew, log(sigma[1]))
           }
         }
@@ -2255,8 +2277,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               names(sigma)[iter+1] = names(nr)[re]
               iter <- iter + 2
               # Matern smoothness
-              names(sigma)[iter+1] = "Matern kappa"
-              iter <- iter +1
+              # names(sigma)[iter+1] = "Matern kappa"
+              # iter <- iter +1
             } else {
               sigma[iter] <- exp(sigma[iter])
               names(sigma)[iter] = names(nr)[re]
