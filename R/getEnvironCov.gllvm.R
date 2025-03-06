@@ -223,7 +223,7 @@ getEnvironCor <- function(object, ...)
 #'@export getEnvironCor.gllvm
 getEnvironCor.gllvm <- function(object, ...)
 {
-  cov2cor(getEnvironCov.gllvm(object)$cov)
+  cov2cor(getEnvironCov.gllvm(object, ...)$cov)
 }
 
 #'@export getEnvironCov

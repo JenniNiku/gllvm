@@ -772,7 +772,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       
       eta <- eta + lv.X%*%b.lv%*%t(gamma/diag(gamma)) + index%*%t(gamma)
-
+      resi <- NULL
+      
     } else {
       b.lv <- matrix(1,ncol=num.lv.c,nrow=ncol(lv.X))
       gamma <- matrix(1,p,num.lv.c)
@@ -805,6 +806,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       gamma.c <- gamma
       index.c <- index
     }
+    resi <- NULL
   }
   if(num.RR>0){
     #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
@@ -899,11 +901,13 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # RRcoef <- t(t(RRcoef)*diag(qr.R(qr.gam))[1:num.RR])
     # RRgamma <- t(qr.R(qr.gam)/diag(qr.R(qr.gam)))[,1:num.RR]
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
+    resi <- NULL
   }else if(num.RR>0 && !isFALSE(randomB)){
-    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "zero", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = "single", diag.iter = 0, Lambda.struc = "diagonal", maxit = 80)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "res", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, diag.iter = 0, Lamda.struc = "diagonal", randomB = randomB, maxit = 200)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
     RRcoef <- fit$params$LvXcoef
     RRgamma <- fit$params$theta
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
+    resi <- NULL
   }
   
   if((num.lv.c+num.RR)>0&num.lv>0){
@@ -996,6 +1000,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           index <- fa$scores[1:num.lv,]
         }
       }
+      # index <- residuals(lm(index ~ lv.X%*%cbind(b.lv,RRcoef)))
     } else {
       gamma <- matrix(1,p,num.lv)
       gamma[upper.tri(gamma)]=0
