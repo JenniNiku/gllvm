@@ -6,6 +6,7 @@ Version 2.0.1
 * Added 'tick.length' argument for phyplot.gllvm to control the tick length in the species-specific random effects plot
 * Improvement for the starting values of concurrent ordination
 * Added correlation canonical coefficients option for randomB="LV"
+* Added additional (LV-specific) variance parameters for randomB="P"
 
 ## Bug Fixes
 * Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
