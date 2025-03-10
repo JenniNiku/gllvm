@@ -176,8 +176,11 @@ Type objective_function<Type>::operator() ()
     if(randomB<1){//Sigma_q = sigma_q I_klv
       //randomB="P","single","iid"
       if(sigmab_lv.size()>1){
+      vector<Type>sigma1 = exp(sigmab_lv.head(x_lv.cols()));
+      vector<Type>sigma2 = exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
       for (int q=0; q<(num_lv_c+num_RR); q++){
-      Sigmab_lv(q).diagonal().array() = exp(sigmab_lv)*exp(sigmab_lv);
+      Sigmab_lv(q).diagonal().array() = sigma1*sigma1;
+      if(q>0)Sigmab_lv(q).diagonal().array() *= sigma2(q-1);
       }
       }else{
         for (int q=0; q<(num_lv_c+num_RR); q++){
@@ -196,7 +199,9 @@ Type objective_function<Type>::operator() ()
     }
     }else if((csb_lv.cols()==2) && (randomB<1)){
       matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
-      sds.diagonal() = exp(sigmab_lv.segment(0,x_lv.cols()));
+      vector<Type>sigma1 = exp(sigmab_lv.head(x_lv.cols()));
+      vector<Type>sigma2 = exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
+      sds.diagonal() = sigma1;
       vector<Type>corsb_lv((x_lv.cols()*x_lv.cols()-x_lv.cols())/2);
       corsb_lv.fill(0.0);
       matrix<Type>Sigmab_lvL(x_lv.cols(),x_lv.cols());
@@ -204,12 +209,13 @@ Type objective_function<Type>::operator() ()
       if(csb_lv.cols()>1){
         //need a vector with covariances and zeros in the right places
         for(int i=0; i<csb_lv.rows(); i++){
-          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(x_lv.cols()+i);
+          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(x_lv.cols()+num_lv_c+num_RR-1+i);
         }
         Sigmab_lvL = sds*gllvmutils::constructL(corsb_lv);
     }
       for (int q=0; q<(num_lv_c+num_RR); q++){
       Sigmab_lv(q) = Sigmab_lvL;
+      if(q>0)Sigmab_lv(q) *= sigma2(q-1);
       }
     }else if((csb_lv.cols()==2) && (randomB>0)){
       Sigmab_lv.resize(num_lv_c+num_RR);//need to change this to same dimension as for randomB="P"
@@ -466,8 +472,6 @@ Type objective_function<Type>::operator() ()
           nll -= -0.5*(b_lv.col(q).transpose()*Sigmab_lvCI*b_lv.col(q)).sum()*pow(exp(sigmab_lv(q)),-2);
           nll -= 0.5*Klv- Klv*sigmab_lv(q)-Sigmab_lv(0).diagonal().array().log().sum();
         }
-        REPORT(sigmab_lv);
-        REPORT(Sigmab_lvCI);
       }
       
       //resize ab_lvcov to correct size

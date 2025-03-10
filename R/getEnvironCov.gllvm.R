@@ -104,75 +104,56 @@ if(object$col.eff$col.eff=="random"){
     }else if(length(x)!=ncol(object$lv.X.design)){
       stop("Supplied 'x' of incorrect length.")
     }
-  if(object$randomB=="LV" && is.null(object$params$corsLvXcoef)){
-    # x_i^\top\beta_j, where \beta_k \sim N(0,\Gamma \Sigma \Gamma^\top)
-    # so, x_i^\top \beta \sim MN(0,x_i^\top x_i, \Gamma \Sigma \Gamma^\top) = N(0,\sum^k x_ik^2 \Gamma \Sigma\Gamma^\top)
     
-  cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)Reduce("+",sapply(x,function(xk)xk^2*object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef[q]^2,simplify=F)),simplify=F)
-  trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
-  if(!isFALSE(object$quadratic)){
-    # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-    Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
-    theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
-    cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q],simplify=F)
-    trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
-  }
-  }else if(object$randomB=="LV" && !is.null(object$params$corsLvXcoef)){
-    C = kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
-    cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR),function(q)as.matrix(C%*%kronecker(object$params$theta[,q,drop=FALSE]%*%t(object$params$theta[,q,drop=FALSE]), object$params$sigmaLvXcoef[q]^2*object$params$corsLvXcoef)%*%t(C)),simplify=FALSE)
-    trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
-    if(!isFALSE(object$quadratic)){
-      # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-      I<-matrix(0,ncol=object$num.lv.c+object$num.RR,nrow=(object$num.lv.c+object$num.RR)*ncol(object$lv.X.design))
-      for(q in 1:(object$num.lv.c+object$num.RR)){
-        I[1:ncol(object$lv.X.design)+(q-1)*ncol(object$lv.X.design),q] <- x
+    if(object$randomB %in% c("P","LV")){
+      # generally speaking, Beta_rr ~ MN(0, U, V)
+      # with V given by species loadings and U by the (albeit present or not) covariance matrix among predictors
+      # with randomB = "LV" we have LV-specific variances in V, and U is a correlation matrix
+      # with randomB = "P" we have a covariance matrix U, and LV-specific variance
+      U <- as(diag(ncol(object$lv.X.design)), "TsparseMatrix")
+      if(!is.null(object$params$corsLvXcoef)){
+        U <- object$params$corsLvXcoef
       }
-      Sigmaz <- t(I)%*%kronecker(diag(object$params$sigmaLvXcoef^2),object$params$corsLvXcoef)%*%(I)
-      theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
-      cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q,q],simplify=F)
-      trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
-    }
-  }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
-    # x_i^\top\beta_j, where \beta_j \sim N(0,\Gamma \Gamma^\top) and \beta_k \sim N(0, \Sigma), i.e., \beta \sim MN(0,\Sigma, \Gamma \Gamma^\top)
-    # so, x_i^\top \beta \sim MN(0,x_i^\top \Sigma x_i, \Gamma \Gamma^\top)
-    
-  cov.environ.randomB <- sapply(1:length(object$params$sigmaLvXcoef), function(k)object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F]%*%t(object$params$theta[,1:(object$num.lv.c+object$num.RR),drop=F])*(object$params$sigmaLvXcoef[k]*x[k])^2,simplify=F)
-  trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
-  
-  if(!isFALSE(object$quadratic)){
-    # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-    Sigmaz <- diag(rep(x%*%diag(object$params$sigmaLvXcoef^2)%*%x,object$num.lv.c+object$num.RR))
-    theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
-    cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
-    trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
-  }
-  }else if(object$randomB=="P" && !is.null(object$params$corsLvXcoef)){
-    # matrix normal
-    Sigma = diag(object$params$sigmaLvXcoef)
-    Sigma = Sigma%*%object$params$corsLvXcoef%*%Sigma
-    C <- kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix"))
-    cov.environ.randomB <- as.matrix(C%*%kronecker(object$params$theta[,1:sum(object$num.lv.c,object$num.RR),drop=FALSE]%*%t(object$params$theta[,1:sum(object$num.lv.c,object$num.RR),drop=FALSE]), Sigma)%*%Matrix::t(C))
-    trace.environ.randomB <- sum(diag(cov.environ.randomB)) 
-    
-    if(!isFALSE(object$quadratic)){
-      # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-      Sigmaz <- diag(rep(x%*%Sigma%*%x,object$num.lv.c+object$num.RR))
-      theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
-      cov.environ.randomB.quad <- 2*abs(theta)%*%Sigmaz%*%Sigmaz%*%t(abs(theta))
-      trace.environ.randomB.quad <- sum(diag(cov.environ.randomB.quad))
-    }
-  }else if(object$randomB=="single" | object$randomB=="iid"){
-    cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef^2,simplify=F)
-    cov.environ.randomB.trace <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
-    if(!isFALSE(object$quadratic)){
-      Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
-    # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
-      theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
-      cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz^2,simplify=F)
-      trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
-  }
-  }
+      if(object$randomB == "P"){
+        sigma1 <- c(1, tail(object$params$sigmaLvXcoef, object$num.lv.c+object$num.RR-1))#first LV serves as "reference"
+        sigma2 <- head(object$params$sigmaLvXcoef, ncol(object$lv.X.design))
+        U = diag(sigma2)%*%U%*%diag(sigma2)
+      }
+      if(object$randomB=="LV"){
+        sigma1 <- object$params$sigmaLvXcoef
+      }
+      
+      # U <- diag(sigma1)%*%U%*%diag(sigma1)
+      # V <- object$params$theta[,1:(object$num.lv.c+object$num.RR)]%*%diag(sigma2^2)%*%t(object$params$theta[,1:(object$num.lv.c+object$num.RR)])
+      # sum(diag(C%*%kronecker(V,U)%*%t(C)))
+      
+      C = kronecker(t(x), as(diag(ncol(object$y)),"TsparseMatrix")) # sum over the predictors
+      cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR),function(q)as.matrix(C%*%kronecker(U, object$params$theta[,q,drop=FALSE]%*%t(object$params$theta[,q,drop=FALSE])*sigma1[q]^2)%*%t(C)),simplify=FALSE)
 
+      trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))
+
+      if(!isFALSE(object$quadratic)){
+        # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
+        I<-matrix(0,ncol=object$num.lv.c+object$num.RR,nrow=(object$num.lv.c+object$num.RR)*ncol(object$lv.X.design))
+        for(q in 1:(object$num.lv.c+object$num.RR)){
+          I[1:ncol(object$lv.X.design)+(q-1)*ncol(object$lv.X.design),q] <- x
+        }
+        Sigmaz <- t(I)%*%kronecker(diag(sigma1^2),U)%*%(I)
+        theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
+        cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz[q,q],simplify=F)
+        trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
+      }
+    }else if(object$randomB=="single" | object$randomB=="iid"){
+      cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef^2,simplify=F)
+      cov.environ.randomB.trace <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
+      if(!isFALSE(object$quadratic)){
+        Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
+        # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
+        theta <- object$params$theta[,-c(1:(object$num.lv.c+object$num.RR+object$num.lv))][,1:(object$num.lv.c+object$num.RR)]
+        cov.environ.randomB.quad <- sapply(1:(object$num.lv.c+object$num.RR), function(q)2*abs(theta)[,q,drop=F]%*%t(abs(theta[,q,drop=F]))*Sigmaz^2,simplify=F)
+        trace.environ.randomB.quad <- lapply(cov.environ.randomB.quad, function(x)sum(diag(x)))
+      }
+    }
   }
   covMat <- 0
   out <- list()
@@ -190,20 +171,13 @@ if(object$col.eff$col.eff=="random"){
     out$trace.randomB <- trace.environ.randomB
   }
   
-  if(object$randomB=="LV"){
     names(out$trace.randomB) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
-  }else if(object$randomB=="P" && is.null(object$params$corsLvXcoef)){
-    names(out$trace.randomB) <- colnames(object$lv.X.design)
-  }
+
   
     if(!isFALSE(object$quadratic)){
       covMat <- covMat + Reduce("+", cov.environ.randomB.quad)
       out$trace.randomB.quad <- unlist(trace.environ.randomB.quad)
-      if(object$randomB=="LV"){
-        names(out$trace.randomB.quad) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
-      }else if(object$randomB=="P"){
-        names(out$trace.randomB.quad) <- colnames(object$lv.X.design)
-      }
+      names(out$trace.randomB.quad) <- colnames(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F])
     }
   }
   out$cov <- covMat

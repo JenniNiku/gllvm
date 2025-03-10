@@ -747,16 +747,19 @@ se.gllvm <- function(object, ...){
     }
     if(!isFALSE(object$randomB)&(num.lv.c+num.RR)>0){
       if(object$randomB!="iid"){
-        if(is.null(object$params$corsLvXcoef) || object$randomB=="LV"){
+        if(object$randomB=="LV"){
         se.lsigmab.lv <-  head(se$sigmab_lv, num.lv.c+num.RR)
         out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
+        }else if(object$randomB=="P"){
+          se.lsigmab.lv <- head(se$sigmab_lv, ncol(object$lv.X.design)+num.lv.c+num.RR-1);
+          out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
         }else{
           se.lsigmab.lv <- head(se$sigmab_lv, ncol(object$lv.X.design));
           out$sd$sigmaLvXcoef <- se.lsigmab.lv*object$params$sigmaLvXcoef
         }
       }
       if(object$randomB=="LV")names(out$sd$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
-      if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- colnames(lv.X.design)
+      if(object$randomB=="P")names(out$sd$sigmaLvXcoef) <- c(colnames(lv.X.design), paste("CLV",2:(num.lv.c+num.RR), sep=""))
       # if(object$randomB=="all")names(out$sd$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X.design),each=num.RR+num.lv.c),sep=".")
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }

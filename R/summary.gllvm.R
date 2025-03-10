@@ -284,11 +284,31 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
   }else if(!isFALSE(object$randomB)){
     coef.table.constrained <- NULL
     
-    REbcovs <- data.frame(Name = names(object$params$sigmaLvXcoef))
-    REbcovs$Std.Dev = format(round(object$params$sigmaLvXcoef, digits), nsmall = digits)
-    REbcovs$Variance = format(round(object$params$sigmaLvXcoef^2, digits), nsmall = digits)
+    REbcovs <- NULL
+    
+    if(object$randomB == "LV"){
+      sigma <- kronecker(object$params$sigmaLvXcoef, rep(1, ncol(object$lv.X.design)))
+    }else if(object$randomB == "P"){
+      sigma1 <- object$params$sigmaLvXcoef[1:ncol(object$lv.X.design)]
+      sigma2 <- object$params$sigmaLvXcoef[-c(1:ncol(object$lv.X.design))]
+      sigma <- kronecker(c(1, sigma2), sigma1)
+    }else{
+      sigma <- rep(object$params$sigmaLvXcoef, ncol(object$lv.X.design)*(object$num.lv.c+object$num.RR))
+    }
+    
+    REbcovs = data.frame(Name = rep(row.names(object$params$LvXcoef), object$num.lv.c+object$num.RR),
+                         Std.Dev = format(round(sigma, digits), nsmall = digits),
+                         Variance = format(round(sigma^2, digits), nsmall = digits),
+                         LV = rep(colnames(object$params$LvXcoef), each = ncol(object$lv.X.design)))
+    
+    REbcovs <- reshape(
+      REbcovs, 
+      timevar = "LV", 
+      idvar = "Name", 
+      direction = "wide"
+    )
+    
     if(!is.null(object$params$corsLvXcoef)){
-      if(object$randomB=="LV")REbcovs <- rbind(REbcovs, data.frame(Name = rep("", ncol(object$lv.X.design)-object$num.RR+object$num.lv.c), Std.Dev="", Variance = ""))
       cors <- format(round(object$params$corsLvXcoef, digits), nsmall = digits)
       cors[upper.tri(cors, diag = TRUE)] <- ""
       REbcovs <- cbind(REbcovs, cors, deparse.level = 0L)

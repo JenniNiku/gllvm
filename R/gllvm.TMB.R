@@ -2138,10 +2138,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           if(randomB=="LV"|randomB=="single"){
             out$params$sigmaLvXcoef <- exp(head(sigmab_lv, num.lv.c+num.RR))
           }else if(randomB=="P"){
-            out$params$sigmaLvXcoef <- exp(head(sigmab_lv, ncol(lv.X)))
+            out$params$sigmaLvXcoef <- exp(head(sigmab_lv, ncol(lv.X)+num.lv.c+num.RR-1))
             }else if(randomB=="iid"){out$params$sigmaLvXcoef <- 1}
             if(randomB=="LV")names(out$params$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
-            if(randomB=="P")names(out$params$sigmaLvXcoef) <- colnames(lv.X)
+            if(randomB=="P")names(out$params$sigmaLvXcoef) <- c(colnames(lv.X), paste("CLV",2:(num.lv.c+num.RR), sep=""))
             # if(randomB=="all")names(out$params$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
             if(randomB=="single")names(out$params$sigmaLvXcoef) <- NULL
             if(ncol(csBlv)==2){

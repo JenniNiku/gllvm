@@ -566,9 +566,11 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         out$sigmab_lv <- rep(0.01,num.lv.c+num.RR)
       }else if(randomB=="P"&starting.val!="zero"&(num.lv.c+num.RR)>1){
         out$sigmab_lv <- log(apply(b.lv,1,function(x)sqrt(sum(x^2))))
+        sigma2 <- apply(b.lv,2,function(x)sqrt(sum(x^2)))
+        out$sigmab_lv <- c(out$sigmab_lv, log(sigma2[1])-log(sigma2[-1])) #extra parameters for LV-wise scaling
         out$sigmab_cors <- cov(t(b.lv))
       }else if(randomB=="P"&starting.val=="zero"|randomB=="P"&(num.lv.c+num.RR)==1){
-        out$sigmab_lv <- rep(0.01,ncol(lv.X)) 
+        out$sigmab_lv <- rep(0.01,ncol(lv.X) + num.lv.c+num.RR-1) 
         out$sigmab_cors <- rep(0.001, ncol(lv.X))
       }else if(starting.val!="zero"&randomB=="single"){
         out$sigmab_lv <- log(sqrt(sum(b.lv^2)))
