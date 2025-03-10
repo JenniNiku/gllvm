@@ -831,7 +831,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               randomB = "P"
             }
             if(randomB%in%c("P","LV"))csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
-            
+            if(is.null(csBlv)) csBlv <- matrix(0)
             # in case "lv.formula" is specified with random effects, but randomB is not specified
             if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
               optimizer = control$optimizer = "optim"
@@ -863,6 +863,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
               randomB = "P"
             }
             if(randomB%in%c("P","LV"))csBlv = RElistLV$cs # cannot have correlated effects with randomB != "P"
+            if(is.null(csBlv)) csBlv <- matrix(0)
             if(control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
               optimizer = control$optimizer = "optim"
             }
