@@ -177,10 +177,12 @@ Type objective_function<Type>::operator() ()
       //randomB="P","single","iid"
       if(sigmab_lv.size()>1){
       vector<Type>sigma1 = exp(sigmab_lv.head(x_lv.cols()));
-      vector<Type>sigma2 = exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
+      vector<Type>sigma2(num_lv_c+num_RR);
+      sigma2.fill(1.0);
+      sigma2.tail(num_lv_c+num_RR-1) = pow(exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1)), 2);
       for (int q=0; q<(num_lv_c+num_RR); q++){
       Sigmab_lv(q).diagonal().array() = sigma1*sigma1;
-      if(q>0)Sigmab_lv(q).diagonal().array() *= sigma2(q-1);
+      Sigmab_lv(q).diagonal().array() *= sigma2(q);
       }
       }else{
         for (int q=0; q<(num_lv_c+num_RR); q++){
@@ -200,7 +202,9 @@ Type objective_function<Type>::operator() ()
     }else if((csb_lv.cols()==2) && (randomB<1)){
       matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
       vector<Type>sigma1 = exp(sigmab_lv.head(x_lv.cols()));
-      vector<Type>sigma2 = exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
+      vector<Type>sigma2(num_lv_c+num_RR);
+      sigma2.fill(1.0);
+      sigma2.tail(num_lv_c+num_RR-1) = exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
       sds.diagonal() = sigma1;
       vector<Type>corsb_lv((x_lv.cols()*x_lv.cols()-x_lv.cols())/2);
       corsb_lv.fill(0.0);
@@ -215,7 +219,7 @@ Type objective_function<Type>::operator() ()
     }
       for (int q=0; q<(num_lv_c+num_RR); q++){
       Sigmab_lv(q) = Sigmab_lvL;
-      if(q>0)Sigmab_lv(q) *= sigma2(q-1);
+      Sigmab_lv(q) *= sigma2(q);
       }
     }else if((csb_lv.cols()==2) && (randomB>0)){
       Sigmab_lv.resize(num_lv_c+num_RR);//need to change this to same dimension as for randomB="P"
@@ -452,16 +456,19 @@ Type objective_function<Type>::operator() ()
         //randomB="P" with predictor-wise correlation
           matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
           matrix<Type>Sigmab_lvI = (Sigmab_lv(0)*Sigmab_lv(0).transpose()).ldlt().solve(Iblv);
+          vector<Type>sigma2(num_lv_c+num_RR);
+          sigma2.fill(1.0);
+          sigma2.tail(num_lv_c+num_RR-1) = pow(exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1)), -2);
+          
           for(int q=0; q<(num_lv_c+num_RR); q++){
-          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lvI*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*Sigmab_lvI*b_lv.col(q)).sum());
-          nll -= 0.5*Klv- Sigmab_lv(0).diagonal().array().log().sum();
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(sigma2(q)*Sigmab_lvI*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*(sigma2(q)*Sigmab_lvI)*b_lv.col(q)).sum());
+          nll -= 0.5*Klv- Sigmab_lv(q).diagonal().array().log().sum();//Sigmab_lv already includes sigma2
         }
         
       }else if((csb_lv.cols()==2) && (randomB>0)){
         //randomB="LV" with predictor-wise correlation
         matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
         //note that Sigmab_lv(0) is the cholesky of the correlation matrix
-        REPORT(Sigmab_lv);
         matrix<Type>Sigmab_lvCI = Sigmab_lv(0).template triangularView<Eigen::Lower>().solve(Iblv);
         Sigmab_lvCI.transpose() *= Sigmab_lvCI;//inverse of correlation matrix via its cholesky
         for(int q=0; q<sbl3; q++){
@@ -3382,9 +3389,16 @@ Type objective_function<Type>::operator() ()
           nll += MVNORM(Sigmab_lv(q))(b_lv.col(q));
         }
       }else if((randomB<1) && (csb_lv.cols()>1)){
+        //randomB = "P" with correlation
+        vector<Type>sigma2(num_lv_c+num_RR);
+        sigma2.fill(1.0);
+        sigma2.tail(num_lv_c+num_RR-1) = pow(exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1)), 2);
+        
         matrix<Type>SigmaB_lv = Sigmab_lv(0)*Sigmab_lv(0).transpose();
         for (int q=0; q<(num_lv_c+num_RR); q++) {
+          SigmaB_lv *= sigma2(q);
           nll += MVNORM(SigmaB_lv)(b_lv.col(q));
+          SigmaB_lv /= sigma2(q);
         }
       }
     }
