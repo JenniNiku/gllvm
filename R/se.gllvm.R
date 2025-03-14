@@ -353,8 +353,8 @@ se.gllvm <- function(object, ...){
             names(sigma)[iter+1] = names(nr)[re]
             iter <- iter + 2
             # Matern smoothness
-            names(sigma)[iter+1] = "Matern kappa"
-            iter <- iter +1
+            # names(sigma)[iter+1] = "Matern kappa"
+            # iter <- iter +1
           } else {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
             iter <- iter +1
@@ -802,8 +802,8 @@ se.gllvm <- function(object, ...){
           names(sigma)[iter+1] = names(nr)[re]
           iter <- iter + 2
           # Matern smoothness
-          names(sigma)[iter+1] = "Matern kappa"
-          iter <- iter +1
+          # names(sigma)[iter+1] = "Matern kappa"
+          # iter <- iter +1
         } else {
           sigma[iter] <- sigma[iter]*object$params$sigma[iter]
           iter <- iter +1

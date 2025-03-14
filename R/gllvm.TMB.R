@@ -1056,7 +1056,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
 
       if(nrow(dr)==n){
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){1:3}else{1:2}
+          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){c(1:2,NA)}else{1:2}
           if(length(cstrucn)>1){
             for(i in 2:length(cstrucn)){
               map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
@@ -1745,7 +1745,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         sigmanew <- NULL
         iter <- 1
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){1:3}else{1:2}
+          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){c(1:2, NA)}else{1:2}
           if(length(cstrucn)>1){
          for(i in 2:length(cstrucn)){
            map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){

@@ -1064,7 +1064,7 @@ trait.TMB <- function(
         sigmanew <- NULL
         iter <- 1
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){1:3}else{1:2}
+          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){c(1:2, NA)}else{1:2}
           if(length(cstrucn)>1){
             for(i in 2:length(cstrucn)){
               map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
@@ -1303,7 +1303,8 @@ trait.TMB <- function(
       if(num.lv>0) {
         lambda1 <- param1[nam=="lambda"]; 
         u1 <- matrix(param1[nam=="u"], nrow(u), num.lv)
-        Au<- c(pmax(param1[nam=="Au"],rep(log(1e-6), num.lv*nrow(u1))), rep(0,num.lv*(num.lv-1)/2*nrow(u1)))
+        Au<- c(pmax(param1[nam=="Au"],log(1e-6)), rep(0,num.lv*(num.lv-1)/2*nrow(u1)))
+        # Au<- c(pmax(param1[nam=="Au"],rep(log(1e-6), num.lv*nrow(u1))), rep(0,num.lv*(num.lv-1)/2*nrow(u1)))
         
         if (quadratic=="LV" | quadratic == T && start.struc == "LV"){
           lambda2 <- matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = 1)#In this scenario we have estimated two quadratic coefficients before

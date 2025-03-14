@@ -2226,8 +2226,7 @@ Type objective_function<Type>::operator() ()
                 
                 // 0.5*lambda_qj*A_qii*lambda_qj
                 for (j=0; j<p;j++){
-                  // cQ.col(j) += 0.5*pow(newlamCor(q,j),2)*(dLV*(Alvm(q)*Alvm(q).transpose()).diagonal().matrix());
-                  cQ.col(j) += 0.5*pow(newlamCor(q,j),2)*(dLV*(Atemp*Atemp.transpose()).diagonal().matrix());
+                  cQ.col(j) += 0.5*pow(newlamCor(q,j),2)*(dLV*((Atemp*Atemp.transpose()).diagonal().array()).matrix()); //this works
                 }
                 
                 // 0.5*logdet(A) -0.5*tr(Sinv*A)
