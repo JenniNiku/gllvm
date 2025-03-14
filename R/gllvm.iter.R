@@ -133,5 +133,10 @@ n.i <- n.i+1;
   fitFinal$seed = seed
 }
 
+# In case gllvm.TMB or trait.TMB fail entirely
+if(is.null(fitFinal)){
+  fitFinal$logL <- -Inf
+}
+    
 return(fitFinal)
 }
