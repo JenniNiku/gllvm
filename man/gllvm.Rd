@@ -46,7 +46,7 @@ gllvm(
     6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
     "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
-    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
     jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res",
     quad.start = 0.01, start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP =
@@ -150,7 +150,7 @@ gllvm(
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
- \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to ...}
+ \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to 10.}
 }}
 
 \item{control.start}{A list with the following arguments controlling the starting values:

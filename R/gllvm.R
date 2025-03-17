@@ -60,7 +60,7 @@
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
-#'  \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to ...}
+#'  \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to 10.}
 #' }
 #' @param control.start A list with the following arguments controlling the starting values:
 #' \describe{
@@ -429,7 +429,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-8, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 3),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -516,7 +516,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("Lambda.start" %in% names(x))) 
         x$Lambda.start = c(0.3, 0.3, 0.3)
       if (!("NN" %in% names(x)))
-        x$NN = 3   
+        x$NN = 10   
       x
     }
     fill_control.start = function(x){
@@ -1196,6 +1196,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(nrow(studyDesign) != nrow(y)) stop("A number of rows in studyDesign must be same as for response matrix.")
     }
     if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
+      NN <- min(NN, nrow(distLV)-1) # check than NN is smaller than the number of coordinate/distLV points
       NN<-t(apply(as.matrix(dist(distLV, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
       i1<-rep(1:nrow(NN), each=ncol(NN))
       i2<-c(t(NN))
