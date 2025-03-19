@@ -1056,12 +1056,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
 
       if(nrow(dr)==n){
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){c(1:2,NA)}else{1:2}
+          map.list$log_sigma <- if(cstrucn[1] == 0){1}else if(cstrucn[1]==4){c(1:2,NA)}else{1:2}
           if(length(cstrucn)>1){
             for(i in 2:length(cstrucn)){
-              map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
+              map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(0,4)){
                 c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
-              }else if(cstrucn[i]==1){
+              }else if(cstrucn[i] %in% c(0)){
                 max(map.list$log_sigma, na.rm = TRUE)+1
               }else if(cstrucn[i]==4){
                 c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2,NA)
@@ -1745,12 +1745,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         sigmanew <- NULL
         iter <- 1
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==1){1}else if(cstrucn[1]==4){c(1:2, NA)}else{1:2}
+          map.list$log_sigma <- if(cstrucn[1]==0){1}else if(cstrucn[1]==4){c(1:2, NA)}else{1:2}
           if(length(cstrucn)>1){
          for(i in 2:length(cstrucn)){
-           map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(1,4)){
+           map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(0,4)){
             c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
-             }else if(cstrucn[i]==1){
+             }else if(cstrucn[i]==0){
                max(map.list$log_sigma, na.rm = TRUE)+1
                }else if(cstrucn[i]==4){
                  c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2,NA)
@@ -2278,7 +2278,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               names(sigma)[iter+1] = names(nr)[re]
               iter <- iter + 2
             } else if(cstrucn[re] %in% c(4)){
-              sigma[iter:(iter+2)] <- exp(sigma[iter:(iter+2)])
+              # sigma[iter:(iter+2)] <- exp(sigma[iter:(iter+2)]) # maternKappa fixed
+              sigma[iter:(iter+1)] <- exp(sigma[iter:(iter+1)])
               names(sigma)[iter] = "Scale"
               names(sigma)[iter+1] = names(nr)[re]
               iter <- iter + 2

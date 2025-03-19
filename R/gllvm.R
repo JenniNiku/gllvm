@@ -1027,13 +1027,13 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       y <- as.matrix(y)
 
     if(!inherits(row.eff, "formula") && !isFALSE(row.eff)){
-    if(row.eff=="random"){
-      row.eff <- ~(1|site)
-    }else if(row.eff %in% c("fixed", TRUE))row.eff  <- ~site
+      if(row.eff=="random"){
+        row.eff <- ~(1|sample)
+      }else if(row.eff %in% c("fixed", TRUE))row.eff  <- ~sample
       if(is.null(studyDesign)){
-        studyDesign <- data.frame(site = factor(1:n))
+        studyDesign <- data.frame(sample = factor(1:n))
       }else{
-        studyDesign <- cbind(studyDesign, data.frame(site = factor(1:n)) )
+        studyDesign <- cbind(studyDesign, data.frame(sample = factor(1:n)) )
       }
     }
     
@@ -1543,8 +1543,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
           names(out$params$row.params.random) <- row.names(RElistRow$Zt)
           if(!is.null(out$grps.row)) {
-            if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="" | names(out$params$sigma)=="site")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="" | names(out$params$sigma)=="site")] ="1"
-            names(out$params$sigma) = paste(names(out$params$sigma),names(out$grps.row), sep="|")
+            if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
+            namsrow<- NULL
+            for (i in 1:length(cstruc)) {
+              namsrow <- c(namsrow, rep(names(out$grps.row)[i], switch(cstruc[i], "ustruc" = 1, "diag" = 1, "corAR1" = 2, "corExp" = 2, "corCS" = 2, "corMatern" = 2)))
+            }
+            names(out$params$sigma) = paste(names(out$params$sigma),namsrow, sep="|")
             }
         }
       }

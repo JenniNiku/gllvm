@@ -335,6 +335,9 @@ se.gllvm <- function(object, ...){
       if(!is.null(object$params$row.params.random)) { 
         iter = 1 # keep track of index
         sigma <- se$log_sigma
+        if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
+          sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
+        }
         for(re in 1:length(cstrucn)){
           if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
@@ -348,7 +351,8 @@ se.gllvm <- function(object, ...){
             names(sigma)[iter+1] = names(nr)[re]
             iter <- iter + 2
           } else if(cstrucn[re] %in% c(4)){
-            sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)]
+            # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)] # matern smoothness fixed
+            sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
             names(sigma)[iter] = "Scale"
             names(sigma)[iter+1] = names(nr)[re]
             iter <- iter + 2
@@ -357,6 +361,7 @@ se.gllvm <- function(object, ...){
             # iter <- iter +1
           } else {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] = names(nr)[re]
             iter <- iter +1
           }
         }
@@ -365,6 +370,9 @@ se.gllvm <- function(object, ...){
       
       if(num.lv.cor>0 & cstruclvn>0){
         if(length(object$params$rho.lv)>0){
+          if(!is.null(object$TMBfn$env$map$rho_lvc)) { #clean from duplicates and NAs
+            se$rho_lvc = se$rho_lvc[!duplicated(object$TMBfn$env$map$rho_lvc) & !is.na(object$TMBfn$env$map$rho_lvc)]
+          }
           if((cstruclvn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc[1:length(object$params$rho.lv)]*(1-object$params$rho.lv^2)^1.5}
           if((cstruclvn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc[1:length(object$params$rho.lv)]*object$params$rho.lv}
           names(out$sd$rho.lv) <- names(object$params$rho.lv)
@@ -784,6 +792,9 @@ se.gllvm <- function(object, ...){
     if(!is.null(object$params$row.params.random)) { 
       iter = 1 # keep track of index
       sigma <- se$log_sigma
+      if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
+        sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
+      }
       for(re in 1:length(cstrucn)){
         if(cstrucn[re] %in% c(1,3)) {
           sigma[iter] <- sigma[iter]*object$params$sigma[iter]
@@ -797,7 +808,8 @@ se.gllvm <- function(object, ...){
           names(sigma)[iter+1] = names(nr)[re]
           iter <- iter + 2
         } else if(cstrucn[re] %in% c(4)){
-          sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)]
+          # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)]# matern smoothness fixed
+          sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
           names(sigma)[iter] = "Scale"
           names(sigma)[iter+1] = names(nr)[re]
           iter <- iter + 2
@@ -806,6 +818,7 @@ se.gllvm <- function(object, ...){
           # iter <- iter +1
         } else {
           sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+          names(sigma)[iter] = names(nr)[re]
           iter <- iter +1
         }
       }
@@ -813,6 +826,9 @@ se.gllvm <- function(object, ...){
     }
     if(num.lv.cor>0 & cstruclvn>0){ 
       if(length(object$params$rho.lv)>0){
+        if(!is.null(object$TMBfn$env$map$rho_lvc)) { #clean from duplicates and NAs
+          se$rho_lvc = se$rho_lvc[!duplicated(object$TMBfn$env$map$rho_lvc) & !is.na(object$TMBfn$env$map$rho_lvc)]
+        }
         if((cstruclvn %in% c(1,3))) {out$sd$rho.lv <- se$rho_lvc*(1-object$params$rho.lv^2)^1.5}
         if((cstruclvn %in% c(2,4))) {out$sd$rho.lv <- se$rho_lvc*object$params$rho.lv}
         names(out$sd$rho.lv) <- names(object$params$rho.lv)
