@@ -53,7 +53,7 @@ coefplot(fit)
 \dontrun{
 # Fit  gllvm model with environmental covariances and reduced rank
 fitRR <- gllvm(y = y, X = X, num.RR = 2, family = "negative.binomial")
-coefplot(fitRR)
+coefplot(fitRR, mfrow=c(2,3))
 }
 }
 \author{
