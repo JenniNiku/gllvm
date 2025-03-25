@@ -368,11 +368,12 @@ varPartitioning.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov
   PropExplainedVarSp <- t(LVpartit)/LtotV
   
   if(object$family == "betaH"){
-    return(list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames, family = object$family))
+    out <- list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   } else {
-    return(list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames, family = object$family))
+    out <- list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   }
-  
+  class(out) <- "VP.gllvm"
+  return(out)
 }
 
 
@@ -386,4 +387,17 @@ varPartitioning <- function(object, ...)
 VP <- function(object, ...)
 {
   varPartitioning.gllvm(object, ...)
+}
+
+#'@export
+#'@rdname varPartitioning 
+print.VP.gllvm <- function (VP, ...) {
+  
+  if(VP$family == "betaH"){
+    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
+  } else {
+    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))
+  }
+  print(print.text, row.names = FALSE, right = FALSE)
+  invisible(print.text)
 }
