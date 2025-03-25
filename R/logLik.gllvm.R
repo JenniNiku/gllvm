@@ -59,6 +59,7 @@ logLik.gllvm <- function(object, ...)
   if(object$randomB!=FALSE){
     object$params$LvXcoef <- NULL
     if(!is.null(object$params$corsLvXcoef)){
+      object$params$corsLvXcoef[object$params$corsLvXcoef == 0.0]<-NA
       object$params$corsLvXcoef[upper.tri(object$params$corsLvXcoef,diag=TRUE)]<-NA
     }
   }else if(object$randomB==F&(object$num.RR+object$num.lv.c)>0){
