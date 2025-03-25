@@ -56,3 +56,10 @@ plotVP <- function(VP, ...)
 {
   plotVarPartitioning(VP, ...)
 }
+
+#'@export plot.VP.gllvm
+#'@rdname varPartitioning.gllvm 
+plot.VP.gllvm <- function(VP, ...)
+{
+  plotVarPartitioning(VP, ...)
+}
