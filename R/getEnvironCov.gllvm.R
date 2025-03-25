@@ -76,7 +76,7 @@ if(is.list(x) && length(x) == 2){
 }else if(object$col.eff$col.eff=="random" && !isFALSE(object$randomB)){
  stop("x should either be NULL, or a list of length 2 for this model.")
 }
-if(object$col.eff$col.eff=="random"){
+if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
   if(is.null(x)){
     x <- rep(1,nrow(object$params$Br))
   }else if(length(x)!=nrow(object$params$Br)){
@@ -157,7 +157,7 @@ if(object$col.eff$col.eff=="random"){
   }
   covMat <- 0
   out <- list()
-  if(object$col.eff$col.eff=="random"){
+  if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
   covMat <- cov.environ.col
   out$trace.col.eff <- trace.environ.col
   }

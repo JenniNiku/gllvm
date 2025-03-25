@@ -61,7 +61,6 @@ se.gllvm <- function(object, ...){
   
   quadratic <- object$quadratic
   nlvr <- num.lv + num.lv.c 
-  nr = object$TMBfn$env$data$nr
   dr = object$dr
   
   cstrucn = 0
@@ -338,6 +337,8 @@ se.gllvm <- function(object, ...){
         if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
           sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
         }
+        nr = object$TMBfn$env$data$nr
+        
         for(re in 1:length(cstrucn)){
           if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
@@ -795,6 +796,8 @@ se.gllvm <- function(object, ...){
       if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
         sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
       }
+      nr = object$TMBfn$env$data$nr
+      
       for(re in 1:length(cstrucn)){
         if(cstrucn[re] %in% c(1,3)) {
           sigma[iter] <- sigma[iter]*object$params$sigma[iter]
