@@ -2710,15 +2710,16 @@ RRse <- function(object, return.covb = FALSE){
         
         jointPrecision <- sweep(sweep(jointPrecision,1,sds,"/"),2,sds,"/")
         
-        covMat <- try(-solve(as.matrix(jointPrecision[incld,incld]),as.matrix(jointPrecision[incld,incl]))%*%object$Hess$cov.mat.mod,silent=T)
+        covMat <- try(-sweep(sweep(solve(as.matrix(jointPrecision[incld,incld]),as.matrix(jointPrecision[incld,incl])), 1, sds[incld],"/"),2,sds[incl],"*")%*%object$Hess$cov.mat.mod,silent=T)
+
         if(inherits(covMat,"try-error")){
           # Via fixed-effects part of Hessian if random-effects part is singular
           Ai <- solve(as.matrix(jointPrecision[incl,incl]))
           B.mat <- as.matrix(jointPrecision[incld,incl])
           D.mat <- as.matrix(jointPrecision[incld,incld])
           covMat<- -MASS::ginv(-D.mat-B.mat%*%Ai%*%t(B.mat))%*%B.mat%*%Ai
+          suppressWarnings(try(covMat <- sweep(sweep(covMat, 1, sds[incld],"/"),2,sds[incl],"/"), silent = TRUE))
         }
-        suppressWarnings(try(covMat <- sweep(sweep(covMat, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
         
         row.names(covMat) <- names(object$TMBfn$env$last.par.best)[r]
         colnames(covMat) <- names(object$TMBfn$env$par)[-r][object$Hess$incl]
@@ -2754,16 +2755,18 @@ RRse <- function(object, return.covb = FALSE){
       sdr = object$Hess$Hess.full
       sds <- diag(sqrt(abs(sdr)))
       if(any(sds<1e-12))sds[sds<1e-12]<-1
+      sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
       
-      covMat <- -as.matrix(solve(as(sdr[incld,incld],"TsparseMatrix"), sdr[incld,incl])%*%object$Hess$cov.mat.mod)
+      covMat <- -as.matrix(sweep(sweep(solve(as(sdr.s[incld,incld],"TsparseMatrix"), sdr.s[incld,incl]), 1, sds[incld],"/"),2,sds[incl],"*")%*%object$Hess$cov.mat.mod)
+      
       if(inherits(covMat,"try-error")){
         # Via fixed-effects part of Hessian if random-effects part is singular
-        Ai <- solve(object$Hess$Hess.full[incl,incl])
-        B.mat <- object$Hess$Hess.full[incld,incl]
-        D.mat <- as(object$Hess$Hess.full[incld,incld], "TsparseMatrix")
+        Ai <- solve(sdr.s[incl,incl])
+        B.mat <- sdr.s[incld,incl]
+        D.mat <- as(sdr.s[incld,incld], "TsparseMatrix")
         covMat<- -MASS::ginv(-as.matrix(D.mat-B.mat%*%Ai%*%t(B.mat)))%*%B.mat%*%Ai
+        suppressWarnings(try(covMat <- sweep(sweep(covMat, 1, sds[incld],"/"),2,sds[incl],"/"), silent = TRUE))
       }
-      suppressWarnings(try(covMat <- sweep(sweep(covMat, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
       
       row.names(covMat) <- names(object$TMBfn$par)[incld]
       colnames(covMat) <- names(object$TMBfn$par)[incl]

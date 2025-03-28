@@ -21,6 +21,7 @@ Version 2.0.1
 * Fixed a bug in extracting fourth corner coefficients, see #214 and #215
 * Fixed a bug in standard errors involving row.eff = "random"
 * Fixed a bug that prevented using getEnvironCov with the fourth corner model
+* Fixed a bug in gllvm:::RRse
 
 Version 2.0
 =============
