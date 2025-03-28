@@ -47,8 +47,11 @@ Let's take a look at the means and variances of the species counts:
 meanY <- apply(Ysoil,2, mean)
 varY <- apply(Ysoil,2, var)
 plot(log(meanY),varY, log = "y", main = "Species mean-variance relationship")
+points(log(sort(meanY)), sort(meanY), type = "l")
+points(log(sort(meanY)), sort(meanY+ 1*meanY^2), type = "l", col=2, lty=2)
+legend("bottomright", lty=1:2, legend = c("var = mean", "var = mean+phi*mu^2"), bty="n", col = 1:2)
 ```
-As species variances increases while mean increases, it is a clear indication of the overdispersion in the data.
+As species variances increases faster than mean, it is a clear indication of the overdispersion in the data.
 
 In order to study if the effect of environmental variables is seen in an unconstrained ordination plot, we first consider a GLLVM with two latent variables and no predictors, and constructed an ordination plot based on the predicted latent variables.
 For count data with overdispersion we consider here the negative binomial (NB) distribution. We also include random effects for sites in order to account for the differences in site totals. This can be done by defining the structure for community level random row effects in an argument `row.eff` and including a data frame with 'Site' variable as factor to an argument 'studyDesign'. Note that in the examples we consider below we don't necessarily need standard errors for the parameters for this specific model so we define `sd.errors = FALSE` in the function call. When needed, standard errors can also be calculated afterwards using function `se`.

@@ -127,7 +127,7 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
 |             | binomial     | VA/LA   |probit  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
-|             | binomial     |    LA   |logit   | 
+|             | binomial     |    EVA/LA   |logit   | 
 |Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
 |             |              | EVA/LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | EVA/VA/LA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
@@ -139,7 +139,7 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |Positive continuous | Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
 |Percent cover| beta    	   | LA/EVA | probit/logit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
 |Percent cover with zeros/ones| ordered beta    	   | EVA | probit | details in Korhonen et al (2024) |
-
+|| beta hurdle    	   | EVA | probit | |
 ## Model-based ordination
 
 GLLVMs can be used as a model-based approach to unconstrained ordination by including (*e.g.*) two latent variables in the model but no predictors. The corresponding ordination plot then provides a graphical representation of which sites are similar in terms of their species composition. Such a model can be fitted to the ant data using the function `gllvm` as below. We will consider two count distributions for the data -- the Poisson and negative binomial (NB).
