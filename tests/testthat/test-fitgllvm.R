@@ -32,17 +32,17 @@ test_that("row effects works", {
 
   # Structured
   X <- microbialdata$Xenv[1:30,1:3]
-  StudyDesign = data.frame(Site = factor(microbialdata$Xenv$Site[1:30]), Soiltype = microbialdata$Xenv$Soiltype[1:30])
+  StudyDesign = data.frame(Site = factor(microbialdata$Xenv$Site[1:30]), Sample = factor(1:30))
   fr2<-gllvm(y, family = "negative.binomial", seed = 999, studyDesign = StudyDesign, row.eff = ~(1|Site), num.lv = 1)
-  fr3<-gllvm(y, family = "negative.binomial", seed = 999, studyDesign = StudyDesign, row.eff = ~(1|Site)+(1|Soiltype), num.lv = 1)
+  fr3<-gllvm(y, family = "negative.binomial", seed = 999, studyDesign = StudyDesign, row.eff = ~(1|Site)+(1|Sample), num.lv = 1)
   StudyDesign = data.frame(Site = factor(microbialdata$Xenv$Site[1:30]), pH = microbialdata$Xenv$pH[1:30])
   fr4<-gllvm(y,X, family = "negative.binomial", seed = 999, studyDesign = StudyDesign,  row.eff = ~pH, num.lv = 1)
   fr5<-gllvm(y,X, family = "negative.binomial", seed = 999, studyDesign = StudyDesign,  row.eff = ~(0+pH|Site), num.lv = 1)
   
   result<-c(-0.34, 0.29, 0.41, -0.02, 0)
   names(result)<-c("AB3", "1|site", "1|Site", "pH", "pH|Site")
-  resultf3<-c(0.30, 0.29)
-  names(resultf3)<-c("1|Site", "1|Soiltype")
+  resultf3<-c(0.41, 0.002)
+  names(resultf3)<-c("1|Site", "Sample|Sample")
   
   expect_true(round(fr0$params$row.params[1], digits = 2)- result[1]<0.1)
   expect_true(round(fr1$params$sigma, digits = 2)- result[2]<0.1)
@@ -79,9 +79,9 @@ test_that("quadratic models work", {
   spider$x <- spider$X[spider$nonNA,]
   X <- scale(spider$x)
   y <- spider$abund
-  fq0<-gllvm(y, num.lv = 2, family = "poisson", seed = 999)
-  fq1<-gllvm(y, X, num.lv = 2, family = "poisson", seed = 999)
-  fq2<-gllvm(y, X, num.lv = 2, family = "poisson", row.eff="random", seed = 999)
+  fq0<-gllvm(y, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999)
+  fq1<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999)
+  fq2<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", row.eff="random", seed = 999)
   expect_true(is.finite(fq0$logL))
   expect_true(is.finite(fq1$logL))
   expect_true(is.finite(fq2$logL))
