@@ -6,6 +6,7 @@
 \alias{VP}
 \alias{plotVarPartitioning}
 \alias{plotVP}
+\alias{plot.VP.gllvm}
 \title{Calculate variance partitioning}
 \usage{
 \method{varPartitioning}{gllvm}(
@@ -29,6 +30,8 @@ plotVarPartitioning(
 )
 
 plotVP(VP, ...)
+
+\method{plot}{VP.gllvm}(VP, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}

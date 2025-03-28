@@ -16,8 +16,11 @@ Version 2.0.1
 * Fixed a bug in residuals.gllvm
 * Fixed a bug in starting value generation
 * Fixed a bug in the number of parameters by logLik.gllvm for 'randomB' models with correlation parameters
-* Fixed a bug in the normalisation constant for randomB="LV"
+* Fixed a bug in the normalization constant for randomB="LV"
 * Fixed a bug in the variance partitioning for models with species random effects
+* Fixed a bug in extracting fourth corner coefficients, see #214 and #215
+* Fixed a bug in standard errors involving row.eff = "random"
+* Fixed a bug that prevented using getEnvironCov with the fourth corner model
 
 Version 2.0
 =============

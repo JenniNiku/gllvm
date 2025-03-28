@@ -708,15 +708,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       col.eff.formula = allbars(formula)
       formula = nobars1_(formula)
       bar.f <- findbars1(col.eff.formula) # list with 3 terms
+      mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(col.eff.formula), deparse1)))),data=data.frame(X.col.eff))
       
       if(anyBars(formula) && is.null(X.col.eff) && (length(bar.f)>1 & bar.f[[1]]!=bquote(1|1))){
         stop("Covariates for species random effects must be provided.")
       }else if(length(bar.f)==1 & bar.f[[1]]==bquote(1|1)){
-        X.col.eff <- cbind(Intercept=rep(1,nrow(y)))
+        X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(y)))
       }
-      
-      mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(col.eff.formula), deparse1)))),data=data.frame(X.col.eff))
-      RElistSP<- mkReTrms1(bar.f,mf, nocorr=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
+
+      RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL

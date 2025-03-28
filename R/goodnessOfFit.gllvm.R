@@ -45,6 +45,8 @@ goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor
   if(is.null(y)){
     if(is.null(object)) stop("If 'y' is not given the model fit for 'object' need to be given.")
     y <- object$y
+  }else if(!is.matrix(y)){
+    try(y <- as.matrix(y))
   }
   n <- NROW(y)
   p <- NCOL(y)
