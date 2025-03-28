@@ -207,9 +207,9 @@ ftRowAR$params$sigma
 
 ``` r
 # Plot random effects and 95% predicted envelope
-rowSite = ftRowAR$params$row.params[names(ftRowAR$params$row.params) == "site"]
+rowSite = ftRowAR$params$row.params[1:ftRowAR$grps.row["site"]]
 years = matrix(as.numeric(levels(studyDesign$year)))
-rowYear = ftRowAR$params$row.params[names(ftRowAR$params$row.params) == "year"]
+rowYear = ftRowAR$params$row.params[-(1:ftRowAR$grps.row["site"])]
 # Calculate prediction errors for row effects:
 predLVR = getPredictErr(ftRowAR)
 # prediction errors for site effects
