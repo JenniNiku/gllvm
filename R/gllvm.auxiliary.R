@@ -2005,7 +2005,12 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
         f(par, order = 1, type = "ADGrad", rangeweight = w, doforward = 0)[r]
       }
       nonr <- setdiff(seq_along(par), r)
-      tmp <- sapply(nonr, reverse.sweep)
+      framework <- .Call("getFramework", PACKAGE = obj$env$DLL)
+      if (framework != "TMBad")
+        tmp <- sapply(nonr, reverse.sweep)
+      else tmp <- f(par, order = 1, type = "ADGrad",
+                    keepx = nonr, keepy = r)
+      
       if (!is.matrix(tmp))
         tmp <- matrix(tmp, ncol = length(nonr))
       

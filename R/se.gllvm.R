@@ -320,14 +320,14 @@ se.gllvm <- function(object, ...){
       }
       
       if(!is.null(object$randomX)){
-        nr <- ncol(xb)
-        if(length(se$sigmaB)>nr && !is.null(object$params$rho.sp)){
-          out$sd$rho.sp <- tail(se$sigmaB,ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
-          se$sigmaB <- head(se$sigmaB, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
+        n.xb <- ncol(xb)
+        if(length(se$sigmaB)>n.xb && !is.null(object$params$rho.sp)){
+          out$sd$rho.sp <- tail(se$sigmaB,ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.xb))
+          se$sigmaB <- head(se$sigmaB, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.xb))
         }
         out$sd$sigmaB <- se$sigmaB*c(sqrt(diag(object$params$sigmaB))); 
         names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
-        if(nr>1){
+        if(n.xb>1){
           out$sd$corrpar <- se$sigmaij
         }
       }
@@ -341,8 +341,8 @@ se.gllvm <- function(object, ...){
         for(re in 1:length(cstrucn)){
           if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-            names(sigma)[iter] = names(nr)[re]
-            names(sigma)[iter+1] = paste0(names(nr)[re],"rho")
+            names(sigma)[iter] <- names(nr)[re]
+            names(sigma)[iter+1] <- paste0(names(nr)[re],"rho")
             sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
             iter <- iter +2
           } else if(cstrucn[re] %in% c(2)){
@@ -772,12 +772,12 @@ se.gllvm <- function(object, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
-      nr <- ncol(object$col.eff$spdr)
-      sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[1:nr]
-      covsigma.sp <- se$sigmaB[-c(1:nr)]
+      n.ce <- ncol(object$col.eff$spdr)
+      sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[1:n.ce]
+      covsigma.sp <- se$sigmaB[-c(1:n.ce)]
       if(!is.null(object$params$rho.sp)){
-        out$sd$rho.sp <- tail(covsigma.sp,ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
-        covsigma.sp <- head(covsigma.sp, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, nr))
+        out$sd$rho.sp <- tail(covsigma.sp,ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.ce))
+        covsigma.sp <- head(covsigma.sp, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.ce))
       }
       sigma.sp <- diag(sigma.sp, length(sigma.sp))
       if(ncol(object$TMBfn$env$data$cs)==2){
