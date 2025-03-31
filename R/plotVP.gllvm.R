@@ -1,5 +1,5 @@
 #' @title Plot variance partitioning
-#' @description Function \code{plotVarPartitioning()} (alias \code{plotVP()}) plots the results of variance partitioning of a fitted gllvm.
+#' @description Function \code{plotVarPartitioning()} (alias \code{plotVP()} or just \code{plot()}) plots the results of variance partitioning of a fitted gllvm.
 #' 
 #' @param VP 	a variance partitioning object for a gllvm produced by function varPartitioning.
 #' @param main main title
@@ -15,7 +15,7 @@
 #'@aliases plotVarPartitioning plotVP plot.VP.gllvm
 #'@export
 #'@export plotVarPartitioning
-#'@rdname varPartitioning.gllvm 
+#'@rdname VP.gllvm 
 
 plotVarPartitioning <- function(VP, main = "Variance Partitioning", xlab = "Response", ylab = "Variance proportion", legend.text = NULL, args.legend =list(cex=0.7, x="topright", bty="n", inset =c(0,-0.15)), mar = c(4,4,6,2), ...){
   arglist <- list(...)
@@ -51,29 +51,16 @@ plotVarPartitioning <- function(VP, main = "Variance Partitioning", xlab = "Resp
 }
 
 #'@export plotVP
-#'@rdname varPartitioning.gllvm 
+#'@rdname VP.gllvm 
 plotVP <- function(VP, ...)
 {
   plotVarPartitioning(VP, ...)
 }
 
-#'@export plot.VP.gllvm
-#'@rdname varPartitioning.gllvm 
+#'@export 
+#'@rdname VP.gllvm 
 plot.VP.gllvm <- function(VP, ...)
 {
   plotVarPartitioning(VP, ...)
 }
 
-
-#'@rdname varPartitioning.gllvm
-#'@export print.VP.gllvm
-print.VP.gllvm <- function (VP, ...) {
-  
-  if(VP$family == "betaH"){
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
-  } else {
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))
-  }
-  print(print.text, row.names = FALSE, right = FALSE)
-  invisible(print.text)
-}
