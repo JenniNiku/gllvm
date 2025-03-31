@@ -7,6 +7,9 @@ Version 2.0.1
 * Improvement for the starting values of concurrent ordination
 * Added correlation canonical coefficients option for randomB="LV"
 * Added additional (LV-specific) variance parameters for randomB="P"
+* Default for rel.tol changed to 1e-10
+* Default for NN changed to 10
+* A Matern smoothness parameter changed to fixed value given by user by default
 
 ## Bug Fixes
 * Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See #204.
@@ -22,6 +25,7 @@ Version 2.0.1
 * Fixed a bug in standard errors involving row.eff = "random"
 * Fixed a bug that prevented using getEnvironCov with the fourth corner model
 * Fixed a bug in gllvm:::RRse
+* Fixed a bug which occurred when correlated latent variables are included and Variational covariance was anything else that diagonal
 
 Version 2.0
 =============
