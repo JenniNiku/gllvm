@@ -12,7 +12,7 @@
 #' 
 #' 
 #' @author Jenni Niku <jenni.m.e.niku@@jyu.fi>
-#'@aliases plotVarPartitioning plotVP
+#'@aliases plotVarPartitioning plotVP plot.VP.gllvm
 #'@export
 #'@export plotVarPartitioning
 #'@rdname varPartitioning.gllvm 

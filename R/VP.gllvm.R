@@ -389,8 +389,7 @@ VP <- function(object, ...)
   varPartitioning.gllvm(object, ...)
 }
 
-#'@export
-#'@rdname varPartitioning 
+#'@export print.VP.gllvm
 print.VP.gllvm <- function (VP, ...) {
   
   if(VP$family == "betaH"){
