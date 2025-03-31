@@ -237,8 +237,8 @@ To evaluate how much of the variation random effects and covariates are able to 
 
 
 ``` r
-VP1 <- varPartitioning(ftRowAR)
-plotVP(VP1, args.legend = list(cex=0.7), col=hcl.colors(5, "Roma"))
+VP1 <- VP(ftRowAR)
+plot(VP1, args.legend = list(cex=0.7), col=hcl.colors(5, "Roma"))
 ```
 
 <div class="figure" style="text-align: center">
@@ -333,8 +333,8 @@ The variance partitioning for the model shows that random effect for year explai
 
 
 ``` r
-VP2 <- varPartitioning(ftRowAR_lv2)
-plotVP(VP2, args.legend = list(cex=0.7), col=hcl.colors(5, "Roma"))
+VP2 <- VP(ftRowAR_lv2)
+plot(VP2, args.legend = list(cex=0.7), col=hcl.colors(5, "Roma"))
 ```
 
 <div class="figure" style="text-align: center">
