@@ -32,17 +32,18 @@
 #'@export randomCoefplot.gllvm
 randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex.ylab = 0.5, mfrow = NULL, mar = c(4,6,2,1), xlim.list = NULL, order = FALSE, ...)
 {
+  
   if(is.null(object$lv.X.design) && !is.null(object$lv.X))object$lv.X.design <- object$lv.X # backward compatibility
   if (any(class(object) != "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   if ((is.null(object$Xrandom) || is.null(object$randomX)) && isFALSE(object$randomB)  && object$col.eff$col.eff!="random")
     stop("No random covariates in the model.")
-  if(is.null(object$TR) && object$col.eff$col.eff=="random") object$Xr <- as.matrix(object$col.eff$spdr)
-  
+  # if(is.null(object$TR) && object$col.eff$col.eff=="random") object$Xr <- as.matrix(object$col.eff$spdr)
+  # 
   predErr <- getPredictErr(object)
   
-  if((object$num.lv.c+object$num.RR)==0 && !is.null(object$params$Br)){
+  if((object$num.lv.c+object$num.RR)==0 && !is.null(object$params$Br) && !is.null(object$Xr)){
     if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))
     Xcoef <- as.matrix(t(object$params$Br)[,which.Xcoef,drop=F])
     cnames <- colnames(object$Xr[,which.Xcoef,drop=FALSE])
