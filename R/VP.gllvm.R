@@ -388,15 +388,3 @@ VP <- function(object, ...)
 {
   varPartitioning.gllvm(object, ...)
 }
-
-#'@export print.VP.gllvm
-print.VP.gllvm <- function (VP, ...) {
-  
-  if(VP$family == "betaH"){
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
-  } else {
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))
-  }
-  print(print.text, row.names = FALSE, right = FALSE)
-  invisible(print.text)
-}
