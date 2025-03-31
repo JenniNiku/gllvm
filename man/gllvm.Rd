@@ -41,7 +41,7 @@ gllvm(
   return.terms = TRUE,
   gradient.check = FALSE,
   disp.formula = NULL,
-  control = list(reltol = 1e-08, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
+  control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
     + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
     6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
@@ -130,7 +130,7 @@ gllvm(
 
 \item{control}{A list with the following arguments controlling the optimization:
 \describe{
- \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-8.}
+ \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-10.}
  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
