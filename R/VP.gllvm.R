@@ -2,7 +2,7 @@
 #' @description Calculates variance partitioning for gllvm object with function \code{VP()} (alias \code{varPartitioning()}).
 #' 
 #' @param object an object of class 'gllvm'.
-#' @param VP a VP.gllvm object
+#' @param x a VP.gllvm object
 #' @param group a vector of integers identifying grouping of X covariates, the default is to use model terms formula and lv.formula.
 #' @param groupnames a vector of strings given as names for the groups defined in group
 #' @param adj.cov logical, whether or not to adjust co-variation within the group
@@ -399,12 +399,12 @@ varPartitioning <- function(object, ...)
 
 #'@export
 #'@rdname VP.gllvm 
-print.VP.gllvm <- function (VP, ...) {
+print.VP.gllvm <- function (x, ...) {
   
-  if(VP$family == "betaH"){
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
+  if(x$family == "betaH"){
+    print.text <- data.frame(Effect = colnames(x$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(x$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
   } else {
-    print.text <- data.frame(Effect = colnames(VP$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(VP$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))
+    print.text <- data.frame(Effect = colnames(x$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(x$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))
   }
   print(print.text, row.names = FALSE, right = FALSE)
   invisible(print.text)

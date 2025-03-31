@@ -20,10 +20,10 @@
   ...
 )
 
-\method{print}{VP.gllvm}(VP, ...)
+\method{print}{VP.gllvm}(x, ...)
 
 plotVarPartitioning(
-  VP,
+  x,
   main = "Variance Partitioning",
   xlab = "Response",
   ylab = "Variance proportion",
@@ -33,9 +33,9 @@ plotVarPartitioning(
   ...
 )
 
-plotVP(VP, ...)
+plotVP(x, ...)
 
-\method{plot}{VP.gllvm}(VP, ...)
+\method{plot}{VP.gllvm}(x, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
@@ -50,7 +50,7 @@ plotVP(VP, ...)
 
 \item{...}{additional graphical arguments passed to the barplot function}
 
-\item{VP}{a variance partitioning object for a gllvm produced by function varPartitioning.}
+\item{x}{a variance partitioning object for a gllvm produced by function varPartitioning.}
 
 \item{main}{main title}
 
