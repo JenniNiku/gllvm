@@ -2269,14 +2269,12 @@ start_values_rows <- function(y, family, dr, cstruc, xr, starting.val, Power = N
       } else if(family == "tweedie"){
         f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "L-BFGS-B", max.iter = max.iter) #, method=method
       }
-    }else{
-      
     }
   }, silent = TRUE)
   
   row.params.random <- NULL
   row.params.fixed <- NULL
-  if((starting.val == "zero")|| inherits(tr0, "try-error")){
+  if((starting.val == "zero")|| inherits(tr0, "try-error") || is.infinite(tr0$logL)){
     if(nrow(dr)==n){
     row.params.random <- rep(0, ncol(dr))
     sigma <- rep(1, length(unique(colnames(dr))))

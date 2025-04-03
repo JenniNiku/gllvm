@@ -1,3 +1,9 @@
+Version 2.0.2
+=============
+
+## Bugfixes
+* Fixed a bug that caused model failure when starting values for row effects could not be calculated
+
 Version 2.0.1
 =============
 
