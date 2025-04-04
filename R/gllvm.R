@@ -1437,7 +1437,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             model = "trait.TMB"
             )
         if(length(all.vars(col.eff.formula))>0){
-          randomX <- out$randomX <- paste0("~",paste(colnames(out$col.eff$spdr)),collapse="+")
+          randomX <- out$randomX <- paste0("~",paste(colnames(out$col.eff$spdr), collapse = "+"))
           out$Xrandom <- as.matrix(out$col.eff$spdr)
         }
         out$X <- fitg$X
