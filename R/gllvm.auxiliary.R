@@ -2137,7 +2137,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   #separate errors column effects
   covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
   covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
-  if(random[4]>0) {
+  if(random[4]>0||random[2]>0) {
     Ab <- matrix(diag(covbetar), ncol = p)
     
     out$Ab <- Ab
@@ -2151,15 +2151,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     covsB <- as.matrix(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   }
   if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
-  
-  #separate errors AB
-  seBr <- diag(covb[colnames(covb)=="Br",colnames(covb)=="Br"])
-  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
-  
-  if(random[2]>0){
-    CovABerr<-matrix(diag(seBr),ncol=p)
-    out$Ab <- CovABerr
-  }
+
   # if((num.RR+num.lv+num.lv.c)>0){
   if(!return.covb){
     covb <- as.matrix(covb)

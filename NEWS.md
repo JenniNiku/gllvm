@@ -4,6 +4,7 @@ Version 2.0.2
 ## Bugfixes
 * Fixed a bug that caused model failure when starting values for row effects could not be calculated
 * Fixed a bug that caused issues when using 'randomCoefPlot' in combination with lme4-type formula for the 4th corner model
+* Fixed a bug in the prediction error calculation of the 4th corner model fitted with method = "LA"
 
 Version 2.0.1
 =============
