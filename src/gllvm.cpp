@@ -2754,6 +2754,10 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p; j++) {
             if(!gllvmutils::isNA(y(i,j))){
               etaP = pnorm_approx(Type(eta(i,j)));   //pnorm funktion approksimaatio
+              
+              etaP = Type(CppAD::CondExpEq(etaP, Type(1), etaP-Type(1e-12), etaP));//check if on the boundary
+              etaP = Type(CppAD::CondExpEq(etaP, Type(0), etaP+Type(1e-12), etaP));//check if on the boundary
+              
               nll -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //
               Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
               nll -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j); //Tää toimii ok tähän etaD = (log=true)
