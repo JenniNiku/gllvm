@@ -868,6 +868,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     #Alternative for RRcoef is factor analysis of the predictors.
     RRmod <- lm(resi~0+lv.X)
     beta <- t(coef(RRmod))
+    if(any(is.na(beta))){beta <- t(MASS::ginv(crossprod(lv.X)) %*% t(lv.X) %*% resi)} # robustness of reduced rank design matrix
     # if(ncol(beta)>1&(randomB==FALSE)){
     # betaSD=apply(beta,1,sd)
     # beta=beta/betaSD

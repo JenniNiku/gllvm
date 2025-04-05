@@ -5,6 +5,8 @@ Version 2.0.2
 * Fixed a bug that caused model failure when starting values for row effects could not be calculated
 * Fixed a bug that caused issues when using 'randomCoefPlot' in combination with lme4-type formula for the 4th corner model
 * Fixed a bug in the prediction error calculation of the 4th corner model fitted with method = "LA"
+* Fixed a bug in the starting values random reduced rank models when the design matrix is of reduced rank
+* Fixed a bug that occured with 'starting.values = "zero"' for random reduced rank models with correlation parameters
 
 Version 2.0.1
 =============
