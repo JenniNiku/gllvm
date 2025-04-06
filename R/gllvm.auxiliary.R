@@ -2269,7 +2269,7 @@ start_values_rows <- function(y, family, dr, cstruc, xr, starting.val, Power = N
         if(family == "ZINB") family <- "negative.binomial"
         f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "nlminb", max.iter = max.iter) #, method=method
       } else if(family == "tweedie"){
-        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "L-BFGS-B", max.iter = max.iter) #, method=method
+        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "optim", optim.method = "L-BFGS-B", max.iter = max.iter) #, method=method
       }
     }
   }, silent = TRUE)
