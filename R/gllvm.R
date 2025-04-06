@@ -1102,7 +1102,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # Can be easily fixed by adding a try(..., silent = TRUE) but probably needs something more robust
         # The bigger problem is that (cov|1) only generates a single "cstruc" entry anove, while it requires two
         # So that the term needs to be expanded to (1|1)+(0+cov|1) first, which is not yet implemented
-        colnames(dr) <- rep(names(RElistRow$nl),RElistRow$nl)
+        colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
