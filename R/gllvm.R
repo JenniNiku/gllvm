@@ -588,7 +588,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     control$optimizer <- "nloptr(agl)"
   }
   if(family=="tweedie" && (num.lv.c+num.RR)>1 && control$optimizer != "alabama" && isFALSE(randomB)){
-    warning("Due to memory issues only optimizer 'alabama' with 'optim.method='L-BFGS-B' can be used with Tweedie.")
+    warning("Due to memory issues only optimizer 'alabama' with optim.method='L-BFGS-B' can be used with Tweedie.")
     control$optimizer <- "alabama"
     control$optim.method <- "L-BFGS-B"
   }
