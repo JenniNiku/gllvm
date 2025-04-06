@@ -643,7 +643,13 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }else{
         optimizer="optim"
       }
-      fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "res", optimizer = optimizer, optim.method="BFGS", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = randomB, diag.iter = 0, Lambda.struc = "diagonal", reltol=1e-10, reltol.c=1e-3, maxit=200, zeta.struc = zeta.struc)
+      optim.method = "BFGS"
+      if(family == "tweedie")optim.method <- "L-BFGS-B"
+      fit <- try(gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "res", optimizer = optimizer, optim.method = optim.method, link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = randomB, diag.iter = 0, Lambda.struc = "diagonal", reltol=1e-10, reltol.c=1e-3, maxit=200, zeta.struc = zeta.struc))
+      if(inherits(fit, "try-error")||is.infinite(fit$logL)){
+        stop("Calculation of starting values has failed.")
+      }
+        
       b.lv <- fit$params$LvXcoef
       
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
@@ -788,9 +794,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(family!="ordinal"){
       zeta.struc<-"species"
     }
-    
-    if(num.lv.c>1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials))
-    if(num.lv.c<=1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "nlminb", method = method, Ntrials = Ntrials))
+    optim.method = "BFGS"
+    if(family == "tweedie")optim.method = "L-BFGS-B"
+    if(num.lv.c>1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = optim.method))
+    if(num.lv.c<=1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "optim", method = method, Ntrials = Ntrials, optim.method = optim.method))
     
     gamma <- start.fit$params$theta
     index <- start.fit$lvs
@@ -907,7 +914,9 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma) 
     resi <- NULL
   }else if(num.RR>0 && !isFALSE(randomB)){
-    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "res", optimizer = "nlminb", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, diag.iter = 0, Lambda.struc = "diagonal", randomB = randomB, maxit = 200)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+    optim.method = "BFGS"
+    if(family == "tweedie")optim.method = "L-BFGS-B"
+    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "res", optimizer = "optim", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, diag.iter = 0, Lambda.struc = "diagonal", randomB = randomB, maxit = 200, optim.method = optim.method)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
     RRcoef <- fit$params$LvXcoef
     RRgamma <- fit$params$theta
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)

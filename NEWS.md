@@ -9,6 +9,7 @@ Version 2.0.2
 * Fixed a bug that occurred with 'starting.values = "zero"' for random reduced rank models with correlation parameters
 * Fixed a bug in the calculation of starting values for concurrent ordination with ordinal species responses and common cut-off parameters
 * Fixed a bug that caused the variance parameter of a second row effect to be fixed to the variance of the first
+* Fixed a bug that increased the duration for calculating starting values of some Tweedie models significantly
 
 Version 2.0.1
 =============
