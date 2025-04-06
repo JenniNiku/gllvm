@@ -558,7 +558,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
   # some checks for optimizer
   if(!is.null(X) && !is.null(y) && any(colnames(X)%in%colnames(y)))stop("Same column name detected in 'y' and 'X' please make sure column names are unique.")
   # Cannot use nloptr or alabama with randomB
-  if(randomB!=FALSE && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+  if(!isFALSE(randomB) && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
     control$optimizer <- 'optim'
     if(family != "tweedie") {control$optim.method <- 'BFGS'}else{control$optim.method <- 'L-BFGS-B'}
@@ -587,19 +587,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
   }
-  if(family=="tweedie" && (num.lv.c+num.RR)>1 && control$optimizer != "alabama"){
+  if(family=="tweedie" && (num.lv.c+num.RR)>1 && control$optimizer != "alabama" && isFALSE(randomB)){
     warning("Due to memory issues only optimizer 'alabama' with 'optim.method='L-BFGS-B' can be used with Tweedie.")
     control$optimizer <- "alabama"
     control$optim.method <- "L-BFGS-B"
   }
     
     # Check if local solver for nloptr augmented lagranian algorithm is one of the defined options
-    if((num.RR+num.lv.c)>1 && randomB == FALSE && control$optimizer == "nloptr(agl)"){
+    if((num.RR+num.lv.c)>1 && isFALSE(randomB) && control$optimizer == "nloptr(agl)"){
       if(!control$optim.method%in%c("NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND", "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA"))control$optim.method <- "NLOPT_LD_TNEWTON_PRECOND"
     }
     
-    if(randomB!=FALSE&!control$TMB){
-      stop("Random slopes in ordination only allows with TMB = TRUE.")
+    if(!isFALSE(randomB)&!control$TMB){
+      stop("Random slopes in ordination only allowed with TMB = TRUE.")
     }
     if(family == "binomial" && max(Ntrials) == 1 && !is.null(y) && max(y, na.rm=TRUE)>1){
     stop("Using the binomial distribution requires setting the `Ntrials` argument.")
