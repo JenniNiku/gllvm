@@ -643,7 +643,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }else{
         optimizer="optim"
       }
-      fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "res", optimizer = optimizer, optim.method="BFGS", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = randomB, diag.iter = 0, Lambda.struc = "diagonal", reltol=1e-10, reltol.c=1e-3, maxit=200)
+      fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.lv.c, starting.val = "res", optimizer = optimizer, optim.method="BFGS", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, randomB = randomB, diag.iter = 0, Lambda.struc = "diagonal", reltol=1e-10, reltol.c=1e-3, maxit=200, zeta.struc = zeta.struc)
       b.lv <- fit$params$LvXcoef
       
       if(family %in% c("poisson", "negative.binomial", "gamma", "exponential","tweedie","ZIP","ZINB")) {
