@@ -65,6 +65,11 @@ y <- as.matrix(antTraits$abund)
 # Fit gllvm model
 fit <- gllvm(y = y, family = poisson())
 summary(fit)
+
+## Plot canonical coefficients
+X = antTraits$env
+fit2 <- gllvm(y = y, X = X, family = "negative.binomial", num.RR = 2)
+plot(summary(fit2))
 }
 }
 \author{
