@@ -64,7 +64,7 @@ gllvm(
 
 \item{data}{data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.}
 
-\item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for fixed-effects predictors).}
+\item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for column-specific effects).}
 
 \item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.}
 
