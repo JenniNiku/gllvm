@@ -1505,6 +1505,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           out$formula <- fitg$formula
           out$X <- fitg$X
         }
+      }
+      
       if(col.eff == "random" || (isFALSE(col.eff) && !is.null(randomX))){
         if(!is.null(colMat)){
           out$col.eff$colMat <- fitg$colMat
@@ -1516,9 +1518,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # for colMat.struc="term" might look like multiple as 0/1 and some away from the boundary
         if(!is.null(fitg$params$rho.sp) && (any(fitg$params$rho.sp < 1e-5) || any(fitg$params$rho.sp > (1-1e-5)))){
           warning("Phylogenetic signal parameter is on the boundary. Considering trying a different optimizer or increasing the convergence tolerance ('reltol').")
-          }
+        }
       }
-}
+      
       out$disp.group <- disp.group
       out$seed <- fitg$seed
       out$X.design <- fitg$X.design

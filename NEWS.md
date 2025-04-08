@@ -1,3 +1,9 @@
+Version 2.0.3
+=============
+
+## Bugfixes
+* Fixed a bug that caused phyloplot.gllvm to fail with trait models
+
 Version 2.0.2
 =============
 
