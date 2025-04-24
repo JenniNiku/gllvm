@@ -46,7 +46,7 @@ X <- microbialdata$Xenv
 y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), 
                      decreasing = TRUE)[21:40]]
 fit <- gllvm(y, X, formula = ~ pH + Phosp, family = poisson())
-# Plot residuals
+# Calculate metrics
 goodnessOfFit(object = fit, measure = c("cor", "RMSE"))
 
 }
