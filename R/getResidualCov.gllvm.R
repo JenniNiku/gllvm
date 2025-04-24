@@ -95,10 +95,10 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
     
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   
-  if((object$num.lv+object$num.lv.c)==0){
-    stop("No latent variables present in model.")
-  }
-  
+  # if((object$num.lv+object$num.lv.c)==0){
+  #   stop("No latent variables present in model.")
+  # }
+  # 
   # Remove Reduced Rank parameters if present without residual term
   if(object$num.RR>0){
     if(object$quadratic==FALSE){
@@ -136,9 +136,11 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
       ResCov.q2[1:object$num.lv.c] <- sapply(1:object$num.lv.c, function(q)ResCov.q2[[q]]+4*c(x%*%object$params$LvXcoef[,q,drop=F]*x%*%object$params$LvXcoef[,q,drop=F])*(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F] *object$params$sigma.lv[q]^2)%*%t(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]),simplify=F)#what follows is a covariance term..-2*c(x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2+x%*%object$params$LvXcoef[,q,drop=F]*object$params$sigma.lv[q]^2)*object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F]%*%t(object$params$theta[,1:(object$num.lv+object$num.lv.c),drop=F][,q,drop=F]),simplify=F)
     }
     #if(object$num.lv.c>0)ResCov <- ResCov - Reduce("+",sapply(1:object$num.lv.c,function(q)2*(c(object$lv.X.design[site.index[1],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))+c(object$lv.X.design[site.index[2],,drop=F]%*%object$params$LvXcoef[,q,drop=F])*(abs(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c)),drop=F][,q,drop=F])%*%t(object$params$theta[,q,drop=F]))),simplify=F))
-  }else{
+  }else if((object$num.lv+object$num.lv.c)>0){
     ResCov <- object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F]%*% Sigma %*% t(object$params$theta[, 1:(object$num.lv+object$num.lv.c), drop = F] %*% Sigma)
     ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) (object$params$theta[, q, drop = F]* object$params$sigma.lv[q]) %*% t(object$params$theta[, q, drop = F] * object$params$sigma.lv[q]), simplify = F)
+  }else{
+    ResCov.q <- NULL
   }
   
   
@@ -193,8 +195,10 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
   rownames(ResCov) <- colnames(object$y)
   if(inherits(object,"gllvm.quadratic")){
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, var.q2 = ResCov.q2)
-  }else{
+  }else if((object$num.lv+object$num.lv.c)>0){
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q)  
+  }else{
+    out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = NULL)  
   }
   return(out)
 }

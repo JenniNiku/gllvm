@@ -1,6 +1,8 @@
 Version 2.0.3
 =============
 
+* Add option for scaling in getEnvironCor
+
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
 

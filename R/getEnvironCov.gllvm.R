@@ -3,7 +3,8 @@
 #'
 #' @param object an object of class 'gllvm'.
 #' @param x (optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s. If both 'randomX' and random species effects are present in the model this should be a list of length two.
-#' @param ... not used
+#' @param relative defaults to TRUE. For \code{\link{getEnvironCor}}, if there are residual latent effects in the model (such as due to num.lv or num.lv.c), this scales the covariance matrix by the sum of the environmental and residual variances instead, so that the diagonal of the correlation matrix is smaller than one. This matrix then represents the contribution of the environment to the overall species associations in the model.
+#' @param ... arguments passed on to \code{\link{getResidualCov.gllvm}}
 #' 
 #' @return Function returns the following components:
 #'  \item{cov}{species covariances due to covariates}
@@ -195,9 +196,18 @@ getEnvironCor <- function(object, ...)
 
 #'@export
 #'@export getEnvironCor.gllvm
-getEnvironCor.gllvm <- function(object, ...)
+getEnvironCor.gllvm <- function(object, x = NULL, relative = TRUE, ...)
 {
-  cov2cor(getEnvironCov.gllvm(object, ...)$cov)
+  ResCov <- matrix(0, ncol = ncol(object$y), nrow = nrow(object$y))
+  if(relative)ResCov <- getResidualCov(object, ...)$cov
+  EnvCov <- getEnvironCov.gllvm(object, x)$cov
+  sds <- sqrt(diag(ResCov)+diag(EnvCov))
+  EnvCors <- sweep(EnvCov, 1, sds, "/")
+  EnvCors <- sweep(EnvCors, 2, sds, "/")
+  
+  colnames(EnvCors) <- row.names(EnvCors) <- colnames(object$y)
+  
+  return(EnvCors)
 }
 
 #'@export getEnvironCov
