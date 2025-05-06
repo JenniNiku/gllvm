@@ -5,6 +5,7 @@ Version 2.0.3
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
+* Ensured that update.gllvm also adopts non-formula arguments
 
 Version 2.0.2
 =============

@@ -22,7 +22,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   call <- getCall(object)
   match.call(expand.dots = FALSE, call = call)
   
-  # args <- list(...)
+  args <- list(...)
   
   if(!is.null(formula)){
     formula.new <- formula
@@ -43,7 +43,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
       call$lv.formula <- lv.formula.new
     }
   }
-  if(!is.null(row.eff)){
+  if(!is.null(row.eff) && is.language(row.eff)){
     row.eff.new <- args$row.eff
     row.eff_ <- call$row.eff
     
@@ -52,6 +52,13 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     }else{
       call$row.eff <- row.eff.new
     }
+  }else if(!is.null(row.eff)){
+    call[["row.eff"]] <- row.eff
+  }
+  
+  # Add or override other arguments from ...
+  for (arg_name in names(args)) {
+    call[[arg_name]] <- args[[arg_name]]
   }
   
   if(eval){
