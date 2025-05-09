@@ -2722,30 +2722,35 @@ Type objective_function<Type>::operator() ()
       REPORT(cQ);
     } else if ((family == 2) && (method>1)) { // Binomial EVA
       if (extra(0) == 0) { // logit
-        Type mu_prime;
-        CppAD::vector<Type> z(4);
+        //Type mu_prime;
+        //CppAD::vector<Type> z(4);
         
         for (int i=0; i<n; i++) {
           for (int j=0; j<p; j++) {
-            // nll -= gllvm::dbinom_logit_eva(y(i,j), eta(i,j), cQ(i,j));
-            
-            mu(i,j) = 0.0;
-            mu_prime = 0.0;
-            
-            z[0] = eta(i,j);
-            z[1] = 0;
-            z[2] = 1/(1+exp(-z[0]));
-            z[3] = exp(z[0])/(exp(z[0])+1);
-            
-            mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
-            
-            mu_prime = mu(i,j) * (1-mu(i,j));
-            if(!gllvmutils::isNA(y(i,j))){
-              nll -= y(i,j) * eta(i,j) + log(1-mu(i,j));
-              nll += mu_prime*cQ(i,j);
+            if (!gllvmutils::isNA(y(i,j))) {
+              Type log_1mp = -CppAD::CondExpLe(eta(i,j), Type(18.), gllvmutils::log1plus(exp(eta(i,j))), eta(i,j));
+              Type log_p = -CppAD::CondExpLe(-eta(i,j), Type(18.), gllvmutils::log1plus(exp(-eta(i,j))), -eta(i,j));
+              nll -= y(i,j)*log_p + (Type(1.)-y(i,j))*log_1mp;
+              nll += gllvmutils::mfexp(log_1mp + log_p)*cQ(i,j);
             }
+        // nll -= gllvm::dbinom_logit_eva(y(i,j), eta(i,j), cQ(i,j));
+            
+        //    mu(i,j) = 0.0;
+        //    mu_prime = 0.0;
+            
+        //    z[0] = eta(i,j);
+        //    z[1] = 0;
+        //    z[2] = 1/(1+exp(-z[0]));
+        //    z[3] = exp(z[0])/(exp(z[0])+1);
+            
+        //    mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+        //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+        //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            
+        //    mu_prime = mu(i,j) * (1-mu(i,j));
+        //    if(!gllvmutils::isNA(y(i,j))){
+        //      nll -= y(i,j) * eta(i,j) + log(1-mu(i,j));
+        //      nll += mu_prime*cQ(i,j);
           }
         }
       } else if (extra(0) == 1) { // probit
@@ -2753,14 +2758,25 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           for (int j=0; j<p; j++) {
             if(!gllvmutils::isNA(y(i,j))){
-              etaP = pnorm_approx(Type(eta(i,j)));   //pnorm funktion approksimaatio
+              Type etaD =  dnorm(eta(i,j), Type(0), Type(1), 1);   // normal density evaluated at eta(i,j)
+              Type logit_p = gllvmutils::logit_pnorm(eta(i,j));
+
+              Type log_p = -CppAD::CondExpLe(-logit_p, Type(18.0), gllvmutils::log1plus(exp(-logit_p)), -logit_p); 
+              Type log_1mp = -CppAD::CondExpLe(logit_p, Type(18.0), gllvmutils::log1plus(exp(logit_p)), logit_p); 
               
-              etaP = Type(CppAD::CondExpEq(etaP, Type(1), etaP-Type(1e-12), etaP));//check if on the boundary
-              etaP = Type(CppAD::CondExpEq(etaP, Type(0), etaP+Type(1e-12), etaP));//check if on the boundary
+              nll -= y(i,j)*log_p + (Type(1.0)-y(i,j))*log_1mp;
+              //Type tmp = CppAD::CondExpLt(logit_p, Type(0.0), -logit_p + 2.*log_1mp, logit_p + 2.*log_p);
               
-              nll -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //
-              Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
-              nll -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j); //Tää toimii ok tähän etaD = (log=true)
+              //nll -= -pow(y(i,j)-exp(log_p),2)* exp(2*tmp+2*etaD)*cQ(i,j) - (y(i,j)-exp(log_p))*eta(i,j)*exp(tmp+etaD)*cQ(i,j);
+              nll -= ((y(i,j)*(gllvmutils::mfexp(log_p + etaD)*(-eta(i,j))-gllvmutils::mfexp(2.*etaD))*gllvmutils::mfexp(2.*log_1mp) + (1.-y(i,j))*(gllvmutils::mfexp(log_1mp+etaD)*eta(i,j)-gllvmutils::mfexp(2.*etaD))*gllvmutils::mfexp(2.*log_p) )/(gllvmutils::mfexp(2*log_p)*(gllvmutils::mfexp(2*log_p)-2*gllvmutils::mfexp(log_p)+1)))*cQ(i,j);
+              //etaP = pnorm_approx(Type(eta(i,j)));
+              
+              //etaP = Type(CppAD::CondExpEq(etaP, Type(1), etaP-Type(1e-12), etaP));//check if on the boundary
+              //etaP = Type(CppAD::CondExpEq(etaP, Type(0), etaP+Type(1e-12), etaP));//check if on the boundary
+              
+              //nll -= y(i,j)*log(etaP) + (1-y(i,j))*log(1-etaP); //
+              //Type etaD =  dnorm(Type(eta(i,j)), Type(0), Type(1), true);   // log normal density evaluated at eta(i,j)
+              //nll -= ((y(i,j)*(etaP*exp(etaD)*(-eta(i,j))-pow(exp(etaD),2))*pow(1-etaP,2) + (1-y(i,j))*((1-etaP)*exp(etaD)*eta(i,j)-pow(exp(etaD),2))*pow(etaP,2) )/(etaP*etaP*(etaP*etaP-2*etaP+1)))*cQ(i,j);
             }
           }
         }
