@@ -2,6 +2,8 @@ Version 2.0.3
 =============
 
 * Add option for scaling in getEnvironCor
+* Added logistic GLLVM with VA via polya-gamma augmentation (see Polson et al. 2012)
+* Added residual variance term in getResidualCov.gllvm for ordinal models 
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
