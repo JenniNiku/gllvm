@@ -3,6 +3,7 @@ Version 2.0.3
 
 * Add option for scaling in getEnvironCor
 * Added residual variance term in getResidualCov.gllvm for ordinal models 
+* Boundary check for cumulative probit model
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
