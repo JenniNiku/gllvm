@@ -9,6 +9,7 @@ Version 2.0.3
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
 * Ensured that update.gllvm also adopts non-formula arguments
 * Default optimizer for random canonical coefficients was not set right for Tweedie
+* Bugfix for showing categorical ordination effects as centroids
 
 Version 2.0.2
 =============
