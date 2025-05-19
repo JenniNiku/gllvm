@@ -2876,15 +2876,21 @@ Type objective_function<Type>::operator() ()
               int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
               //minimum category
               if(y(i,j)==1){
-                nll -= log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)));
+                mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                nll -= log(mu(i,j));
               }else if(y(i,j)==ymaxj){
                 //maximum category
                 int idx = ymaxj-2;
-                nll -= log(1 - pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1)));
+                mu(i,j) = pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
+                nll -= log(1 - mu(i,j));
               }else if(ymaxj>2){
                 for (int l=2; l<ymaxj; l++) {
                   if((y(i,j)==l) && (l != ymaxj)){
-                    nll -= log(pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1)));
+                    mu(i,j) = pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                    nll -= log(mu(i,j));
                   }
                 }
               }
@@ -2947,15 +2953,21 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               //minimum category
               if(y(i,j)==1){
-                nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+                mu(i,j) = pnorm(zetanew(0) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                nll -= log(mu(i,j));
               }else if(y(i,j)==ymax){
                 //maximum category
                 int idx = ymax-2;
-                nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+                mu(i,j) = pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
+                nll -= log(1 - mu(i,j));
               }else if(ymax>2){
                 for (int l=2; l<ymax; l++) {
                   if((y(i,j)==l) && (l != ymax)){
-                    nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+                    mu(i,j) = pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                    nll -= log(mu(i,j));
                   }
                 }
               }
