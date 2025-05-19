@@ -2902,16 +2902,16 @@ Type objective_function<Type>::operator() ()
                 int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
                 //minimum category
                 if(y(i,j)==1){
-                  //nll -= -log1plus(exp(eta(i,j))-zetanew(j,0));
+                  nll -= -gllvmutils::log1plus(exp(eta(i,j))-zetanew(j,0));
                   //nll -= -mfexp(dlogis(zetanew(j,0),eta(i,j),Type(1),1))*cQ(i,j);
-                  nll -= -logspace_add(Type(0), eta(i,j)-zetanew(j,0));
+                  //nll -= -logspace_add(Type(0), eta(i,j)-zetanew(j,0));
                   nll -= -dlogis(zetanew(j,0), eta(i,j), Type(1), 0)*cQ(i,j);
                 }else if(y(i,j)==ymaxj){
                   //maximum category
                   int idx = ymaxj-2;
-                  //nll -= -log1plus(exp(zetanew(j,idx)-eta(i,j)));
+                  nll -= -gllvmutils::log1plus(exp(zetanew(j,idx)-eta(i,j)));
                   //nll -= -mfexp(dlogis(zetanew(j,idx),eta(i,j),Type(1),1))*cQ(i,j);
-                  nll -= -logspace_add(Type(0), zetanew(j,idx)-eta(i,j));
+                  //nll -= -logspace_add(Type(0), zetanew(j,idx)-eta(i,j));
                   nll -= -dlogis(zetanew(j,idx), eta(i,j), Type(1), 0)*cQ(i,j);
                 }else if(ymaxj>2){
                   for (int l=2; l<ymaxj; l++) {
@@ -3336,21 +3336,29 @@ Type objective_function<Type>::operator() ()
             mu_prime = 0.0;
             mu_prime2 = 0.0;
             if((y(i,j)==0)){
-                nll -= -logspace_add(Type(0),eta(i,j)-zetanew(j,0));
-                nll -= -dlogis(zetanew(j,0), eta(i,j), Type(1), 0)*cQ(i,j);
+                //nll -= -logspace_add(Type(0),eta(i,j)-zetanew(j,0));
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetanew(j,0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetanew(j,0))), eta(i,j)-zetanew(j,0));
+                nll -= -gllvmutils::mfexp(dlogis(zetanew(j,0), eta(i,j), Type(1), 1))*cQ(i,j);
             } else if((y(i,j)==1)){
-              nll -= -logspace_add(Type(0),zetanew(j,1)-eta(i,j));
-              nll -= -dlogis(zetanew(j,1), eta(i,j), Type(1), 0)*cQ(i,j);
+              //nll -= -logspace_add(Type(0),zetanew(j,1)-eta(i,j));
+              nll -= -CppAD::CondExpLe(zetanew(j,1)-eta(i,j), Type(18.), gllvmutils::log1plus(exp(zetanew(j,1)-eta(i,j))), zetanew(j,1)-eta(i,j));
+              nll -= -gllvmutils::mfexp(dlogis(zetanew(j,1), eta(i,j), Type(1), 1))*cQ(i,j);
             } else{
               if(zeta.size()>p) {
                 //nll -= log(pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
-                nll -= logspace_sub(-logspace_add(Type(0),zetanew(j,0)-eta(i,j)), -logspace_add(Type(0),zetanew(j,1)-eta(i,j)));
-                nll -= -dlogis(zetanew(j,0), eta(i,j), Type(1), 0)*cQ(i,j); 
-                nll -= -dlogis(zetanew(j,1), eta(i,j), Type(1), 0)*cQ(i,j);
+                //nll -= logspace_sub(-logspace_add(Type(0),zetanew(j,0)-eta(i,j)), -logspace_add(Type(0),zetanew(j,1)-eta(i,j)));
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetanew(j,0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetanew(j,0))), eta(i,j)-zetanew(j,0));
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetanew(j,1), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetanew(j,1))), eta(i,j)-zetanew(j,1));
+                nll -= eta(i,j) - zetanew(j,0);
+                nll -= CppAD::CondExpLe(zetanew(j,1)-zetanew(j,0), log(Type(2.)), log(-gllvmutils::expminus1(zetanew(j,0)-zetanew(j,1))),  gllvmutils::log1plus(-exp(zetanew(j,0)-zetanew(j,1))));
+                nll -= -gllvmutils::mfexp(dlogis(zetanew(j,0), eta(i,j), Type(1), 1))*cQ(i,j); 
+                nll -= -gllvmutils::mfexp(dlogis(zetanew(j,1), eta(i,j), Type(1), 1))*cQ(i,j);
               } else {
                 //nll -= log(1 - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
-                nll -= eta(i,j) - zetanew(j,0) - logspace_add(Type(0), eta(i,j)-zetanew(j,0));
-                nll -= -dlogis(zetanew(j,0), eta(i,j), Type(1), 0)*cQ(i,j);
+                //nll -= eta(i,j) - zetanew(j,0) - logspace_add(Type(0), eta(i,j)-zetanew(j,0));
+                nll -= eta(i,j) - zetanew(j,0); 
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetanew(j,0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetanew(j,0))), eta(i,j)-zetanew(j,0));
+                nll -= -gllvmutils::mfexp(dlogis(zetanew(j,0), eta(i,j), Type(1), 1))*cQ(i,j);
               }
               CppAD::vector<Type> z(4);
               z[0] = eta(i,j);
