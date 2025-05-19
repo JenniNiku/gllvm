@@ -255,7 +255,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     lv.X <- matrix(0)
   }
   formula1 <- formula
-  if(method=="VA" && (family =="binomial")){ link="probit"}
+  # if(method=="VA" && (family =="binomial")){ link="probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
     jitter.var.r <- jitter.var[2]
@@ -336,6 +336,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     sigma <- 1;Br <- matrix(0);sigmaB <- 0;
     if (is.null(start.params)) {
       beta0 <- fit$params[, 1]
+      if(any(beta0==0))beta0[beta0==0]<-1e-3
       if((num.lv.c+num.RR)>0){b.lv <- fit$b.lv}else{b.lv<-matrix(0)}
       betas <- NULL
       if (!is.null(X))
@@ -343,7 +344,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       lambdas <- NULL
       
       if ((num.lv+(num.lv.c+num.RR)) > 0) {
-        sigma.lv <- fit$sigma.lv
+        sigma.lv <- log(fit$sigma.lv)
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv - (num.lv.c+num.RR) + 1):ncol(fit$params)])
         if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
           lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = 1)  
@@ -488,7 +489,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         betas <- c(start.params$params$Xcoef) ## covariates coefficients
         lambdas <- NULL
         if ((num.lv+(num.lv.c+num.RR)) > 0){
-          sigma.lv <- start.params$params$sigma.lv
+          sigma.lv <- log(start.params$params$sigma.lv)
           lambdas <- start.params$params$theta
           if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)])] <- 0
           if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
@@ -505,7 +506,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         lvs <- NULL
         sigma.lv <- 0
         if ((num.lv+num.lv.c) > 0) {
-          sigma.lv <- start.params$params$sigma.lv
+          sigma.lv <- log(start.params$params$sigma.lv)
           lvs <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
         }
         if(num.lv.cor>0){ # sigmas are scale parameters # just diagonal values, not
@@ -1277,8 +1278,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             lg_Ar <- c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
           }
         } else {log_sigma1 = 0}
+      
+        if(beta0com){
+          b1 <- matrix(paramb1[bi][model2$TMBfn$env$map$b], num.X+1, p)
+        }else{
+          b1 <- matrix(param1[nam=="b"],num.X+1,p)  
+        }
         
-        b1 <- matrix(param1[nam=="b"],num.X+1,p)
         if(!isFALSE(randomB)){
           if(randomB!="iid"){
             sigmab_lv1 <- param1[nam=="sigmab_lv"]
@@ -1521,7 +1527,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           rownames(lvs) =colnames(dLV)
           # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
         }
-        sigma.lv <- abs(param[si])
+        sigma.lv <- exp(param[si])
         theta <- matrix(0,p,num.lv.cor)
         if(num.lv.cor>1){
           diag(theta) <- 1 #sigma.lv 
@@ -1545,7 +1551,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if(nlvr>0)sigma.lv <- abs(param[si])
+        if(nlvr>0)sigma.lv <- exp(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
           
           if(p>1) {
@@ -1619,11 +1625,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(nrow(Xt)==n)B = param[names(param)=="B"]
       }
       
-      betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
+      paramb <- param[bi]
+      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]
       if(!is.null(X)) betas <- betaM[,-1]
-      if((num.lv.c+num.RR)>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),(num.lv.c+num.RR))
+      if((num.lv.c+num.RR)>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),num.lv.c+num.RR)
       # if(family %in% "betaH"){
       #   bHi <- names(param)=="bH"
       #   betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
@@ -1970,7 +1978,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
         
         theta <- matrix(0,p,num.lv.cor)
-        sigma.lv <- abs(param[si])
+        sigma.lv <- exp(param[si])
         
         if(num.lv.cor>1){
           diag(theta) <- 1 #sigma.lv 
@@ -1995,7 +2003,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         theta <- matrix(0,p,num.lv+(num.lv.c+num.RR))
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if((num.lv+num.lv.c)>0) sigma.lv <- abs(param[si])
+        if((num.lv+num.lv.c)>0) sigma.lv <- exp(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
           if(p>1) {
             theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
@@ -2061,7 +2069,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
         if(nrow(Xt)==n)B <- param[names(param)=="B"]
       }
-      betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
+      
+      paramb <- param[bi]
+      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]
       if(!is.null(X)) betas=betaM[,-1]

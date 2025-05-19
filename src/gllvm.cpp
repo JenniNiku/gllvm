@@ -5,17 +5,6 @@
 #include "distrib.h"
 #include "utils.h"
 
-template<class Type>
-struct dclist : vector<matrix<Type>> {
-  dclist(SEXP x){  /* x = List passed from R */
-    (*this).resize(LENGTH(x));
-    for(int i=0; i<LENGTH(x); i++){
-      SEXP sm = VECTOR_ELT(x, i);
-      (*this)(i) = asMatrix<Type>(sm);
-    }
-  }
-};
-
 //--------------------------------------------------------
 //GLLVM
 //Authors: Jenni Niku, Bert van der Veen, Pekka Korhonen
@@ -34,7 +23,7 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
   DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
   // DATA_SPARSE_MATRIX(colMat); //lower cholesky of column similarity matrix
-  DATA_STRUCT(colMatBlocksI, dclist); //first entry is the number of species in colMat, rest are the blocks of colMat
+  DATA_STRUCT(colMatBlocksI, gllvmutils::dclist); //first entry is the number of species in colMat, rest are the blocks of colMat
   DATA_IMATRIX(nncolMat);
   DATA_VECTOR(Abranks);
   DATA_MATRIX(offset); //offset matrix
@@ -88,7 +77,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(times); // number of time points, for LVs
   DATA_IVECTOR(cstruc); //correlation structure for row.params 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
   DATA_INTEGER(cstruclv); //correlation structure for LVs 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
-  DATA_STRUCT(dc, dclist); //coordinates for sites, used for exponentially decaying cov. struc
+  DATA_STRUCT(dc, gllvmutils::dclist); //coordinates for sites, used for exponentially decaying cov. struc
   DATA_MATRIX(dc_lv); //coordinates for sites, used for exponentially decaying cov. struc
   DATA_INTEGER(Astruc); //Structure of the variational covariance, 0=diagonal, 1=RR, (2=sparse cholesky not implemented yet)
   DATA_IMATRIX(NN); //nearest neighbours,
@@ -254,8 +243,8 @@ Type objective_function<Type>::operator() ()
       newlam.row(0).fill(1.0);
       if((num_lv+num_lv_c)>0){
         for (int d=0; d<nlvr; d++){
-          // Delta(d,d) = exp(sigmaLV(d));
-          Delta(d,d) = fabs(sigmaLV(d));
+          Delta(d,d) = exp(sigmaLV(d));
+          // Delta(d,d) = fabs(sigmaLV(d));
         }
       }
     }
@@ -2505,11 +2494,13 @@ Type objective_function<Type>::operator() ()
       
       // Update cQ for linear term
       //Binomial, Gaussian, Ordinal
+      
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
         }
       }
+  
       eta += lam;
       
       if(((quadratic>0) && (nlvr>0)) || ((quadratic>0) && (num_RR>0))){
@@ -2702,7 +2693,22 @@ Type objective_function<Type>::operator() ()
           // nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
         }
       }
-    } else if((family == 2) && (method<1)) {//binomial probit VA
+    } else if((family == 2) && (method<1)) {//binomial VA
+      if (extra(0) == 0) { //logit
+        for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+            // Type a = 0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)));//bound it because derivative logcosh = tanh(10) = 1 flattens
+            Type a = sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)));
+            //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
+            // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
+          nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*(0.5*a+gllvmutils::log1plus(exp(-a)));//Ntrials(j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
+            if(Ntrials(j)>1 && (Ntrials(j)>y(i,j))){
+             nll -= lgamma(Ntrials(j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(j)-y(i,j)+1.);//norm.const.
+            }
+          }
+          // nll += n*Ntrials(j)*log(2.0);
+        }
+      }else{//probit
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
@@ -2716,6 +2722,7 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
+      }
       }
       REPORT(mu);
       REPORT(eta);
