@@ -351,8 +351,12 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
           } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {#Not used at the moment, under development
             A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
-            for (i in 1:object$num.lvcor) {
-              A[,i,i]<- diag(object$A[,,i])
+            if(all(dim(A) == dim(object$A))){
+              A<- object$A
+            } else {
+              for (i in 1:object$num.lvcor) {
+                A[,i,i]<- (object$A[,i])
+              }
             }
           }
           

@@ -1414,7 +1414,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            # row.eff = row.eff.formula,
+            row.eff = row.eff.formula,
             Ab.diag.iter = Ab.diag.iter, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
