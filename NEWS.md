@@ -10,6 +10,8 @@ Version 2.0.3
 * Ensured that update.gllvm also adopts non-formula arguments
 * Default optimizer for random canonical coefficients was not set right for Tweedie
 * Bugfix for showing categorical ordination effects as centroids
+* Bugfix for getPredictErr and trait model
+* Bugfix for phylogenetic model with traits; the phylogenetic matrix was not passed on to the output
 
 Version 2.0.2
 =============
