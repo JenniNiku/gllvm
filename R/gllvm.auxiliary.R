@@ -2490,7 +2490,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   }
   
   #separate errors column effects
-  if(fit$col.eff$col.eff == "random") {
+  if(fit$col.eff$col.eff == "random"||!is.null(fit$randomX)) {
     covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
     covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
     out$Ab <- covbetar
@@ -2503,15 +2503,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     covsB <- covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"]
   }
   if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
-  
-  # separate errors AB
-  seAb <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
-  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
-  
-  if(!is.null(fit$randomX)){
-    out$Ab <- seAb
-  }
-  
+
   if(!return.covb){
     #re-order, select submatrices
     try({
