@@ -433,6 +433,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
+  if(!isFALSE(quadratic) && !is.null(lvCor))stop("'lvCor' cannot yet be combined with unimodal responses.")
   if(!method%in%c("LA","VA","EVA"))stop("Selected method is not supported.")
   if(method=="EVA" && !isFALSE(quadratic))stop("The EVA method is not available for a quadratic GLLVM.")
   if(!is.null(lvCor) & corWithin) warning("'lvCor' with 'corWithin = TRUE' is under development, so all properties may not work properly.")
