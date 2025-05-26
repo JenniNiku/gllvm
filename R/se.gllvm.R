@@ -230,6 +230,7 @@ se.gllvm <- function(object, ...){
       
       if(num.lv > 0) {
         se.sigma.lv <- se$sigmaLV[1:num.lv]
+        se.sigma.lv <- se.sigma.lv*object$params$sigma.lv[1:num.lv]
         se.lambdas <- matrix(0,p,num.lv); se.lambdas[lower.tri(se.lambdas, diag=FALSE)] <- se$lambda[1:(p * num.lv - sum(0:num.lv))];
         colnames(se.lambdas) <- paste("LV", 1:num.lv, sep="");
         rownames(se.lambdas) <- colnames(object$y)
@@ -622,8 +623,8 @@ se.gllvm <- function(object, ...){
       out$sd$LvXcoef <- se.LvXcoef
     }
     
-    if((num.lv.c+num.lv)>0){
-      se.sigma.lv <- se$sigmaLV;
+    if((num.lv.c+num.lv)>0){ # exp transformation
+      se.sigma.lv <- se$sigmaLV*object$params$sigma.lv;
     }
     
     if(num.lv > 0&(num.lv.c+num.RR)==0) {

@@ -514,8 +514,9 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     if(num.lv>0&(num.lv.c+num.RR)==0){
       try({
         gamma.new <- params[,(ncol(params) - num.lv + 1):(ncol(params)),drop=F];
+        sig <- sign(diag(gamma.new))
+        gamma.new = t(t(gamma.new)*sig)
         sigma.lv <- diag(gamma.new)
-        sign <- sign(diag(gamma.new))
         params[,(ncol(params) - num.lv + 1):(ncol(params))] <- t(t(gamma.new)/sigma.lv)
         index <- t(t(index)*sig)}, silent = TRUE)  
     }else if(num.lv==0 & (num.lv.c+num.RR) >0){
@@ -1121,14 +1122,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       if(num.lv.c==0&num.lv>0|num.lv==0&num.lv.c>0){
         qr.gamma <- qr(t(gamma))
         gamma.new<-t(qr.R(qr.gamma))
+        index<-(index%*%qr.Q(qr.gamma))
+        if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
         sig <- sign(diag(gamma.new))
         if(num.lv.c>0){
           b.lv<-b.lv%*%qr.Q(qr.gamma)
           b.lv <- t(t(b.lv)*sig)
         }
         gamma <- t(t(gamma.new)*sig)
-        index<-(index%*%qr.Q(qr.gamma))
-        if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
         index <- t(t(index)*sig)
       }else{
         qr.gamma1 <- qr(t(gamma[,1:num.lv.c,drop=F]))
