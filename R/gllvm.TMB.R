@@ -1681,7 +1681,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           DLL = "gllvm")##GLLVM
         
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE, gcFirst = FALSE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
         }
         if(optimizer=="optim" | !(optimizer %in% c("optim","nlminb"))) {
           if( optimizer == "optim" && optim.method != "BFGS")
