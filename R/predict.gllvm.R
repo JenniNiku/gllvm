@@ -290,7 +290,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         }
       }
       if ((object$num.lv.c + object$num.RR) > 0 & !is.null(newdata)) {
-        lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
+        if(anyBars(object$lv.formula)){
+          bar.f <- findbars1(object$lv.formula) # list with 3 terms
+          lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
+          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
+          lv.X = t(as.matrix(RElistLV$Zt))
+          print(lv.X)
+        }else{
+          lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
+        }
       } else {
         lv.X <- object$lv.X.design
       }
@@ -339,13 +347,17 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
     if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
-    stop("Prediction with column effects not yet implemented.")
-      # bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
-      # mf <- model.frame(subbars1(object$col.eff$col.eff.formula),data=data.frame(newX))
-      # RElist <- mkReTrms1(bar.f,mf)
-      # newspdr <- Matrix::t(RElist$Zt)
-      # eta <- eta + as.matrix(newspdr%*%object$params$Br)
-      # eta <- eta + model.matrix(as.formula(paste0("~", paste0(all.vars(object$col.eff$col.eff.formula), collapse = "+"))), newX)[,-1, drop = FALSE]%*%t(object$params$Xcoef[,grepl("RE_mean_",colnames(object$params$Xcoef)),drop=FALSE])
+    bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
+    mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
+    
+    if(length(bar.f)==1 & bar.f[[1]]==bquote(1|1)){
+      X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(y)))
+    }
+    
+    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(col.eff.formula)))
+    spdr <- Matrix::t(RElistSP$Zt)
+    eta <- eta + as.matrix(spdr%*%object$params$Br)
+    if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){

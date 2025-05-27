@@ -250,7 +250,7 @@ trait.TMB <- function(
     }
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
   
-  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, logL = Inf, family = family, offset=offset,randomX=randomX,colMat = colMat,X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
+  out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, logL = Inf, family = family, offset=offset,randomX=randomX, X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
   sigmaij <- 0
   if(is.null(formula) && is.null(X) && is.null(TR)){formula ="~ 1"}
   
@@ -330,7 +330,7 @@ trait.TMB <- function(
         if(!all(colnames(colMat) == colnames(y)))stop("Please make sure that the column names for 'y' and 'colMat' are the same.")
         colMat <- colMat[colnames(y), colnames(y)]
         if(exists("colMat.dist"))colMat.dist <- colMat.dist[colnames(y), colnames(y)]
-        
+        out$colMat <- colMat
         #is left empty, set to maximum number of columns
         if(Ab.struct%in%c("diagonal","blockdiagonal")){
           Ab.struct.rank = 0

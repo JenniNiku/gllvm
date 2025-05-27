@@ -144,7 +144,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
   }
   
   
-  if(adjust > 0 && object$family %in% c("negative.binomial", "binomial", "gaussian")){
+  if(adjust > 0 && object$family %in% c("negative.binomial", "binomial", "gaussian","ordinal")){
   if(object$family == "negative.binomial"){ 
     if(adjust == 1) {
         ResCov <- ResCov + diag(log(object$params$phi + 1), ncol=ncol(ResCov))
@@ -153,7 +153,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
      }
     
   }
-    if(object$family == "binomial"){ 
+    if(object$family == "binomial"||object$family=="ordinal"){ 
       if(object$link == "probit"){
         ResCov <- ResCov + diag(ncol(object$y))
       } 

@@ -356,7 +356,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           sigmab_lv <- fit$sigmab_lv
           if(ncol(csBlv)==2 && starting.val == "res"){
             sigmab_lv <- c(sigmab_lv, fit$sigmab_cors[csBlv])
-          }else{
+          }else if(ncol(csBlv)==2){
             sigmab_lv <- c(sigmab_lv, rep(1e-3, nrow(csBlv)))
           }
         }

@@ -2,9 +2,19 @@ Version 2.0.3
 =============
 
 * Add option for scaling in getEnvironCor
+* Added residual variance term in getResidualCov.gllvm for ordinal models 
+* Boundary check for cumulative probit model
+* New 'ind.spp' argument for coefplot and RandomCoefPlot to possibly plot for fewer species
+* Implemented predict for species-specific random effects
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
+* Ensured that update.gllvm also adopts non-formula arguments
+* Default optimizer for random canonical coefficients was not set right for Tweedie
+* Bugfix for showing categorical ordination effects as centroids
+* Bugfix for getPredictErr and trait model
+* Bugfix for phylogenetic model with traits; the phylogenetic matrix was not passed on to the output
+* Bugfix for predict with constrained ordination and randomB
 
 Version 2.0.2
 =============
