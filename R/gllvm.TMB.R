@@ -23,7 +23,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   
   if(is.null(colMat) && !(sp.Ar.struc %in% c("diagonal","blockdiagonal")))sp.Ar.struc <- "blockdiagonal"
   
-  if(!is.null(start.params)) starting.val <- "zero"
+  # if(!is.null(start.params)) starting.val <- "zero"
   ignore.u <- FALSE
   
   times <- 1
@@ -333,8 +333,73 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     }
     
     ## Set initial values
-    sigma <- 1;Br <- matrix(0);sigmaB <- 0;
-    if (is.null(start.params)) {
+    sigma <- 1;Br <- matrix(0);sigmaB <- 0;rho.sp.start = 0.5;
+    
+    if(!is.null(start.params)){
+      if (dim(start.params$y) == dim(y)) {
+        if(class(start.params)[2]=="gllvm.quadratic" && !isFALSE(quadratic)){
+          if(object$num.lv>0)fit$params[,num.X+tail(1:ncol(fit$params), num.lv)] <- fit$params$theta[, tail(1:ncol(start.params$params$theta), object$num.lv)]
+          if((object$num.lv.c+object$num.RR>0)){
+           fit$params[,num.X+(2+num.lv+num.lv.c+num.RR):(1+num.lv+2*num.lv.c+2*num.RR)] <- start.params$params$theta[,head(tail(1:ncol(start$params$theta), num.lv+num.lv.c+num.RR), num.lv.c+num.RR)]
+          }
+        }
+        if((num.lv.c+num.RR)>0 && (start.params$num.lv.c+start.params$num.RR>0) && ((num.lv.c+num.RR) == (start.params$num.lv.c+start.params$num.RR)) && !isFALSE(start.params$randomB) && !isFALSE(randomB) && randomB!="iid" && all.equal(ncol(start.params$lv.X.design), lv.X)){
+          fit$sigmab_lv <- start.params$params$sigmaLvXcoef
+          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, start.params$params$corsLvXcoef[csBlv])
+        }
+        
+        if((start.params$num.lv.c+start.params$num.RR)>0 && (num.lv.c+num.RR>0) && (num.lv.c+num.RR)==(start.params$num.lv.c+start.params$num.RR)){
+          b.lv <- start.params$params$LvXcoef
+        }
+        
+        res$params[,1] <- start.params$params$beta0 ## column intercepts
+        if (!is.null(X) && !is.null(start.params$X) && ncol(X)==ncol(start.params$X))
+          fit$params[,2:(num.X + 1)] <- c(start.params$params$Xcoef) ## covariates coefficients
+        
+        if ((num.lv+(num.lv.c)) > 0 && (start.params$num.lv.c+start.params$num.lv)>0 && (start.params$num.lv.c+start.params$num.lv)==(num.lv+num.lv.c)){
+          fit$sigma.lv <- sigma.lv <- start.params$params$sigma.lv
+          fit$params[,(num.X+2):(num.lv+num.lv.c+num.RR+num.X+1)] <- start.params$params$theta
+          if((num.lv.c+num.RR)>1)fit$params[,1+num.X+1:(num.lv.c+num.RR)][upper.tri(fit$params[,1+num.X+1:(num.lv.c+num.RR)])] <- 0
+          if(num.lv>1)fit$params[,1+num.X+((num.lv.c+num.RR)+1)+(0:(num.lv-1))][upper.tri(fit$params[,1+num.X+((num.lv.c+num.RR)+1)+(0:(num.lv-1))])] <- 0
+          
+        }
+        
+        if (!isFALSE(row.eff) && !isFALSE(start.params$row.eff) && all.equal(row.eff, start.params$row.eff)) {
+          fit$row.params.fixed <- start.params$params$row.params.fixed
+          fit$row.params.random <- start.params$params$row.params.random
+          if(nrow(dr)==n)
+            fit$sigma <- start.params$params$sigma
+        }## row parameters
+        if ((num.lv+num.lv.c) > 0 && (start.params$num.lv+start.params$num.lv.c) >0 && (num.lv+num.lv.c) == (start.params$num.lv+start.params$num.lv.c)) {
+          fit$sigma.lv <- start.params$params$sigma.lv
+          fit$index <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
+        }
+        if(num.lv.cor>0){ # sigmas are scale parameters # just diagonal values, not
+          if(is.numeric(start.params$params$rho.lv) & ((cstruclvn == 2) | (cstruclvn == 4))) {
+            # if(cstruclvn == 4) start.params$params$rho.lv <- start.params$params$rho.lv[,-ncol(start.params$params$rho.lv), drop=FALSE]
+            scaledc = colMeans(as.matrix(start.params$params$rho.lv)); 
+            if(length(scaledc) < ncol(distLV) ) scaledc <- rep(scaledc, ncol(distLV))[1:ncol(distLV)]
+          }
+        }
+        if(col.eff == "random" && start.params$col.eff$col.eff == "random" && ncol(spdr) == ncol(start.params$col.eff$spdr)){
+          fit$Br <- start.params$params$Br
+          fit$sigmaB <- fit$params$sigmaB#log(diag(start.params$params$sigmaB))
+          # if(!is.null(cs) && (ncol(cs) == 2)){
+          #   if(any(sigmaB[cs]==0)){
+          #     sigmaB[cs] <- sigmaB[cs]+1e-5
+          #   }
+          #   sigmaB <- c(sigmaB, sigmaB[cs])
+          # }
+          if(!is.null(start.params$params$rho.sp))rho.sp.start <- start.params$params$rho.sp
+        }
+      } else {
+        # findproblem = c("y","X", "row.eff", "col.eff")[!c(dim(start.params$y)==dim(y), is.null(X)==is.null(start.params$X), isTRUE(all.equal(row.eff, start.params$row.eff)), (col.eff == start.params$col.eff$col.eff)  )]
+        
+        # stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other. Problem in: ", findproblem)
+        stop("Starting model needs to be fitted to the same data.")
+      }
+    }
+    
       beta0 <- fit$params[, 1]
       if((num.lv.c+num.RR)>0){b.lv <- fit$b.lv}else{b.lv<-matrix(0)}
       betas <- NULL
@@ -421,7 +486,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       fit$Br <- Br
       if(nrow(Xt)==n)fit$B <- B
       # colMat signal strength
-      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(log(-log(0.5)),ifelse(colMat.rho.struct == "single", 1, ncol(spdr))))
+      if(any(colMat[row(colMat)!=col(colMat)]!=0))sigmaB <- c(sigmaB, rep(log(-log(rho.sp.start)),ifelse(colMat.rho.struct == "single", 1, ncol(spdr))))
       fit$sigmaB <- sigmaB
       }
       if(col.eff != "random"){
@@ -454,86 +519,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if ((num.lv+num.lv.c) > 0)
         lvs <- matrix(fit$index, ncol = num.lv+num.lv.c)
       
-    } else{
-      if (all(dim(start.params$y) == dim(y)) &&
-          is.null(X) == is.null(start.params$X) &&
-          (isTRUE(all.equal(row.eff, start.params$row.eff)) && (col.eff == start.params$col.eff$col.eff))) {
-        if(class(start.params)[2]=="gllvm.quadratic" && quadratic != FALSE){
-          lambda2 <- start.params$params$theta[,-c(1:(start.params$num.lv+start.params$num.lv.c+start.params$num.RR)),drop=F]
-        }else if(class(start.params)[1]=="gllvm" && quadratic != FALSE){
-          if(start.struc=="LV"|quadratic=="LV"){
-            lambda2 <- matrix(quad.start, ncol = num.lv+num.lv.c+num.RR, nrow = 1)  
-          }else if(start.struc=="all"&quadratic==TRUE){
-            lambda2 <- matrix(quad.start, ncol = num.lv+num.lv.c+num.RR, nrow = p)
-          }
-        }else if(quadratic == FALSE){
-          lambda2 <- 0
-        }
-        if(start.params$randomB!=FALSE && randomB !=FALSE && randomB!="iid"){
-          sigmab_lv <- start.params$params$sigmaLvXcoef
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, start.params$params$corsLvXcoef[csBlv])
-        }else if(randomB!=FALSE && randomB!="iid"){
-          sigmab_lv <- fit$sigmab_lv
-          if(ncol(csBlv)==2)sigmab_lv <- c(sigmab_lv, fit$sigmab_cors[csBlv])
-        }
-        if((start.params$num.lv.c+start.params$num.RR)==0){
-          b.lv <- matrix(0)
-        }else{
-          b.lv <- start.params$params$LvXcoef
-        }
-        beta0 <- start.params$params$beta0 ## column intercepts
-        betas <- NULL
-        if (!is.null(X))
-          if(!all((dim(X) == dim(start.params$X)))) stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that predictors X are the same in both models.")
-        betas <- c(start.params$params$Xcoef) ## covariates coefficients
-        lambdas <- NULL
-        if ((num.lv+(num.lv.c+num.RR)) > 0){
-          sigma.lv <- start.params$params$sigma.lv
-          lambdas <- start.params$params$theta
-          if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)])] <- 0
-          if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
-          
-        }
-        
-        row.params.random <- row.params.fixed <- NULL
-        if (!isFALSE(start.params$row.eff)) {
-          row.params.fixed <- start.params$params$row.params.fixed
-          row.params.random <- start.params$params$row.params.random
-          if(nrow(dr)==n)
-            sigma <- start.params$params$sigma
-        }## row parameters
-        lvs <- NULL
-        sigma.lv <- 0
-        if ((num.lv+num.lv.c) > 0) {
-          sigma.lv <- start.params$params$sigma.lv
-          lvs <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
-        }
-        if(num.lv.cor>0){ # sigmas are scale parameters # just diagonal values, not
-          if(is.numeric(start.params$params$rho.lv) & ((cstruclvn == 2) | (cstruclvn == 4))) {
-            # if(cstruclvn == 4) start.params$params$rho.lv <- start.params$params$rho.lv[,-ncol(start.params$params$rho.lv), drop=FALSE]
-            scaledc = colMeans(as.matrix(start.params$params$rho.lv)); 
-            if(length(scaledc) < ncol(distLV) ) scaledc <- rep(scaledc, ncol(distLV))[1:ncol(distLV)]
-          }
-        }
-        if(col.eff == "random"){
-          Br <- start.params$params$Br
-          sigmaB <- log(diag(start.params$params$sigmaB))
-          if(!is.null(cs) && (ncol(cs) == 2)){
-            if(any(sigmaB[cs]==0)){
-              sigmaB[cs] <- sigmaB[cs]+1e-5
-            }
-            sigmaB <- c(sigmaB, sigmaB[cs])
-          }
-          if(!is.null(start.params$params$rho.sp))sigmaB <- c(sigmaB, log(-log(start.params$params$rho.sp)))
-        } else {
-          sigmaB <- 0;Br <- matrix(0);B<-matrix(0)
-        }
-      } else {
-        findproblem = c("y","X", "row.eff", "col.eff")[!c(dim(start.params$y)==dim(y), is.null(X)==is.null(start.params$X), isTRUE(all.equal(row.eff, start.params$row.eff)), (col.eff == start.params$col.eff$col.eff)  )]
-
-        stop( "Model which is set as starting parameters isn't the suitable for the one you are trying to fit. Check that attributes y, X and row.eff match to each other. Problem in: ", findproblem)
-      }
-    }
+    
     
     phis <- NULL
     ZINBphis <- NULL
@@ -1172,13 +1158,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
         }
         if(optimizer=="optim" || !(optimizer %in%c("optim","nlminb") )) {
           if(optimizer == "optim" && optim.method != "BFGS")
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           else
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         }
         
         if(!inherits(optr,"try-error")){
@@ -1210,13 +1196,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       #### Fit model 
       if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
         }
         if(optimizer=="optim") {
           if(optim.method != "BFGS")# Due the memory issues, "BFGS" should not be used for Tweedie
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           else
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         }
       }else{
         if(optimizer == "alabama"){
@@ -1227,7 +1213,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }else if(optim.method == "nlminb"){
             control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
           }
-          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
+          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE), gcFirst = FALSE))
         }else{
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
@@ -1239,7 +1225,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                         "maxeval" = maxit,
                         "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
                         "local_opts" = local_opts)
-          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
           if(!inherits(optr,"try-error")){
             optr$convergence <- as.integer(optr$status<0&optr$status!=5)
             #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
@@ -1407,13 +1393,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
-            timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+            timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
           }
           if(optimizer=="optim") {
             if(optim.method != "BFGS")
-              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
             else
-              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           }
         }else{
           if(optimizer == "alabama"){
@@ -1424,7 +1410,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }else if(optim.method == "nlminb"){
               control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
             }
-            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
+            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE), gcFirst = FALSE))
           }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
@@ -1436,7 +1422,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                           "maxeval" = maxit,
                           "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
                           "local_opts" = local_opts)
-            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
             if(!inherits(optr,"try-error")){
               optr$convergence <- as.integer(optr$status<0&optr$status!=5)
               #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
@@ -1695,13 +1681,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           DLL = "gllvm")##GLLVM
         
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
         }
         if(optimizer=="optim" | !(optimizer %in% c("optim","nlminb"))) {
           if( optimizer == "optim" && optim.method != "BFGS")
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           else
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         }
         
         if(!inherits(optr,"try-error")){
@@ -1824,13 +1810,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       # }
       if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
-          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+          timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
         }
         if(optimizer=="optim") {
           if(optim.method != "BFGS")
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           else
-            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+            timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         }
       }else{
         if(optimizer == "alabama"){
@@ -1841,7 +1827,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }else if(optim.method == "nlminb"){
             control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
           }
-          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
+          suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE), gcFirst = FALSE))
         }else{
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
@@ -1853,7 +1839,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                         "maxeval" = maxit,
                         "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
                         "local_opts" = local_opts)
-          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+          timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
           if(!inherits(optr,"try-error")){
             optr$convergence <- as.integer(optr$status<0&optr$status!=5)
             #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates
@@ -1900,13 +1886,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
-            timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE))
+            timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
           }
           if(optimizer=="optim") {
             if(optim.method != "BFGS")
-              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE))
+              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
             else
-              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE))
+              timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
           }
         }else{
           if(optimizer == "alabama"){
@@ -1917,7 +1903,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }else if(optim.method == "nlminb"){
               control.optim <-  list(rel.tol=reltol.c,iter.max=max.iter,eval.max=maxit)
             }
-            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE)))
+            suppressWarnings(timeo <- system.time(optr <- try(auglag(objr$par, objr$fn, objr$gr, heq = eval_eq_c, heq.jac = eval_eq_j, control.optim=control.optim, control.outer = list(eps = reltol.c, itmax=maxit, trace = FALSE, kkt2.check = FALSE, method = optim.method), obj = objr),silent = TRUE), gcFirst = FALSE))
           }else{
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
@@ -1929,7 +1915,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                           "maxeval" = maxit,
                           "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
                           "local_opts" = local_opts)
-            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE))
+            timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
             if(!inherits(optr,"try-error")){
               optr$convergence <- as.integer(optr$status<0&optr$status!=5)
               #need to return objr$env$last.par.best, because when nloptr hits maxeval it doesn't return the last set of estimates

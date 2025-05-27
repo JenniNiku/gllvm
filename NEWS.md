@@ -6,6 +6,7 @@ Version 2.0.3
 * Boundary check for cumulative probit model
 * New 'ind.spp' argument for coefplot and RandomCoefPlot to possibly plot for fewer species
 * Implemented predict for species-specific random effects
+* Improved handling of provided 'start.fit'
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
