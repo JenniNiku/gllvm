@@ -16,6 +16,7 @@ Version 2.0.3
 * Bugfix for getPredictErr and trait model
 * Bugfix for phylogenetic model with traits; the phylogenetic matrix was not passed on to the output
 * Bugfix for predict with constrained ordination and randomB
+* Fixed a rare bug that caused a warning message in starting value generation with square response matrices
 
 Version 2.0.2
 =============

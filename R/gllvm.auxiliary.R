@@ -514,9 +514,8 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     if(num.lv>0&(num.lv.c+num.RR)==0){
       try({
         gamma.new <- params[,(ncol(params) - num.lv + 1):(ncol(params)),drop=F];
-        sig <- sign(diag(gamma.new))
-        gamma.new = t(t(gamma.new)*sig)
         sigma.lv <- diag(gamma.new)
+        sign <- sign(diag(gamma.new))
         params[,(ncol(params) - num.lv + 1):(ncol(params))] <- t(t(gamma.new)/sigma.lv)
         index <- t(t(index)*sig)}, silent = TRUE)  
     }else if(num.lv==0 & (num.lv.c+num.RR) >0){
@@ -733,7 +732,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         }
       }
       if(n>p){
-        index<-as.matrix(fa$scores)
+        index<-as.matrix(fa$scores)[,1:n, drop=FALSE]
         gamma <- as.matrix(fa$loadings)[1:p,,drop=F]
       }else{
         index<-as.matrix(fa$loadings)
@@ -1007,10 +1006,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(tryfit) {
           warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
           pr <- princomp(resi)
-          gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+          gamma <- matrix(pr$loadings[,1:num.lv],p,num.lv)
+          index <- matrix(pr$scores[,1:num.lv],n,num.lv)
         }else{
-          gamma<-matrix(fa$loadings,p,num.lv)
+          gamma <- matrix(fa$loadings,p,num.lv)
           index <- fa$scores[1:num.lv,]
         }
       }
@@ -1098,7 +1097,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           
         }else{
           gamma<-matrix(fa$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(fa$scores[,1:num.lv],n,num.lv)
+          index<-matrix(fa$scores[1:n,1:num.lv],n,num.lv)
         }
       }
     } else {
@@ -1122,14 +1121,14 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       if(num.lv.c==0&num.lv>0|num.lv==0&num.lv.c>0){
         qr.gamma <- qr(t(gamma))
         gamma.new<-t(qr.R(qr.gamma))
-        index<-(index%*%qr.Q(qr.gamma))
-        if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
         sig <- sign(diag(gamma.new))
         if(num.lv.c>0){
           b.lv<-b.lv%*%qr.Q(qr.gamma)
           b.lv <- t(t(b.lv)*sig)
         }
         gamma <- t(t(gamma.new)*sig)
+        index<-(index%*%qr.Q(qr.gamma))
+        if(num.lv.c>0)b.lv<-b.lv%*%qr.Q(qr.gamma)
         index <- t(t(index)*sig)
       }else{
         qr.gamma1 <- qr(t(gamma[,1:num.lv.c,drop=F]))
