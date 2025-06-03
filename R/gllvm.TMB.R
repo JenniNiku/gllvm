@@ -336,7 +336,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     sigma <- 1;Br <- matrix(0);sigmaB <- 0;rho.sp.start = 0.5;
     
     if(!is.null(start.params)){
-      if (dim(start.params$y) == dim(y)) {
+      if (all(dim(start.params$y) == dim(y))) {
         if(class(start.params)[2]=="gllvm.quadratic" && !isFALSE(quadratic)){
           if(object$num.lv>0)fit$params[,num.X+tail(1:ncol(fit$params), num.lv)] <- fit$params$theta[, tail(1:ncol(start.params$params$theta), object$num.lv)]
           if((object$num.lv.c+object$num.RR>0)){
@@ -352,7 +352,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           b.lv <- start.params$params$LvXcoef
         }
         
-        res$params[,1] <- start.params$params$beta0 ## column intercepts
+        fit$params[,1] <- start.params$params$beta0 ## column intercepts
         if (!is.null(X) && !is.null(start.params$X) && ncol(X)==ncol(start.params$X))
           fit$params[,2:(num.X + 1)] <- c(start.params$params$Xcoef) ## covariates coefficients
         
