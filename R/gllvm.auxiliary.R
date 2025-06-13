@@ -732,7 +732,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         }
       }
       if(n>p){
-        index<-as.matrix(fa$scores)
+        index<-as.matrix(fa$scores)[,1:n, drop=FALSE]
         gamma <- as.matrix(fa$loadings)[1:p,,drop=F]
       }else{
         index<-as.matrix(fa$loadings)
@@ -1006,10 +1006,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         if(tryfit) {
           warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
           pr <- princomp(resi)
-          gamma<-matrix(pr$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(pr$scores[,1:num.lv],n,num.lv)
+          gamma <- matrix(pr$loadings[,1:num.lv],p,num.lv)
+          index <- matrix(pr$scores[,1:num.lv],n,num.lv)
         }else{
-          gamma<-matrix(fa$loadings,p,num.lv)
+          gamma <- matrix(fa$loadings,p,num.lv)
           index <- fa$scores[1:num.lv,]
         }
       }
@@ -1097,7 +1097,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           
         }else{
           gamma<-matrix(fa$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(fa$scores[,1:num.lv],n,num.lv)
+          index<-matrix(fa$scores[1:n,1:num.lv],n,num.lv)
         }
       }
     } else {
@@ -2490,7 +2490,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   }
   
   #separate errors column effects
-  if(fit$col.eff$col.eff == "random") {
+  if(fit$col.eff$col.eff == "random"||!is.null(fit$randomX)) {
     covbetar <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
     covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
     out$Ab <- covbetar
@@ -2503,15 +2503,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     covsB <- covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"]
   }
   if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
-  
-  # separate errors AB
-  seAb <- covb[colnames(covb)=="Br",colnames(covb)=="Br"]
-  covb <- covb[colnames(covb)!="Br",colnames(covb)!="Br"]
-  
-  if(!is.null(fit$randomX)){
-    out$Ab <- seAb
-  }
-  
+
   if(!return.covb){
     #re-order, select submatrices
     try({

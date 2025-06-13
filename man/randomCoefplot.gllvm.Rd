@@ -14,6 +14,7 @@
   mar = c(4, 6, 2, 1),
   xlim.list = NULL,
   order = FALSE,
+  ind.spp = NULL,
   ...
 )
 }
@@ -33,6 +34,8 @@
 \item{xlim.list}{list of vectors with length of two to define the intervals for x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals}
 
 \item{order}{logical, if \code{TRUE} (default), coefficients are sorted according to the point estimates}
+
+\item{ind.spp}{vector of species indices to construct the caterpillar plot for}
 
 \item{...}{additional graphical arguments.}
 }

@@ -91,7 +91,7 @@ matrix<Type> corExp(Type s0, Type s1, int nr, matrix<Type> dc)
   //     alf(i,i) = 1/(exp(s1)*exp(s1));
   // }
   // matrix<Type> alf = 1/exp(s1);
-  Type alf = 1/exp(s1);
+  Type alf = 1/exp(s1*2);
   
   
   for (int d=0;d<nr;d++) {

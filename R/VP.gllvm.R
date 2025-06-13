@@ -116,11 +116,12 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
       object$col.eff$Xt <- object$X.design
     }
     bars <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
+    safeDeparse <- function(x) paste(deparse(x, 500L), collapse = " ")
+    
     groupnamesF <- paste0("Random effect: ", unlist(lapply(bars,safeDeparse)))
     
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(object$col.eff$Xt))
 
-    safeDeparse <- function(x) paste(deparse(x, 500L), collapse = " ")
     names(bars) <- vapply(bars, function(x) paste(deparse(x[[3]], 500L), collapse = " "), "")
 
     blist <- lapply(bars, mkModMlist, mf)

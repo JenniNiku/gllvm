@@ -328,6 +328,7 @@ Type objective_function<Type>::operator() ()
     for (int d=0; d<num_corlv; d++){
       // Delta_clv(d,d) = fabs(sigmaLV(d));
       newlamCor.row(d)*=fabs(sigmaLV(d));
+      // newlamCor.row(d)*=exp(sigmaLV(d));
     }
   }
   
@@ -834,6 +835,8 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr); 
           nll -= -0.5*(Br*Br.transpose()*SprI).trace();
         }
+
+        
       }else if(Abstruc == 1){
         //(Abb.size()==(ncov+p-1+p*(p-1)/2)) || (Abb.size() == (p+ncov-1 + p*(p-1)/2 + ncov*(ncov-1)/2)) || (Abb.size() == (p+ncov-1+ncov*(ncov-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p+ncov-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "MNdiagonal" OR "MNunstructured" with blocks due to Phylogeny
@@ -1940,6 +1943,7 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-logdetColCorMat);
         }
       }
+      
     }
     
     

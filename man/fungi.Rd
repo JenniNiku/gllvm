@@ -48,6 +48,9 @@ TR <- fungi$TR
 C <- fungi$C
 dist <- fungi$dist
 
+# cbind is added to treat species-specific random intercept terms
+# for when species-specific fixed intercepts are collected to a global intercept with beta0com = TRUE
+# as is the case
 #model <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR, 
 #        formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + 
 #        log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + 
