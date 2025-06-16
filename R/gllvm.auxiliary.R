@@ -364,7 +364,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     inter <- rep(0, num.T * num.X)
     B=c(env,trait,inter)
     if(zeta.struc == "species"){
-      zeta <- matrix(0,p,max.levels - 1)
+      zeta <- matrix(NA,p,max.levels - 1)
       zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
     }else{
       cw.fit <- MASS::polr(factor(y) ~ 1, method = "probit")
