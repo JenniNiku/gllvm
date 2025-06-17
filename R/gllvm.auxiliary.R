@@ -732,7 +732,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         }
       }
       if(n>p){
-        index<-as.matrix(fa$scores)[,1:n, drop=FALSE]
+        index<-as.matrix(fa$scores)[1:n,, drop=FALSE]
         gamma <- as.matrix(fa$loadings)[1:p,,drop=F]
       }else{
         index<-as.matrix(fa$loadings)
