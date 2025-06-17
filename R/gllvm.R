@@ -875,7 +875,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       } 
       if(!is.null(X)&(num.lv.c+num.RR)>0|!is.null(data)&(num.lv.c+num.RR)>0){
         if(!is.null(formula)&!is.null(lv.formula) && !anyBars(lv.formula)){
-          if(any(attr(term,"term.labels")==labterm)){
+          if(any(attr(term,"term.labels")%in%labterm)){
             stop("Cannot include the same variables for fixed-effects and for constraining the latent variables.")
           }
         }

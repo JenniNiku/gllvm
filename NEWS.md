@@ -18,6 +18,7 @@ Version 2.0.3
 * Bugfix for predict with constrained ordination and randomB
 * Fixed a rare bug that caused a warning message in starting value generation with square response matrices
 * Bugfix for starting values of family = "ordinal" and zeta.struc = "species"
+* Bug fixed for partial constrained/concurrent ordination with more than one conditioning variable
 
 Version 2.0.2
 =============
