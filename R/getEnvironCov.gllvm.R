@@ -61,7 +61,7 @@
 #'@export
 #'@export getEnvironCov.gllvm
 
-getEnvironCov.gllvm <- function(object, x = NULL, ...){
+getEnvironCov.gllvm <- function(object, x = NULL, relative = TRUE, ...){
   
   if(isFALSE(object$randomB) & isFALSE(object$col.eff$col.eff)& is.null(object$randomX)){
     stop("Canot calculate correlations without random effects for covariates in the model.")

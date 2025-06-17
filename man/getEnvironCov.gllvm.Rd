@@ -7,16 +7,16 @@
 \alias{getEnvironCor.gllvm}
 \title{Extract species covariances due to environmental random effects from gllvm object}
 \usage{
-\method{getEnvironCov}{gllvm}(object, x = NULL, ...)
+\method{getEnvironCov}{gllvm}(object, x = NULL, relative = TRUE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{x}{(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s. If both 'randomX' and random species effects are present in the model this should be a list of length two.}
 
-\item{...}{arguments passed on to \code{\link{getResidualCov.gllvm}}}
-
 \item{relative}{defaults to TRUE. For \code{\link{getEnvironCor}}, if there are residual latent effects in the model (such as due to num.lv or num.lv.c), this scales the covariance matrix by the sum of the environmental and residual variances instead, so that the diagonal of the correlation matrix is smaller than one. This matrix then represents the contribution of the environment to the overall species associations in the model.}
+
+\item{...}{arguments passed on to \code{\link{getResidualCov.gllvm}}}
 }
 \value{
 Function returns the following components:

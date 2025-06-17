@@ -338,9 +338,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     if(!is.null(start.params)){
       if (all(dim(start.params$y) == dim(y))) {
         if(class(start.params)[2]=="gllvm.quadratic" && !isFALSE(quadratic)){
-          if(object$num.lv>0)fit$params[,num.X+tail(1:ncol(fit$params), num.lv)] <- fit$params$theta[, tail(1:ncol(start.params$params$theta), object$num.lv)]
-          if((object$num.lv.c+object$num.RR>0)){
-           fit$params[,num.X+(2+num.lv+num.lv.c+num.RR):(1+num.lv+2*num.lv.c+2*num.RR)] <- start.params$params$theta[,head(tail(1:ncol(start$params$theta), num.lv+num.lv.c+num.RR), num.lv.c+num.RR)]
+          if(start.params$num.lv>0)fit$params[,num.X+tail(1:ncol(fit$params), num.lv)] <- fit$params$theta[, tail(1:ncol(start.params$params$theta), start.params$num.lv)]
+          if((start.params$num.lv.c+start.params$num.RR>0)){
+           fit$params[,num.X+(2+num.lv+num.lv.c+num.RR):(1+num.lv+2*num.lv.c+2*num.RR)] <- start.params$params$theta[,head(tail(1:ncol(start.params$params$theta), num.lv+num.lv.c+num.RR), num.lv.c+num.RR)]
           }
         }
         if((num.lv.c+num.RR)>0 && (start.params$num.lv.c+start.params$num.RR>0) && ((num.lv.c+num.RR) == (start.params$num.lv.c+start.params$num.RR)) && !isFALSE(start.params$randomB) && !isFALSE(randomB) && randomB!="iid" && all.equal(ncol(start.params$lv.X.design), lv.X)){
