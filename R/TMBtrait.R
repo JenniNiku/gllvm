@@ -424,8 +424,8 @@ trait.TMB <- function(
     
     #### Calculate starting values
     if(ncol(RElist$Zt)==n) {
-      yXT <- cbind(yXT, xb)
-      data <- cbind(data,xb)
+      yXT <- cbind(yXT, xb, row.names = NULL)
+      data <- cbind(data,xb, row.names = NULL)
     }
 
     res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, cstruc = cstruc, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
@@ -1183,7 +1183,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
@@ -1229,7 +1229,7 @@ trait.TMB <- function(
     #### Fit model 
     
     if(optimizer=="nlminb") {
-      timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
+      timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
     }
     if(optimizer=="optim") {
       if(optim.method != "BFGS") # Due the memory issues, "BFGS" should not be used for Tweedie
@@ -1379,7 +1379,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
@@ -1439,7 +1439,7 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit)),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
