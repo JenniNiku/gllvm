@@ -14,7 +14,7 @@
 #' @param symbols logical, if \code{TRUE} sites are plotted using symbols, if \code{FALSE} (default) site numbers are used
 #' @param cex.spp size of species labels in biplot
 #' @param cex.env size of labels for arrows in constrained ordination
-#' @param spp.colors colors for sites, defaults to \code{"blue"}
+#' @param spp.colors colors for species, defaults to \code{"blue"}
 #' @param spp.arrows plot species scores as arrows if outside of the range of the plot? Defaults to \code{FALSE} for linear response models and \code{TRUE} for quadratic response models.
 #' @param spp.arrows.lty linetype for species arrows
 #' @param lab.dist distance between label and arrow heads. Value between 0 and 1

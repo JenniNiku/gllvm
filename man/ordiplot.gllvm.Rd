@@ -67,7 +67,7 @@
 
 \item{cex.spp}{size of species labels in biplot}
 
-\item{spp.colors}{colors for sites, defaults to \code{"blue"}}
+\item{spp.colors}{colors for species, defaults to \code{"blue"}}
 
 \item{arrow.scale}{positive value, to scale arrows}
 
