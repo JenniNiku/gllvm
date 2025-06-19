@@ -344,7 +344,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       lambdas <- NULL
       
       if ((num.lv+(num.lv.c+num.RR)) > 0) {
-        sigma.lv <- log(fit$sigma.lv)
+        sigma.lv <- (fit$sigma.lv)
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv - (num.lv.c+num.RR) + 1):ncol(fit$params)])
         if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
           lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = 1)  
@@ -489,7 +489,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         betas <- c(start.params$params$Xcoef) ## covariates coefficients
         lambdas <- NULL
         if ((num.lv+(num.lv.c+num.RR)) > 0){
-          sigma.lv <- log(start.params$params$sigma.lv)
+          sigma.lv <- (start.params$params$sigma.lv)
           lambdas <- start.params$params$theta
           if((num.lv.c+num.RR)>1)lambdas[,1:(num.lv.c+num.RR)][upper.tri(lambdas[,1:(num.lv.c+num.RR)])] <- 0
           if(num.lv>1)lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)][upper.tri(lambdas[,((num.lv.c+num.RR)+1):ncol(lambdas)])] <- 0
@@ -506,7 +506,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         lvs <- NULL
         sigma.lv <- 0
         if ((num.lv+num.lv.c) > 0) {
-          sigma.lv <- log(start.params$params$sigma.lv)
+          sigma.lv <- (start.params$params$sigma.lv)
           lvs <- matrix(start.params$lvs, ncol = num.lv+num.lv.c)
         }
         if(num.lv.cor>0){ # sigmas are scale parameters # just diagonal values, not
@@ -1527,7 +1527,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           rownames(lvs) =colnames(dLV)
           # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
         }
-        sigma.lv <- exp(param[si])
+        sigma.lv <- (param[si])
         theta <- matrix(0,p,num.lv.cor)
         if(num.lv.cor>1){
           diag(theta) <- 1 #sigma.lv 
@@ -1551,7 +1551,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if(nlvr>0)sigma.lv <- exp(param[si])
+        if(nlvr>0)sigma.lv <- abs(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
           
           if(p>1) {
@@ -1978,7 +1978,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
         
         theta <- matrix(0,p,num.lv.cor)
-        sigma.lv <- exp(param[si])
+        sigma.lv <- abs(param[si])
         
         if(num.lv.cor>1){
           diag(theta) <- 1 #sigma.lv 
@@ -2003,7 +2003,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         theta <- matrix(0,p,num.lv+(num.lv.c+num.RR))
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if((num.lv+num.lv.c)>0) sigma.lv <- exp(param[si])
+        if((num.lv+num.lv.c)>0) sigma.lv <- abs(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
           if(p>1) {
             theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
