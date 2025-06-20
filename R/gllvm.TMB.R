@@ -1117,7 +1117,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "gamma") {familyn=4}
       if(family == "tweedie"){ familyn=5}
       if(family == "ZIP"){familyn=6}
-      if(family == "ordinal") {familyn=7}
+      if(family == "ordinal") {
+        familyn=7
+        if(link=="probit")extra[1]=1
+        }
       if(family == "exponential") {familyn=8}
       if(family == "beta"){ 
         familyn=9
@@ -2362,7 +2365,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
       }
       
-      if(family %in% c("binomial", "beta")) out$link <- link;
+      if(family %in% c("binomial", "beta", "ordinal")) out$link <- link;
       if(family == "tweedie") out$Power <- Power;
       if(family %in% c("ordinal", "orderedBeta")){
         out$params$zeta <- zetas

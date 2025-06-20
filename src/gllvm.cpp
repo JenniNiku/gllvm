@@ -2866,6 +2866,26 @@ Type objective_function<Type>::operator() ()
         idx += Kj-1;
       }
       if (method<1) { // VA
+        if(extra(0) == 0){ //va logit
+          for (int i=0; i<n; i++) {
+            for(int j=0; j<p; j++){
+              if(!gllvmutils::isNA(y(i,j))){
+                int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                //yik = 1 if yi >=k and 0 otherwise
+                // p(yik = 0) for k<y(i,j)
+                for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= -0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+                // p(yik = 1)  for k>= y(i,j)
+                for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+              }
+            }
+          }
+        }else{//va probit
         for (int i=0; i<n; i++) {
           for(int j=0; j<p; j++){
             if(!gllvmutils::isNA(y(i,j))){
@@ -2895,6 +2915,7 @@ Type objective_function<Type>::operator() ()
             }
             //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
           }
+        }
         }
       } else if (method>1) { // EVA
         if (extra(0)==0) { // logit
@@ -2944,6 +2965,26 @@ Type objective_function<Type>::operator() ()
         }
       }
       if (method<1) {
+        if(extra(0) == 0){ // va logit
+          for (int i=0; i<n; i++) {
+            for(int j=0; j<p; j++){
+              if(!gllvmutils::isNA(y(i,j))){
+                int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                //yik = 1 if yi >=k and 0 otherwise
+                // p(yik = 0) for k<y(i,j)
+                for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+                // p(yik = 1)  for k>= y(i,j)
+                for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+              }
+            }
+          }
+        }else{ // va probit
         for (int i=0; i<n; i++) {
           for(int j=0; j<p; j++){
             if(!gllvmutils::isNA(y(i,j))){
@@ -2972,6 +3013,7 @@ Type objective_function<Type>::operator() ()
           }
           // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
         }
+        }
       } else if (method>1) {
         if (extra(0)==0) {
           for (int i=0; i<n; i++) {
@@ -2996,7 +3038,6 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-      
     } else if(family==8) {// exp dist
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
@@ -3925,6 +3966,27 @@ Type objective_function<Type>::operator() ()
         idx += Kj-1;
       }
       
+      if(extra(0)==0){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+            //minimum category
+            if(y(i,j)==1){
+              nll -= log(invlogit(zetanew(j,0) - eta(i,j)));
+            }else if(y(i,j)==ymaxj){
+              //maximum category
+              int idx = ymaxj-2;
+              nll -= log(1 - invlogit(zetanew(j,idx) - eta(i,j)));
+            }else if(ymaxj>2){
+              for (int l=2; l<ymaxj; l++) {
+                if((y(i,j)==l) && (l != ymaxj)){
+                  nll -= log(invlogit(zetanew(j,l-1)-eta(i,j))-invlogit(zetanew(j,l-2)-eta(i,j)));
+                }
+              }
+            }
+          }
+        }
+      }else if(extra(0)==1){
       for (int i=0; i<n; i++) {
         for(int j=0; j<p; j++){
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
@@ -3944,6 +4006,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
+      }
     } else if((family==7) && (zetastruc==0)){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -3958,26 +4021,48 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      for (int i=0; i<n; i++) {
-        for(int j=0; j<p; j++){
-          if(!gllvmutils::isNA(y(i,j))){
-            //minimum category
-            if(y(i,j)==1){
-              nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
-            }else if(y(i,j)==ymax){
-              //maximum category
-              int idx = ymax-2;
-              nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
-            }else if(ymax>2){
-              for (int l=2; l<ymax; l++) {
-                if((y(i,j)==l) && (l != ymax)){
-                  nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+      if(extra(0)==0){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            if(!gllvmutils::isNA(y(i,j))){
+              //minimum category
+              if(y(i,j)==1){
+                nll -= log(invlogit(zetanew(0) - eta(i,j)));
+              }else if(y(i,j)==ymax){
+                //maximum category
+                int idx = ymax-2;
+                nll -= log(1 - invlogit(zetanew(idx) - eta(i,j)));
+              }else if(ymax>2){
+                for (int l=2; l<ymax; l++) {
+                  if((y(i,j)==l) && (l != ymax)){
+                    nll -= log(invlogit(zetanew(l-1)-eta(i,j))-invlogit(zetanew(l-2)-eta(i,j)));
+                  }
                 }
               }
             }
           }
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
+      }else if(extra(0)==1){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            if(!gllvmutils::isNA(y(i,j))){
+              //minimum category
+              if(y(i,j)==1){
+                nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+              }else if(y(i,j)==ymax){
+                //maximum category
+                int idx = ymax-2;
+                nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+              }else if(ymax>2){
+                for (int l=2; l<ymax; l++) {
+                  if((y(i,j)==l) && (l != ymax)){
+                    nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     } else if(family==8) {// exponential family
       for (int i=0; i<n; i++) {
