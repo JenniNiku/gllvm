@@ -1,3 +1,7 @@
+Version 2.0.4
+=============
+* Logit and cumulative logit models with method = "VA"
+
 Version 2.0.3
 =============
 
