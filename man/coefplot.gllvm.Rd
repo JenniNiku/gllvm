@@ -15,6 +15,7 @@
   mfrow = NULL,
   mar = c(4, 6, 2, 1),
   xlim.list = NULL,
+  ind.spp = NULL,
   ...
 )
 }
@@ -36,6 +37,8 @@
 \item{mar}{vector of length 4, which defines the margin sizes: \code{c(bottom, left, top, right)}. Defaults to \code{c(4,5,2,1)}.}
 
 \item{xlim.list}{list of vectors with length of two to define the intervals for an x axis in each covariate plot. Defaults to NULL when the interval is defined by the range of point estimates and confidence intervals}
+
+\item{ind.spp}{vector of species indices to construct the caterpillar plot for}
 
 \item{...}{additional graphical arguments.}
 }

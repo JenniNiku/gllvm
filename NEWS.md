@@ -9,12 +9,21 @@ Version 2.0.3
 * Added logistic GLLVM with VA via polya-gamma augmentation (see Polson et al. 2012)
 * Added residual variance term in getResidualCov.gllvm for ordinal models 
 * Boundary check for cumulative probit model
+* New 'ind.spp' argument for coefplot and RandomCoefPlot to possibly plot for fewer species
+* Implemented predict for species-specific random effects
+* Improved handling of provided 'start.fit'
 
 ## Bugfixes
 * Fixed a bug that caused phyloplot.gllvm to fail with trait models
 * Ensured that update.gllvm also adopts non-formula arguments
 * Default optimizer for random canonical coefficients was not set right for Tweedie
 * Bugfix for showing categorical ordination effects as centroids
+* Bugfix for getPredictErr and trait model
+* Bugfix for phylogenetic model with traits; the phylogenetic matrix was not passed on to the output
+* Bugfix for predict with constrained ordination and randomB
+* Fixed a rare bug that caused a warning message in starting value generation with square response matrices
+* Bugfix for starting values of family = "ordinal" and zeta.struc = "species"
+* Bug fixed for partial constrained/concurrent ordination with more than one conditioning variable
 
 Version 2.0.2
 =============

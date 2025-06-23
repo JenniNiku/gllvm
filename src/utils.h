@@ -266,6 +266,107 @@ void nngp(Eigen::SparseMatrix<Type> &covMatLI, const matrix<Type> matI, Type &lo
 //     logdet -= 2*covMatLI.diagonal().array().log().sum();
 //   }
 
+// robust exponential function, similar to the one in ADMB
+template<class Type>
+Type mfexp(Type x) {
+  Type one_true = exp(x);
+  Type one_false = exp(Type(-30.))*(1.-x-30.)/(1.+2.*(-x-30.));
+  Type two_false = exp(Type(30.))*(1.+2.*(x-30.))/(1.+x-30.);
+  
+  Type two_true = CppAD::CondExpLt(Type(-30.), x, one_true, one_false);
+  Type two_value = CppAD::CondExpLt(x, Type(30.), two_true, two_false);
+  return two_value;
+}
+
+double log1plus(double x) {
+  return log1p(x);  
+}
+
+TMB_ATOMIC_VECTOR_FUNCTION(
+  // ATOMIC_NAME
+  log1plus
+  ,
+  // OUTPUT_DIM
+  1,
+  // ATOMIC_DOUBLE
+  ty[0] = log1plus(tx[0])
+  ,
+  // ATOMIC_REVERSE
+  px[0] = py[0]/(tx[0]+1);
+)
+
+// more stable way to compute log(1+x) 
+template<class Type>
+Type log1plus(Type x) {
+  CppAD::vector<Type> tx(1);
+  tx[0] = x;
+  return log1plus(tx)[0];
+}
+
+double expminus1(double x) {
+  return expm1(x);  
+}
+  
+TMB_ATOMIC_VECTOR_FUNCTION(
+    // ATOMIC_NAME
+    expminus1
+    ,
+    // OUTPUT_DIM
+    1,
+    // ATOMIC_DOUBLE
+    ty[0] = expminus1(tx[0])
+    ,
+    // ATOMIC_REVERSE
+    px[0] = py[0]*exp(tx[0]);
+)
+
+// robust way to compute exp(x)-1      
+template<class Type>
+Type expminus1(Type x) {
+  CppAD::vector<Type> tx(1);
+  tx[0] = x;
+  return expminus1(tx)[0];
+}
+    
+VECTORIZE1_t(expminus1)
+
+
+extern "C" {
+  /* See 'R-API: entry points to C-code' (Writing R-extensions) */
+  void Rf_pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p);
+}
+
+double logit_pnorm(double x) {
+  double log_p_lower, log_p_upper;
+  Rf_pnorm_both(x, &log_p_lower, &log_p_upper, 2 /* both tails */, 1 /* log_p */);
+  return log_p_lower - log_p_upper;
+}
+
+TMB_ATOMIC_VECTOR_FUNCTION(
+  // ATOMIC_NAME
+  logit_pnorm
+  ,
+  // OUTPUT_DIM
+  1,
+  // ATOMIC_DOUBLE
+  ty[0] = logit_pnorm(tx[0])
+  ,
+  // ATOMIC_REVERSE
+  Type tmp3 = CppAD::CondExpLe(ty[0], Type(18.0), -ty[0] + 2*log1plus(exp(ty[0])), 2*exp(-ty[0]));
+  Type tmp4 = dnorm(tx[0], Type(0), Type(1), true) + tmp3;
+  px[0] = exp( tmp4 ) * py[0];
+)
+
+// used for more robust version of probit
+template<class Type>
+Type logit_pnorm(Type x) {
+  CppAD::vector<Type> tx(1);
+  tx[0] = x;
+  return logit_pnorm(tx)[0];
+}
+
+VECTORIZE1_t(logit_pnorm)
+
 }
 
 
