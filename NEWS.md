@@ -1,7 +1,12 @@
+Version 2.0.4
+=============
+* Logit and cumulative logit models with method = "VA"
+
 Version 2.0.3
 =============
 
 * Add option for scaling in getEnvironCor
+* Added logistic GLLVM with VA via polya-gamma augmentation (see Polson et al. 2012)
 * Added residual variance term in getResidualCov.gllvm for ordinal models 
 * Boundary check for cumulative probit model
 * New 'ind.spp' argument for coefplot and RandomCoefPlot to possibly plot for fewer species

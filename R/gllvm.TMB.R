@@ -255,7 +255,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     lv.X <- matrix(0)
   }
   formula1 <- formula
-  if(method=="VA" && (family =="binomial")){ link="probit"}
+  # if(method=="VA" && (family =="binomial")){ link="probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
     jitter.var.r <- jitter.var[2]
@@ -408,7 +408,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       lambdas <- NULL
       
       if ((num.lv+(num.lv.c+num.RR)) > 0) {
-        sigma.lv <- fit$sigma.lv
+        sigma.lv <- (fit$sigma.lv)
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv - (num.lv.c+num.RR) + 1):ncol(fit$params)])
         if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
           lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = 1)  
@@ -518,9 +518,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       lvs <- NULL
       if ((num.lv+num.lv.c) > 0)
         lvs <- matrix(fit$index, ncol = num.lv+num.lv.c)
-      
-    
-    
+
     phis <- NULL
     ZINBphis <- NULL
     if (family == "negative.binomial") {
@@ -1102,7 +1100,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "gamma") {familyn=4}
       if(family == "tweedie"){ familyn=5}
       if(family == "ZIP"){familyn=6}
-      if(family == "ordinal") {familyn=7}
+      if(family == "ordinal") {
+        familyn=7
+        if(link=="probit")extra[1]=1
+        }
       if(family == "exponential") {familyn=8}
       if(family == "beta"){ 
         familyn=9
@@ -1263,8 +1264,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             lg_Ar <- c(lg_Ar, rep(1e-3, sum(nr*(nr-1)/2)))
           }
         } else {log_sigma1 = 0}
+      
+        if(beta0com){
+          b1 <- matrix(paramb1[bi][model2$TMBfn$env$map$b], num.X+1, p)
+        }else{
+          b1 <- matrix(param1[nam=="b"],num.X+1,p)  
+        }
         
-        b1 <- matrix(param1[nam=="b"],num.X+1,p)
         if(!isFALSE(randomB)){
           if(randomB!="iid"){
             sigmab_lv1 <- param1[nam=="sigmab_lv"]
@@ -1605,11 +1611,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(nrow(Xt)==n)B = param[names(param)=="B"]
       }
       
-      betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
+      paramb <- param[bi]
+      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]
       if(!is.null(X)) betas <- betaM[,-1]
-      if((num.lv.c+num.RR)>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),(num.lv.c+num.RR))
+      if((num.lv.c+num.RR)>0)b.lv <- matrix(param[bi.lv],ncol(lv.X),num.lv.c+num.RR)
       # if(family %in% "betaH"){
       #   bHi <- names(param)=="bH"
       #   betaH <- matrix(param[bHi],p,num.X+1,byrow=TRUE)
@@ -2048,7 +2056,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         Br = matrix(param[Bri], nrow = ncol(spdr))#c(0,param[ri])
         if(nrow(Xt)==n)B <- param[names(param)=="B"]
       }
-      betaM <- matrix(param[bi],p,num.X+1,byrow=TRUE)
+      
+      paramb <- param[bi]
+      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]
       if(!is.null(X)) betas=betaM[,-1]
@@ -2338,7 +2349,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
       }
       
-      if(family %in% c("binomial", "beta")) out$link <- link;
+      if(family %in% c("binomial", "beta", "ordinal")) out$link <- link;
       if(family == "tweedie") out$Power <- Power;
       if(family %in% c("ordinal", "orderedBeta")){
         out$params$zeta <- zetas

@@ -5,17 +5,6 @@
 #include "distrib.h"
 #include "utils.h"
 
-template<class Type>
-struct dclist : vector<matrix<Type>> {
-  dclist(SEXP x){  /* x = List passed from R */
-    (*this).resize(LENGTH(x));
-    for(int i=0; i<LENGTH(x); i++){
-      SEXP sm = VECTOR_ELT(x, i);
-      (*this)(i) = asMatrix<Type>(sm);
-    }
-  }
-};
-
 //--------------------------------------------------------
 //GLLVM
 //Authors: Jenni Niku, Bert van der Veen, Pekka Korhonen
@@ -34,7 +23,7 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
   DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
   // DATA_SPARSE_MATRIX(colMat); //lower cholesky of column similarity matrix
-  DATA_STRUCT(colMatBlocksI, dclist); //first entry is the number of species in colMat, rest are the blocks of colMat
+  DATA_STRUCT(colMatBlocksI, gllvmutils::dclist); //first entry is the number of species in colMat, rest are the blocks of colMat
   DATA_IMATRIX(nncolMat);
   DATA_VECTOR(Abranks);
   DATA_MATRIX(offset); //offset matrix
@@ -88,7 +77,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(times); // number of time points, for LVs
   DATA_IVECTOR(cstruc); //correlation structure for row.params 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
   DATA_INTEGER(cstruclv); //correlation structure for LVs 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
-  DATA_STRUCT(dc, dclist); //coordinates for sites, used for exponentially decaying cov. struc
+  DATA_STRUCT(dc, gllvmutils::dclist); //coordinates for sites, used for exponentially decaying cov. struc
   DATA_MATRIX(dc_lv); //coordinates for sites, used for exponentially decaying cov. struc
   DATA_INTEGER(Astruc); //Structure of the variational covariance, 0=diagonal, 1=RR, (2=sparse cholesky not implemented yet)
   DATA_IMATRIX(NN); //nearest neighbours,
@@ -254,8 +243,8 @@ Type objective_function<Type>::operator() ()
       newlam.row(0).fill(1.0);
       if((num_lv+num_lv_c)>0){
         for (int d=0; d<nlvr; d++){
-          // Delta(d,d) = exp(sigmaLV(d));
           Delta(d,d) = fabs(sigmaLV(d));
+          // Delta(d,d) = fabs(sigmaLV(d));
         }
       }
     }
@@ -2509,11 +2498,13 @@ Type objective_function<Type>::operator() ()
       
       // Update cQ for linear term
       //Binomial, Gaussian, Ordinal
+      
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
         }
       }
+  
       eta += lam;
       
       if(((quadratic>0) && (nlvr>0)) || ((quadratic>0) && (num_RR>0))){
@@ -2706,7 +2697,27 @@ Type objective_function<Type>::operator() ()
           // nll += (((iphi(j)+y(i,j)) / (iphi(j)+exp(eta(i,j)))) * exp(eta(i,j)) - ((iphi(j)+y(i,j))*pow(iphi(j)+exp(eta(i,j)),-2))*pow(exp(eta(i,j)),2)) * cQ(i,j);
         }
       }
-    } else if((family == 2) && (method<1)) {//binomial probit VA
+    } else if((family == 2) && (method<1)) {//binomial VA
+      if (extra(0) == 0) { //logit
+        for (int j=0; j<p;j++){
+        for (int i=0; i<n; i++) {
+            // Type a = 0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)));//bound it because derivative logcosh = tanh(10) = 1 flattens
+            // Type a = sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+          // Type softplus_neg_a = CppAD::CondExpGt(a, Type(15), exp(-a), log1p(exp(-a)));
+          
+            //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
+            // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
+          // nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
+          Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+          nll -= (y(i,j)-0.5)*eta(i,j) - logspace_add(wij, -wij);
+            
+            if(Ntrials(j)>1 && (Ntrials(j)>y(i,j))){
+             nll -= lgamma(Ntrials(j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(j)-y(i,j)+1.);//norm.const.
+            }
+          }
+          // nll += n*Ntrials(j)*log(2.0);
+        }
+      }else{//probit
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
@@ -2720,6 +2731,7 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
+      }
       }
       REPORT(mu);
       REPORT(eta);
@@ -2874,6 +2886,26 @@ Type objective_function<Type>::operator() ()
         idx += Kj-1;
       }
       if (method<1) { // VA
+        if(extra(0) == 0){ //va logit
+          for (int i=0; i<n; i++) {
+            for(int j=0; j<p; j++){
+              if(!gllvmutils::isNA(y(i,j))){
+                int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                //yik = 1 if yi >=k and 0 otherwise
+                // p(yik = 0) for k<y(i,j)
+                for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= -0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+                // p(yik = 1)  for k>= y(i,j)
+                for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+              }
+            }
+          }
+        }else{//va probit
         for (int i=0; i<n; i++) {
           for(int j=0; j<p; j++){
             if(!gllvmutils::isNA(y(i,j))){
@@ -2903,6 +2935,7 @@ Type objective_function<Type>::operator() ()
             }
             //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
           }
+        }
         }
       } else if (method>1) { // EVA
         if (extra(0)==0) { // logit
@@ -2952,6 +2985,26 @@ Type objective_function<Type>::operator() ()
         }
       }
       if (method<1) {
+        if(extra(0) == 0){ // va logit
+          for (int i=0; i<n; i++) {
+            for(int j=0; j<p; j++){
+              if(!gllvmutils::isNA(y(i,j))){
+                int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                //yik = 1 if yi >=k and 0 otherwise
+                // p(yik = 0) for k<y(i,j)
+                for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+                // p(yik = 1)  for k>= y(i,j)
+                for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
+                  Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
+                }
+              }
+            }
+          }
+        }else{ // va probit
         for (int i=0; i<n; i++) {
           for(int j=0; j<p; j++){
             if(!gllvmutils::isNA(y(i,j))){
@@ -2980,6 +3033,7 @@ Type objective_function<Type>::operator() ()
           }
           // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
         }
+        }
       } else if (method>1) {
         if (extra(0)==0) {
           for (int i=0; i<n; i++) {
@@ -3004,7 +3058,6 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-      
     } else if(family==8) {// exp dist
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
@@ -3941,6 +3994,27 @@ Type objective_function<Type>::operator() ()
         idx += Kj-1;
       }
       
+      if(extra(0)==0){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+            //minimum category
+            if(y(i,j)==1){
+              nll -= log(invlogit(zetanew(j,0) - eta(i,j)));
+            }else if(y(i,j)==ymaxj){
+              //maximum category
+              int idx = ymaxj-2;
+              nll -= log(1 - invlogit(zetanew(j,idx) - eta(i,j)));
+            }else if(ymaxj>2){
+              for (int l=2; l<ymaxj; l++) {
+                if((y(i,j)==l) && (l != ymaxj)){
+                  nll -= log(invlogit(zetanew(j,l-1)-eta(i,j))-invlogit(zetanew(j,l-2)-eta(i,j)));
+                }
+              }
+            }
+          }
+        }
+      }else if(extra(0)==1){
       for (int i=0; i<n; i++) {
         for(int j=0; j<p; j++){
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
@@ -3960,6 +4034,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
+      }
     } else if((family==7) && (zetastruc==0)){
       int ymax =  CppAD::Integer(y.maxCoeff());
       int K = ymax - 1;
@@ -3974,26 +4049,48 @@ Type objective_function<Type>::operator() ()
         }
       }
       
-      for (int i=0; i<n; i++) {
-        for(int j=0; j<p; j++){
-          if(!gllvmutils::isNA(y(i,j))){
-            //minimum category
-            if(y(i,j)==1){
-              nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
-            }else if(y(i,j)==ymax){
-              //maximum category
-              int idx = ymax-2;
-              nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
-            }else if(ymax>2){
-              for (int l=2; l<ymax; l++) {
-                if((y(i,j)==l) && (l != ymax)){
-                  nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+      if(extra(0)==0){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            if(!gllvmutils::isNA(y(i,j))){
+              //minimum category
+              if(y(i,j)==1){
+                nll -= log(invlogit(zetanew(0) - eta(i,j)));
+              }else if(y(i,j)==ymax){
+                //maximum category
+                int idx = ymax-2;
+                nll -= log(1 - invlogit(zetanew(idx) - eta(i,j)));
+              }else if(ymax>2){
+                for (int l=2; l<ymax; l++) {
+                  if((y(i,j)==l) && (l != ymax)){
+                    nll -= log(invlogit(zetanew(l-1)-eta(i,j))-invlogit(zetanew(l-2)-eta(i,j)));
+                  }
                 }
               }
             }
           }
         }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
+      }else if(extra(0)==1){
+        for (int i=0; i<n; i++) {
+          for(int j=0; j<p; j++){
+            if(!gllvmutils::isNA(y(i,j))){
+              //minimum category
+              if(y(i,j)==1){
+                nll -= log(pnorm(zetanew(0) - eta(i,j), Type(0), Type(1)));
+              }else if(y(i,j)==ymax){
+                //maximum category
+                int idx = ymax-2;
+                nll -= log(1 - pnorm(zetanew(idx) - eta(i,j), Type(0), Type(1)));
+              }else if(ymax>2){
+                for (int l=2; l<ymax; l++) {
+                  if((y(i,j)==l) && (l != ymax)){
+                    nll -= log(pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1)));
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     } else if(family==8) {// exponential family
       for (int i=0; i<n; i++) {

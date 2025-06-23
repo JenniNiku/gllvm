@@ -1340,11 +1340,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
-    if (family == "binomial") {
-      if (method %in% c("LA", "EVA"))
+    if (family %in% c("binomial", "ordinal")) {
+      if (method %in% c("LA", "EVA","VA"))
         out$link <- link
-      if (method == "VA")
-        out$link <- "probit"
     }
     if (family %in% c("beta","betaH","orderedBeta")) {
       if(family=="beta" && any(range(y)==0|range(y)>1)){
@@ -1352,12 +1350,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
         out$link <- link
     }
-    if(link == "logit" && method == "VA"){
+    if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal"))){
       message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
       method  = "EVA"
       out$method = "EVA"
     }
-    if (family %in% c("orderedBeta", "ordinal")) {
+    if (family %in% c("orderedBeta")) {
       if (method == "VA") {
         out$link <- "probit"  
       } else if (method=="EVA") {

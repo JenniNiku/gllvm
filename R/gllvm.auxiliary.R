@@ -367,7 +367,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
       zeta <- matrix(NA,p,max.levels - 1)
       zeta[,1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
     }else{
-      cw.fit <- MASS::polr(factor(y) ~ 1, method = "probit")
+      cw.fit <- MASS::polr(factor(y) ~ 1, method = switch(link, "logit" = "logistic","probit" = "probit"))
       zeta <- cw.fit$zeta
       zeta[1] <- 0
     }
@@ -389,11 +389,11 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         y.fac <- factor(y[,j])
         if(length(levels(y.fac)) > 2) {
           if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
-            if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = "probit"),silent = TRUE)
-            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ Xdesign, method = "probit"),silent = TRUE)
+            if(is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ 1, method = switch(link, "logit" = "logistic","probit" = "probit")),silent = TRUE)
+            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ Xdesign, method = switch(link, "logit" = "logistic","probit" = "probit")),silent = TRUE)
           } else {
-            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = "probit"),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ Xdesign+index, method = "probit"),silent = TRUE)
+            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = switch(link, "logit" = "logistic","probit" = "probit")),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ Xdesign+index, method = switch(link, "logit" = "logistic","probit" = "probit")),silent = TRUE)
           }
           if(starting.val=="random"){
             params[j,] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
@@ -409,11 +409,11 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         }
         if(length(levels(y.fac)) == 2) {
           if(starting.val%in%c("zero") || (num.lv+num.lv.c)==0){
-            if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = "probit")),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign, family = binomial(link = "probit")),silent = TRUE)
+            if(is.null(X)) try(cw.fit <- glm(y.fac ~ 1, family = binomial(link = link)),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign, family = binomial(link = link)),silent = TRUE)
           } else { # || (!is.null(TR) && NCOL(TR)>0) & is.null(TR)
-            if(is.null(X)) try(cw.fit <- glm(y.fac ~ index, family = binomial(link = "probit")),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign+index, family = binomial(link = "probit")),silent = TRUE)
+            if(is.null(X)) try(cw.fit <- glm(y.fac ~ index, family = binomial(link = link)),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- glm(y.fac ~ Xdesign+index, family = binomial(link = link)),silent = TRUE)
           }
           params[j,1:length(cw.fit$coef)] <- cw.fit$coef
         }

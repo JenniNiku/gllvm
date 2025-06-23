@@ -1,11 +1,25 @@
 // some functions
 namespace gllvmutils{
 
+//structure to pass list from R as list in TMB
+template<class Type>
+struct dclist : vector<matrix<Type>> {
+  dclist(SEXP x){  /* x = List passed from R */
+    (*this).resize(LENGTH(x));
+    for(int i=0; i<LENGTH(x); i++){
+      SEXP sm = VECTOR_ELT(x, i);
+      (*this)(i) = asMatrix<Type>(sm);
+    }
+  }
+};
+
+//covariance to correlation
 template<class Type>
 matrix<Type> cov2cor(matrix<Type> x){
   return x.diagonal().cwiseInverse().cwiseSqrt().asDiagonal()*x*x.diagonal().cwiseInverse().cwiseSqrt().asDiagonal();
 }
 
+//check for NA
 template<class Type>
 bool isNA(Type x){
   return R_IsNA(asDouble(x));
