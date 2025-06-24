@@ -118,7 +118,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
     bars <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     safeDeparse <- function(x) paste(deparse(x, 500L), collapse = " ")
     
-    groupnamesF <- paste0("Random effect: ", unlist(lapply(bars,safeDeparse)))
+    groupnamesF <- c(groupnamesF, paste0("Random effect: ", unlist(lapply(bars,safeDeparse))))
     
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(object$col.eff$Xt))
 
@@ -126,7 +126,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
 
     blist <- lapply(bars, mkModMlist, mf)
     groupFs <- table(lapply(blist, function(x)row.names(x$sm)%in%colnames(object$col.eff$spdr)))
-    groupF <- rep(1:length(groupFs), groupFs)
+    groupF <- c(groupF, rep(1:length(groupFs), groupFs)+max(groupF))
     
     X.d <- object$col.eff$spdr#[, colnames(object$col.eff$spdr)!= "Intercept", drop=FALSE]
     x_in_model = colnames(X.d)
