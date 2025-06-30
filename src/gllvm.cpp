@@ -2700,19 +2700,19 @@ Type objective_function<Type>::operator() ()
     } else if((family == 2) && (method<1)) {//binomial VA
       if (extra(0) == 0) { //logit
         for (int j=0; j<p;j++){
-        for (int i=0; i<n; i++) {
+          for (int i=0; i<n; i++) {
             // Type a = 0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)));//bound it because derivative logcosh = tanh(10) = 1 flattens
             // Type a = sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
-          // Type softplus_neg_a = CppAD::CondExpGt(a, Type(15), exp(-a), log1p(exp(-a)));
-          
+            // Type softplus_neg_a = CppAD::CondExpGt(a, Type(15), exp(-a), log1p(exp(-a)));
+            
             //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
             // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
-          // nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
-          Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
-          nll -= (y(i,j)-0.5)*eta(i,j) - logspace_add(wij, -wij);
+            // nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
+            Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+            nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*logspace_add(wij, -wij);
             
             if(Ntrials(j)>1 && (Ntrials(j)>y(i,j))){
-             nll -= lgamma(Ntrials(j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(j)-y(i,j)+1.);//norm.const.
+              nll -= lgamma(Ntrials(j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(j)-y(i,j)+1.);//norm.const.
             }
           }
           // nll += n*Ntrials(j)*log(2.0);
