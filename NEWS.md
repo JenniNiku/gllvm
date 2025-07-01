@@ -1,6 +1,10 @@
 Version 2.0.5
 =============
+* num.RR and num.lv with lvCor can now be combined
+
+# Bugfixes
 * Bug fixed in VP for mixed effects formula
+
 
 Version 2.0.4
 =============
