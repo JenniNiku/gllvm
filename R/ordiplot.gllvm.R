@@ -663,7 +663,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
       
       #account for variance of the predictors
-      LVcoef <- LVcoef/apply(object$lv.X.design,2,sd)
+      sds <- apply(object$lv.X.design,2,sd)
+      if(any(sds==0))sds[sds==0] <- 1
+      LVcoef <- LVcoef/sds
       marg<-par("usr")
       
       origin<- c(mean(marg[1:2]),mean(marg[3:4]))
