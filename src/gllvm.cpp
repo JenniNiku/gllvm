@@ -2599,39 +2599,38 @@ Type objective_function<Type>::operator() ()
             }
             
             matrix<Type> Binv(nlvr,nlvr);
-            matrix<Type> Cinv(nlvr,nlvr);
             Type logdetC;
-            Type vBinvv;
-            matrix <Type> BiQ(nlvr,nlvr);
             matrix <Type> Id(nlvr,nlvr);
             Id.setZero();Id.diagonal().fill(1.0);
             //this implementation does not follow calculation from van der Veen et al. 2021
             //but prevents Acov^-1 via woodbury matrix identity
             //see https://math.stackexchange.com/questions/17776/inverse-of-the-sum-of-matrices
+            //uses the identity (2D + A^-1) = A - 2A(I+2DA)^-1DA
+            matrix<Type>B(nlvr,nlvr);
             for (int i=0; i<n; i++) {
               Acov = A(i)*A(i).transpose();
               if(random(2)>0 && (num_lv_c+num_RR)>0)Acov += Ab_lvcov(i);
               for (int j=0; j<p;j++){
-                Cinv.setZero();
-                Binv.setZero();
-                BiQ.setZero();
-                Cinv = (Id - 2*sign*Acov*D(j)).inverse();
-                Binv = Acov+2*sign*Cinv*Acov*D(j)*Acov;
-                BiQ = Id+2*sign*D(j)*Cinv*Acov;//Q*Binv
-                
+                B = Id-sign*2*D(j)*Acov;
+                Eigen::PartialPivLU<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>> lu(B);
+                Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> Binv = lu.inverse();
+                Type logdetC = -lu.matrixLU().diagonal().array().log().sum();
                 //the calculation generally prevents having to explicitly invert A*A^t, or having to invert A(i).
-                vBinvv = (2*newlam.col(j).transpose()*Cinv*Acov*D(j)*(sign*Acov*newlam.col(j)-2*u.row(i).transpose())+2*sign*u.row(i)*D(j)*Cinv*u.row(i).transpose()).value();
+                Type vBinvv = (2*sign*newlam.col(j).transpose()*Acov*Binv*D(j)*Acov*newlam.col(j)-4*u.row(i)*Binv*D(j)*Acov*newlam.col(j) +2*sign*u.row(i)*Binv*D(j)*u.row(i).transpose()).value();
                 
                 //extra cQ contribution for  XB,e cross term in concurrent model
                 if((random(2)<1) && (num_lv_c>0)){
-                  vBinvv += (-4*x_lv.row(i)*b_lv2*D(j)*Binv*newlam.col(j)+4*sign*u.row(i)*BiQ*D(j)*(x_lv.row(i)*b_lv2).transpose()+4*x_lv.row(i)*b_lv2*D(j)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
-                  cQ(i,j) -= sign*2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose();
+                  vBinvv += (-4*x_lv.row(i)*b_lv2*Binv*D(j)*Acov*newlam.col(j)+2*sign*x_lv.row(i)*b_lv2*Binv*D(j)*u.row(i).transpose()+2*sign*u.row(i)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()+2*sign*x_lv.row(i)*b_lv2*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
+                  // get rid of extra terms that will occur due to the use of eta + cQ in the likelihood  
+                  cQ(i,j) -= (sign*2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose()+sign*x_lv.row(i)*b_lv2*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
                 }
                 
                 //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
-                // partialPivLU because BiQ is asymmetric, and it ensures that it is invertible.
-                logdetC = BiQ.partialPivLu().matrixLU().diagonal().array().log().sum();
-                cQ(i,j) += 0.5*(vBinvv+logdetC) - sign*(D(j)*Acov).trace() - sign*(u.row(i)*D(j)*u.row(i).transpose()).sum();
+                // partialPivLU because B is asymmetric, and it ensures that it is invertible.
+                logdetC = Binv.partialPivLu().matrixLU().diagonal().array().log().sum();
+                cQ(i,j) += 0.5*(vBinvv+logdetC);
+                // get rid of extra terms that will occur due to the use of eta + cQ in the likelihood
+                cQ(i,j) -=  sign*(D(j)*Acov).trace() + sign*(u.row(i)*D(j)*u.row(i).transpose()).sum();
               }
             }
           }
@@ -2710,7 +2709,7 @@ Type objective_function<Type>::operator() ()
             // nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
             Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
             nll -= (y(i,j)-Ntrials(j)/2)*eta(i,j) - Ntrials(j)*logspace_add(wij, -wij);
-            
+
             if(Ntrials(j)>1 && (Ntrials(j)>y(i,j))){
               nll -= lgamma(Ntrials(j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(j)-y(i,j)+1.);//norm.const.
             }
