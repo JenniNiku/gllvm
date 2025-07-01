@@ -1513,16 +1513,18 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           rownames(lvs) =colnames(dLV)
           # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
         }
-        sigma.lv <- (param[si])
-        theta <- matrix(0,p,num.lv.cor)
-        if(num.lv.cor>1){
-          diag(theta) <- 1 #sigma.lv 
-        } else if(num.lv.cor==1) {
+        sigma.lv <- abs(param[si])
+        theta <- matrix(0,p,num.lv.cor+num.RR)
+        if((num.lv.cor+num.RR)>1){
+          if(num.RR>0)diag(theta[,1:num.RR])<-1
+          diag(theta[,(num.RR+1):(num.RR+num.lv.cor)]) <- 1 #sigma.lv 
+        } else if((num.lv.cor+num.RR)==1) {
           theta[1,1] <- 1 #sigma.lv[1]
         }
         
         if(p>1) {
-          theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
+          if(num.RR>0)theta[,1:num.RR][lower.tri(theta[,1:num.RR,drop=F],diag=FALSE)] <- param[li][1:(num.RR*p-num.RR*(num.RR+1)/2)];
+          theta[,(num.RR+1):(num.lv.cor+num.RR)][lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- tail(param[li], num.lv.cor*p-(num.lv.cor*(num.lv.cor+1)/2));
         } else {
           theta <- as.matrix(1)
         }
@@ -1963,18 +1965,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
         }
         
-        theta <- matrix(0,p,num.lv.cor)
+        theta <- matrix(0,p,num.lv.cor+num.RR)
         sigma.lv <- abs(param[si])
         # sigma.lv <- exp(param[si])
         
-        if(num.lv.cor>1){
-          diag(theta) <- 1 #sigma.lv 
-        } else if(num.lv.cor==1) {
+        if((num.lv.cor+num.RR)>1){
+          if(num.RR>0)diag(theta[,1:num.RR])<-1
+          diag(theta[,(num.RR+1):(num.RR+num.lv.cor)]) <- 1 #sigma.lv 
+        } else if((num.lv.cor+num.RR)==1) {
           theta[1,1] <- 1 #sigma.lv[1]
         }
         
         if(p>1) {
-          theta[lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- param[li];
+          if(num.RR>0)theta[,1:num.RR][lower.tri(theta[,1:num.RR,drop=F],diag=FALSE)] <- param[li][1:(num.RR*p-num.RR*(num.RR+1)/2)];
+          theta[,(num.RR+1):(num.lv.cor+num.RR)][lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- tail(param[li], num.lv.cor*p-(num.lv.cor*(num.lv.cor+1)/2));
         } else {
           theta <- as.matrix(1)
         }

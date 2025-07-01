@@ -102,7 +102,6 @@ Type objective_function<Type>::operator() ()
   if(num_corlv>0){
     nlvr=0; num_lv=0; num_lv_c=0;
     quadratic=0;
-    num_RR=0;
   }
   
   // Distance matrix calculated from the coordinates for LVs
@@ -310,7 +309,7 @@ Type objective_function<Type>::operator() ()
           newlamCor(i,j) = 1;
           // newlamCor(i,j) = exp(sigmaLV(i));
         }else if(j>i){
-          newlamCor(i,j) = lambda(j+i*p-(i*(i-1))/2-2*i-1);
+          newlamCor(i,j) = lambda(num_RR*p-num_RR*(num_RR+1)/2+j+i*p-(i*(i-1))/2-2*i-1);
         }
       }
     }
