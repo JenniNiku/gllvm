@@ -16,7 +16,8 @@
 #' @aliases update update.gllvm
 #' @method update gllvm
 #' @importFrom stats update
-#'
+#' 
+#' @export
 #' @export update.gllvm
 update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NULL, eval = TRUE, ...){
   call <- getCall(object)
@@ -66,10 +67,4 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   }else{
     call
   }
-}
-
-#'@export update
-update <- function(object, ...)
-{
-  UseMethod(generic = "update")
 }

@@ -326,7 +326,9 @@ Type objective_function<Type>::operator() ()
   // Variational approximation
   if((method<1) || (method>1)){
     // add offset
-    eta += offset;
+    if(offset.rows()==n){
+      eta += offset;
+    }
     // add fixed row effects
     // if(r0f.size() == n && (random(0)==0) && xr.rows() != n && r0f.rows() == n && r0f.cols() == 1){
     //   eta += r0f.replicate(1,p);
