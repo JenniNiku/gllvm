@@ -1086,7 +1086,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       corstruc.form <- row.form
       }
       cstruc <- corstruc(corstruc.form)
-      corWithin <- ifelse(cstruc == "diag", FALSE, corWithin)
+      corWithin <- ifelse(cstruc %in% c("diag","ustruc"), FALSE, corWithin)
       
       if(!is.null(bar.f)) {
         mf <- model.frame(subbars1(row.form),data=studyDesign)
@@ -1154,44 +1154,60 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     
     dLV = NULL;cstruclv = "diag"
     if(inherits(lvCor,"formula")) {
-      bar.lv <- findbars1(lvCor) # list with 3 terms
-      grps <- unlist(lapply(bar.lv,function(x) as.character(x[[3]])))
-      if(is.null(studyDesign)){
-        if(all(grps %in% colnames(X))) {
-        studyDesign=X
-        xnames<-colnames(X)[!(colnames(X) %in% grps)]
-        X <- as.data.frame(X[,!(colnames(X) %in% grps)])
-        colnames(X)<-xnames
-        if(ncol(X)==0) X<-NULL
-      } else if(is.null(studyDesign)){
-        stop("Grouping variable needs to be included in 'studyDesign'")
-      }
-      }
-      if(!is.null(data)) {
-        if(any(colnames(data) %in% grps)){
-          xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
-          colnames(xgrps) <- grps
-          X<-cbind(X,xgrps)
+      # first, random effects part
+      if(anyBars(lvCor)){
+        lv.form <- allbars(lvCor)
+        bar.lv <- findbars1(lv.form) # list with 3 terms
+        grps <- unique(unlist(lapply(bar.lv, all.vars)))
+        if(is.null(studyDesign)){
+          if(!is.null(data)) {
+            if(any(colnames(data) %in% grps)){
+              xgrps<-as.data.frame(data[1:n,(colnames(data) %in% grps)])
+              colnames(xgrps) <- grps
+              studyDesign<-cbind(studyDesign, xgrps)
+            }
+            
+          } else {
+            stop("Grouping varible for latent variables must be included in 'studyDesign'")
+          }
+        }
+        
+        form.parts <- strsplit(deparse1(lv.form),split="\\+")[[1]]
+        nested.parts <- grepl("/",form.parts)
+        if(any(nested.parts)){
+          form.parts <- strsplit(deparse1(lv.form),split="\\+")[[1]]
+          
+          for(i in which(nested.parts))
+            form.parts[i] <- paste0("(", findbars1(formula(paste0("~",form.parts[i]))),")",collapse="+")
+          
+          corstruc.form <- as.formula(paste0("~", paste0(form.parts,collapse="+")))
+        }else{
+          corstruc.form <- lv.form
+        }
+        cstruclv <- corstruc(corstruc.form)
+        if(length(bar.lv)>1 && any(!cstruclv %in% c("diag", "ustruc"))){
+          stop("Multiple structured terms in 'lvCor' not yet supported.")
+        }else{
+          cstruclv <- unique(cstruclv)
+          }
+        if(!is.null(bar.lv)) {
+          mf <- model.frame(subbars1(lv.form),data=studyDesign)
+          # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
+          # consequence: we can use Zt everywhere
+          mf.new <- mf
+          if(any(corWithinLV)){
+            mf.new[, corWithinLV] <- apply(mf[, corWithinLV, drop=F],2,function(x)order(order(x)))
+          }
+          colnames(mf.new) <- colnames(mf)
+          RElistLV <- mkReTrms1(bar.lv, mf.new)
+          dLV <- Matrix::t(RElistLV$Zt)
+          if(cstruclv == "corAR1")distLV = matrix(1:ncol(dLV))
+          
+          num.lv.cor <- num.lv
         }
       }
-      if(is.null(bar.lv)) {
-        stop("Incorrect definition for structured random effects. Define the structure this way: 'row.eff = ~(1|group)'")
-        # } else if(!all(grps %in% colnames(X))) {
-        # stop("Grouping variable need to be included in 'X'")
-      } else if(!all(order(studyDesign[,(colnames(studyDesign) %in% grps)])==c(1:n)) && (corWithinLV)) {
-        stop("Data (response matrix Y and covariates X) needs to be grouped according the grouping variable: '",grps,"'")
-      } else {
-        # if(quadratic != FALSE) {warning("Structured row effects model may not work properly with the quadratic model yet.")}
-        mf <- model.frame(subbars1(lvCor),data=studyDesign)
-        dLV <- Matrix::t(mkReTrms1(bar.lv,mf)$Zt)
-      }
-      cstruclv = corstruc(lvCor)[1]
-      num.lv.cor = num.lv
-      if(cstruclv == "corAR1") distLV = matrix(1:ncol(dLV))
-      # Have to set this to diagonal to avoid too many parameters:
-      # Lambda.struc = "diagonal"
-    } else {
-      num.lv.cor = 0
+    }else{
+      num.lv.cor <- 0
     }
     if(!is.null(studyDesign)){
       if(nrow(studyDesign) != nrow(y)) stop("A number of rows in studyDesign must be same as for response matrix.")
