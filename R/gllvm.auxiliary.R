@@ -1963,7 +1963,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   r <- obj$env$random
   par = obj$env$last.par.best
   nr = obj$env$data$nr
-  nsp = obj$env$data$nsp
+  # nsp = obj$env$data$nsp
   num.lv <- obj$env$data$num_lv
   num.lv.c <- obj$env$data$num_lv_c
   num.RR <- obj$env$data$num_RR
@@ -2351,7 +2351,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   n<-nrow(fit$y)
   p<-ncol(fit$y)
   nr <- fit$TMBfn$env$data$nr
-  nsp <- fit$TMBfn$env$data$nsp
+  # nsp <- fit$TMBfn$env$data$nsp
   num.lv <- fit$num.lv
   num.lv.c <- fit$num.lv.c
   num.RR <- fit$num.RR
