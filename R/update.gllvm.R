@@ -28,7 +28,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     formula.new <- formula
     formula_ <- call$formula
     if(!is.null(formula_)){
-    call$formula <- update.formula(formula_, formula.new)
+      call$formula <- update.formula(formula_, formula.new)
     }else{
       call$formula <- formula.new
     }
@@ -66,4 +66,10 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   }else{
     call
   }
+}
+
+#'@export update
+update <- function(object, ...)
+{
+  UseMethod(generic = "update")
 }
