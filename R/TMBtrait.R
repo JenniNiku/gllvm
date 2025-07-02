@@ -601,7 +601,7 @@ trait.TMB <- function(
         sigma.lv <- matrix(0)
       }
       
-    if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
+    if (is.null(offset))  offset <- matrix(0)
     
 ### Starting values for dispersion/shape parameters
     

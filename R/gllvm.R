@@ -1330,7 +1330,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(!is.null(colMat) && method%in%c("VA","EVA") && !Ab.struct%in%c("unstructured","diagonalCL1","CL1","CL2","diagonalCL2","blockdiagonal","diagonal","MNunstructured","MNdiagonal"))stop("Selected 'Ab.struct' not allowed.")
     
     if (is.null(offset))
-      O <- matrix(0, nrow = n, ncol = p)
+      O <- matrix(0)
     else if (NCOL(offset) == 1)
       O <- matrix(rep(offset), nrow = n, ncol = p)
     else

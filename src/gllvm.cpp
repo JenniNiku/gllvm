@@ -3540,7 +3540,9 @@ Type objective_function<Type>::operator() ()
     // Laplace approximation
     
     // add offset to lin. predictor 
-    eta += offset;
+    if(offset.rows()==n){
+      eta += offset;
+    }
     // if(r0f.size() == n && (random(0)==0) && xr.rows() != n && r0f.rows() == n && r0f.cols() == 1){
     //   eta += r0f.replicate(1,p);
     if(xr.rows()==n){

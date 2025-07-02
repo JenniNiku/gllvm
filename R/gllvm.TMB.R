@@ -592,7 +592,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     }
     
     if (is.null(offset))
-      offset <- matrix(0, nrow = n, ncol = p)
+      offset <- matrix(0)
     
     current.loglik <- -1e6; iter <- 1; err <- 10;
     if(!is.null(row.params.fixed)){ r0f <- row.params.fixed} else {r0f <- rep(0,ncol(xr))}
