@@ -2,6 +2,7 @@ Version 2.0.5
 =============
 * num.RR and num.lv with lvCor can now be combined
 * lvCor can be used with multiple (iid) terms
+* New start.optimizer and start.optim.method arguments for changing the optimizers for generating starting values, related to #229.
 
 # Bugfixes
 * Bug fixed in VP for mixed effects formula

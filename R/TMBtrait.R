@@ -9,7 +9,7 @@ trait.TMB <- function(
       link = "logit", n.init = 1, n.init.max = 10, start.params = NULL, start0 = FALSE, optimizer = "optim", dr = matrix(0), dLV = NULL, cstruc = "diag", cstruclv  = "diag", dist = list(matrix(0)), distLV = matrix(0), scalmax = 10, MaternKappa = 1.5,
       starting.val = "res", method = "VA", randomX = NULL, RElist = list(Zt = matrix(0)), Power = 1.5, diag.iter = 1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single",
       Lambda.start = c(0.2, 0.5), jitter.var = 0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL, zetacutoff = NULL,
-      zeta.struc = "species", quad.start = 0.01, start.struc = "LV", quadratic = FALSE, optim.method = "BFGS", disp.group = NULL, NN = matrix(0), setMap = NULL, Ntrials = 1) {
+      zeta.struc = "species", quad.start = 0.01, start.struc = "LV", quadratic = FALSE, optim.method = "BFGS", disp.group = NULL, NN = matrix(0), setMap = NULL, Ntrials = 1, start.optimizer = "nlminb", start.optim.method = "BFGS") {
   if(is.null(X) && !is.null(TR)) stop("Unable to fit a model that includes only trait covariates")
   
   n <- nr <- nu <- dim(y)[1]; 
@@ -267,7 +267,7 @@ trait.TMB <- function(
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
-      bstart <- start_values_randomX(y, X, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link)
+      bstart <- start_values_randomX(y, X, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
       Br <- bstart$Br
       if(jitter.var.br>0)Br <- Br + matrix(rnorm(prod(dim(B)), sd=sqrt(jitter.var.br)), nrow(Br), ncol(Br))
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
@@ -296,7 +296,7 @@ trait.TMB <- function(
       out$randomX <- randomX <- formula(paste0("~", paste(colnames(xb), collapse="+")))
       if(num.lv>0 && randomX.start == "res" && starting.val == "res") {randomXb <- randomX}
       
-      bstart <- start_values_randomX(y, xb, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link)
+      bstart <- start_values_randomX(y, xb, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
       Br <- bstart$Br
       if(jitter.var.br>0)Br <- Br + matrix(rnorm(prod(dim(B)), sd=sqrt(jitter.var.br)), nrow(Br), ncol(Br))
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
@@ -429,7 +429,7 @@ trait.TMB <- function(
     }
 
     res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, cstruc = cstruc, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
-                                  yXT = yXT, TMB = TRUE, link=link, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat)
+                                  yXT = yXT, TMB = TRUE, link=link, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
     
     if(is.null(res$Power) && family == "tweedie")res$Power=1.1
     if(family=="tweedie"){

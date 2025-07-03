@@ -78,6 +78,8 @@
 #'   \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
 #'   \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
 #'   \item{\emph{zetacutoff}: }{ Either vector of length 2 or a matrix of dimension (a number of species x 2). Sets starting value for the cutoff parameters of the ordered beta model.}
+#'   \item{\emph{start.optimizer}: }{ optimizer for starting value generation, see "optimizer" for more information.}
+#'   \item{\emph{start.optim.method}: }{ optimizer method for starting value generation, see "optim.method" for more information.}
 #' }
 #' @param ... Not used.
 #'
@@ -430,7 +432,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)==0 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
-                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL), setMap=NULL, ...
+                  control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
   if(!isFALSE(quadratic) && !is.null(lvCor))stop("'lvCor' cannot yet be combined with unimodal responses.")
@@ -549,6 +551,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$MaternKappa = 1.5
       if (!("zetacutoff" %in% names(x))) 
         x$zetacutoff = NULL
+      if (!("start.optimizer" %in% names(x))) 
+        x$start.optimizer = "nlminb"
+      if (!("start.optim.method" %in% names(x))) 
+        x$start.optim.method = "BFGS"
       x
     }
     
@@ -620,7 +626,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat; colMat.approx = control$colMat.approx;
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
-    start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff
+    start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff; start.optimizer = control.start$start.optimizer; start.optim.method = control.start$start.optim.method;
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
       stop("Cannot fit model with traits and reduced rank predictors. \n")
@@ -1449,6 +1455,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             disp.group = disp.group,
             Ntrials = Ntrials,
             zetacutoff = zetacutoff,
+            start.optimizer = start.optimizer,
+            start.optim.method = start.optim.method,
             model = "trait.TMB"
             )
         if(length(all.vars(col.eff.formula))>0){
@@ -1514,6 +1522,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             # cs = cs,
             beta0com = beta0com,
             zetacutoff = zetacutoff,
+            start.optimizer = start.optimizer,
+            start.optim.method = start.optim.method,
             model = "gllvm.TMB"
         )
         if(is.null(formula)) {
