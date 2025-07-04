@@ -183,6 +183,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
         CoefMat <- rbind(CoefMat, Bt)
         LVgroups = c(LVgroups, 1:(object$num.lv.c + object$num.RR))
       }
+      if(object$num.lv>0)groupnamesF <- c(groupnamesF, paste0("LV", 1:object$num.lv))
       
       # lvs/unconstr. part
       if (object$num.RR == 0) {
@@ -201,6 +202,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
         } else if (object$num.lv > 0 & object$num.lv.c == 0) {
             lvs <- cbind(matrix(0, ncol = object$num.RR, 
                         nrow = n), t(t(object$lvs) * object$params$sigma.lv))
+        groupnamesF <- c(groupnamesF, paste0("LV", 1:object$num.lv))
         } else {
             lvs <- matrix(0, ncol = object$num.RR, nrow = n)
         }
@@ -317,7 +319,13 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   }
   
   if(is.null(groupnames)) {
-    if(!is.null(groupnamesF)){
+    if(!is.null(groupnamesF) && is.null(groupnames)){
+      groupnames <- vector("character", max(group))
+      
+        for (k in unique(group)) {
+          groupnames[k] <- paste(rownames(CoefMat)[group==k],collapse="/")
+        }
+    }else if(is.null(groupnames)){
       groupnames <- groupnamesF
     }
     
