@@ -145,6 +145,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }else if(length(spp.colors)!=p){
     stop("spp.colors needs to be of length p or 1.")
   }
+  if(length(cex.spp)==1){
+    cex.spp <- rep(cex.spp,p)
+  }else if(length(cex.spp)!=p){
+    stop("cex.spp needs to be of length p or 1.")
+  }
   if ((num.lv+(num.lv.c+num.RR)) == 0)
     stop("No latent variables to plot.")
   
@@ -557,7 +562,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
           label = rownames(object$params$theta)[largest.lnorms[1:ind.spp]][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))],
-          col = spp.colors[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp )
+          col = spp.colors[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], 
+          cex = cex.spp[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))])
       }
       if (jitter){
         if (symbols) {
@@ -579,7 +585,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
           label = rownames(object$params$theta)[largest.lnorms[1:ind.spp]][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))],
-          col = spp.colors[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp )
+          col = spp.colors[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], 
+          cex = cex.spp[largest.lnorms][1:ind.spp][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))] )
       }
       
       ##Here add arrows for species with optima outside of range LV
@@ -610,8 +617,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           }
           
           if(nrow(ends)>0){
-            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], cex = cex.spp, length = 0.1, lty=spp.arrows.lty)
-            text(x=ends[,1]*(1+lab.dist)+origin[1],y=ends[,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot),col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp)
+            arrows(origin[1],origin[2],ends[,1]+origin[1],ends[,2]+origin[2],col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], cex = cex.spp[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))][idx2], length = 0.1, lty=spp.arrows.lty)
+            text(x=ends[,1]*(1+lab.dist)+origin[1],y=ends[,2]*(1+lab.dist)+origin[2],labels = row.names(scores_to_plot),col=spp.colors[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))], cex = cex.spp[largest.lnorms][1:ind.spp][!apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x))])
           }
         }
       }
