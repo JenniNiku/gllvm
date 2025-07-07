@@ -38,7 +38,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
-  if (is.null(object$X) & is.null(object$lv.X.design))
+  if (is.null(object$X) & is.null(object$lv.X.design) & (object$col.eff$col.eff != "random" & is.null(object$params$B)) )
     stop("No X covariates in the model.")
   if(is.null(object$X) && !isFALSE(object$randomB))
     stop("No predictor effects to plot in the model.")
@@ -51,7 +51,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     object$sd$Xcoef<-cbind(object$sd$Xcoef,betaSE)
   }
 
-  if (is.null(object$TR)) {
+  if (is.null(object$TR) & !is.null(object$params$Xcoef)) {
     if (is.null(which.Xcoef))
       which.Xcoef <- c(1:NCOL(object$params$Xcoef))
       Xcoef <- (object$params$Xcoef[ind.spp, which.Xcoef, drop=FALSE])
@@ -98,6 +98,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     }
   } else{
     if(object$beta0com){
+      if(length(object$sd$B) > length(object$params$B)) object$sd$B <- object$sd$B[object$sd$B!=0]
       object$params$B <- c(setNames(object$params$beta0[1], "Intercept"), object$params$B)
       object$sd$B <- c(setNames(object$sd$beta0[1], "Intercept"),object$sd$B)
     }
