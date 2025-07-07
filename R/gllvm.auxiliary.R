@@ -427,7 +427,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
         lastart <- FAstart(mu, family=family, y=y, num.lv = num.lv, num.lv.c = num.lv.c, num.RR= num.RR, zeta = zeta, zeta.struc = zeta.struc, lv.X = lv.X, link = link, maxit = maxit, max.iter = max.iter, disp.group = disp.group, randomB = randomB, method = method, Ntrials = Ntrials, ZINB.phi = fit.mva$ZINB.phi, start.optim.method = start.optim.method)
         gamma<-lastart$gamma
         index<-lastart$index
-        params[,(ncol(cbind(1,X))+1):ncol(params)]=gamma
+        params[,(ncol(cbind(1,Xdesign))+1):ncol(params)]=gamma
         if(num.lv.c>0)
         {
           b.lv<-lastart$b.lv
