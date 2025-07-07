@@ -114,7 +114,7 @@ gllvm(
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".}
 
-\item{Ntrials}{number of trials for binomial family.}
+\item{Ntrials}{number of trials for binomial and ZIB families.}
 
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental).}
 
@@ -334,6 +334,7 @@ With ordinal family response classes must start from 0 or 1.
   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p_j)}.}
   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
+  \item{ \code{family = "ZIB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)}.}
   
   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)}.}
 

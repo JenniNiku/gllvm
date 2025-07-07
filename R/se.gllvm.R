@@ -301,13 +301,13 @@ se.gllvm <- function(object, ...){
         }
       }
       
-      if(family%in%c("ZIP","ZINB")) {
+      if(family%in%c("ZIP","ZINB","ZIB")) {
         pars <- object$TMBfn$par
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
       }
       
-      if(family %in% c("ZIP","ZINB")) {
+      if(family %in% c("ZIP","ZINB","ZIB")) {
         se.phis <- se$lg_phi[disp.group];
         out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
         if(length(unique(disp.group))==p){
@@ -419,7 +419,7 @@ se.gllvm <- function(object, ...){
   } else {
     #Without traits#
     pars <- objrFinal$par
-    if(family %in% c("ZIP","ZINB")) {
+    if(family %in% c("ZIP","ZINB","ZIB")) {
       p0i <- names(pars)=="lg_phi"
       p0 <- pars[p0i]
       p0 <- p0+runif(p,0,0.001)
@@ -745,7 +745,7 @@ se.gllvm <- function(object, ...){
       }
     }
     
-    if(family %in% c("ZIP","ZINB")) {
+    if(family %in% c("ZIP","ZINB","ZIB")) {
       se.phis <- se$lg_phi[disp.group];
       out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
       if(length(unique(disp.group))==p){

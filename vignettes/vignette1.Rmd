@@ -127,7 +127,9 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
 |             | binomial     | VA/LA   |probit  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
-|             | binomial     |    EVA/LA   |logit   | 
+|             | binomial     |    VA/EVA/LA   |logit   | 
+|             | ZIB     | VA/LA   |probit  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
+|             | ZIB     |    VA/EVA/LA   |logit   | 
 |Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
 |             |              | EVA/LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | EVA/VA/LA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|

@@ -26,7 +26,7 @@
 #' @param randomB either \code{FALSE}(default), "LV", "P", "single", or "iid". Fits concurrent or constrained ordination (i.e. models with num.lv.c or num.RR) with random slopes for the predictors. "LV" assumes LV-specific variance parameters, "P" predictor specific, and "single" the same across LVs and predictors.
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
-#' @param Ntrials number of trials for binomial family.
+#' @param Ntrials number of trials for binomial and ZIB families.
 #' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental). 
 #' @param seed a single seed value if \code{n.init=1}, and a seed value vector of length \code{n.init} if \code{n.init>1}. Defaults to \code{NULL}, when new seed is not set for single initial fit and seeds are is randomly generated if multiple initial fits are set.
@@ -164,6 +164,7 @@
 #'   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p_j)}.}
 #'   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
 #'   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
+#'   \item{ \code{family = "ZIB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)}.}
 #'   
 #'   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)}.}
 #'
@@ -471,7 +472,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       family <- family$family
     }
 
-    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta")))
+    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB")))
       stop("Selected family not permitted...sorry!")
     
     fill_control = function(x){
@@ -608,10 +609,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(!isFALSE(randomB)&!control$TMB){
       stop("Random slopes in ordination only allowed with TMB = TRUE.")
     }
-    if(family == "binomial" && max(Ntrials) == 1 && !is.null(y) && max(y, na.rm=TRUE)>1){
+    if(family %in% c("binomial","ZIB") && max(Ntrials) == 1 && !is.null(y) && max(y, na.rm=TRUE)>1){
     stop("Using the binomial distribution requires setting the `Ntrials` argument.")
     }
-    if(family == "binomial" && method == "EVA" && max(Ntrials) >1){
+    if(family %in% c("binomial","ZIB") && method == "EVA" && max(Ntrials) >1){
       stop("Binomial distribution not yet supported with the EVA method.")
     }
     if(!colMat.rho.struct %in% c("single","term")){
@@ -1362,7 +1363,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(return.terms) {out$terms = term} #else {terms <- }
 
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
-    if (family %in% c("binomial", "ordinal")) {
+    if (family %in% c("binomial", "ordinal", "ZIB")) {
       if (method %in% c("LA", "EVA","VA"))
         out$link <- link
     }
@@ -1372,7 +1373,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
         out$link <- link
     }
-    if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal"))){
+    if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB"))){
       message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
       method  = "EVA"
       out$method = "EVA"
@@ -1696,7 +1697,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         cat("Try scaling and centering your predictors before entering them into the model, if you haven't. \n")
       }
     }
-    if(family == "binomial")out$Ntrials = fitg$Ntrials
+    if(family %in% c("binomial","ZIB"))out$Ntrials = fitg$Ntrials
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {

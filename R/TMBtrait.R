@@ -30,9 +30,9 @@ trait.TMB <- function(
   term <- NULL
   times = 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
-  if(family=="binomial" && length(Ntrials) != 1 && length(Ntrials) != p){
+  if(family %in% c("binomial", "ZIB") && length(Ntrials) != 1 && length(Ntrials) != p){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  }else if(family=="binomial" && length(Ntrials) == 1){
+  }else if(family %in% c("binomial","ZIB") && length(Ntrials) == 1){
     Ntrials <- rep(Ntrials, p)
   }
   
@@ -585,6 +585,8 @@ trait.TMB <- function(
         if(n.init > 1 && !is.null(res$mu) && starting.val == "res" && family != "tweedie") {
           if(family %in% c("ZIP","ZINB")) {
             lastart <- FAstart(res$mu, family="poisson", y=y, num.lv = num.lv, jitter.var = jitter.var[1], disp.group=disp.group)
+          }else if(family %in% c("ZIB")) {
+              lastart <- FAstart(res$mu, family="binomial", y=y, num.lv = num.lv, jitter.var = jitter.var[1], disp.group=disp.group)
           } else {
             lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
           }
@@ -614,7 +616,7 @@ trait.TMB <- function(
       res$phi <- phis
       phis <- 1/phis
     }
-    if (family == "ZIP" && starting.val=="res") {
+    if (family %in% c("ZIP","ZIB") && starting.val=="res") {
       phis <- res$phi
       phis <- phis / (1 - phis)
     }
@@ -638,7 +640,7 @@ trait.TMB <- function(
       phis= (phis)
     }
     
-    if (family %in% c("ZIP","ZINB") && is.null(phis)) {
+    if (family %in% c("ZIP","ZIB","ZINB") && is.null(phis)) {
       if(length(unique(disp.group))!=p){
         phis <- (sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01)[disp.group]
       }else{
@@ -733,7 +735,7 @@ trait.TMB <- function(
     map.list$Ab_lv = factor(NA)
     if(family %in% c("poisson","binomial","ordinal","exponential")) {
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB")){
+    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB","ZIB")){
       map.list$lg_phi <- factor(disp.group)
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
       if(family=="ZINB" & is.null(map.list$lg_phiZINB))map.list$lg_phiZINB <- factor(disp.group)
@@ -1152,7 +1154,11 @@ trait.TMB <- function(
     }
     if(family == "ZINB"){ familyn <- 11;}
     if(family == "orderedBeta") {familyn=12}
-
+    if(family == "ZIB"){ 
+      familyn <- 13;
+      if(link=="probit") extra[1]=1
+      }
+    
     ## To improve starting values for quadratic model
     if(starting.val!="zero" && start.struc != "LV" && quadratic == TRUE && num.lv>0 && method == "VA"){
       map.list2 <- map.list
@@ -1469,7 +1475,7 @@ trait.TMB <- function(
         names(Power) = "Power"
       }
     }
-    if(family %in% c("ZIP","ZINB")) {
+    if(family %in% c("ZIP","ZIB","ZINB")) {
       if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
       lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0=lp0
       phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
@@ -1726,7 +1732,7 @@ trait.TMB <- function(
           try(names(out$params$phi) <- names(disp.group),silent=T)
         }
       }
-      if(family %in% c("ZIP","ZINB")) {
+      if(family %in% c("ZIP","ZIB","ZINB")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
         
