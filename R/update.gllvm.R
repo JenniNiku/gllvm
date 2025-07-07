@@ -20,35 +20,40 @@
 #' @export
 #' @export update.gllvm
 update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NULL, eval = TRUE, ...){
-  call <- getCall(object)
+  if(inherits(object, "gllvm")){
+    call <- getCall(object)  
+  }else{
+    call <- object
+  }
+  
   match.call(expand.dots = FALSE, call = call)
   
   args <- list(...)
   
-  if(!is.null(formula)){
+  if(!missing(formula)){
     formula.new <- formula
     formula_ <- call$formula
-    if(!is.null(formula_)){
+    if(!is.null(formula_) && !is.null(formula.new)){
       call$formula <- update.formula(formula_, formula.new)
     }else{
       call$formula <- formula.new
     }
   }
-  if(!is.null(lv.formula)){
-    lv.formula.new <- args$lv.formula
+  if(!missing(lv.formula)){
+    lv.formula.new <- lv.formula
     lv.formula_ <- call$lv.formula
     
-    if(!is.null(lv.formula_)){
+    if(!is.null(lv.formula_)  && !is.null(lv.formula.new)){
       call$lv.formula <- update.formula(lv.formula_, lv.formula.new)
     }else{
       call$lv.formula <- lv.formula.new
     }
   }
-  if(!is.null(row.eff) && is.language(row.eff)){
-    row.eff.new <- args$row.eff
+  if(!missing(row.eff) && is.language(row.eff)){
+    row.eff.new <- row.eff
     row.eff_ <- call$row.eff
     
-    if(!is.null(row.eff_)){
+    if(!is.null(row.eff_) && !is.null(row.eff.new) && is.formula(row.eff)){
       call$row.eff <- update.formula(row.eff_, row.eff.new)
     }else{
       call$row.eff <- row.eff.new
@@ -59,9 +64,13 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   
   # Add or override other arguments from ...
   for (arg_name in names(args)) {
-    call[[arg_name]] <- args[[arg_name]]
+    if(exists(arg_name, parent.frame())){
+      call[[arg_name]] <- as.name(arg_name)
+    }else {
+      call[[arg_name]] <- args[[arg_name]]
+    }
   }
-  
+
   if(eval){
     eval(call, parent.frame())
   }else{
