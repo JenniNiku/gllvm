@@ -1266,7 +1266,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         } else {log_sigma1 = 0}
       
         if(beta0com){
-          b1 <- matrix(paramb1[bi][model2$TMBfn$env$map$b], num.X+1, p)
+          b1 <- matrix(param1[nam=="b"][map.list$b], num.X+1, p)
         }else{
           b1 <- matrix(param1[nam=="b"],num.X+1,p)  
         }
@@ -1614,7 +1614,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       
       paramb <- param[bi]
-      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      if(beta0com)paramb <- param[bi][map.list$b]
       betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]
@@ -2062,7 +2062,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       
       paramb <- param[bi]
-      if(beta0com)paramb <- param[bi][model2$TMBfn$env$map$b]
+      if(beta0com)paramb <- param[bi][map.list$b]
       betaM <- matrix(paramb,p,num.X+1,byrow=TRUE)
 
       beta0 <- betaM[,1]

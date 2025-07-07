@@ -91,13 +91,17 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   if((object$num.lv.c+object$num.RR)>0 || object$col.eff$col.eff == "random"){
 
     if((object$num.lv.c+object$num.RR)>0 && object$col.eff$col.eff == "random"){
-      if(is.null(which.Xcoef))which.Xcoef <- c(colnames(object$lv.X.design), colnames(object$col.eff$spdr))
+      if(is.null(which.Xcoef)) which.Xcoef <- c(colnames(object$lv.X.design), colnames(object$col.eff$spdr))
+      if(is.numeric(which.Xcoef)) which.Xcoef <- c(colnames(object$lv.X.design), colnames(object$col.eff$spdr))[which.Xcoef]
     } else if((object$num.lv.c+object$num.RR)>0){
       if(is.null(which.Xcoef))which.Xcoef <- colnames(object$lv.X.design)
+      if(is.numeric(which.Xcoef)) which.Xcoef <- c(colnames(object$lv.X.design))[which.Xcoef]
     }else if(object$col.eff$col.eff=="random"){
       if(is.null(which.Xcoef))which.Xcoef <- colnames(object$col.eff$spdr)
+      if(is.numeric(which.Xcoef)) which.Xcoef <- c(colnames(object$col.eff$spdr))[which.Xcoef]
     }
     Xcoef <- cnames <- sdXcoef <- NULL
+    
     if((object$num.lv.c+object$num.RR)>0 && any(which.Xcoef %in% colnames(object$lv.X.design))){
       if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
       Xcoef <- cbind(Xcoef,as.matrix(object$params$theta[,1:(object$num.RR+object$num.lv.c),drop=F]%*%t(object$params$LvXcoef))[,colnames(object$lv.X.design)%in%which.Xcoef,drop=F])
