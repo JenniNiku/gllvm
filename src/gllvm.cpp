@@ -3511,7 +3511,7 @@ Type objective_function<Type>::operator() ()
             }else{
               Type LL = 0;
               LL += log(1-mu(i,j))*Ntrials(j);
-              LL += cQ(i,j)*Ntrials(j);
+              LL -= cQ(i,j)*Ntrials(j);
               
               if(Ntrials(j)>1 && (Ntrials(j)>y(i,j))){
                 LL += lgamma(Ntrials(j)+1.) - lgamma(Ntrials(j)+1.);//norm.const.
