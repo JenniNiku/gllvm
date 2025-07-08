@@ -914,7 +914,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }else if(num.RR>0 && !isFALSE(randomB)){
     optim.method = "BFGS"
     if(family == "tweedie")optim.method = "L-BFGS-B"
-    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "res", optimizer = "optim", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, diag.iter = 0, Lambda.struc = "diagonal", randomB = randomB, maxit = 200, optim.method = optim.method, start.optimizer = start.optimizer, start.optim.method = start.optim.method)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
+    fit <- gllvm.TMB(y=y, lv.X=lv.X, family = family, num.lv=0, num.RR = num.RR, starting.val = "res", optimizer = "optim", link =link, Power = Power, disp.group = disp.group, method=method, Ntrials = Ntrials, diag.iter = 0, Lambda.struc = "diagonal", randomB = randomB, maxit = 200, optim.method = optim.method, start.optimizer = start.optimizer, start.optim.method = start.optim.method, zeta.struc = zeta.struc)#mvabund::manyglm(y ~ X, family = family, K = trial.size)
     RRcoef <- fit$params$LvXcoef
     RRgamma <- fit$params$theta
     eta <- eta + lv.X%*%RRcoef%*%t(RRgamma)
