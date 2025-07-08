@@ -489,7 +489,7 @@ se.gllvm <- function(object, ...){
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
     if(familyn!=7 && familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
     if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-    if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+    if(!familyn %in% c(11, 14)) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
     
     if((num.lv+num.lv.c)>0){
       inclr[names(objrFinal$par)=="u"] <- TRUE;
@@ -706,15 +706,16 @@ se.gllvm <- function(object, ...){
     #   out$sd$se.thetaH <- se.thetaH
     # }
     
-    if(family %in% c("ZINB")) {
-      se.ZINB.lphis <- se$lg_phiZINB[disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+    if(family %in% c("ZINB", "ZNIB")) {
+      se.ZINB.lphis <- se$lg_phiZINB[disp.group];  
+      if(family == "ZINB")out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
       out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
       names(out$sd$ZINB.phi) <- colnames(object$y);
       
       if(!is.null(names(disp.group))){
         try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
       }
-      names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+      if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
     }
     
     if((num.lv+num.lv.c)>0){
@@ -768,7 +769,20 @@ se.gllvm <- function(object, ...){
       }else{
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
+    }else if(family == "ZNIB"){
+      se.phis <- se$lg_phi[disp.group];  
+      out$sd$phi <- se.phis*object$params$phi;
+      names(out$sd$phi) <- colnames(object$y);
+      
+      if(length(unique(disp.group))==p){
+        names(out$sd$phi) <- colnames(object$y);
+      }else if(!is.null(names(disp.group))){
+        try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+      }else{
+        names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+      }
     }
+    
     if(!isFALSE(object$randomB)&(num.lv.c+num.RR)>0){
       if(object$randomB!="iid"){
         if(object$randomB=="LV"){
