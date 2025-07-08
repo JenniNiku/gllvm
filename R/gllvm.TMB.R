@@ -28,9 +28,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   
   times <- 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
-  if(family %in% c("binomial","ZIB") && length(Ntrials) != 1 && length(Ntrials) != p){
+  if(family %in% c("binomial","ZIB", "ZNIB") && length(Ntrials) != 1 && length(Ntrials) != p){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  } else if(family %in% c("binomial","ZIB") && length(Ntrials) == 1){
+  } else if(family %in% c("binomial","ZIB", "ZNIB") && length(Ntrials) == 1){
     Ntrials <- rep(Ntrials, p)
   }
   
@@ -534,9 +534,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       phis <- fit$phi
       phis <- phis / (1 - phis)
     }
-    if (family == "ZINB" && starting.val=="res") {
+    if (family %in% c("ZINB", "ZNIB") && starting.val=="res") {
       phis <- fit$phi
-      phis <- phis / (1 - phis)
+      if(family == "ZINB")phis <- phis / (1 - phis)
       
       ZINBphis <- fit$ZINB.phi
       if (any(ZINBphis > 100))
@@ -544,7 +544,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if (any(ZINBphis < 0.01))
         ZINBphis[ZINBphis < 0.01] <- 0.01
       fit$ZINB.phi <- ZINBphis
-      ZINBphis <- 1/ZINBphis
+      if(family == "ZINB")ZINBphis <- 1/ZINBphis
     }
     if (family == "tweedie") {
       phis <- fit$phi
@@ -554,14 +554,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         phis[phis < 0.10] <- 0.10
       phis = (phis)
     }
-    if (family %in%c("ZIP","ZIB", "ZINB") && is.null(phis)) {
+    if (family %in%c("ZIP","ZIB", "ZINB", "ZNIB") && is.null(phis)) {
       if(length(unique(disp.group))!=p){
         phis <- sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
         phis <- phis[disp.group]
       }else{
         phis <- (colMeans(y == 0) * 0.98) + 0.01  
       }
-      phis <- phis / (1 - phis)
+      if(family != "ZNIB")phis <- phis / (1 - phis)
     } # ZIP probability
     if (family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
       phis <- fit$phi
@@ -634,7 +634,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       ZINBphi <- ZINBphis 
     } else { 
       ZINBphi <- rep(1, p)+runif(p,0,0.001) 
-      if(family=="ZINB")fit$ZINBphi <- ZINBphi
+      if(family %in% c("ZINB", "ZNIB"))fit$ZINBphi <- ZINBphi
     }
     
     
@@ -664,10 +664,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     }
     if(family %in% c("poisson","binomial","ordinal","exponential")){
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP","ZINB", "ZIB")){
+    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP","ZINB", "ZIB", "ZNIB")){
       map.list$lg_phi <- factor(disp.group)
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
-      if(family=="ZINB" & is.null(map.list$lg_phiZINB)) map.list$lg_phiZINB <- factor(disp.group)
+      if(family %in% c("ZINB", "ZNIB")& is.null(map.list$lg_phiZINB)) map.list$lg_phiZINB <- factor(disp.group)
     }
     
     if(!(family %in% c("ordinal", "orderedBeta"))) map.list$zeta <- factor(NA)
@@ -690,7 +690,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
     }
     if(family != "tweedie"){map.list$ePower = factor(NA)}
-    if(family!="ZINB")map.list$lg_phiZINB <- factor(rep(NA,p))
+    if(!family %in% c("ZINB", "ZNIB"))map.list$lg_phiZINB <- factor(rep(NA,p))
     if((num.lv.c+num.RR)==0){
       map.list$b_lv = factor(rep(NA, length(b.lv)))
     }
@@ -1115,7 +1115,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         familyn=13
         if(link=="probit") extra[1]=1
       }
-      
+      if(family == "ZNIB"){
+        familyn=14
+        if(link=="probit") extra[1]=1
+      }
       if(family == "betaH"){ # EVA
         familyn = 10
         if(link=="probit") extra[1]=1
@@ -1334,7 +1337,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if((num.lv+num.lv.c)>0){sigma.lv1 <- param1[nam=="sigmaLV"]}else{sigma.lv1<-0}
         if((num.lv+num.lv.c)>0){u1 <- matrix(param1[nam=="u"],nrow(u),num.lv+num.lv.c)}else{u1<-u}
         if(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
-        if(family=="ZINB"){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
+        if(family %in% c("ZINB", "ZNIB")){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
         if(family=="tweedie" && is.null(Power)) ePower = param1[nam == "ePower"]
         sigmaij1 <- param1[nam=="sigmaij"]
 
@@ -1456,12 +1459,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       #### Extract estimated values
       
       param <- objr$env$last.par.best
-      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta","ZIP","ZINB", "ZIB")) {
+      if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta","ZIP","ZINB", "ZIB", "ZNIB")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
-        if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
+        if(family %in% c("ZINB", "ZNIB"))ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
         if(family %in% c("ZIP","ZINB", "ZIB")) {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
+        }
+        if(family %in% c("ZNIB")) {
+          lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
+          phis <- exp(lp0)
         }
         if(family=="tweedie" && is.null(Power)){
           Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
@@ -1679,6 +1686,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         familyn=13;
         if(link=="probit") extra[1]=1
       }
+      if(family == "ZNIB"){ 
+        familyn=14;
+        if(link=="probit") extra[1]=1
+      }
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
@@ -1891,7 +1902,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         b <- matrix(objr$env$last.par.best[names(objr$env$last.par.best)=="b"],num.X+1,p)
 
         if(!(family %in% c("poisson","binomial","ordinal","exponential"))) phi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phi"])[disp.group]
-        if(!(family %in% c("ZINB"))) ZINBphi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phiZINB"])[map.list$lg_phiZINB]
+        if(!(family %in% c("ZINB", "ZNIB"))) ZINBphi <- exp(objr$env$last.par.best[names(objr$env$last.par.best)=="lg_phiZINB"])[map.list$lg_phiZINB]
         parameter.list = list(r0r = matrix(r0r), r0f = matrix(r0f), b = b, sigmaB = sigmaB, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi),sigmaij=sigmaij,log_sigma=c(sigma), rho_lvc=rho_lvc, Au=0, lg_Ar=0, Abb=0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
         #### Call makeADFun
@@ -2081,12 +2092,16 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       new.loglik <- objr$env$value.best[1]
       
-      if(family %in% c("negative.binomial", "tweedie", "ZIP", "ZINB", "gaussian", "gamma", "beta", "betaH", "orderedBeta", "ZIB")) {
+      if(family %in% c("negative.binomial", "tweedie", "ZIP", "ZINB", "gaussian", "gamma", "beta", "betaH", "orderedBeta", "ZIB", "ZNIB")) {
         phis <- exp(param[names(param)=="lg_phi"])[disp.group]
-        if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
+        if(family %in% c("ZINB", "ZNIB"))ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
         if(family %in% c("ZIP","ZINB","ZIB")) {
           lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
           phis <- exp(lp0)/(1+exp(lp0));
+        }
+        if(family %in% c("ZNIB")) {
+          lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
+          phis <- exp(lp0)
         }
         if(family=="tweedie" && is.null(Power)){
           Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
@@ -2249,7 +2264,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         names(out$params$inv.phi) <-  names(out$params$phi)
       }
       
-      if(family =="ZINB") {
+      if(family %in% c("ZINB")) {
         out$params$ZINB.inv.phi <- ZINBphis;
         out$params$ZINB.phi <- 1/ZINBphis;
         names(out$params$ZINB.phi) <- colnames(y);
@@ -2258,6 +2273,14 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
         names(out$params$ZINB.inv.phi) <-  names(out$params$ZINB.phi)
       }
+      
+      if(family %in% c("ZNIB")) {
+        out$params$ZINB.phi <- ZINBphis;
+        names(out$params$ZINB.phi) <- colnames(y);
+        if(!is.null(names(disp.group))){
+          try(names(out$params$ZINB.phi) <- names(map.list$lg_phiZINB),silent=T)
+        }
+      }
       if(family %in% c("gaussian", "tweedie", "gamma","beta", "betaH", "orderedBeta")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
@@ -2265,7 +2288,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           try(names(out$params$phi) <- names(disp.group),silent=T)
         }
       }
-      if(family %in% c("ZIP","ZINB","ZIB")) {
+      if(family %in% c("ZIP","ZINB","ZIB", "ZNIB")) {
         out$params$phi <- phis;
         names(out$params$phi) <- colnames(y);
         

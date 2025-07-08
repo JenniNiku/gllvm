@@ -128,8 +128,10 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
 |             | binomial     | VA/LA   |probit  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
 |             | binomial     |    VA/EVA/LA   |logit   | 
-|             | ZIB     | VA/LA   |probit  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
+|zero-inflated| ZIB     | VA/LA   |probit  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
 |             | ZIB     |    VA/EVA/LA   |logit   | 
+|zero/N-inflated|ZIB    |VA/LA           |probit/logit| $E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}$, $V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^N_j)N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2}$|
+
 |Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
 |             |              | EVA/LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | EVA/VA/LA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|

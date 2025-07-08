@@ -70,7 +70,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     invPhis = matrix(rep(object$params$ZINB.inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="tweedie")
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB"))
+  if(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB"))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
   if(object$family == "ordinal"){
     if(object$zeta.struc=="species"){
@@ -99,6 +99,14 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     
     
   }
+  if(object$family=="ZNIB"){
+    phis2 = matrix(rep(object$params$ZINB.phi, each = nsim*nRows), ncol = nCols)
+    
+    phis1 = phis/(1+phis + phis2);
+    phis2 = phis2/(1+phis + phis2);
+    phis3 = phis1+phis2
+  }
+  
   
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs),
                   "poisson" = rpois(nTot, prs),
@@ -112,6 +120,13 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
                   "ZIP" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rpois(nTot, lambda = prs)),
                   "ZINB" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rnbinom(nTot, size = invPhis, mu = prs)),
                   "ZIB" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs)),
+                  "ZNIB" = {
+                    z <- mapply(function(prob) sample(3, 1, prob = prob, replace = TRUE), prob = as.list(data.frame(rbind(c(phis1),c(phis2),c(1-phis3)))))
+                    zeros <- rep(0, nTot)
+                    Ntrials <- rep(object$Ntrials, each = nsim * nRows)
+                    sim1 <- rbinom(nTot, size = rep(object$Ntrials, each = nsim * nRows), prob = prs)
+                    (z==1)*zeros + (z==2)*Ntrials + (z==3)*sim1
+                  },
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
   # reformat as data frame with the appropriate labels
   newDat = as.data.frame(matrix(newDat,ncol=nCols))

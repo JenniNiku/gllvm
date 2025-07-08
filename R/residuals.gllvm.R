@@ -210,6 +210,22 @@ residuals.gllvm <- function(object, ...) {
         if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
         ds.res <- matrix(qnorm(u),n,p)
       }
+      if (object$family == "ZNIB") {
+        if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
+        if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+        
+        phis0 = object$params$phi/(1+object$params$phi + object$params$ZINB.phi);
+        phisN = object$params$ZINB.phi/(1+object$params$phi + object$params$ZINB.phi);
+        
+        b <- pznib(as.vector(y), Ntrials = Ntrials, mu = as.vector(mu), p0 = rep(phis0, each = n), pN = rep(phisN, each = n))
+        a <- pmin(b, pznib(as.vector(y) - 1, Ntrials = Ntrials, mu = as.vector(mu), p0 = rep(phis0, each = n), pN = rep(phisN, each = n)))
+        
+        u = a+(b-a)*runif(n*p)
+        
+        if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+        if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
+        ds.res <- matrix(qnorm(u),n,p)
+      }
       if (object$family == "tweedie") {
         phis <- object$params$phi + 1e-05
         b <- fishMod::pTweedie(as.vector(y), mu = as.vector(mu), phi = rep(phis, each = n), p = object$Power)

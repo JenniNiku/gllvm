@@ -374,7 +374,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
-  if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB")) 
+  if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB") || (object$family == "ZNIB")) 
     ilinkfun <- binomial(link = object$link)$linkinv
   if (object$family %in% c("ZIP","ZINB")) 
     ilinkfun <- function(eta) exp(eta) * (1 - matrix(object$params$phi, 

@@ -5,6 +5,7 @@ Version 2.0.5
 * New start.optimizer and start.optim.method arguments for changing the optimizers for generating starting values, related to #229.
 * cex.spp in ordiplot.gllvm can now be a vector
 * Added zero-inflated binomial distribution
+* Added zero-n-inflated binomial distribution
 
 # Bugfixes
 * Bug fixed in VP for mixed effects formula

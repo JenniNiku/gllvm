@@ -106,7 +106,7 @@ se.gllvm <- function(object, ...){
       # if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
       if(familyn!=7 & familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-      if(familyn!=11) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+      if(!familyn %in% c(11, 14)) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
       
       if(num.lv>0) {
         incld[names(objrFinal$par)=="Au"] <- TRUE
@@ -265,15 +265,16 @@ se.gllvm <- function(object, ...){
       names(out$sd$B) <- names(object$params$B)
       if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
       
-      if(family %in% c("ZINB")) {
-        se.ZINB.lphis <- se$lg_phiZINB[disp.group];  out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+      if(family %in% c("ZINB", "ZNIB")) {
+        se.ZINB.lphis <- se$lg_phiZINB[disp.group];  
+        if(family == "ZINB")out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
         out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
         names(out$sd$ZINB.phi) <- colnames(object$y);
         
         if(!is.null(names(disp.group))){
           try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
         }
-        names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+        if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
       }
       
       if(family %in% c("negative.binomial")) {
@@ -301,7 +302,7 @@ se.gllvm <- function(object, ...){
         }
       }
       
-      if(family%in%c("ZIP","ZINB","ZIB")) {
+      if(family%in%c("ZIP","ZINB","ZIB", "ZNIB")) {
         pars <- object$TMBfn$par
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
@@ -310,6 +311,18 @@ se.gllvm <- function(object, ...){
       if(family %in% c("ZIP","ZINB","ZIB")) {
         se.phis <- se$lg_phi[disp.group];
         out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
+        if(length(unique(disp.group))==p){
+          names(out$sd$phi) <- colnames(object$y);
+        }else if(!is.null(names(disp.group))){
+          try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
+        }else{
+          names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
+        }
+      }else if(family == "ZNIB"){
+        se.phis <- se$lg_phi[disp.group];  
+        out$sd$phi <- se.phis*object$params$phi;
+        names(out$sd$phi) <- colnames(object$y);
+        
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
         }else if(!is.null(names(disp.group))){
@@ -419,7 +432,7 @@ se.gllvm <- function(object, ...){
   } else {
     #Without traits#
     pars <- objrFinal$par
-    if(family %in% c("ZIP","ZINB","ZIB")) {
+    if(family %in% c("ZIP","ZINB","ZIB", "ZNIB")) {
       p0i <- names(pars)=="lg_phi"
       p0 <- pars[p0i]
       p0 <- p0+runif(p,0,0.001)
