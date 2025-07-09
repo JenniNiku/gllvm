@@ -53,7 +53,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     row.eff.new <- row.eff
     row.eff_ <- call$row.eff
     
-    if(!is.null(row.eff_) && !is.null(row.eff.new) && is.formula(row.eff)){
+    if(!is.null(row.eff_) && !is.null(row.eff.new) && is.language(row.eff)){
       call$row.eff <- update.formula(row.eff_, row.eff.new)
     }else{
       call$row.eff <- row.eff.new

@@ -7,7 +7,7 @@ Version 2.0.5
 * Added zero-inflated binomial distribution
 * Added zero-n-inflated binomial distribution
 
-# Bugfixes
+## Bugfixes
 * Bug fixed in VP for mixed effects formula
 
 
