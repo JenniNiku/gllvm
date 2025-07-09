@@ -421,6 +421,17 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
     }
     if(starting.val%in%c("res") && (num.lv+num.lv.c+num.RR)>0){
       
+      if(!is.null(RElist)){
+        fit.mvaR <- gllvm.TMB(y, X = X, formula=formula(formula), family = family, num.lv = 0, RElist = RElist, xr = xr, dr = dr, cstruc = cstruc, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero", diag.iter = 0, optimizer = start.optimizer, optim.method = start.optim.method, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, sp.Ar.struc = Ab.struct, sp.Ar.struc.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat, col.eff = "random", beta0com = beta0com, zeta.struc = zeta.struc)
+        if(!inherits(fit.mvaR,"try-error") && is.finite(fit.mvaR$logL)){
+          if(nrow(dr)==n) { # !!!!  
+            sigma=c(max(fit.mvaR$params$sigma[1],sigma),fit.mvaR$params$sigma[-1])
+            fit.mva$params$row.params.random <- fit.mvaR$params$row.params.random/sd(fit.mvaR$params$row.params.random)*sigma[1]
+          }
+          out$fitstart <- list(A=fit.mvaR$A, Ab=fit.mvaR$Ab, TMBfnpar=fit.mvaR$TMBfn$par, B = fit.mvaR$params$B, Br = fit.mvaR$params$Br, sigmaB = fit.mvaR$params$sigmaB) #params = fit.mva$params, 
+        }
+      }
+      
       mu <- mu + matrix(params[,1],n,p,byrow=TRUE)
       if(!is.null(X) && is.null(TR)) mu <- mu + (Xdesign %*% matrix(params[,2:(1+num.X)],num.X,p))
       if((num.lv+num.lv.c+num.RR)>0){
@@ -638,7 +649,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       # b.lv <- start.fit$params$LvXcoef
       # gamma <- start.fit$params$theta
       #eta <- eta + lv.X%*%start.fit$params$LvXcoef%*%t(start.fit$params$theta)
-      if(isFALSE(randomB)){
+      if(isFALSE(randomB) && (num.lv.c>1)){
         optimizer <- "alabama"
       }else{
         optimizer="optim"

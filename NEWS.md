@@ -9,7 +9,8 @@ Version 2.0.5
 
 ## Bugfixes
 * Bug fixed in VP for mixed effects formula
-
+* Bug fixed for num.lv.c = 1 models
+* Bug fixed that crashed ordinal models with num.lv>0 and species-specific random effects
 
 Version 2.0.4
 =============
