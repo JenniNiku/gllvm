@@ -98,9 +98,9 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     }
   } else{
     if(object$beta0com){
-      if(length(object$sd$B) > length(object$params$B)) object$sd$B <- object$sd$B[object$sd$B!=0]
-      object$params$B <- c(setNames(object$params$beta0[1], "Intercept"), object$params$B)
-      object$sd$B <- c(setNames(object$sd$beta0[1], "Intercept"),object$sd$B)
+      if(length(object$sd[["B"]]) > length(object$params[["B"]])) object$sd[["B"]] <- object$sd$B[object$sd[["B"]]!=0]
+      object$params[["B"]] <- c(setNames(object$params$beta0[1], "Intercept"), object$params[["B"]])
+      object$sd[["B"]] <- c(setNames(object$sd$beta0[1], "Intercept"),object$sd[["B"]])
     }
     if (is.null(which.Xcoef))
       which.Xcoef <- 1:length(object$params$B)
