@@ -42,7 +42,7 @@ gllvm(
   gradient.check = FALSE,
   disp.formula = NULL,
   control = list(reltol = 1e-10, reltol.c = 1e-08, TMB = TRUE, optimizer = ifelse((num.RR
-    + num.lv.c) == 0 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
+    + num.lv.c) <= 1 | randomB != FALSE, "optim", "alabama"), max.iter = 6000, maxit =
     6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
     "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
@@ -114,7 +114,7 @@ gllvm(
 
 \item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".}
 
-\item{Ntrials}{number of trials for binomial family.}
+\item{Ntrials}{number of trials for binomial, ZIB and ZNIB families.}
 
 \item{Power}{fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental).}
 
@@ -334,6 +334,8 @@ With ordinal family response classes must start from 0 or 1.
   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p_j)}.}
   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
+  \item{ \code{family = "ZIB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)}.}
+  \item{ \code{family = "ZNIB"}:}{ Expectation \eqn{E[Y_{ij}] = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^N_j)N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2}.}
   
   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)}.}
 
@@ -502,6 +504,8 @@ Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.
 
 Niku, J., Brooks, W., Herliansyah, R., Hui, F. K. C., Taskinen, S., and Warton,  D. I. (2018). Efficient estimation of generalized linear latent variable models. PLoS One, 14(5):1-20.
+
+Sweeney, J., Haslett, J., & Parnell, A. C. (2014). The zero & $ N $-inflated binomial distribution with applications. arXiv preprint arXiv:1407.0064.
 
 Warton, D. I., Guillaume Blanchet, F., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C. and Hui, F. K. C. (2015). So many variables: Joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779.
 }

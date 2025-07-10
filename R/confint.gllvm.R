@@ -62,7 +62,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$params$phi <- NULL
       object$sd$phi <- NULL
     }
-    if (object$family == "ZINB") {
+    if (object$family %in% c("ZINB")) {
       object$params$ZINB.phi <- NULL
       object$sd$ZINB.phi <- NULL
     }
@@ -80,7 +80,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$params$LvXcoef <- NULL
     }
     
-    if(object$family=="ZINB" && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
+    if(object$family %in% c("ZINB") && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
     
     parmincl <- parm_all[parm_all %in% names(object$params)]
     if("rho.sp"%in%names(object$params[parmincl])){
@@ -203,16 +203,19 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$inv.phi), sep = ".")
     }
     
-    if(object$family == "ZINB"){
+    if(object$family %in% c("ZINB")){
       s <- length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$ZINB.inv.phi), sep = ".")
     }
-    
+    if(object$family %in% c("ZNIB")){
+      s <- length(unique(object$disp.group))
+      rnames[(cal + 1):(s+cal)] <- paste("phi", names(object$params$ZINB.phi), sep = ".")
+    }
     if(object$family == "tweedie"){
       s <-length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
     }
-    if(object$family %in%c("ZIP","ZINB")){
+    if(object$family %in%c("ZIP","ZINB", "ZIB", "ZNIB")){
       s <- length(unique(object$disp.group))
       rnames[(cal + 1):(s+cal)] <- paste("p", names(object$params$p), sep = ".")
     }

@@ -53,7 +53,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     row.eff.new <- row.eff
     row.eff_ <- call$row.eff
     
-    if(!is.null(row.eff_) && !is.null(row.eff.new) && inherits(row.eff,"formula")){
+    if(!is.null(row.eff_) && !is.null(row.eff.new) && is.language(row.eff)){
       call$row.eff <- update.formula(row.eff_, row.eff.new)
     }else{
       call$row.eff <- row.eff.new
@@ -64,7 +64,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   
   # Add or override other arguments from ...
   for (arg_name in names(args)) {
-    if(exists(arg_name, parent.frame())){
+    if(exists(arg_name, parent.frame()) && !is.function(get(arg_name, envir=parent.frame()))){
       call[[arg_name]] <- as.name(arg_name)
     }else {
       call[[arg_name]] <- args[[arg_name]]
