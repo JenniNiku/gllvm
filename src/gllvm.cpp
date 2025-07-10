@@ -2600,7 +2600,7 @@ Type objective_function<Type>::operator() ()
             }
             
             matrix<Type> Binv(nlvr,nlvr);
-            Type logdetC;
+            // Type logdetC;
             matrix <Type> Id(nlvr,nlvr);
             Id.setZero();Id.diagonal().fill(1.0);
             //this implementation does not follow calculation from van der Veen et al. 2021
@@ -2770,7 +2770,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       } else if (extra(0) == 1) { // probit
-        Type etaP;
+        // Type etaP;
         for (int i=0; i<n; i++) {
           for (int j=0; j<p; j++) {
             if(!gllvmutils::isNA(y(i,j))){
