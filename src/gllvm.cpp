@@ -4293,7 +4293,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-    }else if(family= 13){
+    }else if(family== 13){
       iphi=iphi/(1+iphi);
       for (int j=0; j<p;j++){
         for (int i=0; i<n; i++) {
@@ -4310,7 +4310,7 @@ Type objective_function<Type>::operator() ()
           }
         }
       }
-    }else if(family= 14){
+    }else if(family== 14){
       iphi = exp(lg_phi)/(1+exp(lg_phi) + exp(lg_phiZINB));
       vector<Type> iphi2 = exp(lg_phiZINB)/(1+exp(lg_phi) + exp(lg_phiZINB));
       vector<Type> iphi3 = iphi+iphi2;
