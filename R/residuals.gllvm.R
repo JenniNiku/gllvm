@@ -165,6 +165,7 @@ residuals.gllvm <- function(object, ...) {
         ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "ZIP") {
+        mu = exp(eta.mat)
         b <- pzip(as.vector(y), mu = as.vector(mu), sigma = rep(object$params$phi, each = n))
         a <- pmin(b, pzip(as.vector(y) - 1, mu = as.vector(mu), sigma = rep(object$params$phi, each = n)))
         
@@ -175,6 +176,7 @@ residuals.gllvm <- function(object, ...) {
         ds.res <- matrix(qnorm(u),n,p)
       }
       if (object$family == "ZINB") {
+        mu = exp(eta.mat)
         b <- pzinb(as.vector(y), mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n))
         a <- pmin(b, pzinb(as.vector(y) - 1, mu = as.vector(mu), p = rep(object$params$phi, each = n), sigma = rep(object$params$ZINB.phi, each = n)))
 
