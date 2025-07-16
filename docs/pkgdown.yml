@@ -1,4 +1,4 @@
-pandoc: 3.1.11
+pandoc: '3.4'
 pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
@@ -11,4 +11,4 @@ articles:
   vignette7: vignette7.html
   vignette8: vignette8.html
   vignette9: vignette9.html
-last_built: 2024-09-25T12:32Z
+last_built: 2025-07-15T16:42Z

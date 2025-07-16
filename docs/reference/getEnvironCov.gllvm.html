@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -88,7 +88,7 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'gllvm'</span></span>
-<span><span class="fu">getEnvironCov</span><span class="op">(</span><span class="va">object</span>, x <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">getEnvironCov</span><span class="op">(</span><span class="va">object</span>, x <span class="op">=</span> <span class="cn">NULL</span>, relative <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -103,8 +103,12 @@
 <dd><p>(optional) vector of covariate values to calculate the covariance for. Defaults to a vector of 1s. If both 'randomX' and random species effects are present in the model this should be a list of length two.</p></dd>
 
 
+<dt id="arg-relative">relative<a class="anchor" aria-label="anchor" href="#arg-relative"></a></dt>
+<dd><p>defaults to TRUE. For <code>getEnvironCor</code>, if there are residual latent effects in the model (such as due to num.lv or num.lv.c), this scales the covariance matrix by the sum of the environmental and residual variances instead, so that the diagonal of the correlation matrix is smaller than one. This matrix then represents the contribution of the environment to the overall species associations in the model.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>not used</p></dd>
+<dd><p>arguments passed on to <code><a href="getResidualCov.gllvm.html">getResidualCov.gllvm</a></code></p></dd>
 
 </dl></div>
     <div id="value">
@@ -133,11 +137,13 @@ For full rank models with random slopes, i.e., with the formula interface or the
 when there are covariate-specific phylogenetic signal parameters in the model, this is instead:</p>
 <p>$$\Sigma_e = kronecker(x_i', I_m)*bdiag(L_k)*kronecker(\Sigma_r, I_m)*bdiag(L_k')*kronecker(x_i, I_m),$$</p>
 <p>where \(bdiag(L_k)\) is a block-diagonal lower triangular matrix, and each \(L_k\) the lower triangular matrix of the covariance matrix for each covariate.</p>
-<p>For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances, we have:</p>
+<p>For reduced rank models, the covariance is separately defined for the different variance structures of the canonical coefficients in the package. With LV-specific variances and without correlations, we have:</p>
 <p>$$\Sigma_e = \Theta*S*\Theta',$$</p>
 <p>where \(\Theta\) is the matrix of loadings, and S the (diagonal) covariance matrix for the canonical coefficients. With predictor-specific variances, we instead have:</p>
 <p>$$\Sigma_e = \sum^K_{k=1} \Theta(I_d*\sigma_k^2)\Theta',$$</p>
-<p>with I_d an identity matrix for the number of constrained and informed latent variables, and \(\sigma_k^2\) the variance per predictor for the canonical coefficients.</p>
+<p>with I_d an identity matrix for the number of constrained and informed latent variables, and \(\sigma_k^2\) the variance per predictor for the canonical coefficients. When correlations are included, we have:</p>
+<p>$$\Sigma_e = kronecker(x_i', I_m)kronecker(\Sigma,\Theta\Theta')kronecker(x_i, I_m),$$</p>
+<p>and similarly for LV-specific variances with correlations. Expressions for the quadratic models in the package are determined similarly but not documented here for brevity.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>

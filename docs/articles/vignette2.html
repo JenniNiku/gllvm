@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
 data using gllvm</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2024-09-25</h4>
+            <h4 data-toc-skip class="date">2025-07-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette2.rmd" class="external-link"><code>vignettes/vignette2.rmd</code></a></small>
       <div class="hidden name"><code>vignette2.rmd</code></div>
@@ -168,9 +168,12 @@ counts:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">meanY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">Ysoil</span>,<span class="fl">2</span>, <span class="va">mean</span><span class="op">)</span></span>
 <span><span class="va">varY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">Ysoil</span>,<span class="fl">2</span>, <span class="va">var</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span>,<span class="va">varY</span>, log <span class="op">=</span> <span class="st">"y"</span>, main <span class="op">=</span> <span class="st">"Species mean-variance relationship"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span>,<span class="va">varY</span>, log <span class="op">=</span> <span class="st">"y"</span>, main <span class="op">=</span> <span class="st">"Species mean-variance relationship"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"l"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">+</span> <span class="fl">1</span><span class="op">*</span><span class="va">meanY</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"l"</span>, col<span class="op">=</span><span class="fl">2</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"bottomright"</span>, lty<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"var = mean"</span>, <span class="st">"var = mean+phi*mu^2"</span><span class="op">)</span>, bty<span class="op">=</span><span class="st">"n"</span>, col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette2_files/figure-html/unnamed-chunk-3-1.png" width="768" style="display: block; margin: auto;">
-As species variances increases while mean increases, it is a clear
+As species variances increases faster than mean, it is a clear
 indication of the overdispersion in the data.</p>
 <p>In order to study if the effect of environmental variables is seen in
 an unconstrained ordination plot, we first consider a GLLVM with two
@@ -179,13 +182,14 @@ based on the predicted latent variables. For count data with
 overdispersion we consider here the negative binomial (NB) distribution.
 We also include random effects for sites in order to account for the
 differences in site totals. This can be done by defining the structure
-for random row effects in an argument <code>row.eff</code> and including
-a data frame with ‘Site’ variable as factor to an argument
-‘studyDesign’. Note that in the examples we consider below we don’t
-necessarily need standard errors for the parameters for this specific
-model so we define <code>sd.errors = FALSE</code> in the function call.
-When needed, standard errors can also be calculated afterwards using
-function <code>se</code>.</p>
+for community level random row effects in an argument
+<code>row.eff</code> and including a data frame with ‘Site’ variable as
+factor to an argument ‘studyDesign’. Note that in the examples we
+consider below we don’t necessarily need standard errors for the
+parameters for this specific model so we define
+<code>sd.errors = FALSE</code> in the function call. When needed,
+standard errors can also be calculated afterwards using function
+<code>se</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sDesign</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Site<span class="op">=</span><span class="va">Xenv</span><span class="op">$</span><span class="va">Site</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -202,10 +206,10 @@ function <code>se</code>.</p>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## log-likelihood:  -59822.73 </span></span>
-<span><span class="co">## Residual degrees of freedom:  52205 </span></span>
-<span><span class="co">## AIC:  125555.5 </span></span>
-<span><span class="co">## AICc:  125890.1 </span></span>
-<span><span class="co">## BIC:  151908.1</span></span></code></pre>
+<span><span class="co">## Residual degrees of freedom:  52197 </span></span>
+<span><span class="co">## AIC:  125571.5 </span></span>
+<span><span class="co">## AICc:  125908 </span></span>
+<span><span class="co">## BIC:  151995.5</span></span></code></pre>
 <p>Using the residual diagnostic plot we can check that the chosen NB
 distribution is suitable for the data at hand. The Dunn-Smyth residuals
 given by the NB model are normally distributed around zero, thus
@@ -311,10 +315,10 @@ following examples.</p>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## log-likelihood:  -58976.08 </span></span>
-<span><span class="co">## Residual degrees of freedom:  51220 </span></span>
-<span><span class="co">## AIC:  125832.2 </span></span>
-<span><span class="co">## AICc:  126438.5 </span></span>
-<span><span class="co">## BIC:  160969.1</span></span></code></pre>
+<span><span class="co">## Residual degrees of freedom:  51212 </span></span>
+<span><span class="co">## AIC:  125848.2 </span></span>
+<span><span class="co">## AICc:  126457 </span></span>
+<span><span class="co">## BIC:  161056.4</span></span></code></pre>
 <p>Ranked point estimates with 95% confidence intervals are plotted
 below using function <code>coefplot</code> and indicate that pH value
 strongly affects to the species composition as so many of the confidence
@@ -350,10 +354,10 @@ in the GLLVM.</p>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## log-likelihood:  -57178.88 </span></span>
-<span><span class="co">## Residual degrees of freedom:  49250 </span></span>
-<span><span class="co">## AIC:  126177.8 </span></span>
-<span><span class="co">## AICc:  127596.4 </span></span>
-<span><span class="co">## BIC:  178883.1</span></span></code></pre>
+<span><span class="co">## Residual degrees of freedom:  49242 </span></span>
+<span><span class="co">## AIC:  126193.8 </span></span>
+<span><span class="co">## AICc:  127616.5 </span></span>
+<span><span class="co">## BIC:  178970.5</span></span></code></pre>
 <p>The information criteria for the model with all covariates were worse
 than for the model with only pH as a covariate. Below, point estimates
 with 95% confidence intervals below indicate that pH value is the main
@@ -390,10 +394,10 @@ covariate into the model.</p>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## log-likelihood:  -54759.57 </span></span>
-<span><span class="co">## Residual degrees of freedom:  47280 </span></span>
-<span><span class="co">## AIC:  125279.1 </span></span>
-<span><span class="co">## AICc:  127906.2 </span></span>
-<span><span class="co">## BIC:  195552.9</span></span></code></pre>
+<span><span class="co">## Residual degrees of freedom:  47272 </span></span>
+<span><span class="co">## AIC:  125295.1 </span></span>
+<span><span class="co">## AICc:  127928 </span></span>
+<span><span class="co">## BIC:  195640.3</span></span></code></pre>
 <p>The resulting ordination plot shows that there is no more visible
 pattern in sampling location.</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">

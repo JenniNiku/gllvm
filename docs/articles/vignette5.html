@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2024-09-25</h4>
+            <h4 data-toc-skip class="date">2025-07-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette5.Rmd" class="external-link"><code>vignettes/vignette5.Rmd</code></a></small>
       <div class="hidden name"><code>vignette5.Rmd</code></div>
@@ -120,7 +120,7 @@ community ecology, specifically to describe the response of species to
 the environment. When one has measured predictor variables, a quadratic
 function can straightforwardly be included in a regression in R using
 the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>o</mi><mi>l</mi><mi>y</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>⋅</mo><mo>,</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">poly(\cdot,2)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>o</mi><mi>l</mi><mi>y</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>⋅</mi><mo>,</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">poly(\cdot,2)</annotation></semantics></math>
 function. However, in a GLLVM, latent variables are included that can
 represent unmeasured predictors. As such, we might want to test if
 species respond to those unknown predictors too. This is similar to the
@@ -164,7 +164,7 @@ argument in <code>start.control</code>.</p>
 fits the hunting spider data best.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/AICc.html">AICc</a></span><span class="op">(</span><span class="va">ftEqTol</span>,<span class="va">ftComTol</span>,<span class="va">ftUneqTol</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 1671.791 1673.141 1455.211</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 1743.410 1673.141 1455.211</span></span></code></pre>
 <p>The unequal tolerances model fits best, as measured by AICc. Species
 optima and tolerances, and their approximate standard errors, can be
 extracted:</p>

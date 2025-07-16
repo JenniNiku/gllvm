@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
 gllvm</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2024-09-25</h4>
+            <h4 data-toc-skip class="date">2025-07-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette1.Rmd" class="external-link"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -139,7 +139,7 @@ to choose number of ordination axes.</p>
 <p>A multivariate abundance dataset can be defined by a matrix of
 abundances, with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
-rows (usually sites) and
+rows (usually sites or samples) and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
 columns of responses (usually species). Denote the abundance of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>th
@@ -173,10 +173,10 @@ standard normally distributed. The parameters
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\beta_{0j}</annotation></semantics></math>
 are species specific intercepts, while
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>
-are optional site effects which can be chosen as either fixed or random
-effects
+are optional community level row effects which can be chosen as either
+fixed or random effects
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>;</mo><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha_i \sim N(0; \sigma^2))</annotation></semantics></math>.
-If row effects
+If community level row effects for each sample
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>
 are included, all other terms in the model can be subsequently
 interpreted as modelling relative abundance or compositional effects
@@ -318,7 +318,8 @@ re-organised to a long format.</p>
 <code>num.lv</code>. The default number of latent variables is two.
 Other important arguments in the <code>gllvm</code> call are
 <code>row.eff</code> for defining the type of row effects (none, fixed
-or random), <code>offset</code> for potential inclusion of offsets,
+or random, or multiple and/or sructured via formula),
+<code>offset</code> for potential inclusion of offsets,
 <code>Power</code> for defining the power parameter of the Tweedie
 distribution and <code>starting.val</code> for judicious choice of
 starting values for the latent variables.</p>
@@ -417,116 +418,68 @@ is a dispersion parameter</td>
 <tr class="odd">
 <td></td>
 <td align="center">binomial</td>
-<td align="left">LA</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">logit</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td>Binary</td>
-<td align="center">Bernoulli</td>
-<td align="left">EVA/VA/LA</td>
+<td>zero-inflated</td>
+<td align="center">ZIB</td>
+<td align="left">VA/LA</td>
 <td align="left">probit</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)N_j\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)</annotation></semantics></math>
 </td>
 </tr>
 <tr class="odd">
 <td></td>
-<td align="center"></td>
-<td align="left">EVA/LA</td>
+<td align="center">ZIB</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">logit</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td>Biomass</td>
-<td align="center">Tweedie</td>
-<td align="left">LA/EVA</td>
-<td align="left">log</td>
-<td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>ν</mi></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \phi_j\mu_{ij}^\nu</annotation></semantics></math>,</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td align="center"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mi>ν</mi><mo>&lt;</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">1&lt;\nu&lt;2</annotation></semantics></math>
-is a power parameter and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mi>j</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\phi_j&gt;0</annotation></semantics></math>
-is a dispersion parameter</td>
-</tr>
-<tr class="even">
-<td>Ordinal</td>
-<td align="center">Multinomial</td>
-<td align="left">VA</td>
-<td align="left">probit</td>
-<td align="left">Cumulative probit model</td>
-</tr>
-<tr class="odd">
-<td>Normal</td>
-<td align="center">Gaussian</td>
+<td>zero/N-inflated</td>
+<td align="center">ZIB</td>
 <td align="left">VA/LA</td>
-<td align="left">identity</td>
-<td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>ϕ</mi><mi>j</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \phi_j^2</annotation></semantics></math>
-</td>
-</tr>
-<tr class="even">
-<td>Positive continuous</td>
-<td align="center">Gamma</td>
-<td align="left">VA/LA</td>
-<td align="left">log</td>
-<td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup><mi>/</mi><msub><mi>ϕ</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2/\phi_j</annotation></semantics></math>
-</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td align="center"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϕ</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\phi_j</annotation></semantics></math>
-is a shape parameter</td>
-</tr>
-<tr class="even">
-<td>Positive continuous</td>
-<td align="center">Exponential</td>
-<td align="left">VA/LA</td>
-<td align="left">log</td>
-<td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2</annotation></semantics></math>
-</td>
-</tr>
-<tr class="odd">
-<td>Percent cover</td>
-<td align="center">beta</td>
-<td align="left">LA/EVA</td>
 <td align="left">probit/logit</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><msub><mi>N</mi><mi>j</mi></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mn>0</mn></msubsup><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}</annotation></semantics></math>,
+<span class="math inline">$V(\mu_{ij}) = p_j^N N_j^2 +
+(1-p_j^0-p^N_j)N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2}$</span>
 </td>
-</tr>
-<tr class="even">
-<td>Percent cover with zeros/ones</td>
-<td align="center">ordered beta</td>
-<td align="left">EVA</td>
-<td align="left">probit</td>
-<td align="left">details in Korhonen et al (2024)</td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section level3">
-<h3 id="model-based-ordination">Model-based ordination<a class="anchor" aria-label="anchor" href="#model-based-ordination"></a>
-</h3>
+<p>|Binary | Bernoulli | EVA/VA/LA |probit |
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})</annotation></semantics></math>|
+| | | EVA/LA |logit | | |Biomass | Tweedie | EVA/VA/LA |log |
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>ν</mi></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \phi_j\mu_{ij}^\nu</annotation></semantics></math>,|
+| | | | | where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mi>ν</mi><mo>&lt;</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">1&lt;\nu&lt;2</annotation></semantics></math>
+is a power parameter and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mi>j</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\phi_j&gt;0</annotation></semantics></math>
+is a dispersion parameter | |Ordinal | Multinomial | VA |probit |
+Cumulative probit model| |Normal | Gaussian | VA/LA |identity|
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>ϕ</mi><mi>j</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \phi_j^2</annotation></semantics></math>|
+|Positive continuous| Gamma | VA/LA |log|
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup><mi>/</mi><msub><mi>ϕ</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2/\phi_j</annotation></semantics></math>|
+| | | | | where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϕ</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\phi_j</annotation></semantics></math>
+is a shape parameter | |Positive continuous | Exponential | VA/LA |log|
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2</annotation></semantics></math>|
+|Percent cover| beta | LA/EVA | probit/logit |
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)</annotation></semantics></math>
+| |Percent cover with zeros/ones| ordered beta | EVA | probit | details
+in Korhonen et al (2024) | || beta hurdle | EVA | probit | | ##
+Model-based ordination</p>
 <p>GLLVMs can be used as a model-based approach to unconstrained
 ordination by including (<em>e.g.</em>) two latent variables in the
 model but no predictors. The corresponding ordination plot then provides
@@ -544,11 +497,11 @@ distributions for the data – the Poisson and negative binomial (NB).</p>
 <span><span class="co">#&gt; method: </span></span>
 <span><span class="co">#&gt; [1] "VA"</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; log-likelihood:  -2098.632 </span></span>
+<span><span class="co">#&gt; log-likelihood:  -2098.631 </span></span>
 <span><span class="co">#&gt; Residual degrees of freedom:  1108 </span></span>
-<span><span class="co">#&gt; AIC:  4441.264 </span></span>
-<span><span class="co">#&gt; AICc:  4468.375 </span></span>
-<span><span class="co">#&gt; BIC:  5065.266</span></span></code></pre></div>
+<span><span class="co">#&gt; AIC:  4441.261 </span></span>
+<span><span class="co">#&gt; AICc:  4468.372 </span></span>
+<span><span class="co">#&gt; BIC:  5065.263</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span><span class="op">)</span></span>
 <span><span class="va">fit_ord</span></span>
@@ -561,8 +514,8 @@ distributions for the data – the Poisson and negative binomial (NB).</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; log-likelihood:  -1865.085 </span></span>
 <span><span class="co">#&gt; Residual degrees of freedom:  1067 </span></span>
-<span><span class="co">#&gt; AIC:  4056.171 </span></span>
-<span><span class="co">#&gt; AICc:  4106.325 </span></span>
+<span><span class="co">#&gt; AIC:  4056.17 </span></span>
+<span><span class="co">#&gt; AICc:  4106.324 </span></span>
 <span><span class="co">#&gt; BIC:  4889.878</span></span></code></pre></div>
 <p>As a model-based ordination method, GLLVMs offer tools for the model
 checking in contrast to the classical algorithm-based ordination methods
@@ -708,7 +661,7 @@ especially for large datasets with many covariates and latent variables,
 this can take a while to run.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">MuMIn</span><span class="op">)</span></span>
-<span><span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu">dredge</span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AICc"</span><span class="op">)</span></span>
+<span><span class="va">fit_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/MuMIn/man/dredge.html" class="external-link">dredge</a></span><span class="op">(</span><span class="va">fiti</span>,varying<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>num.lv<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>, rank<span class="op">=</span><span class="st">"AICc"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">fit_table</span>, <span class="va">delta</span><span class="op">&lt;</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co"># Global model call: gllvm(y = y, X = X, formula = ~Bare.ground + Canopy.cover +  Volume.lying.CWD, </span></span>
 <span><span class="co">#     family = "negative.binomial", num.lv = i, sd.errors = FALSE, </span></span>
@@ -800,10 +753,10 @@ approximately 40% of the (co)variation in ant species abundances.</p>
 <code class="sourceCode R"><span><span class="va">rcov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit_env</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit1lv</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>; <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 44.15558</span></span>
-<span><span class="co">#&gt; [1] 25.83591</span></span>
+<span><span class="co">#&gt; [1] 44.09134</span></span>
+<span><span class="co">#&gt; [1] 25.83646</span></span>
 <span><span class="fl">1</span> <span class="op">-</span> <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span> <span class="op">/</span> <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 0.4148892</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.4140242</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="incorporating-functional-traits-into-fourth-corner-models">Incorporating functional traits into fourth corner models<a class="anchor" aria-label="anchor" href="#incorporating-functional-traits-into-fourth-corner-models"></a>
@@ -815,12 +768,13 @@ functional traits to the model offers the potential to explain why
 species differ in environmental response.</p>
 <p>The fourth corner model can be fitted using the argument
 <code>TR</code> to include traits. The argument <code>formula</code> is
-used to specify the model. Random row effects are included using
-<code>row.eff = "random"</code> and the argument <code>randomX</code> is
-used to incorporate random slopes in the model. As the defined model is
-very complex, we use three starting points for the initial values of the
-latent variables via argument <code>n.init</code> in order to ensure
-that the maximum point is reached.</p>
+used to specify the model. Community level random row effects are
+included using <code>row.eff = "random"</code> and the argument
+<code>randomX</code> is used to incorporate random slopes in the model.
+As the defined model is very complex, we use three starting points for
+the initial values of the latent variables via argument
+<code>n.init</code> in order to ensure that the maximum point is
+reached.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_4th</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">X</span>, <span class="va">TR</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span>, </span>
 <span>                 formula <span class="op">=</span> <span class="va">y</span> <span class="op">~</span> <span class="op">(</span><span class="va">Bare.ground</span> <span class="op">+</span> <span class="va">Canopy.cover</span> <span class="op">+</span> <span class="va">Volume.lying.CWD</span><span class="op">)</span> <span class="op">+</span></span>
@@ -839,7 +793,7 @@ The resulting plots indicate that interactions of the trait variable
 abundances.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lattice.r-forge.r-project.org/" class="external-link">lattice</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fit_4th</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">11</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex.ylab <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot.gllvm</a></span><span class="op">(</span><span class="va">fit_4th</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">11</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex.ylab <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="va">fourth</span> <span class="op">&lt;-</span> <span class="va">fit_4th</span><span class="op">$</span><span class="va">fourth.corner</span></span>
 <span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">1.5</span></span>
 <span><span class="va">colort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/colorRamp.html" class="external-link">colorRampPalette</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"blue"</span>, <span class="st">"white"</span>, <span class="st">"red"</span><span class="op">)</span><span class="op">)</span></span>
@@ -847,7 +801,16 @@ abundances.</p>
 <span>                      ylab <span class="op">=</span> <span class="st">"Species traits"</span>, col.regions <span class="op">=</span> <span class="fu">colort</span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, cex.lab <span class="op">=</span> <span class="fl">1.3</span>, </span>
 <span>                      at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="va">a</span>, <span class="va">a</span>, length <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>, scales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rot <span class="op">=</span> <span class="fl">45</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">plot.4th</span></span></code></pre></div>
-<p><img src="vignette1_files/figure-html/unnamed-chunk-30-1.png" width="49%" style="display: block; margin: auto;"><img src="vignette1_files/figure-html/unnamed-chunk-30-2.png" width="49%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="F4coef.png" alt="plot of chunk F4 1"><p class="caption">
+coefplot
+</p>
+</div>
+<div class="figure" style="text-align: center">
+<img src="F4.png" alt="plot of chunk F4 2"><p class="caption">
+fourth corner plot
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="example-model-based-inference">Example: Model-based inference<a class="anchor" aria-label="anchor" href="#example-model-based-inference"></a>

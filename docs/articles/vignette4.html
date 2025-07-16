@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
 correlations</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2024-09-25</h4>
+            <h4 data-toc-skip class="date">2025-07-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette4.rmd" class="external-link"><code>vignettes/vignette4.rmd</code></a></small>
       <div class="hidden name"><code>vignette4.rmd</code></div>
@@ -279,7 +279,7 @@ data with the most important arguments listed in the following:</p>
 <li>family: distribution for responses</li>
 <li>num.lv: number of latent variables</li>
 <li>method: approximation used “VA” or “LA”</li>
-<li>row.eff: type of row effects</li>
+<li>row.eff: type of community level row effects</li>
 <li>n.init: number of random starting points for latent variables</li>
 <li>starting.val: starting value method</li>
 </ul>
@@ -336,11 +336,11 @@ using <strong>gllvm</strong>:</p>
 <span><span class="co">## method: </span></span>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## log-likelihood:  -593.6749 </span></span>
+<span><span class="co">## log-likelihood:  -588.9187 </span></span>
 <span><span class="co">## Residual degrees of freedom:  217 </span></span>
-<span><span class="co">## AIC:  1425.35 </span></span>
-<span><span class="co">## AICc:  1557.572 </span></span>
-<span><span class="co">## BIC:  1879.586</span></span></code></pre></div>
+<span><span class="co">## AIC:  1415.837 </span></span>
+<span><span class="co">## AICc:  1548.06 </span></span>
+<span><span class="co">## BIC:  1870.074</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="model-selection">Model selection<a class="anchor" aria-label="anchor" href="#model-selection"></a>
@@ -357,11 +357,11 @@ criterion:</li>
 <span><span class="va">fitx2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">fitx3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1393.843</span></span>
+<span><span class="co">## [1] 1393.837</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1425.35</span></span>
+<span><span class="co">## [1] 1415.837</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1445.35</span></span></code></pre></div>
+<span><span class="co">## [1] 1435.837</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="residual-analysis">Residual analysis<a class="anchor" aria-label="anchor" href="#residual-analysis"></a>
@@ -529,11 +529,11 @@ may</span></p>
 <span><span class="co">## method: </span></span>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## log-likelihood:  -733.6807 </span></span>
+<span><span class="co">## log-likelihood:  -733.6806 </span></span>
 <span><span class="co">## Residual degrees of freedom:  289 </span></span>
 <span><span class="co">## AIC:  1561.361 </span></span>
 <span><span class="co">## AICc:  1577.028 </span></span>
-<span><span class="co">## BIC:  1740.766</span></span></code></pre></div>
+<span><span class="co">## BIC:  1740.765</span></span></code></pre></div>
 <p>Based on AIC, NB distribution suits better. How about residual
 analysis: <span style="color:red"> <strong>NOTE THAT</strong> The
 package uses randomized quantile residuals so each time you plot the
@@ -575,7 +575,7 @@ environmental variable matrix or define the model using formula.
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1449.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1486.451</span></span>
+<span><span class="co">## [1] 1471.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1491.428</span></span>
 <span><span class="co"># Or alternatively using formula:</span></span>
@@ -606,82 +606,82 @@ obtained with <code><a href="../reference/confint.gllvm.html">confint()</a></cod
 <span><span class="co">## $Species.scores</span></span>
 <span><span class="co">##                   LV1</span></span>
 <span><span class="co">## Alopacce 1.000000e+00</span></span>
-<span><span class="co">## Alopcune 1.286564e+00</span></span>
-<span><span class="co">## Alopfabr 4.411474e-01</span></span>
-<span><span class="co">## Arctlute 2.261271e+00</span></span>
-<span><span class="co">## Arctperi 6.558817e-06</span></span>
-<span><span class="co">## Auloalbi 2.499060e+00</span></span>
-<span><span class="co">## Pardlugu 3.973132e-01</span></span>
-<span><span class="co">## Pardmont 9.557377e-01</span></span>
-<span><span class="co">## Pardnigr 2.565877e+00</span></span>
-<span><span class="co">## Pardpull 2.528257e+00</span></span>
-<span><span class="co">## Trocterr 9.659180e-01</span></span>
-<span><span class="co">## Zoraspin 1.751833e+00</span></span>
+<span><span class="co">## Alopcune 1.286728e+00</span></span>
+<span><span class="co">## Alopfabr 4.411405e-01</span></span>
+<span><span class="co">## Arctlute 2.261604e+00</span></span>
+<span><span class="co">## Arctperi 1.199011e-07</span></span>
+<span><span class="co">## Auloalbi 2.499188e+00</span></span>
+<span><span class="co">## Pardlugu 3.974290e-01</span></span>
+<span><span class="co">## Pardmont 9.559553e-01</span></span>
+<span><span class="co">## Pardnigr 2.566355e+00</span></span>
+<span><span class="co">## Pardpull 2.528347e+00</span></span>
+<span><span class="co">## Trocterr 9.659235e-01</span></span>
+<span><span class="co">## Zoraspin 1.751378e+00</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $sigma.lv</span></span>
 <span><span class="co">##       LV1 </span></span>
-<span><span class="co">## 0.8536904 </span></span>
+<span><span class="co">## 0.8536334 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Intercept</span></span>
 <span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
-<span><span class="co">##  -3.010735  -7.407244   2.077617 -21.478661  -7.920069 -12.969707   4.569019 </span></span>
+<span><span class="co">##  -3.009366  -7.407011   2.077469 -21.475808  -7.919788 -12.966567   4.567711 </span></span>
 <span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
-<span><span class="co">##  -6.088991 -14.644413 -16.457915  -3.712424  -9.219694 </span></span>
+<span><span class="co">##  -6.091001 -14.644265 -16.455462  -3.711545  -9.214620 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Xcoef</span></span>
 <span><span class="co">##            soil.dry reflection</span></span>
-<span><span class="co">## Alopacce -0.3438061  1.5945287</span></span>
-<span><span class="co">## Alopcune  2.6112725  0.6246891</span></span>
-<span><span class="co">## Alopfabr -1.8668475  0.7468388</span></span>
-<span><span class="co">## Arctlute  6.3227353  0.8208664</span></span>
-<span><span class="co">## Arctperi -1.7566353  2.8892032</span></span>
-<span><span class="co">## Auloalbi  4.1826104  0.6832891</span></span>
-<span><span class="co">## Pardlugu -0.5456458 -1.2606137</span></span>
-<span><span class="co">## Pardmont  1.7920398  1.4688279</span></span>
-<span><span class="co">## Pardnigr  4.9045138  0.8601683</span></span>
-<span><span class="co">## Pardpull  5.3505939  1.2824173</span></span>
-<span><span class="co">## Trocterr  2.3361048  0.2234954</span></span>
-<span><span class="co">## Zoraspin  3.5570334  0.1199447</span></span>
+<span><span class="co">## Alopacce -0.3441126  1.5943118</span></span>
+<span><span class="co">## Alopcune  2.6111040  0.6246658</span></span>
+<span><span class="co">## Alopfabr -1.8668697  0.7469052</span></span>
+<span><span class="co">## Arctlute  6.3216915  0.8206300</span></span>
+<span><span class="co">## Arctperi -1.7566795  2.8891451</span></span>
+<span><span class="co">## Auloalbi  4.1813980  0.6831737</span></span>
+<span><span class="co">## Pardlugu -0.5452740 -1.2604983</span></span>
+<span><span class="co">## Pardmont  1.7924464  1.4691428</span></span>
+<span><span class="co">## Pardnigr  4.9041830  0.8601713</span></span>
+<span><span class="co">## Pardpull  5.3496242  1.2823045</span></span>
+<span><span class="co">## Trocterr  2.3357628  0.2234528</span></span>
+<span><span class="co">## Zoraspin  3.5553229  0.1198180</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $inv.phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 9.375940e+00 1.699565e+00 1.577636e+00 1.063992e+00 4.391997e+05 1.511603e+00 </span></span>
+<span><span class="co">## 9.379379e+00 1.699522e+00 1.577597e+00 1.064244e+00 2.261178e+07 1.511528e+00 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 1.543843e+00 9.784953e-01 2.518153e+00 2.339355e+00 1.470886e+01 3.624948e+00 </span></span>
+<span><span class="co">## 1.543689e+00 9.784566e-01 2.517830e+00 2.339492e+00 1.471022e+01 3.625276e+00 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 1.066560e-01 5.883857e-01 6.338598e-01 9.398569e-01 2.276869e-06 6.615492e-01 </span></span>
+<span><span class="co">## 1.066169e-01 5.884007e-01 6.338754e-01 9.396342e-01 4.422473e-08 6.615821e-01 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 6.477341e-01 1.021977e+00 3.971164e-01 4.274683e-01 6.798622e-02 2.758661e-01</span></span>
+<span><span class="co">## 6.477990e-01 1.022018e+00 3.971674e-01 4.274432e-01 6.797994e-02 2.758410e-01</span></span>
 <span><span class="co"># Coefficients for covariates are named as `Xcoef`</span></span>
 <span><span class="co"># Confidence intervals for these coefficients:</span></span>
 <span><span class="fu"><a href="../reference/confint.gllvm.html">confint</a></span><span class="op">(</span><span class="va">fitx1</span>, parm <span class="op">=</span> <span class="st">"Xcoef"</span><span class="op">)</span></span>
 <span><span class="co">##               cilow       ciup</span></span>
-<span><span class="co">## Xcoef1  -1.02657582  0.3389637</span></span>
-<span><span class="co">## Xcoef2   1.34798979  3.8745552</span></span>
-<span><span class="co">## Xcoef3  -2.85510118 -0.8785939</span></span>
-<span><span class="co">## Xcoef4   2.24760383 10.3978668</span></span>
-<span><span class="co">## Xcoef5  -2.87603054 -0.6372400</span></span>
-<span><span class="co">## Xcoef6   1.79232232  6.5728985</span></span>
-<span><span class="co">## Xcoef7  -1.64615225  0.5548606</span></span>
-<span><span class="co">## Xcoef8   0.73330963  2.8507700</span></span>
-<span><span class="co">## Xcoef9   2.78645009  7.0225774</span></span>
-<span><span class="co">## Xcoef10  3.14444174  7.5567460</span></span>
-<span><span class="co">## Xcoef11  1.64647443  3.0257352</span></span>
-<span><span class="co">## Xcoef12  1.97813993  5.1359268</span></span>
-<span><span class="co">## Xcoef13  0.95846116  2.2305962</span></span>
-<span><span class="co">## Xcoef14  0.13820904  1.1111691</span></span>
-<span><span class="co">## Xcoef15 -0.24255716  1.7362347</span></span>
-<span><span class="co">## Xcoef16 -0.34239253  1.9841252</span></span>
-<span><span class="co">## Xcoef17  1.63797487  4.1404316</span></span>
-<span><span class="co">## Xcoef18 -0.18415487  1.5507331</span></span>
-<span><span class="co">## Xcoef19 -1.73569020 -0.7855372</span></span>
-<span><span class="co">## Xcoef20  0.89971165  2.0379442</span></span>
-<span><span class="co">## Xcoef21  0.01749653  1.7028400</span></span>
-<span><span class="co">## Xcoef22  0.40749684  2.1573378</span></span>
-<span><span class="co">## Xcoef23 -0.08588201  0.5328728</span></span>
-<span><span class="co">## Xcoef24 -0.46477569  0.7046652</span></span>
+<span><span class="co">## Xcoef1  -1.02682658  0.3386014</span></span>
+<span><span class="co">## Xcoef2   1.34774898  3.8744590</span></span>
+<span><span class="co">## Xcoef3  -2.85509231 -0.8786471</span></span>
+<span><span class="co">## Xcoef4   2.24723560 10.3961474</span></span>
+<span><span class="co">## Xcoef5  -2.87608409 -0.6372750</span></span>
+<span><span class="co">## Xcoef6   1.79152963  6.5712664</span></span>
+<span><span class="co">## Xcoef7  -1.64583665  0.5552887</span></span>
+<span><span class="co">## Xcoef8   0.73363528  2.8512576</span></span>
+<span><span class="co">## Xcoef9   2.78581787  7.0225482</span></span>
+<span><span class="co">## Xcoef10  3.14361557  7.5556328</span></span>
+<span><span class="co">## Xcoef11  1.64617695  3.0253486</span></span>
+<span><span class="co">## Xcoef12  1.97721676  5.1334291</span></span>
+<span><span class="co">## Xcoef13  0.95833923  2.2302843</span></span>
+<span><span class="co">## Xcoef14  0.13815907  1.1111725</span></span>
+<span><span class="co">## Xcoef15 -0.24251362  1.7363241</span></span>
+<span><span class="co">## Xcoef16 -0.34250981  1.9837699</span></span>
+<span><span class="co">## Xcoef17  1.63807038  4.1402198</span></span>
+<span><span class="co">## Xcoef18 -0.18426561  1.5506129</span></span>
+<span><span class="co">## Xcoef19 -1.73557538 -0.7854211</span></span>
+<span><span class="co">## Xcoef20  0.89992696  2.0383586</span></span>
+<span><span class="co">## Xcoef21  0.01738110  1.7029615</span></span>
+<span><span class="co">## Xcoef22  0.40739577  2.1572132</span></span>
+<span><span class="co">## Xcoef23 -0.08590982  0.5328154</span></span>
+<span><span class="co">## Xcoef24 -0.46475616  0.7043921</span></span>
 <span><span class="co"># The first 12 intervals are for soil.dry and next 12 for reflection</span></span></code></pre></div>
 </details><details><summary><span style="color:red"> Problems? See hints:</span>
 </summary><p><span style="color:red"> I have problems in model fitting. My model

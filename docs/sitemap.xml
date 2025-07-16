@@ -15,6 +15,7 @@
 <url><loc>/news/index.html</loc></url>
 <url><loc>/reference/AICc.html</loc></url>
 <url><loc>/reference/anova.gllvm.html</loc></url>
+<url><loc>/reference/beetle.html</loc></url>
 <url><loc>/reference/coefplot.gllvm.html</loc></url>
 <url><loc>/reference/confint.gllvm.html</loc></url>
 <url><loc>/reference/ecoCoefs.html</loc></url>
@@ -27,10 +28,12 @@
 <url><loc>/reference/getResidualCor.gllvm.html</loc></url>
 <url><loc>/reference/getResidualCov.gllvm.html</loc></url>
 <url><loc>/reference/gllvm.html</loc></url>
+<url><loc>/reference/goodnessOfFit.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/kelpforest.html</loc></url>
 <url><loc>/reference/logLik.gllvm.html</loc></url>
 <url><loc>/reference/ordiplot.gllvm.html</loc></url>
+<url><loc>/reference/phyloplot.gllvm.html</loc></url>
 <url><loc>/reference/plot.gllvm.html</loc></url>
 <url><loc>/reference/predict.gllvm.html</loc></url>
 <url><loc>/reference/predictLVs.gllvm.html</loc></url>
@@ -40,7 +43,8 @@
 <url><loc>/reference/simulate.gllvm.html</loc></url>
 <url><loc>/reference/Skabbholmen.html</loc></url>
 <url><loc>/reference/summary.gllvm.html</loc></url>
-<url><loc>/reference/varPartitioning.gllvm.html</loc></url>
+<url><loc>/reference/update.gllvm.html</loc></url>
 <url><loc>/reference/vcov.gllvm.html</loc></url>
+<url><loc>/reference/VP.gllvm.html</loc></url>
 </urlset>
 

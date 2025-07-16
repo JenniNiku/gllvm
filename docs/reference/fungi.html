@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -122,8 +122,6 @@
 <dd><p>The phylogenetic distance matrix.</p></dd>
 
 
-
-
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -145,6 +143,9 @@
 <span class="r-in"><span><span class="va">C</span> <span class="op">&lt;-</span> <span class="va">fungi</span><span class="op">$</span><span class="va">C</span></span></span>
 <span class="r-in"><span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="va">fungi</span><span class="op">$</span><span class="va">dist</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># cbind is added to treat species-specific random intercept terms</span></span></span>
+<span class="r-in"><span><span class="co"># for when species-specific fixed intercepts are collected to a global intercept </span></span></span>
+<span class="r-in"><span><span class="co"># with beta0com = TRUE as is the case</span></span></span>
 <span class="r-in"><span><span class="co">#model &lt;- gllvm(y = Y, X = cbind(int = 1, X), TR = TR, </span></span></span>
 <span class="r-in"><span><span class="co">#        formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + </span></span></span>
 <span class="r-in"><span><span class="co">#        log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + </span></span></span>

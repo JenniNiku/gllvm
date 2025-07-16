@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -81,6 +81,118 @@
       <small>Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.5" id="version-205">Version 2.0.5<small>2025-07-13</small><a class="anchor" aria-label="anchor" href="#version-205"></a></h2>
+<ul><li>For CRAN release 2.0.5 see updates for versions 2.0.3 - 2.0.5</li>
+<li>num.RR and num.lv with lvCor can now be combined</li>
+<li>lvCor can be used with multiple (iid) terms</li>
+<li>New start.optimizer and start.optim.method arguments for changing the optimizers for generating starting values, related to <a href="https://github.com/JenniNiku/gllvm/issues/229" class="external-link">#229</a>.</li>
+<li>cex.spp in ordiplot.gllvm can now be a vector</li>
+<li>Added zero-inflated binomial distribution</li>
+<li>Added zero-n-inflated binomial distribution</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-5">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-5"></a></h3>
+<ul><li>Bug fixed in VP for mixed effects formula</li>
+<li>Bug fixed for num.lv.c = 1 models</li>
+<li>Bug fixed that crashed ordinal models with num.lv&gt;0 and species-specific random effects</li>
+<li>Bug fixed in residuals for ZIP and ZINB models</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.4" id="version-204">Version 2.0.4<a class="anchor" aria-label="anchor" href="#version-204"></a></h2>
+<ul><li>Logit and cumulative logit models with method = “VA”</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.3" id="version-203">Version 2.0.3<a class="anchor" aria-label="anchor" href="#version-203"></a></h2>
+<ul><li>Add option for scaling in getEnvironCor</li>
+<li>Added logistic GLLVM with VA via polya-gamma augmentation (see Polson et al. 2012)</li>
+<li>Added residual variance term in getResidualCov.gllvm for ordinal models</li>
+<li>Boundary check for cumulative probit model</li>
+<li>New ‘ind.spp’ argument for coefplot and RandomCoefPlot to possibly plot for fewer species</li>
+<li>Implemented predict for species-specific random effects</li>
+<li>Improved handling of provided ‘start.fit’</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-3">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-3"></a></h3>
+<ul><li>Fixed a bug that caused phyloplot.gllvm to fail with trait models</li>
+<li>Ensured that update.gllvm also adopts non-formula arguments</li>
+<li>Default optimizer for random canonical coefficients was not set right for Tweedie</li>
+<li>Bugfix for showing categorical ordination effects as centroids</li>
+<li>Bugfix for getPredictErr and trait model</li>
+<li>Bugfix for phylogenetic model with traits; the phylogenetic matrix was not passed on to the output</li>
+<li>Bugfix for predict with constrained ordination and randomB</li>
+<li>Fixed a rare bug that caused a warning message in starting value generation with square response matrices</li>
+<li>Bugfix for starting values of family = “ordinal” and zeta.struc = “species”</li>
+<li>Bug fixed for partial constrained/concurrent ordination with more than one conditioning variable</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.2" id="version-202">Version 2.0.2<small>2025-04-08</small><a class="anchor" aria-label="anchor" href="#version-202"></a></h2>
+<div class="section level3">
+<h3 id="bugfixes-2-0-2">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-2"></a></h3>
+<ul><li>Fixed a bug that caused model failure when starting values for row effects could not be calculated</li>
+<li>Fixed a bug that caused issues when using ‘randomCoefPlot’ in combination with lme4-type formula for the 4th corner model</li>
+<li>Fixed a bug in the prediction error calculation of the 4th corner model fitted with method = “LA”</li>
+<li>Fixed a bug in the starting values random reduced rank models when the design matrix is of reduced rank</li>
+<li>Fixed a bug that occurred with ‘starting.values = “zero”’ for random reduced rank models with correlation parameters</li>
+<li>Fixed a bug in the calculation of starting values for concurrent ordination with ordinal species responses and common cut-off parameters</li>
+<li>Fixed a bug that caused the variance parameter of a second row effect to be fixed to the variance of the first</li>
+<li>Fixed a bug that increased the duration for calculating starting values of some Tweedie models significantly</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.1" id="version-201">Version 2.0.1<small>2025-04-01</small><a class="anchor" aria-label="anchor" href="#version-201"></a></h2>
+<ul><li>Added VA implementation of Tweedie</li>
+<li>Added “band matrix” as a sparsity pattern for phylogenetic models, as alternative to the NNGP</li>
+<li>Added ‘tick.length’ argument for phyplot.gllvm to control the tick length in the species-specific random effects plot</li>
+<li>Improvement for the starting values of concurrent ordination</li>
+<li>Added correlation canonical coefficients option for randomB=“LV”</li>
+<li>Added additional (LV-specific) variance parameters for randomB=“P”</li>
+<li>Default for rel.tol changed to 1e-10</li>
+<li>Default for NN changed to 10</li>
+<li>A Matern smoothness parameter changed to fixed value given by user by default</li>
+</ul><div class="section level3">
+<h3 id="bug-fixes-2-0-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-2-0-1"></a></h3>
+<ul><li>Fixed a bug in the calculation of standard errors for models involving traits and a ZIP/ZINB response distribution. See <a href="https://github.com/JenniNiku/gllvm/issues/204" class="external-link">#204</a>.</li>
+<li>Fixed a bug that prevented from incorporating correlated random effects via “formula”</li>
+<li>Fixed a bug that prevented successfully incorporating phylogenetic random effects with traits</li>
+<li>Fixed a bug in the confidence level of phyloplot.gllvm</li>
+<li>Fixed a bug in residuals.gllvm</li>
+<li>Fixed a bug in starting value generation</li>
+<li>Fixed a bug in the number of parameters by logLik.gllvm for ‘randomB’ models with correlation parameters</li>
+<li>Fixed a bug in the normalization constant for randomB=“LV”</li>
+<li>Fixed a bug in the variance partitioning for models with species random effects</li>
+<li>Fixed a bug in extracting fourth corner coefficients, see <a href="https://github.com/JenniNiku/gllvm/issues/214" class="external-link">#214</a> and <a href="https://github.com/JenniNiku/gllvm/issues/215" class="external-link">#215</a></li>
+<li>Fixed a bug in standard errors involving row.eff = “random”</li>
+<li>Fixed a bug that prevented using getEnvironCov with the fourth corner model</li>
+<li>Fixed a bug in gllvm:::RRse</li>
+<li>Fixed a bug which occurred when correlated latent variables are included and Variational covariance was anything else that diagonal</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0" id="version-20">Version 2.0<small>2024-11-26</small><a class="anchor" aria-label="anchor" href="#version-20"></a></h2>
+<ul><li>For CRAN release 2.0 see updates for versions 1.4.4 - 1.4.9</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.4.9" id="version-149">Version 1.4.9<a class="anchor" aria-label="anchor" href="#version-149"></a></h2>
+<ul><li>Row.eff can now be used for community-level (species-common) effect</li>
+<li>Both fixed and random at the same time (i.e., a mixed effects formula)
+<ul><li>Does not allow for a single random intercept</li>
+<li>Does not yet allow for between random effect correlation</li>
+</ul></li>
+<li>New formula interface for phylogenetic model adapted to trait model too</li>
+<li>New phyplot.gllvm function for plotting the phylogenetic random effects</li>
+<li>Minor adjustment in the behavior of ‘caption’ in plot.gllvm</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.4.8" id="version-148">Version 1.4.8<a class="anchor" aria-label="anchor" href="#version-148"></a></h2>
+<ul><li>Added functionality for correlated random canonical coefficients</li>
+<li>Changed “site.index” argument in getResidualCov.gllvm to “x”, in line with getEnvironCov.gllvm</li>
+<li>New vignette for the correlation structures of random effects and latent variables.</li>
+</ul><div class="section level3">
+<h3 id="bug-fixes-1-4-8">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-8"></a></h3>
+<ul><li>Bug fixed for calculating residual covariances of quadratic concurrent ordination</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.4.7" id="version-147">Version 1.4.7<a class="anchor" aria-label="anchor" href="#version-147"></a></h2>
 <ul><li>Added “fungi” dataset by Abrego et al. 2022</li>

@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -119,8 +119,8 @@ row effects</h1>
 latent variables and random effects in <strong>gllvm</strong>. The
 species abundances are often correlated in time or spatially in
 community ecology. In <strong>gllvm</strong>, such correlation
-structures can now be set either for latent variables or random row
-effects.</p>
+structures can now be set either for latent variables or comunity level
+random row effects.</p>
 <p>Denote the abundance of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>th
 species
@@ -141,7 +141,7 @@ A common form for the GLLVM is then defined for the mean abundance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>u</mi><mrow><mn>1</mn><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>d</mi><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>′</mi></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_{s_u(i)} = ({u}_{1,s_u(i)}, \dots, {u}_{d,s_u(i)})'</annotation></semantics></math>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo></mrow><annotation encoding="application/x-tex">d=</annotation></semantics></math>
 number of latent variables, defined by <code>num.lv</code> in
-<strong>gllvm</strong>) and/or row effects
+<strong>gllvm</strong>) and/or community level row effects
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><msub><mi>s</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><annotation encoding="application/x-tex">r_{s_r(i)}</annotation></semantics></math>.
 The subscripts
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_u(i)</annotation></semantics></math>
@@ -290,13 +290,13 @@ plot of chunk Xcovar
 (0,1), ordered beta for [0,1] and beta hurdle model for [0,1). Here we
 use beta-hurdle response model.</p>
 <div class="section level2">
-<h2 id="structured-and-correlated-random-row-effects">Structured and correlated random row effects<a class="anchor" aria-label="anchor" href="#structured-and-correlated-random-row-effects"></a>
+<h2 id="structured-and-correlated-community-level-random-row-effects">Structured and correlated community level random row effects<a class="anchor" aria-label="anchor" href="#structured-and-correlated-community-level-random-row-effects"></a>
 </h2>
-<p>The structure for row effects can be defined using argument
-<code>row.eff</code> and defining the study design using argument
-<code>studyDesign</code>. The structure is defined by common formula
-interface; eg. <code>row.eff = ~(1|site)</code> and <code>site</code>
-factor in a <code>data.frame</code> given in argument
+<p>The structure for community level row effects can be defined using
+argument <code>row.eff</code> and defining the study design using
+argument <code>studyDesign</code>. The structure is defined by common
+formula interface; eg. <code>row.eff = ~(1|site)</code> and
+<code>site</code> factor in a <code>data.frame</code> given in argument
 <code>studyDesign</code> defines site level random effects. There are
 four correlation structures available in , AR(1) <code>corAR1</code>,
 compound symmetry <code>corCS</code>, exponentially decaying
@@ -307,9 +307,9 @@ level random effects, it could be defined for instance by
 <code>dist</code> as a matrix. Multiple row effect structures are
 allowed.</p>
 <p>In the next example, we attempt to model species abundances
-correlation in time using AR(1) correlated random effect for sampling
-year as well as site level row effects. Latent variables are left out
-from this model for now.</p>
+correlation in time using AR(1) correlated community level random effect
+for sampling year as well as site level row effects. Latent variables
+are left out from this model for now.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define the study design, now we need year and site</span></span>
 <span><span class="va">studyDesign</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">$</span><span class="va">YEAR</span><span class="op">)</span>, site <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">$</span><span class="va">SITE</span><span class="op">)</span><span class="op">)</span></span>
@@ -349,9 +349,9 @@ effects for years</p>
 <span><span class="co">## 0.10601458 0.03676497 0.57861515</span></span></code></pre>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot random effects and 95% predicted envelope</span></span>
-<span><span class="va">rowSite</span> <span class="op">=</span> <span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">)</span> <span class="op">==</span> <span class="st">"site"</span><span class="op">]</span></span>
+<span><span class="va">rowSite</span> <span class="op">=</span> <span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">ftRowAR</span><span class="op">$</span><span class="va">grps.row</span><span class="op">[</span><span class="st">"site"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">years</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">studyDesign</span><span class="op">$</span><span class="va">year</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">rowYear</span> <span class="op">=</span> <span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">)</span> <span class="op">==</span> <span class="st">"year"</span><span class="op">]</span></span>
+<span><span class="va">rowYear</span> <span class="op">=</span> <span class="va">ftRowAR</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">ftRowAR</span><span class="op">$</span><span class="va">grps.row</span><span class="op">[</span><span class="st">"site"</span><span class="op">]</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co"># Calculate prediction errors for row effects:</span></span>
 <span><span class="va">predLVR</span> <span class="op">=</span> <span class="fu"><a href="../reference/getPredictErr.gllvm.html">getPredictErr</a></span><span class="op">(</span><span class="va">ftRowAR</span><span class="op">)</span></span>
 <span><span class="co"># prediction errors for site effects</span></span>
@@ -382,8 +382,8 @@ the presence, while conditional on the presence of the species, random
 year explains on average 5.9% and random site 52.5% of the variation of
 the coverage.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">VP1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/varPartitioning.gllvm.html">varPartitioning</a></span><span class="op">(</span><span class="va">ftRowAR</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/varPartitioning.gllvm.html">plotVP</a></span><span class="op">(</span><span class="va">VP1</span>, args.legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cex<span class="op">=</span><span class="fl">0.7</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">5</span>, <span class="st">"Roma"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">VP1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/VP.gllvm.html">VP</a></span><span class="op">(</span><span class="va">ftRowAR</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">VP1</span>, args.legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cex<span class="op">=</span><span class="fl">0.7</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">5</span>, <span class="st">"Roma"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="VP1-1.png" alt="plot of chunk VP1"><p class="caption">
 plot of chunk VP1
@@ -397,12 +397,13 @@ plot of chunk VP1
 <h3 id="structured-latent-variables">Structured latent variables<a class="anchor" aria-label="anchor" href="#structured-latent-variables"></a>
 </h3>
 <p>In the previous example, we did not include latent variables in the
-model, but let’s focus on them now. Similarly to row effects we can now
-set a structure for the latent variables as well using argument
-<code>lvCor</code>. For instance, we could like to account the variation
-in transects and sites and possible missing environmental covariates
-that affect the species abundances. So let’s include in the model also
-transect level latent variables, leave random effect for site out:</p>
+model, but let’s focus on them now. Similarly to community level row
+effects we can now set a structure for the latent variables as well
+using argument <code>lvCor</code>. For instance, we could like to
+account the variation in transects and sites and possible missing
+environmental covariates that affect the species abundances. So let’s
+include in the model also transect level latent variables, leave random
+effect for site out:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define the study design, now we need year and site x transect</span></span>
 <span><span class="va">Xenv</span><span class="op">$</span><span class="va">STRANSECT</span> <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">$</span><span class="va">SITE</span>,<span class="va">Xenv</span><span class="op">$</span><span class="va">TRANSECT</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span><span class="op">)</span></span>
@@ -467,8 +468,8 @@ coverage. On the other hand, transect level latent variables can explain
 a total of 60% of the variation in presence-absence model, while for
 coverage model the proportion is smaller, around 40%.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">VP2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/varPartitioning.gllvm.html">varPartitioning</a></span><span class="op">(</span><span class="va">ftRowAR_lv2</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/varPartitioning.gllvm.html">plotVP</a></span><span class="op">(</span><span class="va">VP2</span>, args.legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cex<span class="op">=</span><span class="fl">0.7</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">5</span>, <span class="st">"Roma"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">VP2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/VP.gllvm.html">VP</a></span><span class="op">(</span><span class="va">ftRowAR_lv2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">VP2</span>, args.legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cex<span class="op">=</span><span class="fl">0.7</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">5</span>, <span class="st">"Roma"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="VP2-1.png" alt="plot of chunk VP2"><p class="caption">
 plot of chunk VP2

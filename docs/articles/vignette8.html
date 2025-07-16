@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -106,7 +106,7 @@ using gllvm</h1>
                         <h4 data-toc-skip class="author">Pekka
 Korhonen</h4>
             
-            <h4 data-toc-skip class="date">2024-09-25</h4>
+            <h4 data-toc-skip class="date">2025-07-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette8.Rmd" class="external-link"><code>vignettes/vignette8.Rmd</code></a></small>
       <div class="hidden name"><code>vignette8.Rmd</code></div>
@@ -197,7 +197,7 @@ P(Y_{ij};\mu_{ij}, \mu_{ij}^0, \phi_j) = \begin{cases}
 \bf{u_i}^\top\boldsymbol{\lambda}_j^0$</span> for and <span class="math inline">$g(\mu_{ij}) = \eta_{ij} = \beta_{0j} +
 \bf{x_i}^\top\boldsymbol{\beta}_j +
 \bf{u_i}^\top\boldsymbol{\lambda}_j$</span> and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>⋅</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g(\cdot)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>⋅</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g(\cdot)</annotation></semantics></math>
 can be either probit or logistic link function. Note, that here, the
 separate linear predictors share the same environmental covariates <span class="math inline">$\bf{x}_i$</span> and latent variable scores <span class="math inline">$\bf{u}_i$</span>, while the coefficients and
 loadings are allowed to differ.</p>
@@ -272,112 +272,112 @@ estimated by</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">Xcoef</span></span></code></pre></div>
 <pre><code><span><span class="co">##            KELP_FRONDS PERCENT_ROCKY</span></span>
-<span><span class="co">## AMZO     -7.559186e-04 -0.0373175029</span></span>
-<span><span class="co">## AU       -1.171584e-02 -0.0144005483</span></span>
-<span><span class="co">## BF       -7.152126e+00  0.2910471383</span></span>
-<span><span class="co">## BLD      -3.204658e-03 -0.0476120686</span></span>
-<span><span class="co">## BO        2.921004e-01 -0.0518882807</span></span>
-<span><span class="co">## BR       -7.344966e-02  0.0170783843</span></span>
-<span><span class="co">## BRA       5.055051e-01 -0.0834416672</span></span>
-<span><span class="co">## CAL       1.084007e-02  0.0987800253</span></span>
-<span><span class="co">## CC        1.025623e-02  0.0073087358</span></span>
-<span><span class="co">## CF        3.707650e-01 -0.0541218208</span></span>
-<span><span class="co">## CG       -5.926928e-01  0.0200915429</span></span>
-<span><span class="co">## CO       -1.616248e-01 -0.0018804530</span></span>
-<span><span class="co">## COF      -1.945997e+00  0.1076413311</span></span>
-<span><span class="co">## CP       -5.341896e-01 -0.0525919654</span></span>
-<span><span class="co">## CRYP     -2.611052e-01  0.2110012892</span></span>
-<span><span class="co">## CYOS     -4.161144e-02 -0.0008006455</span></span>
-<span><span class="co">## CZ        4.628213e-04  0.0085906513</span></span>
-<span><span class="co">## DL        7.894424e-02  0.0212654434</span></span>
-<span><span class="co">## DMH       4.544533e-01 -0.0691309306</span></span>
-<span><span class="co">## DP       -3.263565e-01  0.0274147869</span></span>
-<span><span class="co">## DU        7.196500e-01 -0.0447905585</span></span>
-<span><span class="co">## EAH       1.519401e+00 -0.0156289883</span></span>
-<span><span class="co">## EC        5.883289e-02 -0.0042398629</span></span>
-<span><span class="co">## EH        4.749486e-01 -0.0975087044</span></span>
-<span><span class="co">## ER        3.295087e-01  0.0531826773</span></span>
-<span><span class="co">## FASP     -1.215428e-03 -0.0391408967</span></span>
-<span><span class="co">## FB       -4.407266e+00  0.1916424807</span></span>
-<span><span class="co">## FTHR      7.616866e-01 -0.1097986807</span></span>
-<span><span class="co">## GR       -7.260712e-01  0.1102382440</span></span>
-<span><span class="co">## GS       -3.964070e-01  0.0111632915</span></span>
-<span><span class="co">## GYSP      2.413003e-01  0.0143571013</span></span>
-<span><span class="co">## IR        1.441621e-04  0.0053780677</span></span>
-<span><span class="co">## LH       -3.276121e-03 -0.0450325932</span></span>
-<span><span class="co">## LI       -2.157823e-04 -0.1942040396</span></span>
-<span><span class="co">## LS       -4.760342e-03 -0.0669292377</span></span>
-<span><span class="co">## LX       -9.268553e-03 -0.1243831800</span></span>
-<span><span class="co">## MH        1.951122e-01 -0.0469759419</span></span>
-<span><span class="co">## NIE      -3.443298e-01  0.0464217012</span></span>
-<span><span class="co">## PH        3.919663e+00 -0.4895614905</span></span>
-<span><span class="co">## PHSE     -4.274897e-01  0.0069147629</span></span>
-<span><span class="co">## PL        1.301021e-01 -0.0120383487</span></span>
-<span><span class="co">## POLA      3.667980e-03 -0.0402016866</span></span>
-<span><span class="co">## PRSP      7.412486e-02  0.0179344497</span></span>
-<span><span class="co">## R        -1.332818e-01 -0.0179944287</span></span>
-<span><span class="co">## RAT      -1.488806e-01 -0.0007753643</span></span>
-<span><span class="co">## SAFU     -2.529752e+00 -0.0106505288</span></span>
-<span><span class="co">## SAHO      1.442079e+01 -0.0401619983</span></span>
-<span><span class="co">## SAMU      6.549716e-02 -0.0414008525</span></span>
-<span><span class="co">## SCCA      1.490898e-01  0.1616272016</span></span>
-<span><span class="co">## STIN     -1.475045e-04 -0.1327540257</span></span>
-<span><span class="co">## TALE     -1.129042e+00  0.2133050826</span></span>
-<span><span class="co">## UEC      -8.695526e-06 -0.0043477629</span></span>
-<span><span class="co">## UV        2.003956e+00 -0.0479209989</span></span>
-<span><span class="co">## H01_AMZO -4.841612e+00  0.1788281281</span></span>
-<span><span class="co">## H01_AU    5.541914e-01 -0.0499089497</span></span>
-<span><span class="co">## H01_BF    9.302235e-01 -0.1831368106</span></span>
-<span><span class="co">## H01_BLD  -3.166692e+00  0.0044685104</span></span>
-<span><span class="co">## H01_BO   -8.521816e-01  0.0597387768</span></span>
-<span><span class="co">## H01_BR   -4.130075e+00  0.2062679137</span></span>
-<span><span class="co">## H01_BRA   1.467430e+00 -0.1214364228</span></span>
-<span><span class="co">## H01_CAL   1.098740e-01  0.1016509682</span></span>
-<span><span class="co">## H01_CC   -9.434492e-01  0.0476976557</span></span>
-<span><span class="co">## H01_CF   -8.951098e-01  0.0555029715</span></span>
-<span><span class="co">## H01_CG    2.782149e+00 -0.0360817065</span></span>
-<span><span class="co">## H01_CO    1.089165e-02 -0.0070612956</span></span>
-<span><span class="co">## H01_COF   8.422893e-01  0.1341693069</span></span>
-<span><span class="co">## H01_CP    1.234360e-01  0.1637403771</span></span>
-<span><span class="co">## H01_CRYP  2.431979e-01 -0.0520857664</span></span>
-<span><span class="co">## H01_CYOS  1.385716e-01 -0.0426825965</span></span>
-<span><span class="co">## H01_CZ    1.940466e+00  0.0116455418</span></span>
-<span><span class="co">## H01_DL    1.940083e+00 -0.1921942650</span></span>
-<span><span class="co">## H01_DMH   8.445488e-01 -0.1031294144</span></span>
-<span><span class="co">## H01_DP   -1.148621e+00  0.0846122857</span></span>
-<span><span class="co">## H01_DU    1.648629e-01  0.1139389772</span></span>
-<span><span class="co">## H01_EAH  -1.101818e+01  0.1624284935</span></span>
-<span><span class="co">## H01_EC   -4.705728e-01  0.0752961970</span></span>
-<span><span class="co">## H01_EH    6.594496e-01 -0.0852358489</span></span>
-<span><span class="co">## H01_ER   -9.091324e-02  0.0489652646</span></span>
-<span><span class="co">## H01_FASP -3.594163e+00  0.2610957250</span></span>
-<span><span class="co">## H01_FB    3.312038e-01 -0.1065414193</span></span>
-<span><span class="co">## H01_FTHR -4.004102e-01 -0.0294651876</span></span>
-<span><span class="co">## H01_GR    1.734091e-01  0.1893856202</span></span>
-<span><span class="co">## H01_GS    6.162066e-01 -0.1798357145</span></span>
-<span><span class="co">## H01_GYSP -1.709483e-01  0.0603420945</span></span>
-<span><span class="co">## H01_IR    1.031488e+00  0.0744924805</span></span>
-<span><span class="co">## H01_LH   -2.832070e-02  0.1480468392</span></span>
-<span><span class="co">## H01_LI   -9.133589e+00  0.1530503448</span></span>
-<span><span class="co">## H01_LS    1.407361e+00 -0.0180365105</span></span>
-<span><span class="co">## H01_LX   -2.052777e+00  0.0602210236</span></span>
-<span><span class="co">## H01_MH    1.298937e+00 -0.0143851169</span></span>
-<span><span class="co">## H01_NIE   2.156391e+00 -0.1614652703</span></span>
-<span><span class="co">## H01_PH   -6.586931e-01  0.0278619343</span></span>
-<span><span class="co">## H01_PHSE  4.155348e-01 -0.1406834417</span></span>
-<span><span class="co">## H01_PL    1.172594e-01 -0.0136841328</span></span>
-<span><span class="co">## H01_POLA  5.610652e-01 -0.0527295403</span></span>
-<span><span class="co">## H01_PRSP  5.774080e-01 -0.0424166671</span></span>
-<span><span class="co">## H01_R    -3.099174e+00  0.1850947593</span></span>
-<span><span class="co">## H01_RAT  -8.390719e-03  0.0203986826</span></span>
-<span><span class="co">## H01_SAFU -8.869626e-01 -0.2241742926</span></span>
-<span><span class="co">## H01_SAHO -5.815047e+00  0.1592870866</span></span>
-<span><span class="co">## H01_SAMU  5.432835e-02 -0.0014264794</span></span>
-<span><span class="co">## H01_SCCA -3.423721e+00  0.2266017485</span></span>
-<span><span class="co">## H01_STIN -8.767218e+00  0.1366966215</span></span>
-<span><span class="co">## H01_TALE -4.500551e-01  0.2346714056</span></span>
-<span><span class="co">## H01_UEC  -8.019724e-01  0.0908981956</span></span>
-<span><span class="co">## H01_UV   -1.021429e+00 -0.1290730236</span></span></code></pre>
+<span><span class="co">## AMZO     -4.274559e-04  -0.021102251</span></span>
+<span><span class="co">## AU        3.052090e-01   0.025981201</span></span>
+<span><span class="co">## BF       -4.169051e+00   0.159480332</span></span>
+<span><span class="co">## BLD      -2.656735e-03  -0.039471491</span></span>
+<span><span class="co">## BO        1.857078e-01  -0.046838831</span></span>
+<span><span class="co">## BR        5.036789e-02   0.017702955</span></span>
+<span><span class="co">## BRA       1.495239e-01  -0.043867938</span></span>
+<span><span class="co">## CAL      -2.065374e-01  -0.034833888</span></span>
+<span><span class="co">## CC        1.253120e-01  -0.017928420</span></span>
+<span><span class="co">## CF       -1.336962e-01  -0.008919487</span></span>
+<span><span class="co">## CG       -2.705489e-01  -0.027616156</span></span>
+<span><span class="co">## CO       -8.411443e-02   0.006413440</span></span>
+<span><span class="co">## COF      -2.829174e-01   0.014398221</span></span>
+<span><span class="co">## CP       -1.473677e-01  -0.070259110</span></span>
+<span><span class="co">## CRYP     -1.445291e+00   0.091480537</span></span>
+<span><span class="co">## CYOS     -2.059704e-01   0.013203228</span></span>
+<span><span class="co">## CZ       -2.020103e-03  -0.037496107</span></span>
+<span><span class="co">## DL        1.702553e-01  -0.001538255</span></span>
+<span><span class="co">## DMH      -6.919793e-01  -0.006442067</span></span>
+<span><span class="co">## DP       -3.871968e-01   0.001579841</span></span>
+<span><span class="co">## DU       -2.703821e-01  -0.042601956</span></span>
+<span><span class="co">## EAH       7.993231e+00  -0.037475747</span></span>
+<span><span class="co">## EC        1.095037e-01  -0.027306652</span></span>
+<span><span class="co">## EH        1.882159e-01  -0.031616625</span></span>
+<span><span class="co">## ER       -2.029789e-01  -0.044587964</span></span>
+<span><span class="co">## FASP     -1.753841e-03  -0.056479634</span></span>
+<span><span class="co">## FB        1.656115e+00  -0.015263501</span></span>
+<span><span class="co">## FTHR      5.009408e-01  -0.039874980</span></span>
+<span><span class="co">## GR       -2.950490e-01  -0.021307487</span></span>
+<span><span class="co">## GS       -1.200359e-01  -0.006817649</span></span>
+<span><span class="co">## GYSP      4.082520e-01   0.003046516</span></span>
+<span><span class="co">## IR       -1.743250e-03  -0.065033153</span></span>
+<span><span class="co">## LH       -2.786407e-03  -0.038301133</span></span>
+<span><span class="co">## LI        1.859623e-04   0.167366090</span></span>
+<span><span class="co">## LS       -5.481117e-03  -0.077063161</span></span>
+<span><span class="co">## LX        3.895720e-04   0.005228022</span></span>
+<span><span class="co">## MH        2.504030e-01  -0.022519750</span></span>
+<span><span class="co">## NIE      -3.469519e-01  -0.023864602</span></span>
+<span><span class="co">## PH        7.499605e-01  -0.099742128</span></span>
+<span><span class="co">## PHSE      9.427389e-02   0.002209517</span></span>
+<span><span class="co">## PL        3.103713e-01   0.001792767</span></span>
+<span><span class="co">## POLA     -8.183636e-01  -0.078008839</span></span>
+<span><span class="co">## PRSP      1.187829e+00  -0.047080321</span></span>
+<span><span class="co">## R         2.717410e-01   0.053576214</span></span>
+<span><span class="co">## RAT      -1.649857e-01   0.013791089</span></span>
+<span><span class="co">## SAFU      5.566473e-01  -0.060642205</span></span>
+<span><span class="co">## SAHO      6.964576e-01  -0.011014359</span></span>
+<span><span class="co">## SAMU     -2.390864e-01  -0.006434354</span></span>
+<span><span class="co">## SCCA      3.112408e-01   0.044587191</span></span>
+<span><span class="co">## STIN      3.326562e-04   0.299390573</span></span>
+<span><span class="co">## TALE      4.369795e-01  -0.008024641</span></span>
+<span><span class="co">## UEC       2.064558e-06   0.001032279</span></span>
+<span><span class="co">## UV       -1.183318e+00  -0.047879510</span></span>
+<span><span class="co">## H01_AMZO -2.938300e-01   0.038168470</span></span>
+<span><span class="co">## H01_AU    6.872724e-01  -0.068533790</span></span>
+<span><span class="co">## H01_BF   -9.039419e-01   0.087310373</span></span>
+<span><span class="co">## H01_BLD   2.538899e+00  -0.107850257</span></span>
+<span><span class="co">## H01_BO    9.849754e-01  -0.082107963</span></span>
+<span><span class="co">## H01_BR   -1.067778e+00   0.080260012</span></span>
+<span><span class="co">## H01_BRA   3.329293e+00  -0.247859515</span></span>
+<span><span class="co">## H01_CAL  -6.623638e-02   0.143435889</span></span>
+<span><span class="co">## H01_CC    2.864145e-01   0.012765625</span></span>
+<span><span class="co">## H01_CF   -8.674238e-01   0.033255935</span></span>
+<span><span class="co">## H01_CG   -8.415424e-01   0.234759767</span></span>
+<span><span class="co">## H01_CO    5.782742e-02  -0.005331931</span></span>
+<span><span class="co">## H01_COF  -3.233815e-01   0.136323015</span></span>
+<span><span class="co">## H01_CP   -4.809987e-01   0.095028822</span></span>
+<span><span class="co">## H01_CRYP  5.403570e-01  -0.052017279</span></span>
+<span><span class="co">## H01_CYOS  9.928465e-01  -0.051959446</span></span>
+<span><span class="co">## H01_CZ    3.104969e-01   0.070231718</span></span>
+<span><span class="co">## H01_DL   -8.349992e-01   0.063248461</span></span>
+<span><span class="co">## H01_DMH  -1.142702e+00   0.053163470</span></span>
+<span><span class="co">## H01_DP   -2.399304e-01   0.033203431</span></span>
+<span><span class="co">## H01_DU    7.997743e-01   0.081842553</span></span>
+<span><span class="co">## H01_EAH  -1.150968e+01   0.117064410</span></span>
+<span><span class="co">## H01_EC   -3.631120e-01   0.095015358</span></span>
+<span><span class="co">## H01_EH    6.802810e-01  -0.102238332</span></span>
+<span><span class="co">## H01_ER   -6.510763e-01   0.070871252</span></span>
+<span><span class="co">## H01_FASP -1.676792e-01   0.127076481</span></span>
+<span><span class="co">## H01_FB   -6.354178e-01  -0.011664588</span></span>
+<span><span class="co">## H01_FTHR -7.691709e-01   0.050484737</span></span>
+<span><span class="co">## H01_GR   -1.411293e+00   0.277024782</span></span>
+<span><span class="co">## H01_GS   -6.900497e-01  -0.150994662</span></span>
+<span><span class="co">## H01_GYSP -4.952834e-01   0.043964907</span></span>
+<span><span class="co">## H01_IR   -3.936736e-01   0.060960003</span></span>
+<span><span class="co">## H01_LH   -9.761488e-02   0.070729327</span></span>
+<span><span class="co">## H01_LI   -5.942463e+00  -0.114861668</span></span>
+<span><span class="co">## H01_LS   -1.487351e+00   0.163771169</span></span>
+<span><span class="co">## H01_LX    8.873841e-01  -0.073959770</span></span>
+<span><span class="co">## H01_MH   -1.093996e+00   0.106806916</span></span>
+<span><span class="co">## H01_NIE   1.621150e+00  -0.119744701</span></span>
+<span><span class="co">## H01_PH   -5.082598e-01   0.006069149</span></span>
+<span><span class="co">## H01_PHSE -2.983738e+00   0.183923654</span></span>
+<span><span class="co">## H01_PL   -1.254989e+00   0.093320897</span></span>
+<span><span class="co">## H01_POLA  8.379306e-01  -0.077320436</span></span>
+<span><span class="co">## H01_PRSP  1.545086e+00  -0.108934977</span></span>
+<span><span class="co">## H01_R     4.156559e-01   0.005007871</span></span>
+<span><span class="co">## H01_RAT  -2.173068e-01   0.033425778</span></span>
+<span><span class="co">## H01_SAFU -2.897465e+00  -0.077951277</span></span>
+<span><span class="co">## H01_SAHO -6.633294e+00   0.072978290</span></span>
+<span><span class="co">## H01_SAMU -1.686715e+00   0.107347141</span></span>
+<span><span class="co">## H01_SCCA  1.683966e+00  -0.083720498</span></span>
+<span><span class="co">## H01_STIN -9.209979e+00   0.126155298</span></span>
+<span><span class="co">## H01_TALE -3.844596e+00   0.189330637</span></span>
+<span><span class="co">## H01_UEC  -2.828745e+00   0.052354478</span></span>
+<span><span class="co">## H01_UV    1.845167e+00  -0.011834243</span></span></code></pre>
 <p>In the above, the prefix indicates that the coefficient relates to
 the Bernoulli part of the hurdle model.</p>
 <p>Ordination plot can then be generated as per usual:</p>

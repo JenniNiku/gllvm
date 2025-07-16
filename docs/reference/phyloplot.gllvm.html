@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.8</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -98,6 +98,7 @@
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#E69F00"</span>, <span class="st">"white"</span>, <span class="st">"#009E73"</span><span class="op">)</span>,</span>
 <span>  col.sym <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  tick.length <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  mar.spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span>
 <span>  mar.phy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">0</span><span class="op">)</span>,</span>
 <span>  mar.comm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">0.5</span>, <span class="fl">2</span>, <span class="fl">1.5</span><span class="op">)</span>,</span>
@@ -107,7 +108,8 @@
 <span>  pch <span class="op">=</span> <span class="st">"x"</span>,</span>
 <span>  heights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.55</span>, <span class="fl">0.35</span><span class="op">)</span>,</span>
 <span>  widths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.64</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
-<span>  phy.place <span class="op">=</span> <span class="st">"top"</span></span>
+<span>  phy.place <span class="op">=</span> <span class="st">"top"</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -149,6 +151,10 @@
 
 <dt id="arg-col-sym">col.sym<a class="anchor" aria-label="anchor" href="#arg-col-sym"></a></dt>
 <dd><p>logical, defaults to <code>TRUE</code>. Then, the color scale of the species random effects plot is symmetrical (so that zero is nearly in the middle), so that both the lower and upper limit are determined by the largest absolute value. If <code>FALSE</code>, the lower and upper limits are determined by the smallest and largest values, respectively.</p></dd>
+
+
+<dt id="arg-tick-length">tick.length<a class="anchor" aria-label="anchor" href="#arg-tick-length"></a></dt>
+<dd><p>numerical, defaults to 2. Length of ticks for the species-specific random effects plot.</p></dd>
 
 
 <dt id="arg-mar-spec">mar.spec<a class="anchor" aria-label="anchor" href="#arg-mar-spec"></a></dt>
@@ -225,12 +231,14 @@ they cross zero.</p>
 <span class="r-in"><span><span class="va">colMat</span> <span class="op">&lt;-</span> <span class="va">fungi</span><span class="op">$</span><span class="va">C</span> <span class="co"># e.g., from ape::vcv(tree)</span></span></span>
 <span class="r-in"><span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="va">fungi</span><span class="op">$</span><span class="va">dist</span> <span class="co"># e.g., from ape::cophenetic.phylo(tree)</span></span></span>
 <span class="r-in"><span><span class="va">order</span> <span class="op">&lt;-</span> <span class="fu">gllvm</span><span class="fu">:::</span><span class="fu">findOrder</span><span class="op">(</span>covMat <span class="op">=</span> <span class="va">colMat</span>, distMat <span class="op">=</span> <span class="va">dist</span>, nn <span class="op">=</span> <span class="fl">15</span>,</span></span>
-<span class="r-in"><span>                           order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">dist</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">tree</span><span class="op">$</span><span class="va">tip.label</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dist</span><span class="op">)</span><span class="op">]</span>,decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">order</span></span></span>
+<span class="r-in"><span>                           order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">dist</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">tree</span><span class="op">$</span><span class="va">tip.label</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">dist</span><span class="op">)</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>                           decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">order</span></span></span>
 <span class="r-in"><span><span class="va">order</span> <span class="op">&lt;-</span> <span class="va">tree</span><span class="op">$</span><span class="va">tip.label</span><span class="op">[</span><span class="va">order</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">Y</span><span class="op">[</span>,<span class="va">order</span><span class="op">]</span>, X <span class="op">=</span> <span class="va">X</span>,</span></span>
 <span class="r-in"><span>                formula <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="va">DBH.CM</span><span class="op">|</span><span class="fl">1</span><span class="op">)</span>, beta0com <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>                family <span class="op">=</span> <span class="st">"binomial"</span>, num.lv <span class="op">=</span> <span class="fl">0</span>, nn.colMat <span class="op">=</span> <span class="fl">15</span>,</span></span>
-<span class="r-in"><span>                colMat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">colMat</span><span class="op">[</span><span class="va">order</span>,<span class="va">order</span><span class="op">]</span>, dist <span class="op">=</span> <span class="va">dist</span><span class="op">[</span><span class="va">order</span>,<span class="va">order</span><span class="op">]</span><span class="op">)</span>, colMat.rho.struct <span class="op">=</span> <span class="st">"term"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                colMat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">colMat</span><span class="op">[</span><span class="va">order</span>,<span class="va">order</span><span class="op">]</span>, dist <span class="op">=</span> <span class="va">dist</span><span class="op">[</span><span class="va">order</span>,<span class="va">order</span><span class="op">]</span><span class="op">)</span>, </span></span>
+<span class="r-in"><span>                colMat.rho.struct <span class="op">=</span> <span class="st">"term"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">phyloplot</span><span class="op">(</span><span class="va">model</span>, <span class="va">tree</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

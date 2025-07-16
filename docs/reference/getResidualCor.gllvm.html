@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
       </span>
     </div>
 
@@ -88,7 +88,7 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'gllvm'</span></span>
-<span><span class="fu">getResidualCor</span><span class="op">(</span><span class="va">object</span>, adjust <span class="op">=</span> <span class="fl">1</span>, site.index <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">getResidualCor</span><span class="op">(</span><span class="va">object</span>, adjust <span class="op">=</span> <span class="fl">1</span>, x <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -103,8 +103,8 @@
 <dd><p>The type of adjustment used for  negative binomial and binomial distribution when computing residual correlation matrix. Options are 0 (no adjustment), 1 (the default adjustment) and 2 (alternative adjustment for NB distribution). See details.</p></dd>
 
 
-<dt id="arg-site-index">site.index<a class="anchor" aria-label="anchor" href="#arg-site-index"></a></dt>
-<dd><p>A site index used used in the calculation of a GLLVM with quadratic response model, for which the residual correlations are calculated.</p></dd>
+<dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
+<dd><p>(optional) vector of covariate values to calculate the covariance for, when applicable.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -128,15 +128,15 @@
 <span class="r-in"><span>                     decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fl">21</span><span class="op">:</span><span class="fl">40</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">y</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span><span class="op">$</span><span class="va">logL</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -4242.668</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -4242.667</span>
 <span class="r-in"><span><span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu">getResidualCor</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">cr</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             OTU_79    OTU_164    OTU_462     OTU_95    OTU_833</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_79   1.0000000  0.3887252  0.3422382 -0.7491377  0.9955697</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_164  0.3887252  1.0000000  0.9987528 -0.9015266  0.4736348</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_462  0.3422382  0.9987528  1.0000000 -0.8787967  0.4290705</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_95  -0.7491377 -0.9015266 -0.8787967  1.0000000 -0.8081033</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_833  0.9955697  0.4736348  0.4290705 -0.8081033  1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_79   1.0000000  0.3889632  0.3424208 -0.7493795  0.9956138</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_164  0.3889632  1.0000000  0.9987496 -0.9014804  0.4734483</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_462  0.3424208  0.9987496  1.0000000 -0.8787153  0.4288215</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_95  -0.7493795 -0.9014804 -0.8787153  1.0000000 -0.8080415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> OTU_833  0.9956138  0.4734483  0.4288215 -0.8080415  1.0000000</span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># Load a dataset from the mvabund package</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">antTraits</span>, package <span class="op">=</span> <span class="st">"mvabund"</span><span class="op">)</span></span></span>
