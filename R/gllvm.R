@@ -27,7 +27,7 @@
 #' @param sd.errors  logical. If \code{TRUE} (default) standard errors for parameter estimates are calculated.
 #' @param offset vector or matrix of offset terms.
 #' @param Ntrials number of trials for binomial, ZIB and ZNIB families.
-#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".
+#' @param link link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit" and "cloglog".
 #' @param Power fixed power parameter in Tweedie model. Scalar from interval (1,2). Defaults to 1.1. If set to NULL it is estimated (note: experimental). 
 #' @param seed a single seed value if \code{n.init=1}, and a seed value vector of length \code{n.init} if \code{n.init>1}. Defaults to \code{NULL}, when new seed is not set for single initial fit and seeds are is randomly generated if multiple initial fits are set.
 #' @param plot  logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.
@@ -1381,6 +1381,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       method  = "EVA"
       out$method = "EVA"
     }
+    if(link == "cloglog" && method == "EVA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
+      message("Cloglog-link not available for method 'EVA'. Setting method = 'VA'.\n")
+      method  = "VA"
+      out$method = "VA"
+    }
+    if(family == "ordinal" && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
     if (family %in% c("orderedBeta")) {
       if (method == "VA") {
         out$link <- "probit"  

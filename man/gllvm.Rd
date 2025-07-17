@@ -112,7 +112,7 @@ gllvm(
 
 \item{plot}{logical. If \code{TRUE} ordination plots will be printed in each iteration step when \code{TMB = FALSE}. Defaults to \code{FALSE}.}
 
-\item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit".}
+\item{link}{link function for binomial family if \code{method = "LA"} and beta family. Options are "logit" and "probit" and "cloglog".}
 
 \item{Ntrials}{number of trials for binomial, ZIB and ZNIB families.}
 

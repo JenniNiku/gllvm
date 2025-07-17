@@ -160,6 +160,9 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
       if(object$link == "logit"){
         ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
       } 
+      if(object$link == "cloglog"){
+        ResCov <- ResCov + diag(ncol(object$y))*pi^2/6
+      } 
     }
     if(object$family == "gaussian"){
           ResCov <- ResCov + diag((object$params$phi^2))

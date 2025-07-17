@@ -1,3 +1,7 @@
+Version 2.0.6
+=============
+* Added cloglog link for binomial, ZIB and ZNIB.
+
 Version 2.0.5
 =============
 

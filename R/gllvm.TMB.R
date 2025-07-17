@@ -1095,6 +1095,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "binomial") { 
         familyn <- 2
         if(link=="probit") extra[1]=1
+        if(link=="cloglog")extra[1]=2
       }
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
@@ -1114,10 +1115,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "ZIB"){
         familyn=13
         if(link=="probit") extra[1]=1
+        if(link=="cloglog") extra[1]=2
       }
       if(family == "ZNIB"){
         familyn=14
         if(link=="probit") extra[1]=1
+        if(link=="cloglog") extra[1]=2
       }
       if(family == "betaH"){ # EVA
         familyn = 10
@@ -1649,6 +1652,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "binomial") {
         familyn=2;
         if(link=="probit") extra[1]=1
+        if(link=="cloglog") extra[1]=2
       }
       if(family == "gaussian") {familyn=3}
       if(family == "gamma") {familyn=4}
@@ -1685,10 +1689,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(family == "ZIB"){ 
         familyn=13;
         if(link=="probit") extra[1]=1
+        if(link=="cloglog") extra[1]=2
       }
       if(family == "ZNIB"){ 
         familyn=14;
         if(link=="probit") extra[1]=1
+        if(link=="cloglog") extra[1]=2
       }
       
       ## generate starting values quadratic coefficients in some cases
