@@ -2,6 +2,10 @@ Version 2.0.6
 =============
 * Added cloglog link for binomial, ZIB and ZNIB.
 
+## Bugfixes
+
+* Bugfix in VP for random effects in formula
+
 Version 2.0.5
 =============
 
