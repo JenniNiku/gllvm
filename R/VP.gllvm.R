@@ -43,7 +43,7 @@
 #'@export print.VP.gllvm 
 
 VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grouplvs=FALSE, ...) {
-  if (!any(class(object) == "gllvm"))
+  if (!inherits(object, "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
   Z <- NULL
@@ -126,7 +126,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
 
     blist <- lapply(bars, mkModMlist, mf)
     groupFs <- table(lapply(blist, function(x)row.names(x$sm)%in%colnames(object$col.eff$spdr)))
-    groupF <- c(groupF, rep(1:length(groupFs), groupFs)+max(groupF))
+    groupF <- c(groupF, rep(1:length(groupFs), groupFs)+max(0, groupF))
     
     X.d <- object$col.eff$spdr#[, colnames(object$col.eff$spdr)!= "Intercept", drop=FALSE]
     x_in_model = colnames(X.d)
