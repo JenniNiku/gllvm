@@ -1937,7 +1937,7 @@ getFourthCorner<- function(object){
   n2=colnames(object$TR)
   
   nams=names(object$params$B)
-  fourth.index <- grepl(":",nams) & grepl(paste(n1,collapse="|"),nams)
+  fourth.index <- grepl(":",nams) & grepl(paste(n1,collapse="|"),nams) & grepl(paste(n2,collapse="|"),nams)
   nams2=nams[fourth.index]
   fourth.corner=object$params$B[fourth.index]
   
@@ -1945,19 +1945,18 @@ getFourthCorner<- function(object){
   isinvec <- function(vec, ob =""){
     ob %in% vec
   }
-  n1 <- unique(unlist(splitsnam)[grep(paste0("^", n1, "$", collapse="|"), unlist(splitsnam))])
-  n2 <- unique(unlist(splitsnam)[grep(paste0("^", n2, "$", collapse="|"), unlist(splitsnam))])
-  i=1; j=1;
-  fourth<-matrix(0,length(n1),length(n2))
-  for (i in 1:length(n1)) {
-    for (j in 1:length(n2)) {
-      fur=(unlist(lapply(splitsnam, isinvec, ob = n1[i])) + unlist(lapply(splitsnam, isinvec, ob = n2[j]))) >1
-      if(any(fur)){ fourth[i,j]=fourth.corner[fur]}
-    }
-  }
   
-  colnames(fourth)=n2
-  rownames(fourth)=n1
+  n1 <-(sapply(splitsnam, function(x) paste0(sort(x[grep(paste0("^", n1, "$", collapse="|"),x)]), collapse = ":")))
+  n2 <-(sapply(splitsnam, function(x) paste0(sort(x[grep(paste0("^", n2, "$", collapse="|"),x)]), collapse = ":")))
+  n1 <- factor(n1, levels = unique(n1))
+  n2 <- factor(n2, levels = unique(n2))
+  
+  fourth<-matrix(0,length(levels(n1)),length(levels(n2)))
+  for (i in 1:length(fourth.corner)) {
+    fourth[as.numeric(n1)[i], as.numeric(n2)[i]] <- fourth.corner[i]
+  }
+  colnames(fourth)=levels(n2)
+  rownames(fourth)=levels(n1)
   return(fourth)
 }
 
