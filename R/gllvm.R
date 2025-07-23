@@ -978,7 +978,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
     
-    if((family %in% c("beta", "betaH", "orderedBeta")) & any(y>1 |y<0))
+    if((family %in% c("beta", "betaH", "orderedBeta")) & any(y>1 |y<0, na.rm = TRUE))
       stop("Responses (eg. percentage cover) must be coded in the range between 0 and 1 in case of beta based response models are used, ('beta, 'orderedBeta' or 'betaH'). Please rescale your data.")
     
     #If not empty but a vector..
