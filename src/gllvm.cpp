@@ -3358,9 +3358,8 @@ Type objective_function<Type>::operator() ()
             } else{
               // if (extra(0) == 1) { // probit
               if(zeta.size()>p) {
-                mu(i,j) = pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1));
-                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
-                nll -= log(mu(i,j)) - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+                // not sure how to do boundary check here
+                nll -= log(pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
               } else {
                 mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
                 mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
