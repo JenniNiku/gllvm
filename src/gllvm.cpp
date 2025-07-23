@@ -3348,15 +3348,23 @@ Type objective_function<Type>::operator() ()
             if((y(i,j)==0)){
               // mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
               // nll -= log(pow(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)), y(i,j)) * pow(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1)),(1-y(i,j)))) - cQ(i,j);
-              nll -= (1-y(i,j))*log(pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+              mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
+              mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+              nll -= (1-y(i,j))*log(mu(i,j)) - cQ(i,j); //
             } else if((y(i,j)==1)){
-              nll -= y(i,j)*log(1.0 - pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) ) - cQ(i,j); //
+              mu(i,j) = pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1));
+              mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+              nll -= y(i,j)*log(1.0 - mu(i,j)) - cQ(i,j); //
             } else{
               // if (extra(0) == 1) { // probit
               if(zeta.size()>p) {
-                nll -= log(pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1)) - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+                mu(i,j) = pnorm(zetanew(j,1) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+                nll -= log(mu(i,j)) - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
               } else {
-                nll -= log(1 - pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1))) - cQ(i,j); //
+                mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
+                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+                nll -= log(1 - mu(i,j)) - cQ(i,j); //
               }
               mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
               mu_prime = dnorm(eta(i,j), Type(0), Type(1));
