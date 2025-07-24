@@ -55,18 +55,13 @@ table(SPinfo$GROUP)
 # Select only the macroalgae:
 Yalg <- Yabund[,SPinfo$GROUP=="ALGAE"]
 
-# Remove empty rows and rows with missing values from the data
-rem0 <- which((rowSums(Yalg)==0) | is.na(rowSums(Yalg)))
-Yalg <- Yalg[-rem0,]
-Xenv <- Xenv[-rem0,]
-
-# Use only the data from the year 2016:
-
+# To demonstrate the models, use only the data from the year 2016:
 Yalg <- Yalg[Xenv$YEAR==2016,]
 Xenv <- Xenv[Xenv$YEAR==2016,]
 
-# Remove species which have no observations
-Yalg <- Yalg[,-which(colSums(Yalg>0)==0)]
+# Remove species which have no observations or just one
+Yalg <- Yalg[,-which(colSums(Yalg>0)<2)]
+
 # Number of obs. and species:
 dim(Yalg)
 
@@ -93,6 +88,65 @@ In the above, the prefix \texttt{H01} indicates that the coefficient relates to 
 Ordination plot can then be generated as per usual:
 ```{r}
 ordiplot(fit, jitter = TRUE, s.cex = .8)
+```
+
+
+## Ordered beta GLLVM
+
+Another solution for modeling percentage cover data in gllvm is to use ordered beta response model. It handles zeros and ones slightly differently compared to hurdle beta model. Instead of assuming that the zeros and ones comes from separate process from the percent cover, the model assumes that there is an underlying process $z_{ij}$ where all observations comes from. 
+
+For species $j = 1, . . . , m$, let $z_{ij}$ denote an underlying continuous variable, and define two cutoff parameters $\zeta_{j0} < \zeta_{j1}$ such that $Y_{ij} = 0$ occurs when $z_{ij} < \zeta_{j0}$, $Y_{ij}=1$ occurs when $z_{ij}>\zeta_{j1}$, and $Y_{ij} \in (0,1)$ occurs when $\zeta_{j0} < z_{ij} < \zeta_{j1}$. Conditional on $Y_{ij} \in (0,1)$, the response variable follows a beta distribution. By assuming $z_{ij}$ follows a logistic distribution, then  marginalising over $z_{ij}$ we obtain the following distribution for the percent cover responses that characterizes the ordered beta GLLVM, 
+
+\begin{align}
+    P(Y_{ij};\eta_{ij}, \phi_j) = 
+    \begin{cases}
+       \rho^0_{ij}, & if  Y_{ij} = 0 ,\\
+        \left(\rho^1 - \rho^0 \right) \cdot f_{\text{beta}}(Y_{ij}; \mu_{ij}, \phi_j), & if  Y_{ij} \in (0,1) ,\\
+        1-\rho^1_{ij}, & if  Y_{ij} = 1 ,\\
+        \end{cases}
+\end{align}
+
+### Adjusting ordered beta to data without ones
+
+Lets demonstrate the ordered beta response model for the previous example. As the data has no ones:
+```{r}
+sum(Yalg ==1)
+```
+
+We can accommodate the model to better handle data that by fixing the upper cutoff parameters to some large value, for example 20. With *gllvm* this can be done by setting starting values for the cutoff parameter, ´zetacutoff = c(0, 20)´ and fixing the upper cutoff parameters with ´setMap = list(zeta = factor(c(1:m, rep(NA, m))))´. We assume that the number of species/response variables in the data is saved to object `m`. There are ´m´ (number of species) lower cutoff parameters $\zeta_{j0}$ we let be freely estimated (that's indexes ´1:m´ in ´setMap´) and ´m´ upper cutoff parameters $\zeta_{j1}$ that we fix (that's ´rep(NA, m)´ in ´setMap´). 
+
+### Setting shape parameter to common across species
+
+Some species are observed only a few times:
+```{r}
+colSums(Yalg>0)
+```
+
+so there is not much information to estimate the shape parameter of the beta distribution for each species separately. Thus we can also set the shape parameter to be common across species with ´disp.formula = rep(1, m)´. This can be applied for all beta based models in *gllvm*.
+
+### Model fit
+
+Now we are ready to fit the model, we use probit-link function here but logit is also possible similarly to beta hurdle model:
+
+```{r}
+# save the number of species to object m
+m <- ncol(Yalg)
+fit_ob <- gllvm(Yalg, X=Xenv, formula = Xformulai, family = "orderedBeta", 
+    method="EVA", num.lv = 2, link="probit",
+    disp.formula = rep(1, m), zetacutoff = c(0, 20),
+    setMap = list(zeta = factor(c(1:m, rep(NA, m)))))
+fit_ob
+```
+
+Now if we check the cutoff values we see that the upper bounds are fixed to 20
+```{r}
+fit_ob$params$zeta
+```
+
+
+Ordination plot:
+```{r}
+ordiplot(fit_ob, jitter = TRUE, s.cex = .8)
 ```
 
 
