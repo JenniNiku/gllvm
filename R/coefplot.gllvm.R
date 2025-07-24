@@ -34,7 +34,9 @@
 #'@export coefplot.gllvm
 coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = TRUE, cex.ylab = 0.5, cex.xlab = 1.3, mfrow = NULL, mar = c(4,6,2,1), xlim.list = NULL, ind.spp = NULL, ...)
 {
-
+  if(!is.list(object$sd)){
+    stop("Cannot construct coefplot without standard errors in the model.")
+  }
   if(is.null(ind.spp))ind.spp <- 1:ncol(object$y)
   if (!any(class(object) == "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
