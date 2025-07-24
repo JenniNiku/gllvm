@@ -34,7 +34,7 @@
 #'
 #'\dontrun{
 #'# Plot the result of  variance partitioning
-#'plot(VP, col = palette(hcl.colors(5, "Roma")))
+#'plot(VP, col = palette(hcl.colors(5, "Roma")), las =2)
 #'
 #'}
 #'
