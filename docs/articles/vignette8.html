@@ -106,7 +106,7 @@ using gllvm</h1>
                         <h4 data-toc-skip class="author">Pekka
 Korhonen</h4>
             
-            <h4 data-toc-skip class="date">2025-07-21</h4>
+            <h4 data-toc-skip class="date">2025-07-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette8.Rmd" class="external-link"><code>vignettes/vignette8.Rmd</code></a></small>
       <div class="hidden name"><code>vignette8.Rmd</code></div>
@@ -245,21 +245,16 @@ giant kelp as environmental covariates in the model.</p>
 <code class="sourceCode R"><span><span class="co"># Select only the macroalgae:</span></span>
 <span><span class="va">Yalg</span> <span class="op">&lt;-</span> <span class="va">Yabund</span><span class="op">[</span>,<span class="va">SPinfo</span><span class="op">$</span><span class="va">GROUP</span><span class="op">==</span><span class="st">"ALGAE"</span><span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Remove empty rows and rows with missing values from the data</span></span>
-<span><span class="va">rem0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">)</span><span class="op">==</span><span class="fl">0</span><span class="op">)</span> <span class="op">|</span> <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">Yalg</span> <span class="op">&lt;-</span> <span class="va">Yalg</span><span class="op">[</span><span class="op">-</span><span class="va">rem0</span>,<span class="op">]</span></span>
-<span><span class="va">Xenv</span> <span class="op">&lt;-</span> <span class="va">Xenv</span><span class="op">[</span><span class="op">-</span><span class="va">rem0</span>,<span class="op">]</span></span>
-<span></span>
-<span><span class="co"># Use only the data from the year 2016:</span></span>
-<span></span>
+<span><span class="co"># To demonstrate the models, use only the data from the year 2016:</span></span>
 <span><span class="va">Yalg</span> <span class="op">&lt;-</span> <span class="va">Yalg</span><span class="op">[</span><span class="va">Xenv</span><span class="op">$</span><span class="va">YEAR</span><span class="op">==</span><span class="fl">2016</span>,<span class="op">]</span></span>
 <span><span class="va">Xenv</span> <span class="op">&lt;-</span> <span class="va">Xenv</span><span class="op">[</span><span class="va">Xenv</span><span class="op">$</span><span class="va">YEAR</span><span class="op">==</span><span class="fl">2016</span>,<span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Remove species which have no observations</span></span>
-<span><span class="va">Yalg</span> <span class="op">&lt;-</span> <span class="va">Yalg</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">&gt;</span><span class="fl">0</span><span class="op">)</span><span class="op">==</span><span class="fl">0</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co"># Remove species which have no observations or just one</span></span>
+<span><span class="va">Yalg</span> <span class="op">&lt;-</span> <span class="va">Yalg</span><span class="op">[</span>,<span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">&gt;</span><span class="fl">0</span><span class="op">)</span><span class="op">&lt;</span><span class="fl">2</span><span class="op">)</span><span class="op">]</span></span>
+<span></span>
 <span><span class="co"># Number of obs. and species:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 44 53</span></span></code></pre>
+<pre><code><span><span class="co">## [1] 44 42</span></span></code></pre>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Specify the covariates in the linear predictor</span></span>
 <span><span class="va">Xformulai</span> <span class="op">=</span> <span class="op">~</span><span class="va">KELP_FRONDS</span> <span class="op">+</span> <span class="va">PERCENT_ROCKY</span></span></code></pre></div>
@@ -272,118 +267,261 @@ estimated by</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">Xcoef</span></span></code></pre></div>
 <pre><code><span><span class="co">##            KELP_FRONDS PERCENT_ROCKY</span></span>
-<span><span class="co">## AMZO     -6.414759e-04  -0.031667796</span></span>
-<span><span class="co">## AU       -1.429881e-01   0.054856810</span></span>
-<span><span class="co">## BF       -2.222402e+00   0.047593908</span></span>
-<span><span class="co">## BLD      -1.012555e-02  -0.150436710</span></span>
-<span><span class="co">## BO        7.988108e-01  -0.084553191</span></span>
-<span><span class="co">## BR        2.682455e-01   0.019632366</span></span>
-<span><span class="co">## BRA      -5.412418e-02  -0.061019703</span></span>
-<span><span class="co">## CAL      -2.096637e-01  -0.053323764</span></span>
-<span><span class="co">## CC        9.203757e-02  -0.020141723</span></span>
-<span><span class="co">## CF       -1.800648e-01   0.061331617</span></span>
-<span><span class="co">## CG        9.176557e-01  -0.055644998</span></span>
-<span><span class="co">## CO       -1.982017e-01   0.026593262</span></span>
-<span><span class="co">## COF       2.819400e-01  -0.004842634</span></span>
-<span><span class="co">## CP        6.393406e-01  -0.042999800</span></span>
-<span><span class="co">## CRYP      1.828712e+00   0.007145965</span></span>
-<span><span class="co">## CYOS      2.099581e-01  -0.041734426</span></span>
-<span><span class="co">## CZ       -4.788803e-03  -0.088887286</span></span>
-<span><span class="co">## DL        3.763774e-01  -0.049474343</span></span>
-<span><span class="co">## DMH      -9.546725e-01   0.027608265</span></span>
-<span><span class="co">## DP       -2.819757e-01  -0.018594380</span></span>
-<span><span class="co">## DU       -7.363924e-02  -0.007471000</span></span>
-<span><span class="co">## EAH       8.587598e+00  -0.025932921</span></span>
-<span><span class="co">## EC        7.828564e-02   0.011818169</span></span>
-<span><span class="co">## EH        1.188374e-01  -0.108121060</span></span>
-<span><span class="co">## ER       -5.499829e-01  -0.026073576</span></span>
-<span><span class="co">## FASP     -1.548967e-03  -0.049881983</span></span>
-<span><span class="co">## FB        1.521047e+00   0.038471820</span></span>
-<span><span class="co">## FTHR     -8.249420e-01   0.059991213</span></span>
-<span><span class="co">## GR        1.787073e-01  -0.034111070</span></span>
-<span><span class="co">## GS       -1.930287e+00   0.040674291</span></span>
-<span><span class="co">## GYSP      5.219380e-01  -0.113931956</span></span>
-<span><span class="co">## IR       -1.015278e-03  -0.037875667</span></span>
-<span><span class="co">## LH       -2.592421e-03  -0.035634651</span></span>
-<span><span class="co">## LI        2.926986e-04   0.263428710</span></span>
-<span><span class="co">## LS       -8.906518e-03  -0.125223450</span></span>
-<span><span class="co">## LX       -1.613055e-02  -0.216470580</span></span>
-<span><span class="co">## MH        3.728082e-01  -0.015549624</span></span>
-<span><span class="co">## NIE      -1.202642e-01  -0.027218067</span></span>
-<span><span class="co">## PH        1.676493e+00  -0.278784906</span></span>
-<span><span class="co">## PHSE     -1.443997e-02   0.026282318</span></span>
-<span><span class="co">## PL       -1.762481e-01   0.024380975</span></span>
-<span><span class="co">## POLA     -7.222893e-01  -0.007268270</span></span>
-<span><span class="co">## PRSP      1.130181e+00  -0.027893744</span></span>
-<span><span class="co">## R         3.158731e-01   0.043833710</span></span>
-<span><span class="co">## RAT      -6.288062e-01   0.026223457</span></span>
-<span><span class="co">## SAFU      2.452626e+00  -0.084268000</span></span>
-<span><span class="co">## SAHO     -7.351259e-01   0.022324266</span></span>
-<span><span class="co">## SAMU      1.665675e-01  -0.019095955</span></span>
-<span><span class="co">## SCCA      3.330960e-02   0.111233546</span></span>
-<span><span class="co">## STIN     -6.422117e-05  -0.057799053</span></span>
-<span><span class="co">## TALE     -6.470602e-01  -0.017442143</span></span>
-<span><span class="co">## UEC      -4.952136e-05  -0.024760680</span></span>
-<span><span class="co">## UV        1.169486e+00  -0.107982466</span></span>
-<span><span class="co">## H01_AMZO  2.243470e+00  -0.065169665</span></span>
-<span><span class="co">## H01_AU   -7.144139e-01  -0.011080315</span></span>
-<span><span class="co">## H01_BF   -9.677637e-01  -0.015704696</span></span>
-<span><span class="co">## H01_BLD  -6.385458e-01   0.035004673</span></span>
-<span><span class="co">## H01_BO    3.737361e-01  -0.038988348</span></span>
-<span><span class="co">## H01_BR   -5.062432e-01   0.034880408</span></span>
-<span><span class="co">## H01_BRA  -1.450563e+00   0.127720865</span></span>
-<span><span class="co">## H01_CAL   8.895561e-02   0.160057833</span></span>
-<span><span class="co">## H01_CC    1.081214e+00  -0.069387989</span></span>
-<span><span class="co">## H01_CF    1.900629e+00  -0.154116956</span></span>
-<span><span class="co">## H01_CG    2.652004e+00   0.013307152</span></span>
-<span><span class="co">## H01_CO    3.984345e-01  -0.021280093</span></span>
-<span><span class="co">## H01_COF   5.208187e-01   0.150036340</span></span>
-<span><span class="co">## H01_CP   -2.106989e+00   0.170146298</span></span>
-<span><span class="co">## H01_CRYP -1.515659e+00   0.060666487</span></span>
-<span><span class="co">## H01_CYOS -1.514434e+00   0.083313361</span></span>
-<span><span class="co">## H01_CZ   -2.648821e-01   0.133230867</span></span>
-<span><span class="co">## H01_DL    3.647576e-01  -0.025484156</span></span>
-<span><span class="co">## H01_DMH  -1.885604e+00   0.101960376</span></span>
-<span><span class="co">## H01_DP    1.126203e+00  -0.048427541</span></span>
-<span><span class="co">## H01_DU   -2.824181e+00   0.166558965</span></span>
-<span><span class="co">## H01_EAH  -1.206518e+01   0.092527522</span></span>
-<span><span class="co">## H01_EC   -1.066875e+00   0.139770775</span></span>
-<span><span class="co">## H01_EH   -7.361457e-01   0.015708696</span></span>
-<span><span class="co">## H01_ER   -2.510731e-01   0.062931800</span></span>
-<span><span class="co">## H01_FASP -4.702653e-01   0.132828607</span></span>
-<span><span class="co">## H01_FB    2.141098e-01  -0.040687842</span></span>
-<span><span class="co">## H01_FTHR -5.646436e-01   0.008388668</span></span>
-<span><span class="co">## H01_GR   -9.135560e-01   0.291659904</span></span>
-<span><span class="co">## H01_GS    5.765959e-01  -0.287425984</span></span>
-<span><span class="co">## H01_GYSP -1.555153e+00   0.104374579</span></span>
-<span><span class="co">## H01_IR    3.454545e-01   0.103177043</span></span>
-<span><span class="co">## H01_LH   -2.095577e+00   0.180935717</span></span>
-<span><span class="co">## H01_LI   -8.050576e+00   0.015719458</span></span>
-<span><span class="co">## H01_LS   -1.164744e+00   0.112298781</span></span>
-<span><span class="co">## H01_LX    9.683870e-01  -0.133361137</span></span>
-<span><span class="co">## H01_MH   -2.363341e+00   0.149731293</span></span>
-<span><span class="co">## H01_NIE  -1.339358e+00   0.078269381</span></span>
-<span><span class="co">## H01_PH   -6.717199e-02  -0.063048673</span></span>
-<span><span class="co">## H01_PHSE  5.077001e-01  -0.098741834</span></span>
-<span><span class="co">## H01_PL   -8.218807e-01   0.051110199</span></span>
-<span><span class="co">## H01_POLA -1.734991e+00   0.075440347</span></span>
-<span><span class="co">## H01_PRSP -1.029324e+00   0.021467787</span></span>
-<span><span class="co">## H01_R     3.694302e-01  -0.020476165</span></span>
-<span><span class="co">## H01_RAT  -3.477286e-01   0.038485109</span></span>
-<span><span class="co">## H01_SAFU -3.705048e+00  -0.071834460</span></span>
-<span><span class="co">## H01_SAHO -6.616918e+00   0.109438215</span></span>
-<span><span class="co">## H01_SAMU  9.968886e-01  -0.051707512</span></span>
-<span><span class="co">## H01_SCCA  4.777883e-01   0.004877998</span></span>
-<span><span class="co">## H01_STIN -1.156252e+01   0.106900683</span></span>
-<span><span class="co">## H01_TALE -3.129780e+00   0.194513617</span></span>
-<span><span class="co">## H01_UEC  -3.841322e+00   0.114540931</span></span>
-<span><span class="co">## H01_UV    1.392082e-01   0.007336603</span></span></code></pre>
+<span><span class="co">## AU       -4.307914e-02 -4.770042e-03</span></span>
+<span><span class="co">## BF       -1.853324e+00  7.845708e-02</span></span>
+<span><span class="co">## BO        3.385302e-01 -6.147463e-02</span></span>
+<span><span class="co">## BR       -6.183200e-02  2.733598e-02</span></span>
+<span><span class="co">## BRA       3.260636e-01 -8.164720e-02</span></span>
+<span><span class="co">## CAL      -1.385751e-01 -2.664296e-02</span></span>
+<span><span class="co">## CC        9.511590e-02 -1.284133e-03</span></span>
+<span><span class="co">## CF       -1.328734e-01  9.125119e-03</span></span>
+<span><span class="co">## CG        3.078440e-02 -3.648815e-02</span></span>
+<span><span class="co">## CO       -9.359905e-02  1.268354e-02</span></span>
+<span><span class="co">## COF      -1.011786e-02  7.601417e-04</span></span>
+<span><span class="co">## CP        2.168726e-02 -7.012546e-02</span></span>
+<span><span class="co">## CRYP      5.176407e-05 -9.012539e-07</span></span>
+<span><span class="co">## CYOS      3.569089e-02 -7.728223e-03</span></span>
+<span><span class="co">## DL        1.015238e-02  1.974069e-02</span></span>
+<span><span class="co">## DMH       2.028236e-01  8.550216e-03</span></span>
+<span><span class="co">## DP       -7.015430e-02  7.813939e-03</span></span>
+<span><span class="co">## DU       -6.720121e-01 -5.758309e-02</span></span>
+<span><span class="co">## EAH       4.407580e+00 -6.136458e-02</span></span>
+<span><span class="co">## EC        7.161877e-02  1.579956e-02</span></span>
+<span><span class="co">## EH        6.005642e-01 -1.139467e-01</span></span>
+<span><span class="co">## ER       -6.355586e-02 -2.330824e-02</span></span>
+<span><span class="co">## FB        6.810655e-02  3.410612e-02</span></span>
+<span><span class="co">## FTHR     -2.401967e-02 -1.913079e-02</span></span>
+<span><span class="co">## GR        3.016769e-01 -1.434593e-02</span></span>
+<span><span class="co">## GS       -2.410029e-01 -1.079593e-02</span></span>
+<span><span class="co">## GYSP     -1.380775e-01  3.815308e-03</span></span>
+<span><span class="co">## MH        8.944465e-02 -1.296316e-03</span></span>
+<span><span class="co">## NIE      -1.928211e-02 -6.757693e-03</span></span>
+<span><span class="co">## PH        1.408930e+00 -2.027203e-01</span></span>
+<span><span class="co">## PHSE     -3.057175e-01  5.667093e-03</span></span>
+<span><span class="co">## PL        1.329472e-01 -5.961618e-04</span></span>
+<span><span class="co">## POLA     -3.064896e-02 -3.633384e-02</span></span>
+<span><span class="co">## PRSP      1.027000e-05 -1.797908e-07</span></span>
+<span><span class="co">## R         9.964480e-02  5.434407e-03</span></span>
+<span><span class="co">## RAT       1.511523e-02  1.733764e-03</span></span>
+<span><span class="co">## SAFU     -1.899770e+00  1.291657e-02</span></span>
+<span><span class="co">## SAHO      5.056012e-01 -2.444927e-02</span></span>
+<span><span class="co">## SAMU     -1.390003e-01 -4.124579e-03</span></span>
+<span><span class="co">## SCCA     -4.487021e-02  5.600061e-02</span></span>
+<span><span class="co">## TALE      6.318130e-02 -2.708912e-02</span></span>
+<span><span class="co">## UV       -8.435144e-01 -4.078454e-02</span></span>
+<span><span class="co">## H01_AU   -3.748890e-01 -5.090408e-02</span></span>
+<span><span class="co">## H01_BF   -1.866961e-01 -7.874489e-02</span></span>
+<span><span class="co">## H01_BO    2.899801e-01 -2.869145e-02</span></span>
+<span><span class="co">## H01_BR   -9.661864e-02 -4.595573e-03</span></span>
+<span><span class="co">## H01_BRA   1.603470e-02 -4.446664e-02</span></span>
+<span><span class="co">## H01_CAL  -2.177546e-01  1.126573e-01</span></span>
+<span><span class="co">## H01_CC   -1.822890e-01  5.703762e-03</span></span>
+<span><span class="co">## H01_CF   -4.843186e-02 -1.332073e-02</span></span>
+<span><span class="co">## H01_CG    8.040600e-02  2.046815e-01</span></span>
+<span><span class="co">## H01_CO    3.978075e-02 -1.539441e-02</span></span>
+<span><span class="co">## H01_COF  -2.497741e+00  2.305096e-01</span></span>
+<span><span class="co">## H01_CP   -8.467667e-02  1.275048e-01</span></span>
+<span><span class="co">## H01_CRYP -3.409764e-02 -7.639185e-02</span></span>
+<span><span class="co">## H01_CYOS  1.091321e-01 -1.693727e-02</span></span>
+<span><span class="co">## H01_DL   -2.191145e-02 -2.713931e-02</span></span>
+<span><span class="co">## H01_DMH  -1.525665e-01 -1.979245e-02</span></span>
+<span><span class="co">## H01_DP   -8.902506e-02  1.617001e-02</span></span>
+<span><span class="co">## H01_DU   -4.162051e-01  2.109371e-01</span></span>
+<span><span class="co">## H01_EAH  -7.180904e+00  1.875275e-01</span></span>
+<span><span class="co">## H01_EC    4.734169e-01  1.351968e-01</span></span>
+<span><span class="co">## H01_EH    1.692431e-01 -4.020182e-02</span></span>
+<span><span class="co">## H01_ER   -3.849820e-02  4.543815e-02</span></span>
+<span><span class="co">## H01_FB   -6.363853e-01 -2.517973e-02</span></span>
+<span><span class="co">## H01_FTHR -4.713358e-01 -4.440901e-02</span></span>
+<span><span class="co">## H01_GR   -1.897726e-01  2.503153e-01</span></span>
+<span><span class="co">## H01_GS   -6.117867e-01 -2.390469e-01</span></span>
+<span><span class="co">## H01_GYSP -3.032503e-02  1.165265e-02</span></span>
+<span><span class="co">## H01_MH    7.628570e+00 -4.105026e-02</span></span>
+<span><span class="co">## H01_NIE   3.543694e-01 -7.125865e-02</span></span>
+<span><span class="co">## H01_PH    4.427246e-01 -8.603485e-02</span></span>
+<span><span class="co">## H01_PHSE -2.351648e-01 -5.932135e-02</span></span>
+<span><span class="co">## H01_PL   -1.886402e-02  2.216514e-03</span></span>
+<span><span class="co">## H01_POLA -1.500098e-01 -2.585375e-02</span></span>
+<span><span class="co">## H01_PRSP -6.698110e-02 -1.248328e-02</span></span>
+<span><span class="co">## H01_R    -1.302328e-01  1.389499e-02</span></span>
+<span><span class="co">## H01_RAT  -1.119953e-01  2.415576e-02</span></span>
+<span><span class="co">## H01_SAFU -3.568917e+00 -1.324343e-01</span></span>
+<span><span class="co">## H01_SAHO -2.594287e+00  1.884425e-01</span></span>
+<span><span class="co">## H01_SAMU -7.460319e-02 -1.506395e-03</span></span>
+<span><span class="co">## H01_SCCA -9.201648e-02  1.441938e-02</span></span>
+<span><span class="co">## H01_TALE -5.933011e-01  2.266302e-01</span></span>
+<span><span class="co">## H01_UV   -7.410063e-01 -1.454605e-02</span></span></code></pre>
 <p>In the above, the prefix indicates that the coefficient relates to
 the Bernoulli part of the hurdle model.</p>
 <p>Ordination plot can then be generated as per usual:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit</span>, jitter <span class="op">=</span> <span class="cn">TRUE</span>, s.cex <span class="op">=</span> <span class="fl">.8</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vignette8_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level2">
+<h2 id="ordered-beta-gllvm">Ordered beta GLLVM<a class="anchor" aria-label="anchor" href="#ordered-beta-gllvm"></a>
+</h2>
+<p>Another solution for modeling percentage cover data in gllvm is to
+use ordered beta response model. It handles zeros and ones slightly
+differently compared to hurdle beta model. Instead of assuming that the
+zeros and ones comes from separate process from the percent cover, the
+model assumes that there is an underlying process
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">z_{ij}</annotation></semantics></math>
+where all observations comes from.</p>
+<p>For species
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>m</mi></mrow><annotation encoding="application/x-tex">j = 1, . . . , m</annotation></semantics></math>,
+let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">z_{ij}</annotation></semantics></math>
+denote an underlying continuous variable, and define two cutoff
+parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ζ</mi><mrow><mi>j</mi><mn>0</mn></mrow></msub><mo>&lt;</mo><msub><mi>ζ</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\zeta_{j0} &lt; \zeta_{j1}</annotation></semantics></math>
+such that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">Y_{ij} = 0</annotation></semantics></math>
+occurs when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>&lt;</mo><msub><mi>ζ</mi><mrow><mi>j</mi><mn>0</mn></mrow></msub></mrow><annotation encoding="application/x-tex">z_{ij} &lt; \zeta_{j0}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">Y_{ij}=1</annotation></semantics></math>
+occurs when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>&gt;</mo><msub><mi>ζ</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">z_{ij}&gt;\zeta_{j1}</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Y_{ij} \in (0,1)</annotation></semantics></math>
+occurs when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ζ</mi><mrow><mi>j</mi><mn>0</mn></mrow></msub><mo>&lt;</mo><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>&lt;</mo><msub><mi>ζ</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\zeta_{j0} &lt; z_{ij} &lt; \zeta_{j1}</annotation></semantics></math>.
+Conditional on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Y_{ij} \in (0,1)</annotation></semantics></math>,
+the response variable follows a beta distribution. By assuming
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">z_{ij}</annotation></semantics></math>
+follows a logistic distribution, then marginalising over
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">z_{ij}</annotation></semantics></math>
+we obtain the following distribution for the percent cover responses
+that characterizes the ordered beta GLLVM,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>;</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msubsup><mi>ρ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>0</mn></msubsup><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>i</mi><mi>f</mi><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>ρ</mi><mn>1</mn></msup><mo>−</mo><msup><mi>ρ</mi><mn>0</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><msub><mi>f</mi><mtext mathvariant="normal">beta</mtext></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>;</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>i</mi><mi>f</mi><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn><mo>−</mo><msubsup><mi>ρ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>1</mn></msubsup><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>i</mi><mi>f</mi><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>1</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"></mtd></mtr></mtable></mrow></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align}
+    P(Y_{ij};\eta_{ij}, \phi_j) = 
+    \begin{cases}
+       \rho^0_{ij}, &amp; if  Y_{ij} = 0 ,\\
+        \left(\rho^1 - \rho^0 \right) \cdot f_{\text{beta}}(Y_{ij}; \mu_{ij}, \phi_j), &amp; if  Y_{ij} \in (0,1) ,\\
+        1-\rho^1_{ij}, &amp; if  Y_{ij} = 1 ,\\
+        \end{cases}
+\end{align}</annotation></semantics></math></p>
+<div class="section level3">
+<h3 id="adjusting-ordered-beta-to-data-without-ones">Adjusting ordered beta to data without ones<a class="anchor" aria-label="anchor" href="#adjusting-ordered-beta-to-data-without-ones"></a>
+</h3>
+<p>Lets demonstrate the ordered beta response model for the previous
+example. As the data has no ones:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">Yalg</span> <span class="op">==</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] 0</span></span></code></pre>
+<p>We can accommodate the model to better handle data that by fixing the
+upper cutoff parameters to some large value, for example 20. With
+<em>gllvm</em> this can be done by setting starting values for the
+cutoff parameter, ´zetacutoff = c(0, 20)´ and fixing the upper cutoff
+parameters with ´setMap = list(zeta = factor(c(1:m, rep(NA, m))))´. We
+assume that the number of species/response variables in the data is
+saved to object <code>m</code>. There are ´m´ (number of species) lower
+cutoff parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ζ</mi><mrow><mi>j</mi><mn>0</mn></mrow></msub><annotation encoding="application/x-tex">\zeta_{j0}</annotation></semantics></math>
+we let be freely estimated (that’s indexes ´1:m´ in ´setMap´) and ´m´
+upper cutoff parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ζ</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub><annotation encoding="application/x-tex">\zeta_{j1}</annotation></semantics></math>
+that we fix (that’s ´rep(NA, m)´ in ´setMap´).</p>
+</div>
+<div class="section level3">
+<h3 id="setting-shape-parameter-to-common-across-species">Setting shape parameter to common across species<a class="anchor" aria-label="anchor" href="#setting-shape-parameter-to-common-across-species"></a>
+</h3>
+<p>Some species are observed only a few times:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">&gt;</span><span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##   AU   BF   BO   BR  BRA  CAL   CC   CF   CG   CO  COF   CP CRYP CYOS   DL  DMH </span></span>
+<span><span class="co">##   23    3   11    5    2    5   30   13    5   24    5    3    3   33   26    8 </span></span>
+<span><span class="co">##   DP   DU  EAH   EC   EH   ER   FB FTHR   GR   GS GYSP   MH  NIE   PH PHSE   PL </span></span>
+<span><span class="co">##   14    4    3   36    2    6    6    6   11   20    7   36   13    2    5    4 </span></span>
+<span><span class="co">## POLA PRSP    R  RAT SAFU SAHO SAMU SCCA TALE   UV </span></span>
+<span><span class="co">##    6    4   31   17    6    2    7    7    5    6</span></span></code></pre>
+<p>so there is not much information to estimate the shape parameter of
+the beta distribution for each species separately. Thus we can also set
+the shape parameter to be common across species with ´disp.formula =
+rep(1, m)´. This can be applied for all beta based models in
+<em>gllvm</em>.</p>
+</div>
+<div class="section level3">
+<h3 id="model-fit">Model fit<a class="anchor" aria-label="anchor" href="#model-fit"></a>
+</h3>
+<p>Now we are ready to fit the model, we use probit-link function here
+but logit is also possible similarly to beta hurdle model:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># save the number of species to object m</span></span>
+<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">Yalg</span><span class="op">)</span></span>
+<span><span class="va">fit_ob</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Yalg</span>, X<span class="op">=</span><span class="va">Xenv</span>, formula <span class="op">=</span> <span class="va">Xformulai</span>, family <span class="op">=</span> <span class="st">"orderedBeta"</span>, </span>
+<span>    method<span class="op">=</span><span class="st">"EVA"</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, link<span class="op">=</span><span class="st">"probit"</span>,</span>
+<span>    disp.formula <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">m</span><span class="op">)</span>, zetacutoff <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">20</span><span class="op">)</span>,</span>
+<span>    setMap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>zeta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="va">m</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fit_ob</span></span></code></pre></div>
+<pre><code><span><span class="co">## Call: </span></span>
+<span><span class="co">## gllvm(y = Yalg, X = Xenv, formula = Xformulai, family = "orderedBeta", </span></span>
+<span><span class="co">##     num.lv = 2, method = "EVA", link = "probit", disp.formula = rep(1, </span></span>
+<span><span class="co">##         m), setMap = list(zeta = factor(c(1:m, rep(NA, m)))), </span></span>
+<span><span class="co">##     zetacutoff = c(0, 20))</span></span>
+<span><span class="co">## family: </span></span>
+<span><span class="co">## [1] "orderedBeta"</span></span>
+<span><span class="co">## method: </span></span>
+<span><span class="co">## [1] "EVA"</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## log-likelihood:  265.8511 </span></span>
+<span><span class="co">## Residual degrees of freedom:  1554 </span></span>
+<span><span class="co">## AIC:  56.29774 </span></span>
+<span><span class="co">## AICc:  167.9912 </span></span>
+<span><span class="co">## BIC:  1679.724</span></span></code></pre>
+<p>Now if we check the cutoff values we see that the upper bounds are
+fixed to 20</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_ob</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">zeta</span></span></code></pre></div>
+<pre><code><span><span class="co">##          cutoff0 cutoff1</span></span>
+<span><span class="co">##  [1,] -2.2804694      20</span></span>
+<span><span class="co">##  [2,] -1.2916900      20</span></span>
+<span><span class="co">##  [3,] -2.7331047      20</span></span>
+<span><span class="co">##  [4,] -1.5286385      20</span></span>
+<span><span class="co">##  [5,] -1.5029773      20</span></span>
+<span><span class="co">##  [6,] -2.1640885      20</span></span>
+<span><span class="co">##  [7,] -5.4648841      20</span></span>
+<span><span class="co">##  [8,] -3.0017473      20</span></span>
+<span><span class="co">##  [9,] -3.6935325      20</span></span>
+<span><span class="co">## [10,] -3.4401731      20</span></span>
+<span><span class="co">## [11,] -5.3251816      20</span></span>
+<span><span class="co">## [12,] -3.3384571      20</span></span>
+<span><span class="co">## [13,] -1.5552542      20</span></span>
+<span><span class="co">## [14,] -3.6606665      20</span></span>
+<span><span class="co">## [15,] -3.4961040      20</span></span>
+<span><span class="co">## [16,] -2.4117584      20</span></span>
+<span><span class="co">## [17,] -2.3677207      20</span></span>
+<span><span class="co">## [18,] -2.3543442      20</span></span>
+<span><span class="co">## [19,] -5.6424235      20</span></span>
+<span><span class="co">## [20,] -4.2557158      20</span></span>
+<span><span class="co">## [21,] -2.8684617      20</span></span>
+<span><span class="co">## [22,] -2.7467919      20</span></span>
+<span><span class="co">## [23,] -0.8132517      20</span></span>
+<span><span class="co">## [24,] -2.3837258      20</span></span>
+<span><span class="co">## [25,] -4.5109361      20</span></span>
+<span><span class="co">## [26,] -3.5332852      20</span></span>
+<span><span class="co">## [27,] -2.0539203      20</span></span>
+<span><span class="co">## [28,] -4.3952734      20</span></span>
+<span><span class="co">## [29,] -3.1997388      20</span></span>
+<span><span class="co">## [30,] -1.5218883      20</span></span>
+<span><span class="co">## [31,] -2.3919245      20</span></span>
+<span><span class="co">## [32,] -1.7326184      20</span></span>
+<span><span class="co">## [33,] -2.2156611      20</span></span>
+<span><span class="co">## [34,] -2.1988386      20</span></span>
+<span><span class="co">## [35,] -4.8337851      20</span></span>
+<span><span class="co">## [36,] -3.3171903      20</span></span>
+<span><span class="co">## [37,] -4.6105558      20</span></span>
+<span><span class="co">## [38,] -8.5070934      20</span></span>
+<span><span class="co">## [39,] -1.6002892      20</span></span>
+<span><span class="co">## [40,] -2.3137990      20</span></span>
+<span><span class="co">## [41,] -3.0606793      20</span></span>
+<span><span class="co">## [42,] -1.6685450      20</span></span></code></pre>
+<p>Ordination plot:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fit_ob</span>, jitter <span class="op">=</span> <span class="cn">TRUE</span>, s.cex <span class="op">=</span> <span class="fl">.8</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vignette8_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;"></p>
+</div>
 </div>
 <div class="section level2 unnumbered">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
