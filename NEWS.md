@@ -1,10 +1,12 @@
 Version 2.0.6
 =============
+
 * Added cloglog link for binomial, ZIB and ZNIB.
 
 ## Bugfixes
 
 * Bugfix in VP for random effects in formula
+* Bugfix in starting values for models involving both random row effects and random species effects
 
 Version 2.0.5
 =============
