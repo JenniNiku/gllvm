@@ -30,6 +30,7 @@
 #' @param col.ellips colors for prediction ellipses.
 #' @param rotate logical, if \code{TRUE} (default) latent variables are rotated to their principal direction using singular value decomposition
 #' @param type which type of ordination plot to construct. Options are "residual", "conditional", and "marginal". Defaults to "residual" for GLLVMs with unconstrained latent variables and "conditional" otherwise.
+#' @param get.coords whether to output a list of dataframes of the coordinates of the sites and loadings displayed in the plot
 #' @param ...	additional graphical arguments.
 #'
 #' @details
@@ -96,7 +97,7 @@
 #'@export
 #'@export ordiplot.gllvm
 ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, main = NULL, which.lvs = c(1, 2), predict.region = FALSE, level =0.95,
-                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", fac.center = FALSE, spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, ...) {
+                           jitter = FALSE, jitter.amount = 0.2, s.colors = 1, s.cex = 1.2, symbols = FALSE, cex.spp = 0.7, spp.colors = "blue", arrow.scale = 0.8, arrow.spp.scale = 0.8, arrow.ci = TRUE, arrow.lty = "solid", fac.center = FALSE, spp.arrows = NULL, spp.arrows.lty = "dashed", cex.env = 0.7, lab.dist = 0.1, lwd.ellips = 0.5, col.ellips = 4, lty.ellips = 1, type = NULL, rotate = TRUE, get.coords = FALSE, ...) {
   if (!any(class(object) %in% "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(isFALSE(object$sd) & !isFALSE(predict.region)){
@@ -257,9 +258,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       svd_rotmat_species <- diag(ncol(lv))
     }    
     
-    
-    
-    
+
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     
@@ -719,6 +718,23 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }else if(num.lv>0&(num.lv.c+num.RR)>0){warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
   }
   
+  # set up object for returning scaled sites/loadings
+  if (get.coords) {
+    coords <- list()
+    coords$sites <- choose.lvs # site coordinates
+    
+    # add loadings if biplot is specified
+    if(biplot) {
+      coords$loadings <- choose.lv.coefs 
+    }
+    
+    # add coefs if predictors are included (condition copied from above)
+    if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal") {
+      # adding only the SD-error scaled coefs, not the plot-window scaled (i.e. "ends" object)
+      coords$coefs <- LVcoef
+    }
+    return(coords)
+  }
 }
 
 
