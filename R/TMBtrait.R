@@ -484,7 +484,7 @@ trait.TMB <- function(
             if(length(scaledc) < ncol(distLV) ) scaledc <- rep(scaledc, ncol(distLV))[1:ncol(distLV)]
           }
         }
-        if(family == "negative.binomial" && start.params$family == "negative.binomial" && !is.null(start.params$params$phi)) {res$phi<-start.params$params$phi}
+        if(family %in% c("negative.binomial","negative.binomial1") && start.params$family %in% c("negative.binomial","negative.binomial1") && !is.null(start.params$params$phi)) {res$phi<-start.params$params$phi}
         # 
         #   if(!is.null(randomX)){
         #   Br <- start.params$params$Br
@@ -607,7 +607,7 @@ trait.TMB <- function(
     
 ### Starting values for dispersion/shape parameters
     
-    if(family == "negative.binomial") {
+    if(family %in% c("negative.binomial", "negative.binomial1")) {
       phis <- res$phi
       if (any(phis > 10))
         phis[phis > 50] <- 50
@@ -735,7 +735,7 @@ trait.TMB <- function(
     map.list$Ab_lv = factor(NA)
     if(family %in% c("poisson","binomial","ordinal","exponential")) {
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB","ZIB", "ZNIB")){
+    } else if(family %in% c("tweedie", "negative.binomial", "negative.binomial1", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB","ZIB", "ZNIB")){
       map.list$lg_phi <- factor(disp.group)
       if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
       if(family %in% c("ZINB", "ZNIB") & is.null(map.list$lg_phiZINB))map.list$lg_phiZINB <- factor(disp.group)
@@ -1121,7 +1121,10 @@ trait.TMB <- function(
     ### family settings
     
     if(family == "poisson") { familyn=0}
-    if(family == "negative.binomial") { familyn=1}
+    if(family %in% c("negative.binomial","negative.binomial1")) { 
+      familyn=1
+      if(family == "negative.binomial1")extra[1] = 1
+      }
     if(family == "binomial") {
       familyn <- 2;
       if(link=="probit") extra[1] <- 1
@@ -1471,7 +1474,7 @@ trait.TMB <- function(
     #### Extract estimated values
     
     param <- objr$env$last.par.best
-    if(family %in% c("negative.binomial", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
+    if(family %in% c("negative.binomial", "negative.binomial1", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
       phis=exp(param[names(param)=="lg_phi"])[disp.group]
       if(family=="tweedie" && is.null(Power)){
         Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
@@ -1721,7 +1724,7 @@ trait.TMB <- function(
       # }
       
       # Dispersion parameters
-      if(family =="negative.binomial") {
+      if(family %in% c("negative.binomial", "negative.binomial1")) {
         out$params$inv.phi <- phis;
         out$params$phi <- 1/phis;
         names(out$params$phi) <- colnames(y);

@@ -360,7 +360,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
   
-  if (object$family == "negative.binomial") {
+  if (object$family %in% c("negative.binomial", "negative.binomial1")) {
     sumry$'Dispersion parameters' <- object$params$phi
   }
   if (object$family == "gamma") {

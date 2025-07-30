@@ -34,7 +34,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
   # if(family=="orderedBeta") family = "beta"
   # if(family=="betaH") family="beta"
   
-  if(!(family %in% c("poisson","negative.binomial","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIP","ZINB",'ZIB', "ZNIB")))
+  if(!(family %in% c("poisson","negative.binomial","negative.binomial1","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIP","ZINB",'ZIB', "ZNIB")))
     stop("inputed family not allowed...sorry =(")
   
   if(any(cstruc %in% c("corExp", "corMatern"))) cstruc[cstruc %in% c("corExp", "corMatern")] = "ustruc"
@@ -304,7 +304,7 @@ start_values_gllvm_TMB <- function(y, X = NULL, lv.X = NULL, TR=NULL, xr = matri
   }
   
   
-  if(family == "negative.binomial") {
+  if(family %in% c("negative.binomial","negative.binomial1")) {
     phi <- fit.mva$phi  + 1e-5
   } else if(family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta","tweedie","ZIP","ZINB","ZIB", "ZNIB")) {
     phi <- fit.mva$phi
@@ -664,7 +664,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       
       b.lv <- fit$params$LvXcoef
       
-      if(family %in% c("poisson", "negative.binomial","gamma", "exponential","tweedie","ZIP","ZINB")) {
+      if(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")) {
         mu <- exp(eta)
       }else if(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")) {
         mu <-  binomial(link = link)$linkinv(eta)
@@ -830,7 +830,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }
   if(num.RR>0){
     #recalculate residual if we have added something to the linear predictor (i.e. num.lv.c)
-    if(family %in% c("poisson", "negative.binomial","gamma", "exponential","tweedie","ZIP","ZINB")) {
+    if(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -935,7 +935,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   
   if((num.lv.c+num.RR)>0&num.lv>0){
     # recalculate if we have added something to the linear predictor (i.e. num.lv.c. or num.RR)
-    if(family %in% c("poisson", "negative.binomial","gamma", "exponential","tweedie","ZIP","ZINB")) {
+    if(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -1034,7 +1034,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   }
   
   if(num.lv>0&(num.lv.c+num.RR)==0){
-    if(family %in% c("poisson", "negative.binomial","gamma", "exponential","tweedie","ZIP","ZINB")) {
+    if(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")) {
       mu <- exp(eta)
     }else if(family %in% c("binomial","beta", "betaH", "orderedBeta","ZIB", "ZNIB")) {
       mu <-  binomial(link = link)$linkinv(eta)
@@ -2233,7 +2233,7 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(family %in% c("poisson", "negative.binomial", "binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB")){
+      if(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB")){
         if(family == "tweedie"){
           start.optimizer <- "optim"
           optim.method  =  "L-BFGS-B"

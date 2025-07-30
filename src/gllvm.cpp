@@ -2672,6 +2672,8 @@ Type objective_function<Type>::operator() ()
         // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
       }
     } else if((family == 1) && (method<1)){//NB VA
+      if(extra(0) == 0){
+        //nb2
       for (int i=0; i<n; i++) {
         for (int j=0; j<p;j++){
           // nll -= Type(gllvm::dnegbinva(y(i,j), eta(i,j), iphi(j), cQ(i,j)));
@@ -2681,6 +2683,18 @@ Type objective_function<Type>::operator() ()
             Type log_term_1 = log1p(exp(eta(i,j)-lg_phi(j)));
             Type log_term_2 = log1p(exp(eta(i,j)-cQ(i,j)-lg_phi(j)));
             nll -= (y(i,j)+iphi(j))*(log_term_1-log_term_2)-(y(i,j)+iphi(j))*cQ(i,j);
+          }
+        }
+      }
+      }else if(extra(0) == 1){
+        //nb1
+        const double gamma = 0.57721566490153286060651209008240243;
+        
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            if(!gllvmutils::isNA(y(i,j))){
+              nll -= -(y(i,j) + exp(eta(i,j) + cQ(i,j))*iphi(j))*log1p(iphi(j)) - lfactorial(y(i,j)) + iphi(j)*exp(eta(i,j) + cQ(i,j))*(gamma + lg_phi(j)) + eta(i,j) +lg_phi(j) - gamma*exp(eta(i,j)+2*cQ(i,j))*iphi(j) - lgamma(exp(eta(i,j)+2*cQ(i,j))*iphi(j)+1.0) + lgamma(y(i,j) + exp(eta(i,j)+cQ(i,j))*iphi(j));
+            }
           }
         }
       }
@@ -4132,6 +4146,8 @@ Type objective_function<Type>::operator() ()
         }
       }
     } else if(family==1){//negative.binomial family
+      if(extra(0)==0){
+        //nb2
       if((num_RR>0) && (nlvr == 0) && (random(2)<1)){
         //use dnbinom_robust in this case - below code does not function well
         //for constrained ordination without any random-effects
@@ -4146,6 +4162,14 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j)))nll -= y(i,j)*(eta(i,j)) - y(i,j)*log(iphi(j)+mu(i,j))-iphi(j)*log(1+mu(i,j)/iphi(j)) + lgamma(y(i,j)+iphi(j)) - lgamma(iphi(j)) -lfactorial(y(i,j));
           }
         } 
+      }
+      }else if(extra(0)==1){
+        //nb1
+        for (int j=0; j<p;j++){
+          for (int i=0; i<n; i++) {
+            if(!gllvmutils::isNA(y(i,j)))nll -= dnbinom_robust(y(i,j), eta(i,j), eta(i,j) - lg_phi(j), 1);
+          }
+        }
       }
       // } else if(family==2) {//binomial family
       //   for (int j=0; j<p;j++){

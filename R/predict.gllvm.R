@@ -372,7 +372,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
+  if(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
   if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB") || (object$family == "ZNIB")) 
     ilinkfun <- binomial(link = object$link)$linkinv

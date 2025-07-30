@@ -277,7 +277,7 @@ se.gllvm <- function(object, ...){
         if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
       }
       
-      if(family %in% c("negative.binomial")) {
+      if(family %in% c("negative.binomial", "negative.binomial1")) {
         se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
         out$sd$phi <- se.lphis*object$params$phi;
         if(length(unique(disp.group))==p){
@@ -734,7 +734,7 @@ se.gllvm <- function(object, ...){
     }
     if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
     
-    if(family %in% c("negative.binomial")) {
+    if(family %in% c("negative.binomial", "negative.binomial1")) {
       se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
       out$sd$phi <- se.lphis*object$params$phi;
       if(length(unique(disp.group))==p){

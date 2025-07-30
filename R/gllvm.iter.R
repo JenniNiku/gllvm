@@ -1,8 +1,8 @@
 gllvm.iter <- function(...){
   args <- list(...)
   
-  if(!(args$family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta", "ZIB","ZNIB")))
-    stop("Selected family not permitted...sorry!")
+  # if(!(args$family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta", "ZIB","ZNIB")))
+    # stop("Selected family not permitted...sorry!")
   if(!(args$Lambda.struc %in% c("unstructured","diagonal","bdNN","UNN", "diagU", "UU")))
     stop("Lambda matrix (covariance of variational distribution for latent variable) not permitted...sorry!")
   
