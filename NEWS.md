@@ -8,6 +8,7 @@ Version 2.0.6
 
 * Bugfix in VP for random effects in formula
 * Bugfix in starting values for models involving both random row effects and random species effects
+* Bugfix in predict for fourth-corner model with random effects species via lme4-style formula
 
 Version 2.0.5
 =============
