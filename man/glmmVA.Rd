@@ -58,9 +58,8 @@ data <- cbind(data.frame(y = c(eSpider$abund[eSpider$nonNA,]),
 model <- glmmVA(y~species + ConWate + ConHumu + (0+ConHumu|species) + (0+ConWate|species), family = "poisson", data = data)
 
 # Example 2: correlated random slopes
-model <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species), family = "poisson", data = data)
+model1 <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species), family = "poisson", data = data)
 
-# Example 3: 
 }
 \seealso{
 \code{\link{gllvm}}

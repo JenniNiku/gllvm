@@ -39,9 +39,8 @@
 #' model <- glmmVA(y~species + ConWate + ConHumu + (0+ConHumu|species) + (0+ConWate|species), family = "poisson", data = data)
 #'
 #' # Example 2: correlated random slopes
-#' model <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species), family = "poisson", data = data)
+#' model1 <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species), family = "poisson", data = data)
 #' 
-#' # Example 3: 
 #' @export
 glmmVA <- function(formula, data, family, 
                    control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000, optim.method = "BFGS"), 
