@@ -20,7 +20,7 @@
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. Either 0 or 1. Defaults to 0.}
 #'  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 #' }
-#' @param control.start A list of arguments controlling the starting values. See \code{\link{"gllvm"}} for details.
+#' @param control.start A list of arguments controlling the starting values. See \code{"\link{gllvm}"} for details.
 #' @param ... other arguments passed onto the \code{"\link{gllvm}"} function.
 #' 
 #' @return An object of class "glmmVA" that inherits from the "gllvm" class.

@@ -39,7 +39,7 @@ glmmVA(
 
 \item{...}{other arguments passed onto the \code{"\link{gllvm}"} function.}
 
-\item{control.start}{A list of arguments controlling the starting values. See \code{\link{"gllvm"}} for details.}
+\item{control.start}{A list of arguments controlling the starting values. See \code{"\link{gllvm}"} for details.}
 }
 \value{
 An object of class "glmmVA" that inherits from the "gllvm" class.
