@@ -117,7 +117,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       }
       
       if(!is.null(object$params$row.params.random)){
-        for(re in 1:length(object$TMBfn$env$data$nr))
+        for(re in 1:ncol(object$TMBfn$env$data$trmsize))
         object$Ar[[re]]<-diag(sdb$Ar[[re]]+object$Ar[[re]])
       }
       if(object$col.eff$col.eff == "random" | !is.null(object$randomX)){

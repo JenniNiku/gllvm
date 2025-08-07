@@ -34,7 +34,7 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
-  Ntrials = 1,
+  Ntrials = matrix(1),
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -146,7 +146,7 @@ gllvm(
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat).}
  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
- \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
+ \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal". "Unstructured" is block diagonal for ordinary random effects.}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}

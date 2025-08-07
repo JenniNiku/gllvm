@@ -3,7 +3,7 @@
 #' linear predictors of fitted values, a Normal Q-Q plot of residuals with a simulated point-wise 95\% confidence interval envelope, residuals against row index and column index and scale location plot.
 #'
 #' @param x an object of class 'gllvm'.
-#' @param which if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below.
+#' @param which if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below. For objects of class "glmmVA" it should be a subset of 1:3.
 #' @param caption captions to appear above the plots.
 #' @param var.colors colors for responses, vector with length of number of response variables or 1. Defaults to NULL, when different responses have different colors.
 #' @param add.smooth logical with default \code{TRUE}. Indicates if a smoother should be added.
@@ -44,9 +44,19 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
                                                    "Residuals vs row", "Residuals vs column", "Scale-Location"), 
                        var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, 
                        envelope.col = c("blue","lightblue"), n.plot = NULL, ...) {
+  if(inherits(x, "glmmVA") && length(which)>3){
+    which <- unique(pmin(3, which))
+  }
   
-  if(missing(caption)) caption <- c("Residuals vs linear predictors", "Normal Q-Q",
+  if(missing(caption) && !inherits(x, "glmmVA")){
+    
+  caption <- c("Residuals vs linear predictors", "Normal Q-Q",
                                     "Residuals vs row", "Residuals vs column", "Scale-Location")[which]
+  }else if(missing(caption)){
+    caption <- c("Residuals vs linear predictors", "Normal Q-Q",
+                 "Scale-Location")[which]
+  }
+  
   if(length(caption)!=length(which))stop("'caption' should have the same length as 'which'.")
   
   n <- NROW(x$y)
@@ -112,27 +122,27 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
       qqline(c(res$residuals), col = envelope.col[1])
     }
   }
-  if(3 %in% which) {
+  if(3 %in% which && !inherits(x, "glmmVA")) {
     plot(rep(1:n, p)[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "site index", ylab = "Dunn-Smyth-residuals", col =
            rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==3], ...);
     abline(0, 0, col = "grey", lty = 3)
     if(add.smooth) panel.smooth(rep(1:n, p)[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
     #panel(rep(1:n, p), ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
-  if(4 %in% which) {
+  if(4 %in% which && !inherits(x, "glmmVA")) {
     plot(rep(1:p, each = n)[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "species index", ylab = "Dunn-Smyth-residuals", col =
            rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==4], ...);  abline(0, 0, col = "grey", lty = 3)
     if(add.smooth) panel.smooth(rep(1:p, each = n)[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
     #panel(rep(1:p, each = n), ds.res, col = rep(col[csum], each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
-  if(5 %in% which) {
+  if(5 %in% which && !inherits(x, "glmmVA") || 3 %in% which && inherits(x, "glmmVA")) {
     sqres <- sqrt(abs(ds.res[!is.na(ds.res)]))
     yl <- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name("Dunn-Smyth-residuals"))))
     if(is.null(gr.pars$xlim)) {
       plot(eta.mat[!is.na(ds.res)], sqres, xlab = "linear predictors", ylab = yl, col = rep(col[csum], each = n)[!is.na(ds.res)],
-           main = caption[which==5], xlim = c(min(xxx), max(xxx)), ...);
+           main = caption[which==max(which)], xlim = c(min(xxx), max(xxx)), ...);
     } else {
-      plot(eta.mat[!is.na(ds.res)], sqres, xlab = "linear predictors", ylab = yl, col = rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==5], ...);
+      plot(eta.mat[!is.na(ds.res)], sqres, xlab = "linear predictors", ylab = yl, col = rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==max(which)], ...);
     }
     if(add.smooth) panel.smooth(eta.mat[!is.na(ds.res)], sqres, col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
     #panel(eta.mat, sqres, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)

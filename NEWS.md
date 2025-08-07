@@ -3,6 +3,8 @@ Version 2.0.6
 
 * Added cloglog link for binomial, ZIB and ZNIB.
 * Added negative binomial (1) (VA via PIG augmentation)
+* Ntrials can vary per site/species
+* New function to fit univariate GLMMs: glmmVA
 
 ## Bugfixes
 

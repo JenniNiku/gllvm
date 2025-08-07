@@ -194,9 +194,10 @@ mkModMlist <- function (x, frloc) {
   }
   
   dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
-  list(ff = ff, sm = sm, nl = nl, cnms = row.names(sm), fm = fm)
+  list(ff = ff, sm = sm, nl = nl, nc = ncol(mm), cnms = row.names(sm), fm = fm)
 }
 
+# for formula
 mkReTrms1 <- function (bars, fr, ...) 
 {
   # drop.unused.levels = TRUE; 
@@ -243,6 +244,48 @@ mkReTrms1 <- function (bars, fr, ...)
   ll
 }
 
+# # for row.eff
+# mkReTrms2 <- function (bars, fr, ...) 
+# {
+#   # drop.unused.levels = TRUE; 
+#   reorder.vars = FALSE
+#   if (!length(bars)) 
+#     stop("No random effects terms specified in formula", 
+#          call. = FALSE)
+#   stopifnot(is.list(bars), vapply(bars, is.language, NA), inherits(fr,"data.frame"))
+#   
+#   safeDeparse <- function(x) paste(deparse(x, 500L), collapse = " ")
+#   barnames <- function(bars) vapply(bars, function(x) safeDeparse(x[[3]]), "")
+#   
+#   names(bars) <- vapply(bars, function(x) paste(deparse(x[[3]], 500L), collapse = " "), "")
+#   term.names <- vapply(bars, safeDeparse, "")
+#   
+#   #
+#   blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
+#   nl <- vapply(blist, `[[`, 0L, "nl") # number of groups in RE
+#   nc <- vapply(blist, `[[`, 0L, "nc") # number of LHS covariates in RE
+#   cnms <- lapply(blist,`[[`,"cnms")
+#   names(nl) <- unlist(lapply(cnms, auxFun))
+#   if(any(nc>1)){
+#     stop("still working out how to fix the covariance matrix thing here")
+#     #we have a nc by nc covariance matrix per group, and the same covariance matrix across groups..
+#      cs <- which(as.matrix(Matrix::bdiag(lapply(blist,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
+#      
+#   }else{
+#     cs <- NULL
+#   }
+#   Ztlist <- lapply(blist, `[[`, "sm")
+#   Zt <- do.call(rbind, Ztlist)
+#   # try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
+#   names(Ztlist) <- term.names
+#   
+#   # Design matrix RE means
+#   Xtlist <- lapply(blist, `[[`, "fm")
+#   Xt <- do.call(rbind, Xtlist)
+#   
+#   ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
+#   ll
+# }
 factorize <- function (x, frloc, char.only = FALSE) {
   for (i in all.vars(x[[length(x)]])) {
     if (!is.null(curf <- frloc[[i]])) 
@@ -390,6 +433,17 @@ nobars1 <- function (term)
   }
   environment(nb) <- e
   nb
+}
+
+# from https://stackoverflow.com/questions/40308944/removing-offset-terms-from-a-formula
+no.offset <- function(x, preserve = NULL) {
+  k <- 0
+  proc <- function(x) {
+    if (length(x) == 1) return(x)
+    if (x[[1]] == as.name("offset") && !((k<<-k+1) %in% preserve)) return(x[[1]])
+    replace(x, -1, lapply(x[-1], proc))
+  }
+  update(proc(x), . ~ . - offset)
 }
 
 nobars1_ <- function (term) 

@@ -200,6 +200,7 @@ residuals.gllvm <- function(object, ...) {
   if (object$family == "binomial") {
     if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
     if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials)
     
     b <- pbinom(as.vector(y), Ntrials, as.vector(mu))
     a <- pmin(b, pbinom(as.vector(y) - 1, Ntrials, as.vector(mu)))
@@ -213,6 +214,7 @@ residuals.gllvm <- function(object, ...) {
   if (object$family == "ZIB") {
     if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
     if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials)
     
     b <- pzib(as.vector(y), Ntrials = Ntrials, mu = as.vector(mu), sigma = rep(object$params$phi, each = n))
     a <- pmin(b, pzib(as.vector(y) - 1, Ntrials = Ntrials, mu = as.vector(mu), sigma = rep(object$params$phi, each = n)))
@@ -226,6 +228,7 @@ residuals.gllvm <- function(object, ...) {
   if (object$family == "ZNIB") {
     if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p)
     if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials)
     
     phis0 = object$params$phi/(1+object$params$phi + object$params$ZINB.phi);
     phisN = object$params$ZINB.phi/(1+object$params$phi + object$params$ZINB.phi);

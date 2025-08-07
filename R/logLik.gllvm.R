@@ -50,6 +50,9 @@ logLik.gllvm <- function(object, ...)
     
   if (!is.null(object$params$row.params.random))
     object$params$row.params.random <- NULL
+  if(!is.null(object$params$sigmaijr)){
+    object$params$sigmaijr[upper.tri(object$params$sigmaijr, diag = TRUE)] <- NA
+  }
   if(object$beta0com) object$params$beta0 <- 1
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL

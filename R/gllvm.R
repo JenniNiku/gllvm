@@ -56,7 +56,7 @@
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat).}
 #'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
-#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
+#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal". "Unstructured" is block diagonal for ordinary random effects.}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
@@ -432,7 +432,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   lvCor = NULL, studyDesign=NULL, dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, colMat.rho.struct = "single", corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, beta0com = FALSE, zeta.struc = "species",
-                  plot = FALSE, link = "probit", Ntrials = 1,
+                  plot = FALSE, link = "probit", Ntrials = matrix(1),
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
@@ -1054,7 +1054,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     
 # Structured row parameters
-    RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff
+    RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff;csR = matrix(0);trmsize = matrix(0)
     if(inherits(row.eff,"formula")) {
       # first, random effects part
       if(anyBars(row.eff)){
@@ -1114,11 +1114,43 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElistRow <- mkReTrms1(bar.f, mf.new)
         dr <- Matrix::t(RElistRow$Zt)
+        
         # This line errs for formulations such as (cov|1), which includes an intercept
         # Can be easily fixed by adding a try(..., silent = TRUE) but probably needs something more robust
         # The bigger problem is that (cov|1) only generates a single "cstruc" entry anove, while it requires two
         # So that the term needs to be expanded to (1|1)+(0+cov|1) first, which is not yet implemented
-        colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
+        # colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
+        # first row: lhs size, second row: rhs size
+        trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
+        trmsize[1,] <- unlist(lapply(bar.f, function(x)length(attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "term.labels"))))
+        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(mf.new[,as.character(x[[3]])]))))
+        
+        if(any(trmsize[1,]==0))trmsize[1,trmsize[1,]==0] <- 1 # occurs with 1|something
+        colnames(trmsize) <- vapply(bar.f, deparse1,  character(1))
+        
+        # build index matrix csR for ustruc terms (both diagonals and off-diagonals)
+        if(any(cstruc %in% "ustruc")){
+          bar.f.ustruc <- bar.f[cstruc %in% "ustruc"]
+          # Number of covariates on LHS
+          # terms with only 1 variable on LHS have 1x1 diagonal matrix
+          if(any(trmsize[1,cstruc=="ustruc"]<2)){
+            cstruc[cstruc == "ustruc"][trmsize[1,]<2] <- "diag"
+          }
+          if(any(cstruc == "ustruc")){
+          ulistlengthTrms <- trmsize[1,cstruc == "ustruc"]
+          
+          # Number of groups on RHS
+          csR = matrix(0, nrow = sum(ulistlengthTrms*(1+ulistlengthTrms)/2), ncol = 2) # columns: row entry, column entry
+          for(i in 1:length(ulistlengthTrms)){
+            idx = (c(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i-1),0)[1]+1):c(tail(ulistlengthTrms*(1+ulistlengthTrms)/2, -i),nrow(csR))[1]
+            csR[idx, 1] = rep(1:ulistlengthTrms[i], times = 1:ulistlengthTrms[i])
+            csR[idx, 2] = unlist(lapply(1:ulistlengthTrms[i], function(i) 1:i))
+          }
+          # drop variances from this for now
+          csR <- csR[csR[,1]!=csR[,2],,drop=FALSE]
+          }
+        }
+
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
@@ -1253,7 +1285,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   if((p<2) & (any(rstruc == 0)))
     #     stop("There must be at least two responses in order to include unstructured row effects. \n");
     # }
-      if(any(rowSums(y, na.rm = TRUE)==0))
+      if(any(rowSums(y, na.rm = TRUE)==0) && ncol(y)>1)
         warning("There are rows full of zeros in y. \n");
     # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
     #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
@@ -1450,7 +1482,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            row.eff = row.eff.formula,
+            row.eff = row.eff.formula, csR = csR, trmsize = trmsize,
             Ab.diag.iter = Ab.diag.iter, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
@@ -1498,7 +1530,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, 
-            row.eff = row.eff.formula,
+            row.eff = row.eff.formula, csR = csR, trmsize = trmsize,
             col.eff = col.eff, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
@@ -1582,17 +1614,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         
         # need to restore the row-effect names
         # because grouped names in dr are used to share variances in gllvm.TMB and traitTMB
-        if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
-          names(out$params$row.params.random) <- row.names(RElistRow$Zt)
-          if(!is.null(out$grps.row)) {
-            if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
-            namsrow<- NULL
-            for (i in 1:length(cstruc)) {
-              namsrow <- c(namsrow, rep(names(out$grps.row)[i], switch(cstruc[i], "ustruc" = 1, "diag" = 1, "corAR1" = 2, "corExp" = 2, "corCS" = 2, "corMatern" = 2)))
-            }
-            names(out$params$sigma) = paste(names(out$params$sigma),namsrow, sep="|")
-            }
-        }
+        # if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
+        #   names(out$params$row.params.random) <- row.names(RElistRow$Zt)
+        #   if(!is.null(out$grps.row)) {
+        #     if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
+        #     namsrow<- NULL
+        #     for (i in 1:length(cstruc)) {
+        #       namsrow <- c(namsrow, rep(names(out$grps.row)[i], switch(cstruc[i], "ustruc" = 1, "diag" = 1, "corAR1" = 2, "corExp" = 2, "corCS" = 2, "corMatern" = 2)))
+        #     }
+        #     names(out$params$sigma) = paste(names(out$params$sigma),namsrow, sep="|")
+        #     }
+        # }
       }
       #### Try to calculate sd errors
       if (!is.infinite(out$logL) && sd.errors) {
