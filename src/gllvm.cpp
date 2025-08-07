@@ -2164,10 +2164,7 @@ Type objective_function<Type>::operator() ()
           // This can straightforwardly be extended to estimate correlation between effects
           matrix <Type> invSr(trmsize(1,re), trmsize(1,re));invSr.setZero();
           // diagonal row effect
-          if(cstruc(re)<0){
-            // build covariance matrix here using cs
-            
-          }else if(cstruc(re) == 0){
+          if(cstruc(re) == 0){
             // inverse and log determinant are straighforwardly available here
             logdetSr = 2*trmsize(1,re)*log(sigma(sigmacounter));
             sigmacounter++;
