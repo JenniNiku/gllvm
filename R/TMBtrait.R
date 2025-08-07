@@ -17,6 +17,7 @@ trait.TMB <- function(
   
   # if(!is.null(start.params)) starting.val <- "zero"
 
+  if(all(cstruc == "diag"))Ar.struc = "diagonal"
   if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
   
   objrFinal <- optrFinal <- NULL
@@ -944,7 +945,7 @@ trait.TMB <- function(
       
       if(Ar.struc!="diagonal" && diag.iter == 0){
         if(any(cstruc!="ustruc")){
-          lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]*(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]-1)/2)))  
+          lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]-1)/2)))  
         }
         # block diagonal for "unstructured" REs (kronecker)
         if(any(cstruc == "ustruc")){
@@ -1278,7 +1279,9 @@ trait.TMB <- function(
       optr1 <- optr
       param1 <- optr$par
       nam <- names(param1)
-      if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"]);sigmaijr1 <- param1[nam=="sigmaijr"]} else {r0r1 <- matrix(0);sigmaijr1<-0}
+      if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"])
+      if(any(cstrucn == "ustruc")){sigmaijr1 <- param1[nam=="sigmaijr"]}else{sigmaijr1 <- sigmaijr}
+      } else {r0r1 <- matrix(0);sigmaijr1<-0}
       if(length(param1[nam=="r0f"])>0){ r0f1 <- matrix(param1[nam=="r0f"])} else {r0f1 <- matrix(0)}
       if(length(param1[nam=="b"])>0){ b1 <- matrix(param1[nam=="b"], ncol = p)} else {b1 <- rbind(rep(0,p))}
       if(nrow(dr)==n){
@@ -1293,7 +1296,7 @@ trait.TMB <- function(
         lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,]*trmsize[1,])])+1e-3)
         if(Ar.struc=="unstructured"){
           if(any(cstruc!="ustruc")){
-            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]*(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]-1)/2)))  
+            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]-1)/2)))  
           }
           # block diagonal for "unstructured" REs (kronecker)
           if(any(cstruc == "ustruc")){
@@ -1998,7 +2001,7 @@ trait.TMB <- function(
         if(nrow(dr)==n){
           lg_Ar <- param[names(param)=="lg_Ar"]
           Ar <- vector("list", ncol(trmsize))
-          Ar.sds<- exp((lg_Ar)[1:sum(trmsize[2,]*trmsize[1,])])
+          Ar.sds <- exp((lg_Ar)[1:sum(trmsize[2,]*trmsize[1,])])
           lg_Ar <- lg_Ar[-c(1:sum(trmsize[2,]*trmsize[1,]))]
           
           for(re in 1:ncol(trmsize)){
@@ -2006,9 +2009,9 @@ trait.TMB <- function(
               Ar[[re]] <- diag(Ar.sds[1:trmsize[2,re]*trmsize[1,re]])
               Ar.sds <- Ar.sds[-c(1:trmsize[2,re]*trmsize[1,re])]
             }else{
-              for(i in 1:trmsize[1,re]){
-                Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[2,re]])
-                Ar.sds <- Ar.sds[-c(1:trmsize[2,re])]
+              for(i in 1:trmsize[2,re]){
+                Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[1,re]])
+                Ar.sds <- Ar.sds[-c(1:trmsize[1,re])]
               }
             }
           }
@@ -2016,7 +2019,7 @@ trait.TMB <- function(
             if(length(lg_Ar)>0){
               k=1;
               for(re in 1:ncol(trmsize)){
-                if(cstruc[re] != "ustruc"){
+                if(!cstruc[re] %in% c("ustruc","diag")){
                   for(d in 1:(trmsize[2,re]*trmsize[1,re]-1)){
                     for(r in (d+1):(trmsize[2,re]*trmsize[1,re])){
                       Ar[[re]][r,d] = lg_Ar[k];
@@ -2039,6 +2042,7 @@ trait.TMB <- function(
             if(cstruc[re] == "ustruc"){
               Ar[[re]] <- as.matrix(Matrix::bdiag(Ar[[re]]))
             }
+            
             Ar[[re]] <- Ar[[re]]%*%t(Ar[[re]])
           }
           out$Ar <- Ar

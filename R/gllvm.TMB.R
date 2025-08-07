@@ -18,6 +18,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   n <- nu <- dim(y)[1]
   p <- dim(y)[2]
   
+  if(all(cstruc == "diag"))Ar.struc = "diagonal"
   if(((num.lv+num.lv.c)==0) & ((nrow(dr)!=n) || Ar.struc == "diagonal") & (randomB==FALSE)) diag.iter <-  0
   if(col.eff != "random" || sp.Ar.struc%in%c("diagonal","MNdiagonal","diagonalCL1")) Ab.diag.iter <- 0
   
@@ -1002,7 +1003,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         if(Ar.struc!="diagonal" && diag.iter == 0){
           if(any(cstruc!="ustruc")){
-            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]*(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]-1)/2)))  
+            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]-1)/2)))  
           }
           # block diagonal for "unstructured" REs (kronecker)
           if(any(cstruc == "ustruc")){
@@ -1284,7 +1285,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         optr1 <- optr
         param1 <- optr$par
         nam <- names(param1)
-        if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"]);sigmaijr1 <- param1[nam=="sigmaijr"]} else {r0r1 <- matrix(0);sigmaijr1<-0}
+        if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"]);
+        if(any(cstrucn == "ustruc")){sigmaijr1 <- param1[nam=="sigmaijr"]}else{sigmaijr1 <- sigmaijr}
+        } else {r0r1 <- matrix(0);sigmaijr1<-0}
         if(length(param1[nam=="r0f"])>0){ r0f1 <- matrix(param1[nam=="r0f"])} else {r0f1 <- matrix(0)}
         if(nrow(dr)==n){
           log_sigma1 <- ifelse(param1[nam=="log_sigma"]==0,1e-3,param1[nam=="log_sigma"])
@@ -1298,7 +1301,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,]*trmsize[1,])])+1e-3)
           if(Ar.struc=="unstructured"){
             if(any(cstruc!="ustruc")){
-              lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]*(trmsize[2,cstruc != "ustruc"]*trmsize[1,cstruc != "ustruc"]-1)/2)))  
+              lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "diag")]-1)/2)))  
             }
             # block diagonal for "unstructured" REs (kronecker)
             if(any(cstruc == "ustruc")){
@@ -2699,9 +2702,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             Ar[[re]] <- diag(Ar.sds[1:trmsize[2,re]*trmsize[1,re]])
             Ar.sds <- Ar.sds[-c(1:trmsize[2,re]*trmsize[1,re])]
             }else{
-              for(i in 1:trmsize[1,re]){
-                Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[2,re]])
-                Ar.sds <- Ar.sds[-c(1:trmsize[2,re])]
+              for(i in 1:trmsize[2,re]){
+                Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[1,re]])
+                Ar.sds <- Ar.sds[-c(1:trmsize[1,re])]
               }
             }
           }
@@ -2709,7 +2712,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             if(length(lg_Ar)>0){
               k=1;
               for(re in 1:ncol(trmsize)){
-                if(cstruc[re] != "ustruc"){
+                if(!cstruc[re] %in% c("ustruc","diag")){
                   for(d in 1:(trmsize[2,re]*trmsize[1,re]-1)){
                     for(r in (d+1):(trmsize[2,re]*trmsize[1,re])){
                       Ar[[re]][r,d] = lg_Ar[k];

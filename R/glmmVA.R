@@ -6,6 +6,21 @@
 #' @param formula a formula object describing both the fixed- and random-effects part of the model. A response should be present on the left-hand side of the operator, and otherwise passed as a named 'y' argument to the function. Random effects are written in \code{lme4}-style. Some structured random effects are supported, see \code{"\link{gllvm}"} for more information.
 #' @param data an optional data frame containing the variables named in formula.
 #' @param family a family as supported by the \code{"\link{gllvm}"} function.
+#' @param control A list with the following arguments controlling the optimization:
+#' \describe{
+#'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-10.}
+#'  \item{\emph{optimizer}: }{the log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}.}
+#'  \item{\emph{max.iter}: }{ maximum number of iterations for \code{optimizer = "nlminb"}, defaults to 6000.}
+#'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"}. Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use.}
+#' }
+#' @param control.va A list with the following arguments controlling the variational approximation method:
+#' \describe{
+#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, and fully unstructured for structured random effects (such as "corExp").}
+#'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. Either 0 or 1. Defaults to 0.}
+#'  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
+#' }
+#' @param control.start A list of arguments controlling the starting values. See \code{\link{"gllvm"}} for details.
 #' @param ... other arguments passed onto the \code{"\link{gllvm}"} function.
 #' 
 #' @return An object of class "glmmVA" that inherits from the "gllvm" class.
@@ -28,15 +43,21 @@
 #' 
 #' # Example 3: 
 #' @export
-glmmVA <- function(formula, data, family, ...) {
+glmmVA <- function(formula, data, family, 
+                   control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000, optim.method = "BFGS"), 
+                   control.va = list(Ar.struc="unstructured", diag.iter = 0, Lambda.start = 0.3), ...) {
   
   args  <- list(...)
-    
+  
   mf <- model.frame(subbars1(formula), data = data)
   y <- as.matrix(model.response(mf))
   offset <- model.offset(mf)
   formula <- no.offset(formula)
     
+  if("Lambda.start" %in% names(control.va)){
+    control.va$Lambda.start <- c(0.3, control.va$Lambda.start[1], 0.3)
+  }
+  
   if(is.null(y) && !"y" %in% names(args)){
     stop("Response variable not found")
   }else if("y" %in% names(args)){
@@ -56,7 +77,7 @@ glmmVA <- function(formula, data, family, ...) {
     stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
   }
   
-  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset), args))
+  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, control = control, control.va = control.va), args))
   
   object$call <-  match.call()
   class(object) <-  c("glmmVA", "gllvm")
