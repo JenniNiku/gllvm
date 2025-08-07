@@ -68,15 +68,32 @@ glmmVA <- function(formula, data, family,
   
   X = model.frame(subbars1(row.eff.formula), data)
   
+  if (inherits(family,"family") || is.function(family) && inherits(family(), "family")) {
+    if(inherits(family, "family")){
+    link <- family$link
+    family <- family$family
+    }else if(is.function(family) && inherits(family(), "family")){
+      link <- family()$link
+      family <- family()$family
+    }
+  }else if("link" %in% names(args)){
+    link <- args[["link"]]
+    args <- args[[names(args)!="link"]]
+  }else{
+    link <- "probit"
+  }
+  
+  Ntrials = matrix(1)
+  
   # Facilitate y to be passed as a 2-column matrix for binomial responses
   if(is.matrix(y) && family %in% c("binomial", "ZIB", "ZNIB") && !"Ntrials" %in% names(args)){
-    Ntrials <- rowSums(y)
+    Ntrials <- matrix(rowSums(y))
     y <- y[, 1,drop=FALSE]
   }else if(is.matrix(y) && family %in% c("binomial", "ZIB", "ZNIB") && !"Ntrials"){
     stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
   }
   
-  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, control = control, control.va = control.va), args))
+  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va), args))
   
   object$call <-  match.call()
   class(object) <-  c("glmmVA", "gllvm")
