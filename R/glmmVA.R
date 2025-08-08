@@ -1,6 +1,6 @@
 #' Fitting Generalized Linear Mixed-Effects Models with Variational Approximation
 #'
-#' Wraps the \code{"\link{gllvm}"} function to fit a (univaroate) generalized linear mixed-effects model (GLMM) in a more familiar syntax. 
+#' Wraps the \code{"\link{gllvm}"} function to fit a (univariate) generalized linear mixed-effects model (GLMM) in a more familiar syntax. 
 #' Both fixed and random effects are specified in \code{lme4}-style via the formula argument.
 #'
 #' @param formula a formula object describing both the fixed- and random-effects part of the model. A response should be present on the left-hand side of the operator, and otherwise passed as a named 'y' argument to the function. Random effects are written in \code{lme4}-style. Some structured random effects are supported, see \code{"\link{gllvm}"} for more information.
@@ -17,7 +17,7 @@
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \describe{
 #'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, and fully unstructured for structured random effects (such as "corExp").}
-#'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. Either 0 or 1. Defaults to 0.}
+#'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters, whichh can sometimes improve the fit. Either 0 or 1. Defaults to 0.}
 #'  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 #' }
 #' @param control.start A list of arguments controlling the starting values. See \code{"\link{gllvm}"} for details.
