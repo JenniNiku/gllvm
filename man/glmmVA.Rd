@@ -32,7 +32,7 @@ glmmVA(
 
 \item{control.va}{A list with the following arguments controlling the variational approximation method:
 \describe{
- \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, and fully unstructured for structured random effects (such as "corExp").}
+ \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, a kronecker product for propto structures with correlaton parameters, and fully unstructured for structured random effects (such as "corExp").}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters, whichh can sometimes improve the fit. Either 0 or 1. Defaults to 0.}
  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 }}

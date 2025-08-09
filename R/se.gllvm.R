@@ -66,7 +66,7 @@ se.gllvm <- function(object, ...){
   cstrucn = 0
   cstruc = object$corP$cstruc
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, "proptoustruc" = 6)
   }
   cstruclvn = switch(object$corP$cstruclv, "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   corWithinLv <- object$corP$corWithinLV
@@ -356,7 +356,17 @@ se.gllvm <- function(object, ...){
         trmsize = object$TMBfn$env$data$trmsize
         
         for(re in 1:length(cstrucn)){
-          if(cstrucn[re] %in% c(1,3)) {
+          if(cstrucn[re] %in% c(0,-1, 5, 6)){
+            sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
+            # parse labels
+            form <- parse(text = colnames(trmsize)[re])[[1]]
+            LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
+            RHS <- form[[3]]
+            
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            
+            iter <- iter + trmsize[1,re]
+          }else if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
             names(sigma)[iter] <- colnames(trmsize)[re]
             names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],"rho")
@@ -832,7 +842,17 @@ se.gllvm <- function(object, ...){
       trmsize = object$TMBfn$env$data$trmsize
       
       for(re in 1:length(cstrucn)){
-        if(cstrucn[re] %in% c(1,3)) {
+        if(cstrucn[re] %in% c(0,-1, 5, 6)){
+          sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
+          # parse labels
+          form <- parse(text = colnames(trmsize)[re])[[1]]
+          LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
+          RHS <- form[[3]]
+          
+          names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+          
+          iter <- iter + trmsize[1,re]
+        }else if(cstrucn[re] %in% c(1,3)) {
           sigma[iter] <- sigma[iter]*object$params$sigma[iter]
           names(sigma)[iter] = colnames(trmsize)[re]
           names(sigma)[iter+1] = paste0(colnames(trmsize)[re],"rho")

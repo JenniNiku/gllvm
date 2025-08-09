@@ -103,14 +103,14 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
-  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0))){
+  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0,5, 6))){
     # check with terms are diag/ustruc
     # we don't report the other here for the moment
     
     cstrucn <- object$TMBfn$env$data$cstruc
     trmsize = object$TMBfn$env$data$trmsize
-    nsigmas <- ifelse(cstrucn %in% c(-1, 0, 1, 3), as.numeric(trmsize[1, ]), 2)
-    idxsigmas <- rep(cstrucn, nsigmas) %in% c(0,-1)
+    nsigmas <- ifelse(cstrucn %in% c(-1, 0, 1, 3, 5, 6), as.numeric(trmsize[1, ]), 2)
+    idxsigmas <- rep(cstrucn, nsigmas) %in% c(0,-1, 5, 6)
     
     Rowcovs <- data.frame(Name = names(object$params$sigma[idxsigmas]),
                           Variance = format(round(object$params$sigma[idxsigmas], digits), nsmall = digits), 

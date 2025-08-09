@@ -1,4 +1,47 @@
-#makeForm
+# Extract correlation structure from formula 
+# Extracts precision matrix from propto terms
+proptoMat<-function (term) 
+{
+
+  if (length(term) == 2) {
+    if(c(term[[1]]) == "propto"){
+        stop("No propto matrix found.")
+    } else return(proptoMat(term[[2]]))
+  }
+  if(length(term) == 3){
+    if(c(term[[1]]) == "propto"){
+      if(length(c(term[[1]])) == 4 && isTRUE(term[[4]])){
+        return(list(eval(term[[3]], envir = globalenv())))  
+      }else{
+        return(list(solve(eval(term[[3]], envir = globalenv()))))  
+      }
+    }
+    }else{
+      return(proptoMat(term[[2]]))
+    }
+  
+  if(length(term) == 4){
+    if(c(term[[1]]) == "propto"){
+      if(length(c(term)) == 4 && isTRUE(term[[4]])){
+        return(list(eval(term[[3]], envir = globalenv())))
+      }else{
+        return(list(solve(eval(term[[3]], envir = globalenv()))))
+      }
+    }else{
+      return(proptoMat(terms[[2]]))
+    }
+    }
+  
+  stopifnot(length(term) >= 3)
+  
+  mats <- list()
+  for (j in 2:length(term)) {
+    mats[[j-1]] <- proptoMat(term[[j]])
+  }
+  mats
+}
+
+
 # Extract correlation structure from formula 
 corstruc<-function (term) 
 {
@@ -11,7 +54,11 @@ corstruc<-function (term)
       return("corCS")
     } else if(c(term) == "corMatern"){
       return("corMatern")
-    }else {return("diag")}
+    } else if(c(term) == "diag"){
+      return("diag")
+    } else if(c(term) == "propto"){
+      return("propto")
+    } else if(term == "("){return("ustruc")}
   if (length(term) == 2) {
     if(c(term[[1]]) %in% c("corAR1")){
       # term <- corstruc(term[[2]])
@@ -22,13 +69,22 @@ corstruc<-function (term)
       return("corCS")
     } else if(c(term[[1]]) == "corMatern"){
       return("corMatern")
-    } else if(c(term[[1]]) == "diag"){
+    }else if(c(term[[1]]) == "diag"){
       return("diag")
+    }else if(c(term[[1]]) == "propto"){
+      return("propto")  
     } else if(term[[1]] == "("){return("ustruc")}
     else return(corstruc(term[[2]])) #term[[2]] <- corstruc(term[[2]])
-    
   }
+  if(length(term) == 3 && c(term[[1]]) == "propto"){
+      return("propto")
+  }
+  if(length(term) == 4 && c(term[[1]]) == "propto"){
+    return("propto")
+  }
+
   stopifnot(length(term) >= 3)
+  
   
   for (j in 2:length(term)) {
     term[[j]] <- corstruc(term[[j]])
@@ -91,12 +147,20 @@ subbars1<-function (term)
   if (is.name(term) || !is.language(term)) 
     return(term)
   if (length(term) == 2) {
-    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp", "corMatern"))
+    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp", "corMatern", "propto"))
       term <- subbars1(term[[2]])
     else term[[2]] <- subbars1(term[[2]])
     return(term)
   }
+  if(length(term) == 3 && c(term[[1]]) == "propto"){
+    term <- subbars1(term[[2]])
+  }
+  if(length(term) == 4 && c(term[[1]]) == "propto"){
+    term <- subbars1(term[[2]])
+  }
+  
   stopifnot(length(term) >= 3)
+  
   if (is.call(term) && term[[1]] == as.name("|")) 
     term[[1]] <- as.name("+")
   if (is.call(term) && term[[1]] == as.name("||")) 
@@ -435,15 +499,34 @@ nobars1 <- function (term)
   nb
 }
 
-# from https://stackoverflow.com/questions/40308944/removing-offset-terms-from-a-formula
-no.offset <- function(x, preserve = NULL) {
-  k <- 0
-  proc <- function(x) {
-    if (length(x) == 1) return(x)
-    if (x[[1]] == as.name("offset") && !((k<<-k+1) %in% preserve)) return(x[[1]])
-    replace(x, -1, lapply(x[-1], proc))
+remove.offset <- function(expr) {
+  if (is.call(expr)) {
+    # If it's an offset, remove it
+    if (expr[[1]] == as.name("offset")) {
+      return(NULL)
+    }
+    
+    # If it's a binary call like `+`, process both sides and remove NULLs
+    if (expr[[1]] == as.name("+")) {
+      left <- remove.offset(expr[[2]])
+      right <- remove.offset(expr[[3]])
+      
+      if (is.null(left) && is.null(right)) {
+        return(NULL)
+      } else if (is.null(left)) {
+        return(right)
+      } else if (is.null(right)) {
+        return(left)
+      } else {
+        return(call("+", left, right))
+      }
+    }
+    
+    # Otherwise, recurse into other calls
+    expr[] <- lapply(expr, remove.offset)
   }
-  update(proc(x), . ~ . - offset)
+  
+  return(expr)
 }
 
 nobars1_ <- function (term) 

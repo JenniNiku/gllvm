@@ -76,7 +76,7 @@ gllvm(
 
 \item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.}
+\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}'), \code{corCS} (compound symmetry), and \code{propto} (proportional covariance, used as propto(a+b|group, matrix)). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.}
 
 \item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 

@@ -5,6 +5,7 @@ Version 2.0.6
 * Added negative binomial (1) (VA via PIG augmentation)
 * Ntrials can vary per site/species
 * New function to fit univariate GLMMs: glmmVA
+* New propto structure for random (row) effects (possibly with correlations)
 
 ## Bugfixes
 

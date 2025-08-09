@@ -4,11 +4,25 @@ namespace gllvmutils{
 //structure to pass list from R as list in TMB
 template<class Type>
 struct dclist : vector<matrix<Type>> {
+  dclist(){}
+  
   dclist(SEXP x){  /* x = List passed from R */
     (*this).resize(LENGTH(x));
     for(int i=0; i<LENGTH(x); i++){
       SEXP sm = VECTOR_ELT(x, i);
       (*this)(i) = asMatrix<Type>(sm);
+    }
+  }
+};
+
+//nested list from R into TMB
+template<class Type>
+struct nesteddclist : vector<dclist<Type>> {
+  nesteddclist(SEXP x) {  // x = List of Lists from R
+    this->resize(LENGTH(x));
+    for(int i = 0; i < LENGTH(x); i++) {
+      SEXP inner_list = VECTOR_ELT(x, i);
+      (*this)[i] = dclist<Type>(inner_list);  // use existing constructor
     }
   }
 };

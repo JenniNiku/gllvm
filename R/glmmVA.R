@@ -16,7 +16,7 @@
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
 #' \describe{
-#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, and fully unstructured for structured random effects (such as "corExp").}
+#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions, "unstructured" or "diagonal". Defaults to "unstructured". "Unstructured" meaning block diagonal for ordinary random effects, a kronecker product for propto structures with correlaton parameters, and fully unstructured for structured random effects (such as "corExp").}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters, whichh can sometimes improve the fit. Either 0 or 1. Defaults to 0.}
 #'  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 #' }
@@ -51,8 +51,8 @@ glmmVA <- function(formula, data, family,
   mf <- model.frame(subbars1(formula), data = data)
   y <- as.matrix(model.response(mf))
   offset <- model.offset(mf)
-  formula <- no.offset(formula)
-    
+  row.eff.formula = remove.offset(formula)
+  
   if("Lambda.start" %in% names(control.va)){
     control.va$Lambda.start <- c(0.3, control.va$Lambda.start[1], 0.3)
   }
@@ -62,8 +62,8 @@ glmmVA <- function(formula, data, family,
   }else if("y" %in% names(args)){
     y <- args[[names(args)]]
     args[[-which("y"%in%names(args))]]
-  }else if(!is.null(y)){
-    row.eff.formula <- formula[-2]
+  }else{
+    row.eff.formula <- row.eff.formula[-2]
   }
   
   X = model.frame(subbars1(row.eff.formula), data)

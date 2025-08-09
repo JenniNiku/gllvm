@@ -78,6 +78,7 @@ Type objective_function<Type>::operator() ()
   DATA_IMATRIX(csR); //2-column matrix. col 1: row number, col2: column number for correlation parameters of random row effects
   DATA_INTEGER(times); // number of time points, for LVs
   DATA_IVECTOR(cstruc); //correlation structure for row.params 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
+  DATA_STRUCT(proptoMats, gllvmutils::nesteddclist); //list of nested lists of length 2, first is the (inverse) matrix, second is the log determinant
   DATA_INTEGER(cstruclv); //correlation structure for LVs 0=indep sigma*I, 1=ar1, 2=exponentially decaying, 3=Compound Symm, 4= Matern
   DATA_STRUCT(dc, gllvmutils::dclist); //coordinates for sites, used for exponentially decaying cov. struc
   DATA_MATRIX(dc_lv); //coordinates for sites, used for exponentially decaying cov. struc
@@ -1963,14 +1964,27 @@ Type objective_function<Type>::operator() ()
       
       // One: build Arm, variational covariance matrix for all random effects as a list
       int sdcounter = 0;
-      int covscounter = trmsize.row(1).cwiseProduct(trmsize.row(0)).sum();
+      int covscounter = 0; //starts at # of VA scale pars
+      
+      //not ideal nor necessary, should eventually be replaced
+      for(int i=0; i<trmsize.cols(); i++){
+        if(cstruc(i)<6){
+          covscounter += trmsize(0,i)*trmsize(1,i);  
+        }else if(cstruc(i) == 6){ //kronecker product VA
+          covscounter += trmsize(0,i) + trmsize(1,i) -1;
+        }
+        
+      }
+      int VAcovs = covscounter; //to see if we are doing unstructured VA or diagonal
       int ucount = 0;
+      int propcount = 0;
       for(int re=0; re<trmsize.cols();re++){
         
         //unstructured row cov
-        if((lg_Ar.size()>(trmsize.row(1).cwiseProduct(trmsize.row(0))).sum() && cstruc(re)>0) || (lg_Ar.size()>(trmsize.row(1).cwiseProduct(trmsize.row(0))).sum() && cstruc(re)<0)){
+        // still need to get the parameter count here right
+        if((lg_Ar.size()>VAcovs && cstruc(re)>0) || (lg_Ar.size()>VAcovs && cstruc(re)<0)){
           Type logdetSr;
-          if(cstruc(re)<0){
+          if(cstruc(re)<0 || cstruc(re) == 6){
             matrix <Type> invSr(trmsize(0,re),trmsize(0,re));invSr.setZero();
             
               matrix<Type> sds = Eigen::MatrixXd::Zero(trmsize(0,re),trmsize(0,re));
@@ -1998,9 +2012,9 @@ Type objective_function<Type>::operator() ()
               SrIL = SrIL.transpose()*SrIL;
               invSr=SrIL*SrIL.transpose();
               logdetSr = 2*SrL.diagonal().array().log().sum();
-              REPORT(invSr);
-              REPORT(SrL);
+              
               matrix<Type> Arm(trmsize(0,re),trmsize(0,re));
+              if(cstruc(re)<0){
               for (int q=0; q<trmsize(1,re); q++){//loop over blocks
                 Arm.setZero();  
                 for (int d=0; d<(trmsize(0,re)); d++){ // diagonals of varcov
@@ -2028,6 +2042,60 @@ Type objective_function<Type>::operator() ()
               // determinants of each block of the covariance matrix
               nll -= 0.5*(trmsize(0,re)-logdetSr);
               }
+              }else if(cstruc(re) == 6){
+                matrix<Type> invpropMat = proptoMats(propcount)(0);
+                logdetSr = logdetSr*trmsize(1,re) + trmsize(0,re)*proptoMats(propcount)(1)(0); //logdet kronecker
+                
+                propcount ++;
+                
+                  Arm.setZero();  
+                  for (int d=0; d<(trmsize(0,re)); d++){ // diagonals of varcov
+                    Arm(d,d)=exp(lg_Ar(sdcounter));
+                    sdcounter++;
+                  }
+                  
+                  // off-diagonals
+                  for (int c=0; c<(trmsize(0,re)); c++){
+                    for (int r=c+1; r<(trmsize(0,re)); r++){
+                      Arm(r,c)=lg_Ar(covscounter);
+                      covscounter++;
+                    }}
+                  
+                  matrix<Type> ArmMat = Arm*Arm.transpose();
+                  
+                  matrix<Type> ArmP(trmsize(1,re), trmsize(1,re));
+                  ArmP.setZero();  
+                  ArmP(0,0) = 1; // identifiability
+                  for (int d=1; d<(trmsize(1,re)); d++){ // diagonals of varcov
+                    ArmP(d,d)=exp(lg_Ar(sdcounter));
+                    sdcounter++;
+                  }
+                  
+                  // off-diagonals
+                  for (int c=0; c<(trmsize(1,re)); c++){
+                    for (int r=c+1; r<(trmsize(1,re)); r++){
+                      ArmP(r,c)=lg_Ar(covscounter);
+                      covscounter++;
+                    }}
+                  
+                  matrix<Type> ArmMatP = ArmP*ArmP.transpose();
+                  
+                  for (int q=0; q<trmsize(1,re); q++){//loop over blocks
+                  cQ += (0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmMatP.diagonal()(q);
+                  }
+                  
+                  if(re==0){
+                    Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(0, trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+                    nll -= ArmP.cols()*Arm.diagonal().array().log().sum() + Arm.cols()*ArmP.diagonal().array().log().sum() - 0.5*((invpropMat*ArmMatP).trace()*(invSr*ArmMat).trace()+(bm*invpropMat*bm.transpose()*invSr).trace());                                                   
+                  }else{
+                    Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+                    nll -= ArmP.cols()*Arm.diagonal().array().log().sum() + Arm.cols()*ArmP.diagonal().array().log().sum() - 0.5*((invpropMat*ArmMatP).trace()*(invSr*ArmMat).trace()+(bm*invpropMat*bm.transpose()*invSr).trace());                                                   
+                  }
+                  
+          
+                  // determinants of each block of the covariance matrix
+                  nll -= 0.5*(trmsize(0,re)*trmsize(1,re)-logdetSr);
+                }
           }else{
             matrix <Type> invSr(trmsize(1,re),trmsize(1,re));invSr.setZero();
             
@@ -2052,7 +2120,7 @@ Type objective_function<Type>::operator() ()
             matrix<Type> ArmMat = Arm*Arm.transpose();
             cQ += (0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(1,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(1,re)).transpose()).diagonal()).replicate(1,p);
             
-            
+          if(cstruc(re)<5){
           if(cstruc(re) == 1){ // corAR1
             Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), trmsize(1,re));
             sigmacounter+= 2;
@@ -2081,7 +2149,12 @@ Type objective_function<Type>::operator() ()
           CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
           logdetSr = res[0];
           invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
-          
+          }else{
+            invSr = pow(sigma(sigmacounter), -2)*proptoMats(propcount)(0);
+            logdetSr = proptoMats(propcount)(1)(0) + 2*proptoMats(propcount)(0).cols()*log_sigma(sigmacounter);
+            sigmacounter++;
+            propcount++;
+          }
           
           if(re==0){
           //diagonal RE
@@ -2097,8 +2170,7 @@ Type objective_function<Type>::operator() ()
         }else{
           Type logdetSr = 0;
           
-          if(cstruc(re)<0){
-            matrix<Type> Sr(trmsize(0,re), trmsize(0,re));
+          if(cstruc(re)<0 || cstruc(re) == 6){
             matrix <Type> invSr(trmsize(0,re),trmsize(0,re));invSr.setZero();
             
             matrix<Type> sds = Eigen::MatrixXd::Zero(trmsize(0,re),trmsize(0,re));
@@ -2128,27 +2200,67 @@ Type objective_function<Type>::operator() ()
             logdetSr = 2*SrL.diagonal().array().log().sum();
             
             matrix<Type> Arm(trmsize(0,re),trmsize(0,re));
-            Sr.setZero();
-            for (int q=0; q<trmsize(1,re); q++){//loop over blocks
+            if(cstruc(re)<0){
+              for (int q=0; q<trmsize(1,re); q++){//loop over blocks
+                Arm.setZero();  
+                for (int d=0; d<(trmsize(0,re)); d++){ // diagonals of varcov
+                  Arm(d,d)=exp(lg_Ar(sdcounter));
+                  sdcounter++;
+                }
+
+                matrix<Type> ArmMat = Arm*Arm.transpose();
+                
+                cQ += (0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
+                
+                if(re==0){
+                  nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)))).sum());  
+                }else{
+                  nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q,trmsize(0,re)))).sum());
+                }
+                
+                // determinants of each block of the covariance matrix
+                nll -= 0.5*(trmsize(0,re)-logdetSr);
+              }
+            }else if(cstruc(re) == 6){
+              logdetSr = logdetSr*trmsize(1,re) + trmsize(0,re)*proptoMats(propcount)(1)(0); //logdet kronecker
+              matrix<Type> invpropMat = proptoMats(propcount)(0);
+              propcount ++;
+              
               Arm.setZero();  
               for (int d=0; d<(trmsize(0,re)); d++){ // diagonals of varcov
                 Arm(d,d)=exp(lg_Ar(sdcounter));
                 sdcounter++;
               }
-              
+
               matrix<Type> ArmMat = Arm*Arm.transpose();
               
-              cQ += (0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
+              matrix<Type> ArmP(trmsize(1,re), trmsize(1,re));
+              ArmP.setZero();  
+              ArmP(0,0) = 1; //identifiability
+              for (int d=1; d<(trmsize(1,re)); d++){ // diagonals of varcov
+                ArmP(d,d)=exp(lg_Ar(sdcounter));
+                sdcounter++;
+              }
+ 
+              matrix<Type> ArmMatP = ArmP*ArmP.transpose();
               
-              if(re==0){
-                nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)))).sum());  
-              }else{
-                nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q,trmsize(0,re)))).sum());
+              for (int q=0; q<trmsize(1,re); q++){//loop over blocks
+                cQ += (0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmMatP.diagonal()(q);
               }
               
+              if(re==0){
+                Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(0, trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+                nll -= ArmP.cols()*Arm.diagonal().array().log().sum() + Arm.cols()*ArmP.diagonal().array().log().sum() - 0.5*((invpropMat*ArmMatP).trace()*(invSr*ArmMat).trace()+(bm*invpropMat*bm.transpose()*invSr).trace());                                                   
+              }else{
+                Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+                nll -= ArmP.cols()*Arm.diagonal().array().log().sum() + Arm.cols()*ArmP.diagonal().array().log().sum() - 0.5*((invpropMat*ArmMatP).trace()*(invSr*ArmMat).trace()+(bm*invpropMat*bm.transpose()*invSr).trace());                                                   
+              }
+              
+              
               // determinants of each block of the covariance matrix
-              nll -= 0.5*(trmsize(0,re)-logdetSr);
+              nll -= 0.5*(trmsize(0,re)*trmsize(1,re)-logdetSr);
             }
+            
           }else{
           Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Arm(trmsize(1,re));
           matrix<Type> Sr(trmsize(1,re), trmsize(1,re));Sr.setZero();
@@ -2164,6 +2276,7 @@ Type objective_function<Type>::operator() ()
           // This can straightforwardly be extended to estimate correlation between effects
           matrix <Type> invSr(trmsize(1,re), trmsize(1,re));invSr.setZero();
           // diagonal row effect
+          if(cstruc(re)<5){
           if(cstruc(re) == 0){
             // inverse and log determinant are straighforwardly available here
             logdetSr = 2*trmsize(1,re)*log(sigma(sigmacounter));
@@ -2191,11 +2304,17 @@ Type objective_function<Type>::operator() ()
             }
             dccounter++;
           }
-          if(cstruc(re)>0 || cstruc(re)<0){
+          if(cstruc(re)>0){
             //TMB's matinvpd function: inverse of matrix with logdet for free
             CppAD::vector<Type> res = atomic::invpd(atomic::mat2vec(Sr));
             logdetSr = res[0];
             invSr = atomic::vec2mat(res,Sr.rows(),Sr.cols(),1);
+          }
+          }else{
+            invSr = pow(sigma(sigmacounter), -2)*proptoMats(propcount)(0);
+            logdetSr = proptoMats(propcount)(1)(0) + 2*proptoMats(propcount)(0).cols()*log_sigma(sigmacounter);
+            sigmacounter++;
+            propcount++;
           }
           
           if(re==0){
@@ -4097,10 +4216,10 @@ Type objective_function<Type>::operator() ()
       int dccounter = 0; // tracking used dc entries
       int sigmacounter = 0; // tracking used sigma entries
       int ucount = 0;
+      int propcount = 0;
       for(int re=0; re<trmsize.cols();re++){
         
-        // diagonal row effect
-        if(cstruc(re)<0){
+        if(cstruc(re)<0 || cstruc(re)>5){
           matrix<Type> Sr(trmsize(0,re), trmsize(0,re));
 
           matrix<Type> sds = Eigen::MatrixXd::Zero(trmsize(0,re),trmsize(0,re));
@@ -4124,7 +4243,7 @@ Type objective_function<Type>::operator() ()
           }
           Sr = SrL*SrL.transpose();
           
-        REPORT(Sr);
+      if(cstruc(re)<0){  
         MVNORM_t<Type> MVNSr(Sr);
         for (int q=0; q<trmsize(1,re); q++){//loop over blocks
           if(re==0){
@@ -4135,9 +4254,33 @@ Type objective_function<Type>::operator() ()
             nll += MVNSr(r0s);
           }
         }
+      }else if(cstruc(re) == 6){
+        matrix <Type> invSr(trmsize(0,re),trmsize(0,re));invSr.setZero();
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(SrL.cols(),SrL.cols());
+        matrix <Type> SrIL(SrL.cols(),SrL.cols());
+        SrIL = SrL.template triangularView<Eigen::Lower>().solve(Ir);
+        SrIL = SrIL.transpose()*SrIL;
+        invSr=SrIL*SrIL.transpose();
+        Type logdetSr = 2*SrL.diagonal().array().log().sum()*trmsize(1,re) + trmsize(0,re)*proptoMats(propcount)(1)(0);
+        matrix<Type> invpropMat = proptoMats(propcount)(0);
+        propcount ++;
+        
+        if(re==0){
+          Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(0, trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+          nll -=  -0.5*(bm*invpropMat*bm.transpose()*invSr).trace();
+        }else{
+          Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> bm = Eigen::Map<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>>(r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(0,re)*trmsize(1,re)).data(), trmsize(0,re), trmsize(1,re));
+          nll -=  -0.5*(bm*invpropMat*bm.transpose()*invSr).trace();
+        }
+        
+        // determinants of each block of the covariance matrix
+        nll -= -0.5*trmsize(0,re)*trmsize(1,re)*log(2*M_PI)-0.5*logdetSr;
+        
+      }
         }else{
           matrix<Type> Sr(trmsize(1,re),trmsize(1,re));Sr.setZero();
           
+        if(cstruc(re) < 5){
         if(cstruc(re) == 0){
           Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
           sigmacounter++;
@@ -4187,6 +4330,18 @@ Type objective_function<Type>::operator() ()
           }else{
             vector<Type> r0s = r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re));
             nll += MVNORM(Sr)(r0s);
+          }
+        }
+        }else{
+          matrix<Type> invSr(trmsize(1,re), trmsize(1,re));
+          invSr = pow(sigma(sigmacounter), -2)*proptoMats(propcount)(0);
+          Type logdetSr = proptoMats(propcount)(1)(0) + 2*proptoMats(propcount)(0).cols()*log_sigma(sigmacounter);
+          sigmacounter++;
+          propcount++;
+          if(re==0){
+          nll -= -trmsize(1,re)/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(0,trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(0,trmsize(1,re));
+          }else{
+          nll -= -trmsize(1,re)/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re));  
           }
         }
         }
