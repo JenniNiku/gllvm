@@ -20,7 +20,19 @@
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters, whichh can sometimes improve the fit. Either 0 or 1. Defaults to 0.}
 #'  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 #' }
-#' @param control.start A list of arguments controlling the starting values. See \code{"\link{gllvm}"} for details.
+#' @param control.start A list with the following arguments controlling the starting values:
+#' \describe{
+#'   \item{\emph{starting.val}: }{ defaults to \code{"zero"}. See \code{"\link{gllvm}"} for details.}
+#'   \item{\emph{n.init}: }{ number of initial runs. Uses multiple runs and picks up the one giving highest log-likelihood value. Defaults to 1.}
+#'   \item{\emph{n.init.max}: }{ maximum number of refits try try for n.init without improvement, defaults to 10.}
+#'   \item{\emph{start.fit}: }{ object that inherits of class 'gllvm' which can be given as starting parameters.}
+#'   \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter of Matern covariance function. Defaults to 3/2.}
+#'   \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
+#'   \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
+#'   \item{\emph{zetacutoff}: }{ A vector of length 2. Sets starting value for the cutoff parameters of the ordered beta model.}
+#'   \item{\emph{start.optimizer}: }{ optimizer for starting value generation, see "optimizer" for more information.}
+#'   \item{\emph{start.optim.method}: }{ optimizer method for starting value generation, see "optim.method" for more information.}
+#' }
 #' @param ... other arguments passed onto the \code{"\link{gllvm}"} function.
 #' 
 #' @return An object of class "glmmVA" that inherits from the "gllvm" class.
@@ -44,7 +56,9 @@
 #' @export
 glmmVA <- function(formula, data, family, 
                    control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000, optim.method = "BFGS"), 
-                   control.va = list(Ar.struc="unstructured", diag.iter = 0, Lambda.start = 0.3), ...) {
+                   control.va = list(Ar.struc="unstructured", diag.iter = 0, Lambda.start = 0.3), 
+                   control.start = list(starting.val = "zero", n.init = 1, n.init.max = 10, start.fit = NULL, scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"), 
+                   ...) {
   
   args  <- list(...)
   
@@ -93,7 +107,7 @@ glmmVA <- function(formula, data, family,
     stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
   }
   
-  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va), args))
+  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va, control.start = control.start), args))
   
   object$call <-  match.call()
   class(object) <-  c("glmmVA", "gllvm")

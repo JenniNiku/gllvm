@@ -11,6 +11,9 @@ glmmVA(
   control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000,
     optim.method = "BFGS"),
   control.va = list(Ar.struc = "unstructured", diag.iter = 0, Lambda.start = 0.3),
+  control.start = list(starting.val = "zero", n.init = 1, n.init.max = 10, start.fit =
+    NULL, scalmax = 10, MaternKappa = 1.5, rangeP = NULL, zetacutoff = NULL,
+    start.optimizer = "nlminb", start.optim.method = "BFGS"),
   ...
 )
 }
@@ -37,9 +40,21 @@ glmmVA(
  \item{\emph{Lambda.start}: }{ starting value for variances in VA distributions. Defaults to 0.3.}
 }}
 
-\item{...}{other arguments passed onto the \code{"\link{gllvm}"} function.}
+\item{control.start}{A list with the following arguments controlling the starting values:
+\describe{
+  \item{\emph{starting.val}: }{ defaults to \code{"zero"}. See \code{"\link{gllvm}"} for details.}
+  \item{\emph{n.init}: }{ number of initial runs. Uses multiple runs and picks up the one giving highest log-likelihood value. Defaults to 1.}
+  \item{\emph{n.init.max}: }{ maximum number of refits try try for n.init without improvement, defaults to 10.}
+  \item{\emph{start.fit}: }{ object that inherits of class 'gllvm' which can be given as starting parameters.}
+  \item{\emph{MaternKappa}: }{ Starting value for smoothness parameter of Matern covariance function. Defaults to 3/2.}
+  \item{\emph{scalmax}: }{ Sets starting value for the scale parameter for the coordinates. Defaults to 10, when the starting value for scale parameter scales the distances of coordinates between 0-10.}
+  \item{\emph{rangeP}: }{ Sets starting value for the range parameter for the correlation structure.}
+  \item{\emph{zetacutoff}: }{ A vector of length 2. Sets starting value for the cutoff parameters of the ordered beta model.}
+  \item{\emph{start.optimizer}: }{ optimizer for starting value generation, see "optimizer" for more information.}
+  \item{\emph{start.optim.method}: }{ optimizer method for starting value generation, see "optim.method" for more information.}
+}}
 
-\item{control.start}{A list of arguments controlling the starting values. See \code{"\link{gllvm}"} for details.}
+\item{...}{other arguments passed onto the \code{"\link{gllvm}"} function.}
 }
 \value{
 An object of class "glmmVA" that inherits from the "gllvm" class.
