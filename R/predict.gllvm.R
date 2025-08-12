@@ -337,7 +337,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     } 
     if(!is.null(object$params$row.params.fixed)){
         object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(as.matrix(object$params$row.params.fixed))
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
     }
     
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
