@@ -92,7 +92,11 @@ glmmVA <- function(formula, data, family,
     }
   }else if("link" %in% names(args)){
     link <- args[["link"]]
+    if(length(args)>1){
     args <- args[[names(args)!="link"]]
+    }else{
+      args <- NULL
+    }
   }else{
     link <- "probit"
   }
