@@ -5,7 +5,6 @@
 #' @param ... not used.
 #'
 #' @details
-#' Computes Hessian and standard errors for gllvm model.
 #' 
 #' @return 
 #'  \item{sd }{ list of standard errors of parameters}
@@ -66,7 +65,8 @@ se.gllvm <- function(object, ...){
   cstrucn = 0
   cstruc = object$corP$cstruc
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, "proptoustruc" = 6)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, 
+                        "proptoustruc" = 6, "corAR1ustruc" = 7, "corExpustruc" = 8, "corCSustruc" = 9, "corMaternustruc" = 10)
   }
   cstruclvn = switch(object$corP$cstruclv, "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   corWithinLv <- object$corP$corWithinLV
@@ -356,40 +356,55 @@ se.gllvm <- function(object, ...){
         trmsize = object$TMBfn$env$data$trmsize
         
         for(re in 1:length(cstrucn)){
-          if(cstrucn[re] %in% c(0,-1, 5, 6)){
+          if(cstrucn[re] %in% c(0,-1, 5, 6:10)){
+            # diag, ustruc, propto, proptoustruc
             sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
             # parse labels
             form <- parse(text = colnames(trmsize)[re])[[1]]
-            LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
+            trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+            LHS <- labels(trm)
+            if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
             RHS <- form[[3]]
             
             names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
             
             iter <- iter + trmsize[1,re]
-          }else if(cstrucn[re] %in% c(1,3)) {
+          }
+          
+          if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
             names(sigma)[iter] <- colnames(trmsize)[re]
-            names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],"rho")
+            names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],".rho")
             sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
             iter <- iter +2
           } else if(cstrucn[re] %in% c(2)){
             sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-            names(sigma)[iter] = "Scale"
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
             names(sigma)[iter+1] = colnames(trmsize)[re]
             iter <- iter + 2
           } else if(cstrucn[re] %in% c(4)){
             # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)] # matern smoothness fixed
             sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-            names(sigma)[iter] = "Scale"
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
             names(sigma)[iter+1] = colnames(trmsize)[re]
             iter <- iter + 2
             # Matern smoothness
             # names(sigma)[iter+1] = "Matern kappa"
             # iter <- iter +1
-          } else {
-            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-            names(sigma)[iter] = colnames(trmsize)[re]
+          }
+          
+          if(cstrucn[re] %in% c(7,9)){
+            sigma[iter] <- sigma[iter]*(1-object$params$sigma[iter]^2)^1.5
+            names(sigma)[iter] <- paste0(colnames(trmsize)[re],".rho")
             iter <- iter +1
+          }else if(cstrucn[re] == 8){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }else if(cstrucn[re] == 10){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
           }
         }
         out$sd$sigma <- sigma
@@ -833,53 +848,70 @@ se.gllvm <- function(object, ...){
       names(out$sd$B) <- names(out$params$B)
       }
     }
-    if(!is.null(object$params$row.params.random)) { 
-      iter = 1 # keep track of index
-      sigma <- se$log_sigma
-      if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
-        sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
-      }
-      trmsize = object$TMBfn$env$data$trmsize
-      
-      for(re in 1:length(cstrucn)){
-        if(cstrucn[re] %in% c(0,-1, 5, 6)){
-          sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
-          # parse labels
-          form <- parse(text = colnames(trmsize)[re])[[1]]
-          LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
-          RHS <- form[[3]]
-          
-          names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
-          
-          iter <- iter + trmsize[1,re]
-        }else if(cstrucn[re] %in% c(1,3)) {
-          sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-          names(sigma)[iter] = colnames(trmsize)[re]
-          names(sigma)[iter+1] = paste0(colnames(trmsize)[re],"rho")
-          sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
-          iter <- iter +2
-        } else if(cstrucn[re] %in% c(2)){
-          sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-          names(sigma)[iter] = "Scale"
-          names(sigma)[iter+1] = colnames(trmsize)[re]
-          iter <- iter + 2
-        } else if(cstrucn[re] %in% c(4)){
-          # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)]# matern smoothness fixed
-          sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-          names(sigma)[iter] = "Scale"
-          names(sigma)[iter+1] = colnames(trmsize)[re]
-          iter <- iter + 2
-          # Matern smoothness
-          # names(sigma)[iter+1] = "Matern kappa"
-          # iter <- iter +1
-        } else {
-          sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-          names(sigma)[iter] = colnames(trmsize)[re]
-          iter <- iter +1
+
+      if(!is.null(object$params$row.params.random)) { 
+        iter = 1 # keep track of index
+        sigma <- se$log_sigma
+        if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
+          sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
         }
+        trmsize = object$TMBfn$env$data$trmsize
+        
+        for(re in 1:length(cstrucn)){
+          if(cstrucn[re] %in% c(0,-1, 5, 6:10)){
+            # diag, ustruc, propto, proptoustruc
+            sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
+            # parse labels
+            form <- parse(text = colnames(trmsize)[re])[[1]]
+            trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+            LHS <- labels(trm)
+            if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+            RHS <- form[[3]]
+            
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            
+            iter <- iter + trmsize[1,re]
+          }
+          
+          if(cstrucn[re] %in% c(1,3)) {
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] <- colnames(trmsize)[re]
+            names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],".rho")
+            sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
+            iter <- iter +2
+          } else if(cstrucn[re] %in% c(2)){
+            sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
+            iter <- iter + 2
+          } else if(cstrucn[re] %in% c(4)){
+            # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)] # matern smoothness fixed
+            sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
+            iter <- iter + 2
+            # Matern smoothness
+            # names(sigma)[iter+1] = "Matern kappa"
+            # iter <- iter +1
+          }
+          
+          if(cstrucn[re] %in% c(7,9)){
+            sigma[iter] <- sigma[iter]*(1-object$params$sigma[iter]^2)^1.5
+            names(sigma)[iter] <- paste0(colnames(trmsize)[re],".rho")
+            iter <- iter +1
+          }else if(cstrucn[re] == 8){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }else if(cstrucn[re] == 10){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }
+        }
+        out$sd$sigma <- sigma
       }
-      out$sd$sigma <- sigma
-    }
+    
     if(num.lv.cor>0 & cstruclvn>0){ 
       if(length(object$params$rho.lv)>0){
         if(!is.null(object$TMBfn$env$map$rho_lvc)) { #clean from duplicates and NAs

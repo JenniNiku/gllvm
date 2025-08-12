@@ -23,7 +23,8 @@ trait.TMB <- function(
   objrFinal <- optrFinal <- NULL
   
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, "proptoustruc" = 6)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, 
+                        "proptoustruc" = 6, "corAR1ustruc" = 7, "corExpustruc" = 8, "corCSustruc" = 9, "corMaternustruc" = 10)
   }
   # calculate log determinants
   if(any(cstruc %in% c("propto", "proptoustruc"))){
@@ -65,24 +66,24 @@ trait.TMB <- function(
   
   if(nrow(dr)==n){
     # distance matrix checks
-    if(any(cstruc%in%c("corExp","corMatern"))){
-      if(length(dist)!=sum(cstruc%in%c("corExp","corMatern"))){
+    if(any(grepl("corExp",cstruc)|grepl("corMatern",cstruc))){
+      if(length(dist)!=sum(grepl("corExp",cstruc)|grepl("corMatern",cstruc))){
         stop("Number of provided distance matrices should equal the number of spatially structured row effects.")
       }else{
-        if(!all(unlist(lapply(dist, nrow))==trmsize[2, cstruc%in%c("corExp","corMatern")])){
-          stop("Number of rows in 'dist' matrices should be same as number of units in the corresponding spatial row effect.")
+        if(!all(unlist(lapply(dist, nrow))==trmsize[2,grepl("corExp",cstruc)|grepl("corMatern",cstruc)])){
+          stop("Number of rows in 'dist' matrices should be the same as number of units in the corresponding spatial row effect.")
         }
       }
     }
-    if(any(cstruc%in%c("corExp","corMatern"))) {
+    if(any(grepl("corExp",cstruc)|grepl("corMatern",cstruc))) {
       if(is.null(rangeP)) {
         rangeP = AD1 = unlist(mapply("/", lapply(mapply('-', lapply(dist,function(x)apply(x,2,max)), lapply(dist,function(x)apply(x,2,min)), SIMPLIFY = FALSE), mean), scalmax, SIMPLIFY = FALSE))
       } else {
-        if(length(rangeP) >1 && length(rangeP) != sum(cstruc%in%c("corExp","corMatern"))){
+        if(length(rangeP) >1 && length(rangeP) != sum(grepl("corExp",cstruc)|grepl("corMatern",cstruc))){
           stop("The length of rangeP should be equal to the number of correlated structured row effects, or of length one.")
         }else if(length(rangeP)==1){
-          rangeP = AD1 <- rep(rangeP,sum(cstruc%in%c("corExp","corMatern")))
-        }else if(length(rangeP) == sum(cstruc%in%c("corExp","corMatern"))){
+          rangeP = AD1 <- rep(rangeP,sum(grepl("corExp",cstruc)|grepl("corMatern",cstruc)))
+        }else if(length(rangeP) == sum(grepl("corExp",cstruc)|grepl("corMatern",cstruc))){
           AD1 = rangeP
         }
       }
@@ -100,7 +101,7 @@ trait.TMB <- function(
   }else{
     dr <- as(matrix(0), "TsparseMatrix")  
     # dimnames(dr) <- list(rep("site", n), rep("site", n))
-    # names(nr) = "site"
+    # colnames(trmsize) = "site"
   }
   
   if(num.lv.cor > 0){#rstruc
@@ -951,21 +952,21 @@ trait.TMB <- function(
       
     # Variational covariances for  random rows
     if(nrow(dr)==n){
-      lg_Ar <- rep(log(Lambda.start[2]), sum(trmsize[2,cstruc!="proptoustruc"]*trmsize[1,cstruc!="proptoustruc"]))
-      if(any(cstruc == "proptoustruc")){
-        lg_Ar <- rep(log(Lambda.start[2]), sum(trmsize[2,cstruc=="proptoustruc"]) + sum(trmsize[1,cstruc=="proptoustruc"])-1)  
+      lg_Ar <- rep(log(Lambda.start[2]), sum(trmsize[2,!grepl("ustruc", cstruc)| cstruc == "ustruc"]*trmsize[1,!grepl("ustruc", cstruc)| cstruc == "ustruc"]))
+      if(any(grepl("ustruc", cstruc) & cstruc != "ustruc")){
+        lg_Ar <- c(lg_Ar, rep(log(Lambda.start[2]), sum(trmsize[2,grepl("ustruc", cstruc) & cstruc != "ustruc"]) + sum(trmsize[1,grepl("ustruc", cstruc) & cstruc != "ustruc"])-sum(grepl("ustruc", cstruc) & cstruc != "ustruc")))
       }
       
       if(Ar.struc!="diagonal" && diag.iter == 0){
-        if(any(!cstruc %in% c("ustruc", "proptoustruc"))){
-          lg_Ar <- c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "proptoustruc", "diag")]-1)/2)))  
+        if(any(!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc"))){
+          lg_Ar <- c(lg_Ar, rep(1e-3, sum(trmsize[2,!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc")]*trmsize[1,!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc")]*(trmsize[2,!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc")]*trmsize[1,!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc")]-1)/2)))  
         }
         # block diagonal for "unstructured" REs (kronecker)
         if(any(cstruc %in% c("ustruc"))){
           lg_Ar <- c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc %in% c("ustruc")]*trmsize[1,cstruc %in% c("ustruc")]*(trmsize[1,cstruc %in% c("ustruc")]-1)/2)))  
         }
-        if(any(cstruc %in% c("proptoustruc"))){
-          lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[1,cstruc %in% c("proptoustruc")]*(trmsize[1,cstruc %in% c("proptoustruc")]-1)/2) + sum(trmsize[2,cstruc %in% c("proptoustruc")]*(trmsize[2,cstruc %in% c("proptoustruc")]-1)/2)))  
+        if(any(grepl("ustruc", cstruc)&cstruc != "ustruc")){
+          lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[1,grepl("ustruc", cstruc)&cstruc != "ustruc"]*(trmsize[1,grepl("ustruc", cstruc)&cstruc != "ustruc"]-1)/2) + sum(trmsize[2,grepl("ustruc", cstruc)&cstruc != "ustruc"]*(trmsize[2,grepl("ustruc", cstruc)&cstruc != "ustruc"]-1)/2)))  
         }
       }
     } else {lg_Ar <- 0}
@@ -1092,42 +1093,87 @@ trait.TMB <- function(
         randoml[1] <- 1
         randomp <- c(randomp,"r0r")
        
-        sigmanew <- NULL
-        iter <- 1
         if(any(cstrucn==4)){
-          map.list$log_sigma <- if(cstrucn[1]==0){1}else if(cstrucn[1]==4){c(1:2, NA)}else{1:2}
-          if(length(cstrucn)>1){
-            for(i in 2:length(cstrucn)){
-              map.list$log_sigma <- c(map.list$log_sigma, if(!cstrucn[i]%in%c(0,4)){
-                c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2)
-              }else if(cstrucn[i]==0){
-                max(map.list$log_sigma, na.rm = TRUE)+1
-              }else if(cstrucn[i]==4){
-                c(max(map.list$log_sigma, na.rm = TRUE)+1, max(map.list$log_sigma, na.rm = TRUE)+2,NA)
-              })
+          iter <- 1
+          for(i in 1:length(cstrucn)){
+            re <- cstrucn[i]
+            if(re %in% c(1:3,7:9)) {
+              # corAR1, corCS, corExp
+              map.list$log_sigma[(iter):((iter+trmsize[1,i]) +1)] <- (iter):(iter+trmsize[1,i])
+              iter <- iter + trmsize[1,i]+1
+            } else if(re %in% c(-1,0,5, 6)){
+              # ustruc, diag, propto, proptoustruc
+              map.list$log_sigma[(iter):(iter+trmsize[1,i]-1)] <- (iter):(iter+trmsize[1,i]-1)
+              iter <- iter + trmsize[1,i]
+            } else if(re == 4){
+              # corMatern
+              map.list$log_sigma[(iter):(iter+1)] <- c(iter, NA)
+              iter <- iter + 2
+            } else if(re == 10){
+              # corMaternUstruc
+              map.list$log_sigma[(iter):(iter+trmsize[1,i])] <- (iter):(iter+trmsize[1,i])
+              iter <- iter + trmsize[1,i]
+              map.list$log_sigma[iter+1] <- NA
+              iter <- iter + 1
             }
           }
           map.list$log_sigma <- factor(map.list$log_sigma)
         }
+        sigmanew <- NULL
         iter = 1 # keep track of # spatial structures
         for(i in 1:length(cstrucn)){
           re <- cstrucn[i]
-          if(re %in% c( 1,3)) {
+          if(re %in% c(1,3)) {
+            # corAR1, corCS
             sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]), 0)
           } else if(re %in% c(2)){
+            # corExp
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
           } else if(re %in% c(4)){
+            # corMatern
             sigmanew = c(sigmanew, log(sigma[1]),scaledc[[iter]])
             iter <- iter + 1
             # Fix matern smoothness by default
             sigmanew = c(sigmanew, log(MaternKappa))
-          } else {
+          } else if(re == 5){
+            # propto
             sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+          }else if(re == 0){
+            # diag
+            sigmanew = c(sigmanew, log(sigma[1]))
+          }
+          
+          # ustruc terms
+          if(re %in% c(-1,6)){
+            # ustruc, proptoustruc
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+          }else if(re == 7){
+            # corAR1ustruc
+            # variance parameters
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+            sigmanew = c(sigmanew, 0) # 1 parameter for AR correlation
+          }else if(re == 9){
+            # corCSustruc
+            sigmanew = c(sigmanew, 0) # 1 parameter for CS
+            # and variance parameters
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+          }else if(re == 8){
+            # corExpustruc
+            # variance parameters
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+            sigmanew = c(sigmanew, scaledc[[iter]]) # 1 spatial field parameter
+            iter <- iter + 1
+          }else if(re == 10){
+            # corMaternustruc
+            # variance parameters
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
+            # Fix matern smoothness by default
+            sigmanew = c(sigmanew, scaledc[[iter]], log(MaternKappa))
           }
         }
         sigma <- sigmanew
-        if(any(cstrucn %in% c(-1, 6))){
+        if(any(cstrucn %in% c(-1, 6:10))){
           if(length(sigmaijr)!=nrow(csR)){
             sigmaijr <- rep(0, nrow(csR))
           }
@@ -1301,7 +1347,7 @@ trait.TMB <- function(
       if(length(param1[nam=="b"])>0){ b1 <- matrix(param1[nam=="b"], ncol = p)} else {b1 <- rbind(rep(0,p))}
       
       if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"]);
-      if(any(cstrucn %in% c("ustruc", "proptoustruc"))){sigmaijr1 <- param1[nam=="sigmaijr"]}else{sigmaijr1 <- sigmaijr}
+      if(any(cstruc %in% c("ustruc", "proptoustruc"))){sigmaijr1 <- param1[nam=="sigmaijr"]}else{sigmaijr1 <- sigmaijr}
       } else {r0r1 <- matrix(0);sigmaijr1<-0}
       if(length(param1[nam=="r0f"])>0){ r0f1 <- matrix(param1[nam=="r0f"])} else {r0f1 <- matrix(0)}
       if(nrow(dr)==n){
@@ -1313,18 +1359,18 @@ trait.TMB <- function(
           log_sigma <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
           log_sigma1 <- log_sigma
         }
-        lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,cstruc != "proptoustruc"]*trmsize[1,cstruc != "proptoustruc"], trmsize[1,cstruc == "proptoustruc"], trmsize[2,cstruc == "proptoustruc"]-1)])+1e-3)
+        lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,!(grepl("ustruc", cstruc) & cstruc != "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[1,(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[2,(grepl("ustruc", cstruc) & cstruc != "ustruc")]-sum((grepl("ustruc", cstruc) & cstruc != "ustruc")))])+1e-3)
         if(Ar.struc=="unstructured"){
-          if(any(!cstruc %in% c("ustruc", "proptoustruc"))){
-            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*(trmsize[2,!cstruc %in% c("ustruc", "proptoustruc", "diag")]*trmsize[1,!cstruc %in% c("ustruc", "proptoustruc", "diag")]-1)/2)))  
+          if(any(!(grepl("ustruc", cstruc)|cstruc == "ustruc"))){
+            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]-1)/2)))  
           }
           # block diagonal for "unstructured" REs
           if(any(cstruc == "ustruc")){
             lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,cstruc %in% c("ustruc")]*trmsize[1,cstruc %in% c("ustruc")]*(trmsize[1,cstruc %in% c("ustruc")]-1)/2)))  
           }
           # kronecker
-          if(any(cstruc == "proptoustruc")){
-            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[1,cstruc %in% c("proptoustruc")]*(trmsize[1,cstruc %in% c("proptoustruc")]-1)/2) + sum(trmsize[2,cstruc %in% c("proptoustruc")]*(trmsize[2,cstruc %in% c("proptoustruc")]-1)/2)))  
+          if(any((grepl("ustruc", cstruc)&cstruc != "ustruc"))){
+            lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[1,(grepl("ustruc", cstruc)&cstruc != "ustruc")]*(trmsize[1,(grepl("ustruc", cstruc)&cstruc != "ustruc")]-1)/2) + sum(trmsize[2,(grepl("ustruc", cstruc)&cstruc != "ustruc")]*(trmsize[2,(grepl("ustruc", cstruc)&cstruc != "ustruc")]-1)/2)))  
           }
         }
       } else {log_sigma1 = 0}
@@ -1727,48 +1773,112 @@ trait.TMB <- function(
           iter = 1 # keep track of index
           for(re in 1:length(cstrucn)){
             if(cstrucn[re] %in% c(0,-1, 5, 6)){
+              # diag, ustruc, propto, proptoustruc
               sigma[iter:(iter+trmsize[1,re]-1)] <- exp(sigma[iter:(iter+trmsize[1,re]-1)])
               # parse labels
               form <- parse(text = colnames(trmsize)[re])[[1]]
-              LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
               names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
               
               iter <- iter + trmsize[1,re]
             }else if(cstrucn[re] %in% c(1,3)) {
+              # corAR1, corCS
               sigma[iter] <- exp(sigma[iter])
               names(sigma)[iter] = colnames(trmsize)[re]
-              names(sigma)[iter+1] = paste0(colnames(trmsize)[re],"rho")
+              names(sigma)[iter+1] = paste0(colnames(trmsize)[re],".rho")
               sigma[iter+1] <- sigma[iter+1] / sqrt(1.0 + sigma[iter+1]^2);
               iter <- iter +2
             } else if(cstrucn[re] %in% c(2)){
+              # corExp
               sigma[iter:(iter+1)] <- exp(sigma[iter:(iter+1)])
-              names(sigma)[iter] = "Scale"
+              names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
               names(sigma)[iter+1] = colnames(trmsize)[re]
               iter <- iter + 2
             } else if(cstrucn[re] %in% c(4)){
+              # corMatern
               # sigma[iter:(iter+2)] <- exp(sigma[iter:(iter+2)]) # maternKappa fixed
               sigma[iter:(iter+1)] <- exp(sigma[iter:(iter+1)])
-              names(sigma)[iter] = "Scale"
+              names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
               names(sigma)[iter+1] = colnames(trmsize)[re]
               iter <- iter + 2
               # Matern smoothness
               # names(sigma)[iter+1] = "Matern kappa"
               # iter <- iter +1
-            } else {
+            } 
+            
+            # other ustrucs
+            if(cstrucn[re] == 7){
+              sigma[iter:(iter+trmsize[1,re]-1)] <- exp(sigma[iter:(iter+trmsize[1,re]-1)])
+              # parse labels
+              form <- parse(text = colnames(trmsize)[re])[[1]]
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+              RHS <- form[[3]]
+              
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              
+              iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
-              names(sigma)[iter] = colnames(trmsize)[re]
-              iter <- iter +1
+              names(sigma)[iter] <- paste0(colnames(trmsize)[re],".rho")
+            }else if(cstrucn[re] == 9){
+              sigma[iter:(iter+trmsize[1,re]-1)] <- exp(sigma[iter:(iter+trmsize[1,re]-1)])
+              # parse labels
+              form <- parse(text = colnames(trmsize)[re])[[1]]
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+              RHS <- form[[3]]
+              
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              
+              iter <- iter + trmsize[1,re]
+              sigma[iter] <- exp(sigma[iter])
+              names(sigma)[iter] <-paste0(colnames(trmsize)[re],".rho")
+              iter <- iter + 1
+            }else if(cstrucn[re] == 8){
+              sigma[iter:(iter+trmsize[1,re]-1)] <- exp(sigma[iter:(iter+trmsize[1,re]-1)])
+              # parse labels
+              form <- parse(text = colnames(trmsize)[re])[[1]]
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+              RHS <- form[[3]]
+              
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              
+              iter <- iter + trmsize[1,re]
+              sigma[iter] <- exp(sigma[iter])
+              names(sigma)[iter] <- paste0(colnames(trmsize)[re],".Scale")
+              iter <- iter + 1
+            }else if(cstrucn[re] == 9){
+              sigma[iter:(iter+trmsize[1,re]-1)] <- exp(sigma[iter:(iter+trmsize[1,re]-1)])
+              # parse labels
+              form <- parse(text = colnames(trmsize)[re])[[1]]
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+              RHS <- form[[3]]
+              
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              
+              iter <- iter + trmsize[1,re]
+              sigma[iter] <- exp(sigma[iter])
+              names(sigma)[iter] <-paste0(colnames(trmsize)[re],".Scale")
+              iter <- iter + 1
             }
           }
           out$params$sigma=sigma; 
           out$params$row.params.random <- row.params.random; 
           if(ncol(csR)>1){
-            D = vector("list", length=sum(cstrucn%in%c(-1,6)))
+            D = vector("list", length=sum(cstrucn%in%c(-1,6:10)))
             
             ucount = 1
-            for(re in 1:sum(cstrucn%in%c(-1, 6))){
+            for(re in 1:sum(cstrucn%in%c(-1, 6:10))){
               sigmaij <- rep(0,(trmsize[1,re]^2-trmsize[1,re])/2)
               for(i in 1:length(sigmaij)){
                 sigmaij[(csR[ucount,1]-1) * (csR[ucount,1] - 2) / 2 + csR[ucount,2]] = sigmaijr[ucount]
@@ -1778,7 +1888,9 @@ trait.TMB <- function(
               D[[re]] <- L%*%t(L)
               
               form <- parse(text = colnames(trmsize)[re])[[1]]
-              LHS <- labels(terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]])))))
+              trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+              LHS <- labels(trm)
+              if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
               colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", RHS)
@@ -2043,12 +2155,12 @@ trait.TMB <- function(
         if(nrow(dr)==n){
           lg_Ar <- param[names(param)=="lg_Ar"]
           Ar <- vector("list", ncol(trmsize))
-          sdtot <- sum(trmsize[2,cstruc != "proptoustruc"]*trmsize[1,cstruc != "proptoustruc"], trmsize[2, cstruc == "proptoustruc"], trmsize[1,cstruc == "proptoustruc"] -1 )
+          sdtot <- sum(trmsize[2,!grepl("ustruc", cstruc)|cstruc=="ustruc"]*trmsize[1,!grepl("ustruc", cstruc)|cstruc=="ustruc"], trmsize[2, grepl("ustruc", cstruc)&cstruc!="ustruc"], trmsize[1,grepl("ustruc", cstruc)&cstruc!="ustruc"] -sum(grepl("ustruc", cstruc)&cstruc!="ustruc"))
           Ar.sds <- exp((lg_Ar)[1:sdtot])
           lg_Ar <- lg_Ar[-c(1:sdtot)]
           
           for(re in 1:ncol(trmsize)){
-            if(!cstruc[re] %in% c("ustruc", "proptoustruc")){
+            if(!(grepl("ustruc", cstruc[re])|cstruc[re] == "ustruc")){
               Ar[[re]] <- diag(Ar.sds[1:trmsize[2,re]*trmsize[1,re]])
               Ar.sds <- Ar.sds[-c(1:trmsize[2,re]*trmsize[1,re])]
             }else if(cstruc[re] == "ustruc"){
@@ -2056,7 +2168,7 @@ trait.TMB <- function(
                 Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[1,re]])
                 Ar.sds <- Ar.sds[-c(1:trmsize[1,re])]
               }
-            }else if(cstruc[re] == "proptoustruc"){
+            }else if(grepl("ustruc", cstruc[re])){
               Ar[[re]][[1]] <- diag(Ar.sds[1:trmsize[1,re]])
               Ar.sds <- Ar.sds[-c(1:trmsize[1,re])]
               Ar[[re]][[2]] <- diag(c(1,Ar.sds[1:c(trmsize[2,re]-1)]))
@@ -2067,13 +2179,13 @@ trait.TMB <- function(
             if(length(lg_Ar)>0){
               k=1;
               for(re in 1:ncol(trmsize)){
-                if(!cstruc[re] %in% c("ustruc", "proptoustruc", "diag")){
+                if(!grepl("ustruc", cstruc[re])&cstruc[re]!="ustruc"){
                   for(d in 1:(trmsize[2,re]*trmsize[1,re]-1)){
                     for(r in (d+1):(trmsize[2,re]*trmsize[1,re])){
                       Ar[[re]][r,d] = lg_Ar[k];
                       k=k+1;
                     }}
-                }else if(cstruc[re] %in% c("ustruc")){
+                }else if(cstruc[re] == "ustruc"){ # blockdiagonal
                   for(c in 1:trmsize[2,re]){
                     for(d in 1:(trmsize[1,re]-1)){
                       for(r in (d+1):trmsize[1,re]){
@@ -2081,7 +2193,7 @@ trait.TMB <- function(
                         k=k+1;
                       }}
                   }
-                }else if(cstruc[re] %in% c("proptoustruc")){
+                }else if(grepl("ustruc", cstruc[re])&cstruc[re]!="ustruc"){ # kronecker
                   for(d in 1:(trmsize[1,re]-1)){
                     for(r in (d+1):trmsize[1,re]){
                       Ar[[re]][[1]][r,d] = lg_Ar[k];
@@ -2098,11 +2210,10 @@ trait.TMB <- function(
           }
           
           for(re in 1:ncol(trmsize)){
-            if(cstruc[re] %in% c("ustruc")){
+            if(cstruc[re] == "ustruc"){
               Ar[[re]] <- as.matrix(Matrix::bdiag(Ar[[re]]))
             }
-            if(cstruc[re] %in% c("proptoustruc")){
-              Ar <<-Ar
+            if(grepl("ustruc", cstruc[re])&cstruc[re]!="ustruc"){
               Ar[[re]] <- kronecker(Ar[[re]][[2]], Ar[[re]][[1]])
             }
             

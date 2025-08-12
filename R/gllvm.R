@@ -1130,26 +1130,26 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                                        attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "intercept")))
         trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(mf.new[,as.character(x[[3]])]))))
         
-        if(any(cstruc == "propto" & trmsize[1,]>1))cstruc[cstruc == "propto" & trmsize[1,]>1] <- "proptoustruc"
+        if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
         
         if(any(trmsize[1,]==0))trmsize[1,trmsize[1,]==0] <- 1 # occurs with 1|something
         colnames(trmsize) <- vapply(bar.f, deparse1,  character(1))
         
         # build index matrix csR for ustruc terms (both diagonals and off-diagonals)
-        if(any(cstruc %in% c("ustruc", "proptoustruc"))){
-          bar.f.ustruc <- bar.f[cstruc %in% c("ustruc", "proptoustruc")]
+        if(any(cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc")))){
+          bar.f.ustruc <- bar.f[cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc"))]
           # Number of covariates on LHS
           # terms with only 1 variable on LHS have 1x1 diagonal matrix
-          if(any(trmsize[1,cstruc %in% c("ustruc", "proptoustruc")]<2)){
-            cstruc[cstruc %in% c("ustruc", "proptoustruc")][trmsize[1,]<2] <- "diag"
+          if(any(trmsize[1,cstruc %in% c("ustruc")]<2)){
+            cstruc[cstruc %in% c("ustruc")][trmsize[1,]<2] <- "diag"
           }
-          if(any(cstruc %in% c("ustruc", "proptoustruc"))){
-          ulistlengthTrms <- trmsize[1,cstruc %in% c("ustruc", "proptoustruc")]
+          if(any(cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc")))){
+          ulistlengthTrms <- trmsize[1,cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc"))]
           
           # Number of groups on RHS
           csR = matrix(0, nrow = sum(ulistlengthTrms*(1+ulistlengthTrms)/2), ncol = 2) # columns: row entry, column entry
           for(i in 1:length(ulistlengthTrms)){
-            idx = (c(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i-1),0)[1]+1):c(tail(ulistlengthTrms*(1+ulistlengthTrms)/2, -i),nrow(csR))[1]
+            idx = (c(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i-1),0)[1]+1):c(sum(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i)),nrow(csR))[1]
             csR[idx, 1] = rep(1:ulistlengthTrms[i], times = 1:ulistlengthTrms[i])
             csR[idx, 2] = unlist(lapply(1:ulistlengthTrms[i], function(i) 1:i))
           }

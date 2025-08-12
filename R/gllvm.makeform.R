@@ -16,8 +16,10 @@ proptoMat<-function (term)
         return(list(solve(eval(term[[3]], envir = globalenv()))))  
       }
     }
-    }else{
+    }else if(length(term) == 2){
       return(proptoMat(term[[2]]))
+    }else{
+      return(NULL)
     }
   
   if(length(term) == 4){
@@ -36,9 +38,12 @@ proptoMat<-function (term)
   
   mats <- list()
   for (j in 2:length(term)) {
-    mats[[j-1]] <- proptoMat(term[[j]])
+    res <- proptoMat(term[[j]])
+    if(length(res)>0){
+    mats[[j-1]] <- res
+    }
   }
-  mats
+  Filter(Negate(is.null), mats)
 }
 
 

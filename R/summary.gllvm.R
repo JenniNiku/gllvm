@@ -103,18 +103,19 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
-  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0,5, 6))){
+  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0,5:10))){
     # check with terms are diag/ustruc
     # we don't report the other here for the moment
     
     cstrucn <- object$TMBfn$env$data$cstruc
-    trmsize = object$TMBfn$env$data$trmsize
-    nsigmas <- ifelse(cstrucn %in% c(-1, 0, 1, 3, 5, 6), as.numeric(trmsize[1, ]), 2)
-    idxsigmas <- rep(cstrucn, nsigmas) %in% c(0,-1, 5, 6)
+    trmsize <- object$TMBfn$env$data$trmsize
+    nsigmas <- ifelse(cstrucn %in% c(-1, 0, 1, 3, 5:10), as.numeric(trmsize[1, ]), 2)
+    idxsigmas <- rep(cstrucn, nsigmas) %in% c(0,-1, 5:10)
+    sigmas <- object$params$sigma[!grepl(".rho|.Scale", names(object$params$sigma))] # get rid of these for summary
     
-    Rowcovs <- data.frame(Name = names(object$params$sigma[idxsigmas]),
-                          Variance = format(round(object$params$sigma[idxsigmas], digits), nsmall = digits), 
-                          Std.Dev = format(round(sqrt(object$params$sigma[idxsigmas]), digits), nsmall = digits))
+    Rowcovs <- data.frame(Name = names(sigmas[idxsigmas]),
+                          Variance = format(round(sigmas[idxsigmas]^2, digits), nsmall = digits), 
+                          Std.Dev = format(round(sigmas[idxsigmas], digits), nsmall = digits))
     
     if(!is.null(object$params$sigmaijr)){
     cors <- format(round(object$params$sigmaijr, digits), nsmall = digits)
