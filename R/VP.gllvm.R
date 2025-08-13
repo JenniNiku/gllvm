@@ -7,6 +7,7 @@
 #' @param groupnames a vector of strings given as names for the groups defined in group
 #' @param adj.cov logical, whether or not to adjust co-variation within the group
 #' @param grouplvs logical, whether or not to group latent variables to one group
+#' @param calcr2scaled logical, whether or not to also calculate r2 scaled variance partitioning. Defaults to FALSE. If true, squared correlation between data and predictions is used for continuous data (normal, gamma, exponent, beta, tweedie), squared spearman correlation for count and ordinal data, and Tjur's R2 for binary data. Note, interpret these cautiously.
 #' 
 #' @details
 #' 
@@ -42,7 +43,7 @@
 #'@export
 #'@export print.VP.gllvm 
 
-VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grouplvs=FALSE, ...) {
+VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grouplvs=FALSE, calcr2scaled = FALSE, ...) {
   if (!inherits(object, "gllvm"))
     stop("Class of the object isn't 'gllvm'.")
   if(!is.null(object$lv.X) && is.null(object$lv.X.design))object$lv.X.design <- object$lv.X #for backward compatibility
@@ -382,6 +383,23 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
     out <- list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   } else {
     out <- list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
+  }
+  
+  if(calcr2scaled){
+    if(object$family %in% c("binomial") & all(object$Ntrials ==1)){
+      r2s <- goodnessOfFit(object = object, measure = "TjurR2", species = TRUE)$TjurR2
+    } else if(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")){
+      r2s <- goodnessOfFit(object = object, measure = "R2", species = TRUE)$R2
+    } else if(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")) {
+      r2s <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2
+    } else if(object$family %in% "betaH") {
+      pred <- predict(object, type = "response")
+      ycover<- object$y; ycover[object$y==0]<- NA;
+      r2s <- goodnessOfFit(y = ycover, pred = pred[, 1:ncol(object$y), drop=FALSE], measure = "R2", species = TRUE)$R2
+      out$r2Hspecies <- goodnessOfFit(y = (object$y>0)*1, pred = pred[, -(1:ncol(object$y)), drop=FALSE], measure = "TjurR2", species = TRUE)$TjurR2
+    }
+    out$r2scaledExplainedVarSp <- out$PropExplainedVarSp*r2s
+    out$r2species <- r2s
   }
   class(out) <- "VP.gllvm"
   return(out)

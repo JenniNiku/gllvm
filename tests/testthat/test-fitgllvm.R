@@ -220,3 +220,5 @@ test_that("phylogenetic models work", {
   expect_true(is.finite(model49$logL))
   
 })
+
+# Add tests for corWithin:

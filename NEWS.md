@@ -1,10 +1,13 @@
 Version 2.0.6
 =============
 * Added cloglog link for binomial, ZIB and ZNIB.
+* Added Nagelkerke's, McFadden's and Cox & Snell's Pseudo r2 measures in goodnessOfFit
+* In predict.gllvm type = "class" implemented for ordinal and binomial models.
 
 ## Bugfixes
 
 * Bugfix in VP for random effects in formula
+* Bugfix goodnessOfFit fixed for ordinal model
 
 Version 2.0.5
 =============
