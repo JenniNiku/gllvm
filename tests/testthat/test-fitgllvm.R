@@ -222,3 +222,18 @@ test_that("phylogenetic models work", {
 })
 
 # Add tests for corWithin:
+test_that("corWithinLV works", {
+  data("kelpforest")
+  SPinfo <- kelpforest$SPinfo
+  y<- (kelpforest$Y[kelpforest$X$YEAR>2017 & (kelpforest$X$SITE!="AHND"),SPinfo$GROUP=="ALGAE"]>0)*1
+  X<- kelpforest$X[kelpforest$X$YEAR>2017 & (kelpforest$X$SITE!="AHND"),]
+  studyDesign = data.frame(st = factor(paste(X$SITE, X$TRANSECT, sep = "")), YEAR=X$YEAR)
+  y<- y[,colSums(y>0)>9]
+
+  ## Test corWithinLV = TRUE
+  fitlv2ar1 = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="diagonal", seed = 1,
+                    studyDesign = studyDesign, lvCor = ~corAR1(1|st), corWithinLV = TRUE) # 
+  expect_true(length(fitlv2ar1$params$rho.lv)==2)
+  expect_true(all(round(fitlv2ar1$params$rho.lv, digits = 2)-c(0.93, 0.97)<0.1))
+  expect_true(all(dim(fitlv2ar1$lvs) == c(nrow(y),2)))
+})
