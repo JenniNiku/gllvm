@@ -197,7 +197,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
         if(!is.null(X)) new.env <- env <- res$params[,2:(num.X + 1)]
       }
       new.row.params <- row.params <- NULL;
-      if(row.eff){
+      if(row.eff != FALSE){
         new.row.params <- row.params <- res$row.params
         }
       new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
@@ -231,7 +231,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
         new.vameans <- vameans <- new.theta <- theta <- new.lambda <- lambda <- NULL
 
         if(num.lv > 0) new.theta <- theta<- c(start.params$params$theta) ## LV coefficients
-        if(row.eff) new.row.params <- row.params <- start.params$params$row.params ## row parameters
+        if(row.eff != FALSE) new.row.params <- row.params <- start.params$params$row.params ## row parameters
         if(num.lv > 0) { new.vameans <- vameans <- matrix(start.params$lvs, ncol = num.lv);
         new.lambda <- lambda <- start.params$A}
       } else { stop("Model which is set as starting parameters isn't the suitable you are trying to fit. Check that attributes y, X, TR and row.eff match to each other.");}
@@ -281,12 +281,12 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
           if(is.null(TR)) { new.env <- matrix(x2[1:(p * num.X)],p,num.X); x2 <- x2[-(1:(p * num.X))]
           } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
         }
-        new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
+        new.row.params <- NULL; if(row.eff !=FALSE) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
 
         mu.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
         if(!is.null(X) && is.null(TR)) mu.mat <- mu.mat + X %*% t(new.env)
         if(!is.null(TR)) mu.mat <- mu.mat + matrix((Xd %*% B),n,p)
-        if(row.eff) mu.mat <- mu.mat + matrix(new.row.params,n,p,byrow=FALSE)
+        if(row.eff !=FALSE) mu.mat <- mu.mat + matrix(new.row.params,n,p,byrow=FALSE)
         if(num.lv > 0) mu.mat <- mu.mat  + new.vameans %*% t(new.theta)
         eta.mat <- mu.mat
         if(num.lv > 0) eta.mat <- eta.mat + calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
@@ -353,7 +353,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
           if(is.null(TR)) { new.env <- matrix(x2[1:(p * num.X)],p,num.X); x2 <- x2[-(1:(p * num.X))]
           } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
         }
-        new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
+        new.row.params <- NULL; if(row.eff !=FALSE) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
 
         grad.theta <- grad.beta0 <- grad.env <- grad.B <- grad.row.params <- NULL
 
@@ -366,7 +366,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
         eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset
         if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
         if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
-        if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+        if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
         if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
 
         if(family=="poisson") {
@@ -389,7 +389,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             sum1 <- c(y-exp(eta.mat)) * Xd
             grad.B <- c(grad.B,colSums(sum1))
           }
-          if(row.eff)  grad.row.params <- rowSums(y - exp(eta.mat))
+          if(row.eff !=FALSE)  grad.row.params <- rowSums(y - exp(eta.mat))
         }
 
         if(family=="negative.binomial") {
@@ -413,7 +413,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             sum1 <- c(-phi.mat - (y + phi.mat) * (-phi.mat / (exp(eta.mat) + phi.mat))) * Xd
             grad.B <- c(grad.B,colSums(sum1))
           }
-          if(row.eff)  grad.row.params <- rowSums(-phi.mat - (y + phi.mat) * (-phi.mat/(exp(eta.mat) + phi.mat)))
+          if(row.eff !=FALSE)  grad.row.params <- rowSums(-phi.mat - (y + phi.mat) * (-phi.mat/(exp(eta.mat) + phi.mat)))
         }
 
         if(family=="binomial") {
@@ -437,13 +437,13 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             sum1 <- c(dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1 - probs) + 1e-5)) * Xd
             grad.B <- c(grad.B,colSums(sum1))
           }
-          if(row.eff)  grad.row.params <- rowSums(dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1 - probs) + 1e-5),na.rm=TRUE)
+          if(row.eff !=FALSE)  grad.row.params <- rowSums(dnorm(eta.mat) * (y - trial.size * probs) / (probs * (1 - probs) + 1e-5),na.rm=TRUE)
         }
 
         if(family=="ordinal") {
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
-          if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+          if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd),n,p)
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
           deriv.trunnorm <- matrix(0,n,p)
@@ -474,20 +474,20 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             sum1 <- c(deriv.trunnorm) * Xd
             grad.B <- c(grad.B,colSums(sum1))
           }
-          if(row.eff) { grad.row.params <- rowSums(deriv.trunnorm,na.rm=TRUE) }
+          if(row.eff !=FALSE) { grad.row.params <- rowSums(deriv.trunnorm,na.rm=TRUE) }
         }
 
         if(num.lv>0){
           grad.theta=matrix(grad.theta,nrow=p,ncol=num.lv)
           grad.theta[upper.tri(grad.theta)] <- 0}
-        if(row.eff) grad.row.params[1]=0;
+        if(row.eff !=FALSE) grad.row.params[1]=0;
         return(c(grad.theta, grad.beta0, grad.env, grad.B, grad.row.params))
       }
 
 
       if(constrOpt) {
         A=NULL;
-        if(row.eff){for(i in 1:p){
+        if(row.eff !=FALSE){for(i in 1:p){
           A=rbind(A,diag(n))
         }}
 
@@ -552,7 +552,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
               new.B <- x2[1:nd]; x2 <- x2[-(1:nd)]
             }
           }
-          new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
+          new.row.params <- NULL; if(row.eff !=FALSE) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
         }
       }
       else { new.theta <- theta; new.beta0 <- beta0; new.env <- env; new.B <- B; new.row.params <- row.params }
@@ -572,7 +572,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             if(is.null(TR)) { new.env <- matrix(x2[1:(p * num.X)],p,num.X); x2 <- x2[-(1:(p * num.X))]
             } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
           }
-          new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
+          new.row.params <- NULL; if(row.eff !=FALSE) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
 
           phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
 
@@ -586,7 +586,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
-          if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+          if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
           mu.mat <- eta.mat
           if(num.lv > 0) mu.mat <- eta.mat - calc.quad(new.lambda,new.theta,tmp.Lambda.struc)$mat
@@ -674,14 +674,14 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             if(is.null(TR)) { new.env <- matrix(x2[1:(p * num.X)],p,num.X); x2 <- x2[-(1:(p * num.X))]
             } else { B=x2[1:nd]; x2 <- x2[-(1:nd)]}
           }
-          new.row.params <- NULL; if(row.eff) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
+          new.row.params <- NULL; if(row.eff !=FALSE) { new.row.params <- x2[1:n]; x2 <- x2[-(1:n)] }
 
           grad.vameans <- grad.lambda <- NULL
 
           eta.mat <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% B),n,p)
-          if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+          if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
           if(num.lv > 0) eta.mat <- eta.mat + new.vameans %*% t(new.theta)
 
           if(family=="poisson") {
@@ -729,7 +729,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
           etas <- matrix(new.beta0,n,p,byrow=TRUE)  + offset
           if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
           if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% new.B),n,p)
-          if(row.eff) etas <- etas + matrix(new.row.params,n,p)
+          if(row.eff !=FALSE) etas <- etas + matrix(new.row.params,n,p)
           ci=c(-restrict-c(etas),-restrict+c(etas))
           q <- constrOptim(c(vameans), method = "BFGS", f = ll0, grad = grad.var, x = c(new.theta,new.beta0,new.env,new.B,new.row.params), lambda = lambda, phi = new.phi, zeta = zeta, control = list(trace = 0, fnscale = -1, maxit = maxit),ui=rbind(U,-U),ci=ci)
         } else {
@@ -749,7 +749,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
         eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + new.vameans %*% t(new.theta)   + offset
         if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
         if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% new.B),n,p)
-        if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+        if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
         if(family == c("poisson")) mu.mat <- exp(eta.mat+calc.quad(lambda,new.theta,tmp.Lambda.struc)$mat)
         if(family == c("negative.binomial")) {
           phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
@@ -785,7 +785,7 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
             eta.mat <- matrix(new.beta0,n,p,byrow=TRUE) + offset + new.vameans %*% t(new.theta)
             if(!is.null(X) && is.null(TR)) eta.mat <- eta.mat + X %*% t(new.env)
             if(!is.null(TR)) eta.mat <- eta.mat + matrix((Xd %*% new.B),n,p)
-            if(row.eff) eta.mat <- eta.mat + matrix(new.row.params,n,p)
+            if(row.eff !=FALSE) eta.mat <- eta.mat + matrix(new.row.params,n,p)
             if(family == c("poisson")) mu.mat <- exp(eta.mat+calc.quad(lambda,new.theta,tmp.Lambda.struc)$mat)
             if(family == c("negative.binomial")) {
               phi.mat <- matrix(new.phi,n,p,byrow=TRUE)
@@ -866,8 +866,9 @@ gllvm.VA <- function(y, X = NULL, TR = NULL, formula=NULL, family = "poisson",
       }
       out.list$start=res
 
-      if(row.eff) {
-        names(row.params) <- rownames(y); out.list$coef$row.params <- row.params
+      if(row.eff !=FALSE) {
+        # names(new.row.params) <- rownames(y); 
+        out.list$coef$row.params <- new.row.params
       }
       if(family == "negative.binomial") { out.list$coef$phi <- 1/phi; names(out.list$coef$phi) <- colnames(y); } ## Flip it back so that it is V = mu + phi * mu^2
 

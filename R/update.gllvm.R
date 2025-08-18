@@ -64,7 +64,8 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
   
   # Add or override other arguments from ...
   for (arg_name in names(args)) {
-    if(exists(arg_name, parent.frame()) && !is.function(get(arg_name, envir=parent.frame()))){
+    if(is.matrix(args[[arg_name]]) || is.data.frame(args[[arg_name]])){
+      # prevent this from getting evaluated
       call[[arg_name]] <- as.name(arg_name)
     }else {
       call[[arg_name]] <- args[[arg_name]]

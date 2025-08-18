@@ -340,16 +340,17 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     } 
     if(!is.null(object$params$row.params.fixed)){
         object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(as.matrix(object$params$row.params.fixed))
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
     }
     
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
-  if (object$col.eff$col.eff == "random" && is.null(newX)) {
+  
+  if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
     if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
-  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
+  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
     
@@ -375,7 +376,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
+  if(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
   if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB") || (object$family == "ZNIB")) 
     ilinkfun <- binomial(link = object$link)$linkinv

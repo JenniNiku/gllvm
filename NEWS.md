@@ -1,12 +1,21 @@
 Version 2.0.6
 =============
+
 * Added cloglog link for binomial, ZIB and ZNIB.
+* Added negative binomial (1) (VA via PIG augmentation)
+* Ntrials can vary per site/species
+* New function to fit univariate GLMMs: glmmVA
+* New propto structure for random (row) effects (possibly with correlations)
+* More generally expanded the (row.eff) formula interface for glmmVA to kronecker structures (e.g., corExp(0+a+b|group) has a 2x2 covarariance for the LHS and a nxn for the RHS)
 * Added Nagelkerke's, McFadden's and Cox & Snell's Pseudo r2 measures in goodnessOfFit
 * In predict.gllvm type = "class" implemented for ordinal and binomial models.
 
 ## Bugfixes
 
 * Bugfix in VP for random effects in formula
+* Bugfix in starting values for models involving both random row effects and random species effects
+* Bugfix in predict for fourth-corner model with random effects species via lme4-style formula
+* Bugfix in prediction with random and fixed row effects
 * Bugfix goodnessOfFit fixed for ordinal model
 
 Version 2.0.5

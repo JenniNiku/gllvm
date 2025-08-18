@@ -1,14 +1,90 @@
 // some functions
 namespace gllvmutils{
+// 
+// TMB_ATOMIC_VECTOR_FUNCTION(
+//   Hypo,
+//   1,
+//   // ATOMIC_DOUBLE
+//   {
+//     // tx, ty are double*
+//     double x = tx[0];
+//     double y = tx[1];
+//     double abs_x = std::abs(x);
+//     double abs_y = std::abs(y);
+//     double max_val = (abs_x > abs_y) ? abs_x : abs_y;
+//     double r = (abs_x > abs_y) ? (abs_y / abs_x) : (abs_x / abs_y);
+//     if(max_val == 0) {
+//       ty[0] = 0;
+//     } else {
+//       ty[0] = max_val * std::sqrt(1 + r * r);
+//     }
+//   },
+//   // ATOMIC_REVERSE
+//   {
+//     // In here, use "Type" as the templated scalar
+//     Type x = tx[0];
+//     Type y = tx[1];
+//     Type abs_x = fabs(x);
+//     Type abs_y = fabs(y);
+//     Type max_val = (abs_x > abs_y) ? abs_x : abs_y;
+//     Type r = (abs_x > abs_y) ? (abs_y / abs_x) : (abs_x / abs_y);
+//     Type denom;
+//     if(max_val == Type(0)) {
+//       denom = Type(0);
+//     } else {
+//       denom = max_val * sqrt(Type(1) + r * r);
+//     }
+//     if(denom == Type(0)) {
+//       px[0] = Type(0);
+//       px[1] = Type(0);
+//     } else {
+//       px[0] = py[0] * x / denom;
+//       px[1] = py[0] * y / denom;
+//     }
+//   }
+// );
+// 
+// template<class Type>
+// Type Hypo(const Type &x, const Type &y) {
+//   vector<Type> tx(2);
+//   tx[0] = x;
+//   tx[1] = y;
+//   vector<Type> ty(1);
+//   Hypo(tx, ty);
+//   return ty[0];
+// }
+// 
+// template<class Type>
+// Type hypo(const Type &x, const Type &y) {
+//   CppAD::vector<Type> tx(2);
+//   tx[0] = x;
+//   tx[1] = y;
+//   CppAD::vector<Type> ty = Hypo(tx);
+//   return ty[0];
+// }
 
 //structure to pass list from R as list in TMB
 template<class Type>
 struct dclist : vector<matrix<Type>> {
+  dclist(){}
+  
   dclist(SEXP x){  /* x = List passed from R */
     (*this).resize(LENGTH(x));
     for(int i=0; i<LENGTH(x); i++){
       SEXP sm = VECTOR_ELT(x, i);
       (*this)(i) = asMatrix<Type>(sm);
+    }
+  }
+};
+
+//nested list from R into TMB
+template<class Type>
+struct nesteddclist : vector<dclist<Type>> {
+  nesteddclist(SEXP x) {  // x = List of Lists from R
+    this->resize(LENGTH(x));
+    for(int i = 0; i < LENGTH(x); i++) {
+      SEXP inner_list = VECTOR_ELT(x, i);
+      (*this)[i] = dclist<Type>(inner_list);  // use existing constructor
     }
   }
 };

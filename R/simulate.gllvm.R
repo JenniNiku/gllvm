@@ -64,7 +64,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   }
   # generate new data
   nTot = nsim*nRows*nCols # total number of values to generate
-  if(object$family=="negative.binomial")
+  if(object$family %in% c("negative.binomial", "negative.binomial1"))
     invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
   if(object$family=="ZINB")
     invPhis = matrix(rep(object$params$ZINB.inv.phi,each=nsim*nRows), ncol=nCols)
@@ -111,6 +111,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   newDat = switch(object$family, "binomial"=rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs),
                   "poisson" = rpois(nTot, prs),
                   "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
+                  "negative.binomial1" = rnbinom(nTot, size = prs/invPhis, mu = prs),
                   "gaussian" = rnorm(nTot, mean = prs, sd = phis),
                   "gamma" = rgamma(nTot, shape = phis, scale = prs/phis),
                   "exponential" = rexp(nTot, rate = 1/prs),

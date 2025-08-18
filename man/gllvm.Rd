@@ -34,7 +34,7 @@ gllvm(
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
-  Ntrials = 1,
+  Ntrials = matrix(1),
   Power = 1.1,
   seed = NULL,
   scale.X = TRUE,
@@ -66,7 +66,7 @@ gllvm(
 
 \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for column-specific effects).}
 
-\item{family}{distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.}
+\item{family}{distribution function for responses. Options are \code{"negative.binomial"} and \code{"negative.binomial1"} (with log link), \code{poisson(link = "log")}, \code{binomial} (with probit, logit, or cloglog link), zero-inflated binomial (\code{ZIB}), zero-and-N-inflated binomial (\code{ZNIB}) zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method, with probit or logit link), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.}
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.}
 
@@ -76,7 +76,7 @@ gllvm(
 
 \item{lv.formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).}
 
-\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.}
+\item{lvCor}{correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}'), \code{corCS} (compound symmetry), and \code{propto} (proportional covariance, used as propto(a+b|group, matrix)). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.}
 
 \item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 
@@ -146,7 +146,7 @@ gllvm(
  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat).}
  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
- \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
+ \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal". "Unstructured" is block diagonal for ordinary random effects.}
  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
@@ -331,6 +331,7 @@ With ordinal family response classes must start from 0 or 1.
 \describe{
   \item{For count data \code{family = poisson()}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j}, or}
+  \item{ \code{family = "negative.binomial1"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}\phi_j}, or}
   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p_j)}.}
   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}

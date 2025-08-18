@@ -58,7 +58,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     object$sd$beta0 <- unique(object$sd$beta0)
   }
   if(is.null(parm)){
-    if (object$family == "negative.binomial") {
+    if (object$family %in% c("negative.binomial", "negative.binomial1")) {
       object$params$phi <- NULL
       object$sd$phi <- NULL
     }

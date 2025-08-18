@@ -31,11 +31,14 @@
 #' which leads to the residual covariance matrix \eqn{\Theta \Theta' + 2 \Gamma_j \Gamma_j' + diag(\Phi)}, where \eqn{\Gamma_j} holds the quadratic coefficients.
 #' Since the quadratic coefficients are constrained to be positive, the residual covariance in the latter case is, given the same coefficients on the linear term, equal or more positive than in the linear case.
 #' 
-#' The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametri-zation
+#' The residual covariance matrix with \code{adjust = 2} can be obtained by using Poisson-Gamma parametrization
 #' \deqn{Y_{ij} \sim Poisson(\mu_{ij} \lambda_j),}
 #' where \eqn{\lambda_j \sim Gamma(1/\phi_j, 1/\phi_j)} and \eqn{\mu_{ij}} is as above. The mean and the variance are of similar form as above and we have that
 #' \deqn{V(log(\mu_{ij} \lambda_j)) = V(log\mu_{ij}) + V(log\lambda_j) = \theta_j'\theta_j + \psi^{(1)}(1/\phi_j),}
-#' where \eqn{\psi^{(1)}} is the trigamma function.
+#' where \eqn{\psi^{(1)}} is the trigamma function. 
+#' 
+#' For the negative binomial (1) parameterization, we instead have \eqn{\lambda_{ij} \sim Gamma(\mu_{ij}\phi_j, \phi_j)}, so that \eqn{V(log \lambda_{ij} = \psi^{(1)}(\mu_{ij}\phi_j)}.
+#' As this makes the variance of the link-scale model-dependent, no correction is currently applied.
 #' 
 #' In the case of binomial distribution, the adjustment terms (\code{adjust = 1}) are 1 for probit link and \eqn{\pi^2/3} for logit link.
 #' These are obtained by treating binomial model as latent variable model. Assume
@@ -144,7 +147,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
   }
   
   
-  if(adjust > 0 && object$family %in% c("negative.binomial", "binomial", "gaussian","ordinal", "ZIB", "ZNIB", "ZINB")){
+  if(adjust > 0 && object$family %in% c("negative.binomial","binomial", "gaussian","ordinal", "ZIB", "ZNIB", "ZINB")){
   if(object$family %in% c("negative.binomial", "ZINB")){ 
     if(adjust == 1) {
         ResCov <- ResCov + diag(log(object$params$phi + 1), ncol=ncol(ResCov))

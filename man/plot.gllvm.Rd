@@ -21,7 +21,7 @@
 \arguments{
 \item{x}{an object of class 'gllvm'.}
 
-\item{which}{if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below.}
+\item{which}{if a subset of the plots is required, specify a subset of the numbers 1:5, see caption below. For objects of class "glmmVA" it should be a subset of 1:3.}
 
 \item{caption}{captions to appear above the plots.}
 
