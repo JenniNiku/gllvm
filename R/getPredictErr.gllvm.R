@@ -95,23 +95,52 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
   if((object$method %in% c("VA", "EVA"))){
     if(CMSEP) {
       sdb <- CMSEPf(object)
+
       # sdb<-sdA(object)
-      if(num.RR>0){
-        #variational covariances but add 0s for RRR
-        A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
-        A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
-      } else if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) {
+      if(object$num.lvcor >0){
+        if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) {
           A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
           for (i in 1:dim(A)[1]) {
             A[i,,]<-A[i,,]*object$AQ
           }
-      } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {
-        A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
-        for (i in 1:object$num.lvcor) {
-          A[,i,i]<- diag(object$A[,,i])
+        } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {
+          A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
+          if(all(dim(A) == dim(object$A))){
+            A<- object$A
+          } else {
+            for (i in 1:object$num.lvcor) {
+              A[,i,i]<- diag(object$A[,,i])
+            }
+          }
+          if(object$num.lvcor==1) A <- matrix(A[,1,1])
+        } else if((num.lv.c+num.lv)>0 & num.RR==0){
+          A<-object$A
+          if((num.lv.c+num.lv)==1) A <- A[,1,1]
         }
-        if(object$num.lvcor==1) A <- A[,1,1]
-      }else if((num.lv.c+num.lv)>0){
+        
+        if(object$num.lv.c > 0 |object$num.RR > 0){
+          if(NROW(A) != n) {
+            if(length(dim(A)) <3) {
+              object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%A)
+            } else {
+              object$A <- array(0,dim=c(n,dim(A)[2:3]))
+              for (k in 1:dim(A)[3]) {
+                object$A[,,k] = as.matrix(object$TMBfn$env$data$dLV%*%A[,,k]) # !!!
+              }
+              A <- object$A
+            }
+          }
+        }
+        if(num.RR>0){
+          #variational covariances but add 0s for RRR
+          A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+          A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+        }
+      } else if(num.RR>0){
+        #variational covariances but add 0s for RRR
+        A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+        A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
+      } else if((num.lv.c+num.lv)>0 & num.RR==0){
         A<-object$A
         if((num.lv.c+num.lv)==1) A <- A[,1,1]
       }
