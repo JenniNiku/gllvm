@@ -2418,29 +2418,59 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     D <- solve(D)
   }
   
+  if(prod(dim(D))!=0){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
+  
+  if(!is.null(fit$lvs) && inherits(fit$lvCor,"formula")){
+    n_nlv <- n_nlvc <- NROW(fit$lvs)
+    if((type!="residual") & (n_nlvc!=n) & (num.lv.c>0) & (n_nlvc != n)) {
+      namesvec <- names(fit$TMBfn$par[fit$Hess$incla])
+      dLV <- list(fit$TMBfn$env$data$dLV)
+      if((num.lv.c +num.lv)>1){
+        for (i in 2:(num.lv.c +num.lv)) {
+          dLV <- c(dLV, fit$TMBfn$env$data$dLV)
+        }
+      }
+      dLV <- bdiag(dLV)
+      # If LVs structured & type = conditional & num.lv.c>0, D must be resized with LV-design matrix
+      # Dold <- D
+      D <- cbind(D[,-(radidx+1:ncol(D))],D[,1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx]%*% t(dLV),D[,-c(1:(num.lv.c*n_nlvc+num.lv*n_nlv+radidx))])
+      D <- as.matrix(rbind(D[-(radidx+1:nrow(D)),], dLV%*% D[1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx,],D[-c(1:(num.lv.c*n_nlvc+num.lv*n_nlv+radidx)),]))
+      B <- as.matrix(cbind(B[,-(radidx+1:ncol(B))], B[,1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx]%*%t(dLV),B[,-c(1:(num.lv.c*n_nlvc+num.lv*n_nlv+radidx))]))
+      C <- t(B)
+      colnames(D)[1:(num.lv.c*n+num.lv*n)+radidx]<-row.names(D)[1:(num.lv.c*n+num.lv*n)+radidx]<- namesvec[1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx]
+      colnames(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<-row.names(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<- namesvec[-(1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx)]
+      n_nlv <- n_nlvc <- n
+    }
+  } else {
+    n_nlv <- n_nlvc <- n
+  }
+  
   sigma.lv <- fit$params$sigma.lv
   
   #we never scale the prediction regions for num.lv by sigma.lv.
   if(num.lv.c>0&num.lv>0){
-    sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR*ifelse(randomB==FALSE,1,0)),rep(1,num.lv))
+    sigma.lv <- c(rep(sigma.lv[1:num.lv.c],each=n_nlvc), rep(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),each=n), rep(rep(1,num.lv),each=n_nlv))
+    # sigma.lv <- c(sigma.lv[1:num.lv.c],rep(1,num.RR*ifelse(randomB==FALSE,1,0)),rep(1,num.lv))
   }else if(num.lv>0&num.lv.c==0){
-    sigma.lv <- c(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),rep(1,num.lv))
+    sigma.lv <- c(rep(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),each=n), rep(rep(1,num.lv),each=n_nlv))
+    # sigma.lv <- c(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),rep(1,num.lv))
   }else if(num.lv.c>0&num.lv==0){
-    sigma.lv <- c(sigma.lv,rep(1,num.RR*ifelse(randomB==FALSE,1,0)))
+    sigma.lv <- c(rep(sigma.lv,each=n_nlvc), rep(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),each=n))
+    # sigma.lv <- c(sigma.lv,rep(1,num.RR*ifelse(randomB==FALSE,1,0)))
   }else if(num.RR>0){
-    sigma.lv <- rep(1,num.RR*ifelse(randomB==FALSE,1,0))
+    sigma.lv <- c(rep(rep(1,num.RR*ifelse(randomB==FALSE,1,0)),each=n))
+    # sigma.lv <- rep(1,num.RR*ifelse(randomB==FALSE,1,0))
   }
   
-  if(prod(dim(D))!=0){colnames(D)<-row.names(D)<-names(fit$TMBfn$par[fit$Hess$incla])}
   if(radidx>0){
     if(prod(dim(D))==0&num.RR>0){
       D <- matrix(0,ncol=num.RR*n,nrow=num.RR*n)
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
     }else if(num.RR>0&randomB==FALSE){
-      D <- cbind(D[,1:(num.lv.c*n+radidx)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n+radidx))])
-      D <- rbind(D[1:(num.lv.c*n+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n+radidx)),])
-      B <- cbind(B[,1:(num.lv.c*n+radidx)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n+radidx))])
+      D <- cbind(D[,1:(num.lv.c*n_nlvc+radidx)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n_nlvc+radidx))])
+      D <- rbind(D[1:(num.lv.c*n_nlvc+radidx),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n_nlvc+radidx)),])
+      B <- cbind(B[,1:(num.lv.c*n_nlvc+radidx)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n_nlvc+radidx))])
       C <- t(B)
     }
   }else{
@@ -2449,9 +2479,9 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
       B <- matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n)
       C <- t(B)
     }else if(num.lv.c>0&num.RR>0&randomB==FALSE){
-      D <- cbind(D[,1:(num.lv.c*n)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n))])
-      D <- rbind(D[1:(num.lv.c*n),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n)),])
-      B <- cbind(B[,1:(num.lv.c*n)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n))])
+      D <- cbind(D[,1:(num.lv.c*n_nlvc)],matrix(0,nrow=nrow(D),ncol=num.RR*n),D[,-c(1:(num.lv.c*n_nlvc))])
+      D <- rbind(D[1:(num.lv.c*n_nlvc),],matrix(0,nrow=num.RR*n,ncol=ncol(D)),D[-c(1:(num.lv.c*n_nlvc)),])
+      B <- cbind(B[,1:(num.lv.c*n_nlvc)],matrix(0,nrow=sum(fit$Hess$incl),ncol=num.RR*n),B[,-c(1:(num.lv.c*n_nlvc))])
       C <- t(B)
     }else if(num.lv>0&num.RR>0&randomB==FALSE){
       D <- cbind(matrix(0,nrow=nrow(D),ncol=num.RR*n),D)
@@ -2461,6 +2491,7 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     }
   }
   
+  
   if(num.RR>0&randomB==FALSE){
     if((num.lv+num.lv.c+radidx)==0){colnames(D)<-rep("",ncol(D))}
     colnames(D)[colnames(D)==""]<-"XB"
@@ -2468,13 +2499,18 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   }
   
   if(num.lv.cor>0){
-    Q <- matrix(0,nrow=sum(names(fit$TMBfn$par)%in%c("u"))+radidx,ncol=dim(A)[1])
+    if(type=="residual"){
+      Q <- matrix(0,nrow=sum(names(fit$TMBfn$par)%in%c("u"))+radidx,ncol=dim(A)[1])
+      # Q <- matrix(0,nrow=sum(names(fit$TMBfn$par)%in%c("u")) + (num.RR*ifelse(randomB!=FALSE,0,1))*n_nlvc+radidx,ncol=dim(A)[1])
+    } else {
+      Q <- matrix(0,nrow=num.lv*n_nlv + (num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n_nlvc+radidx,ncol=dim(A)[1])
+    }
   }else{
     Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR*ifelse(randomB!=FALSE,0,1))*n+radidx,ncol=dim(A)[1])
     # Q <- matrix(0,nrow=(num.lv+num.lv.c+num.RR)*n+radidx,ncol=dim(A)[1])
   }
   
-  if((num.lv.c+num.RR)>0&randomB==FALSE){
+  if((num.lv.c+num.RR)>0&randomB==FALSE & type!="residual"){ # Used only for "conditional"/"marginal"
     for(q in 1:(num.lv.c+num.RR)){
       Q[(1:n)+n*(q-1)+radidx,which(names(fit$TMBfn$par[fit$Hess$incl])=="b_lv")[(1:ncol(fit$lv.X.design))+(ncol(fit$lv.X.design)*(q-1))]] <- fit$lv.X.design#/fit$params$sigma.lv[q] #divide here to multiply later in ordiplot
     }
@@ -2483,7 +2519,8 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   ####################################
   
   if(type=="conditional"|type=="marginal"&randomB!=FALSE){
-    S <- diag(c(rep(1,radidx),rep(sigma.lv,each=n)))
+    S <- diag(c(rep(1,radidx),sigma.lv))
+    # S <- diag(c(rep(1,radidx),rep(sigma.lv,each=n)))
     covb <- (Q+S%*%D%*%C)%*%(A)%*%(t(Q)+B%*%t(D)%*%S)  
   }else if(type=="residual"){
     covb <- (D%*%C)%*%(A)%*%(B%*%t(D))
@@ -2527,7 +2564,9 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     try({
       if(num.lv.cor>0){
         # nS<- nrow(fit$TMBfn$env$parameters$u)
-        nS<- nrow(fit$A)
+        if(type=="residual"){
+          nS<- nrow(fit$A)
+        } else {nS<- n}
         se <- simplify2array(sapply(1:nS,function(i)covb[seq(i,nS*(num.lv+num.lv.c+num.RR),by=nS),seq(i,nS*(num.lv+num.lv.c+num.RR),by=nS)],simplify=F))
       } else if((num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0))>0){
         se <- simplify2array(sapply(1:n,function(i)covb[seq(i,n*(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0)),by=n),seq(i,n*(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(randomB==FALSE&type!="residual",1,0)),by=n)],simplify=F))

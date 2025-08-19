@@ -1257,7 +1257,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           dLV <- Matrix::t(RElistLV$Zt)
           if(cstruclv == "corAR1")distLV = matrix(1:ncol(dLV))
           
-          num.lv.cor <- num.lv
+          num.lv.cor <- num.lv + num.lv.c
         }
       }
     }else{

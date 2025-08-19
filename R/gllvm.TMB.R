@@ -1059,6 +1059,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       # latent vars
       if((num.lv+num.lv.c)>0){
         u<-cbind(u)
+        if(num.lv.cor>0){
+          if(!corWithinLV) {
+            if(nrow(u) != nu){
+              u=as.matrix((Matrix::t(dLV)%*%u/Matrix::colSums(dLV))[1:nu,, drop=FALSE])
+            }
+          }
+        }
       } else {
         u<-matrix(0)
         if(num.RR==0)lambda = 0
@@ -1067,13 +1074,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list$u = factor(NA) 
         map.list$Au = factor(NA) 
       }
-      if(num.lv.cor>0){
-        if(!corWithinLV) {
-          if(nrow(u) != nu){
-            u=as.matrix((Matrix::t(dLV)%*%u/Matrix::colSums(dLV))[1:nu,, drop=FALSE])
-          }
-        }
-      }
+
       if(num.RR==0 && num.lv.c==0) map.list$b_lv = factor(NA)
       
       ## Row effect settings
@@ -1626,37 +1627,26 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       li2 <- names(param)=="lambda2"
       ui <- names(param)=="u"
       
-      if(num.lv.cor > 0){ # Correlated latent variables
-        if(corWithinLV){
-          lvs<-(matrix(param[ui],n,num.lv.cor))
-        } else {
-          lvs = matrix(param[ui],nu,num.lv.cor)
-          rownames(lvs) =colnames(dLV)
-          # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
+      if((num.lv+num.lv.c+num.RR) > 0){
+        if(num.lv.cor > 0){ # Correlated latent variables
+          if(corWithinLV){
+            lvs<-(matrix(param[ui],n,num.lv.cor))
+          } else {
+            lvs = matrix(param[ui],nu,num.lv.cor)
+            rownames(lvs) =colnames(dLV)
+            # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
+          }
+          sigma.lv <- abs(param[si])
+          
+          rho_lvc = param[names(param)=="rho_lvc"]
+          if((cstruclvn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
+          if((cstruclvn %in% c(2,4))) {
+            rho.lv<- exp(param[names(param)=="rho_lvc"]);
+            # scaledc<- exp(param[names(param)=="scaledc"]);
+          }
+        } else if((num.lv+num.lv.c)>0) {
+          lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
         }
-        sigma.lv <- abs(param[si])
-        theta <- matrix(0,p,num.lv.cor+num.RR)
-        if((num.lv.cor+num.RR)>1){
-          if(num.RR>0)diag(theta[,1:num.RR])<-1
-          diag(theta[,(num.RR+1):(num.RR+num.lv.cor)]) <- 1 #sigma.lv 
-        } else if((num.lv.cor+num.RR)==1) {
-          theta[1,1] <- 1 #sigma.lv[1]
-        }
-        
-        if(p>1) {
-          if(num.RR>0)theta[,1:num.RR][lower.tri(theta[,1:num.RR,drop=F],diag=FALSE)] <- param[li][1:(num.RR*p-num.RR*(num.RR+1)/2)];
-          theta[,(num.RR+1):(num.lv.cor+num.RR)][lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- tail(param[li], num.lv.cor*p-(num.lv.cor*(num.lv.cor+1)/2));
-        } else {
-          theta <- as.matrix(1)
-        }
-        rho_lvc = param[names(param)=="rho_lvc"]
-        if((cstruclvn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
-        if((cstruclvn %in% c(2,4))) {
-          rho.lv<- exp(param[names(param)=="rho_lvc"]);
-          # scaledc<- exp(param[names(param)=="scaledc"]);
-        }
-      } else if((num.lv+num.lv.c+num.RR) > 0){
-        if((num.lv+num.lv.c)>0)lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
         theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
@@ -2342,7 +2332,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             out$params$sigmaLvXcoef <- exp(head(sigmab_lv, ncol(lv.X)+num.lv.c+num.RR-1))
             }else if(randomB=="iid"){out$params$sigmaLvXcoef <- 1}
             if(randomB=="LV")names(out$params$sigmaLvXcoef) <- paste("CLV",1:(num.lv.c+num.RR), sep="")
-            if(randomB=="P")names(out$params$sigmaLvXcoef) <- c(colnames(lv.X), paste("CLV",2:(num.lv.c+num.RR), sep=""))
+            if(randomB=="P")names(out$params$sigmaLvXcoef) <- c(colnames(lv.X), paste("CLV",2:(num.lv.c+num.RR), sep=""))[1:length(out$params$sigmaLvXcoef)]
             # if(randomB=="all")names(out$params$sigmaLvXcoef) <- paste(paste("CLV",1:(num.lv.c+num.RR),sep=""),rep(colnames(lv.X),each=num.RR+num.lv.c),sep=".")
             if(randomB=="single")names(out$params$sigmaLvXcoef) <- NULL
             if(ncol(csBlv)==2){

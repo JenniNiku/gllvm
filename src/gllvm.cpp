@@ -91,9 +91,9 @@ Type objective_function<Type>::operator() ()
   // int nt =n;
   int nu =n; //CorLV
   
-  if(num_corlv>0){ //CorLV
-    nu = dLV.cols();
-  }
+  // if(num_corlv>0){ //CorLV
+  //   nu = dLV.cols();
+  // }
   
   vector<Type> iphi = exp(lg_phi);
   
@@ -102,9 +102,20 @@ Type objective_function<Type>::operator() ()
   int nlvr = num_lv+num_lv_c;//treating constr. ord random slopes as a LV, to use existing infrastructure for integration
   
   matrix<Type> ucopy = u;
-  if(num_corlv>0){
-    nlvr=0; num_lv=0; num_lv_c=0;
+  // if(num_corlv>0){
+  //   nlvr=0; num_lv=0; num_lv_c=0;
+  //   quadratic=0;
+  // }
+  if(dLV.cols()>1){ //CorLV comb
+    num_corlv = nlvr;
+    u = (dLV*ucopy);
+    // if(num_corlv>0){ //CorLV
+    nu = dLV.cols();
+    // }
+    // nlvr=0; num_lv=0; num_lv_c=0;
+    //Not yet combined with num_RR or quadratic
     quadratic=0;
+    // num_RR=0;
   }
   
   // Distance matrix calculated from the coordinates for LVs
@@ -298,30 +309,30 @@ Type objective_function<Type>::operator() ()
   }
   
   // Loadings for correlated latent variables //CorLV
-  matrix<Type> newlamCor;
+  // matrix<Type> newlamCor;
   // matrix <Type> Delta_clv(num_corlv,num_corlv);
-  if((num_corlv)>0){
-    newlamCor = matrix <Type> (num_corlv,p);
-    //To create lambda as matrix Upper triangle
-    // put LV loadings into a matrix
-    for (int j=0; j<p; j++){
-      for (int i=0; i<num_corlv; i++){
-        if(j<i){
-          newlamCor(i,j) = 0;
-        }else if (j == i){
-          newlamCor(i,j) = 1;
-          // newlamCor(i,j) = exp(sigmaLV(i));
-        }else if(j>i){
-          newlamCor(i,j) = lambda(num_RR*p-num_RR*(num_RR+1)/2+j+i*p-(i*(i-1))/2-2*i-1);
-        }
-      }
-    }
-    for (int d=0; d<num_corlv; d++){
-      // Delta_clv(d,d) = fabs(sigmaLV(d));
-      newlamCor.row(d)*=fabs(sigmaLV(d));
-      // newlamCor.row(d)*=exp(sigmaLV(d));
-    }
-  }
+  // if((num_corlv)>0){
+  //   newlamCor = matrix <Type> (num_corlv,p);
+  //   //To create lambda as matrix Upper triangle
+  //   // put LV loadings into a matrix
+  //   for (int j=0; j<p; j++){
+  //     for (int i=0; i<num_corlv; i++){
+  //       if(j<i){
+  //         newlamCor(i,j) = 0;
+  //       }else if (j == i){
+  //         newlamCor(i,j) = 1;
+  //         // newlamCor(i,j) = exp(sigmaLV(i));
+  //       }else if(j>i){
+  //         newlamCor(i,j) = lambda(num_RR*p-num_RR*(num_RR+1)/2+j+i*p-(i*(i-1))/2-2*i-1);
+  //       }
+  //     }
+  //   }
+  //   for (int d=0; d<num_corlv; d++){
+  //     // Delta_clv(d,d) = fabs(sigmaLV(d));
+  //     newlamCor.row(d)*=fabs(sigmaLV(d));
+  //     // newlamCor.row(d)*=exp(sigmaLV(d));
+  //   }
+  // }
   
   matrix<Type> mu(n,p);
   
@@ -358,7 +369,7 @@ Type objective_function<Type>::operator() ()
     
     // lltOfB.matrixL() = A(0).template triangularView<Lower>;//wouuld be great if we could store A(i) each as a triangular matrix where the upper zeros are ignored
     // Set up variational covariance matrix for LVs 
-    if(nlvr>0){
+    if((nlvr>0) & (num_corlv==0)){
       if((num_lv+num_lv_c)>0){
         // log-Cholesky parametrization for A_i:s
         // don't include num_RR for random slopes, comes in later
@@ -406,7 +417,16 @@ Type objective_function<Type>::operator() ()
         A(i) = Delta*A(i);
       }
       
-    }
+    } else if(num_corlv > 0) {
+      u *= Delta;
+      if((num_RR*random(2))>0 && (quadratic)>0){
+        Delta.conservativeResize(nlvr+num_RR,nlvr+num_RR);
+        for(int d=nlvr; d<(nlvr+num_RR); d++){
+          Delta.col(d).setZero();
+          Delta.row(d).setZero();
+        }
+      }
+    } // ad else for num_corlv to create ucopy & create D*u*= Delta;
     
     //random slopes for constr. ord.
     vector<matrix<Type>> Ab_lvcov;  //covariance of LVs due to random slopes
@@ -538,6 +558,7 @@ Type objective_function<Type>::operator() ()
           nlvr += num_RR;
           newlam.bottomRows(num_RR) = RRgamma.bottomRows(num_RR);
           u.rightCols(num_RR) += x_lv*b_lv.rightCols(num_RR);
+          REPORT(RRgamma);
         }
         
         if((nlvr-num_RR-num_lv_c)>0){
@@ -2427,388 +2448,6 @@ Type objective_function<Type>::operator() ()
     }
     
     
-    // Correlated LVs
-    if(num_corlv>0) { //CorLV
-      int i,j,d;
-      int arank = 2;
-      matrix<Type> AQ(num_corlv,num_corlv);
-      AQ.setZero(); AQ.diagonal().fill(1.0);
-      
-      if(ucopy.rows() == nu){
-        eta += (dLV*ucopy)*newlamCor;
-        
-        if(cstruclv==0){
-          vector<matrix<Type>> Alvm(nu);
-          
-          for(int d=0; d<nu; d++){
-            Alvm(d).resize(num_corlv,num_corlv);
-            Alvm(d).setZero();
-          }
-          
-          // Variational covariance for row effects
-          for (int q=0; q<(num_corlv); q++){
-            for (int d=0; d<(nu); d++){
-              Alvm(d)(q,q)=exp(Au(q*nu+d));
-            }
-          }
-          if((Astruc>0) & (Au.size()>((num_corlv)*nu))){//unstructured cov
-            int k=0;
-            for (int c=0; c<(num_corlv); c++){
-              for (int r=c+1; r<(num_corlv); r++){
-                for(int d=0; d<nu; d++){
-                  Alvm(d)(r,c)=Au(nu*num_corlv+k*nu+d);
-                }
-                k++;
-              }}
-          }
-          
-          for (d=0; d<nu; d++) {
-            nll -= atomic::logdet(Alvm(d)) + 0.5*( - (Alvm(d)*Alvm(d).transpose()).trace() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());  // nll -= atomic::logdet(Alvm.col(d).matrix()) + 0.5*( - (Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()).diagonal().sum() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
-            for (j=0; j<p;j++){
-              cQ.col(j) += 0.5*dLV.col(d)*((newlamCor.col(j).transpose()*(Alvm(d)*Alvm(d).transpose()))*newlamCor.col(j));
-            }
-          }
-          nll -= 0.5*(nu*num_corlv);
-          
-        } else {
-          vector<matrix<Type> > Slv(num_corlv);
-          for(int q=0; q<num_corlv; q++){
-            Slv(q).resize(nu,nu);
-            Slv(q).setZero();
-          }
-          
-          matrix<Type> Slvinv(nu,nu);
-          
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated between sites/groups
-            if(cstruclv==1){// AR1 covariance
-              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
-            } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
-              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
-            } else {
-              DiSc_lv.fill(0.0);
-              for(int j=0; j<dc_lv.cols(); j++){
-                DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled_lv = dc_lv*DiSc_lv;
-              if(cstruclv==2){// exp decaying
-                Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled_lv);
-              } else if(cstruclv==4) {// Matern
-                Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), nu, dc_scaled_lv);
-              }
-            }
-            nll -= 0.5*(nu - atomic::logdet(Slv(q)));
-          }
-          
-          if(Astruc<3){
-            
-            for(int q=0; q<num_corlv; q++){
-              
-              // u^T*Sinv*u
-              Slvinv = atomic::matinv(Slv(q));
-              nll -= - 0.5*( ucopy.col(q).transpose()*(Slvinv*ucopy.col(q)) ).sum();
-              
-              if(Astruc==0 ){//diagonal A cov
-                vector<Type> Atemp(nu);
-                Atemp.setZero();
-                
-                for (d=0; d<(nu); d++){
-                  Atemp(d)=exp(Au(q*nu+d));
-                  // - tr(Sinv*A)
-                  nll -= - 0.5*Slvinv(d,d)*pow(Atemp(d),2);
-                }
-                // 0.5*lambda_qj*A_qii*lambda_qj
-                for (j=0; j<p;j++){
-                  cQ.col(j) = cQ.col(j) + 0.5*pow(newlamCor(q,j),2)*(dLV*(Atemp.array()*Atemp.array()).matrix());
-                }
-                // 0.5*logdet(A)
-                nll -= log(Atemp.prod());
-                
-              } else if((Astruc>0)){
-                matrix<Type> Atemp(nu, nu);
-                Atemp.setZero();
-                
-                for (d=0; d<(nu); d++){
-                  Atemp(d,d)=exp(Au(q*nu+d));
-                }
-                int k=0;
-                if((Astruc==1) & (Au.size() > nu*num_corlv) ){ // unstructured variational covariance
-                  for (d=0; d<nu; d++){
-                    for (int r=d+1; r<(nu); r++){
-                      Atemp(r,d)=Au(nu*num_corlv+k*num_corlv+q);
-                      k++;
-                    }
-                  }
-                } else if((Astruc==2) & (Au.size() > nu*num_corlv)) { // bdNN variational covariance
-                  arank = NN.rows();
-                  for (int r=0; r<(arank); r++){
-                    Atemp(NN(r,0)-1,NN(r,1)-1)=Au(nu*num_corlv+k*num_corlv+q);
-                    k++;
-                  }
-                }
-                // REPORT(k);
-                
-                // 0.5*lambda_qj*A_qii*lambda_qj
-                for (j=0; j<p;j++){
-                  cQ.col(j) += 0.5*pow(newlamCor(q,j),2)*(dLV*((Atemp*Atemp.transpose()).diagonal().array()).matrix()); //this works
-                }
-                
-                // 0.5*logdet(A) -0.5*tr(Sinv*A)
-                nll -= log(Atemp.diagonal().prod()) + 0.5*(- (Slvinv*(Atemp*Atemp.transpose())).diagonal().sum());
-              }
-              
-            }
-            
-          } else if((num_corlv>1) & (Astruc<6)){
-            // UNN/Kronecker variational covariance
-            matrix<Type> Alvm(nu,nu);
-            Alvm.setZero();
-            
-            for (d=0; d<(nu); d++){
-              Alvm(d,d)=exp(Au(d));
-            }
-            
-            int k=0;
-            arank = NN.rows();
-            if(Au.size()>(nu+num_corlv*(num_corlv+1)/2)) {
-              if(Astruc == 4) {
-                for (int r=0; r<(arank); r++){
-                  Alvm(NN(r,0)-1,NN(r,1)-1)=Au(nu+k);
-                  k++;
-                }
-              } else if(Astruc == 3) {
-                for (d=0; d<nu; d++){
-                  for (int r=d+1; r<(nu); r++){
-                    Alvm(r,d)=Au(nu+k);
-                    k++;
-                  }
-                }
-              }
-            }
-            
-            for (d=0; d<num_corlv; d++){
-              AQ(d,d)=exp(Au(nu+k));
-              k++;
-              for (int r=d+1; r<(num_corlv); r++){
-                AQ(r,d)=Au(nu+k);
-                k++;
-              }
-            }
-            
-            // logdet(A) for triang.mat = prod of diag. elements
-            nll -= num_corlv*log(Alvm.diagonal().prod()) + nu*log(AQ.diagonal().prod()); // Moved right after Slv initialization: + 0.5*num_corlv*nu;
-            // nll -= num_corlv*log(Alvm.determinant()) + nu*log(AQ.determinant()) + 0.5*num_corlv*nu;
-            
-            Alvm *= Alvm.transpose();
-            AQ *= AQ.transpose();
-            
-            // tr(Sinv*A) + u^T*Sinv*u
-            for(int q=0; q<num_corlv; q++){
-              Slvinv = atomic::matinv(Slv(q));
-              nll -= 0.5*(- AQ(q,q)*(Slvinv*Alvm).trace()-( ucopy.col(q).transpose()*(Slvinv*ucopy.col(q)) ).sum());
-            }
-            
-            // 0.5*lambda_qj*A_qii*lambda_qj
-            for (j=0; j<p;j++){
-              cQ.col(j) += 0.5*(dLV*Alvm.diagonal())*((newlamCor.col(j).transpose()*AQ)*newlamCor.col(j));
-            }
-            
-            REPORT(Alvm);
-          }
-          
-        }
-      } else {
-        
-        eta += ucopy*newlamCor;
-        vector<matrix<Type> > Slv(num_corlv);
-        for(int q=0; q<num_corlv; q++){
-          Slv(q).resize(times,times);
-          Slv(q).setZero();
-        }
-        matrix<Type> Slvinv(times,times);
-        
-        // int acol = times;
-        // if(Astruc>0){
-        //   acol = arank;
-        // }
-        //
-        if(Astruc<3){
-          
-          vector<matrix<Type>> Alvm(num_corlv);
-          for(int d=0; d<num_corlv; d++){
-            Alvm(d).resize(times*nu,times*nu);
-            Alvm(d).setZero();
-          }
-          
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated within groups
-            
-            // Variational covariance for row effects
-            //diagonal
-            for(i=0; i<nu; i++){
-              for (d=0; d<(times); d++){
-                Alvm(q)(i*times+d,i*times+d)=exp(Au(q*n+i*times+d));
-              }
-            }
-            
-            if((Astruc>0) && (Au.size() > nu*times*num_corlv)){//reduced rank cov
-              int k=0;
-              if(Astruc==1){
-                for(i=0; i<nu; i++){
-                  for (d=0; ((d<arank) && (d<times)); d++){
-                    for (int r=d+1; r<(times); r++){
-                      Alvm(q)(i*times+r,i*times+d)=Au(nu*times*num_corlv+k*num_corlv+q);
-                      k++;
-                    }
-                  }
-                }
-              } else if(Astruc==2) { //bdNN var cov
-                arank = NN.rows();
-                for(i=0; i<nu; i++){
-                  for (int r=0; r<(arank); r++){
-                    Alvm(q)(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times*num_corlv+k*num_corlv+q);
-                    k++;
-                  }
-                }
-              }
-            }
-            
-            
-            for (j=0; j<p;j++){
-              for (i=0; i<(times*nu); i++) {
-                cQ(i,j) += 0.5*pow(newlamCor(q,j),2)*(Alvm(q).row(i)*Alvm(q).row(i).transpose()).sum();
-              }
-            }
-            // 0.5*logdet(A)
-            nll -= log(Alvm(q).diagonal().prod()); //log(Alvm(q).determinant());
-            
-            // Define covariance matrix
-            if(cstruclv==1){// AR1 covariance
-              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
-            } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
-              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
-            } else {
-              DiSc_lv.setZero();
-              for(int j=0; j<dc_lv.cols(); j++){
-                DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled_lv = dc_lv*DiSc_lv;
-              if(cstruclv==2){// exp decaying
-                Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled_lv);
-              } else if(cstruclv==4) {// matern
-                Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times, dc_scaled_lv);
-              }
-            }
-            
-            nll -= 0.5*nu*(times - atomic::logdet(Slv(q)));
-            
-            Slvinv = atomic::matinv(Slv(q));
-            matrix <Type> Alvmblock(times,times);
-            matrix <Type> ucopyblock(times,1);
-            for (i=0; i<nu; i++) {
-              Alvmblock.setZero();
-              ucopyblock.setZero();
-              Alvmblock = Alvm(q).block(i*times,i*times,times,times)*Alvm(q).block(i*times,i*times,times,times).transpose();
-              ucopyblock = ucopy.block(i*times,q,times,1);
-              nll -=  0.5*(- (Slvinv*Alvmblock).trace()-(ucopyblock.transpose()*Slvinv*ucopyblock).sum());
-            }
-            
-          }
-          
-          REPORT(Alvm);
-        } else if(num_corlv>1){
-          // Kron A=AQ*Alvm
-          matrix<Type> Alvm(times*nu,times*nu);
-          Alvm.setZero();
-          // Variational covariance
-          //diagonal
-          for(i=0; i<nu; i++){
-            for (d=0; d<(times); d++){
-              Alvm(i*times+d,i*times+d)=exp(Au(i*times+d));
-            }
-          }
-          
-          //reduced rank cov
-          int k=0;
-          arank = NN.rows();
-          if(Au.size()>(nu*times+num_corlv*(num_corlv+1)/2)) {
-            if(Astruc == 4) {
-              for(i=0; i<nu; i++){
-                for (int r=0; r<(arank); r++){
-                  Alvm(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times+k);
-                  k++;
-                }
-              }
-            } else if(Astruc == 3){
-              for(i=0; i<nu; i++){
-                for (d=0; (d<times); d++){
-                  for (int r=d+1; r<(times); r++){
-                    Alvm(i*times+r,i*times+d)=Au(nu*times+k);
-                    k++;
-                  }
-                }
-              }
-            }
-          }
-          //
-          for (d=0; d<num_corlv; d++){
-            AQ(d,d)=exp(Au(nu*times+k));
-            k++;
-            for (int r=d+1; r<(num_corlv); r++){
-              AQ(r,d)=Au(nu*times+k);
-              k++;
-            }
-          }
-          nll -= num_corlv*log(Alvm.diagonal().prod()) + times*nu*log(AQ.diagonal().prod()) + 0.5*num_corlv*times*nu;
-          // nll -= num_corlv*log(Alvm.determinant()) + times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
-          // Alvm *= Alvm.transpose();
-          // AQ *= AQ.transpose();
-          
-          for (j=0; j<p;j++){
-            cQ.col(j) += 0.5*(Alvm*Alvm.transpose()).diagonal().matrix()*((newlamCor.col(j).transpose()*(AQ*AQ.transpose()))*newlamCor.col(j));
-          }
-          
-          for(int q=0; q<num_corlv; q++){
-            // site specific LVs, which are correlated within groups
-            // Slv.setZero();
-            
-            // Define covariance matrix
-            if(cstruclv==1){// AR1 covariance
-              Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
-            } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
-              Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
-            } else {
-              DiSc_lv.setZero();
-              for(int j=0; j<dc_lv.cols(); j++){
-                DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
-              }
-              dc_scaled_lv = dc_lv*DiSc_lv;
-              if(cstruclv==2){// exp decaying
-                Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled_lv);
-              } else if(cstruclv==4) {// matern
-                Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times, dc_scaled_lv);
-              }
-            }
-            
-            nll -= - 0.5*nu*atomic::logdet(Slv(q));
-            Slvinv = atomic::matinv(Slv(q));
-            matrix <Type> Alvmblock;
-            matrix <Type> ucopyblock;
-            for (i=0; i<nu; i++) {
-              Alvmblock = Alvm.col(q).matrix().block(i*times,i*times,times,times)*Alvm.col(q).matrix().block(i*times,i*times,times,times).transpose();
-              ucopyblock = ucopy.block(i*times,q,times,1);
-              nll -=  0.5*(- (AQ.row(q)*AQ.row(q).transpose()).sum()*(Slvinv*Alvmblock).trace() - (ucopyblock.transpose()*(Slvinv*ucopyblock)).sum());
-            }
-            
-          }
-          REPORT(Alvm);
-        }
-        
-        
-      }
-      REPORT(AQ);
-    }
-    
     vector<Eigen::DiagonalMatrix<Type, Eigen::Dynamic>> D(p);
     
     if(nlvr>0){
@@ -2829,12 +2468,405 @@ Type objective_function<Type>::operator() ()
       
       // Update cQ for linear term
       //Binomial, Gaussian, Ordinal
-      
-      for (int i=0; i<n; i++) {
-        for (int j=0; j<p;j++){
-          cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
+      if(num_corlv==0){
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<p;j++){
+            cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
+          }
         }
+      } else if(num_corlv>0) { //CorLV // Correlated LVs
+        int i,j,d;
+        int arank = 2;
+        matrix<Type> AQ(num_corlv,num_corlv);
+        AQ.setZero(); AQ.diagonal().fill(1.0);
+        
+        // matrix <Type> newlamCor(num_corlv,p);
+        // for (int d=0; d<num_corlv; d++){
+        //   newlamCor.row(d)=newlam.row(d);
+        //   // newlamCor.row(d)=newlam.row(d)*fabs(sigmaLV(d));
+        // }
+        if(ucopy.rows() == nu){
+          // eta += (dLV*ucopy)*newlamCor;
+          
+          if(cstruclv==0){
+            vector<matrix<Type>> Alvm(nu);
+            
+            for(int d=0; d<nu; d++){
+              Alvm(d).resize(num_corlv,num_corlv);
+              Alvm(d).setZero();
+            }
+            
+            // Variational covariance for row effects
+            for (int q=0; q<(num_corlv); q++){
+              for (int d=0; d<(nu); d++){
+                Alvm(d)(q,q)=exp(Au(q*nu+d));
+              }
+            }
+            if((Astruc>0) & (Au.size()>((num_corlv)*nu))){//unstructured cov
+              int k=0;
+              for (int c=0; c<(num_corlv); c++){
+                for (int r=c+1; r<(num_corlv); r++){
+                  for(int d=0; d<nu; d++){
+                    Alvm(d)(r,c)=Au(nu*num_corlv+k*nu+d);
+                  }
+                  k++;
+                }}
+            }
+            
+            for (d=0; d<nu; d++) {
+              nll -= atomic::logdet(Alvm(d)) + 0.5*( - (Alvm(d)*Alvm(d).transpose()).trace() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());  // nll -= atomic::logdet(Alvm.col(d).matrix()) + 0.5*( - (Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()).diagonal().sum() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
+              for (j=0; j<p;j++){
+                cQ.col(j) += 0.5*dLV.col(d)*((newlam.col(j).transpose()*((Delta*Alvm(d))*(Delta*Alvm(d)).transpose()))*newlam.col(j));
+              }
+            }
+            nll -= 0.5*(nu*num_corlv);
+            
+            REPORT(Alvm);
+          } else {
+            vector<matrix<Type> > Slv(num_corlv);
+            for(int q=0; q<num_corlv; q++){
+              Slv(q).resize(nu,nu);
+              Slv(q).setZero();
+            }
+            
+            matrix<Type> Slvinv(nu,nu);
+            
+            for(int q=0; q<num_corlv; q++){
+              // site specific LVs, which are correlated between sites/groups
+              if(cstruclv==1){// AR1 covariance
+                Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), nu);
+              } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
+                Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), nu);
+              } else {
+                DiSc_lv.fill(0.0);
+                for(int j=0; j<dc_lv.cols(); j++){
+                  DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
+                }
+                dc_scaled_lv = dc_lv*DiSc_lv;
+                if(cstruclv==2){// exp decaying
+                  Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled_lv);
+                } else if(cstruclv==4) {// Matern
+                  Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), nu, dc_scaled_lv);
+                }
+              }
+              nll -= 0.5*(nu - atomic::logdet(Slv(q)));
+            }
+            
+            if(Astruc<3){
+              
+              for(int q=0; q<num_corlv; q++){
+                
+                // u^T*Sinv*u
+                Slvinv = atomic::matinv(Slv(q));
+                nll -= - 0.5*( ucopy.col(q).transpose()*(Slvinv*ucopy.col(q)) ).sum();
+                
+                if(Astruc==0 ){//diagonal A cov
+                  vector<Type> Atemp(nu);
+                  Atemp.setZero();
+                  
+                  for (d=0; d<(nu); d++){
+                    Atemp(d)=exp(Au(q*nu+d));
+                    // - tr(Sinv*A)
+                    nll -= - 0.5*Slvinv(d,d)*pow(Atemp(d),2);
+                  }
+                  // 0.5*lambda_qj*A_qii*lambda_qj
+                  for (j=0; j<p;j++){
+                    cQ.col(j) = cQ.col(j) + 0.5*pow(newlam(q,j),2)*(dLV*(pow(Delta(q,q),2)*Atemp.array()*Atemp.array()).matrix());
+                  }
+                  // 0.5*logdet(A)
+                  nll -= log(Atemp.prod());
+                  
+                } else if((Astruc>0)){
+                  matrix<Type> Atemp(nu, nu);
+                  Atemp.setZero();
+                  
+                  for (d=0; d<(nu); d++){
+                    Atemp(d,d)=exp(Au(q*nu+d));
+                  }
+                  int k=0;
+                  if((Astruc==1) & (Au.size() > nu*num_corlv) ){ // unstructured variational covariance
+                    for (d=0; d<nu; d++){
+                      for (int r=d+1; r<(nu); r++){
+                        Atemp(r,d)=Au(nu*num_corlv+k*num_corlv+q);
+                        k++;
+                      }
+                    }
+                  } else if((Astruc==2) & (Au.size() > nu*num_corlv)) { // bdNN variational covariance
+                    arank = NN.rows();
+                    for (int r=0; r<(arank); r++){
+                      Atemp(NN(r,0)-1,NN(r,1)-1)=Au(nu*num_corlv+k*num_corlv+q);
+                      k++;
+                    }
+                  }
+                  // REPORT(k);
+                  
+                  // 0.5*lambda_qj*A_qii*lambda_qj
+                  for (j=0; j<p;j++){
+                    cQ.col(j) += 0.5*pow(newlam(q,j),2)*(dLV*((pow(Delta(q,q),2)*Atemp*Atemp.transpose()).diagonal().array()).matrix()); //this works
+                  }
+                  
+                  // 0.5*logdet(A) -0.5*tr(Sinv*A)
+                  nll -= log(Atemp.diagonal().prod()) + 0.5*(- (Slvinv*(Atemp*Atemp.transpose())).diagonal().sum());
+                }
+                
+              }
+              
+            } else if((num_corlv>1) & (Astruc<6)){
+              // UNN/Kronecker variational covariance
+              matrix<Type> Alvm(nu,nu);
+              Alvm.setZero();
+              
+              for (d=0; d<(nu); d++){
+                Alvm(d,d)=exp(Au(d));
+              }
+              
+              int k=0;
+              arank = NN.rows();
+              if(Au.size()>(nu+num_corlv*(num_corlv+1)/2)) {
+                if(Astruc == 4) {
+                  for (int r=0; r<(arank); r++){
+                    Alvm(NN(r,0)-1,NN(r,1)-1)=Au(nu+k);
+                    k++;
+                  }
+                } else if(Astruc == 3) {
+                  for (d=0; d<nu; d++){
+                    for (int r=d+1; r<(nu); r++){
+                      Alvm(r,d)=Au(nu+k);
+                      k++;
+                    }
+                  }
+                }
+              }
+              
+              for (d=0; d<num_corlv; d++){
+                AQ(d,d)=exp(Au(nu+k));
+                k++;
+                for (int r=d+1; r<(num_corlv); r++){
+                  AQ(r,d)=Au(nu+k);
+                  k++;
+                }
+              }
+              
+              // logdet(A) for triang.mat = prod of diag. elements
+              nll -= num_corlv*log(Alvm.diagonal().prod()) + nu*log(AQ.diagonal().prod()); // Moved right after Slv initialization: + 0.5*num_corlv*nu;
+              // nll -= num_corlv*log(Alvm.determinant()) + nu*log(AQ.determinant()) + 0.5*num_corlv*nu;
+              
+              Alvm *= Alvm.transpose();
+              AQ *= AQ.transpose();
+              
+              // tr(Sinv*A) + u^T*Sinv*u
+              for(int q=0; q<num_corlv; q++){
+                Slvinv = atomic::matinv(Slv(q));
+                nll -= 0.5*(- AQ(q,q)*(Slvinv*Alvm).trace()-( ucopy.col(q).transpose()*(Slvinv*ucopy.col(q)) ).sum());
+              }
+              
+              // 0.5*lambda_qj*A_qii*lambda_qj
+              for (j=0; j<p;j++){
+                cQ.col(j) += 0.5*(dLV*Alvm.diagonal())*((newlam.col(j).transpose()*(Delta*AQ*Delta.transpose()))*newlam.col(j));
+              }
+              
+              REPORT(Alvm);
+            }
+            
+          }
+        } else {
+          
+          // eta += ucopy*newlamCor;
+          vector<matrix<Type> > Slv(num_corlv);
+          for(int q=0; q<num_corlv; q++){
+            Slv(q).resize(times,times);
+            Slv(q).setZero();
+          }
+          matrix<Type> Slvinv(times,times);
+          
+          // int acol = times;
+          // if(Astruc>0){
+          //   acol = arank;
+          // }
+          //
+          if(Astruc<3){
+            
+            vector<matrix<Type>> Alvm(num_corlv);
+            for(int d=0; d<num_corlv; d++){
+              Alvm(d).resize(times*nu,times*nu);
+              Alvm(d).setZero();
+            }
+            
+            for(int q=0; q<num_corlv; q++){
+              // site specific LVs, which are correlated within groups
+              
+              // Variational covariance for row effects
+              //diagonal
+              for(i=0; i<nu; i++){
+                for (d=0; d<(times); d++){
+                  Alvm(q)(i*times+d,i*times+d)=exp(Au(q*n+i*times+d));
+                }
+              }
+              
+              if((Astruc>0) && (Au.size() > nu*times*num_corlv)){//reduced rank cov
+                int k=0;
+                if(Astruc==1){
+                  for(i=0; i<nu; i++){
+                    for (d=0; ((d<arank) && (d<times)); d++){
+                      for (int r=d+1; r<(times); r++){
+                        Alvm(q)(i*times+r,i*times+d)=Au(nu*times*num_corlv+k*num_corlv+q);
+                        k++;
+                      }
+                    }
+                  }
+                } else if(Astruc==2) { //bdNN var cov
+                  arank = NN.rows();
+                  for(i=0; i<nu; i++){
+                    for (int r=0; r<(arank); r++){
+                      Alvm(q)(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times*num_corlv+k*num_corlv+q);
+                      k++;
+                    }
+                  }
+                }
+              }
+              
+              
+              for (j=0; j<p;j++){
+                for (i=0; i<(times*nu); i++) {
+                  cQ(i,j) += 0.5*pow(newlam(q,j),2)*pow(Delta(q,q),2)*(Alvm(q).row(i)*Alvm(q).row(i).transpose()).sum();
+                }
+              }
+              // 0.5*logdet(A)
+              nll -= log(Alvm(q).diagonal().prod()); //log(Alvm(q).determinant());
+              
+              // Define covariance matrix
+              if(cstruclv==1){// AR1 covariance
+                Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+              } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
+                Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+              } else {
+                DiSc_lv.setZero();
+                for(int j=0; j<dc_lv.cols(); j++){
+                  DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
+                }
+                dc_scaled_lv = dc_lv*DiSc_lv;
+                if(cstruclv==2){// exp decaying
+                  Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled_lv);
+                } else if(cstruclv==4) {// matern
+                  Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times, dc_scaled_lv);
+                }
+              }
+              
+              nll -= 0.5*nu*(times - atomic::logdet(Slv(q)));
+              
+              Slvinv = atomic::matinv(Slv(q));
+              matrix <Type> Alvmblock(times,times);
+              matrix <Type> ucopyblock(times,1);
+              for (i=0; i<nu; i++) {
+                Alvmblock.setZero();
+                ucopyblock.setZero();
+                Alvmblock = Alvm(q).block(i*times,i*times,times,times)*Alvm(q).block(i*times,i*times,times,times).transpose();
+                ucopyblock = ucopy.block(i*times,q,times,1);
+                nll -=  0.5*(- (Slvinv*Alvmblock).trace()-(ucopyblock.transpose()*Slvinv*ucopyblock).sum());
+              }
+              
+            }
+            
+            REPORT(Alvm);
+          } else if(num_corlv>1){
+            // Kron A=AQ*Alvm
+            matrix<Type> Alvm(times*nu,times*nu);
+            Alvm.setZero();
+            // Variational covariance
+            //diagonal
+            for(i=0; i<nu; i++){
+              for (d=0; d<(times); d++){
+                Alvm(i*times+d,i*times+d)=exp(Au(i*times+d));
+              }
+            }
+            
+            //reduced rank cov
+            int k=0;
+            arank = NN.rows();
+            if(Au.size()>(nu*times+num_corlv*(num_corlv+1)/2)) {
+              if(Astruc == 4) {
+                for(i=0; i<nu; i++){
+                  for (int r=0; r<(arank); r++){
+                    Alvm(i*times+NN(r,0)-1,i*times+NN(r,1)-1)=Au(nu*times+k);
+                    k++;
+                  }
+                }
+              } else if(Astruc == 3){
+                for(i=0; i<nu; i++){
+                  for (d=0; (d<times); d++){
+                    for (int r=d+1; r<(times); r++){
+                      Alvm(i*times+r,i*times+d)=Au(nu*times+k);
+                      k++;
+                    }
+                  }
+                }
+              }
+            }
+            //
+            for (d=0; d<num_corlv; d++){
+              AQ(d,d)=exp(Au(nu*times+k));
+              k++;
+              for (int r=d+1; r<(num_corlv); r++){
+                AQ(r,d)=Au(nu*times+k);
+                k++;
+              }
+            }
+            nll -= num_corlv*log(Alvm.diagonal().prod()) + times*nu*log(AQ.diagonal().prod()) + 0.5*num_corlv*times*nu;
+            // nll -= num_corlv*log(Alvm.determinant()) + times*nu*log(AQ.determinant()) + 0.5*num_corlv*times*nu;
+            // Alvm *= Alvm.transpose();
+            // AQ *= AQ.transpose();
+            
+            for (j=0; j<p;j++){
+              cQ.col(j) += 0.5*(Alvm*Alvm.transpose()).diagonal().matrix()*((newlam.col(j).transpose()*((Delta*AQ)*(Delta*AQ).transpose()))*newlam.col(j));
+            }
+            
+            for(int q=0; q<num_corlv; q++){
+              // site specific LVs, which are correlated within groups
+              // Slv.setZero();
+              
+              // Define covariance matrix
+              if(cstruclv==1){// AR1 covariance
+                Slv(q) = gllvm::corAR1(Type(1), rho_lvc(q,0), times);
+              } else if(cstruclv==3) {// Compound Symm  if(cstruclv==3)
+                Slv(q) = gllvm::corCS(Type(1), rho_lvc(q,0), times);
+              } else {
+                DiSc_lv.setZero();
+                for(int j=0; j<dc_lv.cols(); j++){
+                  DiSc_lv(j,j) += 1/exp(rho_lvc(q,j));
+                }
+                dc_scaled_lv = dc_lv*DiSc_lv;
+                if(cstruclv==2){// exp decaying
+                  Slv(q) = gllvm::corExp(Type(1), Type(0), times, dc_scaled_lv);
+                } else if(cstruclv==4) {// matern
+                  Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times, dc_scaled_lv);
+                }
+              }
+              
+              nll -= - 0.5*nu*atomic::logdet(Slv(q));
+              Slvinv = atomic::matinv(Slv(q));
+              matrix <Type> Alvmblock;
+              matrix <Type> ucopyblock;
+              for (i=0; i<nu; i++) {
+                Alvmblock = Alvm.col(q).matrix().block(i*times,i*times,times,times)*Alvm.col(q).matrix().block(i*times,i*times,times,times).transpose();
+                ucopyblock = ucopy.block(i*times,q,times,1);
+                nll -=  0.5*(- (AQ.row(q)*AQ.row(q).transpose()).sum()*(Slvinv*Alvmblock).trace() - (ucopyblock.transpose()*(Slvinv*ucopyblock)).sum());
+              }
+              
+            }
+            REPORT(Alvm);
+          }
+          
+          
+        }
+        REPORT(AQ);
+        // REPORT(newlam);
       }
+      // REPORT(newlam);
+      // REPORT(A);
+      // REPORT(u);
+      // REPORT(ucopy);
+      // REPORT(Delta);
+      
   
       eta += lam;
       
@@ -4275,9 +4307,11 @@ Type objective_function<Type>::operator() ()
     
     //latent variables
     if(nlvr>0){
-      for (int i=0; i<n; i++) {
-        for(int q=0; q<u.cols(); q++){
-          nll -= dnorm(u(i,q), Type(0), Type(1), true);
+      if(num_corlv==0){
+        for (int i=0; i<n; i++) {
+          for(int q=0; q<u.cols(); q++){
+            nll -= dnorm(u(i,q), Type(0), Type(1), true);
+          }
         }
       }
       //variances of LVs
@@ -4485,7 +4519,7 @@ Type objective_function<Type>::operator() ()
     if(num_corlv>0) {
       int i;
       if(ucopy.rows() == nu){
-        eta += (dLV*ucopy)*newlamCor;
+        // eta += (dLV*ucopy)*newlamCor;
         // if(family==10){ // betaH
         //   etaH += (dLV*ucopy)*thetaH;
         // }
@@ -4533,7 +4567,7 @@ Type objective_function<Type>::operator() ()
       } else {
         
         matrix<Type> Slv(times,times);
-        eta += ucopy*newlamCor;
+        // eta += ucopy*newlamCor;
         // if(family==10){// betaH
         //   etaH += ucopy*thetaH;
         // }
