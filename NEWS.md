@@ -6,6 +6,7 @@ Version 2.0.6
 * Ntrials can vary per site/species
 * New function to fit univariate GLMMs: glmmVA
 * New propto structure for random (row) effects (possibly with correlations)
+* lvCor compatible with num.lv.c
 * More generally expanded the (row.eff) formula interface for glmmVA to kronecker structures (e.g., corExp(0+a+b|group) has a 2x2 covarariance for the LHS and a nxn for the RHS)
 * Added Nagelkerke's, McFadden's and Cox & Snell's Pseudo r2 measures in goodnessOfFit
 * In predict.gllvm type = "class" implemented for ordinal and binomial models.
