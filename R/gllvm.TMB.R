@@ -1094,8 +1094,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               iter <- iter + trmsize[1,i]
             } else if(re == 4){
               # corMatern
-              map.list$log_sigma[(iter):(iter+1)] <- c(iter, NA)
-              iter <- iter + 2
+              # map.list$log_sigma[(iter):(iter+1)] <- c(iter, NA)
+              # iter <- iter + 2
+              map.list$log_sigma[(iter):((iter+trmsize[1,i]) +1)] <- c((iter):(iter+trmsize[1,i]), NA)
+              iter <- iter + trmsize[1,i] + 2
             } else if(re == 10){
               # corMaternUstruc
               map.list$log_sigma[(iter):(iter+trmsize[1,i])] <- (iter):(iter+trmsize[1,i])
@@ -1290,6 +1292,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       ### Set up data and parameters
       
+      # data.list <- list(y = y, x = Xd, x_lv = lv.X , xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = as.matrix(dist(distLV)), Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
       data.list <- list(y = y, x = Xd, x_lv = lv.X , xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
 
       parameter.list <- list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
@@ -1364,7 +1367,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             # We need to maintain the fixed parameter for Matern smoothness
             # Which is omitted in the optimiser
             log_sigma <- sigma
-            log_sigma <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
+            log_sigma[!is.na(map.list$log_sigma)] <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
             log_sigma1 <- log_sigma
           }
           lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,!(grepl("ustruc", cstruc) & cstruc != "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[1,(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[2,(grepl("ustruc", cstruc) & cstruc != "ustruc")]-sum((grepl("ustruc", cstruc) & cstruc != "ustruc")))])+1e-3)

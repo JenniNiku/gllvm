@@ -1108,8 +1108,10 @@ trait.TMB <- function(
               iter <- iter + trmsize[1,i]
             } else if(re == 4){
               # corMatern
-              map.list$log_sigma[(iter):(iter+1)] <- c(iter, NA)
-              iter <- iter + 2
+              map.list$log_sigma[(iter):((iter+trmsize[1,i]) +1)] <- c((iter):(iter+trmsize[1,i]), NA)
+              iter <- iter + trmsize[1,i] + 2
+              # map.list$log_sigma[(iter):(iter+1)] <- c(iter, NA)
+              # iter <- iter + 2
             } else if(re == 10){
               # corMaternUstruc
               map.list$log_sigma[(iter):(iter+trmsize[1,i])] <- (iter):(iter+trmsize[1,i])
@@ -1357,7 +1359,7 @@ trait.TMB <- function(
           # We need to maintain the fixed parameter for Matern smoothness
           # Which is omitted in the optimiser
           log_sigma <- sigma
-          log_sigma <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
+          log_sigma[!is.na(map.list$log_sigma)] <- log_sigma1[map.list$log_sigma[!is.na(map.list$log_sigma)]]
           log_sigma1 <- log_sigma
         }
         lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,!(grepl("ustruc", cstruc) & cstruc != "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[1,(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[2,(grepl("ustruc", cstruc) & cstruc != "ustruc")]-sum((grepl("ustruc", cstruc) & cstruc != "ustruc")))])+1e-3)
