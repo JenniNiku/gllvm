@@ -1132,7 +1132,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         
         if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
         
-        if(any(trmsize[1,]==0))trmsize[1,trmsize[1,]==0] <- 1 # occurs with 1|something
+        if(any(trmsize[1,]==0)) trmsize[1,trmsize[1,]==0] <- 1 # occurs with 1|something
         colnames(trmsize) <- vapply(bar.f, deparse1,  character(1))
         
         # build index matrix csR for ustruc terms (both diagonals and off-diagonals)
@@ -1141,7 +1141,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           # Number of covariates on LHS
           # terms with only 1 variable on LHS have 1x1 diagonal matrix
           if(any(trmsize[1,cstruc %in% c("ustruc")]<2)){
-            cstruc[cstruc %in% c("ustruc")][trmsize[1,]<2] <- "diag"
+            cstruc[cstruc %in% c("ustruc")][trmsize[1,cstruc %in% c("ustruc")]<2] <- "diag"
           }
           if(any(cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc")))){
           ulistlengthTrms <- trmsize[1,cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc"))]
