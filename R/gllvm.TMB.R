@@ -1303,6 +1303,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameters = parameter.list, map = map.list,
         DLL = "gllvm")##GLLVM
  
+      if(!is.finite(objr$fn(objr$par))) warning("Starting values do not give finite starting point for log-likelihood.")
+      if(any(!is.finite(objr$gr(objr$par)))) warning("Gradients are not finite with the starting values.")
       #### Fit model 
       if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
@@ -1991,6 +1993,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
+      
+      # Check if finite logL and gradients
+      if(!is.finite(objr$fn(objr$par))) warning("Starting values do not give finite starting point for log-likelihood.")
+      if(any(!is.finite(objr$gr(objr$par)))) warning("Gradients are not finite with the starting values.")
+      
+      
       #### Fit model 
       
       # Not used for now
@@ -2075,6 +2083,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           parameters = parameter.list, map = map.list,
           inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")
+        
         
         if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {

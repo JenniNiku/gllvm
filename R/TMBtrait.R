@@ -1328,6 +1328,8 @@ trait.TMB <- function(
     }
     
     #### Fit model 
+    if(!is.finite(objr$fn(objr$par))) warning("Starting values do not give finite starting point for log-likelihood.")
+    if(any(!is.finite(objr$gr(objr$par)))) warning("Gradients are not finite with the starting values.")
     
     if(optimizer=="nlminb") {
       timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
