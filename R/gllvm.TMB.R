@@ -380,8 +380,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         if(!isFALSE(row.eff) && (nrow(dr)==n) || (nrow(xr)==n)) {
           if (!isFALSE(start.params$row.eff)) {
-            if(all.equal(allbars(start.params$row.eff), allbars(row.eff)))fit$row.params.random <- row.params.random <- start.params$params$row.params.random
-            if(all.equal(nobars1_(start.params$row.eff), nobars1_(row.eff)))fit$row.params.fixed <- row.params.fixed <- start.params$params$row.params.fixed
+            if(isTRUE(all.equal(allbars(start.params$row.eff), allbars(row.eff)))) fit$row.params.random <- row.params.random <- start.params$params$row.params.random
+            if(isTRUE(all.equal(nobars1_(start.params$row.eff), nobars1_(row.eff)))) fit$row.params.fixed <- row.params.fixed <- start.params$params$row.params.fixed
             if(nrow(dr)==n) {
               fit$sigma <- sigma <- start.params$params$sigma
               fit$sigmaijr <- start.params$sigmaijr
