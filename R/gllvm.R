@@ -452,6 +452,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
   if((num.RR+num.lv.c)==0){
     randomB <- FALSE
   }
+  if((num.RR+num.lv.c)==0 && !is.null(lv.formula))warning("lv.formula is ignored in models with num.RR = 0 and num.lv.c = 0. \n")
 
   if(!randomB%in%c(FALSE,"single","P","LV","iid")){
     stop("RandomB should be one of FALSE, 'single', 'P', 'LV', or 'iid'.")
