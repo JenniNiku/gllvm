@@ -257,9 +257,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       svd_rotmat_species <- diag(ncol(lv))
     }    
     
-    
-    
-    
+
     choose.lvs <- lv
     if(quadratic == FALSE){choose.lv.coefs <- object$params$theta}else{choose.lv.coefs<-optima(object,sd.errors=F)}  
     
@@ -554,7 +552,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
       }
       
       if (predict.region %in% c("species")) {
-        if(length(col.ellips)!=p){ col.ellips2 =rep(col.ellips[1],p)}
+        if(length(col.ellips)!=p){
+          col.ellips2 <- rep(col.ellips[1],p)
+        } else {
+          col.ellips2 <- col.ellips
+          }
         # col.ellips2=rep("grey",p)
         
         covMload<-object$sd$theta%*%( diag(object$params$sigma.lv, length(object$params$sigma.lv)) ); #diag(covMT)=1
@@ -739,6 +741,23 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }else if(num.lv>0&(num.lv.c+num.RR)>0){warning("Cannot add arrows to plot, when num.lv>0 and with reduced rank constraints.")}
   }
   
+  
+  ## set up object for returning sites/loadings if ordiplot() is assigned to an object ##
+  coords <- list()
+  coords$sites <- choose.lvs # site coordinates
+  
+  # add loadings if biplot is specified
+  if(biplot) {
+    coords$loadings <- choose.lv.coefs 
+  }
+  # add coefs if predictors are included (condition copied from further up)
+  if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal") {
+    # adding only the SD-error scaled coefficient loadings, not the plot-window scaled (i.e. "ends" object)
+    coords$coefs <- LVcoef
+  }
+  
+  # return if assigned
+  invisible(coords)
 }
 
 
