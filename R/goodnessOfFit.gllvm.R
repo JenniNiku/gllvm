@@ -1,10 +1,10 @@
 #' @title Goodness of fit measures for a gllvm
 #' @description Several goodness-of-fit measure are currently available and can be calculated for a gllvm model fit and predicted values.
 #'
-#' @param y a response matrix
-#' @param pred predicted values for response matrix y
-#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation) and \code{"sR2"} (R-squared as the square of the spearman correlation)
-#' @param object an object of class 'gllvm'.
+#' @param object an object of class 'gllvm', to calculate goodness of a model fit.
+#' @param y a response matrix of new observations
+#' @param pred predicted values for response matrix y if you want to calculate prediction accuracy for new values. Note that for ordinal model, you need to give the predicted classes.
+#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation) and \code{"sR2"} (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures \code{"NagelkerkeR2"}, \code{"McFaddenR2"}, \code{"CoxSnellR2"} can be calculated currently only for training data to measure the model's goodness of fit for full data, not response specific.
 #' @param species logical, if \code{TRUE}, goodness-of-fit measures are calculated for each species separately. If FALSE,  goodness-of-fit measures are calculated for all species together.
 #'
 #' @details
@@ -37,14 +37,22 @@
 #'
 #'}
 #'@export
-goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
+goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
   if(is.null(pred)){
     if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' need to be given.")
-    pred <- predict(object, type = "response")
+    if(object$family == "ordinal"){
+      pred <- predict(object, type = "class")
+    } else {
+      pred <- predict(object, type = "response")
+    }
   }
   if(is.null(y)){
     if(is.null(object)) stop("If 'y' is not given the model fit for 'object' need to be given.")
     y <- object$y
+    if(object$family == "betaH"){
+      yH01 <- (y>0)*1; colnames(yH01) <- paste("H01", colnames(y), sep = "_")
+      y <- cbind(y, (yH01))
+    }
   }else if(!is.matrix(y)){
     try(y <- as.matrix(y))
   }
@@ -64,7 +72,7 @@ goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor
   }
   if("scor" %in% measure) {
     if(species) {
-      out$cor <- rep(NA,p)
+      out$scor <- rep(NA,p)
       for (j in 1:p) {
         out$scor[j] <- cor(na.omit(cbind(y[,j], pred[,j])), method = "spearman")[2,1]
       }
@@ -116,7 +124,7 @@ goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor
   }
   if("R2" %in% measure) {
     if(species) {
-      out$cor <- rep(NA,p)
+      out$R2 <- rep(NA,p)
       for (j in 1:p) {
         out$R2[j] <- cor(na.omit(cbind(y[,j], pred[,j])))[2,1]
         out$R2[j] <- sign(out$R2[j])*out$R2[j]^2
@@ -128,7 +136,7 @@ goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor
   }
   if("sR2" %in% measure) {
     if(species) {
-      out$cor <- rep(NA,p)
+      out$sR2 <- rep(NA,p)
       for (j in 1:p) {
         out$sR2[j] <- cor(na.omit(cbind(y[,j], pred[,j])), method = "spearman")[2,1]
         out$sR2[j] <- sign(out$sR2[j])*out$sR2[j]^2
@@ -136,6 +144,26 @@ goodnessOfFit <- function(y = NULL, pred = NULL, object = NULL, measure = c("cor
     } else {
       out$sR2 <- cor(na.omit(cbind(unlist(c(y)), unlist(c(pred)))), method = "spearman")[2,1]
       out$sR2 <- sign(out$sR2)*out$sR2^2
+    }
+  }
+  if(any(c("NagelkerkeR2", "McFaddenR2", "CoxSnellR2") %in% measure) & !is.null(object)) {
+    #Fit null model to calculate 
+    nob <- nobs(object)
+    if(object$family == "ordinal"){
+      modelnull<- update(object, formula = ~1, lv.formula = NULL, row.eff = NULL, num.lv=0, num.lv.c=0, num.RR=0, sd.errors = FALSE, starting.val="zero", zeta.struc=object$zeta.struc)
+    } else {
+      modelnull<- update(object, formula = ~1, lv.formula = NULL, row.eff = NULL, num.lv=0, num.lv.c=0, num.RR=0, sd.errors = FALSE, starting.val="zero")
+    }
+    logLik_full <- object$logL
+    logLik_null <- modelnull$logL
+    if("McFaddenR2"%in% measure) {
+      out$McFaddenR2 <- 1 - logLik_full/logLik_null
+    }
+    if("CoxSnellR2"%in% measure) {
+      out$CoxSnellR2 <- 1 - exp((2 / nob) * (logLik_null - logLik_full))
+    }
+    if("NagelkerkeR2"%in% measure) {
+      out$NagelkerkeR2 <- (1 - exp((2 /nob) * (logLik_null - logLik_full)))/(1 - exp((2 / nob) * (logLik_null)))
     }
   }
   return(out)

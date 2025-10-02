@@ -118,7 +118,6 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   a <- jitter.amount
   Nlv <- n <- NROW(object$y)
   
-  if(object$num.lv+object$num.lv.c+object$num.lvcor>0) try(Nlv <- NROW(object$lvs), silent = TRUE)
   
   p <- NCOL(object$y)
   num.lv <- object$num.lv
@@ -206,6 +205,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
   }
   
   lv <- getLV(object, type = type)
+  if(object$num.lv+object$num.lv.c+object$num.lvcor>0) try(Nlv <- NROW(lv), silent = TRUE)
   
   if ((num.lv+(num.lv.c+num.RR)) == 1|ncol(lv) == 1|length(which.lvs)==1) {
     if(ncol(lv)>1 && length(which.lvs) == 1){
@@ -213,7 +213,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     }
     if(length(which.lvs)>1)which.lvs <- 1
     if(which.lvs>(num.RR+num.lv.c)){
-      plot(1:Nlv, lv, ylab = paste0("LV", which.lvs-(num.lv.c+num.RR)), xlab = "Row index", type="n") 
+      plotfun(1:Nlv, lv, ylab = paste0("LV", which.lvs-(num.lv.c+num.RR)), xlab = "Row index", type="n", ...) 
       if (symbols) {
         points(lv, col = s.colors, cex = s.cex, ...)
       } else {
@@ -225,7 +225,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         
       }
     }else{
-      plot(1:Nlv, lv, ylab = paste0("CLV",which.lvs), xlab = "Row index", type="n") 
+      plotfun(1:Nlv, lv, ylab = paste0("CLV",which.lvs), xlab = "Row index", type="n", ...) 
       if (symbols) {
         points(lv, col = s.colors, cex = s.cex, ...)
       } else {
@@ -337,6 +337,36 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           
           sdb<-CMSEPf(object, type = type)$A
           
+          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) { #Not used at the moment, under development
+            A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
+            for (i in 1:dim(A)[1]) {
+              A[i,,]<-A[i,,]*object$AQ
+            }
+            object$A <- A
+          } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {#Not used at the moment, under development
+            A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
+            if(all(dim(A) == dim(object$A))){
+              A<- object$A
+            } else {
+              for (i in 1:object$num.lvcor) {
+                A[,i,i]<- diag(object$A[,,i])
+              }
+            }
+            object$A <- A
+          }
+          if((object$num.lv.c > 0 |object$num.RR > 0) & type!="residual"){
+            if(NROW(object$A) != n) {
+              if(length(dim(object$A)) <3) {
+                object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%object$A)
+              } else {
+                A <- array(0,dim=c(n,dim(object$A)[2:3]))
+                for (k in 1:dim(object$A)[3]) {
+                  A[,,k] = as.matrix(object$TMBfn$env$data$dLV%*%object$A[,,k])
+                }
+                object$A <- A
+              }
+            }
+          }
           #If not marginal add variational covariances
           if(type!="residual"){
             #variational covariances but add 0s for RRR
@@ -345,23 +375,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             A <- array(0,dim=c(Nlv,(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0)),(num.lv*ifelse(type=="marginal",0,1)+num.lv.c+num.RR*ifelse(type!="residual",1,0))))
             if(type!="marginal"&num.RR>0)A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
             if(type!="marginal"&num.RR==0) A <- object$A
+            
           } else {A<-object$A}
           
-          if((object$num.lvcor > 1) && (object$Lambda.struc %in% c("diagU","UNN","UU"))) { #Not used at the moment, under development
-            A<-array(diag(object$A[,,1]), dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
-            for (i in 1:dim(A)[1]) {
-              A[i,,]<-A[i,,]*object$AQ
-            }
-          } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {#Not used at the moment, under development
-            A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
-            if(all(dim(A) == dim(object$A))){
-              A<- object$A
-            } else {
-              for (i in 1:object$num.lvcor) {
-                A[,i,i]<- (object$A[,i])
-              }
-            }
-          }
+
+          # else if(object$num.lvcor > 1 & type!="residual") {
+          #   
+          # }
           
           #If conditional scale variational covariances for concurrent ordination by sigma
           if(type=="conditional" & num.lv.c>0){

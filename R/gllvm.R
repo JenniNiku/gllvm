@@ -7,12 +7,12 @@
 #' @param TR matrix or data.frame of trait covariates.
 #' @param data data in long format, that is, matrix of responses, environmental and trait covariates and row index named as "id". When used, model needs to be defined using formula. This is alternative data input for y, X and TR.
 #' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for column-specific effects).
-#' @param family  distribution function for responses. Options are \code{"negative.binomial"} (with log link), \code{poisson(link = "log")}, \code{binomial(link = "probit")} (and also with \code{link = "logit"} when \code{method = "LA"} or \code{method = "EVA"}), zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.                                                   
+#' @param family  distribution function for responses. Options are \code{"negative.binomial"} and \code{"negative.binomial1"} (with log link), \code{poisson(link = "log")}, \code{binomial} (with probit, logit, or cloglog link), zero-inflated binomial (\code{ZIB}), zero-and-N-inflated binomial (\code{ZNIB}) zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method, with probit or logit link), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.                                                   
 #' @param num.lv  number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.
 #' @param num.lv.c  number of latent variables, d, in gllvm model to inform, i.e., with residual term. Non-negative integer, less than number of response (m) and equal to, or less than, the number of predictor variables (k). Defaults to 0. Requires specification of "lv.formula" in combination with "X" or "datayx". Can be used in combination with num.lv and fixed-effects, but not with traits.
 #' @param num.RR number of latent variables, d, in gllvm model to constrain, without residual term (reduced rank regression). Cannot yet be combined with traits.
 #' @param lv.formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for latent variables).
-#' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.
+#' @param lvCor correlation structure for latent variables, defaults to \code{NULL} Correlation structure for latent variables can be defined via formula, eg. \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}'), \code{corCS} (compound symmetry), and \code{propto} (proportional covariance, used as propto(a+b|group, matrix)). The grouping variable needs to be included either in \code{studyDesign}. Works at the moment only with unconstrained ordination without quadratic term.
 #' @param studyDesign variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.
 #' @param method  model can be fitted using Laplace approximation method (\code{method = "LA"}) or variational approximation method (\code{method = "VA"}), or with extended variational approximation method (\code{method = "EVA"}) when VA is not applicable. If particular model has not been implemented using the selected method, model is fitted using the alternative method as a default. Defaults to \code{"VA"}.
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or formula to define the structure for the community level row effects, indicating whether row effects are included in the model as a fixed or as a random effects. Defaults to \code{FALSE} when row effects are not included. Structured random row effects can be defined via formula, eg. \code{~(1|groups)}, when unique row effects are set for each group, not for all rows, the grouping variable needs to be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}') and \code{corCS} (compound symmetry). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
@@ -56,7 +56,7 @@
 #'  \item{\emph{Lambda.struc}: }{ covariance structure of VA distributions for latent variables when \code{method = "VA"}, "unstructured" or "diagonal".}
 #'  \item{\emph{Ab.struct}: }{ covariance structure of VA distributions for random slopes when \code{method = "VA"}, ordered in terms of complexity: "diagonal", "MNdiagonal" (only with colMat), "blockdiagonal" (default without colMat), "MNunstructured" (default, only with colMat), "diagonalCL1" ,"CL1" (only with colMat), "CL2" (only with colMat),"diagonalCL2" (only with colMat), or "unstructured" (only with colMat).}
 #'  \item{\emph{Ab.struct.rank}: }{number of columns for the cholesky of the variational covariance matrix to use, defaults to 1. Only applicable with "MNunstructured", "diagonalCL1", "CL1","diagonalCL2", and "unstructured".}
-#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal".}
+#'  \item{\emph{Ar.struc}: }{ covariance structure of VA distributions for random row effects when \code{method = "VA"}, "unstructured" or "diagonal". Defaults to "diagonal". "Unstructured" is block diagonal for ordinary random effects.}
 #'  \item{\emph{diag.iter}: }{ non-negative integer which can sometimes be used to speed up the updating of variational (covariance) parameters in VA method. Can sometimes improve the accuracy. If \code{TMB = TRUE} either 0 or 1. Defaults to 1.}
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
@@ -161,6 +161,7 @@
 #'\describe{
 #'   \item{For count data \code{family = poisson()}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}}, or}
 #'   \item{ \code{family = "negative.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}^2\phi_j}, or}
+#'   \item{ \code{family = "negative.binomial1"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}+\mu_{ij}\phi_j}, or}
 #'   \item{ \code{family = "ZIP"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}p_j)}.}
 #'   \item{ \code{family = "ZINB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)\mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(\phi_j+p_j))}.}
 #'   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
@@ -416,7 +417,7 @@
 #'@importFrom TMB MakeADFun
 #'@importFrom graphics abline axis par plot segments text points boxplot barplot panel.smooth lines polygon arrows image layout mtext
 #'@importFrom grDevices rainbow hcl colorRampPalette dev.size
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict cov2cor reformulate update.formula aggregate setNames contrasts cor na.omit getCall plogis
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict cov2cor reformulate update.formula aggregate setNames contrasts cor na.omit getCall plogis model.offset
 #'@importFrom Matrix bdiag chol2inv diag t
 #'@importFrom MASS ginv polr mvrnorm
 #'@importFrom mgcv gam predict.gam
@@ -431,7 +432,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   lvCor = NULL, studyDesign=NULL, dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, colMat.rho.struct = "single", corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
                   randomX = NULL, beta0com = FALSE, zeta.struc = "species",
-                  plot = FALSE, link = "probit", Ntrials = 1,
+                  plot = FALSE, link = "probit", Ntrials = matrix(1),
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
@@ -451,6 +452,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
   if((num.RR+num.lv.c)==0){
     randomB <- FALSE
   }
+  if((num.RR+num.lv.c)==0 && !is.null(lv.formula))warning("lv.formula is ignored in models with num.RR = 0 and num.lv.c = 0. \n")
 
   if(!randomB%in%c(FALSE,"single","P","LV","iid")){
     stop("RandomB should be one of FALSE, 'single', 'P', 'LV', or 'iid'.")
@@ -475,7 +477,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       family <- family$family
     }
 
-    if(!(family %in% c("poisson","negative.binomial","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")))
+    if(!(family %in% c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")))
       stop("Selected family not permitted...sorry!")
     
     fill_control = function(x){
@@ -1053,7 +1055,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     
 # Structured row parameters
-    RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff
+    RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff;csR = matrix(0);trmsize = matrix(0);proptoMats <- list(list(matrix(0)))
     if(inherits(row.eff,"formula")) {
       # first, random effects part
       if(anyBars(row.eff)){
@@ -1100,6 +1102,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       corstruc.form <- row.form
       }
       cstruc <- corstruc(corstruc.form)
+      if(any(cstruc == "propto")){
+        proptoMats <- proptoMat(corstruc.form)
+      }
+      
       corWithin <- ifelse(cstruc %in% c("diag","ustruc"), FALSE, corWithin)
       
       if(!is.null(bar.f)) {
@@ -1113,11 +1119,46 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElistRow <- mkReTrms1(bar.f, mf.new)
         dr <- Matrix::t(RElistRow$Zt)
+        
         # This line errs for formulations such as (cov|1), which includes an intercept
         # Can be easily fixed by adding a try(..., silent = TRUE) but probably needs something more robust
         # The bigger problem is that (cov|1) only generates a single "cstruc" entry anove, while it requires two
         # So that the term needs to be expanded to (1|1)+(0+cov|1) first, which is not yet implemented
-        colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
+        # colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
+        # first row: lhs size, second row: rhs size
+        trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
+        trmsize[1,] <- unlist(lapply(bar.f, function(x)length(attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "term.labels")) + 
+                                       attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "intercept")))
+        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(mf.new[,as.character(x[[3]])]))))
+        
+        if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
+        
+        if(any(trmsize[1,]==0)) trmsize[1,trmsize[1,]==0] <- 1 # occurs with 1|something
+        colnames(trmsize) <- vapply(bar.f, deparse1,  character(1))
+        
+        # build index matrix csR for ustruc terms (both diagonals and off-diagonals)
+        if(any(cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc")))){
+          bar.f.ustruc <- bar.f[cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc"))]
+          # Number of covariates on LHS
+          # terms with only 1 variable on LHS have 1x1 diagonal matrix
+          if(any(trmsize[1,cstruc %in% c("ustruc")]<2)){
+            cstruc[cstruc %in% c("ustruc")][trmsize[1,cstruc %in% c("ustruc")]<2] <- "diag"
+          }
+          if(any(cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc")))){
+          ulistlengthTrms <- trmsize[1,cstruc %in% c("ustruc", paste0(c("propto", "corExp", "corMatern", "corAR1", "corCS"), "ustruc"))]
+          
+          # Number of groups on RHS
+          csR = matrix(0, nrow = sum(ulistlengthTrms*(1+ulistlengthTrms)/2), ncol = 2) # columns: row entry, column entry
+          for(i in 1:length(ulistlengthTrms)){
+            idx = (c(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i-1),0)[1]+1):c(sum(head(ulistlengthTrms*(1+ulistlengthTrms)/2, i)),nrow(csR))[1]
+            csR[idx, 1] = rep(1:ulistlengthTrms[i], times = 1:ulistlengthTrms[i])
+            csR[idx, 2] = unlist(lapply(1:ulistlengthTrms[i], function(i) 1:i))
+          }
+          # drop variances from this for now
+          csR <- csR[csR[,1]!=csR[,2],,drop=FALSE]
+          }
+        }
+
         # add unique column names with corWithin so that we can identify them as separate random effects later
       if(any(corWithin)){
         corWithinNew <- corWithin
@@ -1217,7 +1258,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           dLV <- Matrix::t(RElistLV$Zt)
           if(cstruclv == "corAR1")distLV = matrix(1:ncol(dLV))
           
-          num.lv.cor <- num.lv
+          num.lv.cor <- num.lv + num.lv.c
         }
       }
     }else{
@@ -1252,7 +1293,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   if((p<2) & (any(rstruc == 0)))
     #     stop("There must be at least two responses in order to include unstructured row effects. \n");
     # }
-      if(any(rowSums(y, na.rm = TRUE)==0))
+      if(any(rowSums(y, na.rm = TRUE)==0) && ncol(y)>1)
         warning("There are rows full of zeros in y. \n");
     # if(row.eff == "random" && quadratic != FALSE && Lambda.struc == "unstructured"){
     #   stop("Dependent row-effects can only be used with quadratic != FALSE if Lambda.struc == 'diagonal'' '. \n")
@@ -1449,7 +1490,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Power = Power,
             diag.iter = diag.iter,
-            row.eff = row.eff.formula,
+            row.eff = row.eff.formula, csR = csR, proptoMats = proptoMats, trmsize = trmsize,
             Ab.diag.iter = Ab.diag.iter, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, 
             Ar.struc = Ar.struc,
             Lambda.start = Lambda.start,
@@ -1497,7 +1538,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             method = method,
             Lambda.struc = Lambda.struc, Ar.struc = Ar.struc,
             sp.Ar.struc = Ab.struct, Ab.diag.iter = Ab.diag.iter, sp.Ar.struc.rank = Ab.struct.rank, 
-            row.eff = row.eff.formula,
+            row.eff = row.eff.formula, csR = csR, proptoMats = proptoMats, trmsize = trmsize,
             col.eff = col.eff, colMat = colMat, nn.colMat = nn.colMat, colMat.approx = colMat.approx, colMat.rho.struct = colMat.rho.struct, randomX.start = randomX.start,
             reltol = reltol,
             reltol.c = reltol.c,
@@ -1581,17 +1622,17 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         
         # need to restore the row-effect names
         # because grouped names in dr are used to share variances in gllvm.TMB and traitTMB
-        if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
-          names(out$params$row.params.random) <- row.names(RElistRow$Zt)
-          if(!is.null(out$grps.row)) {
-            if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
-            namsrow<- NULL
-            for (i in 1:length(cstruc)) {
-              namsrow <- c(namsrow, rep(names(out$grps.row)[i], switch(cstruc[i], "ustruc" = 1, "diag" = 1, "corAR1" = 2, "corExp" = 2, "corCS" = 2, "corMatern" = 2)))
-            }
-            names(out$params$sigma) = paste(names(out$params$sigma),namsrow, sep="|")
-            }
-        }
+        # if(!is.null(out$params$row.params.random)){ # extra security, probably redundant
+        #   names(out$params$row.params.random) <- row.names(RElistRow$Zt)
+        #   if(!is.null(out$grps.row)) {
+        #     if(any(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")) names(out$params$sigma)[(is.na(names(out$params$sigma)) | names(out$params$sigma)=="")] ="1"
+        #     namsrow<- NULL
+        #     for (i in 1:length(cstruc)) {
+        #       namsrow <- c(namsrow, rep(names(out$grps.row)[i], switch(cstruc[i], "ustruc" = 1, "diag" = 1, "corAR1" = 2, "corExp" = 2, "corCS" = 2, "corMatern" = 2)))
+        #     }
+        #     names(out$params$sigma) = paste(names(out$params$sigma),namsrow, sep="|")
+        #     }
+        # }
       }
       #### Try to calculate sd errors
       if (!is.infinite(out$logL) && sd.errors) {

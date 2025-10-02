@@ -2,7 +2,7 @@
 #' @description Obtains predictions from a fitted generalized linear latent variable model object.
 #'
 #' @param object an object of class 'gllvm'.
-#' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternative \code{"response"} is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
+#' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternatives are \code{"response"} and \code{"class"} (predicted classes, works only for binomial model with 1 trial or ordinal model). \code{"response"} is on the scale of the response variable. That is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
 #' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
@@ -56,6 +56,9 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
 
+  if(type=="class" & !(object$family %in% c("binomial", "ordinal"))) {
+    stop("type='class' can be calculated only for ordinal or binary data.")
+  }
   # backward compatibility
   if(is.null(object$params$row.params.random) && !inherits(object$row.eff, "formula") && object$row.eff == "random"){
     object$params$row.params.random <- object$params$row.params
@@ -339,16 +342,17 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     } 
     if(!is.null(object$params$row.params.fixed)){
         object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(as.matrix(object$params$row.params.fixed))
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
     }
     
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
-  if (object$col.eff$col.eff == "random" && is.null(newX)) {
+  
+  if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
     if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
-  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1){
+  }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
     
@@ -374,7 +378,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(object$family %in% c("poisson", "negative.binomial", "tweedie", "gamma", "exponential"))
+  if(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))
     ilinkfun <- exp
   if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB") || (object$family == "ZNIB")) 
     ilinkfun <- binomial(link = object$link)$linkinv
@@ -389,10 +393,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     out <- eta
   if ("response" %in% type) 
     out <- ilinkfun(eta)
+  if ("class" %in% type & object$family == "binomial") 
+    out <- round(ilinkfun(eta))
   if (is.null(newdata) && is.null(newTR) && is.null(newLV) && 
       "logL" %in% type) 
     out <- object$logL
-  if (object$family == "ordinal" && type == "response") {
+  if (object$family == "ordinal" && (type == "response" | type == "class")) {
     if (object$zeta.struc == "species") {
       k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 
         1
@@ -441,9 +447,19 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           preds[, i, j] <- c(probK)
         }
       }
+      dimnames(preds)[[3]] <- colnames(object$y)
       out <- preds
     }
-    dimnames(preds)[[3]] <- colnames(object$y)
+    if(type == "class") {
+      pred_class <- matrix(NA, dim(preds)[2], dim(preds)[3])
+      for (j in 1:ncol(pred_class)) {
+        for (i in 1:nrow(pred_class)) {
+          pred_class[i,j] <- (order(preds[,i,j], decreasing = TRUE)[1]-1)
+        }
+      }
+      colnames(pred_class) <- colnames(object$y)
+      out <- pred_class
+    }
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)
   if(any(class(out) %in% "dgeMatrix")) out <- as.matrix(out)

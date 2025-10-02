@@ -17,6 +17,7 @@
   groupnames = NULL,
   adj.cov = TRUE,
   grouplvs = FALSE,
+  calcr2scaled = FALSE,
   ...
 )
 
@@ -30,6 +31,7 @@ plotVarPartitioning(
   legend.text = NULL,
   args.legend = list(cex = 0.7, x = "topright", bty = "n", inset = c(0, -0.15)),
   mar = c(4, 4, 6, 2),
+  r2scaled = FALSE,
   ...
 )
 
@@ -48,6 +50,8 @@ plotVP(x, ...)
 
 \item{grouplvs}{logical, whether or not to group latent variables to one group}
 
+\item{calcr2scaled}{logical, whether or not to also calculate r2 scaled variance partitioning. Defaults to FALSE. If true, squared correlation between data and predictions is used for continuous data (normal, gamma, exponent, beta, tweedie), squared spearman correlation for count and ordinal data, and Tjur's R2 for binary data. Note, interpret these cautiously.}
+
 \item{...}{additional graphical arguments passed to the barplot function}
 
 \item{x}{a variance partitioning object for a gllvm produced by function varPartitioning.}
@@ -63,6 +67,8 @@ plotVP(x, ...)
 \item{args.legend}{a list of additional arguments to pass to \code{legend()}.}
 
 \item{mar}{Margins of the plot. Default \code{c(4,4,6,2)}}
+
+\item{r2scaled}{logical, whether or not to plot the response specific R2 -scaled variance partitioning. Defaults to FALSE.}
 }
 \description{
 Calculates variance partitioning for gllvm object with function \code{VP()} (alias \code{varPartitioning()}).

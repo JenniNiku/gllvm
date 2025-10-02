@@ -59,6 +59,9 @@ getLV.gllvm <- function(object, type = NULL, ...)
   if(type == "residual"){
     lvs <- object$lvs
   }else if(type=="conditional"&object$num.lv.c>0){
+    if(!is.null(object$lvs) && inherits(object$lvCor,"formula")){
+      if(nrow(object$lvs)!=n) object$lvs = as.matrix(object$TMBfn$env$data$dLV%*%object$lvs) # !!!
+    }
       lvs <- object$lvs
       lvs[,1:object$num.lv.c] <- t(t(lvs[,1:object$num.lv.c,drop=F])*object$params$sigma.lv[1:object$num.lv.c])
       lvs[,1:object$num.lv.c] <- lvs[,1:object$num.lv.c]+object$lv.X.design%*%object$params$LvXcoef[,1:object$num.lv.c,drop=F]

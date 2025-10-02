@@ -66,7 +66,8 @@ se.gllvm <- function(object, ...){
   cstrucn = 0
   cstruc = object$corP$cstruc
   for (i in 1:length(cstruc)) {
-    cstrucn[i] = switch(cstruc[i], "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
+    cstrucn[i] = switch(cstruc[i], "ustruc" = -1, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4, "propto" = 5, 
+                        "proptoustruc" = 6, "corAR1ustruc" = 7, "corExpustruc" = 8, "corCSustruc" = 9, "corMaternustruc" = 10)
   }
   cstruclvn = switch(object$corP$cstruclv, "ustruc" = 0, "diag" = 0, "corAR1" = 1, "corExp" = 2, "corCS" = 3, "corMatern" = 4)
   corWithinLv <- object$corP$corWithinLV
@@ -79,10 +80,10 @@ se.gllvm <- function(object, ...){
   # Trait model
   if (!is.null(object$TR)) {
     {
-      if((object$method %in% c("VA", "EVA"))){
+      if((method %in% c("VA", "EVA"))){
         sdr <- objrFinal$he(objrFinal$par)
       }
-      if(object$method == "LA"){
+      if(method == "LA"){
         pars <- objrFinal$par
         sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
       }
@@ -119,10 +120,12 @@ se.gllvm <- function(object, ...){
       if(!is.null(object$params$row.params.random)) {
         incld[names(objrFinal$par)=="lg_Ar"] <- TRUE
         incld[names(objrFinal$par)=="r0r"] <- TRUE
+        if(ncol(object$TMBfn$env$data$csR)<2)incl[names(objrFinal$par) == "sigmaijr"] <- FALSE
         incl[names(objrFinal$par)=="r0r"] <- FALSE; 
       } else {
         incl[names(objrFinal$par)=="log_sigma"] <- FALSE
         incl[names(objrFinal$par)=="r0r"] <- FALSE
+        incl[names(objrFinal$par) == "sigmaijr"] <- FALSE
       }
       if(!is.null(object$params$row.params.fixed)){
         if(object$params$row.params.fixed[1]==0) incl[names(objrFinal$par)=="r0f"][1] <- FALSE
@@ -277,7 +280,7 @@ se.gllvm <- function(object, ...){
         if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
       }
       
-      if(family %in% c("negative.binomial")) {
+      if(family %in% c("negative.binomial", "negative.binomial1")) {
         se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
         out$sd$phi <- se.lphis*object$params$phi;
         if(length(unique(disp.group))==p){
@@ -351,33 +354,58 @@ se.gllvm <- function(object, ...){
         if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
           sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
         }
-        nr = object$TMBfn$env$data$nr
+        trmsize = object$TMBfn$env$data$trmsize
         
         for(re in 1:length(cstrucn)){
+          if(cstrucn[re] %in% c(0,-1, 5, 6:10)){
+            # diag, ustruc, propto, proptoustruc
+            sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
+            # parse labels
+            form <- parse(text = colnames(trmsize)[re])[[1]]
+            trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+            LHS <- labels(trm)
+            if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+            RHS <- form[[3]]
+            
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            
+            iter <- iter + trmsize[1,re]
+          }
+          
           if(cstrucn[re] %in% c(1,3)) {
             sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-            names(sigma)[iter] <- names(nr)[re]
-            names(sigma)[iter+1] <- paste0(names(nr)[re],"rho")
+            names(sigma)[iter] <- colnames(trmsize)[re]
+            names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],".rho")
             sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
             iter <- iter +2
           } else if(cstrucn[re] %in% c(2)){
             sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-            names(sigma)[iter] = "Scale"
-            names(sigma)[iter+1] = names(nr)[re]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
             iter <- iter + 2
           } else if(cstrucn[re] %in% c(4)){
             # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)] # matern smoothness fixed
             sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-            names(sigma)[iter] = "Scale"
-            names(sigma)[iter+1] = names(nr)[re]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
             iter <- iter + 2
             # Matern smoothness
             # names(sigma)[iter+1] = "Matern kappa"
             # iter <- iter +1
-          } else {
-            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-            names(sigma)[iter] = names(nr)[re]
+          }
+          
+          if(cstrucn[re] %in% c(7,9)){
+            sigma[iter] <- sigma[iter]*(1-object$params$sigma[iter]^2)^1.5
+            names(sigma)[iter] <- paste0(colnames(trmsize)[re],".rho")
             iter <- iter +1
+          }else if(cstrucn[re] == 8){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }else if(cstrucn[re] == 10){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
           }
         }
         out$sd$sigma <- sigma
@@ -438,7 +466,7 @@ se.gllvm <- function(object, ...){
       p0 <- p0+runif(p,0,0.001)
       pars[p0i] <- p0
     }
-    if((object$method %in% c("VA", "EVA"))){
+    if((method %in% c("VA", "EVA"))){
       sdr <- objrFinal$he(pars)
     }
     if(method == "LA"){
@@ -505,10 +533,12 @@ se.gllvm <- function(object, ...){
       incld[names(objrFinal$par) == "lg_Ar"] <- TRUE
       incld[names(objrFinal$par) == "r0r"] <- TRUE
       inclr[names(objrFinal$par) == "r0r"] <- TRUE;
+      if(ncol(object$TMBfn$env$data$csR)<2)incl[names(objrFinal$par) == "sigmaijr"] <- FALSE
       incl[names(objrFinal$par) == "r0r"] <- FALSE; 
     } else {
       incl[names(objrFinal$par)=="log_sigma"] <- FALSE
       incl[names(objrFinal$par)=="r0r"] <- FALSE
+      incl[names(objrFinal$par)=="sigmaijr"] <- FALSE
     }
     if(!is.null(object$params$row.params.fixed)){
       if(object$params$row.params.fixed[1]==0) incl[names(objrFinal$par)=="r0f"][1] <- FALSE
@@ -525,7 +555,7 @@ se.gllvm <- function(object, ...){
       incl[names(objrFinal$par)=="B"] <- FALSE
     }
     
-    if(method=="LA" || ((num.lv+num.lv.c)==0 && (object$method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
+    if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
       covM <- try(MASS::ginv(sdr[incl,incl]))
       if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       se <- try(sqrt(diag(abs(covM))))
@@ -734,7 +764,7 @@ se.gllvm <- function(object, ...){
     }
     if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
     
-    if(family %in% c("negative.binomial")) {
+    if(family %in% c("negative.binomial", "negative.binomial1")) {
       se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
       out$sd$phi <- se.lphis*object$params$phi;
       if(length(unique(disp.group))==p){
@@ -819,43 +849,70 @@ se.gllvm <- function(object, ...){
       names(out$sd$B) <- names(out$params$B)
       }
     }
-    if(!is.null(object$params$row.params.random)) { 
-      iter = 1 # keep track of index
-      sigma <- se$log_sigma
-      if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
-        sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
-      }
-      nr = object$TMBfn$env$data$nr
-      
-      for(re in 1:length(cstrucn)){
-        if(cstrucn[re] %in% c(1,3)) {
-          sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-          names(sigma)[iter] = names(nr)[re]
-          names(sigma)[iter+1] = paste0(names(nr)[re],"rho")
-          sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
-          iter <- iter +2
-        } else if(cstrucn[re] %in% c(2)){
-          sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-          names(sigma)[iter] = "Scale"
-          names(sigma)[iter+1] = names(nr)[re]
-          iter <- iter + 2
-        } else if(cstrucn[re] %in% c(4)){
-          # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)]# matern smoothness fixed
-          sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
-          names(sigma)[iter] = "Scale"
-          names(sigma)[iter+1] = names(nr)[re]
-          iter <- iter + 2
-          # Matern smoothness
-          # names(sigma)[iter+1] = "Matern kappa"
-          # iter <- iter +1
-        } else {
-          sigma[iter] <- sigma[iter]*object$params$sigma[iter]
-          names(sigma)[iter] = names(nr)[re]
-          iter <- iter +1
+
+      if(!is.null(object$params$row.params.random)) { 
+        iter = 1 # keep track of index
+        sigma <- se$log_sigma
+        if(!is.null(object$TMBfn$env$map$log_sigma)) { #clean from duplicates and NAs
+          sigma = sigma[!duplicated(object$TMBfn$env$map$log_sigma) & !is.na(object$TMBfn$env$map$log_sigma)]
         }
+        trmsize = object$TMBfn$env$data$trmsize
+        
+        for(re in 1:length(cstrucn)){
+          if(cstrucn[re] %in% c(0,-1, 5, 6:10)){
+            # diag, ustruc, propto, proptoustruc
+            sigma[iter:(iter+trmsize[1,re]-1)] <- sigma[iter:(iter+trmsize[1,re]-1)]*object$params$sigma[iter:(iter+trmsize[1,re]-1)]
+            # parse labels
+            form <- parse(text = colnames(trmsize)[re])[[1]]
+            trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
+            LHS <- labels(trm)
+            if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
+            RHS <- form[[3]]
+            
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            
+            iter <- iter + trmsize[1,re]
+          }
+          
+          if(cstrucn[re] %in% c(1,3)) {
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] <- colnames(trmsize)[re]
+            names(sigma)[iter+1] <- paste0(colnames(trmsize)[re],".rho")
+            sigma[iter+1] <- sigma[iter+1]*(1-object$params$sigma[iter+1]^2)^1.5
+            iter <- iter +2
+          } else if(cstrucn[re] %in% c(2)){
+            sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
+            iter <- iter + 2
+          } else if(cstrucn[re] %in% c(4)){
+            # sigma[iter:(iter+2)] <- sigma[iter:(iter+2)]*object$params$sigma[iter:(iter+2)] # matern smoothness fixed
+            sigma[iter:(iter+1)] <- sigma[iter:(iter+1)]*object$params$sigma[iter:(iter+1)]
+            names(sigma)[iter] = paste0(colnames(trmsize)[re],".Scale")
+            names(sigma)[iter+1] = colnames(trmsize)[re]
+            iter <- iter + 2
+            # Matern smoothness
+            # names(sigma)[iter+1] = "Matern kappa"
+            # iter <- iter +1
+          }
+          
+          if(cstrucn[re] %in% c(7,9)){
+            sigma[iter] <- sigma[iter]*(1-object$params$sigma[iter]^2)^1.5
+            names(sigma)[iter] <- paste0(colnames(trmsize)[re],".rho")
+            iter <- iter +1
+          }else if(cstrucn[re] == 8){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }else if(cstrucn[re] == 10){
+            sigma[iter] <- sigma[iter]*object$params$sigma[iter]
+            names(sigma)[iter] =  paste0(colnames(trmsize)[re],".Scale")
+            iter <- iter + 1
+          }
+        }
+        out$sd$sigma <- sigma
       }
-      out$sd$sigma <- sigma
-    }
+    
     if(num.lv.cor>0 & cstruclvn>0){ 
       if(length(object$params$rho.lv)>0){
         if(!is.null(object$TMBfn$env$map$rho_lvc)) { #clean from duplicates and NAs

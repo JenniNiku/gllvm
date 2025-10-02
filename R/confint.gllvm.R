@@ -58,7 +58,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     object$sd$beta0 <- unique(object$sd$beta0)
   }
   if(is.null(parm)){
-    if (object$family == "negative.binomial") {
+    if (object$family %in% c("negative.binomial", "negative.binomial1")) {
       object$params$phi <- NULL
       object$sd$phi <- NULL
     }
@@ -75,7 +75,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$sd$corrpar <- NULL
     }
     
-    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params.fixed", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta", "rho.sp")
+    parm_all <- c("sigma.lv","theta", "LvXcoef","beta0", "Xcoef", "B", "row.params.fixed", "sigma", "sigmaB", "sigmaLvXcoef", "inv.phi", "phi", "ZINB.phi", "ZINB.inv.phi" ,"p","zeta", "rho.sp", "rho.lv")
     if(object$randomB!=FALSE){
       object$params$LvXcoef <- NULL
     }
