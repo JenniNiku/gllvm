@@ -103,7 +103,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     newnams <- c(newnams, dimnames(object$params$theta)[[2]][1:(num.lv+num.lv.c+num.RR)])
   }
   
-  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0,5:10))){
+  if(any(object$TMBfn$env$data$cstruc %in% c(-1,0,5:10)) & ( "sigma" %in% names(object$params) | !is.null(object$params$sigmaijr))){
     # check with terms are diag/ustruc
     # we don't report the other here for the moment
     
