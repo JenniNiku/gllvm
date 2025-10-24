@@ -2422,7 +2422,8 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   
   if(!is.null(fit$lvs) && inherits(fit$lvCor,"formula")){
     n_nlv <- n_nlvc <- NROW(fit$lvs)
-    if((type!="residual") & (n_nlvc!=n) & (num.lv.c>0) & (n_nlvc != n)) {
+    #  & (n_nlvc!=n) & (n_nlvc != n)
+    if((type!="residual") & (num.lv.c>0)) {
       namesvec <- names(fit$TMBfn$par[fit$Hess$incla])
       dLV <- list(fit$TMBfn$env$data$dLV)
       if((num.lv.c +num.lv)>1){
@@ -2437,8 +2438,8 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
       D <- as.matrix(rbind(D[-(radidx+1:nrow(D)),], dLV%*% D[1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx,],D[-c(1:(num.lv.c*n_nlvc+num.lv*n_nlv+radidx)),]))
       B <- as.matrix(cbind(B[,-(radidx+1:ncol(B))], B[,1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx]%*%t(dLV),B[,-c(1:(num.lv.c*n_nlvc+num.lv*n_nlv+radidx))]))
       C <- t(B)
-      colnames(D)[1:(num.lv.c*n+num.lv*n)+radidx]<-row.names(D)[1:(num.lv.c*n+num.lv*n)+radidx]<- namesvec[1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx]
-      colnames(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<-row.names(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<- namesvec[-(1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx)]
+      colnames(D)[1:(num.lv.c*n+num.lv*n)+radidx]<-row.names(D)[1:(num.lv.c*n+num.lv*n)+radidx]<- c(namesvec[1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx])[(dLV%*%c(1:(num.lv.c*n_nlvc+num.lv*n_nlv)))[,1]]
+      colnames(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<-row.names(D)[-(1:(num.lv.c*n+num.lv*n)+radidx)]<- c(namesvec[-(1:(num.lv.c*n_nlvc+num.lv*n_nlv)+radidx)])
       n_nlv <- n_nlvc <- n
     }
   } else {
