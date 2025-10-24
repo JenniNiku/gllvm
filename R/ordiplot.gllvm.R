@@ -236,6 +236,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         }      
       }
     }    
+    choose.lvs =lv
   }
   
   if ((num.lv+num.lv.c+num.RR) > 1 & ncol(lv) > 1 & length(which.lvs)>1) {
