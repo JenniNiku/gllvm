@@ -21,7 +21,7 @@ Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 LazyData: true
 LinkingTo: TMB, RcppEigen
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 NeedsCompilation: yes
 URL: https://jenniniku.github.io/gllvm/, https://github.com/JenniNiku/gllvm
 BugReports: https://github.com/JenniNiku/gllvm/issues
