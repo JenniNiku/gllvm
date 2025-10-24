@@ -3,7 +3,7 @@
 ## Original author: Jenni Niku
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, family = "poisson", 
-                      num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, randomB = FALSE, 
+                      num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, LVgroups = NULL, randomB = FALSE, 
                       method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL,
                       trace = FALSE, link = "logit", n.init = 1, n.init.max = 10, restrict = 30, start.params = NULL, RElist = NULL, dr = matrix(0), trmsize = matrix(0), csR = matrix(0), proptoMats = list(list(matrix(0))), dLV=NULL, cstruc = "diag", cstruclv = "diag", dist = list(matrix(0)), distLV = matrix(0),
@@ -227,12 +227,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     if(is.null(dLV)) stop("Define structure for LVs.")
     nu <- dim(dLV)[2]
     times <- n/nu#dim(dLV)[1]
+    if(corWithinLV) { times = LVgroups$times} #nu <- length(LVgroups$times);
     if((cstruclvn == 2) | (cstruclvn == 4)) {
       if(corWithinLV){
         if(is.null(distLV))
-          distLV=matrix(1:times)
-        if(NROW(distLV)!=times)
-          stop("Number of rows in 'distLV' should be same as maximum number of units within groups when corWithinLV = TRUE")
+          distLV=matrix(unlist(sapply(times, function(x) 1:x)))
+        if(NROW(distLV)!=dim(dLV)[2])
+          stop("Number of rows in 'distLV' should be same as number of units when corWithinLV = TRUE")
       } else {
         if(is.null(distLV))
           distLV=matrix(1:nu)
@@ -764,28 +765,28 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     
     ## Set up starting values for scale (and shape) parameters for correlated LVs
     if(num.lv.cor>0 & cstruclvn>0){
-      rho_lvc<- matrix(rep(0, num.lv.cor))
+      rho_lvc<- matrix(rep(0, num.lv.cor*length(times)), num.lv.cor, length(times))
       if(cstruclvn==2){ #"corExp"
         if(is.null(rho.lv)) {
           rho.lv=rep(0, num.lv.cor) 
         } else if(length(rho.lv)==num.lv.cor) {
           rho.lv=c(log(rho.lv))
         }
-        rho_lvc<- matrix(c(rep(scaledc, each=num.lv.cor)), num.lv.cor)
+        rho_lvc<- matrix(c(rep(mean(scaledc), each=num.lv.cor*length(times))), num.lv.cor, length(times))
       } else if(cstruclvn==4){#"corMatern"
         if(is.null(rho.lv)) {
           rho.lv=rep(log(MaternKappa), each=num.lv.cor)
         } else if(length(rho.lv)==num.lv.cor) {
           rho.lv=c(log(rho.lv))
         }
-        rho_lvc<- matrix(c(rep(scaledc, each=num.lv.cor), rho.lv), num.lv.cor)
+        rho_lvc<- matrix(c(rep(mean(scaledc), each=num.lv.cor*length(times)), rho.lv), num.lv.cor, length(times))
         # rho_lvc<- matrix(rho.lv,nrow = num.lv.cor)
       }
       # else {
       #   map.list$scaledc = factor(rep(NA, length(scaledc)))
       # }
       
-      if(cstruclvn %in% c(2,4)){
+      if(cstruclvn %in% c(1,3,2,4)){
         iv<-rep(1:nrow(rho_lvc), ncol(rho_lvc)); 
         if(!is.null(setMap$rho_lvc)){
           if((length(setMap$rho_lvc)==length(rho_lvc))) 
@@ -799,6 +800,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           maprho = matrix(iv, nrow(rho_lvc), ncol(rho_lvc))
           maprho[, ncol(maprho)] = NA
           map.list$rho_lvc = factor(c(maprho))
+        } else {
+          map.list$rho_lvc = factor(iv)
         }
       }
       fit$rho.lv = rho_lvc
@@ -806,6 +809,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       rho_lvc <- matrix(0)
       map.list$rho_lvc = factor(NA) 
     }
+    
     
     ### VA method, used only if there is some random effects/LVs in the model
     
@@ -839,25 +843,27 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(corWithinLV) {
           if(diag.iter>0){
             if(Astruc>=3){
-              Au <- c(Au[1:(n)])
+              Au <- c(Au[1:(sum(times))])
               AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
+            } else {
+              Au <- c(Au[1:(sum(times)*num.lv.cor)])
             }
           } else {
             if(Lambda.struc == "unstructured" && Astruc==1) {
-              Au <- c(Au[1:(n*num.lv.cor)], rep(0,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
+              Au <- c(Au[1:(sum(times)*num.lv.cor)], rep(0,sum(times*(times-1)/2)*num.lv.cor) )
             } else if(Lambda.struc == "bdNN" && Astruc==2){
-              Au <- c(Au[1:(n*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor*n) )
+              Au <- c(Au[1:(sum(times)*num.lv.cor)], rep(0,nrow(NN)*num.lv.cor) )
             } else if(Astruc==3) {
-              Au <- c(Au[1:(n)], rep(0,sum(lower.tri(matrix(0,n,n)))) )
+              Au <- c(Au[1:(sum(times))], rep(0,sum(times*(times-1)/2)) )
               AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
             } else if(Astruc==4) {
-              Au <- c(Au[1:(n)], rep(0,nrow(NN)*nu) )
+              Au <- c(Au[1:(sum(times))], rep(0,nrow(NN)) )
               AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
             } else if(Astruc==5) {
-              Au <- c(Au[1:(n)])
+              Au <- c(Au[1:(sum(times))])
               AQ<-diag(rep(log(Lambda.start[1]),num.lv.cor),num.lv.cor)
               Au<-c(Au,AQ[lower.tri(AQ, diag = TRUE)])
             } 
@@ -1064,6 +1070,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             if(nrow(u) != nu){
               u=as.matrix((Matrix::t(dLV)%*%u/Matrix::colSums(dLV))[1:nu,, drop=FALSE])
             }
+          } else {
+            u=as.matrix((Matrix::t(dLV)%*%u/Matrix::colSums(dLV))[1:sum(times),, drop=FALSE])
           }
         }
       } else {
@@ -1226,7 +1234,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1)
         
         # if(row.eff=="random"){
         #   if(dependent.row) sigma<-c(log(sigma), rep(0, num.lv))
@@ -1293,7 +1301,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       ### Set up data and parameters
       
       # data.list <- list(y = y, x = Xd, x_lv = lv.X , xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = as.matrix(dist(distLV)), Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
-      data.list <- list(y = y, x = Xd, x_lv = lv.X , xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
+      data.list <- list(y = y, x = Xd, x_lv = lv.X , xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs =  cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1)
 
       parameter.list <- list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc,thetaH = thetaH, bH=bH
       
@@ -1461,13 +1469,13 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           Au1<- c(param1[nam=="Au"])
           if(corWithinLV) {
             if(Lambda.struc == "unstructured" && Astruc==1) {
-              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,sum(lower.tri(matrix(0,n,n)))*num.lv.cor) )
+              Au1 <- c(pmax(Au1[1:(sum(times)*num.lv.cor)],log(1e-2)), rep(1e-3,sum(times*(times-1)/2)*num.lv.cor) )
             } else if(Lambda.struc == "bdNN" && Astruc==2){
-              Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor*n) )
+              Au1 <- c(pmax(Au1[1:(sum(times)*num.lv.cor)],log(1e-2)), rep(1e-3,nrow(NN)*num.lv.cor) )
             } else if(Astruc==3) {
-              Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,sum(lower.tri(matrix(0,n,n)))), Au1[-(1:n)])
+              Au1 <- c(log(exp(Au1[1:(sum(times))])+1e-2), rep(1e-3,sum(times*(times-1)/2)), Au1[-(1:sum(times))])
             } else if(Astruc==4) {
-              Au1 <- c(log(exp(Au1[1:(n)])+1e-2), rep(1e-3,nrow(NN)*nu), Au1[-(1:n)])
+              Au1 <- c(log(exp(Au1[1:(sum(times))])+1e-2), rep(1e-3,nrow(NN)), Au1[-(1:sum(times))])
             } 
             # else if(Astruc==6){
             #   Au1 <- c(pmax(Au1[1:(n*num.lv.cor)],log(1e-2)), rep(1e-3,NN[1]*num.lv.cor*n) )
@@ -1511,7 +1519,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
         
         #Because then there is no next iteration
-        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
+        data.list = list(y = y, x = Xd,  x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1)
         
         parameter.list <- list(r0r = r0r1, sigmaijr = sigmaijr1, r0f = r0f1, b = b1, b_lv = b.lv1, sigmaB = sigmaB1, Abb = spAr1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B = B1, Br=Br1,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
@@ -1634,13 +1642,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       if((num.lv+num.lv.c+num.RR) > 0){
         if(num.lv.cor > 0){ # Correlated latent variables
-          if(corWithinLV){
-            lvs<-(matrix(param[ui],n,num.lv.cor))
-          } else {
             lvs = matrix(param[ui],nu,num.lv.cor)
             rownames(lvs) =colnames(dLV)
             # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
-          }
           sigma.lv <- abs(param[si])
           
           rho_lvc = param[names(param)=="rho_lvc"]
@@ -1806,7 +1810,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
-        data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, dLV = dLV, csR = csR, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
+        data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, dLV = dLV, csR = csR, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1)
         
         map.list2 <- map.list 
         map.list2$log_sigma = factor(NA)
@@ -1840,7 +1844,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           # fit$b.lv <- b.lv
         }
       }
-      data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats,  dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv)
+      data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats,  dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=1,model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1)
       
       if(family %in% c("ordinal", "orderedBeta")){
         data.list$method = 0
@@ -1864,8 +1868,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list$u = factor(NA) 
       }
       
-      if(num.lv.cor>0 & (!corWithinLV)){
-        u <- as.matrix(u[1:nu,])
+      if(num.lv.cor>0 ){
+        if((!corWithinLV)){
+          u <- as.matrix(u[1:nu,])
+        } else {
+          u <- as.matrix(u[1:sum(times),])
+        }
       }
       
       # Row parameter settings
@@ -2147,48 +2155,31 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       si <- names(param) == "sigmaLV"
       ui <- names(param)=="u"
       
-      if(num.lv.cor > 0){
-        if((num.lv.cor)>0 & corWithinLV){
-          lvs<-(matrix(param[ui],n,num.lv.cor))
-        } else{ 
+      
+      if((num.lv+num.lv.c+num.RR) > 0){
+        if(num.lv.cor > 0){ # Correlated latent variables
           lvs = matrix(param[ui],nu,num.lv.cor)
           rownames(lvs) =colnames(dLV)
           # lvs = dLV%*%matrix(param[ui],nu,num.lv.cor)
+          sigma.lv <- abs(param[si])
+          
+          rho_lvc = param[names(param)=="rho_lvc"]
+          if((cstruclvn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
+          if((cstruclvn %in% c(2,4))) {
+            rho.lv<- exp(param[names(param)=="rho_lvc"]);
+            # scaledc<- exp(param[names(param)=="scaledc"]);
+          }
+        } else if((num.lv+num.lv.c)>0) {
+          lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
         }
-        
-        theta <- matrix(0,p,num.lv.cor+num.RR)
-        sigma.lv <- abs(param[si])
-        # sigma.lv <- exp(param[si])
-        
-        if((num.lv.cor+num.RR)>1){
-          if(num.RR>0)diag(theta[,1:num.RR])<-1
-          diag(theta[,(num.RR+1):(num.RR+num.lv.cor)]) <- 1 #sigma.lv 
-        } else if((num.lv.cor+num.RR)==1) {
-          theta[1,1] <- 1 #sigma.lv[1]
-        }
-        
-        if(p>1) {
-          if(num.RR>0)theta[,1:num.RR][lower.tri(theta[,1:num.RR,drop=F],diag=FALSE)] <- param[li][1:(num.RR*p-num.RR*(num.RR+1)/2)];
-          theta[,(num.RR+1):(num.lv.cor+num.RR)][lower.tri(theta[,1:num.lv.cor,drop=F],diag=FALSE)] <- tail(param[li], num.lv.cor*p-(num.lv.cor*(num.lv.cor+1)/2));
-        } else {
-          theta <- as.matrix(1)
-        }
-        rho_lvc = as.matrix(param[names(param)=="rho_lvc"])
-        if((cstruclvn %in% c(1,3))) rho.lv<- param[names(param)=="rho_lvc"] / sqrt(1.0 + param[names(param)=="rho_lvc"]^2);
-        if((cstruclvn %in% c(2,4))) {
-          rho.lv<- exp(param[names(param)=="rho_lvc"]);
-          # scaledc<- exp(param[names(param)=="scaledc"]);
-        }
-        
-      } else if((num.lv+num.lv.c+num.RR) > 0){
-        if((num.lv.c+num.lv)>0)lvs<-(matrix(param[ui],n,num.lv+num.lv.c))
-        theta <- matrix(0,p,num.lv+(num.lv.c+num.RR))
+        theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
         if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
         if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if((num.lv+num.lv.c)>0) sigma.lv <- abs(param[si])
+        if(nlvr>0)sigma.lv <- abs(param[si])
         if(num.lv>0&(num.lv.c+num.RR)==0){
+          
           if(p>1) {
-            theta[,1:num.lv][lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
+            theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
             }
@@ -2200,7 +2191,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }
         }else if(num.lv==0&(num.lv.c+num.RR)>0){
           if(p>1) {
-            theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li];
+            theta[lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
               theta<-cbind(theta,matrix(-abs(param[li2]),ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
             }
@@ -2225,9 +2216,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!
-        
       }
-      
+
       if((nrow(dr)==n) || (nrow(xr)==n)) {
         rir = names(param)=="r0r"
         rif = names(param)=="r0f"
@@ -2762,41 +2752,40 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           } else {
             nMax<- 1
           }
-          A <- array(0, dim=c(times*nu, times*nu, nMax))
-          Alvm <- objr$report()$Alvm
+          A <- array(0, dim=c(sum(times), sum(times), nMax))
+          # Alvm <- objr$report()$Alvm
           
           AQ <- NULL
           
           for (q in 1:nMax) {
-            # for (i in  1:nu){
-            #   for (r in (1:times)){
-            #     A[(i-1)*times+r,(i-1)*times+r,q]=exp(Au[(q-1)*n+(i-1)*times+r]);
-            #   }
-            # }
-            # if(Astruc>0){#var cov
-            #   k=0;
-            #   if(Astruc %in% c(1,3)){ # var cov struct unstructured
-            #     for(i in 1:nu){
-            #       for (d in 1:times){
-            #         r=d+1
-            #         while (r<=(times)){
-            #           A[(i-1)*times+r,(i-1)*times+d,q]=Au[nu*times*nMax+k*nMax+q];
-            #           k=k+1; r=r+1
-            #         }
-            #       }
-            #     }
-            #   } else if(Astruc %in% c(2,4)) { # var cov struct NN
-            #     arank = nrow(NN);
-            #     for(i in 1:nu){
-            #       for (r in (1:arank)){
-            #         A[(i-1)*times+NN[r,1],(i-1)*times+NN[r,2],q]=Au[nu*times*nMax+k*nMax+q];
-            #         k=k+1;
-            #       }
-            #     }
-            #   }
-            # }
-            # A[,,q] <- A[,,q]%*%t(A[,,q])
-            # Uncomm
+            # Diagonal, common for all
+            for (i in  1:sum(times)){
+                A[i,i,q]=exp(Au[(q-1)*sum(times)+i]);
+            }
+            if(Astruc>0){#var cov
+              k=0;
+              if(Astruc %in% c(1,3)){ # var cov struct unstructured/UNN
+                itind=0
+                for(i in 1:length(times)){
+                  for (d in 1:times[i]){
+                    r=d+1
+                    while (r<=(times[i])){
+                      A[itind+r,itind+d,q]=Au[sum(times)*nMax+k*nMax+q];
+                      k=k+1; r=r+1
+                    }
+                  }
+                  itind = itind + times[i]
+                }
+              } else if(Astruc %in% c(2,4)) { # var cov struct NN
+                arank = nrow(NN);
+                for (r in (1:arank)){
+                    A[NN[r,1],NN[r,2],q]=Au[sum(times)*nMax+k*nMax+q];
+                    k=k+1;
+                }
+              }
+            }
+            A[,,q] <- A[,,q]%*%t(A[,,q])
+            
             # if(Astruc %in% c(3,4)){
             #   A[,,q] <- Alvm%*%t(Alvm)
             # } else {

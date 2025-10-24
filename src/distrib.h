@@ -106,6 +106,25 @@ matrix<Type> corExp(Type s0, Type s1, int nr, matrix<Type> dc)
   return S;
 }
 
+// // Exp decaying correlation matrix
+// template <class Type>
+// matrix<Type> corExpM(Type s0, Type s1, matrix<Type> dc)
+// {  //matrix<Type> corExp(Type s0, CppAD::vector<Type> s1, int nr, matrix<Type> dc)
+//   // matrix<Type> S(nr,nr);
+//   Type alf = 1/exp(s1);
+// 
+//   matrix<Type> S=s0*exp(-dc*alf )*s0;//*Type(0.99)
+//   
+//   // for (int d=0;d<nr;d++) {
+//   //   S(d,d)=s0*s0;
+//   //   for (int j=0;j<d;j++){
+//   //     S(d,j)=s0*exp(-dc(d,j)*alf )*s0;//*Type(0.99)
+//   //     S(j,d)=S(d,j);
+//   //   }
+//   // }
+//   return S;
+// }
+
 
 // Matern correlation matrix
 template <class Type>

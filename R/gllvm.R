@@ -1206,6 +1206,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
     
+    LVgroups <- NULL
     dLV = NULL;cstruclv = "diag"
     if(inherits(lvCor,"formula")) {
       # first, random effects part
@@ -1250,11 +1251,29 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           # consequence: we can use Zt everywhere
           mf.new <- mf
           if(any(corWithinLV)){
-            mf.new[, corWithinLV] <- apply(mf[, corWithinLV, drop=F],2,function(x)order(order(x)))
+            if(ncol(mf)==1){
+              LVgroups <- list(grpsv = mf, times = c(table(mf)))
+              if(nrow(distLV) == sum(LVgroups$times) & (cstruclv[corWithinLV] %in% c("corExp", "corMatern")) ){
+                distLV <- distLV[order(mf[, corWithinLV]),, drop=FALSE]
+              }
+              mf.new[, corWithinLV] <- apply(mf[, corWithinLV, drop=F],2,function(x)order(order(x)))
+            } else {
+              grpnames <- sapply(bar.lv[corWithinLV], function(x) paste(x[[3]]))
+              expr1 <- paste("order(",paste("mf$",c(colnames(mf)[colnames(mf) %in% grpnames], colnames(mf)[!(colnames(mf) %in% grpnames)]), sep="", collapse = ","),")","")
+              mf <- mf[eval(parse(text = expr1)),]
+              times <- apply(table(mf)>0, (1:ncol(mf))[colnames(mf) %in% grpnames], sum)
+              if(length(dim(times))>1){
+                timesnames <- paste(rep(rownames(times), ncol(times)), rep(colnames(times), each = nrow(times)), sep = "")
+                times <- c(times); names(times) <- timesnames
+              }
+              LVgroups <- list(grpsv = mf, times =  times[times>0])
+            }
           }
           colnames(mf.new) <- colnames(mf)
           RElistLV <- mkReTrms1(bar.lv, mf.new)
           dLV <- Matrix::t(RElistLV$Zt)
+          dLV <- dLV[,colSums(as.matrix(dLV))>0]
+          
           if(cstruclv == "corAR1")distLV = matrix(1:ncol(dLV))
           
           num.lv.cor <- num.lv + num.lv.c
@@ -1267,18 +1286,45 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(nrow(studyDesign) != nrow(y)) stop("A number of rows in studyDesign must be same as for response matrix.")
     }
     if(Lambda.struc %in% c("bdNN","UNN") & num.lv.cor>0){
-      NN <- min(NN, nrow(distLV)-1) # check than NN is smaller than the number of coordinate/distLV points
-      NN<-t(apply(as.matrix(dist(distLV, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
-      i1<-rep(1:nrow(NN), each=ncol(NN))
-      i2<-c(t(NN))
-      indM<-cbind(i1,i2)
-      indM[i1<i2,1]<- i2[i1<i2]
-      indM[i1<i2,2]<- i1[i1<i2]
-      # indM[,1]>indM[,2]
-      indM<-indM[order(indM[,2]),]
-      indM<-indM[order(indM[,1]),]
-      dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]), na.rm=TRUE)!=0)
-      NN<-indM[dupl,]
+      if(corWithinLV) {
+        # if(min(LVgroups$times) <=2) stop("Lambda.struc ='bdNN' or 'UNN' can not be used when lvCor group-variable has less than <2 levels within group.")
+        NNno <- min(NN,pmax(LVgroups$times-1,1)) 
+        NN <- NULL
+        k=0
+        i1<- NULL
+        for (i in 1:length(LVgroups$times)) {
+          # NN<-rbind(NN,k+t(apply(as.matrix(dist(distLV[k+1:LVgroups$times[i],,drop=FALSE], upper = TRUE, diag = TRUE)),1, order)[1+(1:NNno),,drop=FALSE]))
+          NNi <- t(apply(as.matrix(dist(distLV[k+1:LVgroups$times[i],,drop=FALSE], upper = TRUE, diag = TRUE)),1, order)[1+(1:NNno),,drop=FALSE])
+          NN<-rbind(NN,cbind(NNi,i))
+          i1 <- c(i1, rep(1:nrow(NNi), each=ncol(NNi)))
+          k = k+ LVgroups$times[i]
+        }
+        # i1<-rep(1:nrow(NN), each=ncol(NN)-1)
+        i2<-c(t(NN[,-ncol(NN), drop=FALSE]))
+        i3<-c(rep(NN[,ncol(NN)], each=ncol(NN)-1))
+        indM<-cbind(i1,i2, i3)
+        indM[i1<i2,1]<- i2[i1<i2]
+        indM[i1<i2,2]<- i1[i1<i2]
+        # indM[,1]>indM[,2]
+        indM<-indM[order(indM[,3], indM[,1],indM[,2]),]
+        # indM<-indM[order(indM[,2]),]
+        # indM<-indM[order(indM[,1]),]
+        
+      } else{
+        NN <- min(NN, nrow(distLV)-1) # check than NN is smaller than the number of coordinate/distLV points
+        NN<-t(apply(as.matrix(dist(distLV, upper = TRUE, diag = TRUE)),1, order)[1+(1:NN),])
+        i1<-rep(1:nrow(NN), each=ncol(NN))
+        i2<-c(t(NN))
+        indM<-cbind(i1,i2)
+        indM[i1<i2,1]<- i2[i1<i2]
+        indM[i1<i2,2]<- i1[i1<i2]
+        # indM[,1]>indM[,2]
+        indM<-indM[order(indM[,1],indM[,2]),]
+        # indM<-indM[order(indM[,2]),]
+        # indM<-indM[order(indM[,1]),]
+        # dupl<-c(TRUE, rowSums(abs(indM[-1,]-indM[1:(nrow(indM)-1),]), na.rm=TRUE)!=0)
+      }
+      NN<-indM[!duplicated(indM),,drop=FALSE]
     } else if(Lambda.struc %in% c("LR") & num.lv.cor>0){
       NN <- as.matrix(NN)
     } else {NN=matrix(0)}
@@ -1511,6 +1557,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zetacutoff = zetacutoff,
             start.optimizer = start.optimizer,
             start.optim.method = start.optim.method,
+            LVgroups = LVgroups,
             model = "trait.TMB"
             )
         if(length(all.vars(col.eff.formula))>0){
@@ -1578,6 +1625,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zetacutoff = zetacutoff,
             start.optimizer = start.optimizer,
             start.optim.method = start.optim.method,
+            LVgroups = LVgroups,
             model = "gllvm.TMB"
         )
         if(is.null(formula)) {

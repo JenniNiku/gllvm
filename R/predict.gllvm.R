@@ -242,7 +242,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         0) {
       
       if(!is.null(object$lvs) && inherits(object$lvCor,"formula")){
-        if(nrow(object$lvs)!=n) object$lvs = as.matrix(object$TMBfn$env$data$dLV%*%object$lvs) # !!!
+        object$lvs = as.matrix(object$TMBfn$env$data$dLV%*%object$lvs) # !!!
       }
       
       if (!is.null(newLV)) {

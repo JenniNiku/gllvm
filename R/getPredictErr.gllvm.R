@@ -119,7 +119,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         }
         
         if(object$num.lv.c > 0 |object$num.RR > 0){
-          if(NROW(A) != n) {
+          # if(NROW(A) != n) {
+          if(inherits(object$lvCor,"formula")){
             if(length(dim(A)) <3) {
               object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%A)
             } else {
