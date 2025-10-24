@@ -68,7 +68,8 @@ data(eSpider)
 data <- cbind(data.frame(y = c(eSpider$abund[eSpider$nonNA,]),
            species = factor(rep(1:ncol(eSpider$abund), each = length(eSpider$nonNA))),
            site = factor(rep(1:length(eSpider$nonNA), ncol(eSpider$abund)))),
-           do.call(rbind, replicate(ncol(eSpider$abund), scale(eSpider$X[eSpider$nonNA,]), simplify = FALSE)))
+           do.call(rbind, replicate(ncol(eSpider$abund), scale(eSpider$X[eSpider$nonNA,]), 
+           simplify = FALSE)))
 # Example 1: crossed random slope effects                          
 model <- glmmVA(y~species + ConWate + ConHumu + (0+ConHumu|species) + (0+ConWate|species),
                 family = "poisson", data = data)
