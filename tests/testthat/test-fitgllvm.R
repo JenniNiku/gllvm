@@ -96,7 +96,7 @@ test_that("constrained ordination models work", {
   y <- spider$abund
   suppressWarnings({fc0<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999)})
   fc1<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999, randomB="LV")
-  fc2<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999, randomB="LV", row.eff="random")
+  fc2<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 9, randomB="LV", row.eff="random")
   fc3<-gllvm(y, X, num.RR = 2, quadratic=T, family = "poisson", seed = 9226, randomB="LV", row.eff="random")
   expect_true(is.finite(fc0$logL))
   expect_true(is.finite(fc1$logL))
@@ -225,15 +225,38 @@ test_that("phylogenetic models work", {
 test_that("corWithinLV works", {
   data("kelpforest")
   SPinfo <- kelpforest$SPinfo
-  y<- (kelpforest$Y[kelpforest$X$YEAR>2017 & (kelpforest$X$SITE!="AHND"),SPinfo$GROUP=="ALGAE"]>0)*1
-  X<- kelpforest$X[kelpforest$X$YEAR>2017 & (kelpforest$X$SITE!="AHND"),]
-  studyDesign = data.frame(st = factor(paste(X$SITE, X$TRANSECT, sep = "")), YEAR=X$YEAR)
-  y<- y[,colSums(y>0)>9]
-
-  ## Test corWithinLV = TRUE
-  fitlv2ar1 = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="diagonal", seed = 1,
+  y<- (kelpforest$Y[kelpforest$X$YEAR<2004 & (kelpforest$X$SITE!="AHND"),SPinfo$GROUP=="ALGAE"]>0)*1
+  X<- kelpforest$X[kelpforest$X$YEAR<2004 & (kelpforest$X$SITE!="AHND"),]
+  studyDesign = data.frame(site = factor(X$SITE), transect = factor(X$TRANSECT), st = factor(paste(X$SITE, X$TRANSECT, sep = "")), YEAR=factor(X$YEAR))
+  # table(studyDesign$st)
+  y<- y[,colSums(y>0, na.rm = TRUE)>9]
+  distm = matrix(X$YEAR-min(X$YEAR))
+  disty <- c((table(studyDesign$YEAR, studyDesign$site)>0)*(1:4))
+  disty<- matrix(disty[disty>0])
+  
+  fitlv2exp = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="UNN", seed = 1, sd.errors=FALSE, starting.val ="zero",
+                    studyDesign = studyDesign, lvCor = ~corExp(0 + YEAR|site), distLV = disty, corWithinLV = TRUE) # 
+  expect_true(length(fitlv2exp$params$rho.lv)==2)
+  expect_true(all(round(fitlv2exp$params$rho.lv, digits = 2)-c(16.98, 0.61)<0.1))
+  expect_true(all(dim(fitlv2exp$lvs) == c(27,2)))
+  
+  fitlv2ar1 = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="diagonal", seed = 1, sd.errors=FALSE, starting.val ="zero",
                     studyDesign = studyDesign, lvCor = ~corAR1(1|st), corWithinLV = TRUE) # 
   expect_true(length(fitlv2ar1$params$rho.lv)==2)
-  expect_true(all(round(fitlv2ar1$params$rho.lv, digits = 2)-c(0.93, 0.97)<0.1))
+  expect_true(all(round(fitlv2ar1$params$rho.lv, digits = 2)-c(0.96, 0.82)<0.1))
   expect_true(all(dim(fitlv2ar1$lvs) == c(nrow(y),2)))
+  
+  fitlv2ar1cy = gllvm(y,scale(X[,4:5]), family = "binomial", method="EVA", num.lv.c = 1, Lambda.struc="diagonal", seed = 1, sd.errors=FALSE, starting.val ="zero",
+                    studyDesign = studyDesign, lvCor = ~corAR1(0 + YEAR|site), corWithinLV = TRUE) # 
+  expect_true(all(round(fitlv2ar1cy$params$rho.lv, digits = 2)-c(0.85)<0.1))
+  expect_true(all(dim(fitlv2ar1cy$lvs)==c(27, 1)))
+  
+  ## Test corWithinLV = TRUE
+  fitlv2ar1c = gllvm(y,scale(X[,4:5]), family = "binomial", num.lv.c = 2, Lambda.struc="diagonal", seed = 11, sd.errors=FALSE,
+                    studyDesign = studyDesign, lvCor = ~corAR1(1|st), corWithinLV = TRUE) # 
+  # plot(c(fitlv2ar1c$TMBfn$gr(fitlv2ar1c$TMBfn$par)))
+  expect_true(all(sort(round(fitlv2ar1c$params$rho.lv, digits = 2))-c(0.0,0.93)<0.1))
+  # plot(c(fitlv2ar1c$TMBfn$gr(fitlv2ar1c$TMBfn$par)))
+  # ordiplot(fitlv2ar1c)
+  
 })
