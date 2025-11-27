@@ -684,22 +684,27 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           for(i in 1:n){
             for(j in 1:p){
               if (family == "betaH") {
-                if(j>(p/2)){
-                  if(y[i, j]==0){
-                    b = 1 - mu[i,j]
-                    a = 0
+                if(!is.na(y[i, j])){
+                  if(j>(p/2)){
+                    if(y[i, j]==0){
+                      b = 1 - mu[i,j]
+                      a = 0
+                    } else {
+                      b <- 1 
+                      a <- 1 - (mu[i,j]) 
+                    }
                   } else {
-                    b <- 1 
-                    a <- 1 - (mu[i,j]) 
+                    if(y[i, j]==0){
+                      b = 1 - (mu[i,(p/2)+j])
+                      a = 0
+                    } else {
+                      if(y[i,j]==1) y[i,j]=1-1e-16
+                      b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+                    }
                   }
                 } else {
-                  if(y[i, j]==0){
-                    b = 1 - (mu[i,(p/2)+j])
-                    a = 0
-                  } else {
-                    if(y[i,j]==1) y[i,j]=1-1e-16
-                    b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-                  }
+                  b<-1
+                  a<-0
                 }
                 u <- runif(n = 1, min = a, max = b)
                 if(u==1) u=1-1e-16
@@ -849,23 +854,25 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         for(i in 1:n){
           for(j in 1:p){
             if (family == "betaH") {
-              if(j>(p/2)){
-                if(y[i, j]==0){
-                  b = 1 - mu[i,j]
-                  a = 0
+              if(!is.na(y[i, j])){
+                if(j>(p/2)){
+                  if(y[i, j]==0){
+                    b = 1 - mu[i,j]
+                    a = 0
+                  } else {
+                    b <- 1 
+                    a <- 1 - (mu[i,j]) 
+                  }
                 } else {
-                  b <- 1 
-                  a <- 1 - (mu[i,j]) 
+                  if(y[i, j]==0){
+                    b = 1 - (mu[i,(p/2)+j])
+                    a = 0
+                  } else {
+                    if(y[i,j]==1) y[i,j]=1-1e-16
+                    b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+                  }
                 }
-              } else {
-                if(y[i, j]==0){
-                  b = 1 - (mu[i,(p/2)+j])
-                  a = 0
-                } else {
-                  if(y[i,j]==1) y[i,j]=1-1e-16
-                  b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-                }
-              }
+              } else {a<-0; b<-1}
               u <- runif(n = 1, min = a, max = b)
               if(u==1) u=1-1e-16
               if(u==0) u=1e-16
@@ -954,23 +961,25 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         for(i in 1:n){
           for(j in 1:p){
             if (family == "betaH") {
-              if(j>(p/2)){
-                if(y[i, j]==0){
-                  b = 1 - mu[i,j]
-                  a = 0
+              if(!is.na(y[i, j])) {
+                if(j>(p/2)){
+                  if(y[i, j]==0){
+                    b = 1 - mu[i,j]
+                    a = 0
+                  } else {
+                    b <- 1 
+                    a <- 1 - (mu[i,j]) 
+                  }
                 } else {
-                  b <- 1 
-                  a <- 1 - (mu[i,j]) 
+                  if(y[i, j]==0){
+                    b = 1 - (mu[i,(p/2)+j])
+                    a = 0
+                  } else {
+                    if(y[i,j]==1) y[i,j]=1-1e-16
+                    b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+                  }
                 }
-              } else {
-                if(y[i, j]==0){
-                  b = 1 - (mu[i,(p/2)+j])
-                  a = 0
-                } else {
-                  if(y[i,j]==1) y[i,j]=1-1e-16
-                  b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-                }
-              }
+              } else {a<-0; b<-1}
               u <- runif(n = 1, min = a, max = b)
               if(u==1) u=1-1e-16
               if(u==0) u=1e-16
@@ -1052,23 +1061,25 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         for(i in 1:n){
           for(j in 1:p){
             if (family == "betaH") {
-              if(j>(p/2)){
-                if(y[i, j]==0){
-                  b = 1 - mu[i,j]
-                  a = 0
+              if(!is.na(y[i, j])){
+                if(j>(p/2)){
+                  if(y[i, j]==0){
+                    b = 1 - mu[i,j]
+                    a = 0
+                  } else {
+                    b <- 1 
+                    a <- 1 - (mu[i,j]) 
+                  }
                 } else {
-                  b <- 1 
-                  a <- 1 - (mu[i,j]) 
+                  if(y[i, j]==0){
+                    b = 1 - (mu[i,(p/2)+j])
+                    a = 0
+                  } else {
+                    if(y[i,j]==1) y[i,j]=1-1e-16
+                    b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
+                  }
                 }
-              } else {
-                if(y[i, j]==0){
-                  b = 1 - (mu[i,(p/2)+j])
-                  a = 0
-                } else {
-                  if(y[i,j]==1) y[i,j]=1-1e-16
-                  b <- a <- 1 - (mu[i,(p/2)+j]) + (mu[i,(p/2)+j])*pbeta(as.vector(unlist(y[i, j])), shape1 = phis[j]*mu[i, j], shape2 = phis[j]*(1-mu[i, j]))
-                }
-              }
+              } else {a<-0; b<-1}
               u <- runif(n = 1, min = a, max = b)
               if(u==1) u=1-1e-16
               if(u==0) u=1e-16
