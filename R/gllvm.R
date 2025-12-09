@@ -1467,11 +1467,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
         out$link <- link
     }
-    if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
-      message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
-      method  = "EVA"
-      out$method = "EVA"
-    }
+    # if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
+    #   message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
+    #   method  = "EVA"
+    #   out$method = "EVA"
+    # }
     if(link == "cloglog" && method == "EVA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
       message("Cloglog-link not available for method 'EVA'. Setting method = 'VA'.\n")
       method  = "VA"
