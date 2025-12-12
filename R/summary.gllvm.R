@@ -439,7 +439,7 @@ print.summary.gllvm <- function (x, ...)
   
   cat("AIC: ", AIC, "AICc: ", AICc, "BIC: ", BIC, "LL: ", zapsmall(x$`log-likelihood`, x$digits), "df: ", x$df, "\n\n")
   
-  if(x$Call[[1]] != "glmmVA"){
+  if(!grepl('glmmVA',deparse1(x$Call))){
     cat("Informed LVs: ", x$num.lv.c, "\n")
     cat("Constrained LVs: ", x$num.RR,"\n")
     cat("Unconstrained LVs: ", x$num.lv, "\n")
@@ -450,7 +450,7 @@ print.summary.gllvm <- function (x, ...)
   #only print SD from LV if model is quadratic or if (hybrid) concurrent
   if((x$num.lv.c)>0|!isFALSE(x$quadratic)){cat("Residual standard deviation of LVs: ", zapsmall(x$sigma.lv,x$digits),"\n\n")}else{cat("\n")}
   
-  if(x$Call[[1]] != "glmmVA"){
+  if(!grepl('glmmVA',deparse1(x$Call))){
   cat("Formula: ", paste(x$formula, collapse = ""), "\n")
   cat("LV formula: ", ifelse(is.null(x$lv.formula),"~ 0", paste(x$lv.formula,collapse="")), "\n")
   cat("Row effect: ", ifelse(isFALSE(x$row.eff),"~ 1", paste(x$row.eff,collapse="")), "\n")
