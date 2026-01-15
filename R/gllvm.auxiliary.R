@@ -2075,6 +2075,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   row.names(covb)<-colnames(covb) <- colnames(diag.term2)
   out <- list()
   
+  if(!return.covb){
+  
   #separate errors row-effects
   ser0 <- covb[colnames(covb)=="r0r",colnames(covb)=="r0r"]
   covb <- covb[colnames(covb)!="r0r",colnames(covb)!="r0r"]
@@ -2103,10 +2105,9 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$Ab_lv <- covb_lvErr
     covsB <- as.matrix(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   }
-  if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
   # if((num.RR+num.lv+num.lv.c)>0){
-  if(!return.covb){
     covb <- as.matrix(covb)
     
     
@@ -2464,12 +2465,12 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   }
   
   colnames(covb)<-row.names(covb)<-colnames(D)
-  
+  out <- list()
+  if(!return.covb){
   #separate errors row-effects
   ser0 <- covb[colnames(covb)=="r0r",colnames(covb)=="r0r"]
   covb <- covb[colnames(covb)!="r0r",colnames(covb)!="r0r"]
   
-  out <- list()
   if(!is.null(fit$params$row.params.random)) {
     Ar <- list()
     for(re in 1:ncol(trmsize)){
@@ -2492,9 +2493,8 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     out$Ab_lv <- covb_lvErr
     covsB <- covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"]
   }
-  if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
-  if(!return.covb){
     #re-order, select submatrices
     try({
       if(num.lv.cor>0){
