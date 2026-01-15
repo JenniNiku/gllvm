@@ -8,6 +8,9 @@
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
 #' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
 #' @param offset specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
+#' @param se.fit logical. If \code{TRUE}, performs 1000 simulations from the asymptotic covariance matrix for fixed effects, and from the CMSEP covariance matrix for the random effects. If an integer is provided, it is used as the number of simulations instead. 
+#' @param alpha numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.
+#' @param seed numeric, defaults to 42. Seed used for simulation in se.fit.
 #' @param ... not used.
 #'
 #' @details
@@ -54,7 +57,7 @@
 #'
 #'@export
 #'@export predict.gllvm
-predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
 
   if(type=="class" & !(object$family %in% c("binomial", "ordinal"))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
@@ -463,5 +466,213 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)
   if(any(class(out) %in% "dgeMatrix")) out <- as.matrix(out)
+  
+  if((is.numeric(se.fit) || se.fit) && isFALSE(object$sd)){
+    stop("Cannot calculate standard errors for the prediction without standard errors of the parameter estimates. Please refit the model with 'sd.erors = TRUE', or use 'se.gllvm'.")
+  }else if(is.numeric(se.fit) || se.fit){
+    num.lv <- object$num.lv
+    num.RR <- object$num.RR
+    num.lv.c <- object$num.lv.c
+    num.lv.cor <- object$num.lvcor
+    quadratic = object$quadratic
+    
+    incl <- object$Hess$incl
+    incla <- object$Hess$incla
+    if(object$method %in% c("VA","EVA")){
+      incla <- rep(FALSE, length(object$TMBfn$par))
+      if((num.lv.c+num.lv+num.lv.cor)>0)incla[names(object$TMBfn$par)=="u"] <- TRUE
+      if("Br" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="Br"] <- TRUE
+      if(num.RR>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
+      if("r0r" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="r0r"] <- TRUE
+    }
+    
+    if(is.null(incla)) incla <- 0
+    
+    R <- 1e3
+    if(is.numeric(se.fit))R <- se.fit
+    
+    set.seed(seed)
+    
+    if(sum(incl)>0){
+      Vf <- vcov(object)
+      ffs <- try(MASS::mvrnorm(R, object$TMBfn$par[incl],Vf), silent = TRUE)
+      if(inherits(ffs, "try-error"))stop("Covariance matrix of fixed effects is not semi positive-definite.")
+      colnames(ffs) <- names(object$TMBfn$par)[incl]
+      
+      # Same code for organsing map as in se.gllvm
+      if(any(colnames(ffs)%in%names(object$TMBfn$env$map))){
+        map <- object$TMBfn$env$map[names(object$TMBfn$env$map)%in%colnames(ffs)]
+        # rebuild se matrix if mapped parameters
+        ffs.new <- NULL
+        for(nm in unique(colnames(ffs))){
+          if(!nm%in%names(map)){
+            ffs.new <- cbind(ffs.new,ffs[,colnames(ffs)==nm, drop=FALSE])
+          }else{
+            ffs.new <- cbind(ffs.new, ffs[,colnames(ffs)==nm, drop=FALSE][,map[[nm]],drop=FALSE])
+          }
+          
+        }
+        ffs <- ffs.new
+        rm(ffs.new)
+      }
+    
+    }
+    
+    if(sum(incla)>0){
+      if(object$method == "LA"){
+        Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
+      }else{
+        Vr <- CMSEPf(object, return.covb = TRUE)
+      }
+      rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
+      if(inherits(rfs, "try-error"))stop("Covariance matrix of random effects is not semi positive-definite.")
+    }
+    
+    # set all parameters to NA to avoid potential issues if we miss something
+    object$params <- lapply(object$params, function(x) {
+      if (is.numeric(x)) {
+        x[] <- NA 
+      }
+      x
+    })
+    object$lvs[] <- NA
+    
+    predSims <- array(dim = c(R, dim(out)))
+    # parameter organisation, partly from gllvm.TMB and traitTMB.R, should really store this in a separate function so we don't keep copying the same code...
+    for(r in 1:R){
+      # fixed effects first
+      # fixed effects needed for prediction; beta0, Xcoef, sigmaLV, lambda, phi, zeta, 4th corner, r0f, b_lv, 
+      
+      if(sum(incl)>0){
+      newpars <- relist_gllvm(ffs[r,], object$TMBfn$env$parList())
+      newobject <- object
+      newobject$params$beta0 <- newpars$b[1,]
+      if(nrow(newpars$b)>1)newobject$params$Xcoef <- t(newpars$b[-1,,drop=FALSE])
+      
+      # LV stuff
+      if((num.lv+num.lv.c)>0)newobject$params$sigma.lv <- abs(newpars$sigmaLV)
+      
+      # Organising theta is a pain, copied almost completely from gllvm.TMB.R
+      if((num.lv+num.lv.c+num.RR)){
+        theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
+        if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
+        if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
+        if(num.lv>0&(num.lv.c+num.RR)==0){
+          
+          if(p>1) {
+            theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- newpars$lambda;
+            if(quadratic!=FALSE){
+              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=num.lv,nrow=p,byrow=T))
+            }
+          } else {
+            if(quadratic==FALSE){
+              theta <- as.matrix(1)
+            }else{
+              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
+          }
+        }else if(num.lv==0&(num.lv.c+num.RR)>0){
+          if(p>1) {
+            theta[lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- newpars$lambda;
+            if(quadratic!=FALSE){
+              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
+            }
+          } else {
+            if(quadratic==FALSE){
+              theta <- as.matrix(1)
+            }else{
+              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
+          }
+        }else if(num.lv>0&(num.lv.c+num.RR)>0){
+          if(p>1) {
+            theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- newpars$lambda[1:sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))];
+            theta[,((num.lv.c+num.RR)+1):ncol(theta)][lower.tri(theta[,((num.lv.c+num.RR)+1):ncol(theta),drop=F],diag=FALSE)] <- newpars$lambda[(sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))+1):length(newpars$lambda)];
+            if(quadratic!=FALSE){
+              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
+            }
+          } else {
+            if(quadratic==FALSE){
+              theta <- as.matrix(1)
+            }else{
+              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
+          }
+        }
+        newobject$params$theta <- theta
+        
+      }
+    
+      # Organising phi. Only necessary when predicing ZIP/ZINB stuff
+      if(object$family %in% c("ZIP","ZINB")){
+        disp.group <- object$disp.group
+        lp0 <- newpars$lg_phi[disp.group]
+        object$params$phi <- exp(lp0)/(1+exp(lp0));
+      }
+      
+      if(object$family == "ordinal"){
+        zetas <- newpars$zeta
+        K = max(object$TMBfn$y)
+        
+        if(object$zeta.struc=="species"){
+          zetanew <- matrix(NA,nrow=p,ncol=K)
+          idx<-0
+          for(j in 1:p){
+            k<-max(object$y[,j])-2
+            if(k>0){
+              for(l in 1:k){
+                zetanew[j,l+1]<-zetas[idx+l]
+              } 
+            }
+            idx<-idx+k
+          }
+          zetanew[,1] <- 0 
+        }else{
+          zetanew <- c(0,zetas)
+        }
+        newobject$params$zeta <- zetanew
+      }
+      if(object$family == "orderedBeta"){
+        zetas <- matrix(newpars$zeta,p,2)
+        if(any(is.na(object$TMBfn$env$map$zeta))) zetas[is.na(object$env$TMBfn$map$zeta)] = attr(object$TMBfn$env$parameters$zeta, "shape")[is.na(object$TMBfn$env$map$zeta)]
+        zetas[,2] = exp(zetas[,2])
+        newobject$params$zeta <- zetas
+      }
+      
+      if(!is.null(newpars$B)){
+        newobject$params$B <- newpars$B
+        newobject$params$B <- newobject$params$B[!is.na(newpars$B)]
+        names(newobject$params$B) <- names(object$params$B)
+      }
+      
+      if(!is.null(newpars$params$r0f))
+        newobject$params$row.params.fixed <- newpars$r0f
+      
+      if(num.RR>0 && isFALSE(object$randomB))
+        newobject$params$LvXcoef <- newpars$b_lv
+      }
+      
+      # random effects next
+      # random effects needed for prediction; Br, r0r, u, b_lv, 
+      if(sum(incla)>0){
+        newrfs <- relist_gllvm(rfs[r,], object$TMBfn$env$parList())
+        
+        if(!is.null(newrfs$Br))
+          newobject$params$Br = newrfs$Br
+        if(!is.null(newrfs$u))
+          newobject$lvs <- newrfs$u
+        if(!is.null(newrfs$b_lv))
+          newobject$params$LvXcoef <- newrfs$b_lv
+        if(!is.null(newrfs$r0r))
+          newobject$params$row.params.random  <- newrfs$r0r
+      }
+      
+      predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+    }
+    if(is.null(alpha)){
+    out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
+    }else{
+    ci <- apply(predSims, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+    out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
+    }
+  }
+  
   return(out)
 }
