@@ -21,7 +21,7 @@ or introductions for using `gllvm` for [ordination](https://jenniniku.github.io/
 
 Other available vignettes are:  [Analysing microbial community data](https://CRAN.R-project.org/package=gllvm/vignettes/vignette2.html),
 [How to use the quadratic response model](https://CRAN.R-project.org/package=gllvm/vignettes/vignette5.html),
-[Ordination with predictors](https://CRAN.R-project.org/package=gllvm/vignettes/vignette6.html), [Analysing percent cover data](https://jenniniku.github.io/gllvm/articles/vignette8.html) and 
+[Ordination with predictors](https://CRAN.R-project.org/package=gllvm/vignettes/vignette6.html), [Phylogenetic random effects](https://jenniniku.github.io/gllvm/articles/vignette7.html), [Analysing percent cover data](https://jenniniku.github.io/gllvm/articles/vignette8.html) and 
 [Structured and correlated random effects and latent variables](https://jenniniku.github.io/gllvm/articles/vignette9.html).
 
 # Citation
