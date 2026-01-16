@@ -57,7 +57,7 @@ start_values_gllvm_TMB <- function(
   sigma = 1
   
   if(any(family == "orderedBeta")) {
-    zetaOB = matrix(rep(0,p),rep(1,p),p,2)
+    zetaOB = matrix(c(rep(0,p),rep(1,p)),p,2)
   }
   
   out = list()
@@ -1002,12 +1002,12 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       phis <- phis + 1e-05
       for(j in 1:p){
         if(family[j]!="betaH"){
-          ds.res[,j] <- residuals.gllvm(list(y=y[,j, drop=F], p=1, n=n,  Ntrials = Ntrials[,min(j,NCOL(Ntrials))],  params=list(phi = phis[j], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[j]), mu = mu[,j, drop=F], eta.mat = eta[,j, drop=F], replace = FALSE)$resi
+          ds.res[,j] <- residuals.gllvm(list(y=y[,j, drop=F], Ntrials = Ntrials[,min(j,NCOL(Ntrials))],  params=list(phi = phis[j], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[j]), mu = mu[,j, drop=F], eta.mat = eta[,j, drop=F], replace = FALSE)$resi
         }else{
           if(j>(p-NobetaH/2)){
-            ds.res[,j] <- residuals.gllvm(list(y=(y[,j, drop=F]>0)*1, p=1, n=n,  Ntrials = matrix(1), params=list(phi = phis[j], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = "binomial"), mu = mu[,j, drop=F], eta.mat = eta[,j, drop=F], replace = FALSE)$resi
+            ds.res[,j] <- residuals.gllvm(list(y=(y[,j, drop=F]>0)*1,  Ntrials = matrix(1), params=list(phi = phis[j], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = "binomial"), mu = mu[,j, drop=F], eta.mat = eta[,j, drop=F], replace = FALSE)$resi
           } else {
-            ds.res[,j] <- residuals.gllvm(list(y=y[,j, drop=F], p=1, n=n,  Ntrials = NULL, params=list(phi = phis[c(j)], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[j]), mu = mu[,c(j,p-NobetaH/2+j), drop=F], eta.mat = eta[,c(j,p-NobetaH/2+j), drop=F], replace = FALSE)$resi
+            ds.res[,j] <- residuals.gllvm(list(y=y[,j, drop=F], Ntrials = NULL, params=list(phi = phis[j], zeta = zeta[j,,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[j]), mu = mu[,c(j,p-NobetaH/2+j), drop=F], eta.mat = eta[,c(j,p-NobetaH/2+j), drop=F], replace = FALSE)$resi
           }
         }
       }
