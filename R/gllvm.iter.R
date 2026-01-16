@@ -35,10 +35,10 @@ gllvm.iter <- function(...){
       stop("family=\"", args$family, "\" : family not implemented with LA method, change the method to 'VA'.")
     
     if((sum(args$y==1, na.rm = TRUE) + sum(args$y==0, na.rm = TRUE))==0){
-      stop("No zeros or ones in the data, so use 'family = `beta`'.")
+      stop("No zeros or ones in the data, please use 'family = `beta`' instead.")
     }
-    if(!all(colSums(args$y==1, na.rm = TRUE)>0) & !all(colSums(args$y==0, na.rm = TRUE)>0)){
-      warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'.")
+    if(!all(colSums(args$y==1, na.rm = TRUE)>0) & !all(colSums(args$y==0, na.rm = TRUE)>0) & args$zeta.struc != "common"){
+      warning("Not all species have zeros and ones. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }
   }
