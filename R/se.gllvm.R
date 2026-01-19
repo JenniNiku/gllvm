@@ -37,9 +37,10 @@ se.gllvm <- function(object, ...){
   if(object$TMB == FALSE) stop("Function is not implemented for TMB = FALSE.")
   objrFinal <- object$TMBfn
   
-  if(object$family =="betaH"){
-    Y01 = (object$y>0)*1; colnames(Y01) = paste("H01",colnames(object$y), sep = "_")
+  if(any(object$family %in% "betaH")){
+    Y01 = (object$y[,object$family %in% "betaH", drop=FALSE]>0)*1; colnames(Y01) = paste("H01",colnames(object$y)[object$family %in% "betaH"], sep = "_")
     object$y = cbind(object$y, Y01)
+    object$family <- c(object$family, rep("betaH", ncol(Y01)))
   } 
   
   # backward compatibility
@@ -74,7 +75,11 @@ se.gllvm <- function(object, ...){
   
   family = object$family
   familyn <- objrFinal$env$data$family
-  disp.group <- object$disp.group
+  shape_family = c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")
+  # disp.group <- object$disp.group
+  disp.group <- object$TMBfn$env$map$lg_phi
+  # disp.group <- object$TMBfn$env$map$lg_phi
+  
   out <- list()
   
   # Trait model
@@ -105,9 +110,9 @@ se.gllvm <- function(object, ...){
       
       if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
       # if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
-      if(familyn!=7 & familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
-      if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-      if(!familyn %in% c(11, 14)) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+      if(all(familyn!=7) & all(familyn!=12)) incl[names(objrFinal$par)=="zeta"] <- FALSE
+      if(all(familyn %in% c(0,2,7, 8))) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+      if(all(!familyn %in% c(11, 14))) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
       
       if(num.lv>0) {
         incld[names(objrFinal$par)=="Au"] <- TRUE
@@ -268,69 +273,72 @@ se.gllvm <- function(object, ...){
       names(out$sd$B) <- names(object$params$B)
       if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
       
-      if(family %in% c("ZINB", "ZNIB")) {
-        se.ZINB.lphis <- se$lg_phiZINB[disp.group];  
-        if(family == "ZINB")out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+      if(any(family %in% c("ZINB", "ZNIB"))) {
+        se.ZINB.lphis <- se$lg_phiZINB;  
+        if(any(family == "ZINB"))out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
         out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
         names(out$sd$ZINB.phi) <- colnames(object$y);
         
-        if(!is.null(names(disp.group))){
+        if(!is.null(names(disp.group)) & all(!is.na(disp.group))){
           try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
         }
-        if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+        if(any(family == "ZINB"))names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
       }
       
-      if(family %in% c("negative.binomial", "negative.binomial1")) {
-        se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+      se.lphis <- NULL
+      # Dispersion/ZI/variance etc parameters, need to be fixed (!!) 
+      if(any(family %in% c("negative.binomial", "negative.binomial1"))) {
+        se.lphis <- se$lg_phi;  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
         out$sd$phi <- se.lphis*object$params$phi;
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
-        }else if(!is.null(names(disp.group))){
+        }else if(!is.null(names(disp.group))& all(!is.na(disp.group))){
           try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-        }else{
+        }else if(all(!is.na(disp.group))){
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
         names(out$sd$inv.phi) <-  names(out$sd$phi)
       }
       
-      if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")) {
-        se.lphis <- se$lg_phi[disp.group];
-        out$sd$phi <- se.lphis*object$params$phi;
+      if(any(family %in% shape_family)) {
+        se.lphis[family %in% shape_family] <- (se$lg_phi)[family %in% shape_family];
+        out$sd$phi[family %in% shape_family] <- (se.lphis*object$params$phi)[family %in% shape_family];
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
-        }else if(!is.null(names(disp.group))){
+        }else if(!is.null(names(disp.group))& all(!is.na(disp.group))){
           try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-        }else{
+        }else if(all(!is.na(disp.group))){
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
       }
       
-      if(family%in%c("ZIP","ZINB","ZIB", "ZNIB")) {
+      if(any(family%in%c("ZIP","ZINB","ZIB", "ZNIB"))) {
         pars <- object$TMBfn$par
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
       }
       
-      if(family %in% c("ZIP","ZINB","ZIB")) {
-        se.phis <- se$lg_phi[disp.group];
-        out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
+      if(any(family %in% c("ZIP","ZINB","ZIB"))) {
+        se.phis <- se$lg_phi;
+        p0 <- p0[disp.group]
+        out$sd$phi[family %in% c("ZIP","ZINB","ZIB")] <- (se.phis*exp(p0)/(1+exp(p0))^2)[family %in% c("ZIP","ZINB","ZIB")];#
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
-        }else if(!is.null(names(disp.group))){
+        }else if(!is.null(names(disp.group))& all(!is.na(disp.group)) ){
           try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-        }else{
+        }else if(all(!is.na(disp.group))){
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
-      }else if(family == "ZNIB"){
-        se.phis <- se$lg_phi[disp.group];  
-        out$sd$phi <- se.phis*object$params$phi;
+      }else if(any(family == "ZNIB")){
+        se.phis <- se$lg_phi;  
+        out$sd$phi[family == "ZNIB"] <- (se.phis*object$params$phi)[family == "ZNIB"];
         names(out$sd$phi) <- colnames(object$y);
         
         if(length(unique(disp.group))==p){
           names(out$sd$phi) <- colnames(object$y);
-        }else if(!is.null(names(disp.group))){
+        }else if(!is.null(names(disp.group))& all(!is.na(disp.group)) ){
           try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-        }else{
+        }else if(all(!is.na(disp.group))){
           names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
         }
       }
@@ -423,47 +431,66 @@ se.gllvm <- function(object, ...){
         # if((cstrucn[2] %in% c(2,4))) {out$sd$scaledc <- se[(1:length(object$params$scaledc))]*object$params$scaledc; se = se[-(1:length(out$sd$scaledc))]}
       }
       
-      if(family %in% c("ordinal")){
-        y <- object$y
-        K = max(y)-min(y)
-        if(min(y)==0) y <- y+1 
+      if(any(family %in% c("ordinal", "orderedBeta"))){
+        K = 2; kz =0
+        if(any(family %in% "ordinal")){
+          y <- object$y
+          K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
+          if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
+        } 
+        if(any(family %in% "orderedBeta")){
+          kz = 2
+        }
         se.zetanew <- se.zetas <- se$zeta;
         if(object$zeta.struc == "species"){
           se.zetanew <- matrix(NA,nrow=p,ncol=K)
+          o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
           idx<-0
-          for(j in 1:ncol(y)){
-            k<-max(y[,j])-2
-            if(k>0){
-              for(l in 1:k){
-                se.zetanew[j,l+1]<-se.zetas[idx+l]
-              } 
+          for(j in o_ind){
+            
+            if(family[j]=="ordinal"){
+              k<-max(y[,j])-2
+              if(k>0){
+                for(l in 1:k){
+                  se.zetanew[j,l+1]<-se.zetas[idx+l]
+                } 
+              }
+              se.zetanew[j,1] <- 0
+              idx<-idx+k
+            } else {
+              se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              idx<-idx+2
             }
-            idx<-idx+k
           }
-          se.zetanew[,1] <- 0
           out$sd$zeta <- se.zetanew
-          row.names(out$sd$zeta) <- colnames(object$y); colnames(out$sd$zeta) <- paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep="")
-          
+          row.names(out$sd$zeta) <- colnames(object$y); 
+          if(any(family%in%c("ordinal"))){
+            colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+          } else {
+            colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
+          }
         }else{
-          se.zetanew <- c(0, se.zetanew)
+          if(any(family%in%c("orderedBeta"))){
+            se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
+            names(zetanew)[1:2] <- c("cutoff0","cutoff1")
+          }
+          if(any(family%in%c("ordinal"))){
+            se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
+          }
           out$sd$zeta <- se.zetanew
-          names(out$sd$zeta) <- paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep="")
-          
+          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
         }
-      }
-      if(family== "orderedBeta") {
-        out$sd$zeta <- matrix(se$zeta,p,2)
-        colnames(out$sd$zeta) = c("cutoff0","cutoff1")
-      }
+      } # end se zeta
       
     }
+    
   } else {
     #Without traits#
     pars <- objrFinal$par
-    if(family %in% c("ZIP","ZINB","ZIB", "ZNIB")) {
+    if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB"))) {
       p0i <- names(pars)=="lg_phi"
       p0 <- pars[p0i]
-      p0 <- p0+runif(p,0,0.001)
+      p0 <- p0+runif(length(p0),0,0.000001)
       pars[p0i] <- p0
     }
     if((method %in% c("VA", "EVA"))){
@@ -515,10 +542,10 @@ se.gllvm <- function(object, ...){
     
     #loadings for quadratic models
     if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
-    if(familyn!=7 && familyn!=12) incl[names(objrFinal$par)=="zeta"] <- FALSE
-    if(familyn==0 || familyn==2 || familyn==7 || familyn==8) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
-    if(!familyn %in% c(11, 14)) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
-    
+    if(all(familyn!=7) & all(familyn!=12)) incl[names(objrFinal$par)=="zeta"] <- FALSE
+    if(all(familyn %in% c(0,2,7, 8))) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
+    if(all(!familyn %in% c(11, 14))) incl[names(objrFinal$par)=="lg_phiZINB"] <- FALSE
+
     if((num.lv+num.lv.c)>0){
       inclr[names(objrFinal$par)=="u"] <- TRUE;
       incld[names(objrFinal$par)=="u"] <- TRUE;
@@ -736,16 +763,16 @@ se.gllvm <- function(object, ...){
     #   out$sd$se.thetaH <- se.thetaH
     # }
     
-    if(family %in% c("ZINB", "ZNIB")) {
-      se.ZINB.lphis <- se$lg_phiZINB[disp.group];  
-      if(family == "ZINB")out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
+    if(any(family %in% c("ZINB", "ZNIB"))) {
+      se.ZINB.lphis <- se$lg_phiZINB;  
+      if(any(family == "ZINB"))out$sd$ZINB.inv.phi <- se.ZINB.lphis*object$params$ZINB.inv.phi;
       out$sd$ZINB.phi <- se.ZINB.lphis*object$params$ZINB.phi;
       names(out$sd$ZINB.phi) <- colnames(object$y);
       
-      if(!is.null(names(disp.group))){
+      if(!is.null(names(disp.group)) & all(!is.na(disp.group))){
         try(names(out$sd$ZINB.phi) <- names(disp.group),silent=T)
       }
-      if(family == "ZINB")names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
+      if(any(family == "ZINB"))names(out$sd$ZINB.inv.phi) <-  names(out$sd$ZINB.phi)
     }
     
     if((num.lv+num.lv.c)>0){
@@ -764,51 +791,55 @@ se.gllvm <- function(object, ...){
     }
     if(!is.null(object$params$row.params.fixed)) {out$sd$row.params.fixed <- se.row.params}
     
-    if(family %in% c("negative.binomial", "negative.binomial1")) {
-      se.lphis <- se$lg_phi[disp.group];  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
+    se.lphis <- NULL
+    if(any(family %in% c("negative.binomial", "negative.binomial1"))) {
+      se.lphis <- se$lg_phi;  out$sd$inv.phi <- se.lphis*object$params$inv.phi;
       out$sd$phi <- se.lphis*object$params$phi;
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
-      }else if(!is.null(names(disp.group))){
+      }else if(!is.null(names(disp.group)) & all(!is.na(disp.group))){
         try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-      }else{
+      }else if(all(!is.na(disp.group))){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
       names(out$sd$inv.phi) <-  names(out$sd$phi)
     }
     
-    if(family %in% c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")) {
-      se.lphis <- se$lg_phi[disp.group];
-      out$sd$phi <- se.lphis*object$params$phi;
+    if(any(family %in% shape_family)) {
+      se.lphis[family %in% shape_family] <- (se$lg_phi)[family %in% shape_family];
+      out$sd$phi[family %in% shape_family] <- (se.lphis*object$params$phi)[family %in% shape_family];
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
-      }else if(!is.null(names(disp.group))){
+      }else if(!is.null(names(disp.group))& all(!is.na(disp.group))){
         try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-      }else{
+      }else if(all(!is.na(disp.group))){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
     }
     
-    if(family %in% c("ZIP","ZINB","ZIB")) {
-      se.phis <- se$lg_phi[disp.group];
-      out$sd$phi <- se.phis*exp(p0)/(1+exp(p0))^2;#
+    se.phis <- NULL
+    if(any(family %in% c("ZIP","ZINB","ZIB"))) {
+      se.phis[family %in% c("ZIP","ZINB","ZIB")] <- (se$lg_phi)[family %in% c("ZIP","ZINB","ZIB")];
+      p0 <- p0[disp.group]
+      out$sd$phi[family %in% c("ZIP","ZINB","ZIB")] <- (se.phis*((exp(p0)/(1+exp(p0))^2)))[family %in% c("ZIP","ZINB","ZIB")];#
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
-      }else if(!is.null(names(disp.group))){
+      }else if(!is.null(names(disp.group))& all(!is.na(disp.group))){
         try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-      }else{
+      }else if(all(!is.na(disp.group))){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
-    }else if(family == "ZNIB"){
-      se.phis <- se$lg_phi[disp.group];  
-      out$sd$phi <- se.phis*object$params$phi;
+    } 
+    if(any(family == "ZNIB")){
+      se.phis[family == "ZNIB"] <- (se$lg_phi)[family == "ZNIB"];  
+      out$sd$phi[family == "ZNIB"] <- (se.phis*object$params$phi)[family == "ZNIB"];
       names(out$sd$phi) <- colnames(object$y);
       
       if(length(unique(disp.group))==p){
         names(out$sd$phi) <- colnames(object$y);
-      }else if(!is.null(names(disp.group))){
+      }else if(!is.null(names(disp.group)) & all(!is.na(disp.group))){
         try(names(out$sd$phi) <- unique(names(disp.group)),silent=T)
-      }else{
+      }else if(all(!is.na(disp.group))){
         names(out$sd$phi) <- paste("Spp. group", as.integer(unique(disp.group)))
       }
     }
@@ -924,37 +955,55 @@ se.gllvm <- function(object, ...){
       }
     }
     
-    if(family %in% c("ordinal")){
-      y <- object$y
-      K = max(y)-min(y)
-      if(min(y)==0) y <- y+1 
+    if(any(family %in% c("ordinal", "orderedBeta"))) {
+      K = 2; kz =0
+      if(any(family %in% "ordinal")){
+        y <- object$y
+        K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
+        if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
+      } 
+      if(any(family %in% "orderedBeta")){
+        kz = 2
+      }
       se.zetanew <- se.zetas <- se$zeta;
       if(object$zeta.struc == "species"){
         se.zetanew <- matrix(NA,nrow=p,ncol=K)
+        o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
         idx<-0
-        for(j in 1:ncol(y)){
-          k<-max(y[,j])-2
-          if(k>0){
-            for(l in 1:k){
-              se.zetanew[j,l+1]<-se.zetas[idx+l]
-            } 
+        for(j in o_ind){
+          
+          if(family[j]=="ordinal"){
+            k<-max(y[,j])-2
+            if(k>0){
+              for(l in 1:k){
+                se.zetanew[j,l+1]<-se.zetas[idx+l]
+              } 
+            }
+            se.zetanew[j,1] <- 0
+            idx<-idx+k
+          } else {
+            se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+            idx<-idx+2
           }
-          idx<-idx+k
         }
-        se.zetanew[,1] <- 0
         out$sd$zeta <- se.zetanew
-        row.names(out$sd$zeta) <- colnames(object$y); colnames(out$sd$zeta) <- paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep="")
-        
+        row.names(out$sd$zeta) <- colnames(object$y); 
+        if(any(family%in%c("ordinal"))){
+          colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+        } else {
+          colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
+        }
       }else{
-        se.zetanew <- c(0, se.zetanew)
+        if(any(family%in%c("orderedBeta"))){
+          se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
+          names(zetanew)[1:2] <- c("cutoff0","cutoff1")
+        }
+        if(any(family%in%c("ordinal"))){
+          se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
+        }
         out$sd$zeta <- se.zetanew
-        names(out$sd$zeta) <- paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep="")
-        
+        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
       }
-    }
-    if(family== "orderedBeta") {
-      out$sd$zeta <- matrix(se$zeta,p,2)
-      colnames(out$sd$zeta) = c("cutoff0","cutoff1")
     }
     
   }
