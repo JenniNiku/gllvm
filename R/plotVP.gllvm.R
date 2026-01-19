@@ -39,7 +39,7 @@ plotVarPartitioning <- function(x, main = "Variance Partitioning", xlab = "Respo
   scaler2 <- rep(1, nrow(x$PropExplainedVarSp))
   
   if(r2scaled){
-    if(x$family=="ordinal")
+    if(any(x$family=="ordinal"))
       stop("At the moment, we do not have proper response specific R-squared measure for ordinal model inplemented.")
     if(!("r2species" %in% names(x)))
       stop("Scaled variance partitioning is missing from the object. Please re-calculate variance partitioning with an option 'r2scaled = TRUE'")
@@ -47,7 +47,7 @@ plotVarPartitioning <- function(x, main = "Variance Partitioning", xlab = "Respo
     if(!("main" %in% names(arglist))) main = "r2-scaled Variance Partitioning"
     if(!("ylab" %in% names(arglist))) ylab = "r2-scaled variance proportion"
   }
-  if(x$family == "betaH"){
+  if(any(x$family == "betaH")){
     scaler2H <- rep(1, nrow(x$PropExplainedVarHurdleSp))
     if(r2scaled){
       scaler2H <- x$r2Hspecies

@@ -110,7 +110,7 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     Xcoef <- object$params$B[which.Xcoef]
     xnames <- names(object$params$B)[which.Xcoef]
     sdXcoef <- object$sd$B[which.Xcoef]
-    if(object$family=="betaH"){
+    if(any(object$family=="betaH")){
       if(is.null(which.Xcoef)){
         Xcoef <- c(Xcoef,object$params$betaH)
         xnames <- c(xnames,paste("beta",names(object$params$betaH),sep = ":"))

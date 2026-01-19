@@ -4,7 +4,7 @@ print.gllvm <- function(x, ...) {
   cat("Call: \n")
   print(x$call)
   cat("family: \n")
-  print(x$family)
+  print(unique(x$family))
   cat("method: \n")
   print(x$method)
   cat("\n")

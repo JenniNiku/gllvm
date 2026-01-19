@@ -56,7 +56,7 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, ...){
 
-  if(type=="class" & !(object$family %in% c("binomial", "ordinal"))) {
+  if(type=="class" & any(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
   }
   # backward compatibility
@@ -74,7 +74,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   newdata <- newX
   p <- ncol(object$y)
-  if(object$family == "betaH")p <- p*2
+  if(any(object$family == "betaH"))p <- p+ sum(object$family == "betaH")
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -378,35 +378,49 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))
-    ilinkfun <- exp
-  if (object$family == "binomial" || (object$family == "beta") || (object$family == "betaH") || (object$family == "orderedBeta") || (object$family == "ordinal") || (object$family == "ZIB") || (object$family == "ZNIB")) 
-    ilinkfun <- binomial(link = object$link)$linkinv
-  if (object$family %in% c("ZIP","ZINB")) 
-    ilinkfun <- function(eta) exp(eta) * (1 - matrix(object$params$phi, 
-                                                     n, p, byrow = TRUE))
-  if (object$family == "gaussian") 
-    ilinkfun <- gaussian()$linkinv
+  ilinkfun <- list()
+  pointer <- NULL
+  if(any(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))){
+    ilinkfun <- c(ilinkfun, exp)
+    pointer[object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] <- length(ilinkfun)
+  }
+  if (any(object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB"))){
+    ilinkfun <- c(ilinkfun, binomial(link = object$link)$linkinv)
+    pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB")] <- length(ilinkfun)
+  }
+  if (any(object$family %in% c("ZIP","ZINB"))) {
+    # ilinkfun <- c(ilinkfun, function(eta) exp(eta) * (1 - matrix(object$params$phi, n, p, byrow = TRUE)))
+    ilinkfun <- c(ilinkfun, function(eta) exp(eta))
+    pointer[object$family %in% c("ZIP","ZINB")] <- length(ilinkfun)
+  }
+  if (any(object$family == "gaussian")) {
+    ilinkfun <- c(ilinkfun, gaussian()$linkinv)
+    pointer[object$family %in% c("gaussian")] <- length(ilinkfun)
+  }
   out <- NULL
   preds <- NULL
   if ("link" %in% type) 
     out <- eta
-  if ("response" %in% type) 
-    out <- ilinkfun(eta)
-  if ("class" %in% type & object$family == "binomial") 
-    out <- round(ilinkfun(eta))
+  if ("response" %in% type) {
+    out <- sapply(1:p, function(j) ilinkfun[[pointer[j]]](eta[,j]))
+    if(any(object$family %in% c("ZIP","ZINB"))) 
+      out[,object$family %in% c("ZIP","ZINB")] <- out[,object$family %in% c("ZIP","ZINB")]*(1 - matrix(object$params$phi[object$family %in% c("ZIP","ZINB")], n, sum(object$family %in% c("ZIP","ZINB")), byrow = TRUE))
+  }
+  if ("class" %in% type & all(object$family == "binomial")) 
+    out <- round(sapply(1:p, function(j) ilinkfun[[pointer[j]]](eta[,j], )))
   if (is.null(newdata) && is.null(newTR) && is.null(newLV) && 
       "logL" %in% type) 
     out <- object$logL
-  if (object$family == "ordinal" && (type == "response" | type == "class")) {
+  if (any(object$family == "ordinal") && (type == "response" | type == "class")) {
+    ordi_ind <- c(1:p)[object$family == "ordinal"]
     if (object$zeta.struc == "species") {
-      k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 
-        1
-      preds <- array(NA, dim = c(max(k.max), nrow(eta), 
-                                 p), dimnames = list(paste("level", 1:max(k.max), 
+      k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
+      preds <- array(NA, dim = c(max(k.max, na.rm = TRUE), nrow(eta), 
+                                 p), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE), 
                                                            sep = ""), NULL, NULL))
+      if(!all(object$family == "orderedBeta")) preds[1,,] <- out
       for (i in 1:n) {
-        for (j in 1:p) {
+        for (j in ordi_ind) {
           probK <- NULL
           probK[1] <- pnorm(object$params$zeta[j, 1] - 
                               eta[i, j], log.p = FALSE)
@@ -425,24 +439,23 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         }
       }
       out <- preds
-    }
-    else {
-      k.max <- length(object$params$zeta) + 1
+    } else {
+      kz <- any(family == "orderedBeta")*2
+      k.max <- length(object$params$zeta) + 1 - kz
       preds <- array(NA, dim = c(k.max, nrow(eta), p), 
                      dimnames = list(paste("level", 1:max(k.max), 
                                            sep = ""), NULL, NULL))
+      if(!all(object$family == "orderedBeta")) preds[1,,] <- out
       for (i in 1:n) {
         for (j in 1:p) {
           probK <- NULL
-          probK[1] <- pnorm(object$params$zeta[1] - eta[i, 
+          probK[1] <- pnorm(object$params$zeta[1+kz] - eta[i, 
                                                         j], log.p = FALSE)
-          probK[k.max] <- 1 - pnorm(object$params$zeta[k.max - 
-                                                         1] - eta[i, j])
+          probK[k.max] <- 1 - pnorm(object$params$zeta[k.max - 1 + kz] - eta[i, j])
           levels <- 2:(k.max - 1)
           for (k in levels) {
-            probK[k] <- pnorm(object$params$zeta[k] - 
-                                eta[i, j]) - pnorm(object$params$zeta[k - 
-                                                                        1] - eta[i, j])
+            probK[k] <- pnorm(object$params$zeta[k + kz] - 
+                                eta[i, j]) - pnorm(object$params$zeta[k - 1 + kz] - eta[i, j])
           }
           preds[, i, j] <- c(probK)
         }
@@ -452,7 +465,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     if(type == "class") {
       pred_class <- matrix(NA, dim(preds)[2], dim(preds)[3])
-      for (j in 1:ncol(pred_class)) {
+      for (j in ordi_ind) {
         for (i in 1:nrow(pred_class)) {
           pred_class[i,j] <- (order(preds[,i,j], decreasing = TRUE)[1]-1)
         }

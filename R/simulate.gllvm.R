@@ -64,32 +64,34 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   }
   # generate new data
   nTot = nsim*nRows*nCols # total number of values to generate
-  if(object$family %in% c("negative.binomial", "negative.binomial1"))
-    invPhis = matrix(rep(object$params$inv.phi,each=nsim*nRows), ncol=nCols)
-  if(object$family=="ZINB")
-    invPhis = matrix(rep(object$params$ZINB.inv.phi,each=nsim*nRows), ncol=nCols)
-  if(object$family=="tweedie")
+  if(any(object$family %in% c("negative.binomial", "negative.binomial1", "ZINB"))){
+    invPhis <- matrix(NA,nsim*nRows,nCols)
+    if(any(object$family %in% c("negative.binomial", "negative.binomial1")))
+      invPhis[,object$family %in% c("negative.binomial", "negative.binomial1")] = matrix(rep(object$params$inv.phi[object$family %in% c("negative.binomial", "negative.binomial1")],each=nsim*nRows), ncol=sum(object$family %in% c("negative.binomial", "negative.binomial1")))
+    if(any(object$family=="ZINB"))
+      invPhis[,object$family %in% c("ZINB")] = matrix(rep(object$params$ZINB.inv.phi[object$family %in% c("ZINB")],each=nsim*nRows), ncol=sum(object$family %in% c("ZINB")))
+  }
+  if(any(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB", "tweedie")))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB"))
-    phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
-  if(object$family == "ordinal"){
+
+  if(any(object$family == "ordinal")){
+    ordi_ind <- c(1:nCols)[object$family == "ordinal"]
+    sims = matrix(0, nrow = nsim * nRows, ncol = length(ordi_ind))
     if(object$zeta.struc=="species"){
-      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-      for(j in 1:nCols){
+      for(j in ordi_ind){
         k <- sort(unique(object$y[,j]))
         for(i in 1:(nsim * nRows)){
-          sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+          sims[i,ordi_ind==j] <- sample(k,1,prob=prs[!is.na(prs[,i,j]),i,j, drop=FALSE])
         }
       }
       dimnames(prs)[[3]] <- colnames(object$y)
       dimnames(prs)[[2]] <- 1:(nsim * nRows)
       prs <- prs[1,,]
     }else{
-      sims = matrix(0, nrow = nsim * nRows, ncol = nCols)
-      k <- sort(unique(c(object$y)))
-      for(j in 1:nCols){
+      k <- sort(unique(c(object$y[,object$family == "ordinal"])))
+      for(j in ordi_ind){
         for(i in 1:(nsim * nRows)){
-          sims[i,j] <- sample(k,1,prob=prs[,i,j][!is.na(prs[,i,j])])
+          sims[i,ordi_ind==j] <- sample(k,1,prob=prs[!is.na(prs[,i,j]),i,j, drop=FALSE])
         }
       }
       dimnames(prs)[[3]] <- colnames(object$y)
@@ -99,7 +101,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     
     
   }
-  if(object$family=="ZNIB"){
+  if(any(object$family=="ZNIB")){
     phis2 = matrix(rep(object$params$ZINB.phi, each = nsim*nRows), ncol = nCols)
     
     phis1 = phis/(1+phis + phis2);
@@ -107,30 +109,39 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
     phis3 = phis1+phis2
   }
   
-  
-  newDat = switch(object$family, "binomial"=rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs),
-                  "poisson" = rpois(nTot, prs),
-                  "negative.binomial" = rnbinom(nTot, size = invPhis, mu = prs),
-                  "negative.binomial1" = rnbinom(nTot, size = prs/invPhis, mu = prs),
-                  "gaussian" = rnorm(nTot, mean = prs, sd = phis),
-                  "gamma" = rgamma(nTot, shape = phis, scale = prs/phis),
-                  "exponential" = rexp(nTot, rate = 1/prs),
-                  "tweedie" = fishMod::rTweedie(nTot, mu = c(prs), phi = c(phis), p = object$Power),
+  newDat <- matrix(NA,nsim*nRows, nCols)
+  # Need to be fixed, now works only if same family
+  for(fam in unique(object$family)){
+    prsfam = prs[,object$family == fam, drop=FALSE]
+    nTotfam = nsim*nRows*sum(object$family == fam) # total number of values to generate for given family fam
+    newDat[,object$family == fam] = matrix(
+                switch(fam, #object$family[1], 
+                  "binomial"=rbinom(nTotfam, size = rep(object$Ntrials,each=nsim*nRows), prob = prsfam),
+                  "poisson" = rpois(nTotfam, prsfam),
+                  "negative.binomial" = rnbinom(nTotfam, size = invPhis[,object$family == fam], mu = prsfam),
+                  "negative.binomial1" = rnbinom(nTotfam, size = prsfam/(invPhis[,object$family == fam]), mu = prsfam),
+                  "gaussian" = rnorm(nTotfam, mean = prsfam, sd = phis[,object$family == fam]),
+                  "gamma" = rgamma(nTotfam, shape = phis[,object$family == fam], scale = prsfam/(phis[,object$family == fam])),
+                  "exponential" = rexp(nTotfam, rate = 1/prsfam),
+                  "tweedie" = fishMod::rTweedie(nTotfam, mu = c(prsfam), phi = c(phis[,object$family == fam]), p = object$Power),
                   "ordinal" = sims,
-                  "beta" = rbeta(nTot, shape1 = phis*prs, shape2 = phis*(1-prs)),
-                  "ZIP" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rpois(nTot, lambda = prs)),
-                  "ZINB" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rnbinom(nTot, size = invPhis, mu = prs)),
-                  "ZIB" = ifelse(rbinom(nTot, size = 1, prob = phis) > 0, 0, rbinom(nTot, size = rep(object$Ntrials,each=nsim*nRows), prob = prs)),
+                  "beta" = rbeta(nTotfam, shape1 = phis[,object$family == fam]*prsfam, shape2 = phis[,object$family == fam]*(1-prsfam)),
+                  "ZIP" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rpois(nTotfam, lambda = prsfam)),
+                  "ZINB" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rnbinom(nTotfam, size = invPhis[,object$family == fam], mu = prsfam)),
+                  "ZIB" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rbinom(nTotfam, size = rep(object$Ntrials[object$family == fam],each=nsim*nRows), prob = prsfam)),
                   "ZNIB" = {
-                    z <- mapply(function(prob) sample(3, 1, prob = prob, replace = TRUE), prob = as.list(data.frame(rbind(c(phis1),c(phis2),c(1-phis3)))))
-                    zeros <- rep(0, nTot)
-                    Ntrials <- rep(object$Ntrials, each = nsim * nRows)
-                    sim1 <- rbinom(nTot, size = rep(object$Ntrials, each = nsim * nRows), prob = prs)
+                    z <- mapply(function(prob) sample(3, 1, prob = prob, replace = TRUE), prob = as.list(data.frame(rbind(c(phis1[,object$family == fam]),c(phis2[,object$family == fam]),c(1-phis3[,object$family == fam])))))
+                    zeros <- rep(0, nTotfam)
+                    Ntrials <- rep(object$Ntrials[object$family == fam], each = nsim * nRows)
+                    sim1 <- rbinom(nTotfam, size = Ntrials, prob = prsfam)
                     (z==1)*zeros + (z==2)*Ntrials + (z==3)*sim1
                   },
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
+                ,ncol=sum(object$family == fam))
+  # newDat = as.data.frame(matrix(newDat,ncol=nCols))
+  }
+  
   # reformat as data frame with the appropriate labels
-  newDat = as.data.frame(matrix(newDat,ncol=nCols))
   try(colnames(newDat) <- colnames(prs), silent = TRUE)
   try(rownames(newDat) <- rownames(prs), silent = TRUE)
   try(dimnames(newDat) <- dimnames(prs), silent = TRUE)

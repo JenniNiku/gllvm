@@ -389,19 +389,19 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
   
-  if (object$family %in% c("negative.binomial", "negative.binomial1")) {
+  if (any(object$family %in% c("negative.binomial", "negative.binomial1"))) {
     sumry$'Dispersion parameters' <- object$params$phi
   }
-  if (object$family == "gamma") {
+  if (any(object$family == "gamma")) {
     sumry$'Shape parameters' <- object$params$phi
   }
-  if (object$family == "tweedie") {
+  if (any(object$family == "tweedie")) {
     sumry$'Dispersion parameters' <- object$params$phi
   }
-  if (object$family == "ZIP") {
+  if (any(object$family == "ZIP")) {
     sumry$'Zero inflation p' <- object$params$phi
   }
-  if(object$family == "gaussian"){
+  if(any(object$family == "gaussian")){
     sumry$'Standard deviations' <- object$params$phi
   }
   if(!is.null(coef.table)){
@@ -431,7 +431,7 @@ print.summary.gllvm <- function (x, ...)
 {
   cat("\nCall:\n", paste(deparse(x$Call), sep = "\n", 
                          collapse = "\n"), "\n\n", sep = "")
-  cat("Family: ", x$family, "\n\n")
+  cat("Family: ", unique(x$family), "\n\n")
   
   AIC <- round(x$AIC,x$digits)
   BIC <- round(x$BIC,x$digits)
@@ -508,24 +508,24 @@ print.summary.gllvm <- function (x, ...)
   }
   if(x$dispersion){
     
-    if (x$family == "negative.binomial") {
+    if (any(x$family == "negative.binomial")) {
       phi <- x$'Dispersion parameters'
     }
-    if (x$family == "gamma") {
+    if (any(x$family == "gamma")) {
       phi <- x$'Shape parameters'
     }
-    if (x$family == "tweedie") {
+    if (any(x$family == "tweedie")) {
       phi <- x$'Dispersion parameters'
     }
-    if (x$family == "ZIP") {
+    if (any(x$family == "ZIP")) {
       phi <- x$'Zero inflation p'
     }
-    if(x$family == "gaussian"){
+    if(any(x$family == "gaussian")){
       phi <- x$'Standard deviations'
     }
-    if(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian")){
+    if(any(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian"))){
       # names(phi) <- row.names(x$Coefficients)
-      cat("\n(Dispersion estimates for ", x$family, ":\n")
+      cat("\n(Dispersion estimates for ", unique(x$family), ":\n")
       print(phi)
     }
   }

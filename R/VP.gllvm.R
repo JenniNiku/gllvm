@@ -55,7 +55,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   
   r0 <- NULL
   p <- ncol(object$y)
-  if(object$family == "betaH") p <- p*2
+  if(any(object$family == "betaH")) p <- p*2
   n <- nrow(object$y)
 
   if (!is.null(object$X)) {
@@ -379,20 +379,20 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   # Species specific variance partitioning:
   PropExplainedVarSp <- t(LVpartit)/LtotV
   
-  if(object$family == "betaH"){
+  if(any(object$family == "betaH")){
     out <- list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   } else {
     out <- list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   }
   
   if(calcr2scaled){
-    if(object$family %in% c("binomial") & all(object$Ntrials ==1)){
+    if(any(object$family %in% c("binomial")) & all(object$Ntrials ==1)){
       r2s <- goodnessOfFit(object = object, measure = "TjurR2", species = TRUE)$TjurR2
-    } else if(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")){
+    } else if(any(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta"))){
       r2s <- goodnessOfFit(object = object, measure = "R2", species = TRUE)$R2
-    } else if(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")) {
+    } else if(any(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB"))) {
       r2s <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2
-    } else if(object$family %in% "betaH") {
+    } else if(any(object$family %in% "betaH")) {
       pred <- predict(object, type = "response")
       ycover<- object$y; ycover[object$y==0]<- NA;
       r2s <- goodnessOfFit(y = ycover, pred = pred[, 1:ncol(object$y), drop=FALSE], measure = "R2", species = TRUE)$R2
@@ -428,7 +428,7 @@ varPartitioning <- function(object, ...)
 #'@rdname VP.gllvm 
 print.VP.gllvm <- function (x, ...) {
   
-  if(x$family == "betaH"){
+  if(any(x$family == "betaH")){
     print.text <- data.frame(Effect = colnames(x$PropExplainedVarHurdleSp), "Mean explained variance" = paste0(format(round(colMeans(x$PropExplainedVarHurdleSp), digits = 3)*100, nsmall = 1), "%"))
   } else {
     print.text <- data.frame(Effect = colnames(x$PropExplainedVarSp), "Mean explained variance" = paste0(format(round(colMeans(x$PropExplainedVarSp), digits = 3)*100, nsmall = 1), "%"))

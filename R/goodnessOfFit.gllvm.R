@@ -40,7 +40,7 @@
 goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
   if(is.null(pred)){
     if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' need to be given.")
-    if(object$family == "ordinal"){
+    if(any(object$family == "ordinal")){
       pred <- predict(object, type = "class")
     } else {
       pred <- predict(object, type = "response")
@@ -49,7 +49,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
   if(is.null(y)){
     if(is.null(object)) stop("If 'y' is not given the model fit for 'object' need to be given.")
     y <- object$y
-    if(object$family == "betaH"){
+    if(any(object$family == "betaH")){
       yH01 <- (y>0)*1; colnames(yH01) <- paste("H01", colnames(y), sep = "_")
       y <- cbind(y, (yH01))
     }
@@ -149,7 +149,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
   if(any(c("NagelkerkeR2", "McFaddenR2", "CoxSnellR2") %in% measure) & !is.null(object)) {
     #Fit null model to calculate 
     nob <- nobs(object)
-    if(object$family == "ordinal"){
+    if(any(object$family == "ordinal")){
       modelnull<- update(object, formula = ~1, lv.formula = NULL, row.eff = NULL, num.lv=0, num.lv.c=0, num.RR=0, sd.errors = FALSE, starting.val="zero", zeta.struc=object$zeta.struc)
     } else {
       modelnull<- update(object, formula = ~1, lv.formula = NULL, row.eff = NULL, num.lv=0, num.lv.c=0, num.RR=0, sd.errors = FALSE, starting.val="zero")
