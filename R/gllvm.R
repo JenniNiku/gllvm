@@ -477,8 +477,30 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       family <- family$family
     }
 
-    if(!(family %in% c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")))
-      stop("Selected family not permitted...sorry!")
+    # if(any(family %in% c("ordinal"))){
+    #   if(!all(family == "ordinal")) stop("Currently ordinal model is not implemented for mixed response type models.")
+    # }
+    # if(any(family %in% c("orderedBeta"))){
+    #   if(!all(family == "orderedBeta")) stop("Currently ordered Beta model is not implemented for mixed response type models.")
+    # }
+
+    
+    accepted_families = c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")
+    VA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "exponential", "betaH", "ZINB", "orderedBeta","ZIB", "ZNIB")
+    EVA_family = c("negative.binomial","negative.binomial1","binomial", "tweedie", "ordinal", "beta", "betaH", "orderedBeta")
+    LA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "ZINB", "exponential", "beta", "betaH", "ZINB", "ZIB", "ZNIB")
+    
+    if(any(!(family %in% accepted_families)))
+      stop("Selected family: ", paste(family[!family %in% accepted_families], collapse = ", ")," not permitted...sorry!")
+    
+    if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family)))
+      stop("Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
+           "\n For 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "),
+           "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", ")
+      )
+    # if(method =="VA" & !all(family %in% VA_family)) stop("Only families implemented with same method can be combined, for 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "))
+    # if(method =="EVA" & !all(family %in% EVA_family)) stop("Only families implemented with same method can be combined, for 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "))
+    # if(method =="LA" & !all(family %in% LA_family)) stop("Only families implemented with same method can be combined, for 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", "))
     
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
@@ -489,10 +511,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
         x$optimizer = ifelse((num.RR+num.lv.c)<=1 | !isFALSE(randomB),"optim","alabama")
-      if((num.lv.c+num.RR)>1 && family =="tweedie" && isFALSE(randomB)) x$optimizer = "alabama"
+      if((num.lv.c+num.RR)>1 && any(family =="tweedie") && isFALSE(randomB)) x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
-        if(family=="tweedie") x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
-        if((num.RR+num.lv.c)>1 && randomB == FALSE && family!="tweedie" && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
+        if(any(family=="tweedie")) x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
+        if((num.RR+num.lv.c)>1 && randomB == FALSE && all(family!="tweedie") && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
       }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 6000
@@ -574,7 +596,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
   if(!isFALSE(randomB) && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
     warning("Random slope models should use 'nlminb' or 'optim' as optimizer. Changing to 'optim'.")
     control$optimizer <- 'optim'
-    if(family != "tweedie") {control$optim.method <- 'BFGS'}else{control$optim.method <- 'L-BFGS-B'}
+    if(all(family != "tweedie")) {control$optim.method <- 'BFGS'}else{control$optim.method <- 'L-BFGS-B'}
     
   }
   
@@ -592,15 +614,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if((num.lv.c+num.RR)<=1 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
       warning("Selected optimizer not available for this model. Using optim instead.")
       control$optimizer <- "optim"
-      if(family!="tweedie")control$optim.metod <- "BFGS"
-      if(family=="tweedie")control$optim.method <- "L-BFGS-B"
+      if(all(family!="tweedie"))control$optim.method <- "BFGS"
+      if(any(family=="tweedie"))control$optim.method <- "L-BFGS-B"
     }
     
   if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
   }
-  if(family=="tweedie" && (num.lv.c+num.RR)>1 && control$optimizer != "alabama" && isFALSE(randomB)){
+  if(any(family=="tweedie") && (num.lv.c+num.RR)>1 && control$optimizer != "alabama" && isFALSE(randomB)){
     warning("Due to memory issues only optimizer 'alabama' with optim.method='L-BFGS-B' can be used with Tweedie.")
     control$optimizer <- "alabama"
     control$optim.method <- "L-BFGS-B"
@@ -611,13 +633,15 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(!control$optim.method%in%c("NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND", "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA"))control$optim.method <- "NLOPT_LD_TNEWTON_PRECOND"
     }
     
+    
+    
     if(!isFALSE(randomB)&!control$TMB){
       stop("Random slopes in ordination only allowed with TMB = TRUE.")
     }
-    if(family %in% c("binomial","ZIB", "ZNIB") && max(Ntrials) == 1 && !is.null(y) && max(y, na.rm=TRUE)>1){
+    if(any(family %in% c("binomial","ZIB", "ZNIB")) && max(Ntrials) == 1 && !is.null(y) && max(y[,family %in% c("binomial","ZIB", "ZNIB")], na.rm=TRUE)>1){
     stop("Using the binomial distribution requires setting the `Ntrials` argument.")
     }
-    if(family %in% c("binomial","ZIB", "ZNIB") && method == "EVA" && max(Ntrials) >1){
+    if(any(family %in% c("binomial","ZIB", "ZNIB")) && method == "EVA" && max(Ntrials) >1){
       stop("Binomial distribution not yet supported with the EVA method.")
     }
     if(!colMat.rho.struct %in% c("single","term")){
@@ -633,6 +657,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff; start.optimizer = control.start$start.optimizer; start.optim.method = control.start$start.optim.method;
+    
+    # For tweedie & optim, optim.method always "L-BFGS-B"
+    if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(any(family == "tweedie"), "L-BFGS-B", "BFGS")
     
     if(!is.null(TR)&num.lv.c>0|!is.null(TR)&num.RR>0){
       stop("Cannot fit model with traits and reduced rank predictors. \n")
@@ -657,7 +684,6 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   family <- family$family
     # }  
 
-    if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(family == "tweedie", "L-BFGS-B", "BFGS")
 
     if(!is.null(X)){
       if(!is.matrix(X) && !is.data.frame(X) ) 
@@ -980,7 +1006,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
     
-    if((family %in% c("beta", "betaH", "orderedBeta")) & any(y>1 |y<0, na.rm = TRUE))
+    if(length(family) != NCOL(y)) family = rep(family, NCOL(y))[1:NCOL(y)]
+    
+    # Check that percent covers are between [0,1]
+    if(any(family %in% c("beta", "betaH", "orderedBeta")) & any(y[,family %in% c("beta", "betaH", "orderedBeta")]>1 |y[,family %in% c("beta", "betaH", "orderedBeta")]<0, na.rm = TRUE))
       stop("Responses (eg. percentage cover) must be coded in the range between 0 and 1 in case of beta based response models are used, ('beta, 'orderedBeta' or 'betaH'). Please rescale your data.")
     
     #If not empty but a vector..
@@ -1347,11 +1376,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # }
     if( any(!is.finite(y[!is.na(y)])) ) stop("Infinite values are not allowed in 'y'")
     if(any(is.na(y)))y[is.na(y)]<-NA_real_
-    if (anyBars(row.eff.formula) && family == "ordinal" && TMB==FALSE) {
+    if (anyBars(row.eff.formula) && any(family == "ordinal") && TMB==FALSE) {
       stop("Random row effect model is not implemented for ordinal family without TMB. \n")
     }
     
-    if ((method == "LA") && family == "ordinal") {
+    if ((method == "LA") && any(family == "ordinal")) {
       stop("Laplace's method cannot yet handle ordinal data, so use EVA or VA method instead.")
       #method <- "VA"
     }
@@ -1371,10 +1400,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   cat("VA method cannot handle", family, " family, so LA method is used instead. \n")
     #   method <- "LA"
     # }
-    if (quadratic != FALSE && family %in% c("beta")){
+    if (quadratic != FALSE && any(family %in% c("beta"))){
       stop("The quadratic model is not implemented for ", family, " family yet. \n")
     }
-    if (method == "VA" && family %in% c("beta")){
+    if (method == "VA" && any(family %in% c("beta"))){
       cat("Note that, the", family, "family is implemented using the extended variational approximation method. \n")
     }
     # if (method == "EVA"){
@@ -1388,9 +1417,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       TMB <- TRUE
     }
     
-    if (family %in% c("gaussian","ZIP","ZINB","beta","Tweedie","gamma","exponential") && !TMB) {
+    TMB_family_only <- c("gaussian","ZIP","ZINB","beta","betaH","orderedBeta","Tweedie","gamma","exponential")
+    if (any(family %in% TMB_family_only) && !TMB) {
       TMB <- TRUE
-      cat("Only TMB implementation available for ", family, " family, so 'TMB = TRUE' is used instead. \n")
+      cat("Only TMB implementation available for ", paste(unique(family[family %in% TMB_family_only]), collapse = ", "), " family, so 'TMB = TRUE' is used instead. \n")
     }
     
     # if(family == "ordinal" && num.lv ==0 && zeta.struc == "common"){
@@ -1451,56 +1481,60 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     out <- list( y = y, X = X, lv.X = lv.X, lv.X.design = lv.X.design, TR = TR, data = datayx, num.lv = num.lv, num.lv.c = num.lv.c, num.RR = num.RR, num.lvcor =num.lv.cor, lv.formula = lv.formula, lvCor = lvCor, formula = formula,
         method = method, family = family, row.eff = row.eff.formula, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
-        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB)
+        sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB, zeta.struc = zeta.struc)
     if(any(out$corP$cstruc=="corMatern")) out$corP$MaternSmoothness = MaternKappa
     if(inherits(row.eff.formula, "formula"))out$row.eff <- row.eff.formula
     if(return.terms) {out$terms = term} #else {terms <- }
 
+    # Check that link is valid with distribution and method
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
-    if (family %in% c("binomial", "ordinal", "ZIB", "ZNIB")) {
+    if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))) {
       if (method %in% c("LA", "EVA","VA"))
         out$link <- link
     }
-    if (family %in% c("beta","betaH","orderedBeta")) {
-      if(family=="beta" && any(range(y)==0|range(y)>1)){
+    if (any(family %in% c("beta","betaH","orderedBeta"))) {
+      if(any(family=="beta") && (any(range(y[,family=="beta"])==0)|any(range(y[,family=="beta"])>1))){
         stop("Data must be in the range 0-1 for the beta distribution.")
       }
         out$link <- link
     }
-    # if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
-    #   message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
-    #   method  = "EVA"
-    #   out$method = "EVA"
-    # }
-    if(link == "cloglog" && method == "EVA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
+    if(link == "cloglog" && method == "EVA" && any(!(family %in% c("binomial", "ordinal", "ZIB", "ZNIB")))){
       message("Cloglog-link not available for method 'EVA'. Setting method = 'VA'.\n")
       method  = "VA"
       out$method = "VA"
     }
-    if(family == "ordinal" && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
-    if (family %in% c("orderedBeta")) {
+    if(any(family == "ordinal") && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
+    if (any(family %in% c("orderedBeta"))) {
       if (method == "VA") {
         out$link <- "probit"  
       } else if (method=="EVA") {
         out$link <- "logit"
       }
     }
+    # if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
+    #   message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
+    #   method  = "EVA"
+    #   out$method = "EVA"
+    # }
+    
     out$offset <- offset
+    
     if(quadratic=="LV")start.struc <- "LV"
     if (TMB) {
-      if (family == "betaH") {
+      if (any(family == "betaH")) {
         if(is.null(colnames(y))) colnames(y)= paste("y",1:NCOL(y))
-        y01 = y #(y>0)*1; 
+        y01 = y[,family == "betaH", drop=FALSE] #(y>0)*1; 
         if(is.null(colnames(y01))) colnames(y01)= paste("y",1:NCOL(y01))
         colnames(y01) = paste("H01",colnames(y01), sep = "_")
         y=cbind(y,y01)
         if(!is.null(TR)){
-          TR=rbind(TR,TR)
+          TR=rbind(TR,TR[family == "betaH",, drop=FALSE])
         }
         if(!is.null(disp.group)){
-          disp.group=c(disp.group,disp.group)
+          disp.group=c(disp.group,disp.group[family == "betaH"])
         }
-        O = cbind(O,O)
+        if(ncol(O)==p & nrow(O)>1) O = cbind(O,O[,family == "betaH", drop=FALSE])
+        family = c(family, rep("betaH", ncol(y01)))
       }
       
       if (!is.null(TR)) {
@@ -1660,9 +1694,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       
       out$params <- fitg$params
       
-      if(!TMB&family=="ordinal"){
+      if(!TMB&any(family %in% c("ordinal"))){
         out$zeta.struc <- "species"
-      }else if(TMB & family == "ordinal"){
+      }
+      if(TMB & any(family %in% c("ordinal", "orderedBeta"))){
         out$zeta.struc = fitg$zeta.struc
       }
       if(!isFALSE(row.eff.formula)){
@@ -1698,7 +1733,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         if(inherits(trsd, "try-error")) { cat("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       }
       
-      if (family == "tweedie") {
+      if (any(family == "tweedie")) {
         out$Power <- fitg$Power
       }
 
@@ -1790,8 +1825,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # }
     #   names(out$params$sigma.lv) <- names(out$sd$sigma.lv) <- colnames(out$params$theta[,1:(num.lv+num.lv.c)])
     #   }
-    if (family == "negative.binomial")
-      out$params$inv.phi <- 1 / out$params$phi
+    # if (any(family == "negative.binomial"))
+    #   out$params$inv.phi <- 1 / out$params$phi
     if (is.infinite(out$logL)){
       warning("Algorithm converged to infinity, try other starting values or different method.")
       cat("Algorithm converged to infinity, try other starting values or different method. \n")
@@ -1799,7 +1834,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         cat("Try scaling and centering your predictors before entering them into the model, if you haven't. \n")
       }
     }
-    if(family %in% c("binomial","ZIB", "ZNIB"))out$Ntrials = fitg$Ntrials
+    if(any(family %in% c("binomial","ZIB", "ZNIB")))out$Ntrials = fitg$Ntrials
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {

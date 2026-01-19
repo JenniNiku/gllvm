@@ -14,30 +14,30 @@ gllvm.iter <- function(...){
     rownames(args$y) <- paste("Row", 1:nrow(args$y), sep = "")
   if (is.null(colnames(args$y)))
     colnames(args$y) <- paste("Col", 1:ncol(args$y), sep = "")
-  if(args$family == "ordinal"){
-    max.levels <- apply(args$y,2,function(x) length(min(x):max(x)))
+  if(any(args$family == "ordinal")){
+    max.levels <- apply(args$y[,args$family == "ordinal", drop=FALSE],2,function(x) length(min(x):max(x)))
     if(any(max.levels == 1)&args$zeta.struc=="species" || all(max.levels == 2)&args$zeta.struc=="species")
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead.")
-    if(any(!apply(args$y,2,function(x)all(diff(sort(unique(x)))==1)))&args$zeta.struc=="species"){
+    if(any(!apply(args$y[,args$family == "ordinal", drop=FALSE],2,function(x)all(diff(sort(unique(x)))==1)))&args$zeta.struc=="species"){
       warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }
-    if(!all(min(args$y)==apply(args$y,2,min))&args$zeta.struc=="species"){
+    if(!all(min(args$y[,args$family == "ordinal", drop=FALSE])==apply(args$y[,args$family == "ordinal", drop=FALSE],2,min))&args$zeta.struc=="species"){
       warning("For ordinal data and zeta.struc=`species` all species must have the same minimum category. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }
-    if(any(diff(sort(unique(c(args$y))))!=1)&args$zeta.struc=="common")
+    if(any(diff(sort(unique(c(args$y[,args$family == "ordinal", drop=FALSE]))))!=1)&args$zeta.struc=="common")
       stop("Can't fit ordinal model if there are missing response classes. Please reclassify.")
   }
   
-  if(args$family == "orderedBeta") {
+  if(any(args$family == "orderedBeta")) {
     if (!(args$method %in% c("VA", "EVA"))) #"tweedie", 
-      stop("family=\"", args$family, "\" : family not implemented with LA method, change the method to 'VA'.")
+      stop("family=\"", "orderedBeta", "\" : family not implemented with LA method, change the method to 'VA'.")
     
-    if((sum(args$y==1, na.rm = TRUE) + sum(args$y==0, na.rm = TRUE))==0){
+    if((sum(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE) + sum(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE))==0){
       stop("No zeros or ones in the data, so use 'family = `beta`'.")
     }
-    if(!all(colSums(args$y==1, na.rm = TRUE)>0) & !all(colSums(args$y==0, na.rm = TRUE)>0)){
+    if(!all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE)>0) & !all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE)>0)){
       warning("All species do not have zeros and ones. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }

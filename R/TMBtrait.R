@@ -14,7 +14,9 @@ trait.TMB <- function(
   
   n <- nu <- dim(y)[1]; 
   p <- dim(y)[2];
+  p_betaH =  sum(family %in% c("betaH"))/2
   
+  if(length(family)==1) family <- rep(family, p)
   # if(!is.null(start.params)) starting.val <- "zero"
 
   if(all(cstruc == "diag"))Ar.struc = "diagonal"
@@ -43,11 +45,11 @@ trait.TMB <- function(
   term <- NULL
   times = 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
-  if(family %in% c("binomial","ZIB", "ZNIB") && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
+  if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  } else if(family %in% c("binomial","ZIB", "ZNIB") && length(Ntrials) == 1){
+  } else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == 1){
     Ntrials <- matrix(Ntrials, n, p)
-  }else if(family %in% c("binomial","ZIB", "ZNIB") && length(Ntrials) == p){
+  }else if((any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == p)){
     Ntrials <- matrix(Ntrials, n, p, byrow = TRUE)
   }
   
@@ -151,14 +153,14 @@ trait.TMB <- function(
   
   y <- as.data.frame(y)
   formula1 <- formula
-  if(method=="VA" && (family =="binomial")){ link <- "probit"}
+  # if(method=="VA" && (family =="binomial")){ link <- "probit"}
   jitter.var.r <- 0
   if(length(jitter.var)>1){ 
     jitter.var.r <- jitter.var[2]
     jitter.var <- jitter.var[1]
   }
   
-  if(NCOL(X) < 1) stop("No covariates in the model, fit the model using gllvm(y,family=",family,"...)")
+  if(NCOL(X) < 1) stop("No covariates in the model, fit the model using gllvm(y,family = ...)")
   
   # change categorical variables to dummy variables
   num.X <- 0
@@ -258,10 +260,10 @@ trait.TMB <- function(
   trial.size <- 1
   
   y <- as.matrix(y)
-  if(family == "ordinal") {
-    y00<-y
-    if(min(y)==0){ y=y+1}
-    }
+  if(any(family == "ordinal")) {
+    y00 <- y[,family == "ordinal", drop=FALSE]
+    if(min(y[,family == "ordinal"]) == 0){ y[,family == "ordinal"] = y[,family == "ordinal"]+1}
+  }
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
   
   out <-  list(y = y, X = X1, TR = TR1, num.lv = num.lv, logL = Inf, family = family, offset=offset,randomX=randomX, X.design=Xd,terms=term, method = method, Ntrials = Ntrials)
@@ -444,8 +446,8 @@ trait.TMB <- function(
     res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
                                   yXT = yXT, TMB = TRUE, link=link, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
     
-    if(is.null(res$Power) && family == "tweedie")res$Power=1.1
-    if(family=="tweedie"){
+    if(is.null(res$Power) && any(family == "tweedie"))res$Power=1.1
+    if(any(family=="tweedie")){
       Power = res$Power
       ePower = log((Power-1)/(1-(Power-1)))
       if(ePower==0)ePower=ePower-0.01
@@ -500,7 +502,7 @@ trait.TMB <- function(
             if(length(scaledc) < ncol(distLV) ) scaledc <- rep(scaledc, ncol(distLV))[1:ncol(distLV)]
           }
         }
-        if(family %in% c("negative.binomial","negative.binomial1") && start.params$family %in% c("negative.binomial","negative.binomial1") && !is.null(start.params$params$phi)) {res$phi<-start.params$params$phi}
+        if(any(family %in% c("negative.binomial","negative.binomial1")) && any(start.params$family %in% c("negative.binomial","negative.binomial1")) && !is.null(start.params$params$phi)) {res$phi<-start.params$params$phi}
         # 
         #   if(!is.null(randomX)){
         #   Br <- start.params$params$Br
@@ -541,7 +543,7 @@ trait.TMB <- function(
       
       if(num.lv > 0) {
         sigma.lv <- res$sigma.lv
-        if(!is.null(randomXb) && family != "ordinal"){
+        if(!is.null(randomXb) && all(family != "ordinal")){
           Br <- res$Br
           sigmaB <- (res$sigmaB)
           if(length(sigmaB)>1 && ncol(RElist$Zt)!=n) sigmaij <- rep(1e-3,length(res$sigmaij))
@@ -599,11 +601,12 @@ trait.TMB <- function(
         #   thetaH <- t(theta%*%diag(sigma.lv, nrow = length(sigma.lv), ncol = length(sigma.lv)))
         # }
         
-        if(n.init > 1 && !is.null(res$mu) && starting.val == "res" && family != "tweedie") {
-          if(family %in% c("ZIP","ZINB")) {
-            lastart <- FAstart(res$mu, family="poisson", y=y, num.lv = num.lv, jitter.var = jitter.var[1], disp.group=disp.group)
-          }else if(family %in% c("ZIB", "ZNIB")) {
-              lastart <- FAstart(res$mu, family="binomial", y=y, num.lv = num.lv, jitter.var = jitter.var[1], disp.group=disp.group)
+        if(n.init > 1 && !is.null(res$mu) && starting.val == "res" && all(family != "tweedie")) {
+          if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB"))) {
+            famstart =family
+            famstart[family %in% c("ZIP","ZINB")] <- "poisson"
+            famstart[family %in% c("ZIB", "ZNIB")] <- "binomial"
+            lastart <- FAstart(res$mu, family=famstart, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1],  zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
           } else {
             lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
           }
@@ -623,79 +626,109 @@ trait.TMB <- function(
     if (is.null(offset))  offset <- matrix(0)
     
 ### Starting values for dispersion/shape parameters
-    
-    if(family %in% c("negative.binomial", "negative.binomial1")) {
-      phis <- res$phi
-      if (any(phis > 10))
-        phis[phis > 50] <- 50
-      if (any(phis < 0.02))
-        phis[phis < 0.02] <- 0.02
-      res$phi <- phis
-      phis <- 1/phis
-    }
-    if (family %in% c("ZIP","ZIB") && starting.val=="res") {
-      phis <- res$phi
-      phis <- phis / (1 - phis)
-    }
-    if (family %in% c("ZINB", "ZNIB") && starting.val=="res") {
-      phis <- res$phi
-      if(family == "ZINB")phis <- phis / (1 - phis)
+      phis <- NULL
+      ZINBphis <- NULL
+      phi_family = c("negative.binomial","negative.binomial1", "tweedie",
+                     "ZIP", "ZIB", "ZINB", "ZNIB",
+                     "gaussian", "gamma", "beta", "betaH", "orderedBeta")
+      shape_family = c("gaussian", "gamma", "beta", "betaH", "orderedBeta")
+      ZI_family = c("ZIP","ZIB", "ZINB", "ZNIB")
       
-      ZINBphis <- res$ZINB.phi
-      if (any(ZINBphis > 100))
-        ZINBphis[ZINBphis > 100] <- 100
-      if (any(ZINBphis < 0.01))
-        ZINBphis[ZINBphis < 0.01] <- 0.01
-      res$ZINB.phi <- ZINBphis
-      if(family == "ZINB")ZINBphis <- 1/ZINBphis
-    }
-    
-    if(family == "tweedie") {
-      phis <- res$phi; 
-      if(any(phis>10)) phis[phis>10]=10; 
-      if(any(phis<0.10))phis[phis<0.10]=0.10; 
-      phis= (phis)
-    }
-    
-    if (family %in% c("ZIP","ZIB","ZINB", "ZNIB") && is.null(phis)) {
-      if(length(unique(disp.group))!=p){
-        phis <- (sapply(1:length(unique(disp.group)),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01)[disp.group]
-      }else{
-        phis <- (colMeans(y == 0) * 0.98) + 0.01  
+      if (any(family %in% phi_family) && !is.null(res$phi)) {
+        phis <- res$phi
+
+        # Dispersion parameters:
+        if (any(family %in% c("negative.binomial","negative.binomial1", "tweedie"))) {
+          if (any(na.omit(phis > 10)))
+            phis[phis > 10] <- 10
+          if (any(na.omit(phis < 0.1)))
+            phis[phis < 0.1] <- 0.1
+          res$phi <- phis
+        }
+        
+        # Shape/variance parameters
+        if (any(family %in% c("betaH", "orderedBeta"))) {
+          phis[family %in% c("betaH", "orderedBeta")] <- rep(5,p)[family %in% c("betaH", "orderedBeta")]
+        }
+        
+        # Zero inflation parameters:
+        if(any(family %in% c("ZIP", "ZIB", "ZINB"))) {
+          phis[family %in% c("ZIP", "ZIB", "ZINB")] <- (phis / (1 - phis))[family %in% c("ZIP", "ZIB", "ZINB")]
+        }
+        # Inverse of phi implementation:
+        if (any(family %in% c("negative.binomial","negative.binomial1") )) {
+          phis[family %in% c("negative.binomial","negative.binomial1")] <- 1/phis[family %in% c("negative.binomial","negative.binomial1")]
+        }
       }
-      if(family != "ZNIB")phis <- phis / (1 - phis)
-      } # ZIP probability
-    
-    if (family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
-      phis <- res$phi
-      if (family %in% c("betaH", "orderedBeta")) { # & is.null(res$phi)
-        phis <- rep(5,p)
+      
+      if (any(family %in% c("ZINB", "ZNIB")) && !is.null(res$ZINB.phi)) {
+        ZINBphis <- res$ZINB.phi
+
+        if (any(na.omit(ZINBphis > 100)))
+          ZINBphis[ZINBphis > 100] <- 100
+        if (any(na.omit(ZINBphis < 0.01)))
+          ZINBphis[ZINBphis < 0.01] <- 0.01
+        res$ZINB.phi <- ZINBphis
+        if(any(family %in% "ZINB"))ZINBphis[family %in% "ZINB"] <- 1/ZINBphis[family %in% "ZINB"]
       }
-    }
+      
+      # ZIP probability if not initialized
+      if (any(family %in%ZI_family) && (starting.val != "res")) {
+        if(length(unique(disp.group))!=p){
+          phis1 <- sapply(1:length(na.omit(unique(disp.group))),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
+          phis[family %in%ZI_family] <- (phis1[disp.group])[family %in%ZI_family]
+        }else{
+          phis[family %in%ZI_family] <- (colMeans(y[,family %in%ZI_family, drop=FALSE] == 0) * 0.98) + 0.01  
+        }
+      }
     
 ### Starting values for cut-off parameters
-    
-    if(family=="ordinal"){
-      K = max(y00)-min(y00)
-      if(zeta.struc=="species"){
-        zeta <- c(t(res$zeta[,-1]))
-        zeta <- zeta[!is.na(zeta)]
-      }else{
-        zeta <- res$zeta[-1]
-      }
-      
-    } else if(family=="orderedBeta") {
-      if(is.null(zetacutoff)){
-        zeta <- rep(0,p)
-        zeta <- c(zeta,rep(log(3),p))
+      zeta <- NULL
+      zetaO = NULL
+      if(any(family%in%c("ordinal", "orderedBeta"))){
+        if(any(family%in%c("ordinal"))){
+          K = max(y00)-min(y00)
+        } else {K=2}
+        
+        if(zeta.struc =="common") {
+          if(any(family%in%c("orderedBeta"))){
+            zeta <- c(zeta, res$zeta[1], log(res$zeta[2]))
+            zetaO <- c(zetaO, rep(TRUE,2))
+            
+            if(!is.null(zetacutoff)){
+              zeta<- c(zetacutoff[1], log(zetacutoff[2]))
+            }
+          }
+          if(any(family%in%c("ordinal"))){
+            zeta <- c(zeta, res$zeta[(length(res$zeta)-(K-1)+1):length(res$zeta)])
+            zetaO <- c(zetaO, rep(FALSE,(K-1)))
+          }
+        } else if(zeta.struc =="species") {
+          o_ind <- c(1:p)[family%in%c("ordinal", "orderedBeta")]
+          for (j in o_ind) {
+            if(family[j]=="ordinal"){
+              zeta <- c(zeta, na.omit(res$zeta[j,-1]))
+              zetaO <- c(zetaO, rep(FALSE,length(na.omit(res$zeta[j,-1]))))
+            } else {
+              if(!is.null(zetacutoff)){
+                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]))
+              } else {
+                zeta <- c(zeta, res$zeta[j,1], log(res$zeta[j,2]))
+              }
+              zetaO <- c(zetaO, rep(TRUE,2))
+            }
+          }
+        }
+        # K = max(y00)-min(y00)
+        # if(zeta.struc=="species"){
+        #   zeta <- c(zeta, t(fit$zeta[,-1]))
+        #   zeta <- zeta[!is.na(zeta)]
+        # }else{
+        #   zeta <- c(zeta, fit$zeta[-1])
+        # }
       } else {
-        zetacutoff<- matrix(zetacutoff, ncol=2)
-        zeta <- rep(zetacutoff[,1],p)[1:p]
-        zeta <- c(zeta,rep(log(zetacutoff[,2]),p)[1:p])
+        zeta = 0
       }
-    } else {
-      zeta = 0
-    }
     
 ### Jittering for row effs/random coefs
     if(jitter.var.r>0){ 
@@ -714,10 +747,10 @@ trait.TMB <- function(
 
     if(!is.null(phis)) {
       phi=(phis)
-    } else {
-      phi <- rep(1,p)+runif(p,0,0.001) 
-      if (family %in% c("betaH", "orderedBeta")) {
-        phi <- rep(5,p)
+    } else { 
+      phi <- rep(1, p)+runif(p,0,0.001); 
+      if (any(family %in% c("betaH", "orderedBeta"))) {
+        phi[family %in% c("betaH", "orderedBeta")] <- rep(5,p)[family %in% c("betaH", "orderedBeta")]
       }
       res$phi <- phi
     }
@@ -726,7 +759,7 @@ trait.TMB <- function(
       ZINBphi <- ZINBphis 
     } else { 
       ZINBphi <- rep(1, p)+runif(p,0,0.001)  
-      if(family %in% c("ZINB", "ZNIB")) res$ZINBphi <- ZINBphi
+      if(any(family %in% c("ZINB", "ZNIB"))) res$ZINBphi <- ZINBphi
     }
     
     nlvr=num.lv
@@ -751,34 +784,37 @@ trait.TMB <- function(
     if(ncol(cs)<2)map.list$sigmaij <- factor(NA)
     map.list$sigmab_lv = factor(NA)
     map.list$Ab_lv = factor(NA)
-    if(family %in% c("poisson","binomial","ordinal","exponential")) {
+    if(all(!(family %in% phi_family))) { # If non of the families among "phi"-families
       map.list$lg_phi <- factor(rep(NA,p))
-    } else if(family %in% c("tweedie", "negative.binomial", "negative.binomial1", "gamma", "gaussian", "beta", "betaH", "orderedBeta", "ZIP", "ZINB","ZIB", "ZNIB")){
+    } else if(any(family %in% phi_family)){
+      disp.group[!(family %in% phi_family)] = NA
       map.list$lg_phi <- factor(disp.group)
-      if(family=="tweedie" && !is.null(Power))map.list$ePower = factor(NA)
-      if(family %in% c("ZINB", "ZNIB") & is.null(map.list$lg_phiZINB))map.list$lg_phiZINB <- factor(disp.group)
+      if(any(family=="tweedie") && !is.null(Power))map.list$ePower = factor(NA)
+      if(any(family %in% c("ZINB", "ZNIB"))& is.null(map.list$lg_phiZINB))map.list$lg_phiZINB <- factor(disp.group)
     }
     
-    if(!(family %in% c("ordinal", "orderedBeta"))) map.list$zeta <- factor(NA)
-    if((family %in% c("orderedBeta"))){
+    if(all(!(family %in% c("ordinal","orderedBeta")))) map.list$zeta <- factor(NA)
+    if(any(family %in% c("orderedBeta"))){
       if(zeta.struc=="species"){
         zetamap = c(1:length(zeta))
+        zetaindex = zetaO*1
+        zetaindex[zetaO] <- 1:2
         if(!all(colSums(y==0, na.rm = TRUE)>0))
-          zetamap[1:p] <- 1
+          zetamap[zetaindex ==1] <- zetamap[zetaindex==1][1]
         if(!all(colSums(y==1, na.rm = TRUE)>0))
-          zetamap[-(1:p)] <- max(zetamap[1:p])+1
+          zetamap[zetaindex ==2] <- zetamap[zetaindex==2][1]
         map.list$zeta = factor( zetamap)
-        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
-      }else{
-        zetamap <- c(rep(1,p))
-        # if(any(y==1))
-        zetamap <- c(zetamap,rep(max(zetamap)+1,p))
-        map.list$zeta <- factor( c(zetamap) )
-        if("zeta" %in% names(setMap)) map.list$zeta = factor(setMap$zeta)
+      }
+      if("zeta" %in% names(setMap)){ 
+        map.list$zeta= factor(setMap$zeta)
       }
     }
-    if(family != "tweedie"){map.list$ePower = factor(NA)}
-    if(!family %in% c("ZINB", "ZNIB"))map.list$lg_phiZINB <- factor(rep(NA,p))
+    if(all(family != "tweedie")){map.list$ePower = factor(NA)}
+    if(any(!family %in% c("ZINB", "ZNIB"))){
+      mapZINB <- 1:p; if(!is.null(disp.group)) mapZINB <- disp.group
+      mapZINB[!(family %in% c("ZINB", "ZNIB"))] <- NA
+      map.list$lg_phiZINB <- factor(mapZINB)
+    }
     if(nrow(xr)!=n){
       map.list$r0f <- factor(NA)
     }
@@ -787,7 +823,7 @@ trait.TMB <- function(
     }
     if(ncol(csR)<2)map.list$sigmaijr <- factor(NA)
     
-    extra <- c(0,1,0)
+    extra <- c(rep(0,p),1,0)
     
     # Common intercept
     if(beta0com){
@@ -1211,50 +1247,45 @@ trait.TMB <- function(
     
     ### family settings
     
-    if(family == "poisson") { familyn=0}
-    if(family %in% c("negative.binomial","negative.binomial1")) { 
-      familyn=1
-      if(family == "negative.binomial1")extra[1] = 1
-      }
-    if(family == "binomial") {
-      familyn <- 2;
-      if(link=="probit") extra[1] <- 1
+    familyn <- NULL
+    if(any(family == "poisson")) { familyn[family == "poisson"] <- 0}
+    if(any(family %in% c("negative.binomial","negative.binomial1"))) { 
+      familyn[family %in% c("negative.binomial","negative.binomial1")] <- 1
+      if(any(family == "negative.binomial1"))extra[family == "negative.binomial1"]=1
     }
-    if(family == "gaussian") {familyn=3}
-    if(family == "gamma") {familyn=4}
-    if(family == "tweedie"){ familyn <- 5}
-    if(family == "ZIP"){ familyn <- 6;}
-    if(family == "ordinal") {familyn=7}
-    if(family == "exponential") {familyn=8}
-    if(family == "beta"){
-      familyn=9
-      if(link=="probit") extra[1] <- 1
+    if(any(family == "binomial")) { 
+      familyn[family == "binomial"] <- 2
+      if(link=="probit") extra[family == "binomial"]=1
+      if(link=="cloglog")extra[family == "binomial"]=2
     }
-    if(family == "betaH"){ 
-      familyn = 10
-      if(link=="probit") extra[1]=1
-      # bH <- rbind(a,b)
-      # extra[2] <- 0
-      # Xd<-cbind(1,Xd)
-      # bH<-matrix(B)
-      # if(num.lv>0) {
-      #   mapLH<-factor(1:length(thetaH))
-      #   mapLH[lower.tri(thetaH)] <- NA
-      #   map.list$thetaH <- factor(mapLH)
-      # } else {
-      #   thetaH<- matrix(0);
-      #   map.list$thetaH = factor(NA)
-      # }
+    if(any(family == "gaussian")) {familyn[family == "gaussian"]=3}
+    if(any(family == "gamma")) {familyn[family == "gamma"]=4}
+    if(any(family == "tweedie")){ familyn[family == "tweedie"] =5}
+    if(any(family == "ZIP")){familyn[family == "ZIP"] =6}
+    if(any(family == "ordinal")) {
+      familyn[family == "ordinal"]=7
+      if(link=="probit")extra[family == "ordinal"]=1
     }
-    if(family == "ZINB"){ familyn <- 11;}
-    if(family == "orderedBeta") {familyn=12}
-    if(family == "ZIB"){ 
-      familyn <- 13;
-      if(link=="probit") extra[1]=1
+    if(any(family == "exponential")) {familyn[family == "exponential"] =8}
+    if(any(family == "beta")){ 
+      familyn[family == "beta"] =9
+      if(link=="probit") extra[family == "beta"]=1
     }
-    if(family == "ZNIB"){ 
-      familyn <- 14;
-      if(link=="probit") extra[1]=1
+    if(any(family == "betaH")){ # EVA
+      familyn[family == "betaH"] = 10
+      if(link=="probit") extra[family == "betaH"]=1
+    }
+    if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
+    if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12}
+    if(any(family == "ZIB")){
+      familyn[family == "ZIB"] =13
+      if(link=="probit") extra[family == "ZIB"]=1
+      if(link=="cloglog") extra[family == "ZIB"]=2
+    }
+    if(any(family == "ZNIB")){
+      familyn[family == "ZNIB"] =14
+      if(link=="probit") extra[family == "ZNIB"]=1
+      if(link=="cloglog") extra[family == "ZNIB"]=2
     }
     ## To improve starting values for quadratic model
     if(starting.val!="zero" && start.struc != "LV" && quadratic == TRUE && num.lv>0 && method == "VA"){
@@ -1277,7 +1308,8 @@ trait.TMB <- function(
       map.list2$lg_Ar = factor(rep(NA, length(lg_Ar)))
       map.list2$Abb = factor(rep(NA, length(Abb)))
       map.list2$zeta = factor(rep(NA, length(zeta)))
-
+      map.list2$zetacutoff = factor(rep(NA, length(zetacutoff)))
+      
       parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
 
       objr <- TMB::MakeADFun(
@@ -1303,9 +1335,9 @@ trait.TMB <- function(
     
     #### Call makeADFun
     
-    if( (method %in% c("VA", "EVA")) && (num.lv>0 || (nrow(dr)==n) || !is.null(randomX) || (family =="orderedBeta")) ){
+    if( (method %in% c("VA", "EVA")) && (num.lv>0 || (nrow(dr)==n) || !is.null(randomX) || any(family =="orderedBeta")) ){
       parameter.list <- list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a),  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset=offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset=offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -1317,9 +1349,9 @@ trait.TMB <- function(
       map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
       
       parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, randomB = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, randomB = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
-      if(family == "ordinal"){
+      if(any(family %in% c("ordinal", "orderedBeta"))){
         data.list$method = 0
       }
       
@@ -1475,21 +1507,19 @@ trait.TMB <- function(
       } else {Au1<-Au}
       
       if(num.lv==0) {lambda1 <- 0; }
-      if(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
-      if(family %in% c("ZINB", "ZNIB")){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
-      if(family=="tweedie" && is.null(Power))ePower = param1[nam == "ePower"]
+      if(all(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta"))){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][map.list$lg_phi]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
+      if(any(family %in% c("ZINB", "ZNIB"))){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
+      if(any(family=="tweedie") && is.null(Power)) ePower = param1[nam == "ePower"]
 
-      if(family %in% c("ordinal")){
-        zeta <- param1[nam=="zeta"] 
-      } else if(family %in% c("orderedBeta")){
-        zeta <- matrix((param1[names(param1)=="zeta"])[map.list$zeta],p,2)
-        if(any(is.na(map.list$zeta))) zeta[is.na(map.list$zeta)] = attr(objr1$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
+      if(any(family %in% c("ordinal","orderedBeta"))){
+        zeta = objr1$env$parList()$zeta
       } else {
         zeta <- 0 
       }
+      
       parameter.list <- list(r0r = r0r1, sigmaijr = sigmaijr1, r0f = r0f1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B = B1, Br = Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = (sigma.lv1), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), randomB = 0,family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), randomB = 0,family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -1542,14 +1572,18 @@ trait.TMB <- function(
       Au<- param1[nam=="Au"]
       lambda2 <- abs(matrix(param1[nam == "lambda2"], byrow = T, ncol = num.lv, nrow = p))
       
-      if(family %in% c("poisson","binomial","ordinal","exponential")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][disp.group]}
-      if(family %in% c("ZINB", "ZNIB")){lg_phiZINB1 <- param1[nam=="lg_ZINBphi"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
+      if(any(family %in% c("poisson","binomial","ordinal","exponential"))){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][map.list$lg_phi]}
+      if(any(family %in% c("ZINB", "ZNIB"))){lg_phiZINB1 <- param1[nam=="lg_ZINBphi"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
       
-      if(family == "ordinal"){ zeta <- param1[nam=="zeta"] } else { zeta <- 0 }
+      if(any(family %in% c("ordinal","orderedBeta"))){
+        zeta = objr1$env$parList()$zeta
+      } else {
+        zeta <- 0 
+      }
       
         parameter.list = list(r0r = r0r1, sigmaijr = sigmaijr, r0f = r0f1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br = Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1)
+      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=!trace,
@@ -1581,54 +1615,77 @@ trait.TMB <- function(
     #### Extract estimated values
     
     param <- objr$env$last.par.best
-    if(family %in% c("negative.binomial", "negative.binomial1", "tweedie", "gaussian", "gamma", "beta", "betaH", "orderedBeta")) {
-      phis=exp(param[names(param)=="lg_phi"])[disp.group]
-      if(family=="tweedie" && is.null(Power)){
-        Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
-        names(Power) = "Power"
+    if(any(family %in% phi_family)) {
+      phis <- exp(param[names(param)=="lg_phi"])[map.list$lg_phi]
+      if(any(family %in% c("ZINB", "ZNIB")))ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
+      if(any(family %in% c("ZIP","ZINB", "ZIB"))) {
+        lp0 <- param[names(param)=="lg_phi"][map.list$lg_phi]; out$lp0[family %in% c("ZIP","ZINB", "ZIB")] <- lp0[family %in% c("ZIP","ZINB", "ZIB")]
+        phis[family %in% c("ZIP","ZINB", "ZIB")] <- (exp(lp0)/(1+exp(lp0)))[family %in% c("ZIP","ZINB", "ZIB")];
       }
+      if(any(family %in% c("ZNIB"))) {
+        lp0 <- param[names(param)=="lg_phi"][map.list$lg_phi]; out$lp0[family %in% c("ZNIB")] <- lp0[family %in% c("ZNIB")]
+        phis[family %in% c("ZNIB")] <- exp(lp0)[family %in% c("ZNIB")]
+      }
+      if(any(family=="tweedie") && is.null(Power)){
+        Power = exp(param[names(param)=="ePower"])/(1+exp(param[names(param)=="ePower"]))+1
+      }
+      
+      
+      
     }
-    if(family %in% c("ZIP","ZIB","ZINB")) {
-      if(family == "ZINB")ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
-      lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0=lp0
-      phis <- exp(lp0)/(1+exp(lp0));#log(phis); #
-    }
-    if(family %in% c("ZNIB")) {
-      ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
-      lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0 <- lp0
-      phis <- exp(lp0)
-    }
-    if(family == "ordinal"){
-      zetas <- param[names(param)=="zeta"]
-      if(zeta.struc=="species"){
+
+    if(any(family %in% c("ordinal", "orderedBeta"))) {
+      zetas = objr$env$parList()$zeta
+      # zetas <- param[names(param)=="zeta"]
+      if(any(family == "ordinal")){
+        K = max(y00)-min(y00)
+      } else {
+        K = 2
+      }
+      
+      if(zeta.struc =="common") {
+        zetanew <- NULL
+        if(any(family%in%c("orderedBeta"))){
+          zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+          names(zetanew) <- c("cutoff0","cutoff1")
+        }
+        if(any(family%in%c("ordinal"))){
+          zetanew <- c(zetanew, 0,zetas[!zetaO])
+          names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+          # zetanew <- c(0,zetas)
+          # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+        }
+      } else if(zeta.struc =="species") {
         zetanew <- matrix(NA,nrow=p,ncol=K)
         idx<-0
-        for(j in 1:ncol(y)){
-          k<-max(y[,j])-2
-          if(k>0){
-            for(l in 1:k){
-              zetanew[j,l+1]<-zetas[idx+l]
-            } 
+        o_ind <- c(1:p)[family%in%c("ordinal", "orderedBeta")]
+        for (j in o_ind) {
+          if(family[j]=="ordinal"){
+            zetanew[j,1] <- 0 
+            k<-max(y[,j])-2
+            if(k>0){
+              for(l in 1:k){
+                zetanew[j,l+1]<-zetas[idx+l]
+              } 
+            }
+            idx<-idx+k
+          } else {
+            zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
+            idx<-idx+2
           }
-          idx<-idx+k
+        } # end for j
+        row.names(zetanew) <- colnames(y); 
+        if(any(family%in%c("ordinal"))){
+          colnames(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+        } else {
+          colnames(zetanew) <- c("cutoff0","cutoff1")
         }
-        zetanew[,1] <- 0 
-        row.names(zetanew) <- colnames(y00); colnames(zetanew) <- paste(min(y):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
-      }else{
-        zetanew <- c(0,zetas)
-        names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
       }
       
       zetas<-zetanew
-      out$y<-y00
+      out$zeta.struc = zeta.struc
     }
-    if(family == "orderedBeta") {
-      zetas <- matrix((param[names(param)=="zeta"])[map.list$zeta],p,2)
-      if(any(is.na(map.list$zeta))) zetas[is.na(map.list$zeta)] = attr(objr$env$parameters$zeta, "shape")[is.na(map.list$zeta)]
-      zetas[,2] = exp(zetas[,2])
-      colnames(zetas) = c("cutoff0","cutoff1")
-    }
-    
+
     bi<-names(param)=="b"
     Bi<-names(param)=="B"
     li<-names(param)=="lambda"
@@ -1941,52 +1998,45 @@ trait.TMB <- function(
       # }
       
       # Dispersion parameters
-      if(family %in% c("negative.binomial", "negative.binomial1")) {
-        out$params$inv.phi <- phis;
-        out$params$phi <- 1/phis;
+      if(any(family %in% c("negative.binomial","negative.binomial1"))) {
+        out$params$inv.phi[family %in% c("negative.binomial","negative.binomial1")] <- phis[family %in% c("negative.binomial","negative.binomial1")];
+        out$params$phi[family %in% c("negative.binomial","negative.binomial1")] <- 1/phis[family %in% c("negative.binomial","negative.binomial1")];
         names(out$params$phi) <- colnames(y);
-        
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)
         }
         names(out$params$inv.phi) <-  names(out$params$phi)
       }
 
-      if(family %in% c("gaussian", "tweedie", "gamma","beta", "betaH", "orderedBeta")) {
-        out$params$phi <- phis;
+      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB"))) {
+        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")];
         names(out$params$phi) <- colnames(y);
-        
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)
         }
       }
-      if(family %in% c("ZIP","ZIB","ZINB", "ZNIB")) {
-        out$params$phi <- phis;
-        names(out$params$phi) <- colnames(y);
-        
+      
+      if(any(family %in% c("ZINB"))) {
+        out$params$ZINB.inv.phi[family %in% c("ZINB")] <- ZINBphis[family %in% c("ZINB")];
+        out$params$ZINB.phi[family %in% c("ZINB")] <- 1/ZINBphis[family %in% c("ZINB")];
+        names(out$params$ZINB.phi) <- colnames(y);
         if(!is.null(names(disp.group))){
-          try(names(out$params$phi) <- names(disp.group),silent=T)
+          try(names(out$params$ZINB.phi) <- names(map.list$lg_phiZINB),silent=T)
         }
-        if(family =="ZINB") {
-          out$params$ZINB.inv.phi <- ZINBphis;
-          out$params$ZINB.phi <- 1/ZINBphis;
-          names(out$params$ZINB.phi) <- colnames(y);
-          if(!is.null(names(disp.group))){
-            try(names(out$params$ZINB.phi) <- names(disp.group),silent=T)
-          }
-          names(out$params$ZINB.inv.phi) <-  names(out$params$ZINB.phi)
-        }
-        if(family == "ZNIB"){
-          out$params$ZINB.phi <- ZINBphis;
-          names(out$params$ZINB.phi) <- colnames(y);
-          if(!is.null(names(disp.group))){
-            try(names(out$params$ZINB.phi) <- names(disp.group),silent=T)
-          }
+        names(out$params$ZINB.inv.phi) <-  names(out$params$ZINB.phi)
+      }
+      if(any(family %in% c("ZNIB"))) {
+        out$params$ZINB.phi[family %in% c("ZNIB")] <- ZINBphis[family %in% c("ZNIB")];
+        names(out$params$ZINB.phi) <- colnames(y);
+        if(!is.null(names(disp.group))){
+          try(names(out$params$ZINB.phi) <- names(map.list$lg_phiZINB),silent=T)
         }
       }
-      if (family %in% c("ordinal", "orderedBeta")) {
+      
+      if (any(family %in% c("ordinal", "orderedBeta"))) {
         out$params$zeta <- zetas
       }
+
       if(!is.null(randomX)){
         out$params$Br <- Br
         out$params$sigmaB <- sigmaB
@@ -2002,10 +2052,10 @@ trait.TMB <- function(
         rownames(out$params$Br) <- rownames(out$params$sigmaB) <- colnames(out$params$sigmaB) <- colnames(xb)
         colnames(out$params$Br) <- colnames(y)
       }
-      if(family %in% c("binomial", "beta")) out$link <- link;
+      if(any(family %in% c("binomial", "beta", "ordinal", "betaH", "orderedBeta"))) out$link <- link;
       out$time <- timeo
       out$start <- res
-      if(family == "tweedie")out$Power = Power
+      if(any(family == "tweedie")) out$Power = Power
       
       pars <- optr$par
       
