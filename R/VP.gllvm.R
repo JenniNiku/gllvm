@@ -55,7 +55,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   
   r0 <- NULL
   p <- ncol(object$y)
-  if(any(object$family == "betaH")) p <- p*2
+  if(any(object$family == "betaH")) p <- p + sum(object$family == "betaH")
   n <- nrow(object$y)
 
   if (!is.null(object$X)) {
@@ -380,23 +380,27 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   PropExplainedVarSp <- t(LVpartit)/LtotV
   
   if(any(object$family == "betaH")){
-    out <- list(PropExplainedVarSp=PropExplainedVarSp[1:(p/2),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p/2)),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
+    out <- list(PropExplainedVarSp=PropExplainedVarSp[1:(p-sum(object$family == "betaH")),, drop=FALSE],PropExplainedVarHurdleSp=PropExplainedVarSp[-(1:(p-sum(object$family == "betaH"))),, drop=FALSE], LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   } else {
     out <- list(PropExplainedVarSp=PropExplainedVarSp, LtotV=LtotV, LVpartit=t(LVpartit), group = group, groupnames = groupnames, family = object$family)
   }
   
   if(calcr2scaled){
+    r2s<- rep(NA, length(object$family))
     if(any(object$family %in% c("binomial")) & all(object$Ntrials ==1)){
-      r2s <- goodnessOfFit(object = object, measure = "TjurR2", species = TRUE)$TjurR2
-    } else if(any(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta"))){
-      r2s <- goodnessOfFit(object = object, measure = "R2", species = TRUE)$R2
-    } else if(any(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB"))) {
-      r2s <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2
-    } else if(any(object$family %in% "betaH")) {
+      r2s[object$family %in% c("binomial")] <- goodnessOfFit(object = object, measure = "TjurR2", species = TRUE)$TjurR2[object$family %in% c("binomial")]
+    } 
+    if(any(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta"))){
+      r2s[object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")] <- goodnessOfFit(object = object, measure = "R2", species = TRUE)$R2[object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")]
+    } 
+    if(any(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB"))) {
+      r2s[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")] <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")]
+    } 
+    if(any(object$family %in% "betaH")) {
       pred <- predict(object, type = "response")
-      ycover<- object$y; ycover[object$y==0]<- NA;
-      r2s <- goodnessOfFit(y = ycover, pred = pred[, 1:ncol(object$y), drop=FALSE], measure = "R2", species = TRUE)$R2
-      out$r2Hspecies <- goodnessOfFit(y = (object$y>0)*1, pred = pred[, -(1:ncol(object$y)), drop=FALSE], measure = "TjurR2", species = TRUE)$TjurR2
+      ycover<- object$y[,object$family %in% "betaH"]; ycover[ycover==0]<- NA;
+      r2s[object$family %in% "betaH"] <- goodnessOfFit(y = ycover, pred = pred[, (1:ncol(object$y))[object$family %in% "betaH"], drop=FALSE], measure = "R2", species = TRUE)$R2
+      out$r2Hspecies <- goodnessOfFit(y = (object$y[,object$family %in% "betaH"]>0)*1, pred = pred[, -(1:ncol(object$y)), drop=FALSE], measure = "TjurR2", species = TRUE)$TjurR2
     }
     out$r2scaledExplainedVarSp <- out$PropExplainedVarSp*r2s
     out$r2species <- r2s

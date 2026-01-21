@@ -60,12 +60,16 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   }
   if(is.null(parm)){
     if (any(object$family %in% c("negative.binomial", "negative.binomial1"))) {
-      object$params$phi <- NULL
-      object$sd$phi <- NULL
+      object$params$phi[object$family %in% c("negative.binomial", "negative.binomial1")] <- object$params$inv.phi[object$family %in% c("negative.binomial", "negative.binomial1")]
+      object$sd$phi[object$family %in% c("negative.binomial", "negative.binomial1")] <- object$sd$inv.phi[object$family %in% c("negative.binomial", "negative.binomial1")]
+      object$params$inv.phi <- NULL
+      object$sd$inv.phi <- NULL
     }
     if (any(object$family %in% c("ZINB"))) {
-      object$params$ZINB.phi <- NULL
-      object$sd$ZINB.phi <- NULL
+      object$params$ZINB.phi[object$family %in% "ZINB"] <- object$params$ZINB.inv.phi[object$family %in% "ZINB"]
+      object$sd$ZINB.phi[object$family %in% "ZINB"] <- object$sd$ZINB.inv.phi[object$family %in% "ZINB"]
+      object$params$ZINB.inv.phi <- NULL
+      object$sd$ZINB.inv.phi <- NULL
     }
     
     if (!is.null(object$params$sigmaB)) {
@@ -81,9 +85,11 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
       object$params$LvXcoef <- NULL
     }
     
-    if(any(object$family %in% c("ZINB")) && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
     
     parmincl <- parm_all[parm_all %in% names(object$params)]
+    
+    if(any(object$family %in% c("ZINB")) && "inv.phi" %in% parmincl)parmincl[parmincl=="inv.phi"]<-"ZINB.inv.phi"
+    
     if("rho.sp"%in%names(object$params[parmincl])){
       object$params$rho.sp <- log(-log(object$params$rho.sp))
     }
@@ -199,37 +205,66 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if (object$randomB!=FALSE) {
       cal <- cal + length(object$params$sigmaLvXcoef)
     }
-    if(any(object$family == "negative.binomial")){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$inv.phi), sep = ".")
+    
+    #Name phis:
+    if(any(object$family %in%c(object$family == "negative.binomial","ZIP","ZINB", "ZIB", "ZNIB"))){
+      s <- length(object$params$phi)
+      # rnames[(cal + 1):(cal+s)] <- paste("inv.phi", names(object$params$inv.phi), sep = ".")
+      
+      namephi <- function(j, fam) switch (fam[j],
+              negative.binomial = paste("inv.phi", names(object$params$phi)[j], sep = "."),
+              ZIP = paste("p", names(object$params$phi)[j], sep = "."),
+              ZINB = paste("p", names(object$params$phi)[j], sep = "."),
+              ZIB = paste("p", names(object$params$phi)[j], sep = "."),
+              ZNIB = paste("p", names(object$params$phi)[j], sep = "."),
+              gaussian = paste("Standard deviations phi", names(object$params$phi)[j], sep = "."),
+              gamma = paste("Shape phi", names(object$params$phi)[j], sep = "."),
+              tweedie = paste("Dispersion phi", names(object$params$phi)[j], sep = "."),
+              beta = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
+              orderedBeta = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
+              betaH = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
+              ""
+      )
+      rnames[(cal + 1):(cal+s)] <- sapply(1:ncol(object$y), namephi, fam = object$family, simplify = c)
+      cal <- cal + s
     }
+    
+    # if(any(object$family %in%c("ZIP","ZINB", "ZIB", "ZNIB"))){
+    #   s <- length(unique(object$disp.group))
+    #   rnames[(cal + 1):(s+cal)] <- paste("p", names(object$params$phi), sep = ".")
+    # }
+    
+    # if(any(object$family == "gaussian")){
+    #   s <- length(unique(object$disp.group))
+    #   rnames[(cal + 1):(s+cal)] <- paste("Standard deviations phi", names(object$params$phi), sep = ".")
+    # }
+    
+    # if(any(object$family == "gamma")){
+    #   s <- length(unique(object$disp.group))
+    #   rnames[(cal + 1):(s+cal)] <- paste("Shape phi", names(object$params$phi), sep = ".")
+    # }
+    
+    # if(any(object$family == "tweedie")){
+    #   s <-length(unique(object$disp.group))
+    #   rnames[(cal + 1):(s+cal)] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
+    # }
+    
     
     if(any(object$family %in% c("ZINB"))){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("inv.phi", names(object$params$ZINB.inv.phi), sep = ".")
+      # s <- length(unique(object$disp.group))
+      s <- length(object$params$ZINB.phi)
+      rnames[(cal + (1:s)[object$family %in% c("ZINB")])] <- paste("inv.phi", names(object$params$ZINB.phi)[object$family %in% c("ZINB")], sep = ".")
     }
     if(any(object$family %in% c("ZNIB"))){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("phi", names(object$params$ZINB.phi), sep = ".")
-    }
-    if(any(object$family == "tweedie")){
-      s <-length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("Dispersion phi", names(object$params$phi), sep = ".")
-    }
-    if(any(object$family %in%c("ZIP","ZINB", "ZIB", "ZNIB"))){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("p", names(object$params$p), sep = ".")
-    }
-    if(any(object$family == "gaussian")){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("Standard deviations phi", names(object$params$phi), sep = ".")
-    }
-    if(any(object$family == "gamma")){
-      s <- length(unique(object$disp.group))
-      rnames[(cal + 1):(s+cal)] <- paste("Shape phi", names(object$params$phi), sep = ".")
+      # s <- length(unique(object$disp.group))
+      s <- length(object$params$ZINB.phi)
+      rnames[(cal + (1:s)[object$family %in% c("ZNIB")])] <- paste("phi", names(object$params$ZINB.phi)[object$family %in% c("ZNIB")], sep = ".")
     }
     
+    
     rownames(M) <- rnames
+    
+    M <- M[!is.na(unlist(object$params[parmincl])),]
   } else {
     if ("beta0" %in% parm) {
       object$params$Intercept = object$params$beta0
@@ -293,7 +328,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     }
     
     M <- cbind(cilow, ciup)
-    
+    M <- M[!is.na(unlist(object$params[parm])),]
     
   }
   return(M)

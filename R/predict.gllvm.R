@@ -59,7 +59,7 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
 
-  if(type=="class" & any(!(object$family %in% c("binomial", "ordinal")))) {
+  if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
   }
   # backward compatibility
@@ -409,8 +409,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     if(any(object$family %in% c("ZIP","ZINB"))) 
       out[,object$family %in% c("ZIP","ZINB")] <- out[,object$family %in% c("ZIP","ZINB")]*(1 - matrix(object$params$phi[object$family %in% c("ZIP","ZINB")], n, sum(object$family %in% c("ZIP","ZINB")), byrow = TRUE))
   }
-  if ("class" %in% type & all(object$family == "binomial")) 
-    out <- round(sapply(1:p, function(j) ilinkfun[[pointer[j]]](eta[,j], )))
+  if ("class" %in% type & any(object$family == "binomial")) {
+    if(is.null(out)){ out <- eta; out[] <- NA}
+    out[,object$family == "binomial"] <- round(sapply((1:p)[object$family == "binomial"], function(j) ilinkfun[[pointer[j]]](eta[,j])))
+  }
   if (is.null(newdata) && is.null(newTR) && is.null(newLV) && 
       "logL" %in% type) 
     out <- object$logL
@@ -441,9 +443,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                           k.max[j]))
         }
       }
-      out <- preds
     } else {
-      kz <- any(family == "orderedBeta")*2
+      kz <- any(object$family == "orderedBeta")*2
       k.max <- length(object$params$zeta) + 1 - kz
       preds <- array(NA, dim = c(k.max, nrow(eta), p), 
                      dimnames = list(paste("level", 1:max(k.max), 
@@ -464,6 +465,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         }
       }
       dimnames(preds)[[3]] <- colnames(object$y)
+    }
+    if(type == "response") {
       out <- preds
     }
     if(type == "class") {
@@ -474,7 +477,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         }
       }
       colnames(pred_class) <- colnames(object$y)
-      out <- pred_class
+      if(is.null(out)){ out <- eta; out[] <- NA}
+      out[,object$family == "ordinal"] <- pred_class[,object$family == "ordinal"]
     }
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)

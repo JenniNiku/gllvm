@@ -40,10 +40,14 @@
 goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
   if(is.null(pred)){
     if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' need to be given.")
-    if(any(object$family == "ordinal")){
+    if(all(object$family == "ordinal")){
       pred <- predict(object, type = "class")
     } else {
       pred <- predict(object, type = "response")
+      if(any(object$family == "ordinal")){
+        pred <- pred[1,,]
+        pred[,object$family == "ordinal"] <- predict(object, type = "class")[,object$family == "ordinal"]
+      }
     }
   }
   if(is.null(y)){

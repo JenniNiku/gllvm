@@ -389,20 +389,21 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     sumry$'Variance of random row intercepts' <- object$params$sigma2
   }
   
-  if (any(object$family %in% c("negative.binomial", "negative.binomial1"))) {
-    sumry$'Dispersion parameters' <- object$params$phi
+  # if (any(object$family == "tweedie")) {
+  #   sumry$'Dispersion parameters' <- object$params$phi[object$family == "tweedie"]
+  # }
+  if (any(object$family %in% c("negative.binomial", "negative.binomial1", "tweedie"))) {
+    sumry$'Dispersion parameters' <- object$params$phi[object$family %in% c("negative.binomial", "negative.binomial1", "tweedie")]
   }
-  if (any(object$family == "gamma")) {
-    sumry$'Shape parameters' <- object$params$phi
+  if (any(object$family %in% c("gamma", "beta", "orderedBeta", "betaH"))) {
+    sumry$'Shape parameters' <- object$params$phi[object$family %in% c("gamma", "beta", "orderedBeta", "betaH")]
   }
-  if (any(object$family == "tweedie")) {
-    sumry$'Dispersion parameters' <- object$params$phi
-  }
+
   if (any(object$family == "ZIP")) {
-    sumry$'Zero inflation p' <- object$params$phi
+    sumry$'Zero inflation p' <- object$params$phi[object$family == "ZIP"]
   }
   if(any(object$family == "gaussian")){
-    sumry$'Standard deviations' <- object$params$phi
+    sumry$'Standard deviations' <- object$params$phi[object$family == "gaussian"]
   }
   if(!is.null(coef.table)){
     sumry$'Coef.tableX' <- coef.table
@@ -508,26 +509,34 @@ print.summary.gllvm <- function (x, ...)
   }
   if(x$dispersion){
     
-    if (any(x$family == "negative.binomial")) {
+    if (any(x$family %in% c("negative.binomial", "negative.binomial1", "tweedie"))) {
       phi <- x$'Dispersion parameters'
+      cat("\n(Dispersion estimates for ", unique(x$family[x$family %in% c("negative.binomial", "negative.binomial1", "tweedie")]), ":\n")
+      print(phi)
     }
-    if (any(x$family == "gamma")) {
+    if (any(x$family %in% c("gamma", "beta", "orderedBeta", "betaH"))) {
       phi <- x$'Shape parameters'
+      cat("\n(Shape estimates for ", unique(x$family[x$family %in% c("gamma", "beta", "orderedBeta", "betaH")]), ":\n")
+      print(phi)
     }
-    if (any(x$family == "tweedie")) {
-      phi <- x$'Dispersion parameters'
-    }
+    # if (any(x$family == "tweedie")) {
+    #   phi <- x$'Dispersion parameters'
+    # }
     if (any(x$family == "ZIP")) {
       phi <- x$'Zero inflation p'
+      cat("\n(Zero inflation p estimates for ", unique(x$family[x$family == "ZIP"]), ":\n")
+      print(phi)
     }
     if(any(x$family == "gaussian")){
       phi <- x$'Standard deviations'
-    }
-    if(any(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian"))){
-      # names(phi) <- row.names(x$Coefficients)
-      cat("\n(Dispersion estimates for ", unique(x$family), ":\n")
+      cat("\n(Standard deviations for ", unique(x$family[x$family == "gaussian"]), ":\n")
       print(phi)
     }
+    # if(any(x$family%in%c("negative.binomial","gamma","tweedie","ZIP","gaussian"))){
+    #   # names(phi) <- row.names(x$Coefficients)
+    #   cat("\n(Dispersion estimates for ", unique(x$family), ":\n")
+    #   print(phi)
+    # }
   }
   
   invisible(x)

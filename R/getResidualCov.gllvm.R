@@ -148,27 +148,30 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
   
   
   if(adjust > 0 && any(object$family %in% c("negative.binomial","binomial", "gaussian","ordinal", "ZIB", "ZNIB", "ZINB"))){
-  if(any(object$family %in% c("negative.binomial", "ZINB"))){ 
+  if(any(object$family %in% c("negative.binomial", "ZINB"))){
+    nbfam <- object$family %in% c("negative.binomial", "ZINB")
     if(adjust == 1) {
-        ResCov <- ResCov + diag(log(object$params$phi + 1), ncol=ncol(ResCov))
+        ResCov[nbfam,nbfam] <- ResCov[nbfam,nbfam, drop=FALSE] + diag(log(object$params$phi[nbfam] + 1), ncol=sum(nbfam))
       }else if(adjust == 2){
-        ResCov <- ResCov + diag(trigamma(1/object$params$phi), ncol=ncol(ResCov))
+        ResCov[nbfam,nbfam] <- ResCov[nbfam,nbfam, drop=FALSE] + diag(trigamma(1/object$params$phi[nbfam]), ncol=sum(nbfam))
      }
     
   }
-    if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))){ 
+    if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))){
+      binfam <- object$family %in% c(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))
+      
       if(object$link == "probit"){
-        ResCov <- ResCov + diag(ncol(object$y))
+        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))
       } 
       if(object$link == "logit"){
-        ResCov <- ResCov + diag(ncol(object$y))*pi^2/3
+        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))*pi^2/3
       } 
       if(object$link == "cloglog"){
-        ResCov <- ResCov + diag(ncol(object$y))*pi^2/6
+        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))*pi^2/6
       } 
     }
     if(any(object$family == "gaussian")){
-          ResCov <- ResCov + diag((object$params$phi^2))
+          ResCov[object$family == "gaussian",object$family == "gaussian"] <- ResCov[object$family == "gaussian",object$family == "gaussian", drop=FALSE] + diag((object$params$phi[object$family == "gaussian"]^2))
     }
   }
   ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q[[q]])))

@@ -432,15 +432,14 @@ se.gllvm <- function(object, ...){
       }
       
       if(any(family %in% c("ordinal", "orderedBeta"))){
-        K = 2; kz =0
+        K = 2; 
+        kz <- any(object$family == "orderedBeta")*2
         if(any(family %in% "ordinal")){
           y <- object$y
           K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
           if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
         } 
-        if(any(family %in% "orderedBeta")){
-          kz = 2
-        }
+        
         se.zetanew <- se.zetas <- se$zeta;
         if(object$zeta.struc == "species"){
           se.zetanew <- matrix(NA,nrow=p,ncol=K)
@@ -956,15 +955,14 @@ se.gllvm <- function(object, ...){
     }
     
     if(any(family %in% c("ordinal", "orderedBeta"))) {
-      K = 2; kz =0
+      K = 2; 
+      kz <- any(object$family == "orderedBeta")*2
       if(any(family %in% "ordinal")){
         y <- object$y
         K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
         if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
       } 
-      if(any(family %in% "orderedBeta")){
-        kz = 2
-      }
+      
       se.zetanew <- se.zetas <- se$zeta;
       if(object$zeta.struc == "species"){
         se.zetanew <- matrix(NA,nrow=p,ncol=K)

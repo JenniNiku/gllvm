@@ -36,8 +36,11 @@ logLik.gllvm <- function(object, ...)
     object$params$ZINB.inv.phi <- NULL
   }
     if(any(object$family=="ordinal")){
-      if(object$zeta.struc=="species")object$params$zeta <-object$params$zeta[,-1]
-      if(object$zeta.struc=="common")object$params$zeta <-object$params$zeta[-1]
+      if(object$zeta.struc=="species")object$params$zeta[object$family=="ordinal",1] <-NA
+      if(object$zeta.struc=="common"){
+        if(any(object$family=="orderedBeta")) {kz<- 2} else {kz <- 0}
+        object$params$zeta[kz+1] <-NA
+      }
     }
   
     # backward compatibility

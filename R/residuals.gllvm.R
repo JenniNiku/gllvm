@@ -59,7 +59,7 @@ residuals.gllvm <- function(object, ...) {
   if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
   
   ds.res = matrix(NA, n, p)
-  if(any(object$family %in% "orderedBeta") & object$zeta.struc == "common") {kz =2} else {kz=0} # For indexing
+  if(any(object$family %in% "orderedBeta") & object$zeta.struc == "common") {kz <- any(object$family == "orderedBeta")*2} # For indexing
   
   
   if (any(object$family == "poisson")) {
