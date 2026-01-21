@@ -113,7 +113,7 @@ Lets demonstrate the ordered beta response model for the previous example. As th
 sum(Yalg ==1)
 ```
 
-We can accommodate the model to better handle data that by fixing the upper cutoff parameters to some large value, for example 20. With *gllvm* this can be done by setting starting values for the cutoff parameter, ´zetacutoff = c(0, 20)´ and fixing the upper cutoff parameters with ´setMap = list(zeta = factor(c(1:m, rep(NA, m))))´. We assume that the number of species/response variables in the data is saved to object `m`. There are ´m´ (number of species) lower cutoff parameters $\zeta_{j0}$ we let be freely estimated (that's indexes ´1:m´ in ´setMap´) and ´m´ upper cutoff parameters $\zeta_{j1}$ that we fix (that's ´rep(NA, m)´ in ´setMap´). 
+We can accommodate the model to better handle data that by fixing the upper cutoff parameters to some large value, for example 20. With *gllvm* this can be done by setting starting values for the cutoff parameter, ´zetacutoff = c(0, 20)´ and fixing the upper cutoff parameters with ´setMap = list(zeta = factor(rbind(1:m, rep(NA, m))))´. We assume that the number of species/response variables in the data is saved to object `m`. There are ´m´ (number of species) lower cutoff parameters $\zeta_{j0}$ we let be freely estimated (that's indexes ´1:m´ in ´setMap´) and ´m´ upper cutoff parameters $\zeta_{j1}$ that we fix (that's ´rep(NA, m)´ in ´setMap´). 
 
 ### Setting shape parameter to common across species
 
@@ -134,7 +134,7 @@ m <- ncol(Yalg)
 fit_ob <- gllvm(Yalg, X=Xenv, formula = Xformulai, family = "orderedBeta", 
     method="EVA", num.lv = 2, link="probit",
     disp.formula = rep(1, m), zetacutoff = c(0, 20),
-    setMap = list(zeta = factor(c(1:m, rep(NA, m)))))
+    setMap = list(zeta = factor(rbind(1:m, rep(NA, m)))) )
 fit_ob
 ```
 
