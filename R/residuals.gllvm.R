@@ -36,9 +36,9 @@
 #'# residuals
 #'res <- residuals(fit)
 #'}
-#'@export
-
-
+#'
+#' @method residuals gllvm
+#' @export
 residuals.gllvm <- function(object, ...) {
   n <- NROW(object$y)
   p <- NCOL(object$y)
@@ -46,6 +46,8 @@ residuals.gllvm <- function(object, ...) {
   Ntrials <- object$Ntrials
   args <- list(...)
   replace = TRUE
+  if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
+  
   if(!all(c("mu", "eta.mat")%in%names(args))){
     eta.mat = predict(object, type = "link")
     mu = predict(object, type = "response")
@@ -56,10 +58,9 @@ residuals.gllvm <- function(object, ...) {
     if("replace"%in%names(args))replace = args$replace
   }
   
-  if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
   
   ds.res = matrix(NA, n, p)
-  if(any(object$family %in% "orderedBeta") & object$zeta.struc == "common") {kz <- any(object$family == "orderedBeta")*2} # For indexing
+  if(any(object$family %in% "orderedBeta") ) {kz <- any(object$family == "orderedBeta")*2} # For indexing
   
   
   if (any(object$family == "poisson")) {

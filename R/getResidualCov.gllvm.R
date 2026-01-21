@@ -83,6 +83,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
 {
   #backward compatibility
   opts <- list(...)
+  if(length(object$family) != ncol(object$y)) object$family = rep(object$family,ncol(object$y)) [1:ncol(object$y)]
   if("site.index"%in%names(opts)){
     site.index <- opts$site.index
     x <- object$lv.X.design[site.index[1],]

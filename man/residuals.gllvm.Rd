@@ -38,6 +38,7 @@ fit <- gllvm(y = y, family = poisson())
 # residuals
 res <- residuals(fit)
 }
+
 }
 \references{
 Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.

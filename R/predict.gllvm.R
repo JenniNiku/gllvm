@@ -77,6 +77,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   newdata <- newX
   p <- ncol(object$y)
+  if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
+  
   if(any(object$family == "betaH"))p <- p+ sum(object$family == "betaH")
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
