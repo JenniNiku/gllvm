@@ -28,7 +28,6 @@
 #'@method simulate gllvm
 #'@export
 #'@export simulate.gllvm
-
 simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, ...) 
 {
   # code chunk from simulate.lm to sort out the seed thing:
