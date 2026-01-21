@@ -1,7 +1,7 @@
 Package: gllvm
 Type: Package
 Title: Generalized Linear Latent Variable Models
-Version: 2.0.5
+Version: 2.0.6
 Date: 2025-07-10
 Authors@R: c(person("Jenni", "Niku", role = c("aut", "cre"), email = "jenni.m.e.niku@jyu.fi"),
              person("Wesley", "Brooks", role = "aut"),
