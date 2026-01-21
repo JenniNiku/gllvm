@@ -1,3 +1,8 @@
+Version 2.0.7
+=============
+
+* Added simulated confidence intervals to predict.gllvm, see #24
+
 Version 2.0.6
 =============
 

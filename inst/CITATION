@@ -91,3 +91,16 @@ bibentry(bibtype="Article",
          "Fast and universal estimation of latent variable models using extended variational approximations.",
                "Statistics and Computing, 33, 1-16.")
 )
+
+bibentry(bibtype="Article",
+         title = "gllvm 2.0: fast fitting of advanced ordination methods and joint species distribution models",
+         author = c(as.person("Pekka Korhonen"), as.person("Francis K. C. Hui"), as.person("Jenni Niku"), as.person("Sara Taskinen"), as.person("Bert van der Veen")),
+         journal = "PeerJ",
+         year     = "2025",
+         volume      = "13",
+         pages   = "e20338",
+         textVersion =
+         paste("Korhonen, P., Hui, F. K. C., Niku, J., Taskinen, S., and van der Veen, B. (2025).",
+         "gllvm 2.0: fast fitting of advanced ordination methods and joint species distribution models.",
+               "PeerJ, 13, e20338.")
+)

@@ -1084,7 +1084,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       rownames(ds.res) <- rownames(y)
       colnames(ds.res) <- colnames(y)
       phis <- phis + 1e-05
-      
+
       for(famj in unique(family)){
         if(famj!="betaH"){
           ds.res[,family == famj] <- residuals.gllvm(list(y=y[,family == famj, drop=F],  Ntrials = Ntrials[,pmin(c(1:p)[family == famj],NCOL(Ntrials))], params=list(phi = phis[family == famj], zeta = zeta[pmin(c(1:p)[family ==famj], nrow(zeta)),,drop=FALSE], ZINB.phi = ZINB.phi[family == famj]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[family == famj]), mu = mu[,family == famj, drop=F], eta.mat = eta[,family == famj, drop=F], replace = FALSE)$resi
@@ -1098,6 +1098,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
           ds.res[,bhind] <- residuals.gllvm(list(y=y[,bhind, drop=F],  Ntrials = NULL, params=list(phi = phis[bhind], zeta = NULL, ZINB.phi = NULL), zeta.struc = zeta.struc, Power = Power, link = link, family = family[bhind]), mu = mu[,c(bhind,p-NobetaH/2+bhind), drop=F], eta.mat = eta[,c(bhind,p-NobetaH/2+bhind), drop=F], replace = FALSE)$resi
           # ds.res[,j] <- residuals.gllvm(list(y=y[,j, drop=F], p=1, n=n,  Ntrials = NULL, params=list(phi = phis[c(j)], zeta = zeta[min(j, nrow(zeta)),,drop=FALSE], ZINB.phi = ZINB.phi[j]), zeta.struc = zeta.struc, Power = Power, link = link, family = family[j]), mu = mu[,c(j,p-NobetaH/2+j), drop=F], eta.mat = eta[,c(j,p-NobetaH/2+j), drop=F], replace = FALSE)$resi
           # }
+
         }
       }
       # for(j in 1:p){
@@ -2175,6 +2176,8 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   row.names(covb)<-colnames(covb) <- colnames(diag.term2)
   out <- list()
   
+  if(!return.covb){
+  
   #separate errors row-effects
   ser0 <- covb[colnames(covb)=="r0r",colnames(covb)=="r0r"]
   covb <- covb[colnames(covb)!="r0r",colnames(covb)!="r0r"]
@@ -2203,10 +2206,9 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
     out$Ab_lv <- covb_lvErr
     covsB <- as.matrix(covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"])
   }
-  if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
   # if((num.RR+num.lv+num.lv.c)>0){
-  if(!return.covb){
     covb <- as.matrix(covb)
     
     
@@ -2564,12 +2566,12 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   }
   
   colnames(covb)<-row.names(covb)<-colnames(D)
-  
+  out <- list()
+  if(!return.covb){
   #separate errors row-effects
   ser0 <- covb[colnames(covb)=="r0r",colnames(covb)=="r0r"]
   covb <- covb[colnames(covb)!="r0r",colnames(covb)!="r0r"]
   
-  out <- list()
   if(!is.null(fit$params$row.params.random)) {
     Ar <- list()
     for(re in 1:ncol(trmsize)){
@@ -2592,9 +2594,8 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
     out$Ab_lv <- covb_lvErr
     covsB <- covb[colnames(covb)=="b_lv",colnames(covb)=="b_lv"]
   }
-  if(!return.covb)covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
+  covb <- covb[colnames(covb)!="b_lv",colnames(covb)!="b_lv"]
   
-  if(!return.covb){
     #re-order, select submatrices
     try({
       if(num.lv.cor>0){

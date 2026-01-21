@@ -46,6 +46,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
   
   # end backward compatibility
   
+  if(any(!is.na(object$TMBfn$env$map$B)))object$sd$B <- object$sd$B[!is.na(object$TMBfn$env$map$B)]
   if("Intercept"%in%row.names(object$sd$B))object$sd$B<-object$sd$B[-which(row.names(object$sd$B)=="Intercept")]
   alfa <- (1 - level) / 2
   
