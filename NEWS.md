@@ -1,3 +1,9 @@
+Version 2.0.8
+=============
+
+## Bugfixes
+* row.eff was ignoring 'diag'
+
 Version 2.0.7
 =============
 
