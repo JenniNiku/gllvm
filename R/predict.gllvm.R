@@ -621,20 +621,46 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
     
       # Organising phi. Only necessary when predicing ZIP/ZINB stuff
-      if(object$family %in% c("ZIP","ZINB")){
+      if(any(object$family %in% c("ZIP","ZINB"))){
         disp.group <- object$disp.group
         lp0 <- newpars$lg_phi[disp.group]
-        object$params$phi <- exp(lp0)/(1+exp(lp0));
+        object$params$phi <- (exp(lp0)/(1+exp(lp0)))[object$family %in% c("ZIP","ZINB")];
       }
       
-      if(object$family == "ordinal"){
-        zetas <- newpars$zeta
-        K = max(object$TMBfn$y)
+      if(any(object$family %in% c("orderedBeta","ordinal"))){
         
+        zetaO = NULL
+          if(any(object$family%in%c("ordinal"))){
+            K = max(object$TMBfn$env$data$y)-min(object$TMBfn$env$data$y)
+          } else {K=2}
+        
+          if(object$zeta.struc =="common") {
+            if(any(object$family%in%c("orderedBeta"))){
+              zetaO <- c(zetaO, rep(TRUE,2))
+             }
+            if(any(object$family%in%c("ordinal"))){
+              zetaO <- c(zetaO, rep(FALSE,(K-1)))
+            }
+          } else if(object$zeta.struc =="species") {
+            o_ind <- c(1:ncol(object$y))[object$family%in%c("ordinal", "orderedBeta")]
+            for (j in o_ind) {
+              if(object$family[j]=="ordinal"){
+                zetaO <- c(zetaO, rep(FALSE,length(na.omit(object$params$zeta[j,-1]))))
+              } else {
+                zetaO <- c(zetaO, rep(TRUE,2))
+              }
+            }
+          }
+ 
+        zetas <- newpars$zeta
+
         if(object$zeta.struc=="species"){
           zetanew <- matrix(NA,nrow=p,ncol=K)
+          zetanew[,1] <- 0 
           idx<-0
-          for(j in 1:p){
+          o_ind <- c(1:p)[object$family %in%c("ordinal","orderedBeta")]
+          for(j in o_ind){
+            if(object$family[j] == "ordinal"){
             k<-max(object$y[,j])-2
             if(k>0){
               for(l in 1:k){
@@ -642,19 +668,29 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
               } 
             }
             idx<-idx+k
+          }else{
+            zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
+            idx<-idx+2
           }
-          zetanew[,1] <- 0 
+          }
         }else{
-          zetanew <- c(0,zetas)
+          zetanew <- NULL
+          if(any(object$family == "orderedBeta")){
+            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+            names(zetanew) <- c("cutoff0","cutoff1")
+          }
+          if(any(object$family%in%c("ordinal"))){
+            zetanew <- c(zetanew, 0,zetas[!zetaO])
+          }
         }
         newobject$params$zeta <- zetanew
       }
-      if(object$family == "orderedBeta"){
-        zetas <- matrix(newpars$zeta,p,2)
-        if(any(is.na(object$TMBfn$env$map$zeta))) zetas[is.na(object$env$TMBfn$map$zeta)] = attr(object$TMBfn$env$parameters$zeta, "shape")[is.na(object$TMBfn$env$map$zeta)]
-        zetas[,2] = exp(zetas[,2])
-        newobject$params$zeta <- zetas
-      }
+      # if(object$family == "orderedBeta"){
+      #   zetas <- matrix(newpars$zeta,p,2)
+      #   if(any(is.na(object$TMBfn$env$map$zeta))) zetas[is.na(object$env$TMBfn$map$zeta)] = attr(object$TMBfn$env$parameters$zeta, "shape")[is.na(object$TMBfn$env$map$zeta)]
+      #   zetas[,2] = exp(zetas[,2])
+      #   newobject$params$zeta <- zetas
+      # }
       
       if(!is.null(newpars$B)){
         newobject$params$B <- newpars$B
