@@ -60,7 +60,7 @@ residuals.gllvm <- function(object, ...) {
   
   
   ds.res = matrix(NA, n, p)
-  if(any(object$family %in% "orderedBeta") ) {kz <- any(object$family == "orderedBeta")*2} # For indexing
+  kz <- any(object$family == "orderedBeta")*2 # For indexing of zeta
   
   
   if (any(object$family == "poisson")) {
