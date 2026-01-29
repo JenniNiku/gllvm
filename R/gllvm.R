@@ -1146,7 +1146,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
         }
         colnames(mf.new) <- colnames(mf)
-        RElistRow <- mkReTrms1(bar.f, mf.new)
+        RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
         dr <- Matrix::t(RElistRow$Zt)
         
         # This line errs for formulations such as (cov|1), which includes an intercept
