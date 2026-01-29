@@ -1,9 +1,9 @@
-#define TMB_LIB_INIT R_init_gllvm
-#define EIGEN_DONT_PARALLELIZE
 #include <TMB.hpp>
-#include<math.h>
+#include <cmath>
 #include "distrib.h"
+#include "init.h"
 #include "utils.h"
+#include <R_ext/Error.h>
 
 // Selkeyden vuoksi: nimeä perheiden koodit enumilla
 enum Family : int {
@@ -21,7 +21,7 @@ enum Family : int {
     ZINB = 11,
     ORDERED_BETA = 12,
     ZIB = 13,
-    ZNIB =14,
+    ZNIB = 14,
     
     
     // lisää tarvittaessa muita perheitä: BINOMIAL=2, GAUSSIAN=3, ...
@@ -4253,9 +4253,8 @@ Type objective_function<Type>::operator() ()
     
       default: {
         // Error message for non-available family
-        error(("Unsupported family at column " + std::to_string(j) +
-          ": " + std::to_string(static_cast<int>(family(j)))).c_str());
-        break;
+        error("%s", ("Unsupported family at column " + std::to_string(j) +
+          std::string(": ") + std::to_string(static_cast<int>(family(j)))).c_str());
       }
     } // switch
   } // for j
@@ -5166,8 +5165,8 @@ Type objective_function<Type>::operator() ()
       
       default: {
         // Error message for non-available family
-        error(("Unsupported family at column " + std::to_string(j) +
-          ": " + std::to_string(static_cast<int>(family(j)))).c_str());
+        error("%s", ("Unsupported family at column " + std::to_string(j) +
+          std::string(": ") + std::to_string(static_cast<int>(family(j)))).c_str());
         break;
       }
       

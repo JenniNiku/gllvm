@@ -1,8 +1,14 @@
 Version 2.0.8
 =============
 
+* New predictSR function for predicting species richness
+* New poisson-binomial PMF function (for predictSR)
+* New predictPairwise function (simple wrapper for predicting joint occurrence)
+
 ## Bugfixes
 * row.eff was ignoring 'diag'
+* 2.0.7 did not install on ubuntu due to string error in new enum check
+
 
 Version 2.0.7
 =============

@@ -566,7 +566,6 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       
       if(sum(incl)>0){
       newpars <- relist_gllvm(ffs[r,], object$TMBfn$env$parList())
-      newobject <- object
       newobject$params$beta0 <- newpars$b[1,]
       if(nrow(newpars$b)>1)newobject$params$Xcoef <- t(newpars$b[-1,,drop=FALSE])
       
