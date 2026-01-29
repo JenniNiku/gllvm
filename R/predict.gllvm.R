@@ -537,7 +537,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
     }
     
-    if(sum(incla)>0){
+    if(sum(incla)>0 && level>0){
       if(object$method == "LA"){
         Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
       }else{
@@ -556,7 +556,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     })
     object$lvs[] <- NA
     
-    predSims <- array(dim = c(R, dim(out)))
+    predSims <- array(0.0, dim = c(R, dim(out)))
+    newobject <- object
+    
     # parameter organisation, partly from gllvm.TMB and traitTMB.R, should really store this in a separate function so we don't keep copying the same code...
     for(r in 1:R){
       # fixed effects first
@@ -670,7 +672,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       
       # random effects next
       # random effects needed for prediction; Br, r0r, u, b_lv, 
-      if(sum(incla)>0){
+      if(sum(incla)>0 && level>0){
         newrfs <- relist_gllvm(rfs[r,], object$TMBfn$env$parList())
         
         if(!is.null(newrfs$Br))
