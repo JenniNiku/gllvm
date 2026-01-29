@@ -4,7 +4,7 @@
 #' @param object an object of class 'gllvm'.
 #' @param SR integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.
 #' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
-#' @param type character, defaults to \code{empirical}. For 'empirical', simulates confidence intervals by simulating species' probabilities, and evaluating the Poisson-Binomial PMF. Alternatively, type 'empirical' simulates from the Bernoulli distribution of species, and calculates empirical probabilities instead from sums of Bernoulli simulations.
+#' @param type character, defaults to \code{direct}. For 'direct', simulates confidence intervals by simulating species' probabilities, and evaluating the Poisson-Binomial PMF. Alternatively, type 'empirical' simulates from the Bernoulli distribution of species, and calculates empirical probabilities instead from sums of Bernoulli simulations.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
