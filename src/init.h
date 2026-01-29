@@ -13,24 +13,18 @@ extern "C" {
   using namespace Eigen; 
   
   SEXP C_poisbinom(SEXP probSEXP) {
-    // 1. INPUT: Map R memory to Eigen (No Rcpp::as)
     double* p_prob = REAL(probSEXP);
     int rows = Rf_nrows(probSEXP);
     int cols = Rf_ncols(probSEXP);
     Eigen::Map<Eigen::MatrixXd> prob(p_prob, rows, cols);
     
-    // 2. LOGIC:
     Eigen::MatrixXd out = dpoisbinom(prob);
     
-    // 3. OUTPUT: Allocate R matrix and copy Eigen data (No Rcpp::wrap)
-    // Create a new numeric matrix in R memory
     SEXP resSEXP = PROTECT(Rf_allocMatrix(REALSXP, out.rows(), out.cols()));
     
-    // Copy data from Eigen to the new R matrix memory
-    // Eigen's .data() returns a pointer; std::copy is safe and fast
     std::copy(out.data(), out.data() + out.size(), REAL(resSEXP));
     
-    UNPROTECT(1); // Release the protection on resSEXP
+    UNPROTECT(1); 
     return resSEXP;
   }
   
@@ -39,7 +33,7 @@ extern "C" {
 #ifdef _OPENMP
     omp_set_num_threads(t);
 #endif
-    return R_NilValue; // nothing to return
+    return R_NilValue;
   }
   
   SEXP C_get_omp_threads(void) {
@@ -49,7 +43,7 @@ extern "C" {
 #else
     n = 1;
 #endif
-    return Rf_ScalarInteger(n);  // wrap int as SEXP
+    return Rf_ScalarInteger(n);
   }
   
   const static R_CallMethodDef R_CallDef[] = {
