@@ -20,7 +20,7 @@ Imports: MASS, Matrix, fishMod, mgcv, alabama, nloptr, methods
 Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 LazyData: true
-LinkingTo: TMB, RcppEigen
+LinkingTo: TMB, Rcpp, RcppEigen
 RoxygenNote: 7.3.3
 NeedsCompilation: yes
 URL: https://jenniniku.github.io/gllvm/, https://github.com/JenniNiku/gllvm

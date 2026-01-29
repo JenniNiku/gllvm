@@ -152,7 +152,7 @@ subbars1<-function (term)
   if (is.name(term) || !is.language(term)) 
     return(term)
   if (length(term) == 2) {
-    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp", "corMatern", "propto"))
+    if(c((term[[1]])) %in% c("corCS", "corAR1", "corExp", "corMatern", "diag", "propto"))
       term <- subbars1(term[[2]])
     else term[[2]] <- subbars1(term[[2]])
     return(term)
