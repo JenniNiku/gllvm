@@ -28,7 +28,7 @@
 #'@method simulate gllvm
 #'@export
 #'@export simulate.gllvm
-simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, ...) 
+simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, newX = NULL, ...) 
 {
   # code chunk from simulate.lm to sort out the seed thing:
   if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
@@ -43,6 +43,10 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   }
   
   nRows = dim(object$y)[1]
+  if(!is.null(newX)){
+    if(conditional)stop("Cannot simulate with 'conditional = FALSE' and new covariates.")
+    nRows = nrow(newX)
+  }
   nCols = dim(object$y)[2]
   if((object$num.lv+object$num.lv.c)==0){
     lvsNew <- NULL
@@ -55,10 +59,18 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, .
   if(is.null(object$X))   {
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
   }  else if(is.null(object$TR)){ 
+    if(is.null(newX)){
     Xnew <- object$X[rep(1:nRows,nsim),,drop=FALSE]; colnames(Xnew) <- colnames(object$X)
+    }else{
+      Xnew <- newX[rep(1:nRows,nsim),,drop=FALSE]
+    }
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   } else {
+    if(is.null(newX)){
     Xnew <- object$X[rep(1:nRows,nsim),,drop=FALSE]; colnames(Xnew) <- colnames(object$X)
+    }else{
+      Xnew <- newX[rep(1:nRows,nsim),,drop=FALSE]
+    }
     prs = predict.gllvm(object,newX=Xnew, newLV = lvsNew,type="response")
   }
   # generate new data
