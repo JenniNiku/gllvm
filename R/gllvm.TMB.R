@@ -755,6 +755,31 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       if("zeta" %in% names(setMap)){ 
         map.list$zeta= factor(setMap$zeta)
+        if(all(family %in% c("orderedBeta")) & zeta.struc=="species"){
+          if((all(is.na(setMap$zeta[(length(setMap$zeta)/2 +1):(length(setMap$zeta))])) & !all(is.na(setMap$zeta)) ) | 
+             (any(na.omit(setMap$zeta[(1:(length(setMap$zeta)/2))*2-1] == setMap$zeta[(1:(length(setMap$zeta)/2))*2]))) ){
+            message0<- "The ordering of zeta cutoff parameters has been changed from 2.0.7 onwards, 
+            such that cut off parameters for ordered Beta model 
+            are ordered according to response variables. 
+            Looks like order in your mapping is different, as: \n"
+            message1 <- message2 <- NULL
+            if((any(na.omit(setMap$zeta[(1:(length(setMap$zeta)/2))*2-1] == setMap$zeta[(1:(length(setMap$zeta)/2))*2])))) {
+              message1<-  
+                "- Lower cutoff (for zeros) and upper cutoff (for ones) parameters can't be mapped to be same value. 
+              So looks like the order in your mapping follows the old version. \n"
+            }
+            if((all(is.na(setMap$zeta[(length(setMap$zeta)/2 +1):(length(setMap$zeta))])) & !all(is.na(setMap$zeta)) )){
+              message2<-
+                "- Looks like you are trying to fix the upper cutoff parameters (for ones) in your mapping, 
+              as the last half of the mapping vector is set to NA. \n"
+            }
+            message(paste(message0, message1, message2, "Thus mapping vector is reordered."))
+            
+            # Reorder zeta mapping
+            map.list$zeta<- setMap$zeta <- factor(c(matrix(as.numeric(setMap$zeta), 2, byrow = TRUE)))
+              
+          }
+        }
       }
     }
     if(all(family != "tweedie")){map.list$ePower = factor(NA)}
