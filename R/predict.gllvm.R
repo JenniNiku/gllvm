@@ -59,6 +59,7 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
 
+  if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))stop("Confidence intervals not yet implemented for ordinal models.")
   if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
   }
