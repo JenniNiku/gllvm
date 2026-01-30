@@ -457,8 +457,10 @@ se.gllvm <- function(object, ...){
               se.zetanew[j,1] <- 0
               idx<-idx+k
             } else {
+              if(!is.null(se.zetas)){
               se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
               idx<-idx+2
+              }
             }
           }
           out$sd$zeta <- se.zetanew
@@ -471,7 +473,7 @@ se.gllvm <- function(object, ...){
         }else{
           if(any(family%in%c("orderedBeta"))){
             se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
-            names(zetanew)[1:2] <- c("cutoff0","cutoff1")
+            names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
             se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
@@ -980,8 +982,10 @@ se.gllvm <- function(object, ...){
             se.zetanew[j,1] <- 0
             idx<-idx+k
           } else {
-            se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
-            idx<-idx+2
+            if(!is.null(se.zetas)){
+              se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              idx<-idx+2
+            }
           }
         }
         out$sd$zeta <- se.zetanew
@@ -994,7 +998,7 @@ se.gllvm <- function(object, ...){
       }else{
         if(any(family%in%c("orderedBeta"))){
           se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
-          names(zetanew)[1:2] <- c("cutoff0","cutoff1")
+          names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
         }
         if(any(family%in%c("ordinal"))){
           se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
