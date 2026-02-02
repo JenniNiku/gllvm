@@ -159,7 +159,7 @@ predictSR <- function(object, ...) {
 
 hilbert_to_provided_center <- function(mat, center) {
   # Ensure inputs are valid
-  if (any(mat <= 0) || any(center <= 0)) {
+  if (any(mat[!is.na(mat)] <= 0) || any(center[!is.na(center)] <= 0)) {
     stop("Hilbert metric requires strictly positive values (interior of the simplex).")
   }
   
@@ -167,13 +167,10 @@ hilbert_to_provided_center <- function(mat, center) {
     stop("Dimension mismatch: 'center' must have the same length as the number of columns in 'mat'.")
   }
   
-  # Calculate the ratio of each sample component to the corresponding center component
-  # ratios[i, j] = mat[i, j] / center[j]
   ratios <- sweep(mat, 2, center, "/")
   
-  # Hilbert distance d_H(x, c) = log( max(x_i/c_i) / min(x_i/c_i) )
-  row_max <- apply(ratios, 1, max)
-  row_min <- apply(ratios, 1, min)
+  row_max <- apply(ratios, 1, max, na.rm = TRUE)
+  row_min <- apply(ratios, 1, min, na.rm = TRUE)
   
   return(log(row_max / row_min))
 }

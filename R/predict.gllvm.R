@@ -746,10 +746,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           # and threshold over the distances
           for(i in 1:n){
             center = pmin(pmax(out[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
-            dists = try(hilbert_to_provided_center(pmin(pmax(predSims[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center),silent=TRUE)
-            threshold = quantile(dists, alpha)
-            ci[,,i,j] <- apply(predSims[,,i,j][dists <= threshold, ],2,range)
+            dists = suppressWarnings(hilbert_to_provided_center(pmin(pmax(predSims[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center))
+            threshold = quantile(dists, alpha, na.rm = TRUE)
+            ci[,,i,j] <- suppressWarnings(apply(predSims[,,i,j][dists <= threshold, ],2,range, na.rm = TRUE))
           }
+          if(any(!is.finite(ci)))ci[!is.finite(ci)] <- NA # guaranteed to happen on zeta.struc = "species"
         }
       }
       out <- list(fit = out, lower = ci[1,,,], upper = ci[2,,,])
