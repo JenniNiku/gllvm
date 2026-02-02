@@ -79,7 +79,7 @@ predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, 
       if(!any(object$family == "ordinal")){
         probs.sim <- gllvm.presence.prob(preds$ci.sim[,i,],object)
       }else{
-        probs.sim <- gllvm.presence.prob(preds$ci.sim[,,i,],object)
+        probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object)
       }
     predSR.sim <- poisbinom(probs.sim)
     
