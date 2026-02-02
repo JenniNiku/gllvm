@@ -669,7 +669,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
               } 
             }
             idx<-idx+k
-            zetas[j,] <- cumsum(abs(zetas[,j]))
+            zetanew[j,] <- cumsum(abs(zetanew[j,]))
           }else{
             zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
             idx<-idx+2
