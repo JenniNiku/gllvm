@@ -62,6 +62,8 @@ start_values_gllvm_TMB <- function(
   sigma = 1
   
   if(any(family %in% c("orderedBeta", "ordinal"))) {
+    out.zeta = NULL
+    
     max.levels = 3
     if(any(family == "ordinal") && zeta.struc == "species") {
       max.levels = apply(y[,family == "ordinal", drop=FALSE],2,function(x) length(min(x, na.rm=TRUE):max(x, na.rm=TRUE)) );
@@ -388,10 +390,6 @@ start_values_gllvm_TMB <- function(
       cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(link, "logit" = "logistic","probit" = "probit"))
       zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta
       zeta[(length(zeta)-length(cw.fit$zeta)+1)] <- 0
-      # gllvm is parameterized in terms of the cumulative sum
-      if(any(family %in% "ordinal")){
-        zeta <- fit.mva$zeta <- fit.mva$params$zeta <- c(zeta[1], diff(zeta))
-      }
     }
 
     # if(starting.val=="res"){
@@ -460,16 +458,21 @@ start_values_gllvm_TMB <- function(
         }
       } # end for j
     }
-    # gllvm is paramterized in terms of the cumulative sum
-    if(any(family %in% "ordinal")){
-    if(zeta.struc == "common"){
-      zeta <- fit.mva$zeta <- fit.mva$params$zeta <- c(zeta[1], diff(zeta))
-    }else if(zeta.struc == "species"){
-      zeta <- fit.mva$zeta <- fit.mva$params$zeta <- t(apply(zeta,1,function(zeta)c(zeta[1],diff(zeta))))
-    }
-    }
   }
   
+  # gllvm is paramterized in terms of the cumulative sum
+  # need to create out.zeta so that ds.residuals further is not affected
+  if(any(family == "ordinal")){
+    kz <- 0
+    if(any(family == "orderedBeta"))kz <- 2
+    if(zeta.struc == "common"){
+        out.zeta[(kz+1):length(zeta)] <- c(zeta[kz+1][1], diff(zeta[(kz+1):length(zeta)]))  
+    }else if(zeta.struc == "species"){
+      out.zeta <- zeta
+      out.zeta[family=="ordinal",] <- t(apply(zeta[family=="ordinal",],1,function(zeta)c(zeta[1],diff(zeta))))
+    }
+  }else if(any(family == "orderedBeta"))out.zeta <- zeta
+
   # FA -starting values for LVs and loadings:
   gamma=NULL
   if(starting.val%in%c("res") && (num.lv+num.lv.c+num.RR)>0){
@@ -649,7 +652,7 @@ start_values_gllvm_TMB <- function(
     }
   }
   
-  if(any(family %in% c("ordinal","orderedBeta"))) out$zeta <- zeta
+  if(any(family %in% c("ordinal","orderedBeta"))) out$zeta <- out.zeta
 
   options(warn = 0)
   
