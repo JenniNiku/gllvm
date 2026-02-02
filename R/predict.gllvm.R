@@ -628,7 +628,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         object$params$phi <- (exp(lp0)/(1+exp(lp0)))[object$family %in% c("ZIP","ZINB")];
       }
       
-      if(any(object$family %in% c("orderedBeta","ordinal"))){
+      if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
         
         zetaO = NULL
           if(any(object$family%in%c("ordinal"))){
