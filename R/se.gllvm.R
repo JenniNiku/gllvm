@@ -433,7 +433,7 @@ se.gllvm <- function(object, ...){
       
       if(any(family %in% c("ordinal", "orderedBeta"))){
         K = 2; 
-        kz <- any(object$family == "orderedBeta")*2
+        kz <- any(family == "orderedBeta")*2
         if(any(family %in% "ordinal")){
           y <- object$y
           K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
@@ -444,14 +444,18 @@ se.gllvm <- function(object, ...){
         if(object$zeta.struc == "species"){
           se.zetanew <- matrix(NA,nrow=p,ncol=K)
           o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
+          zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
+          zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta"]
           idx<-0
           for(j in o_ind){
             
             if(family[j]=="ordinal"){
               k<-max(y[,j])-2
               if(k>0){
+                sgns <- sign(zetas[(idx+1):(idx+k)])
+                cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k)]%*%diag(sgns)
                 for(l in 1:k){
-                  se.zetanew[j,l+1]<-se.zetas[idx+l]
+                  se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
                 } 
               }
               se.zetanew[j,1] <- 0
@@ -474,10 +478,23 @@ se.gllvm <- function(object, ...){
           if(any(family%in%c("orderedBeta"))){
             se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
             names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
+            se.zetanew <- se.zetanew[-((kz+ 1):length(se.zetanew))]
           }
           if(any(family%in%c("ordinal"))){
-            se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
-          }
+            zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
+            zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
+            sgns <- sign(zetas[(kz+ 1):(K-1+kz)])
+            cvs <- diag(sgns)%*%zeta.cov%*%diag(sgns)
+            sezetanew <- 0
+            for(i in 1:(K-1)){
+              sezetanew <- c(sezetanew, sqrt(sum(cvs[1:i,1:i])))
+            }
+            if(any(object$family == "orderedBeta")){
+              se.zetanew <- c(se.zetanew[1:kz,1:kz],sezetanew)
+            }else{
+              se.zetanew <- sezetanew
+            }
+            }
           out$sd$zeta <- se.zetanew
           names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
         }
@@ -969,14 +986,18 @@ se.gllvm <- function(object, ...){
       if(object$zeta.struc == "species"){
         se.zetanew <- matrix(NA,nrow=p,ncol=K)
         o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
+        zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
+        zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta"]
         idx<-0
         for(j in o_ind){
           
           if(family[j]=="ordinal"){
             k<-max(y[,j])-2
             if(k>0){
+              sgns <- sign(zetas[(idx+1):(idx+k)])
+              cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k)]%*%diag(sgns)
               for(l in 1:k){
-                se.zetanew[j,l+1]<-se.zetas[idx+l]
+                se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
               } 
             }
             se.zetanew[j,1] <- 0
@@ -1001,7 +1022,19 @@ se.gllvm <- function(object, ...){
           names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
         }
         if(any(family%in%c("ordinal"))){
-          se.zetanew <- c(se.zetanew[-((kz+ 1):length(se.zetanew))], 0, se.zetanew[(kz+ 1):length(se.zetanew)])
+          zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
+          zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
+          sgns <- sign(zetas[(kz+ 1):(K+kz-1)])
+          cvs <- diag(sgns)%*%zeta.cov%*%diag(sgns)
+          sezetanew <- 0
+          for(i in 1:(K-1)){
+            sezetanew <- c(sezetanew, sqrt(sum(cvs[1:i,1:i])))
+          }
+        }
+        if(any(object$family == "orderedBeta")){
+          se.zetanew <- c(se.zetanew[1:kz,1:kz],sezetanew)
+        }else{
+          se.zetanew <- sezetanew
         }
         out$sd$zeta <- se.zetanew
         names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))

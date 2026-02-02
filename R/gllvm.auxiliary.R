@@ -388,6 +388,10 @@ start_values_gllvm_TMB <- function(
       cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(link, "logit" = "logistic","probit" = "probit"))
       zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta
       zeta[(length(zeta)-length(cw.fit$zeta)+1)] <- 0
+      # gllvm is parameterized in terms of the cumulative sum
+      if(any(family %in% "ordinal")){
+        zeta <- fit.mva$zeta <- fit.mva$params$zeta <- c(zeta[1], diff(zeta))
+      }
     }
 
     # if(starting.val=="res"){
@@ -456,7 +460,14 @@ start_values_gllvm_TMB <- function(
         }
       } # end for j
     }
-
+    # gllvm is paramterized in terms of the cumulative sum
+    if(any(family %in% "ordinal")){
+    if(zeta.struc == "common"){
+      zeta <- fit.mva$zeta <- fit.mva$params$zeta <- c(zeta[1], diff(zeta))
+    }else if(zeta.struc == "species"){
+      zeta <- fit.mva$zeta <- fit.mva$params$zeta <- t(apply(zeta,1,function(zeta)c(zeta[1],diff(zeta))))
+    }
+    }
   }
   
   # FA -starting values for LVs and loadings:

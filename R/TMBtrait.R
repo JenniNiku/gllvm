@@ -1675,7 +1675,7 @@ trait.TMB <- function(
           names(zetanew) <- c("cutoff0","cutoff1")
         }
         if(any(family%in%c("ordinal"))){
-          zetanew <- c(zetanew, 0,zetas[!zetaO])
+          zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
           names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
           # zetanew <- c(0,zetas)
           # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
@@ -1693,6 +1693,7 @@ trait.TMB <- function(
                 zetanew[j,l+1]<-zetas[idx+l]
               } 
             }
+            zetanew[j,] <- cumsum(abs(zetanew[j,]))
             idx<-idx+k
           } else {
             zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))

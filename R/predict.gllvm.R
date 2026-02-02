@@ -59,7 +59,7 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
 
-  if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))stop("Confidence intervals not yet implemented for ordinal models.")
+  # if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))warning("Confidence intervals for ordinal models can be sensitive to the number of simulations.")
   if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
   }
@@ -669,6 +669,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
               } 
             }
             idx<-idx+k
+            zetas[j,] <- cumsum(abs(zetas[,j]))
           }else{
             zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
             idx<-idx+2
@@ -681,7 +682,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(object$family%in%c("ordinal"))){
-            zetanew <- c(zetanew, 0,zetas[!zetaO])
+            zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
           }
         }
         newobject$params$zeta <- zetanew
@@ -720,15 +721,39 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(!is.null(newrfs$r0r))
           newobject$params$row.params.random  <- newrfs$r0r
       }
-      
-      predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+      if(!any(object$family == "ordinal") || type == "link")
+        predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+      else
+        predSims[r,,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
     }
+    
+    if(!any(object$family == "ordinal") || !is.null(alpha) && type == "link" || is.null(alpha)){
     if(is.null(alpha)){
     out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
-    }else{
+    }else if(!is.null(alpha)){
     ci <- apply(predSims, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
     out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
     }
+    }else if(any(object$family == "ordinal") && type == "response" && !is.null(alpha)){
+      ci <- array(dim=c(2,nrow(out), n,p))
+      for(j in 1:p){
+        if(object$family[j] != "ordinal"){
+          ci[,1,,j] <- apply(predSims[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
+        }else{
+          # here we need to be a bit more careful because of the simplex constraint
+          # we take the same approach as in predictSR.gllvm.R
+          # we measure the distance to the center of the simplex (which we will consider the prediction on the point estimates)
+          # and threshold over the distances
+          for(i in 1:n){
+            center = pmin(pmax(out[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
+            dists = try(hilbert_to_provided_center(pmin(pmax(predSims[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center),silent=TRUE)
+            threshold = quantile(dists, alpha)
+            ci[,,i,j] <- apply(predSims[,,i,j][dists <= threshold, ],2,range)
+          }
+        }
+      }
+      out <- list(fit = out, lower = ci[1,,,], upper = ci[2,,,])
+    }  
   }
   
   return(out)

@@ -3421,11 +3421,7 @@ Type objective_function<Type>::operator() ()
           int Kj = ymaxj - 1;
           if(Kj>1){
             for(int k=0; k<(Kj-1); k++){
-              if(k==1){
-                zetanew(k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
-              }else{
-                zetanew(k+1) = zeta(idx+k);
-              }
+              zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
             }
           }
           idx += Kj-1; 
@@ -3528,12 +3524,9 @@ Type objective_function<Type>::operator() ()
         zetanew.setZero();
         if(zeta.size()>(K-1)) idx = 2; // start from 2 if there are orderedBeta columns in the model
         for(int k=0; k<(K-1); k++){
-          if(k==1){
-            zetanew(k+1) = fabs(zeta(k+idx));//second cutoffs must be positive
-          }else{
-            zetanew(k+1) = zeta(k+idx);
-          }
+          zetanew(k+1) = zeta.segment(idx, k+1).array().abs().sum();//second cutoffs must be positive
         }
+        
         if (method<1) {
           if(extra(j) == 0){ // va logit
             for (int i=0; i<n; i++) {
@@ -4942,12 +4935,7 @@ Type objective_function<Type>::operator() ()
             int Kj = ymaxj - 1;
             if(Kj>1){
               for(int k=0; k<(Kj-1); k++){
-                if(k==1){
-                  zetanew(k+1) = fabs(zeta(idx+k));//second cutoffs must be positive
-                }else{
-                  zetanew(k+1) = zeta(idx+k);
-                }
-                
+                zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
               }
             }
             idx += Kj-1;
@@ -5001,13 +4989,9 @@ Type objective_function<Type>::operator() ()
           vector <Type> zetanew(K);
           zetanew.setZero();
           for(int k=0; k<(K-1); k++){
-            if(k==1){
-              zetanew(k+1) = fabs(zeta(k));//second cutoffs must be positive
-            }else{
-              zetanew(k+1) = zeta(k);
-            }
+            zetanew(k+1) = zeta.head(k+1).array().abs().sum();
           }
-          
+
           if(extra(j)==0){
             for (int i=0; i<n; i++) {
               // for(int j=0; j<p; j++){
