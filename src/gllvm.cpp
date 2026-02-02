@@ -3249,8 +3249,8 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           // for (int j=0; j<p;j++){
             mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
               nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
               nll += cQ(i,j)*Ntrials(i,j);
@@ -3297,8 +3297,8 @@ Type objective_function<Type>::operator() ()
           //    z[3] = exp(z[0])/(exp(z[0])+1);
               
           //    mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
-          //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-          //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+          //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+          //    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
               
           //    mu_prime = mu(i,j) * (1-mu(i,j));
           //    if(!gllvmutils::isNA(y(i,j))){
@@ -3463,21 +3463,21 @@ Type objective_function<Type>::operator() ()
                   if(y(i,j)==1){
                     mu(i,j) = pnorm(zetanew(0) - eta(i,j), Type(0), Type(1));
                     // mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
-                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), Type(1e-12), mu(i,j)));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                     nll -= log(mu(i,j));
                   }else if(y(i,j)==ymaxj){
                     //maximum category
                     int idxj = ymaxj-2;
                     mu(i,j) = pnorm(zetanew(idxj) - eta(i,j), Type(0), Type(1));
                     // mu(i,j) = pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1));
-                    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));
+                    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
                   }else if(ymaxj>2){
                     for (int l=2; l<ymaxj; l++) {
                       if((y(i,j)==l) && (l != ymaxj)){
                         mu(i,j) = pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1));
                         // mu(i,j) = pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1));
-                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), Type(1e-12), mu(i,j)));
+                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                         nll -= log(mu(i,j));
                       }
                     }
@@ -3560,19 +3560,19 @@ Type objective_function<Type>::operator() ()
                   //minimum category
                   if(y(i,j)==1){
                     mu(i,j) = pnorm(zetanew(0) - eta(i,j), Type(0), Type(1));
-                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), Type(1e-12), mu(i,j)));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                     nll -= log(mu(i,j));
                   }else if(y(i,j)==ymax){
                     //maximum category
                     int idxj = ymax-2;
                     mu(i,j) = pnorm(zetanew(idxj) - eta(i,j), Type(0), Type(1));
-                    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));
+                    mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
                   }else if(ymax>2){
                     for (int l=2; l<ymax; l++) {
                       if((y(i,j)==l) && (l != ymax)){
                         mu(i,j) = pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1));
-                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), Type(1e-12), mu(i,j)));
+                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                         nll -= log(mu(i,j));
                       }
                     }
@@ -4072,8 +4072,8 @@ Type objective_function<Type>::operator() ()
         // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
@@ -4180,8 +4180,8 @@ Type objective_function<Type>::operator() ()
         // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j)< Ntrials(i,j)){
@@ -4884,8 +4884,8 @@ Type objective_function<Type>::operator() ()
             if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else if(extra(j)==1){mu(i,j) = pnorm(eta(i,j));
             }else if(extra(j)==2)mu(i,j) = 1-exp(-exp(eta(i,j)));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
               nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
               if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
@@ -5125,8 +5125,8 @@ Type objective_function<Type>::operator() ()
           for (int i=0; i<n; i++) {
             if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
                 nll -= log(1-iphij) + dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 1);
@@ -5147,8 +5147,8 @@ Type objective_function<Type>::operator() ()
           for (int i=0; i<n; i++) {
             if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), Type(1)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j) < Ntrials(i,j)){
                 nll -= log(1-iphi3) + dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 1);
