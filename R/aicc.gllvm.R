@@ -15,17 +15,29 @@
 #'@export nobs.gllvm
 #'
 AICc.gllvm <- function(object, ...){
-  objectlist <- list(object, ...)
-  IC<-lapply(objectlist,function(x){
-    abund=x$y
-    n <- dim(abund)[1]
-    p <- dim(abund)[2]
-    k<-attributes(logLik.gllvm(x))$df
-    AICc <- -2*x$logL + (k) * 2 + 2*k*(k+1)/(n*p-k-1)
-    return(AICc)
-  })
-  return(unlist(IC))
-}
+     if (!missing(...)) {
+      lls <- lapply(list(object, ...), logLik.gllvm)
+      vals <- sapply(lls, function(el) {
+        c(as.numeric(el), attr(el, "df"), attr(el, "nobs") %||% 
+            NA_integer_)
+      })
+      val <- data.frame(df = vals[2L, ], ll = vals[1L, ])
+      nos <- na.omit(vals[3L, ])
+      if (length(nos) && any(nos != nos[1L])) 
+        warning("models are not all fitted to the same number of observations")
+    val <- data.frame(df = val$df, AICc = -2 * val$ll + val$df*2+2*val$df*(val$df+1)/(vals[3L,])-val$df-1)
+      Call <- match.call()
+      Call$k <- NULL
+      row.names(val) <- as.character(Call[-1L])
+      val
+    }
+    else {
+      lls <- logLik.gllvm(object)
+      df <- attr(lls, "df")
+      nobs <- attr(lls, "nobs")
+      -2 * as.numeric(lls) + 2 *  df+ 2*df*(df+1)/(nobs-df-1)
+    }
+  }
 
 #'@method AICc gllvm
 #'@export AICc
