@@ -27,7 +27,6 @@ AICc.gllvm <- function(object, ...){
         warning("models are not all fitted to the same number of observations")
     val <- data.frame(df = val$df, AICc = -2 * val$ll + val$df*2+2*val$df*(val$df+1)/(vals[3L,])-val$df-1)
       Call <- match.call()
-      Call$k <- NULL
       row.names(val) <- as.character(Call[-1L])
       val
     }
