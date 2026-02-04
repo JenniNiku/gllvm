@@ -5,14 +5,24 @@
 \alias{predictSR}
 \title{Predict species richness from a gllvm object}
 \usage{
-\method{predictSR}{gllvm}(object, SR = NULL, se.fit = FALSE, alpha = 0.95, seed = 42, ...)
+\method{predictSR}{gllvm}(
+  object,
+  SR = NULL,
+  type = "direct",
+  se.fit = 10000,
+  alpha = 0.95,
+  seed = 42,
+  ...
+)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
 \item{SR}{integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.}
 
-\item{se.fit}{logical, defaults to \code{FALSE}. If set to \code{TRUE}, returns a simulated confidence interval of the prediction.}
+\item{type}{character, defaults to \code{direct}. For 'direct', simulates confidence intervals by simulating species' probabilities, and evaluating the Poisson-Binomial PMF. Alternatively, type 'empirical' simulates from the Bernoulli distribution of species, and calculates empirical probabilities instead from sums of Bernoulli simulations.}
+
+\item{se.fit}{integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.}
 
 \item{alpha}{numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.}
 
@@ -25,6 +35,12 @@ A matrix of size sites by length(SR).
 }
 \description{
 Obtains predictions from a fitted generalized linear latent variable model object.
+}
+\details{
+This function returns probabilities of richness for species richness from gllvm objects, following a Poisson-Binomial distribution for richness. The distribution for species  richness follows naturally from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation.
+}
+\note{
+The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.
 }
 \examples{
 \donttest{

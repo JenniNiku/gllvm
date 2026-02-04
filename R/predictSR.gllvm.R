@@ -9,6 +9,9 @@
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
 #'
+#' @details This function returns probabilities of richness for species richness from gllvm objects, following a Poisson-Binomial distribution for richness. The distribution for species  richness follows naturally from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation.
+#' @note The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.
+#'
 #' @return A matrix of size sites by length(SR).
 #' 
 #' @seealso \code{\link{predict.gllvm}}
@@ -81,6 +84,7 @@ predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, 
       }else{
         probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object)
       }
+      
     predSR.sim <- poisbinom(probs.sim)
     
     center = predSR[i,]         # point estimate for site i
