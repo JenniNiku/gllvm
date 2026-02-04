@@ -430,20 +430,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       for (i in 1:n) {
         for (j in ordi_ind) {
           probK <- NULL
-          probK[1] <- pnorm(object$params$zeta[j, 1] - 
-                              eta[i, j], log.p = FALSE)
-          probK[k.max[j]] <- 1 - pnorm(object$params$zeta[j, 
-                                                          k.max[j] - 1] - eta[i, j])
+          probK[1] <- pnorm(object$params$zeta[j, 1] -  eta[i, j], log.p = FALSE)
+          probK[k.max[j]] <- 1 - pnorm(object$params$zeta[j, k.max[j] - 1] - eta[i, j])
           if (k.max[j] > 2) {
             j.levels <- 2:(k.max[j] - 1)
             for (k in j.levels) {
-              probK[k] <- pnorm(object$params$zeta[j, 
-                                                   k] - eta[i, j]) - pnorm(object$params$zeta[j, 
-                                                                                              k - 1] - eta[i, j])
+              probK[k] <- pnorm(object$params$zeta[j, k] - eta[i, j]) - pnorm(object$params$zeta[j, k - 1] - eta[i, j])
             }
           }
-          preds[, i, j] <- c(probK, rep(NA, max(k.max) - 
-                                          k.max[j]))
+          preds[, i, j] <- c(probK, rep(NA, max(k.max) - k.max[j]))
         }
       }
     } else {
@@ -456,13 +451,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       for (i in 1:n) {
         for (j in 1:p) {
           probK <- NULL
-          probK[1] <- pnorm(object$params$zeta[1+kz] - eta[i, 
-                                                        j], log.p = FALSE)
+          probK[1] <- pnorm(object$params$zeta[1+kz] - eta[i, j], log.p = FALSE)
           probK[k.max] <- 1 - pnorm(object$params$zeta[k.max - 1 + kz] - eta[i, j])
           levels <- 2:(k.max - 1)
           for (k in levels) {
-            probK[k] <- pnorm(object$params$zeta[k + kz] - 
-                                eta[i, j]) - pnorm(object$params$zeta[k - 1 + kz] - eta[i, j])
+            probK[k] <- pnorm(object$params$zeta[k + kz] - eta[i, j]) - pnorm(object$params$zeta[k - 1 + kz] - eta[i, j])
           }
           preds[, i, j] <- c(probK)
         }
@@ -515,6 +508,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
     if(sum(incl)>0){
       Vf <- vcov(object)
+      if(min(diag(Vf))/max(diag(Vf))<.Machine$double.eps)warning("Seeing some odd things in the fixed effects covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       ffs <- try(MASS::mvrnorm(R, object$TMBfn$par[incl],Vf), silent = TRUE)
       if(inherits(ffs, "try-error"))stop("Covariance matrix of fixed effects is not semi positive-definite.")
       colnames(ffs) <- names(object$TMBfn$par)[incl]
@@ -544,6 +538,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }else{
         Vr <- CMSEPf(object, return.covb = TRUE)
       }
+      if(min(diag(Vr))/max(diag(Vr))<.Machine$double.eps)warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
       if(inherits(rfs, "try-error"))stop("Covariance matrix of random effects is not semi positive-definite.")
     }
