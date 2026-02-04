@@ -4,6 +4,7 @@ Version 2.0.8
 * New predictSR function for predicting species richness
 * New poisson-binomial PMF function (for predictSR)
 * New predictPairwise function (simple wrapper for predicting joint occurrence)
+* Implemented prediction functionality with when providing new measurements for covariates in the row effects
 
 ## Bugfixes
 * row.eff was ignoring 'diag'

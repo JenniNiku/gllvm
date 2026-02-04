@@ -102,13 +102,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   else {
     formula <- NULL
   }
-  if (!isFALSE(object$row.eff)) {
-    if(!is.null(newX)){
-      if(any(all.vars(object$call$row.eff) %in% colnames(newX))) {
-        warning("Using row effects for predicting new sites does not work yet.")
-      }
-    }
-  }
+
   b0 <- object$params$beta0
   eta <- matrix(b0, n, p, byrow = TRUE)
   if (!is.null(newTR)) 
@@ -352,6 +346,63 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+  }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
+      row.eff <- object$row.eff
+
+      # code is an undressed version of the code in gllvm.R
+      # first, random effects part
+      if(anyBars(row.eff)){
+        row.form <- allbars(row.eff)
+        bar.f <- findbars1(row.form) # list with 3 terms
+        grps <- unique(unlist(lapply(bar.f, all.vars)))
+        form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
+        nested.parts <- grepl("/",form.parts)
+        if(any(nested.parts)){
+          form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
+          
+          for(i in which(nested.parts))
+            form.parts[i] <- paste0("(", findbars1(formula(paste0("~",form.parts[i]))),")",collapse="+")
+          
+          corstruc.form <- as.formula(paste0("~", paste0(form.parts,collapse="+")))
+        }else{
+          corstruc.form <- row.form
+        }
+        cstruc <- corstruc(corstruc.form)
+        corWithin <- ifelse(cstruc %in% c("diag","ustruc"), FALSE, corWithin)
+        
+        if(!is.null(bar.f)) {
+          mf <- model.frame(subbars1(row.form),data=newX)
+          # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
+          # consequence: we can use Zt everywhere
+          mf.new <- mf
+          if(any(corWithin)){
+            mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
+          }
+          colnames(mf.new) <- colnames(mf)
+          RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
+          dr <- Matrix::t(RElistRow$Zt)
+        }
+        row.eff <- nobars1_(row.eff)
+      }
+      # second, fixed effects part
+      if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
+        xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
+      }
+
+    r0 <- NULL
+    if (inherits(object$row.eff, "formula") & is.null(newX)) {
+      if(!is.null(object$params$row.params.random)){
+        object$params$row.params.random = dr%*%object$params$row.params.random # !!!
+        if(level==0)object$params$row.params.random = object$params$row.params.random*0
+        r0 <- cbind(r0, as.matrix(object$params$row.params.random))
+      } 
+      if(!is.null(object$params$row.params.fixed)){
+        object$params$row.params.fixed = xr%*%as.matrix(object$params$row.params.fixed)
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
+      }
+      
+      eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+    }
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
