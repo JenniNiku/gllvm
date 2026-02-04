@@ -5,6 +5,7 @@ Version 2.0.8
 * New poisson-binomial PMF function (for predictSR)
 * New predictPairwise function (simple wrapper for predicting joint occurrence)
 * Implemented prediction functionality with when providing new measurements for covariates in the row effects
+* Improved output of AICc.gllvm to be in line with the AIC and BIC returned tables
 
 ## Bugfixes
 * row.eff was ignoring 'diag'
