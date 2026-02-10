@@ -59,7 +59,7 @@
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
 
-  if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))stop("Confidence intervals not yet implemented for ordinal models.")
+  # if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))warning("Confidence intervals for ordinal models can be sensitive to the number of simulations.")
   if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
   }
@@ -102,13 +102,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   else {
     formula <- NULL
   }
-  if (!isFALSE(object$row.eff)) {
-    if(!is.null(newX)){
-      if(any(all.vars(object$call$row.eff) %in% colnames(newX))) {
-        warning("Using row effects for predicting new sites does not work yet.")
-      }
-    }
-  }
+
   b0 <- object$params$beta0
   eta <- matrix(b0, n, p, byrow = TRUE)
   if (!is.null(newTR)) 
@@ -352,6 +346,63 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+  }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
+      row.eff <- object$row.eff
+
+      # code is an undressed version of the code in gllvm.R
+      # first, random effects part
+      if(anyBars(row.eff)){
+        row.form <- allbars(row.eff)
+        bar.f <- findbars1(row.form) # list with 3 terms
+        grps <- unique(unlist(lapply(bar.f, all.vars)))
+        form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
+        nested.parts <- grepl("/",form.parts)
+        if(any(nested.parts)){
+          form.parts <- strsplit(deparse1(row.form),split="\\+")[[1]]
+          
+          for(i in which(nested.parts))
+            form.parts[i] <- paste0("(", findbars1(formula(paste0("~",form.parts[i]))),")",collapse="+")
+          
+          corstruc.form <- as.formula(paste0("~", paste0(form.parts,collapse="+")))
+        }else{
+          corstruc.form <- row.form
+        }
+        cstruc <- corstruc(corstruc.form)
+        corWithin <- ifelse(cstruc %in% c("diag","ustruc"), FALSE, corWithin)
+        
+        if(!is.null(bar.f)) {
+          mf <- model.frame(subbars1(row.form),data=newX)
+          # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
+          # consequence: we can use Zt everywhere
+          mf.new <- mf
+          if(any(corWithin)){
+            mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
+          }
+          colnames(mf.new) <- colnames(mf)
+          RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
+          dr <- Matrix::t(RElistRow$Zt)
+        }
+        row.eff <- nobars1_(row.eff)
+      }
+      # second, fixed effects part
+      if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
+        xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
+      }
+
+    r0 <- NULL
+    if (inherits(object$row.eff, "formula") & is.null(newX)) {
+      if(!is.null(object$params$row.params.random)){
+        object$params$row.params.random = dr%*%object$params$row.params.random # !!!
+        if(level==0)object$params$row.params.random = object$params$row.params.random*0
+        r0 <- cbind(r0, as.matrix(object$params$row.params.random))
+      } 
+      if(!is.null(object$params$row.params.fixed)){
+        object$params$row.params.fixed = xr%*%as.matrix(object$params$row.params.fixed)
+        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
+      }
+      
+      eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+    }
   }
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
@@ -430,20 +481,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       for (i in 1:n) {
         for (j in ordi_ind) {
           probK <- NULL
-          probK[1] <- pnorm(object$params$zeta[j, 1] - 
-                              eta[i, j], log.p = FALSE)
-          probK[k.max[j]] <- 1 - pnorm(object$params$zeta[j, 
-                                                          k.max[j] - 1] - eta[i, j])
+          probK[1] <- ilinkfun[[pointer[j]]](object$params$zeta[j, 1] -  eta[i, j])
+          probK[k.max[j]] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j, k.max[j] - 1] - eta[i, j])
           if (k.max[j] > 2) {
             j.levels <- 2:(k.max[j] - 1)
             for (k in j.levels) {
-              probK[k] <- pnorm(object$params$zeta[j, 
-                                                   k] - eta[i, j]) - pnorm(object$params$zeta[j, 
-                                                                                              k - 1] - eta[i, j])
+              probK[k] <- ilinkfun[[pointer[j]]](object$params$zeta[j, k] - eta[i, j]) - ilinkfun[[pointer[j]]](object$params$zeta[j, k - 1] - eta[i, j])
             }
           }
-          preds[, i, j] <- c(probK, rep(NA, max(k.max) - 
-                                          k.max[j]))
+          preds[, i, j] <- c(probK, rep(NA, max(k.max) - k.max[j]))
         }
       }
     } else {
@@ -456,13 +502,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       for (i in 1:n) {
         for (j in 1:p) {
           probK <- NULL
-          probK[1] <- pnorm(object$params$zeta[1+kz] - eta[i, 
-                                                        j], log.p = FALSE)
-          probK[k.max] <- 1 - pnorm(object$params$zeta[k.max - 1 + kz] - eta[i, j])
+          probK[1] <- ilinkfun[[pointer[j]]](object$params$zeta[1+kz] - eta[i, j])
+          probK[k.max] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[i, j])
           levels <- 2:(k.max - 1)
           for (k in levels) {
-            probK[k] <- pnorm(object$params$zeta[k + kz] - 
-                                eta[i, j]) - pnorm(object$params$zeta[k - 1 + kz] - eta[i, j])
+            probK[k] <- ilinkfun[[pointer[j]]](object$params$zeta[k + kz] - eta[i, j]) - ilinkfun[[pointer[j]]](object$params$zeta[k - 1 + kz] - eta[i, j])
           }
           preds[, i, j] <- c(probK)
         }
@@ -515,6 +559,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
     if(sum(incl)>0){
       Vf <- vcov(object)
+      if(min(diag(Vf))/max(diag(Vf))<.Machine$double.eps)warning("Seeing some odd things in the fixed effects covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       ffs <- try(MASS::mvrnorm(R, object$TMBfn$par[incl],Vf), silent = TRUE)
       if(inherits(ffs, "try-error"))stop("Covariance matrix of fixed effects is not semi positive-definite.")
       colnames(ffs) <- names(object$TMBfn$par)[incl]
@@ -544,6 +589,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }else{
         Vr <- CMSEPf(object, return.covb = TRUE)
       }
+      if(min(diag(Vr))/max(diag(Vr))<.Machine$double.eps)warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
       if(inherits(rfs, "try-error"))stop("Covariance matrix of random effects is not semi positive-definite.")
     }
@@ -628,7 +674,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         object$params$phi <- (exp(lp0)/(1+exp(lp0)))[object$family %in% c("ZIP","ZINB")];
       }
       
-      if(any(object$family %in% c("orderedBeta","ordinal"))){
+      if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
         
         zetaO = NULL
           if(any(object$family%in%c("ordinal"))){
@@ -669,6 +715,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
               } 
             }
             idx<-idx+k
+            zetanew[j,] <- cumsum(abs(zetanew[j,]))
           }else{
             zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
             idx<-idx+2
@@ -681,7 +728,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(object$family%in%c("ordinal"))){
-            zetanew <- c(zetanew, 0,zetas[!zetaO])
+            zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
           }
         }
         newobject$params$zeta <- zetanew
@@ -720,15 +767,40 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(!is.null(newrfs$r0r))
           newobject$params$row.params.random  <- newrfs$r0r
       }
-      
-      predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+      if(!any(object$family == "ordinal") || type == "link")
+        predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+      else
+        predSims[r,,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
     }
+    
+    if(!any(object$family == "ordinal") || !is.null(alpha) && type == "link" || is.null(alpha)){
     if(is.null(alpha)){
     out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
-    }else{
+    }else if(!is.null(alpha)){
     ci <- apply(predSims, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
     out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
     }
+    }else if(any(object$family == "ordinal") && type == "response" && !is.null(alpha)){
+      ci <- array(dim=c(2,nrow(out), n,p))
+      for(j in 1:p){
+        if(object$family[j] != "ordinal"){
+          ci[,1,,j] <- apply(predSims[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
+        }else{
+          # here we need to be a bit more careful because of the simplex constraint
+          # we take the same approach as in predictSR.gllvm.R
+          # we measure the distance to the center of the simplex (which we will consider the prediction on the point estimates)
+          # and threshold over the distances
+          for(i in 1:n){
+            center = pmin(pmax(out[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
+            dists = suppressWarnings(hilbert_to_provided_center(pmin(pmax(predSims[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center))
+            threshold = quantile(dists, alpha, na.rm = TRUE)
+            ci[,,i,j] <- suppressWarnings(apply(predSims[,,i,j][dists <= threshold, ],2,range, na.rm = TRUE))
+          }
+          if(any(!is.finite(ci)))ci[!is.finite(ci)] <- NA # guaranteed to happen on zeta.struc = "species"
+        }
+      }
+      out <- list(fit = out, lower = ci[1,,,], upper = ci[2,,,])
+    }  
   }
   
   return(out)
