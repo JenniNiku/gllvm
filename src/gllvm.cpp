@@ -4694,9 +4694,9 @@ Type objective_function<Type>::operator() ()
           sigmacounter++;
           propcount++;
           if(re==0){
-          nll -= -trmsize(1,re)/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(0,trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(0,trmsize(1,re));
+          nll -= -Type(trmsize(1,re))/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(0,trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(0,trmsize(1,re));
           }else{
-          nll -= -trmsize(1,re)/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re));  
+          nll -= -Type(trmsize(1,re))/2*log(2*M_PI) - 0.5*logdetSr -0.5*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re)).transpose()*invSr*r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re));  
           }
         }
         }
