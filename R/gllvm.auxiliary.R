@@ -417,7 +417,7 @@ start_values_gllvm_TMB <- function(
     #     mu <- mu + matrix(params[,1],n,p,byrow=TRUE)
     #     if(!is.null(X) && is.null(TR)) mu <- mu + (Xdesign %*% matrix(params[,2:(1+num.X)],num.X,p))
     #   }
-    # } else 
+    # } else
     if(starting.val=="random"){ # Coefs not needed for zero
       for(j in ordinal_p) {
         y.fac <- factor(y[,j])
@@ -486,10 +486,10 @@ start_values_gllvm_TMB <- function(
     if(num.RR>0)b.lv2 <- matrix(rnorm(ncol(lv.X)*num.RR),nrow=ncol(lv.X),ncol=num.RR)
     if(num.lv.c>0&num.RR>0){b.lv <- cbind(b.lv, b.lv2)}else if(num.lv.c==0&num.RR>0)b.lv<-b.lv2
     
-    if(num.lv==0){
+    if(num.lv==0 & num.RR>0){
       params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params) - num.lv.c - num.lv)] <- matrix(rnorm(num.RR*p),ncol=num.RR,nrow=p)
       # params <- cbind(params,matrix(rnorm(num.RR*p),ncol=num.RR,nrow=p))
-    }else{
+    }else if(num.RR>0){
       params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):(ncol(params) - num.lv.c - num.lv)] <- matrix(rnorm(num.RR*p),ncol=num.RR,nrow=p)
       # params <- cbind(params[,1:(ncol(params)-num.lv)],matrix(rnorm(num.RR*p),ncol=num.RR,nrow=p),params[,(ncol(params)-num.lv+1):ncol(params)])
     }
