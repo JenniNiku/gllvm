@@ -445,7 +445,7 @@ se.gllvm <- function(object, ...){
           se.zetanew <- matrix(NA,nrow=p,ncol=K)
           o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
           zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
-          zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta"]
+          zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta",drop=FALSE]
           idx<-0
           for(j in o_ind){
             
@@ -453,7 +453,7 @@ se.gllvm <- function(object, ...){
               k<-max(y[,j])-2
               if(k>0){
                 sgns <- sign(zetas[(idx+1):(idx+k)])
-                cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k)]%*%diag(sgns)
+                cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns)
                 for(l in 1:k){
                   se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
                 } 
@@ -987,7 +987,7 @@ se.gllvm <- function(object, ...){
         se.zetanew <- matrix(NA,nrow=p,ncol=K)
         o_ind <- c(1:ncol(object$y))[family%in%c("ordinal", "orderedBeta")]
         zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
-        zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta"]
+        zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta", drop=FALSE]
         idx<-0
         for(j in o_ind){
           
@@ -995,7 +995,7 @@ se.gllvm <- function(object, ...){
             k<-max(y[,j])-2
             if(k>0){
               sgns <- sign(zetas[(idx+1):(idx+k)])
-              cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k)]%*%diag(sgns)
+              cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns)
               for(l in 1:k){
                 se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
               } 
