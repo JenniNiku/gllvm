@@ -3354,30 +3354,30 @@ Type objective_function<Type>::operator() ()
       
     case TWEEDIE: {// Tweedie family 5
       if(method >1){ // Tweedie EVA
-        ePower = invlogit(ePower) + Type(1);
+        Type ePower1 = invlogit(ePower) + Type(1);
         for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
               // Tweedie log-likelihood:
-              nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), ePower, true);
+              nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), ePower1, true);
               if (y(i,j) == 0) {
                 // Hessian-trace part:
-                nll += (1/iphi(j)) * (2-ePower)*exp(2*eta(i,j))*exp(-ePower*eta(i,j)) * cQ(i,j);
+                nll += (1/iphi(j)) * (2-ePower1)*exp(2*eta(i,j))*exp(-ePower1*eta(i,j)) * cQ(i,j);
               } else if (y(i,j) > 0) {
-                nll -= (1/iphi(j)) * (y(i,j)*(1-ePower)*exp((1-ePower)*eta(i,j)) - (2-ePower)*exp((2-ePower)*eta(i,j))) * cQ(i,j);
+                nll -= (1/iphi(j)) * (y(i,j)*(1-ePower1)*exp((1-ePower1)*eta(i,j)) - (2-ePower1)*exp((2-ePower1)*eta(i,j))) * cQ(i,j);
               }
             }
         }
       }else if(method <1){ // Tweedie VA
-        ePower = invlogit(ePower) + Type(1);
+        Type ePower1 = invlogit(ePower) + Type(1);
         for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
-              Type p1 = ePower - 1.0, p2 = 2.0 - ePower;
+              Type p1 = ePower1 - 1.0, p2 = 2.0 - ePower1;
               Type ans = -pow(exp(eta(i,j)+p2*cQ(i,j)), p2)/(iphi(j)*p2);
                if(y(i,j)>0){
                 CppAD::vector<Type> tx(4);
                 tx[0] = y(i,j);
                 tx[1] = iphi(j);
-                tx[2] = ePower;
+                tx[2] = ePower1;
                 tx[3] = 0;
                 ans += atomic::tweedie_logW(tx)[0];
                 ans += -y(i,j) / (iphi(j) * p1 * pow(exp(eta(i,j)-p1*cQ(i,j)), p1)) - log(y(i,j));
