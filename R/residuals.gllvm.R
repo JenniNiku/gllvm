@@ -269,7 +269,7 @@ residuals.gllvm <- function(object, ...) {
     b <- fishMod::pTweedie(as.vector(y[,object$family == "tweedie"]), mu = as.vector(mu[,object$family == "tweedie"]), phi = rep(phis, each = n), p = object$Power)
     a <- pmin(b, fishMod::pTweedie(as.vector(y[,object$family == "tweedie"]) - 1, mu = as.vector(mu[,object$family == "tweedie"]), phi = rep(phis, each = n), p = object$Power));
     
-    anew =  ifelse((as.vector(y) - 1)<0, 0, a)
+    anew =  ifelse((as.vector(y[,object$family == "tweedie"]) - 1)<0, 0, a)
     
     u = anew+(b-anew)*runif(n*p_f)
     
