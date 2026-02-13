@@ -10,6 +10,7 @@ Version 2.0.8
 ## Bugfixes
 * row.eff was ignoring 'diag'
 * 2.0.7 did not install on ubuntu due to string error in new enum check
+* bugfix in residuals.gllvm that left plots empty under particular settings
 
 
 Version 2.0.7
