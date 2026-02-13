@@ -469,7 +469,7 @@ start_values_gllvm_TMB <- function(
         out.zeta[(kz+1):length(zeta)] <- c(zeta[kz+1][1], diff(zeta[(kz+1):length(zeta)]))  
     }else if(zeta.struc == "species"){
       out.zeta <- zeta
-      out.zeta[family=="ordinal",] <- t(apply(zeta[family=="ordinal",],1,function(zeta)c(zeta[1],diff(zeta))))
+      out.zeta[family=="ordinal",] <- t(apply(zeta[family=="ordinal",,drop=FALSE],1,function(zeta)c(zeta[1],diff(zeta))))
     }
   }else if(any(family == "orderedBeta"))out.zeta <- zeta
 
@@ -2672,7 +2672,7 @@ ellipse<-function(center, covM, rad, col=4, lwd = 1, lty = 1){
   lines(ellips, col = col, lwd = lwd, lty = lty)
 }
 
-gamEnvelope <- function(x, y,line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, ...){
+gamEnvelope <- function(x, y,line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE){
   xSort <- sort(x, index.return = TRUE)
   gam.yx <- gam(y[xSort$ix] ~ xSort$x)
   pr.y <- predict.gam(gam.yx, se.fit = TRUE)
@@ -2682,7 +2682,7 @@ gamEnvelope <- function(x, y,line.col = "red", envelope.col = c("blue","lightblu
   if(envelopes) polygon(xSort$x[c(1:n.obs,n.obs:1)], c(prHi,prLow[n.obs:1]), col = envelope.col[2], border = NA)
   lines(xSort$x, pr.y$fit, col = envelope.col[1])
   abline(h = 0, col = 1)
-  points(x, y, col = col, ...)
+  # points(x, y, col = col, ...)
 }
 
 mlm <- function(y, X = NULL, index = NULL){

@@ -89,19 +89,18 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
   
   if(1 %in% which) {
     if(is.null(gr.pars$xlim)) {
-      plot(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "linear predictors", ylab = "Dunn-Smyth-residuals",
-           type = "n", col = rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==1], xlim = c(min(xxx), max(xxx))); abline(0, 0, col = "grey", lty = 3)
+      plot(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "linear predictors", ylab = "Dunn-Smyth-residuals", main = caption[which==1], xlim = c(min(xxx), max(xxx)), type = "n", ...); abline(0, 0, col = "grey", lty = 3)
     } else {
-      plot(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "linear predictors", ylab = "Dunn-Smyth-residuals", type =
-             "n", col = rep(col[csum], each = n), main = caption[which==1], ...); abline(0, 0, col = "grey", lty = 3)
+      plot(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "linear predictors", ylab = "Dunn-Smyth-residuals", main = caption[which==1], type = "n", ...); abline(0, 0, col = "grey", lty = 3)
     }
     
-    if(add.smooth) gamEnvelope(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], envelopes = envelopes, envelope.col = envelope.col, ...)
+    if(add.smooth) gamEnvelope(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], envelopes = envelopes, envelope.col = envelope.col)
+    points(eta.mat[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], ...)
     #      panel(eta.mat, ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
   if(2 %in% which) {
-    qq.x<-qqnorm(c(ds.res)[!is.na(ds.res)], main = caption[which==2], ylab = "Dunn-Smyth residuals", col = rep(col[csum], each = n)[!is.na(ds.res)], cex = 0.5, xlab = "theoretical quantiles");
-    qqline(c(res$residuals)[!is.na(ds.res)], col = envelope.col[1])
+    qq.x<-qqnorm(ds.res[!is.na(ds.res)], plot.it  = FALSE);
+    plot(qq.x, main = caption[which==2], ylab = "Dunn-Smyth residuals", col = rep(col[csum], each = n)[!is.na(ds.res)], xlab = "theoretical quantiles", type = "n")
     if(envelopes){
       K <- reps
       yy <- quantile(ds.res[!is.na(ds.res)], c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
@@ -118,21 +117,28 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
       
       n.obs <- n*p-sum(is.na(ds.res))
       polygon(Xm[c(1:n.obs,n.obs:1)], c(cis[1, ],cis[2, n.obs:1]), col = envelope.col[2], border = NA)
-      points(qq.x, col = rep(col[csum], each = n)[!is.na(ds.res)], cex = 0.5)
-      qqline(c(res$residuals), col = envelope.col[1])
+      # qqline(c(res$residuals), col = envelope.col[1])
     }
+    args <- list(...)
+    if(!"cex"%in%names(args))args$cex  <- 0.5
+    do.call(points, c(list(x = qq.x$x, y = qq.x$y, col = rep(col[csum], each = n)[!is.na(ds.res)]), args))    
+    
+    qqline(qq.x$y, col = envelope.col[1])
   }
   if(3 %in% which && !inherits(x, "glmmVA")) {
     plot(rep(1:n, p)[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "site index", ylab = "Dunn-Smyth-residuals", col =
            rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==3], ...);
     abline(0, 0, col = "grey", lty = 3)
-    if(add.smooth) panel.smooth(rep(1:n, p)[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
+    args <- list(...)
+    if("cex" %in% names(args))args <- args[-which(names(args) == "cex")]
+    if(add.smooth) do.call(panel.smooth, c(list(x = rep(1:n, p)[!is.na(ds.res)], y = ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA), args))
     #panel(rep(1:n, p), ds.res, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
   if(4 %in% which && !inherits(x, "glmmVA")) {
     plot(rep(1:p, each = n)[!is.na(ds.res)], ds.res[!is.na(ds.res)], xlab = "species index", ylab = "Dunn-Smyth-residuals", col =
            rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==4], ...);  abline(0, 0, col = "grey", lty = 3)
-    if(add.smooth) panel.smooth(rep(1:p, each = n)[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
+    if("cex" %in% names(args))args[-which(names(args) == "cex")]
+    if(add.smooth) panel.smooth(rep(1:p, each = n)[!is.na(ds.res)], ds.res[!is.na(ds.res)], col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, args)
     #panel(rep(1:p, each = n), ds.res, col = rep(col[csum], each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
   if(5 %in% which && !inherits(x, "glmmVA") || 3 %in% which && inherits(x, "glmmVA")) {
@@ -144,7 +150,8 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
     } else {
       plot(eta.mat[!is.na(ds.res)], sqres, xlab = "linear predictors", ylab = yl, col = rep(col[csum], each = n)[!is.na(ds.res)], main = caption[which==max(which)], ...);
     }
-    if(add.smooth) panel.smooth(eta.mat[!is.na(ds.res)], sqres, col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, ...)
+    if("cex" %in% names(args))args[-which(names(args) == "cex")]
+    if(add.smooth) panel.smooth(eta.mat[!is.na(ds.res)], sqres, col = rep(col[csum], each = n)[!is.na(ds.res)], col.smooth = envelope.col[1], cex = NA, args)
     #panel(eta.mat, sqres, col = rep(col, each = n), cex = 1, cex.lab = 1, cex.axis = 1, lwd = 1)
   }
   
