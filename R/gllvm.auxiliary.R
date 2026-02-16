@@ -92,7 +92,7 @@ start_values_gllvm_TMB <- function(
   
   # Starting values for rows:
   if((nrow(dr) == n) || (nrow(xr) == n)){
-    rowstart <- start_values_rows(y, family, dr, csR, proptoMats, trmsize, cstruc, xr, starting.val, Power, link, method, Ntrials)
+    rowstart <- start_values_rows(y, family, dr, csR, proptoMats, trmsize, cstruc, xr, starting.val, Power, link, method, Ntrials, zeta.struc = zeta.struc)
     
     if(nrow(dr)==n){
       out$row.params.random=rowstart$row.params.random
@@ -2317,7 +2317,7 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
 }
 
 # starting values rows
-start_values_rows <- function(y, family, dr, csR, proptoMats = list(list(matrix(0))), trmsize, cstruc, xr, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = matrix(1), max.iter = 200, start.optimizer = "nlminb", start.optim.method = "BFGS") {
+start_values_rows <- function(y, family, dr, csR, proptoMats = list(list(matrix(0))), trmsize, cstruc, xr, starting.val, Power = NULL, link=NULL, method="VA", Ntrials = matrix(1), max.iter = 200, start.optimizer = "nlminb", start.optim.method = "BFGS", zeta.struc = "species") {
   y <- as.matrix(y)
   n <- NROW(y)
   tr0 <- try({
@@ -2328,9 +2328,9 @@ start_values_rows <- function(y, family, dr, csR, proptoMats = list(list(matrix(
       if(any(family == "ZIB")) family[family == "ZIB"] <- "binomial"
       if(any(family == "ZNIB")) family[family == "ZNIB"] <- "binomial"
       if(all(family != "tweedie")){
-        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = start.optimizer, optim.method = start.optim.method, max.iter = max.iter) #, method=method
+        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = start.optimizer, optim.method = start.optim.method, max.iter = max.iter, zeta.struc = zeta.struc) #, method=method
       } else if(any(family == "tweedie")){
-        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "optim", optim.method = "L-BFGS-B", max.iter = max.iter) #, method=method
+        f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = "optim", optim.method = "L-BFGS-B", max.iter = max.iter, zeta.struc = zeta.struc) #, method=method
       }
     }
   }, silent = TRUE)
