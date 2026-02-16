@@ -3423,8 +3423,8 @@ Type objective_function<Type>::operator() ()
             for(int k=0; k<(Kj-1); k++){
               zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
             }
+            idx += Kj-1; 
           }
-          idx += Kj-1; 
         
         if (method<1) { // VA
           if(extra(j) == 0){ //va logit
