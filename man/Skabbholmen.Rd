@@ -31,7 +31,7 @@ Cramer, W. & Hytteborn, H. (1987). The separation of fluctuation and long-term c
 }
 \examples{
 \dontrun{
-data(Skabholmen)
+data(Skabbholmen)
 Y <- Skabbholmen$Y
 X <- Skabbholmen$X
 model <- gllvm(y = Y, X = X, studyDesign = X,
