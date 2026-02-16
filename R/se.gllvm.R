@@ -148,14 +148,14 @@ se.gllvm <- function(object, ...){
       }
       
       if(method=="LA" || (num.lv==0 && (is.null(object$params$row.params.random) && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
-        covM <- try(MASS::ginv(sdr[incl,incl]))
-        if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-        se <- try(sqrt(diag(abs(covM))))
+        cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]))
+        if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
+        se <- try(sqrt(diag(abs(cov.mat.mod))))
         names(se) = names(object$TMBfn$par[incl])
         
         trpred<-try({
           if(num.lv > 0 || !is.null(object$params$row.params.random) || !is.null(object$randomX) || object$col.eff$col.eff == "random") {
-            sd.random <- sdrandom(objrFinal, covM, incl)
+            sd.random <- sdrandom(objrFinal, cov.mat.mod, incl)
             prediction.errors <- list()
             
             if(!is.null(object$params$row.params.random)){
@@ -176,7 +176,7 @@ se.gllvm <- function(object, ...){
         }, silent=TRUE)
         if(inherits(trpred, "try-error")) { cat("Prediction errors for random effects could not be calculated.\n") }
         
-        out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
+        out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
       } else {
         sds <- sqrt(abs(diag(sdr)))
         if(any(sds<1e-12))sds[sds<1e-12]<-1
@@ -601,14 +601,14 @@ se.gllvm <- function(object, ...){
     }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
-      covM <- try(MASS::ginv(sdr[incl,incl]))
-      if(inherits(covM, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-      se <- try(sqrt(diag(abs(covM))))
+      cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]))
+      if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
+      se <- try(sqrt(diag(abs(cov.mat.mod))))
       names(se) = names(object$TMBfn$par[incl])
       
       trpred<-try({
         if((num.lv+num.lv.c) > 0 || !is.null(object$params$row.params.random) || object$col.eff$col.eff == "random"){
-          sd.random <- sdrandom(objrFinal, covM, incl, ignore.u = FALSE)
+          sd.random <- sdrandom(objrFinal, cov.mat.mod, incl, ignore.u = FALSE)
           prediction.errors <- list()
           
           if(!is.null(object$params$row.params.random)){
@@ -636,7 +636,7 @@ se.gllvm <- function(object, ...){
       }, silent=TRUE)
       if(inherits(trpred, "try-error")) { cat("Prediction errors for random effects could not be calculated.\n") }
       
-      out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=covM)
+      out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
       
     } else {
       # cnrm <- apply(sdr,2,function(x)sqrt(sum(x^2)))
