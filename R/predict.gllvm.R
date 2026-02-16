@@ -478,18 +478,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                  p), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE), 
                                                            sep = ""), NULL, NULL))
       if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-        for (j in ordi_ind) {
-          probK <- matrix(nrow=k.max[j], ncol = n)
-          probK[1,] <- ilinkfun[[pointer[j]]](object$params$zeta[j, 1] -  eta[, j])
-          probK[k.max[j],] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j, k.max[j] - 1] - eta[, j])
-          if (k.max[j] > 2) {
-            j.levels <- 2:(k.max[j] - 1)
-            for (k in j.levels) {
-              probK[k,] <- ilinkfun[[pointer[j]]](object$params$zeta[j, k] - eta[, j]) - ilinkfun[[pointer[j]]](object$params$zeta[j, k - 1] - eta[, j])
-            }
-          }
-          preds[1:k.max[j], , j] <- probK
+      for (j in ordi_ind) {
+        probK <- matrix(nrow=k.max[j],ncol=n)
+        probK[1:(k.max[j]-1),] <- ilinkfun[[pointer[j]]](outer(object$params$zeta[j,1:k.max[j]-1], eta[,j], function(zeta, eta)zeta-eta))
+        if(k.max[j]>2){
+        probK[2:(k.max[j]-1), ] <- probK[2:(k.max[j]-1),,drop=FALSE] - probK[1:(k.max[j]-2),,drop=FALSE]
         }
+        probK[k.max[j],] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j,k.max[j] - 1] - eta[, j])
+        preds[1:k.max[j],, j] <- probK
+      }
     } else {
       kz <- any(object$family == "orderedBeta")*2
       k.max <- length(object$params$zeta) + 1 - kz
@@ -497,14 +494,13 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                      dimnames = list(paste("level", 1:max(k.max), 
                                            sep = ""), NULL, NULL))
       if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-        for (j in 1:p) {
+        for (j in ordi_ind) {
           probK <- matrix(nrow=k.max,ncol=n)
-          probK[1,] <- ilinkfun[[pointer[j]]](object$params$zeta[1+kz] - eta[, j])
-          probK[k.max,] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[, j])
-          levels <- 2:(k.max - 1)
-          for (k in levels) {
-            probK[k,] <- ilinkfun[[pointer[j]]](object$params$zeta[k + kz] - eta[, j]) - ilinkfun[[pointer[j]]](object$params$zeta[k - 1 + kz] - eta[, j])
+          probK[1:(k.max-1),] <- ilinkfun[[pointer[j]]](outer(tail(object$params$zeta,k.max-1), eta[,j], function(zeta, eta)zeta-eta))
+          if(k.max>2){
+          probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
           }
+          probK[k.max,] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[, j])
           preds[1:k.max,, j] <- probK
         }
       dimnames(preds)[[3]] <- colnames(object$y)
