@@ -26,7 +26,7 @@
 
 \item{seed}{numeric, defaults to 42. Seed for the simulation of the confidence interval.}
 
-\item{return.pred}{logical, defauøts tp \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.}
+\item{return.pred}{logical, defaults to \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.}
 
 \item{...}{arguments passed to \code{"\link{predict.gllvm}"}.}
 }
@@ -64,7 +64,7 @@ plot(x = newX$soil.dry, y = predSR[,i+1], xlab = "Soil dry matter content", ylab
 
 }
 \seealso{
-\code{\link{predict.gllvm}}
+\code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}
 }
 \author{
 Bert van der Veen

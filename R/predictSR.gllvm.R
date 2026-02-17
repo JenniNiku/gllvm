@@ -6,7 +6,7 @@
 #' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
-#' @param return.pred logical, defauøts tp \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.
+#' @param return.pred logical, defaults to \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
 #'
 #' @details This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
@@ -14,7 +14,7 @@
 #'
 #' @return list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
 #' 
-#' @seealso \code{\link{predict.gllvm}}
+#' @seealso \code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}
 #' 
 #' @author Bert van der Veen
 #'
@@ -192,6 +192,7 @@ predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, see
     }
   }
   
+  class(out) <- "predictSR.gllvm"
   return(out)
   
 }
@@ -232,7 +233,7 @@ hilbert_to_provided_center <- function(mat, center) {
 #' @details
 #' The probability of co-occurrence is simply given by the joint probability of getting two presences for any pair of species. As such,
 #' it is simply calculated as the product of the probability of occurrence for any pair of species, so that this function mostly serves
-#' as convenience wrapper around \code{\link{predict.gllvm}}.
+#' as convenience wrapper around \code{"\link{predict.gllvm}"}.
 #' 
 #' @return A matrix of size np(p-1)/2 by 2.
 #' 
@@ -382,3 +383,61 @@ set_omp_threads <- function(t) {
 poisbinom <- function(prob) {
   .Call("C_poisbinom", prob, PACKAGE = "gllvm")
 }
+
+
+#' @title Dunn-Smyth residuals for species richness from a gllvm object
+#' @description Calculates Dunn-Smyth residuals for species richness.
+#'
+#' @param object an object of class 'gllvm'.
+#' @param predSR object returned by \code{"\link{predictSR.gllvm}"}
+#' @param ... not used.
+#'
+#' @details
+#' See \code{"\link{residuals.gllvm}"} for details.
+#' 
+#' @return A list of length 2 with 1) the fitted and 2) the dunn-smyth residuals.
+#' 
+#' @seealso \code{\link{predict.gllvm}}, \code{\link{predictSR.gllvm}}, \code{\link{residuals.gllvm}}
+#' 
+#' @author Bert van der Veen
+#'
+#'@author Bert van der Veen
+#'
+#'@aliases residuals.predictSR.gllvm
+#'@method residuals predictSR.gllvm
+#'@export
+#'@export residuals.predictSR.gllvm
+residuals.predictSR.gllvm <- function(predSR, object, ...){
+  
+  y = rowSums(ifelse(object$y==0,0,1))
+  n = length(y)
+  pmf = predSR$predicted$fit
+  
+  K <- ncol(pmf) - 1
+  
+  cdf <- t(apply(pmf, 1, cumsum))
+  
+  b <- cdf[cbind(seq_len(n), pmin(y, K) + 1)]
+  
+  a <- numeric(n)
+  nz <- y > 0
+  a[nz] <- cdf[cbind(which(nz), y[nz])]
+  
+  u <- a + (b - a) * runif(n)
+  
+  if (any(u == 1, na.rm = TRUE))
+    u[u == 1] <- 1 - 1e-16
+  
+  if (any(u == 0, na.rm = TRUE))
+    u[u == 0] <- 1e-16
+  
+    list(fitted = predSR$expected$fit, residuals = qnorm(u))
+}
+
+#'@export
+plot.predictSR.gllvm <- function(predSR, object...){
+  res <- residuals.predictSR.gllvm(predSR, object)
+  
+  plot(xlab = "Expected species richness", ylab = "Dunn-Smyth residuals", x = res$fitted, y = res$residuals)
+}
+
