@@ -231,7 +231,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       eta <- eta + matrix(xr %*% object$params$Br, n, p)
     }
   }
-  if (level == 1) {
+  if (level == 1 || (level == 0 && (object$num.lv.c + object$num.RR)>0)) {
     if (is.null(newLV) && !is.null(newdata) & (object$num.lv + 
                                                object$num.lv.c) > 0) {
       if (nrow(newdata) != nrow(object$y)) {
@@ -298,7 +298,6 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
           RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula))) #still add find double bars
           lv.X = t(as.matrix(RElistLV$Zt))
-          print(lv.X)
         }else{
           lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
         }
@@ -471,6 +470,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       "logL" %in% type) 
     out <- object$logL
   if (any(object$family == "ordinal") && (type == "response" | type == "class")) {
+    if(is.null(out)){ out <- eta; out[] <- NA}
+    
     ordi_ind <- c(1:p)[object$family == "ordinal"]
     if (object$zeta.struc == "species") {
       k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
