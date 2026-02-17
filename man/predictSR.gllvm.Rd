@@ -8,10 +8,10 @@
 \method{predictSR}{gllvm}(
   object,
   SR = NULL,
-  type = "direct",
   se.fit = 10000,
   alpha = 0.95,
   seed = 42,
+  return.pred = FALSE,
   ...
 )
 }
@@ -20,24 +20,24 @@
 
 \item{SR}{integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.}
 
-\item{type}{character, defaults to \code{direct}. For 'direct', simulates confidence intervals by simulating species' probabilities, and evaluating the Poisson-Binomial PMF. Alternatively, type 'empirical' simulates from the Bernoulli distribution of species, and calculates empirical probabilities instead from sums of Bernoulli simulations.}
-
 \item{se.fit}{integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.}
 
 \item{alpha}{numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.}
 
 \item{seed}{numeric, defaults to 42. Seed for the simulation of the confidence interval.}
 
+\item{return.pred}{logical, defauøts tp \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.}
+
 \item{...}{arguments passed to \code{"\link{predict.gllvm}"}.}
 }
 \value{
-A matrix of size sites by length(SR).
+list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
 }
 \description{
 Obtains predictions from a fitted generalized linear latent variable model object.
 }
 \details{
-This function returns probabilities of richness for species richness from gllvm objects, following a Poisson-Binomial distribution for richness. The distribution for species  richness follows naturally from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation.
+This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
 }
 \note{
 The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.

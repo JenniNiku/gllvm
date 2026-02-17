@@ -4,15 +4,15 @@
 #' @param object an object of class 'gllvm'.
 #' @param SR integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.
 #' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
-#' @param type character, defaults to \code{direct}. For 'direct', simulates confidence intervals by simulating species' probabilities, and evaluating the Poisson-Binomial PMF. Alternatively, type 'empirical' simulates from the Bernoulli distribution of species, and calculates empirical probabilities instead from sums of Bernoulli simulations.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
+#' @param return.pred logical, defauøts tp \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
 #'
-#' @details This function returns probabilities of richness for species richness from gllvm objects, following a Poisson-Binomial distribution for richness. The distribution for species  richness follows naturally from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation.
+#' @details This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
 #' @note The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.
 #'
-#' @return A matrix of size sites by length(SR).
+#' @return list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
 #' 
 #' @seealso \code{\link{predict.gllvm}}
 #' 
@@ -45,7 +45,7 @@
 #'@export
 #'@export predictSR.gllvm
 
-predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, alpha = 0.95, seed = 42,...){
+predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, seed = 42, return.pred = FALSE, ...){
   
   set.seed(seed)
   preds <- predict(object, type = "response", alpha = NULL, se.fit = se.fit, ...)
@@ -59,11 +59,15 @@ predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, 
     if(any(object$family == "ordinal")){
       n = nrow(fit[1,,])
     }
+    
     probs <- gllvm.presence.prob(fit, object)
+    
+    eSR <- rowSums(probs)
+    eSR.CI <- matrix(nrow = n, ncol = 2)
     
     if(is.null(SR))SR <-0:ncol(probs)
 
-    if(type == "direct"){
+    if(TRUE){#type == "direct"){
     # it's slow, but we can do our best
     TMBcores <- TMB::openmp(DLL="gllvm")[1]
     PoisBinCores <- get_omp_threads()
@@ -85,6 +89,8 @@ predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, 
         probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object)
       }
       
+    eSR.CI[i,]  <- quantile(rowSums(probs.sim), prob = c((1-alpha)/2, 1-(1-alpha)/2))
+      
     predSR.sim <- poisbinom(probs.sim)
     
     center = predSR[i,]         # point estimate for site i
@@ -95,65 +101,99 @@ predictSR.gllvm <- function(object, SR = NULL, type = "direct", se.fit = 10000, 
     # Keep points inside the simultaneous confidence region
     SR.ci[,i,] <- apply(predSR.sim[dists <= threshold, ],2,range)
     }
-    out <- list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,])
+    out <- list(predicted = list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,]), expected = list(fit = eSR, lower = eSR.CI[,1], upper = eSR.CI[,2]))
     
-  }else if(type == "empirical"){
-    p <- ncol(object$y)
-    R <- se.fit
-    n <- nrow(fit)
-    if(any(object$family == "ordinal"))n <- nrow(fit[1,,])
-  
-    if(!is.numical(se.fit))se.fit <- 1e3
-    
-    predSR  <-  array(rbinom(R*nrow(fit)*ncol(fit), size = 1, prob = array(rep(probs, each = R), dim = c(R, n, p))), dim = c(R, n, p))
-    
-    predSR <- rowSums(predSR, dims=2)
-    predSR <- pmin(pmax(t(table(factor(predSR,levels=0:p), col(predSR))/R), 1e-15),1-1e-15)
-    colnames(predSR) <- paste0("SR_", SR)
-    
-    SR.ci <- array(dim=c(2,n,length(SR)))
-    predSR.sim = array(0, dim=c(R,n,p))
-    predSR.sim.mat <- matrix(0, nrow = n, ncol = p)
-    dists = numeric(R)
-    center = numeric(length(SR))
-    
-    pred.sim.mat <- matrix(0, ncol = p+1)
-    for(i in 1:n){
-      probs.sim <- gllvm.presence.prob(preds$ci.sim[,i,],object)
-      # bad idea to fit this into memory
-      # predSR.sim  <-  array(rbinom(R*R*ncol(fit), size = 1, prob = array(rep(probs.sim, each = R), dim = c(R, R, p))), dim = c(R, R, p))
-      # predSR.sim.mat <- rowSums(predSR.sim, dims = 2)
-      predSR.sim.mat <-  t(replicate(R, table(factor(replicate(R, sum(rbinom(p, 1, probs.sim[r, ]))), levels = 0:p))/R))
-      predSR.sim.mat <- pmin(pmax(predSR.sim.mat, 1e-15),1-1e-15)
-
-      
-      center = predSR[i,] # point estimate for site i
-      dists = hilbert_to_provided_center(predSR.sim.mat, center)
-      
-      threshold = quantile(dists, alpha)
-      
-      # Keep points inside the simultaneous confidence region
-      SR.ci[,i,] <- apply(predSR.sim.mat[dists <= threshold, ],2,range)
-    }
-    out <- list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,])
-    
-    
-    }
-    return(out)
+  }
+    # else if(type == "empirical"){
+    # p <- ncol(object$y)
+    # R <- se.fit
+    # n <- nrow(fit)
+    # if(any(object$family == "ordinal"))n <- nrow(fit[1,,])
+    # 
+    # if(!is.numical(se.fit))se.fit <- 1e3
+    # 
+    # predSR  <-  array(rbinom(R*nrow(fit)*ncol(fit), size = 1, prob = array(rep(probs, each = R), dim = c(R, n, p))), dim = c(R, n, p))
+    # 
+    # predSR <- rowSums(predSR, dims=2)
+    # predSR <- pmin(pmax(t(table(factor(predSR,levels=0:p), col(predSR))/R), 1e-15),1-1e-15)
+    # colnames(predSR) <- paste0("SR_", SR)
+    # 
+    # SR.ci <- array(dim=c(2,n,length(SR)))
+    # predSR.sim = array(0, dim=c(R,n,p))
+    # predSR.sim.mat <- matrix(0, nrow = n, ncol = p)
+    # dists = numeric(R)
+    # center = numeric(length(SR))
+    # 
+    # pred.sim.mat <- matrix(0, ncol = p+1)
+    # for(i in 1:n){
+    #   probs.sim <- gllvm.presence.prob(preds$ci.sim[,i,],object)
+    #   # bad idea to fit this into memory
+    #   # predSR.sim  <-  array(rbinom(R*R*ncol(fit), size = 1, prob = array(rep(probs.sim, each = R), dim = c(R, R, p))), dim = c(R, R, p))
+    #   # predSR.sim.mat <- rowSums(predSR.sim, dims = 2)
+    #   predSR.sim.mat <-  t(replicate(R, table(factor(replicate(R, sum(rbinom(p, 1, probs.sim[r, ]))), levels = 0:p))/R))
+    #   predSR.sim.mat <- pmin(pmax(predSR.sim.mat, 1e-15),1-1e-15)
+    # 
+    #   
+    #   center = predSR[i,] # point estimate for site i
+    #   dists = hilbert_to_provided_center(predSR.sim.mat, center)
+    #   
+    #   threshold = quantile(dists, alpha)
+    #   
+    #   # Keep points inside the simultaneous confidence region
+    #   SR.ci[,i,] <- apply(predSR.sim.mat[dists <= threshold, ],2,range)
+    # }
+    # out <- list(predicted = list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,]), expected = list(eSR, lower = eSR.CI[,1], upper = eSR.CI[,2]))
+    # 
+    # }
   }else if(!is.list(preds)){
+    n <- nrow(fit)
+    
     probs <- gllvm.presence.prob(fit, object)  
     
     if(is.null(SR))SR <-0:ncol(probs)
     predSR  <-  poisbinom(probs)
     colnames(predSR) <- paste0("SR_", SR)
-    out <- predSR
+    out <- list(predicted = list(fit = predSR), expected  = list(fit = rowSums(probs)))
     
     # if(type == "class"){
     #   out <- apply(predSR, 1, which.max)-1
     # }
-    
-    return(out)
   }
+  
+  if(return.pred){
+    # code from predict.gllvm
+    if(is.list(preds)){
+    if(!any(object$family == "ordinal")){
+      ci <- apply(preds$ci.sim, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+      out$predict.gllvm <- list(fit = preds$fit, lower = ci[1,,], upper = ci[2,,])
+  }else if(any(object$family == "ordinal")){
+    ci <- array(dim=c(2,nrow(preds$fit), nrow(object$y),ncol(object$y)))
+    for(j in 1:ncol(object$y)){
+      if(object$family[j] != "ordinal"){
+        ci[,1,,j] <- apply(preds$ci.sim[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
+      }else{
+        # here we need to be a bit more careful because of the simplex constraint
+        # we take the same approach as in predictSR.gllvm.R
+        # we measure the distance to the center of the simplex (which we will consider the prediction on the point estimates)
+        # and threshold over the distances
+        for(i in 1:nrow(object$y)){
+          center = pmin(pmax(preds$fit[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
+          dists = suppressWarnings(hilbert_to_provided_center(pmin(pmax(preds$ci.sim[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center))
+          threshold = quantile(dists, alpha, na.rm = TRUE)
+          ci[,,i,j] <- suppressWarnings(apply(preds$ci.sim[,,i,j][dists <= threshold, ],2,range, na.rm = TRUE))
+        }
+        if(any(!is.finite(ci)))ci[!is.finite(ci)] <- NA # guaranteed to happen on zeta.struc = "species"
+      }
+    }
+    out$predict.gllvm <- list(fit = preds$fit, lower = ci[1,,,], upper = ci[2,,,])
+  }
+    }else{
+      out$predict.gllvm <- list(fit = fit)
+    }
+  }
+  
+  return(out)
+  
 }
 
 #'@export
