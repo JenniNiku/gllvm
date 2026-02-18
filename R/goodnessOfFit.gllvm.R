@@ -38,6 +38,8 @@
 #'}
 #'@export
 goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
+  mispred <- missing(pred) # for AUC
+  
   if(is.null(pred)){
     if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' needs to be given.")
     if(all(object$family == "ordinal")){
@@ -155,25 +157,27 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     if(any(object$family %in% c("ordinal"))){
       # just making sure the minimum is 0
       y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min) 
-      
-      if(missing(pred)){
-        preda <- predict(model, type = "response")
-        pred[,object$family == "ordinal"]  <- pred[1,,object$family == "ordinal"]
-      }
-      pred[,object$family == "ordinal"]  <- 1  - preda[1,,object$family == "ordinal"]
     }
+    predAUC <- pred
+    if(mispred){
+      predAUC <- predict(model, type = "response")
+    }else if(!mispred && any(object$family == "ordinal") && length(dim(pred))!=3){
+      stop("To calculate AUC, 'pred' should  be an array with 3 dimensions when ordinal responses are included.")
+    }
+    
+    predAUC <- gllvm.presence.prob(predAUC, object)
     
     if(species){
       out$AUC <- rep(NA, p)
       for(j in 1:p){
-        ranks <- rank(pred[,j])
+        ranks <- rank(predAUC[,j])
         n_pos <- sum(y[,j] > 0)
         n_neg <- sum(y[,j] == 0)
         sum_ranks_pos <- sum(ranks[y[,j] >0])
         out$AUC[j] <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
       }
     }else{
-      ranks <- rank(c(pred))
+      ranks <- rank(c(predAUC))
       n_pos <- sum(c(y) > 0)
       n_neg <- sum(c(y) == 0)
       sum_ranks_pos <- sum(ranks[c(y) >0])
