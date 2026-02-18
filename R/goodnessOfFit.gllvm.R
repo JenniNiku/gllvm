@@ -158,8 +158,9 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       
       if(missing(pred)){
         preda <- predict(model, type = "response")
-        pred[,object$family == "ordinal"]  <- 1  - preda[1,,object$family == "ordinal"]
+        pred[,object$family == "ordinal"]  <- pred[1,,object$family == "ordinal"]
       }
+      pred[,object$family == "ordinal"]  <- 1  - preda[1,,object$family == "ordinal"]
     }
     
     if(species){
