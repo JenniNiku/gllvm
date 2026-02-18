@@ -435,7 +435,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
 }
 
 #'@export
-plot.predictSR.gllvm <- function(predSR, object...){
+plot.predictSR.gllvm <- function(predSR, object, ...){
   res <- residuals.predictSR.gllvm(predSR, object)
   
   plot(xlab = "Expected species richness", ylab = "Dunn-Smyth residuals", x = res$fitted, y = res$residuals)
