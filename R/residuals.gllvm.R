@@ -280,7 +280,6 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "ordinal")) {
     
     o_ind <- c(1:p)[object$family == "ordinal"]
-    linkfun <- switch(object$link, "probit" = pnorm, "logit" = plogis)
         if(object$zeta.struc == "species"){
           k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
           
@@ -291,31 +290,31 @@ residuals.gllvm <- function(object, ...) {
                 probK[2:(k.max[j]-1), ] <- probK[2:(k.max[j]-1),,drop=FALSE] - probK[1:(k.max[j]-2),,drop=FALSE]
               }
             probK[k.max[j],] <- 1 - binomial(link=object$link)$linkinv(object$params$zeta[j,k.max[j] - 1] - eta.mat[, j])
-            
-          cumsum.b <- colSums(probK*outer(1:k.max[j],y[,j]+ifelse(min(y[,j])==0,1,0)+1,"<="))
-          cumsum.a <- pmin(cumsum.b, colSums(probK*outer(1:k.max[j],y[,j]+ifelse(min(y[,j])==0,1,0),"<=")))
+            probK <- rbind(0, probK)
+            cumsum.b <- colSums(probK*outer(1:(k.max[j]+1),y[,j]+ifelse(min(y[,j])==0,1,0)+1,"<="))
+            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max[j],y[,j]+ifelse(min(y[,j])==0,1,0),"<=")))
           
-          u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
+            u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
           
-          if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
-          if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
-          ds.res[, j] <- qnorm(u)
+            if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+            if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
+            ds.res[, j] <- qnorm(u)
           }
           
         } else {
           kz <- any(object$family == "orderedBeta")*2
           k.max <- length(object$params$zeta) + 1 - kz
           
-          for (j in 1:o_inds) {
+          for (j in o_ind) {
             probK <- matrix(nrow=k.max,ncol=n)
             probK[1:(k.max-1),] <- binomial(link=object$link)$linkinv(outer(tail(object$params$zeta,k.max-1), eta.mat[,j], function(zeta, eta)zeta-eta))
             if(k.max>2){
               probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
             }
             probK[k.max,] <- 1 - binomial(link=object$link)$linkinv(object$params$zeta[k.max - 1 + kz] - eta.mat[, j])
-            
-            cumsum.b <- colSums(probK*outer(1:k.max,y[,j]+ifelse(min(y)==0,1,0)+1,"<="))
-            cumsum.a <- pmin(cumsum.b, colSums(probK*outer(1:k.max,y[,j]+ifelse(min(y)==0,1,0),"<=")))
+            probK <- rbind(0, probK)
+            cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y)==0,1,0)+1,"<="))
+            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y)==0,1,0),"<=")))
             
             u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
             
