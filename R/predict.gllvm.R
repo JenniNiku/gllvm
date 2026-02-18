@@ -539,7 +539,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       incla <- rep(FALSE, length(object$TMBfn$par))
       if((num.lv.c+num.lv+num.lv.cor)>0)incla[names(object$TMBfn$par)=="u"] <- TRUE
       if("Br" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="Br"] <- TRUE
-      if(num.RR>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
+      if((num.RR+num.lv.c)>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
       if("r0r" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="r0r"] <- TRUE
     }
     
