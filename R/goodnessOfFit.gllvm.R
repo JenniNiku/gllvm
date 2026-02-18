@@ -4,7 +4,7 @@
 #' @param object an object of class 'gllvm', to calculate goodness of a model fit.
 #' @param y a response matrix of new observations
 #' @param pred predicted values for response matrix y if you want to calculate prediction accuracy for new values. Note that for ordinal model, you need to give the predicted classes.
-#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation) and \code{"sR2"} (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures \code{"NagelkerkeR2"}, \code{"McFaddenR2"}, \code{"CoxSnellR2"} can be calculated currently only for training data to measure the model's goodness of fit for full data, not response specific.
+#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation), "AUC", \code{"sR2"} (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures \code{"NagelkerkeR2"}, \code{"McFaddenR2"}, \code{"CoxSnellR2"} can be calculated currently only for training data to measure the model's goodness of fit for full data, not response specific.
 #' @param species logical, if \code{TRUE}, goodness-of-fit measures are calculated for each species separately. If FALSE,  goodness-of-fit measures are calculated for all species together.
 #'
 #' @details
@@ -39,7 +39,7 @@
 #'@export
 goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor", "RMSE", "MAE", "MARNE"), species = FALSE){
   if(is.null(pred)){
-    if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' need to be given.")
+    if(is.null(object)) stop("If 'pred' is not given the model fit for 'object' needs to be given.")
     if(all(object$family == "ordinal")){
       pred <- predict(object, type = "class")
     } else {
@@ -149,6 +149,36 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       out$sR2 <- cor(na.omit(cbind(unlist(c(y)), unlist(c(pred)))), method = "spearman")[2,1]
       out$sR2 <- sign(out$sR2)*out$sR2^2
     }
+  }
+  if("AUC" %in% measure){
+    if(any(object$family%in%c("gamma","exponential","beta")))warning("AUC only makes sense for families that include absence.")
+    if(any(object$family %in% c("ordinal"))){
+      # just making sure the minimum is 0
+      y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min) 
+      
+      if(missing(pred)){
+        preda <- predict(model, type = "response")
+        pred[,object$family == "ordinal"]  <- 1  - preda[1,,object$family == "ordinal"]
+      }
+    }
+    
+    if(species){
+      out$AUC <- rep(NA, p)
+      for(j in 1:p){
+        ranks <- rank(pred[,j])
+        n_pos <- sum(y[,j] > 0)
+        n_neg <- sum(y[,j] == 0)
+        sum_ranks_pos <- sum(ranks[y[,j] >0])
+        out$AUC[j] <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
+      }
+    }else{
+      ranks <- rank(c(pred))
+      n_pos <- sum(c(y) > 0)
+      n_neg <- sum(c(y) == 0)
+      sum_ranks_pos <- sum(ranks[c(y) >0])
+      out$AUC <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
+    }
+  
   }
   if(any(c("NagelkerkeR2", "McFaddenR2", "CoxSnellR2") %in% measure) & !is.null(object)) {
     #Fit null model to calculate 
