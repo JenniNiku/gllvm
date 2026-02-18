@@ -160,7 +160,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     }
     predAUC <- pred
     if(mispred){
-      predAUC <- predict(model, type = "response")
+      predAUC <- predict(object, type = "response")
     }else if(!mispred && any(object$family == "ordinal") && length(dim(pred))!=3){
       stop("To calculate AUC, 'pred' should  be an array with 3 dimensions when ordinal responses are included.")
     }
