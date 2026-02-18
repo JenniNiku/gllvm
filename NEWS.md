@@ -7,6 +7,7 @@ Version 2.0.8
 * New predictPairwise function (simple wrapper for predicting joint occurrence)
 * Implemented prediction functionality with when providing new measurements for covariates in the row effects
 * Improved output of AICc.gllvm to be in line with the AIC and BIC returned tables
+* AUC added to goodnessOfFit statistics
 
 ## Bugfixes
 * row.eff was ignoring 'diag'
