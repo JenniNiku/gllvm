@@ -351,7 +351,7 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
   } else if(family[j] == "betaH") {
     probs[,j] <- 1 - fit[,-seq_len(ncol(object$y)), drop = FALSE][,j]
   } else if(family[j] == "orderedBeta"){
-    probs[,j] <- 1 - binomial(link = object$link)$linkinv(binomial(link = object$link)$linkfun(fit[,j]) - object$params$zeta[j,1])
+    probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[j,1]-binomial(link = object$link)$linkfun(fit[,j]))
   }else if(family[j] == "ZIP") {
     probs[,j] <- 1 - pzip(rep(0, n), mu = fit[,j], sigma = rep(object$params$phi[j], each = n))
   } else if(family[j] == "ZINB") {
