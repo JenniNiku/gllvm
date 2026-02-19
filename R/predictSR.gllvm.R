@@ -408,6 +408,9 @@ poisbinom <- function(prob) {
 #'@export residuals.predictSR.gllvm
 residuals.predictSR.gllvm <- function(predSR, object, ...){
   
+  # ensure ordinal starts at 0
+  if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min)
+  
   y = rowSums(ifelse(object$y==0,0,1))
   n = length(y)
   pmf = predSR$predicted$fit
