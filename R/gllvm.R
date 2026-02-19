@@ -1506,6 +1506,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$method = "VA"
     }
     if(any(family == "ordinal") && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
+    # this following statement is problematic for mixed responses of orderedBeta with binomial
     if (any(family %in% c("orderedBeta"))) {
       if (method == "VA") {
         out$link <- "probit"  
