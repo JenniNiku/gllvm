@@ -1011,6 +1011,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # Check that percent covers are between [0,1]
     if(any(family %in% c("beta", "betaH", "orderedBeta")) & any(y[,family %in% c("beta", "betaH", "orderedBeta")]>1 |y[,family %in% c("beta", "betaH", "orderedBeta")]<0, na.rm = TRUE))
       stop("Responses (eg. percentage cover) must be coded in the range between 0 and 1 in case of beta based response models are used, ('beta, 'orderedBeta' or 'betaH'). Please rescale your data.")
+    if(any(family %in% c("betaH")) & any(y[,family %in% c("betaH")]==1, na.rm = TRUE))
+      stop("The beta hurdle model cannot accommodate 1s, please change to the ordered Beta model instead.")
     
     #If not empty but a vector..
     if(!is.null(disp.formula)){
