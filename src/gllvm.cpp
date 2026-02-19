@@ -3875,7 +3875,8 @@ Type objective_function<Type>::operator() ()
         idx += 2;
       }
       if(method<1) { // ordered Beta VA-EVA hybrid
-        
+        if(extra(j)==1){
+          //probit
         Type mu_prime;
         Type mu_prime2;
         CppAD::vector<Type> z;
@@ -3946,6 +3947,73 @@ Type objective_function<Type>::operator() ()
               
             }
           // }
+        }
+        }else if(extra(j)==0){
+          //logit
+          Type mu_prime;
+          Type mu_prime2;
+          CppAD::vector<Type> z;
+          if(extra(j)==0){
+            z = CppAD::vector<Type> (4);
+          }
+          CppAD::vector<Type> a(2);
+          CppAD::vector<Type> b(2);
+          CppAD::vector<Type> aa;
+          CppAD::vector<Type> bb;
+          Type dig_a;
+          Type dig_b;
+          Type trig_a;
+          Type trig_b;
+          
+          for (int i=0; i<n; i++) {
+            // for (int j=0; j<p; j++) {
+            if(!gllvmutils::isNA(y(i,j))){
+              // logit link
+              if((y(i,j)==0)){
+                  Type wij = 0.5*sqrt((zetacutoffnew(0)-eta(i,j))*(zetacutoffnew(0)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetacutoffnew(0)-eta(i,j)) - logspace_add(wij, -wij);
+              } else if((y(i,j)==1)){
+                Type wij = 0.5*sqrt((zetacutoffnew(1)-eta(i,j))*(zetacutoffnew(1)-eta(i,j)) + 2*cQ(i,j));
+                nll -= 0.5*(zetacutoffnew(1)-eta(i,j)) - logspace_add(wij, -wij);
+              } else{
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(0))), eta(i,j)-zetacutoffnew(0));
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(1), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(1))), eta(i,j)-zetacutoffnew(1));
+                nll -= eta(i,j) - zetacutoffnew(0);
+                nll -= CppAD::CondExpLe(zetacutoffnew(1)-zetacutoffnew(0), log(Type(2.)), log(-gllvmutils::expminus1(zetacutoffnew(0)-zetacutoffnew(1))),  gllvmutils::log1plus(-exp(zetacutoffnew(0)-zetacutoffnew(1))));
+                nll -= -gllvmutils::mfexp(dlogis(zetacutoffnew(0), eta(i,j), Type(1), 1))*cQ(i,j); 
+                nll -= -gllvmutils::mfexp(dlogis(zetacutoffnew(1), eta(i,j), Type(1), 1))*cQ(i,j);
+              
+                CppAD::vector<Type> z(4);
+                z[0] = eta(i,j);
+                z[1] = 0;
+                z[2] = 1/(1+exp(-z[0]));
+                z[3] = exp(z[0])/(exp(z[0])+1);
+                
+                mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+                mu_prime = mu(i,j) * (1-mu(i,j));
+                mu_prime2 = mu_prime * (1-2*mu(i,j));
+                
+                a[0] = mu(i,j)*iphi(j);
+                a[1] = 1;
+                b[0] = (1-mu(i,j))*iphi(j);
+                b[1] = 1;
+                aa = a;
+                bb = b;
+                aa[1] = 2;
+                bb[1] = 2;
+                dig_a = Type(atomic::D_lgamma(a)[0]);
+                dig_b = Type(atomic::D_lgamma(b)[0]);
+                trig_a = Type(atomic::D_lgamma(aa)[0]);
+                trig_b = Type(atomic::D_lgamma(bb)[0]);
+                
+                nll -= dbeta(y(i,j), Type(a[0]), Type(b[0]), 1);
+                nll -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
+                nll -= iphi(j) * mu_prime2 * logit(y(i,j)) * cQ(i,j);
+              }
+              
+            }
+            // }
+          }
         }
         
       } else if (method>1) {  // Ordered beta EVA
