@@ -3879,10 +3879,6 @@ Type objective_function<Type>::operator() ()
           //probit
         Type mu_prime;
         Type mu_prime2;
-        CppAD::vector<Type> z;
-        if(extra(j)==0){
-          z = CppAD::vector<Type> (4);
-        }
         CppAD::vector<Type> a(2);
         CppAD::vector<Type> b(2);
         CppAD::vector<Type> aa;
@@ -3953,9 +3949,7 @@ Type objective_function<Type>::operator() ()
           Type mu_prime;
           Type mu_prime2;
           CppAD::vector<Type> z;
-          if(extra(j)==0){
-            z = CppAD::vector<Type> (4);
-          }
+          z = CppAD::vector<Type> (4);
           CppAD::vector<Type> a(2);
           CppAD::vector<Type> b(2);
           CppAD::vector<Type> aa;

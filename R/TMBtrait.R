@@ -1301,7 +1301,9 @@ trait.TMB <- function(
       if(link=="probit") extra[family == "betaH"]=1
     }
     if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
-    if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12}
+    if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
+    if(link=="probit")extra[family == "orderedBeta"]=1
+    }    
     if(any(family == "ZIB")){
       familyn[family == "ZIB"] =13
       if(link=="probit") extra[family == "ZIB"]=1
