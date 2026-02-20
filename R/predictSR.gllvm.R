@@ -347,11 +347,15 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
     probs[,j] <- pnbinom(rep(0,n), mu = fit[,j], size = size, lower.tail = FALSE)
   } else if(family[j] == "negative.binomial1") {
     size <- fit[,j] * object$params$phi[j]
-    probs[,j] <- pnbinom(rep(0, n), mu = fit, size = size, lower.tail = FALSE)
+    probs[,j] <- pnbinom(rep(0, n), mu = fit[,j], size = size, lower.tail = FALSE)
   } else if(family[j] == "betaH") {
     probs[,j] <- 1 - fit[,-seq_len(ncol(object$y)), drop = FALSE][,j]
   } else if(family[j] == "orderedBeta"){
-    probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[j,1]-binomial(link = object$link)$linkfun(fit[,j]))
+    if(object$zeta.struc == "species"){
+      probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[j,1]-binomial(link = object$link)$linkfun(fit[,j]))  
+    }else{
+      probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[1]-binomial(link = object$link)$linkfun(fit[,j]))
+    }
   }else if(family[j] == "ZIP") {
     probs[,j] <- 1 - pzip(rep(0, n), mu = fit[,j], sigma = rep(object$params$phi[j], each = n))
   } else if(family[j] == "ZINB") {

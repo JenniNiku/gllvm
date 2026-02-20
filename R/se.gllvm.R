@@ -480,6 +480,7 @@ se.gllvm <- function(object, ...){
             names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
             se.zetanew <- se.zetanew[-((kz+ 1):length(se.zetanew))]
           }
+          sezetanew <- NULL
           if(any(family%in%c("ordinal"))){
             zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
             zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
@@ -1021,6 +1022,7 @@ se.gllvm <- function(object, ...){
           se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
           names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
         }
+        sezetanew  <- NULL
         if(any(family%in%c("ordinal"))){
           zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
           zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
