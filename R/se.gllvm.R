@@ -490,7 +490,7 @@ se.gllvm <- function(object, ...){
               sezetanew <- c(sezetanew, sqrt(sum(cvs[1:i,1:i])))
             }
             if(any(object$family == "orderedBeta")){
-              se.zetanew <- c(se.zetanew[1:kz,1:kz],sezetanew)
+              se.zetanew <- c(se.zetanew[1:kz],sezetanew)
             }else{
               se.zetanew <- sezetanew
             }
@@ -1032,7 +1032,7 @@ se.gllvm <- function(object, ...){
           }
         }
         if(any(object$family == "orderedBeta")){
-          se.zetanew <- c(se.zetanew[1:kz,1:kz],sezetanew)
+          se.zetanew <- c(se.zetanew[1:kz],sezetanew)
         }else{
           se.zetanew <- sezetanew
         }
