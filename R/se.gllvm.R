@@ -453,7 +453,7 @@ se.gllvm <- function(object, ...){
               k<-max(y[,j])-2
               if(k>0){
                 sgns <- sign(zetas[(idx+1):(idx+k)])
-                cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns)
+                cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
                 for(l in 1:k){
                   se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
                 } 
@@ -996,7 +996,7 @@ se.gllvm <- function(object, ...){
             k<-max(y[,j])-2
             if(k>0){
               sgns <- sign(zetas[(idx+1):(idx+k)])
-              cvs <- diag(sgns)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns)
+              cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
               for(l in 1:k){
                 se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
               } 
