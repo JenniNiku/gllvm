@@ -1160,7 +1160,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
         trmsize[1,] <- unlist(lapply(bar.f, function(x)length(attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "term.labels")) + 
                                        attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "intercept")))
-        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(mf.new[,as.character(x[[3]])]))))
+        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(interaction(mf.new[, all.vars(x[[3]])])))))
         
         if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
         

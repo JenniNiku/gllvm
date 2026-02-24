@@ -1875,7 +1875,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
             }else if(cstrucn[re] %in% c(1,3)) {
@@ -1913,7 +1913,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -1927,7 +1927,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -1942,7 +1942,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -1957,7 +1957,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -1986,7 +1986,7 @@ trait.TMB <- function(
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", RHS)
+              colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", deparse(RHS))
             }
             
             out$params$sigmaijr=as.matrix(Matrix::bdiag(D))
