@@ -375,7 +375,7 @@ se.gllvm <- function(object, ...){
             if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
             RHS <- form[[3]]
             
-            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
             
             iter <- iter + trmsize[1,re]
           }
@@ -919,7 +919,7 @@ se.gllvm <- function(object, ...){
             if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
             RHS <- form[[3]]
             
-            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+            names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
             
             iter <- iter + trmsize[1,re]
           }
