@@ -332,22 +332,13 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  r0 <- NULL
-  if (inherits(object$row.eff, "formula") & is.null(newX)) {
-    if(!is.null(object$params$row.params.random)){
-     object$params$row.params.random = object$TMBfn$env$data$dr0%*%object$params$row.params.random # !!!
-     if(level==0)object$params$row.params.random = object$params$row.params.random*0
-     r0 <- cbind(r0, as.matrix(object$params$row.params.random))
-    } 
-    if(!is.null(object$params$row.params.fixed)){
-        object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
-    }
-    
-    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
-  }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
+  if(!is.null(object$params$row.params.fixed)||!is.null(object$params$row.params$random)){
+    if (inherits(object$row.eff, "formula") & is.null(newX)) {
+      if(!is.null(object$params$row.params.random))dr = object$TMBfn$env$data$dr0
+      if(!is.null(object$params$row.params.fixed))xr = object$TMBfn$env$data$xr
+    }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
       row.eff <- object$row.eff
-
+      
       # code is an undressed version of the code in gllvm.R
       # first, random effects part
       if(anyBars(row.eff)){
@@ -387,9 +378,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
       }
-
+    }
+    
     r0 <- NULL
-    if (inherits(object$row.eff, "formula") & is.null(newX)) {
       if(!is.null(object$params$row.params.random)){
         object$params$row.params.random = dr%*%object$params$row.params.random # !!!
         if(level==0)object$params$row.params.random = object$params$row.params.random*0
@@ -400,9 +391,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
       }
       
-      eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
-    }
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+    
   }
+  
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
@@ -739,7 +731,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         names(newobject$params$B) <- names(object$params$B)
       }
       
-      if(!is.null(newpars$params$r0f))
+      if(!is.null(newpars$r0f))
         newobject$params$row.params.fixed <- newpars$r0f
       
       if(num.RR>0 && isFALSE(object$randomB))
@@ -758,7 +750,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(!is.null(newrfs$b_lv))
           newobject$params$LvXcoef <- newrfs$b_lv
         if(!is.null(newrfs$r0r))
-          newobject$params$row.params.random  <- newrfs$r0r
+          newobject$params$row.params.random  <- newrfs$r0
       }
       if(!any(object$family == "ordinal") || type == "link")
         predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
