@@ -441,9 +441,12 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
 }
 
 #'@export
-plot.predictSR.gllvm <- function(predSR, object, ...){
+plot.predictSR.gllvm <- function(predSR, object, which = c(1,2), ...){
   res <- residuals.predictSR.gllvm(predSR, object)
   
-  plot(xlab = "Expected species richness", ylab = "Dunn-Smyth residuals", x = res$fitted, y = res$residuals)
+  par(mfrow=c(1,length(which)))
+  
+  if(1%in%which)plot(xlab = "Expected species richness", ylab = "Dunn-Smyth residuals", x = res$fitted, y = res$residuals)
+  if(2%in%which)qqnorm(res$residuals);qqline(res$residuals)
 }
 
