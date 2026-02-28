@@ -3967,8 +3967,8 @@ Type objective_function<Type>::operator() ()
                   Type wij = 0.5*sqrt((zetacutoffnew(0)-eta(i,j))*(zetacutoffnew(0)-eta(i,j)) + 2*cQ(i,j));
                   nll -= 0.5*(zetacutoffnew(0)-eta(i,j)) - logspace_add(wij, -wij);
               } else if((y(i,j)==1)){
-                Type wij = 0.5*sqrt((zetacutoffnew(1)-eta(i,j))*(zetacutoffnew(1)-eta(i,j)) + 2*cQ(i,j));
-                nll -= 0.5*(zetacutoffnew(1)-eta(i,j)) - logspace_add(wij, -wij);
+                Type wij = 0.5*sqrt((eta(i,j)-zetacutoffnew(1))*(eta(i,j)-zetacutoffnew(1)) + 2*cQ(i,j));
+                nll -= 0.5*(eta(i,j)-zetacutoffnew(1)) - logspace_add(wij, -wij);
               } else{
                 nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(0))), eta(i,j)-zetacutoffnew(0));
                 nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(1), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(1))), eta(i,j)-zetacutoffnew(1));
