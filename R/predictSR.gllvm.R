@@ -100,8 +100,10 @@ predictSR.gllvm <- function(object, SR = NULL, expected = "mean", se.fit = 10000
       eSR.temp <- sapply(eSR.temp, pbMode, n = ncol(object$y))
     }
     
-    eSR.CI[i,]  <- quantile(eSR.temp, prob = c((1-alpha)/2, 1-(1-alpha)/2))
-      
+    type = 7 #R's default for quantile
+    if(expected == "mode")type = 1 # default doesn't work for integer problems
+    eSR.CI[i,]  <- quantile(eSR.temp, type = type, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+
     predSR.sim <- poisbinom(probs.sim)
     
     center = predSR[i,]         # point estimate for site i
