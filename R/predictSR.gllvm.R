@@ -3,6 +3,7 @@
 #'
 #' @param object an object of class 'gllvm'.
 #' @param SR integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.
+#' @param expected character, defaults to "mean", in which case the returned measure of central tendency for species richness is the Poisson-Binomial expectation. Alternatively can be "mode".
 #' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
@@ -45,7 +46,7 @@
 #'@export
 #'@export predictSR.gllvm
 
-predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, seed = 42, return.pred = FALSE, ...){
+predictSR.gllvm <- function(object, SR = NULL, expected = "mean", se.fit = 10000, alpha = 0.95, seed = 42, return.pred = FALSE, ...){
   
   set.seed(seed)
   preds <- predict(object, type = "response", alpha = NULL, se.fit = se.fit, ...)
@@ -63,6 +64,10 @@ predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, see
     probs <- gllvm.presence.prob(fit, object)
     
     eSR <- rowSums(probs)
+    if(expected == "mode"){
+      eSR <- sapply(eSR, pbMode, n = ncol(object$y))
+    }
+    
     eSR.CI <- matrix(nrow = n, ncol = 2)
     
     if(is.null(SR))SR <-0:ncol(probs)
@@ -88,7 +93,14 @@ predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, see
       }else{
         probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object)
       }
-    eSR.CI[i,]  <- quantile(rowSums(probs.sim), prob = c((1-alpha)/2, 1-(1-alpha)/2))
+      
+    eSR.temp <- rowSums(probs.sim)
+    
+    if(expected == "mode"){
+      eSR.temp <- sapply(eSR.temp, pbMode, n = ncol(object$y))
+    }
+    
+    eSR.CI[i,]  <- quantile(eSR.temp, prob = c((1-alpha)/2, 1-(1-alpha)/2))
       
     predSR.sim <- poisbinom(probs.sim)
     
@@ -149,10 +161,15 @@ predictSR.gllvm <- function(object, SR = NULL, se.fit = 10000, alpha = 0.95, see
     
     probs <- gllvm.presence.prob(fit, object)  
     
+    eSR <- rowSums(probs)
+    if(expected == "mode"){
+      eSR <- sapply(eSR, pbMode, n = ncol(object$y))
+    }
+    
     if(is.null(SR))SR <-0:ncol(probs)
     predSR  <-  poisbinom(probs)
     colnames(predSR) <- paste0("SR_", SR)
-    out <- list(predicted = list(fit = predSR), expected  = list(fit = rowSums(probs)))
+    out <- list(predicted = list(fit = predSR), expected  = list(fit = eSR))
     
     # if(type == "class"){
     #   out <- apply(predSR, 1, which.max)-1
@@ -450,3 +467,17 @@ plot.predictSR.gllvm <- function(predSR, object, which = c(1,2), ...){
   if(2%in%which)qqnorm(res$residuals);qqline(res$residuals)
 }
 
+pbMode <- function(mu, n) {
+  k <- floor(mu)
+  
+  lower <- k + 1/(k + 2)
+  upper <- (k + 1) - 1/(n - k + 1)
+  
+  if (mu < lower) {
+    return(k)
+  } else if (mu > upper) {
+    return(k + 1)
+  } else {
+    return(k)#c(k, k + 1))  # bimodal region
+  }
+}
