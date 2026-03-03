@@ -731,7 +731,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
       
       if(!is.null(newpars$r0f))
-        newobject$params$row.params.fixed <- newpars$r0f
+        newobject$params$row.params.fixed <- c(newpars$r0f)
       
       if(num.RR>0 && isFALSE(object$randomB))
         newobject$params$LvXcoef <- newpars$b_lv
@@ -749,7 +749,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(!is.null(newrfs$b_lv))
           newobject$params$LvXcoef <- newrfs$b_lv
         if(!is.null(newrfs$r0r))
-          newobject$params$row.params.random  <- newrfs$r0
+          newobject$params$row.params.random  <- c(newrfs$r0r)
       }
       if(!any(object$family == "ordinal") || type == "link")
         predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
