@@ -332,7 +332,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  if(!is.null(object$params$row.params.fixed)||!is.null(object$params$row.params$random)){
+  if(!is.null(object$params$row.params.fixed)||!is.null(object$params$row.params.random)){
     if (inherits(object$row.eff, "formula") & is.null(newX)) {
       if(!is.null(object$params$row.params.random))dr = object$TMBfn$env$data$dr0
       if(!is.null(object$params$row.params.fixed))xr = object$TMBfn$env$data$xr
