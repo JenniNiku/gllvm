@@ -194,8 +194,8 @@ auxFun <- function(x) {
   return(out)
 }
 
-mkModMlist <- function (x, frloc) {
-  frloc <- factorize(x, frloc)
+mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
+  frloc <- factorize(x, frloc, drop.unused.levels = drop.unused.levels)
   # safeguard for issues with numeric in factor levels
   # There is probably a better way to do this
   if(suppressWarnings(any(!is.na(as.numeric(unlist(frloc[,all.vars(x[[3]])])))))){
@@ -205,14 +205,14 @@ mkModMlist <- function (x, frloc) {
       levels(frloc[,colnames(frloc[,all.vars(x[[3]]), drop = FALSE])[i]]) <- ilev
     }
   }
-  ff <- eval(substitute(factor(fac), list(fac = x[[3]])), frloc)
+  ff <- eval(substitute(fac, list(fac = x[[3]])), frloc)
   nl <- length(levels(ff))
   
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
   cntrsts <- lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE)
   mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[-which(!names(cntrsts)%in%labels(trms))])
   
-  sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = TRUE)
+  sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = drop.unused.levels)
   
   fm <- NULL
   
@@ -242,7 +242,7 @@ mkModMlist <- function (x, frloc) {
   if("(Intercept)"%in%colnames(mm)){
     levels(ff2)[1]<- NA # exclude reference category for identifiability
     if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
-      fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = TRUE)
+      fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = drop.unused.levels)
     }else{
       fm2 <- matrix(ncol = nrow(mm),nrow=0) # no categorical variables, nothing should be happening here
     }
@@ -267,7 +267,7 @@ mkModMlist <- function (x, frloc) {
 }
 
 # for formula
-mkReTrms1 <- function (bars, fr, ...) 
+mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, ...) 
 {
   # drop.unused.levels = TRUE; 
   reorder.vars = FALSE
@@ -283,7 +283,7 @@ mkReTrms1 <- function (bars, fr, ...)
   term.names <- vapply(bars, safeDeparse, "")
   
   #
-  blist <- lapply(bars, mkModMlist, fr) #drop.unused.levels, reorder.vars = reorder.vars)
+  blist <- lapply(bars, mkModMlist, fr, drop.unused.levels = drop.unused.levels)#, reorder.vars = reorder.vars)
   nl <- vapply(blist, `[[`, 0L, "nl")
   cnms <- lapply(blist,`[[`,"cnms")
   names(nl) <- unlist(lapply(cnms, auxFun))
@@ -355,10 +355,10 @@ mkReTrms1 <- function (bars, fr, ...)
 #   ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
 #   ll
 # }
-factorize <- function (x, frloc, char.only = FALSE) {
+factorize <- function (x, frloc, char.only = FALSE, drop.unused.levels = TRUE) {
   for (i in all.vars(x[[length(x)]])) {
     if (!is.null(curf <- frloc[[i]])) 
-      frloc[[i]] <- factor(curf)
+      frloc[[i]] <- factor(curf, levels = if(!is.factor(curf)||is.factor(curf)&&drop.unused.levels){unique(curf)}else if(is.factor(curf)){levels(curf)})
   }
   return(frloc)
 }
