@@ -1011,6 +1011,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # Check that percent covers are between [0,1]
     if(any(family %in% c("beta", "betaH", "orderedBeta")) & any(y[,family %in% c("beta", "betaH", "orderedBeta")]>1 |y[,family %in% c("beta", "betaH", "orderedBeta")]<0, na.rm = TRUE))
       stop("Responses (eg. percentage cover) must be coded in the range between 0 and 1 in case of beta based response models are used, ('beta, 'orderedBeta' or 'betaH'). Please rescale your data.")
+    if(any(family %in% c("betaH")) & any(y[,family %in% c("betaH")]==1, na.rm = TRUE))
+      stop("The beta hurdle model cannot accommodate 1s, please change to the ordered Beta model instead.")
     
     #If not empty but a vector..
     if(!is.null(disp.formula)){
@@ -1158,7 +1160,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
         trmsize[1,] <- unlist(lapply(bar.f, function(x)length(attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "term.labels")) + 
                                        attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "intercept")))
-        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(mf.new[,as.character(x[[3]])]))))
+        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(interaction(mf.new[, all.vars(x[[3]])])))))
         
         if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
         
@@ -1504,10 +1506,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       out$method = "VA"
     }
     if(any(family == "ordinal") && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
+    # this following statement is problematic for mixed responses of orderedBeta with binomial
     if (any(family %in% c("orderedBeta"))) {
-      if (method == "VA") {
-        out$link <- "probit"  
-      } else if (method=="EVA") {
+      # if (method == "VA") {
+      #   out$link <- "probit"  
+      # } else 
+        if (method=="EVA") {
         out$link <- "logit"
       }
     }

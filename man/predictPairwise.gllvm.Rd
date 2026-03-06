@@ -36,7 +36,7 @@ Obtains the probability of co-occurrnece for species from a fitted generalized l
 \details{
 The probability of co-occurrence is simply given by the joint probability of getting two presences for any pair of species. As such,
 it is simply calculated as the product of the probability of occurrence for any pair of species, so that this function mostly serves
-as convenience wrapper around \code{\link{predict.gllvm}}.
+as convenience wrapper around \code{"\link{predict.gllvm}"}.
 }
 \examples{
 

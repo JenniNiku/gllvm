@@ -231,7 +231,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       eta <- eta + matrix(xr %*% object$params$Br, n, p)
     }
   }
-  if (level == 1) {
+  if (level == 1 || (level == 0 && (object$num.lv.c + object$num.RR)>0)) {
     if (is.null(newLV) && !is.null(newdata) & (object$num.lv + 
                                                object$num.lv.c) > 0) {
       if (nrow(newdata) != nrow(object$y)) {
@@ -296,9 +296,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(anyBars(object$lv.formula)){
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
-          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula))) #still add find double bars
+          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula)), drop.unused.levels = FALSE) #still add find double bars
           lv.X = t(as.matrix(RElistLV$Zt))
-          print(lv.X)
         }else{
           lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
         }
@@ -333,22 +332,13 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
   
-  r0 <- NULL
-  if (inherits(object$row.eff, "formula") & is.null(newX)) {
-    if(!is.null(object$params$row.params.random)){
-     object$params$row.params.random = object$TMBfn$env$data$dr0%*%object$params$row.params.random # !!!
-     if(level==0)object$params$row.params.random = object$params$row.params.random*0
-     r0 <- cbind(r0, as.matrix(object$params$row.params.random))
-    } 
-    if(!is.null(object$params$row.params.fixed)){
-        object$params$row.params.fixed = object$TMBfn$env$data$xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
-    }
-    
-    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
-  }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
+  if(!is.null(object$params$row.params.fixed)||(!is.null(object$params$row.params.random)&&level>0)){
+    if (inherits(object$row.eff, "formula") & is.null(newX)) {
+      if(!is.null(object$params$row.params.random))dr = object$TMBfn$env$data$dr0
+      if(!is.null(object$params$row.params.fixed))xr = object$TMBfn$env$data$xr
+    }else if(inherits(object$row.eff, "formula") & !is.null(newX)){
       row.eff <- object$row.eff
-
+      
       # code is an undressed version of the code in gllvm.R
       # first, random effects part
       if(anyBars(row.eff)){
@@ -379,7 +369,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
           }
           colnames(mf.new) <- colnames(mf)
-          RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
+          RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc, drop.unused.levels = FALSE)
           dr <- Matrix::t(RElistRow$Zt)
         }
         row.eff <- nobars1_(row.eff)
@@ -388,12 +378,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
       }
-
+    }
+    
     r0 <- NULL
-    if (inherits(object$row.eff, "formula") & is.null(newX)) {
-      if(!is.null(object$params$row.params.random)){
+      if(!is.null(object$params$row.params.random) && level>0){
         object$params$row.params.random = dr%*%object$params$row.params.random # !!!
-        if(level==0)object$params$row.params.random = object$params$row.params.random*0
         r0 <- cbind(r0, as.matrix(object$params$row.params.random))
       } 
       if(!is.null(object$params$row.params.fixed)){
@@ -401,14 +390,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
       }
       
-      eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
-    }
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+    
   }
+  
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
@@ -417,10 +407,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(object$y)))
     }
     
-    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)))
+    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)), drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
     eta <- eta + as.matrix(spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){
@@ -471,6 +461,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       "logL" %in% type) 
     out <- object$logL
   if (any(object$family == "ordinal") && (type == "response" | type == "class")) {
+    if(is.null(out)){ out <- eta; out[] <- NA}
+    
     ordi_ind <- c(1:p)[object$family == "ordinal"]
     if (object$zeta.struc == "species") {
       k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
@@ -478,19 +470,14 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                                  p), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE), 
                                                            sep = ""), NULL, NULL))
       if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-      for (i in 1:n) {
-        for (j in ordi_ind) {
-          probK <- NULL
-          probK[1] <- ilinkfun[[pointer[j]]](object$params$zeta[j, 1] -  eta[i, j])
-          probK[k.max[j]] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j, k.max[j] - 1] - eta[i, j])
-          if (k.max[j] > 2) {
-            j.levels <- 2:(k.max[j] - 1)
-            for (k in j.levels) {
-              probK[k] <- ilinkfun[[pointer[j]]](object$params$zeta[j, k] - eta[i, j]) - ilinkfun[[pointer[j]]](object$params$zeta[j, k - 1] - eta[i, j])
-            }
-          }
-          preds[, i, j] <- c(probK, rep(NA, max(k.max) - k.max[j]))
+      for (j in ordi_ind) {
+        probK <- matrix(nrow=k.max[j],ncol=n)
+        probK[1:(k.max[j]-1),] <- ilinkfun[[pointer[j]]](outer(object$params$zeta[j,1:k.max[j]-1], eta[,j], function(zeta, eta)zeta-eta))
+        if(k.max[j]>2){
+        probK[2:(k.max[j]-1), ] <- probK[2:(k.max[j]-1),,drop=FALSE] - probK[1:(k.max[j]-2),,drop=FALSE]
         }
+        probK[k.max[j],] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j,k.max[j] - 1] - eta[, j])
+        preds[1:k.max[j],, j] <- probK
       }
     } else {
       kz <- any(object$family == "orderedBeta")*2
@@ -499,18 +486,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                      dimnames = list(paste("level", 1:max(k.max), 
                                            sep = ""), NULL, NULL))
       if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-      for (i in 1:n) {
-        for (j in 1:p) {
-          probK <- NULL
-          probK[1] <- ilinkfun[[pointer[j]]](object$params$zeta[1+kz] - eta[i, j])
-          probK[k.max] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[i, j])
-          levels <- 2:(k.max - 1)
-          for (k in levels) {
-            probK[k] <- ilinkfun[[pointer[j]]](object$params$zeta[k + kz] - eta[i, j]) - ilinkfun[[pointer[j]]](object$params$zeta[k - 1 + kz] - eta[i, j])
+        for (j in ordi_ind) {
+          probK <- matrix(nrow=k.max,ncol=n)
+          probK[1:(k.max-1),] <- ilinkfun[[pointer[j]]](outer(tail(object$params$zeta,k.max-1), eta[,j], function(zeta, eta)zeta-eta))
+          if(k.max>2){
+          probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
           }
-          preds[, i, j] <- c(probK)
+          probK[k.max,] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[, j])
+          preds[1:k.max,, j] <- probK
         }
-      }
       dimnames(preds)[[3]] <- colnames(object$y)
     }
     if(type == "response") {
@@ -546,7 +530,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       incla <- rep(FALSE, length(object$TMBfn$par))
       if((num.lv.c+num.lv+num.lv.cor)>0)incla[names(object$TMBfn$par)=="u"] <- TRUE
       if("Br" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="Br"] <- TRUE
-      if(num.RR>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
+      if((num.RR+num.lv.c)>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
       if("r0r" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="r0r"] <- TRUE
     }
     
@@ -746,8 +730,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         names(newobject$params$B) <- names(object$params$B)
       }
       
-      if(!is.null(newpars$params$r0f))
-        newobject$params$row.params.fixed <- newpars$r0f
+      if(!is.null(newpars$r0f))
+        newobject$params$row.params.fixed <- c(newpars$r0f)
       
       if(num.RR>0 && isFALSE(object$randomB))
         newobject$params$LvXcoef <- newpars$b_lv
@@ -765,7 +749,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(!is.null(newrfs$b_lv))
           newobject$params$LvXcoef <- newrfs$b_lv
         if(!is.null(newrfs$r0r))
-          newobject$params$row.params.random  <- newrfs$r0r
+          newobject$params$row.params.random  <- c(newrfs$r0r)
       }
       if(!any(object$family == "ordinal") || type == "link")
         predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)

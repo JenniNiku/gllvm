@@ -1294,7 +1294,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(link=="probit") extra[family == "betaH"]=1
       }
       if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
-      if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12}
+      if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
+      if(link=="probit")extra[family == "orderedBeta"]=1
+      }
       if(any(family == "ZIB")){
         familyn[family == "ZIB"] =13
         if(link=="probit") extra[family == "ZIB"]=1
@@ -1889,7 +1891,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       #   map.list$bH = factor(NA)
       # }
       if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
-      if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12}
+      if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
+      if(link=="probit")extra[family == "orderedBeta"]=1
+      }
       if(any(family == "ZIB")){ 
         familyn[family == "ZIB"] =13;
         if(link=="probit") extra[family == "ZIB"]=1
@@ -2597,6 +2601,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(nrow(dr)==n){ 
           out$dr=dr
           iter = 1 # keep track of index
+
           for(re in 1:length(cstrucn)){
             if(cstrucn[re] %in% c(0,-1, 5, 6)){
               # diag, ustruc, propto, proptoustruc
@@ -2608,7 +2613,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
             }else if(cstrucn[re] %in% c(1,3)) {
@@ -2646,7 +2651,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -2660,7 +2665,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -2675,7 +2680,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -2690,7 +2695,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
               RHS <- form[[3]]
               
-              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", RHS)
+              names(sigma)[iter:(iter+trmsize[1,re]-1)] <- paste0(LHS, "|", deparse(RHS))
               
               iter <- iter + trmsize[1,re]
               sigma[iter] <- exp(sigma[iter])
@@ -2719,7 +2724,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
             RHS <- form[[3]]
             
-            colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", RHS)
+            colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", deparse(RHS))
             }
             
             out$params$sigmaijr=as.matrix(Matrix::bdiag(D))

@@ -3354,30 +3354,30 @@ Type objective_function<Type>::operator() ()
       
     case TWEEDIE: {// Tweedie family 5
       if(method >1){ // Tweedie EVA
-        ePower = invlogit(ePower) + Type(1);
+        Type ePower1 = invlogit(ePower) + Type(1);
         for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
               // Tweedie log-likelihood:
-              nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), ePower, true);
+              nll -= dtweedie(y(i,j), exp(eta(i,j)), iphi(j), ePower1, true);
               if (y(i,j) == 0) {
                 // Hessian-trace part:
-                nll += (1/iphi(j)) * (2-ePower)*exp(2*eta(i,j))*exp(-ePower*eta(i,j)) * cQ(i,j);
+                nll += (1/iphi(j)) * (2-ePower1)*exp(2*eta(i,j))*exp(-ePower1*eta(i,j)) * cQ(i,j);
               } else if (y(i,j) > 0) {
-                nll -= (1/iphi(j)) * (y(i,j)*(1-ePower)*exp((1-ePower)*eta(i,j)) - (2-ePower)*exp((2-ePower)*eta(i,j))) * cQ(i,j);
+                nll -= (1/iphi(j)) * (y(i,j)*(1-ePower1)*exp((1-ePower1)*eta(i,j)) - (2-ePower1)*exp((2-ePower1)*eta(i,j))) * cQ(i,j);
               }
             }
         }
       }else if(method <1){ // Tweedie VA
-        ePower = invlogit(ePower) + Type(1);
+        Type ePower1 = invlogit(ePower) + Type(1);
         for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
-              Type p1 = ePower - 1.0, p2 = 2.0 - ePower;
+              Type p1 = ePower1 - 1.0, p2 = 2.0 - ePower1;
               Type ans = -pow(exp(eta(i,j)+p2*cQ(i,j)), p2)/(iphi(j)*p2);
                if(y(i,j)>0){
                 CppAD::vector<Type> tx(4);
                 tx[0] = y(i,j);
                 tx[1] = iphi(j);
-                tx[2] = ePower;
+                tx[2] = ePower1;
                 tx[3] = 0;
                 ans += atomic::tweedie_logW(tx)[0];
                 ans += -y(i,j) / (iphi(j) * p1 * pow(exp(eta(i,j)-p1*cQ(i,j)), p1)) - log(y(i,j));
@@ -3423,8 +3423,8 @@ Type objective_function<Type>::operator() ()
             for(int k=0; k<(Kj-1); k++){
               zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
             }
+            idx += Kj-1; 
           }
-          idx += Kj-1; 
         
         if (method<1) { // VA
           if(extra(j) == 0){ //va logit
@@ -3875,13 +3875,10 @@ Type objective_function<Type>::operator() ()
         idx += 2;
       }
       if(method<1) { // ordered Beta VA-EVA hybrid
-        
+        if(extra(j)==1){
+          //probit
         Type mu_prime;
         Type mu_prime2;
-        CppAD::vector<Type> z;
-        if(extra(j)==0){
-          z = CppAD::vector<Type> (4);
-        }
         CppAD::vector<Type> a(2);
         CppAD::vector<Type> b(2);
         CppAD::vector<Type> aa;
@@ -3902,17 +3899,17 @@ Type objective_function<Type>::operator() ()
                 // mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
                 // nll -= log(pow(1.0 - pnorm(zetacutoffnew(j,1) - eta(i,j), Type(0), Type(1)), y(i,j)) * pow(pnorm(zetacutoffnew(j,0) - eta(i,j), Type(0), Type(1)),(1-y(i,j)))) - cQ(i,j);
                 mu(i,j) = pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
-                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+                mu(i,j) = CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+1e-12, mu(i,j));
                 nll -= (1-y(i,j))*log(mu(i,j)) - cQ(i,j); //
               } else if((y(i,j)==1)){
                 mu(i,j) = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1));
-                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+                mu(i,j) = CppAD::CondExpLt(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
                 nll -= y(i,j)*log(1.0 - mu(i,j)) - cQ(i,j); //
               } else{
                 // if (extra(j) == 1) { // probit
                 // if(zetacutoff.size()>p) {
                 mu(i,j) = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1)) - pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
-                mu(i,j) = CppAD::CondExpLe(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);  
+                mu(i,j) = CppAD::CondExpGt(mu(i,j), Type(1e-12), mu(i,j), mu(i,j)+1e-12);  
                 nll -= log(mu(i,j)) - cQ(i,j); //
                   // Type a1 = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1)) - pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
                   // a1 = CppAD::CondExpLe(a1, Type(1.0), a1, a1-1e-12);  
@@ -3946,6 +3943,71 @@ Type objective_function<Type>::operator() ()
               
             }
           // }
+        }
+        }else if(extra(j)==0){
+          //logit
+          Type mu_prime;
+          Type mu_prime2;
+          CppAD::vector<Type> z;
+          z = CppAD::vector<Type> (4);
+          CppAD::vector<Type> a(2);
+          CppAD::vector<Type> b(2);
+          CppAD::vector<Type> aa;
+          CppAD::vector<Type> bb;
+          Type dig_a;
+          Type dig_b;
+          Type trig_a;
+          Type trig_b;
+          
+          for (int i=0; i<n; i++) {
+            // for (int j=0; j<p; j++) {
+            if(!gllvmutils::isNA(y(i,j))){
+              // logit link
+              if((y(i,j)==0)){
+                  Type wij = 0.5*sqrt((zetacutoffnew(0)-eta(i,j))*(zetacutoffnew(0)-eta(i,j)) + 2*cQ(i,j));
+                  nll -= 0.5*(zetacutoffnew(0)-eta(i,j)) - logspace_add(wij, -wij);
+              } else if((y(i,j)==1)){
+                Type wij = 0.5*sqrt((eta(i,j)-zetacutoffnew(1))*(eta(i,j)-zetacutoffnew(1)) + 2*cQ(i,j));
+                nll -= 0.5*(eta(i,j)-zetacutoffnew(1)) - logspace_add(wij, -wij);
+              } else{
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(0))), eta(i,j)-zetacutoffnew(0));
+                nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(1), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(1))), eta(i,j)-zetacutoffnew(1));
+                nll -= eta(i,j) - zetacutoffnew(0);
+                nll -= CppAD::CondExpLe(zetacutoffnew(1)-zetacutoffnew(0), log(Type(2.)), log(-gllvmutils::expminus1(zetacutoffnew(0)-zetacutoffnew(1))),  gllvmutils::log1plus(-exp(zetacutoffnew(0)-zetacutoffnew(1))));
+                nll -= -gllvmutils::mfexp(dlogis(zetacutoffnew(0), eta(i,j), Type(1), 1))*cQ(i,j); 
+                nll -= -gllvmutils::mfexp(dlogis(zetacutoffnew(1), eta(i,j), Type(1), 1))*cQ(i,j);
+              
+                CppAD::vector<Type> z(4);
+                z[0] = eta(i,j);
+                z[1] = 0;
+                z[2] = 1/(1+exp(-z[0]));
+                z[3] = exp(z[0])/(exp(z[0])+1);
+                
+                mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+                mu_prime = mu(i,j) * (1-mu(i,j));
+                mu_prime2 = mu_prime * (1-2*mu(i,j));
+                
+                a[0] = mu(i,j)*iphi(j);
+                a[1] = 1;
+                b[0] = (1-mu(i,j))*iphi(j);
+                b[1] = 1;
+                aa = a;
+                bb = b;
+                aa[1] = 2;
+                bb[1] = 2;
+                dig_a = Type(atomic::D_lgamma(a)[0]);
+                dig_b = Type(atomic::D_lgamma(b)[0]);
+                trig_a = Type(atomic::D_lgamma(aa)[0]);
+                trig_b = Type(atomic::D_lgamma(bb)[0]);
+                
+                nll -= dbeta(y(i,j), Type(a[0]), Type(b[0]), 1);
+                nll -= ((-trig_a) * pow(iphi(j)*mu_prime, 2) - dig_a * iphi(j) * mu_prime2 - trig_b * pow(iphi(j)*mu_prime, 2) + dig_b * iphi(j) * mu_prime2) * cQ(i,j);
+                nll -= iphi(j) * mu_prime2 * logit(y(i,j)) * cQ(i,j);
+              }
+              
+            }
+            // }
+          }
         }
         
       } else if (method>1) {  // Ordered beta EVA
