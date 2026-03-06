@@ -575,6 +575,39 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
       }else{
         Vr <- CMSEPf(object, return.covb = TRUE)
+        renms <- c("r0r","Br","u")
+        if(!isFALSE(object$randomB))renms <- c(renms, "b_lv")
+        colnames(Vr) <- row.names(Vr) <- names(object$TMBfn$par[names(object$TMBfn$par)%in%renms])
+        if(!is.null(object$Ar))Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] <- as.matrix(Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] + Matrix::bdiag(object$Ar))
+        if(object$col.eff$col.eff=="random"){
+            if(object$col.eff$Ab.struct %in% c("diagonal", "blockdiagonal")){
+              Ab <- Matrix::bdiag(object$Ab)
+            }else if(object$col.eff$Ab.struct == "diagonalCL2"){
+              Ab <- Matrix::bdiag(object$Ab)[order(rep(1:p,times=nrow(object$params$Br))),order(rep(1:p,times=nrow(object$params$Br)))]
+            }else if(object$col.eff$Ab.struct %in% c("unstructured", "diagonalsp", "blockdiagonalsp")){
+              Ab <- object$Ab[[1]]
+            }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
+              Ab <- kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])
+            }else if(object$col.eff$Ab.struct %in% c("diagonalCL1", "CL1", "CL2")){
+              Ab <- object$Ab # double check ordering
+            }
+          Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] <- Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] + Ab
+        }
+        if((object$num.lv+object$num.lv.c)>0){
+          A <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
+          d <- object$num.lv+object$num.lv.c
+          idx <- rep(1:n, each = d) + rep(c(0, rep(n,d-1)*(1:(d-1))), times=n)
+          Vr[row.names(Vr) == "u", colnames(Vr) == "u"] <- as.matrix(Vr[row.names(Vr) == "u", colnames(Vr) == "u"] + Matrix::bdiag(A)[order(idx),order(idx)])
+        }
+        if(!isFALSE(object$randomB)){
+          d <- object$num.RR+object$num.lv.c
+          K <- nrow(object$params$LvXcoef)
+          Ab.lv <- lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[ 1, , ])
+          Ab.lv <- Matrix::bdiag(Ab.lv)
+          idx <- 1:(d*K)
+          if(object$randomB=="LV") idx <- rep(1:K, each = d) + rep(c(0, rep(K,d-1)*(1:(d-1))), times=K)
+          Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] <- as.matrix(Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] + Ab.lv[order(idx),order(idx)])
+        }
       }
       if(min(diag(Vr))/max(diag(Vr))<.Machine$double.eps)warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
