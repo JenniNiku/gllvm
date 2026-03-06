@@ -444,6 +444,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     ilinkfun <- c(ilinkfun, gaussian()$linkinv)
     pointer[object$family %in% c("gaussian")] <- length(ilinkfun)
   }
+  if(any(object$family == "betaH")){
+    pointer <- c(pointer, rep(unique(pointer[object$family == "betaH"]), sum(object$family == "betaH")))
+  }
   out <- NULL
   preds <- NULL
   if ("link" %in% type) 
