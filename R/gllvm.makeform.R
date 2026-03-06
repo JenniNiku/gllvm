@@ -262,6 +262,7 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
     colnames(mm)[colnames(mm)%in%"(Intercept)"] <- ""
   }
   
+  if(!is.factor(ff))ff <- as.factor(ff)
   dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, nc = ncol(mm), cnms = row.names(sm), fm = fm)
 }
