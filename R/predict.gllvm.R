@@ -297,7 +297,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
           RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula)), drop.unused.levels = FALSE) #still add find double bars
+          # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
           lv.X = t(as.matrix(RElistLV$Zt))
+          lv.X <- lv.X[,colnames(lv.X)%in%colnames(object$lv.X.design),drop=FALSE]
+          
         }else{
           lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
         }
@@ -371,6 +374,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           colnames(mf.new) <- colnames(mf)
           RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc, drop.unused.levels = FALSE)
           dr <- Matrix::t(RElistRow$Zt)
+          # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
+          dr <- dr[,colnames(dr)%in%colnames(object$dr),drop=FALSE]
         }
         row.eff <- nobars1_(row.eff)
       }
@@ -409,6 +414,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
     RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)), drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
+    # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
+    spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
+    
     eta <- eta + as.matrix(spdr%*%object$params$Br)
     if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }
