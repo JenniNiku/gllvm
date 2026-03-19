@@ -181,7 +181,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       n_pos <- sum(c(y) > 0)
       n_neg <- sum(c(y) == 0)
       sum_ranks_pos <- sum(ranks[c(y) >0])
-      out$AUC <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
+      out$AUC <-  exp(log(sum_ranks_pos - n_pos*(n_pos + 1)/2) -log(n_pos)-log(n_neg))#(sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) # can overflow for large n_pos, n_neg
     }
   
   }
