@@ -2283,8 +2283,8 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB")){
-        if(family == "tweedie"){
+      if(any(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB"))){
+        if(any(family == "tweedie")){
           start.optimizer <- "optim"
           optim.method  =  "L-BFGS-B"
         }
