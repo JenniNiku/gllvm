@@ -15,6 +15,7 @@ Version 2.0.8
 * 2.0.7 did not install on ubuntu due to string error in new enum check
 * bugfix in plot.gllvm that left plots empty under particular settings
 * bugfix in nested random row effects
+* bugfix in phyloplot.gllvm that prevented uncertain random effects from being crossed out
 
 
 Version 2.0.7
