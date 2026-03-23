@@ -291,7 +291,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     colnames(y) <- paste("Col", 1:p, sep = "")
   if(any(family == "ordinal")) {
     y00 <- y[,family == "ordinal", drop=FALSE]
-    if(min(y[,family == "ordinal"]) == 0){ y[,family == "ordinal"] = y[,family == "ordinal"]+1}
+    if(min(y[,family == "ordinal"],na.rm=TRUE) == 0){ y[,family == "ordinal"] = y[,family == "ordinal"]+1}
   }
 
   
@@ -615,7 +615,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       zetaO = NULL
       if(any(family%in%c("ordinal", "orderedBeta"))) {
         if(any(family%in%c("ordinal"))){
-          K = max(y00)-min(y00)
+          K = max(y00,na.rm=TRUE)-min(y00,na.rm=TRUE)
         } else {K=2}
         if(zeta.struc =="common") {
           if(any(family%in%c("orderedBeta"))){
@@ -1675,7 +1675,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         zetas = objr$env$parList()$zeta
         # zetas <- param[names(param)=="zeta"]
         if(any(family == "ordinal")){
-            K = max(y00)-min(y00)
+            K = max(y00,na.rm=TRUE)-min(y00,na.rm=TRUE)
         } else {
           K = 2
         }
@@ -1688,7 +1688,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }
           if(any(family%in%c("ordinal"))){
             zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
-            names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+            names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
             # zetanew <- c(0,zetas)
             # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
           }
@@ -1714,7 +1714,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           } # end for j
           row.names(zetanew) <- colnames(y); 
           if(any(family%in%c("ordinal"))){
-            colnames(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+            colnames(zetanew) <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
           } else {
             colnames(zetanew) <- c("cutoff0","cutoff1")
           }
@@ -2380,7 +2380,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         zetas = objr$env$parList()$zeta
         # zetas <- param[names(param)=="zeta"]
         if(any(family == "ordinal")){
-          K = max(y00)-min(y00)
+          K = max(y00,na.rm=TRUE)-min(y00,na.rm=TRUE)
         } else {
           K = 2
         }
@@ -2393,7 +2393,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }
           if(any(family%in%c("ordinal"))){
             zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
-            names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+            names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
             # zetanew <- c(0,zetas)
             # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
           }
@@ -2419,7 +2419,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           } # end for j
           row.names(zetanew) <- colnames(y); 
           if(any(family%in%c("ordinal"))){
-            colnames(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+            colnames(zetanew) <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
           } else {
             colnames(zetanew) <- c("cutoff0","cutoff1")
           }

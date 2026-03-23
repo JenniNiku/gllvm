@@ -262,7 +262,7 @@ trait.TMB <- function(
   y <- as.matrix(y)
   if(any(family == "ordinal")) {
     y00 <- y[,family == "ordinal", drop=FALSE]
-    if(min(y[,family == "ordinal"]) == 0){ y[,family == "ordinal"] = y[,family == "ordinal"]+1}
+    if(min(y[,family == "ordinal"],na.rm=TRUE) == 0){ y[,family == "ordinal"] = y[,family == "ordinal"]+1}
   }
   if(!is.null(X)) { if(is.null(colnames(X))) colnames(X) <- paste("x",1:ncol(X),sep="") }
   
@@ -687,7 +687,7 @@ trait.TMB <- function(
       zetaO = NULL
       if(any(family%in%c("ordinal", "orderedBeta"))){
         if(any(family%in%c("ordinal"))){
-          K = max(y00)-min(y00)
+          K = max(y00,na.rm=TRUE)-min(y00,na.rm=TRUE)
         } else {K=2}
         
         if(zeta.struc =="common") {
@@ -1665,7 +1665,7 @@ trait.TMB <- function(
       zetas = objr$env$parList()$zeta
       # zetas <- param[names(param)=="zeta"]
       if(any(family == "ordinal")){
-        K = max(y00)-min(y00)
+        K = max(y00,na.rm=TRUE)-min(y00,na.rm=TRUE)
       } else {
         K = 2
       }
@@ -1678,7 +1678,7 @@ trait.TMB <- function(
         }
         if(any(family%in%c("ordinal"))){
           zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
-          names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+          names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
           # zetanew <- c(0,zetas)
           # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
         }
@@ -1689,7 +1689,7 @@ trait.TMB <- function(
         for (j in o_ind) {
           if(family[j]=="ordinal"){
             zetanew[j,1] <- 0 
-            k<-max(y[,j])-2
+            k<-max(y[,j],na.rm=TRUE)-2
             if(k>0){
               for(l in 1:k){
                 zetanew[j,l+1]<-zetas[idx+l]
@@ -1704,7 +1704,7 @@ trait.TMB <- function(
         } # end for j
         row.names(zetanew) <- colnames(y); 
         if(any(family%in%c("ordinal"))){
-          colnames(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
+          colnames(zetanew) <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
         } else {
           colnames(zetanew) <- c("cutoff0","cutoff1")
         }

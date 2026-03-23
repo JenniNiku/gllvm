@@ -15,14 +15,14 @@ gllvm.iter <- function(...){
   if (is.null(colnames(args$y)))
     colnames(args$y) <- paste("Col", 1:ncol(args$y), sep = "")
   if(any(args$family == "ordinal")){
-    max.levels <- apply(args$y[,args$family == "ordinal", drop=FALSE],2,function(x) length(min(x):max(x)))
+    max.levels <- apply(args$y[,args$family == "ordinal", drop=FALSE],2,function(x) length(min(x,na.rm=TRUE):max(x,na.rm=TRUE)))
     if(any(max.levels == 1)&args$zeta.struc=="species" || all(max.levels == 2)&args$zeta.struc=="species")
       stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead.")
     if(any(!apply(args$y[,args$family == "ordinal", drop=FALSE],2,function(x)all(diff(sort(unique(x)))==1)))&args$zeta.struc=="species"){
       warning("Can't fit ordinal model if there are species with missing classes. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }
-    if(!all(min(args$y[,args$family == "ordinal", drop=FALSE])==apply(args$y[,args$family == "ordinal", drop=FALSE],2,min))&args$zeta.struc=="species"){
+    if(!all(min(args$y[,args$family == "ordinal", drop=FALSE],na.rm=TRUE)==apply(args$y[,args$family == "ordinal", drop=FALSE],2,min,na.rm=TRUE))&args$zeta.struc=="species"){
       warning("For ordinal data and zeta.struc=`species` all species must have the same minimum category. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
     }
