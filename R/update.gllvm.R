@@ -26,7 +26,7 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     call <- object
   }
   
-  match.call(expand.dots = FALSE, call = call)
+  call.update <- match.call()
   
   args <- list(...)
   
@@ -62,15 +62,12 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     call[["row.eff"]] <- row.eff
   }
   
+  call.update[names(call.update)%in%c("object","row.eff","formula","lv.formula","eval","")] <- NULL
+
   # Add or override other arguments from ...
-  for (arg_name in names(args)) {
-    if(is.matrix(args[[arg_name]]) || is.data.frame(args[[arg_name]])){
-      # prevent this from getting evaluated
-      call[[arg_name]] <- as.name(arg_name)
-    }else {
-      call[[arg_name]] <- args[[arg_name]]
+  for (arg_name in names(call.update)) {
+      call[[arg_name]] <- call.update[[arg_name]]
     }
-  }
 
   if(eval){
     eval(call, parent.frame())
