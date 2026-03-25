@@ -62,13 +62,14 @@ update.gllvm <- function(object, formula = NULL, lv.formula = NULL, row.eff = NU
     call[["row.eff"]] <- row.eff
   }
   
+  if(!any(names(call.update)%in%c("object","row.eff","formula","lv.formula","eval",""))){
   call.update[names(call.update)%in%c("object","row.eff","formula","lv.formula","eval","")] <- NULL
 
   # Add or override other arguments from ...
   for (arg_name in names(call.update)) {
       call[[arg_name]] <- call.update[[arg_name]]
     }
-
+  }
   if(eval){
     eval(call, parent.frame())
   }else{
