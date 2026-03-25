@@ -403,7 +403,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
@@ -418,7 +418,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
     
     eta <- eta + as.matrix(spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){
