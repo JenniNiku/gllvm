@@ -609,7 +609,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             }
           Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] <- Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] + Ab
         }
-        if((object$num.lv+object$num.lv.c)>0){
+        if((object$num.lv+object$num.lv.c)>0 && n == nrow(object$y)){
           # coefficients are sorted per LV
           
           A <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
