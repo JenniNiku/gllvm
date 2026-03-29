@@ -44,7 +44,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
   
   nRows = dim(object$y)[1]
   if(!is.null(newX)){
-    if(conditional)stop("Cannot simulate with 'conditional = FALSE' and new covariates.")
+    if(conditional)stop("Cannot simulate with 'conditional = TRUE' and new covariates.")
     nRows = nrow(newX)
   }
   nCols = dim(object$y)[2]
