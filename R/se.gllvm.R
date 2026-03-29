@@ -106,9 +106,8 @@ se.gllvm <- function(object, ...){
       
       incl[names(objrFinal$par)=="lg_Ar"] <- FALSE;
       incl[names(objrFinal$par)=="Au"] <- FALSE;
-      incl[names(objrFinal$par)=="u"] <- FALSE; 
-      
-      if(quadratic == FALSE){incl[names(objrFinal$par)=="lambda2"]<-FALSE}
+      incl[names(objrFinal$par)=="u"] <- FALSE;
+
       # if(object$beta0com){ incl[names(objrFinal$par)=="b"] <- FALSE}
       if(all(familyn!=7) & all(familyn!=12)) incl[names(objrFinal$par)=="zeta"] <- FALSE
       if(all(familyn %in% c(0,2,7, 8))) incl[names(objrFinal$par)=="lg_phi"] <- FALSE
