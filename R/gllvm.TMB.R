@@ -1345,7 +1345,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list = list(r0r = matrix(r0r), sigmaijr =  sigmaijr, r0f = matrix(r0f), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, sigmaB = sigmaB, rho_lvc=rho_lvc, Au=Au, lg_Ar =lg_Ar, Abb = spAr, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=TRUE,
+          data = data.list, silent=!trace,
           parameters = parameter.list, map = map.list2,
           DLL = "gllvm")##GLLVM
         
@@ -1383,7 +1383,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
-        data = data.list, silent=TRUE,
+        data = data.list, silent=!trace,
         parameters = parameter.list, map = map.list,
         DLL = "gllvm")##GLLVM
  
@@ -1597,7 +1597,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list <- list(r0r = r0r1, sigmaijr = sigmaijr1, r0f = r0f1, b = b1, b_lv = b.lv1, sigmaB = sigmaB1, Abb = spAr1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B = B1, Br=Br1,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=TRUE,
+          data = data.list, silent=!trace,
           parameters = parameter.list, map = map.list,
           DLL = "gllvm")
         
@@ -1918,7 +1918,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=TRUE,
+          data = data.list, silent=!trace,
           parameters = parameter.list, map = map.list2,
           DLL = "gllvm")##GLLVM
         
