@@ -206,6 +206,8 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
     }
   }
   ff <- eval(substitute(fac, list(fac = x[[3]])), frloc)
+  # interactions with unobserved combinations need to be caught
+  if(is.factor(ff) && drop.unused.levels)ff <- droplevels(ff) 
   nl <- length(levels(ff))
   
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
@@ -220,7 +222,8 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
     sm <- matrix(1, ncol = nrow(mm))
   }
   # row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
-  if(length(levels(ff))==1 && levels(ff)==as.character(1)){
+  if(!is.factor(ff) && length(ff)==1|| is.factor(ff) && length(ff) == 1 && levels(ff)==as.character(1)){
+    ff <- factor(ff)
     levels(ff) <- ""
   }
   
@@ -262,6 +265,7 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
     colnames(mm)[colnames(mm)%in%"(Intercept)"] <- ""
   }
   
+  if(!is.factor(ff))ff <- as.factor(ff)
   dimnames(sm) <- list(make.names(paste0(rep(colnames(mm), length(levels(ff))), rep(levels(ff), each=ncol(mm)))), row.names(mm))
   list(ff = ff, sm = sm, nl = nl, nc = ncol(mm), cnms = row.names(sm), fm = fm)
 }

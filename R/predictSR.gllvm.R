@@ -432,7 +432,7 @@ poisbinom <- function(prob) {
 residuals.predictSR.gllvm <- function(predSR, object, ...){
   
   # ensure ordinal starts at 0
-  if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min)
+  if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min, na.rm = TRUE)
   
   y = rowSums(ifelse(object$y==0,0,1))
   n = length(y)
@@ -450,8 +450,8 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   
   u <- a + (b - a) * runif(n)
   
-  if (any(u == 1, na.rm = TRUE))
-    u[u == 1] <- 1 - 1e-16
+  if (any(u>(1-1e-16), na.rm = TRUE))
+    u[u>(1-1e-16)] <- 1 - 1e-16
   
   if (any(u == 0, na.rm = TRUE))
     u[u == 0] <- 1e-16

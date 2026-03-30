@@ -89,7 +89,7 @@ residuals.gllvm <- function(object, ...) {
     p_f = sum(object$family == "negative.binomial1")
     phis <- object$params$phi[object$family == "negative.binomial1"] + 1e-05
     b <- pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n))
-    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n)))
+    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]) - 1, mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n)))
     
     u = a+(b-a)*runif(n*p_f)
     
@@ -313,8 +313,8 @@ residuals.gllvm <- function(object, ...) {
             }
             probK[k.max,] <- 1 - binomial(link=object$link)$linkinv(object$params$zeta[k.max - 1 + kz] - eta.mat[, j])
             probK <- rbind(0, probK)
-            cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y)==0,1,0)+1,"<="))
-            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y)==0,1,0),"<=")))
+            cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y[,o_ind])==0,1,0)+1,"<="))
+            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y[,o_ind])==0,1,0),"<=")))
             
             u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
             

@@ -69,7 +69,7 @@ start_values_gllvm_TMB <- function(
       max.levels = apply(y[,family == "ordinal", drop=FALSE],2,function(x) length(min(x, na.rm=TRUE):max(x, na.rm=TRUE)) );
       if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If al columns only have two levels, please use family == binomial instead. Thanks")
     }else if(any(family=="ordinal") && zeta.struc == "common"){
-      max.levels = length(min(y[,family == "ordinal"]):max(y[,family == "ordinal"]))
+      max.levels = length(min(y[,family == "ordinal"],na.rm=TRUE):max(y[,family == "ordinal"],na.rm=TRUE))
     }
     if(zeta.struc == "species"){
       zeta <- matrix(NA,p,max(max.levels - 1,2))
@@ -1305,7 +1305,7 @@ calc.infomat <- function(theta = NULL, beta0=NULL, env = NULL, row.params = NULL
   if(!is.null(TR)) num.T <- ncol(TR)
   trial.size <- 1
   if(any(family == "ordinal")) {
-    max.levels <- max(y[,family == "ordinal"])
+    max.levels <- max(y[,family == "ordinal"],na.rm=TRUE)
     if(any(max.levels == 1) || all(max.levels == 2)) stop("Ordinal data requires all columns to have at least has two levels. If all columns only have two levels, please use family == binomial instead. Thanks")
   }
   if (is.null(offset))  offset <- matrix(0, nrow = n, ncol = p)
@@ -2283,8 +2283,8 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB")){
-        if(family == "tweedie"){
+      if(any(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB"))){
+        if(any(family == "tweedie")){
           start.optimizer <- "optim"
           optim.method  =  "L-BFGS-B"
         }

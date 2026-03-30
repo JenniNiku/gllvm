@@ -159,7 +159,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
     
   }
     if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))){
-      binfam <- object$family %in% c(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))
+      binfam <- object$family %in% c("binomial","ordinal","ZNIB","ZIB")
       
       if(object$link == "probit"){
         ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))

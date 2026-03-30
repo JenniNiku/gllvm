@@ -297,7 +297,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
           RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula)), drop.unused.levels = FALSE) #still add find double bars
+          # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
           lv.X = t(as.matrix(RElistLV$Zt))
+          lv.X <- lv.X[,colnames(lv.X)%in%colnames(object$lv.X.design),drop=FALSE]
+          
         }else{
           lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
         }
@@ -371,6 +374,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           colnames(mf.new) <- colnames(mf)
           RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc, drop.unused.levels = FALSE)
           dr <- Matrix::t(RElistRow$Zt)
+          # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
+          dr <- dr[,colnames(dr)%in%colnames(object$dr),drop=FALSE]
         }
         row.eff <- nobars1_(row.eff)
       }
@@ -398,7 +403,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
     eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
@@ -409,8 +414,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     
     RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)), drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
+    # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
+    spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
+    
     eta <- eta + as.matrix(spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params["B"]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){
@@ -575,6 +583,51 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
       }else{
         Vr <- CMSEPf(object, return.covb = TRUE)
+        renms <- c("r0r","Br","u")
+        if(!isFALSE(object$randomB))renms <- c(renms, "b_lv")
+        colnames(Vr) <- row.names(Vr) <- names(object$TMBfn$par[names(object$TMBfn$par)%in%renms])
+        if(!is.null(object$Ar)){
+          # coefficients are sorted per random effect
+          Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] <- as.matrix(Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] + Matrix::bdiag(object$Ar))
+        }
+        if(object$col.eff$col.eff=="random"){
+          # coefficients are sorted per species
+          
+            if(object$col.eff$Ab.struct %in% c("diagonal", "blockdiagonal")){
+              Ab <- Matrix::bdiag(object$Ab)
+            }else if(object$col.eff$Ab.struct == "diagonalCL2"){
+              Ab <- Matrix::bdiag(object$Ab)[order(rep(1:p,times=nrow(object$params$Br))),order(rep(1:p,times=nrow(object$params$Br)))]
+            }else if(object$col.eff$Ab.struct %in% "unstructured"){
+              Ab <- object$Ab[[1]]
+            }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
+              # Ab[[1]] is the row covariance, Ab[[2]] the species'
+              # sorting is per species, i.e., species number of covariate by covariate blocks on the diagonal
+              Ab <- kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])
+            }else if(object$col.eff$Ab.struct %in% c("diagonalCL1", "CL1", "CL2")){
+              # sorting is also per species
+              Ab <- object$Ab
+            }
+          Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] <- Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] + Ab
+        }
+        if((object$num.lv+object$num.lv.c)>0 && n == nrow(object$y)){
+          # coefficients are sorted per LV
+          
+          A <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
+          d <- object$num.lv+object$num.lv.c
+          idx <- rep(1:n, each = d) + rep(c(0, rep(n,d-1)*(1:(d-1))), times=n)
+          Vr[row.names(Vr) == "u", colnames(Vr) == "u"] <- as.matrix(Vr[row.names(Vr) == "u", colnames(Vr) == "u"] + Matrix::bdiag(A)[order(idx),order(idx)])
+        }
+        if(!isFALSE(object$randomB)){
+          # coefficients are sorted per lV
+          
+          d <- object$num.RR+object$num.lv.c
+          K <- nrow(object$params$LvXcoef)
+          Ab.lv <- lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[ 1, , ])
+          Ab.lv <- Matrix::bdiag(Ab.lv)
+          idx <- 1:(d*K)
+          if(object$randomB=="LV") idx <- rep(1:K, each = d) + rep(c(0, rep(K,d-1)*(1:(d-1))), times=K)
+          Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] <- as.matrix(Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] + Ab.lv[order(idx),order(idx)])
+        }
       }
       if(min(diag(Vr))/max(diag(Vr))<.Machine$double.eps)warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
       rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)

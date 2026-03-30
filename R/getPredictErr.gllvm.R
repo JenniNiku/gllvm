@@ -154,12 +154,15 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
         if(object$col.eff$Ab.struct %in% c("diagonal", "blockdiagonal")){
           object$Ab <- matrix(diag(sdb$Ab+Matrix::bdiag(object$Ab)), ncol = p)
         }else if(object$col.eff$Ab.struct == "diagonalCL2"){
+          # ordering is m independent blocks of p
           object$Ab <- matrix(diag(sdb$Ab+Matrix::bdiag(object$Ab)[order(rep(1:p,times=nrow(object$params$Br))),order(rep(1:p,times=nrow(object$params$Br)))]), ncol = p)
-        }else if(object$col.eff$Ab.struct %in% c("unstructured", "diagonalsp", "blockdiagonalsp")){
+        }else if(object$col.eff$Ab.struct %in% c("unstructured")){
           object$Ab <- matrix(diag(sdb$Ab+object$Ab[[1]]), ncol = p)
         }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
+          # ordering is p blocks of m
           object$Ab <- matrix(diag(sdb$Ab + kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])), ncol = p)
         }else if(object$col.eff$Ab.struct %in% c("diagonalCL1", "CL1", "CL2")){
+          # ordering is m blocks of size p
           object$Ab <- matrix(diag(sdb$Ab),ncol=p)+matrix(diag(object$Ab),byrow=TRUE,ncol=p)
         }
       }
