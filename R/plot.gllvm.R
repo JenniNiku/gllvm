@@ -107,15 +107,16 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
       xx <- qnorm(c(0.25, 0.75))
       slope <- diff(yy) / diff(xx)
       int <- yy[1L] - slope * xx[1L]
-      Xm <- Ym <- NULL
+      n.obs <- n*p-sum(is.na(ds.res))
+      
+      Ym <- matrix(0,nrow=n.obs,ncol=reps)
       for (i in 1:K) {
-        ri <- (rnorm(n * p-sum(is.na(ds.res)), int, sd = slope))
-        Ym <- cbind(Ym, sort(ri))
+        ri <- (rnorm(n.obs, int, sd = slope))
+        Ym[,i] <- sort(ri)
       }
       Xm <- sort(qq.x$x)
       cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
       
-      n.obs <- n*p-sum(is.na(ds.res))
       polygon(Xm[c(1:n.obs,n.obs:1)], c(cis[1, ],cis[2, n.obs:1]), col = envelope.col[2], border = NA)
       # qqline(c(res$residuals), col = envelope.col[1])
     }
