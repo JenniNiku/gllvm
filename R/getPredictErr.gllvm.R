@@ -87,7 +87,8 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
       }
       if(object$randomB!=FALSE) out$b.lv <- sqrt(abs(object$prediction.errors$Ab.lv))
       if(!is.null(object$randomX)){
-        out$Br  <- sqrt(apply(object$prediction.errors$Br,1,diag))
+        out$Br  <- sqrt(object$prediction.errors$Br)
+        # out$Br  <- sqrt(apply(object$prediction.errors$Br,1,diag))
       }
     }
   }

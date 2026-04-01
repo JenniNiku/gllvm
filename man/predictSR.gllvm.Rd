@@ -8,6 +8,7 @@
 \method{predictSR}{gllvm}(
   object,
   SR = NULL,
+  expected = "mean",
   se.fit = 10000,
   alpha = 0.95,
   seed = 42,
@@ -19,6 +20,8 @@
 \item{object}{an object of class 'gllvm'.}
 
 \item{SR}{integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.}
+
+\item{expected}{character, defaults to "mean", in which case the returned measure of central tendency for species richness is the Poisson-Binomial expectation. Alternatively can be "mode".}
 
 \item{se.fit}{integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.}
 
@@ -57,7 +60,7 @@ predSR <- predictSR(fit, newX = newX, level = 0)
 # Visualize the results
 par(mfrow = c(4,4))
 for(i in 0:ncol(fit$y)){
-plot(x = newX$soil.dry, y = predSR[,i+1], xlab = "Soil dry matter content", ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
+plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
 }
 
 }

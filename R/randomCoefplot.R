@@ -47,7 +47,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
   if((object$num.lv.c+object$num.RR)==0 && !is.null(object$params$Br) && !is.null(object$Xr)){
     if(is.null(which.Xcoef))which.Xcoef <- c(1:NROW(object$params$Br))
     Xcoef <- as.matrix(t(object$params$Br)[ind.spp,which.Xcoef,drop=F])
-    cnames <- colnames(object$Xr[ind.spp,which.Xcoef,drop=FALSE])
+    cnames <- colnames(object$Xr[,which.Xcoef,drop=FALSE])
     k <- length(cnames)
     if(is.null(colnames(object$y))) colnames(object$y) <- paste("Y",1:NCOL(object$y), sep = "")
     labely <- colnames(object$y)[ind.spp]
