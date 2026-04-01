@@ -81,7 +81,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(num_corlv); //number of correlated lvs
   DATA_IVECTOR(family); // family index
   DATA_INTEGER(quadratic); // quadratic model, 0=no, 1=yes
-  DATA_INTEGER(randomB) //0 = P,single,iid and 1 = LV
+  DATA_INTEGER(randomB); //0 = P,single,iid and 1 = LV
   PARAMETER_VECTOR(Au); // variational covariances for u
   PARAMETER_VECTOR(lg_Ar); // variational covariances for r0r
   PARAMETER_VECTOR(Abb);  // variational covariances for Br
