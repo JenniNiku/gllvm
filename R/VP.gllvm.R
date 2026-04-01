@@ -164,7 +164,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
       lv.X <- object$lv.X.design
       # lv.X variances Separated only if quaratic = FALSE
       if ((object$num.lv.c + object$num.RR) > 0 & object$quadratic == FALSE) {
-        if(is.null(object$params$corsLvXcoef)){
+        if(is.null(object$params$corsLvXcoef) && !anyBars(object$lv.formula)){
         groupnamesF <- c(groupnamesF, paste("CLV:",labels(terms(object$lv.formula)), sep = ""))
         groupF <- c(groupF, attr(model.matrix(object$lv.formula, data = as.data.frame(object$lv.X)), "assign")[-1] + max(groupF,0))
         }else{
