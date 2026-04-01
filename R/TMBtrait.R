@@ -5,7 +5,7 @@
 trait.TMB <- function(
       y, X = NULL, xr = matrix(0), TR=NULL, formula = NULL, num.lv = 2, family = "poisson", num.lv.cor = 0, corWithinLV = FALSE, LVgroups = NULL,
       Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc = "diagonal", row.eff = FALSE, reltol = 1e-6,
-      maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL, trace = FALSE,
+      maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL, trace = FALSE, optimizer.trace = 0,
       link = "logit", n.init = 1, n.init.max = 10, start.params = NULL, start0 = FALSE, optimizer = "optim", dr = matrix(0), proptoMats = list(list(matrix(0))), csR = matrix(0), trmsize = matrix(0), dLV = NULL, cstruc = "diag", cstruclv  = "diag", dist = list(matrix(0)), distLV = matrix(0), scalmax = 10, MaternKappa = 1.5,
       starting.val = "res", method = "VA", randomX = NULL, RElist = list(Zt = matrix(0)), Power = 1.5, diag.iter = 1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single",
       Lambda.start = c(0.2, 0.5), jitter.var = 0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL, zetacutoff = NULL,
@@ -1346,13 +1346,13 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         else
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
       }
       lambda2 <- matrix(optr$par, byrow = T, ncol = num.lv, nrow = p)
       
@@ -1394,13 +1394,13 @@ trait.TMB <- function(
     if(any(!is.finite(objr$gr(objr$par)))) warning("Gradients are not finite with the starting values.")
     
     if(optimizer=="nlminb") {
-      timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
+      timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
     }
     if(optimizer=="optim") {
       if(optim.method != "BFGS") # Due the memory issues, "BFGS" should not be used for Tweedie
-        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
       else
-        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
     }
     if(inherits(optr,"try-error")) warning(optr[1]);
   
@@ -1555,13 +1555,13 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method,control = list(maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         else
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS",control = list(reltol=reltol,maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
       }
       if(inherits(optr, "try-error")){optr <- optr1; objr <- objr1; Lambda.struc <- "diagonal"}
       
@@ -1619,13 +1619,13 @@ trait.TMB <- function(
         DLL = "gllvm")
       
       if(optimizer=="nlminb") {
-        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
+        timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
       }
       if(optimizer=="optim") {
         if(optim.method != "BFGS")
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method, control = list(maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = optim.method, control = list(maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
         else
-          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS", control = list(reltol=reltol,maxit=maxit),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
+          timeo <- system.time(optr <- try(optim(objr$par, objr$fn, objr$gr,method = "BFGS", control = list(reltol=reltol,maxit=maxit, trace = optimizer.trace),hessian = FALSE),silent = TRUE), gcFirst = FALSE)
       }
       
       # quick check to see if something actually happened
