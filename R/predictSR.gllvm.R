@@ -5,6 +5,7 @@
 #' @param spp index vector, defaults to NULL. If omitted, returns a prediction with all species in the data.
 #' @param expected character, defaults to "mean", in which case the returned measure of central tendency for species richness is the Poisson-Binomial expectation. Alternatively can be "mode".
 #' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
+#' @param ci character vector, defaults to "expected" but can also be "pmf" or both. If "pmf" provides CI on the whole pmf prediction.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
 #' @param return.pred logical, defaults to \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.
@@ -46,7 +47,7 @@
 #'@export
 #'@export predictSR.gllvm
 
-predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 10000, alpha = 0.95, seed = 42, return.pred = FALSE, ...){
+predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 10000, ci = "expected", alpha = 0.95, seed = 42, return.pred = FALSE, ...){
   
   set.seed(seed)
   preds <- predict(object, type = "response", alpha = NULL, se.fit = se.fit, ...)
@@ -97,6 +98,7 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
           probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object, spp = spp)
         }
         
+        if("expected" %in% ci){
         eSR.temp <- rowSums(probs.sim)
         
         if(expected == "mode"){
@@ -106,7 +108,9 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
         type = 7 #R's default for quantile
         if(expected == "mode")type = 1 # default doesn't work for integer problems
         eSR.CI[i,]  <- quantile(eSR.temp, type = type, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+        }
         
+        if("pmf" %in% ci){
         predSR.sim <- poisbinom(probs.sim)
         
         center = predSR[i,]         # point estimate for site i
@@ -116,9 +120,19 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
         
         # Keep points inside the simultaneous confidence region
         SR.ci[,i,] <- apply(predSR.sim[dists <= threshold, ],2,range)
+        }
       }
-      out <- list(predicted = list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,]), expected = list(fit = eSR, lower = eSR.CI[,1], upper = eSR.CI[,2]))
       
+      out <- list(predicted = list(fit = predSR), expected = list(fit = eSR))
+      
+      if("expected" %in% ci){
+        out$expected$lower = eSR.CI[,1]
+        out$expected$upper = eSR.CI[,2]
+      }
+      if("pmf" %in% ci){
+        out$predicted$lower = SR.ci[1,,]
+        out$predicted$upper = SR.ci[2,,]
+      }
     }
     # else if(type == "empirical"){
     # p <- ncol(object$y)
