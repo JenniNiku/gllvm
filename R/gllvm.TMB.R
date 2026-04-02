@@ -1699,7 +1699,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           for (j in o_ind) {
             if(family[j]=="ordinal"){
               zetanew[j,1] <- 0 
-              k<-max(y[,j])-2
+              k<-max(y[,j], na.rm = TRUE)-2
               if(k>0){
                 for(l in 1:k){
                   zetanew[j,l+1]<-zetas[idx+l]
@@ -2404,7 +2404,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           for (j in o_ind) {
             if(family[j]=="ordinal"){
               zetanew[j,1] <- 0 
-              k<-max(y[,j])-2
+              k<-max(y[,j], na.rm = TRUE)-2
               if(k>0){
                 for(l in 1:k){
                   zetanew[j,l+1]<-zetas[idx+l]
