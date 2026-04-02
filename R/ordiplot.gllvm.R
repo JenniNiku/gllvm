@@ -21,7 +21,7 @@
 #' @param arrow.scale positive value, to scale arrows
 #' @param arrow.spp.scale positive value, to scale arrows of species
 #' @param arrow.ci represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}
-#' @param arrow.lty linetype for arrows in constrained
+#' @param arrow.lty linetype for arrows in constrained ordination
 #' @param fac.center logical. If \code{TRUE} place labels for binary variables at their estimated location.
 #' @param predict.region if \code{TRUE} or \code{"sites"} prediction regions for the predicted latent variables are plotted, defaults to \code{FALSE}. EXTENSION UNDER DEVELOPMENT: if \code{"species"} uncertainty estimate regions for the estimated latent variable loadings are plotted. Works only if \code{biplot = TRUE}.
 #' @param level level for prediction regions.
@@ -454,7 +454,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             text(
               (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
               (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-              label = row.names(lv), cex = s.cex, col = s.colors )          
+              label = row.names(lv), cex = s.cex, col = s.colors )
           }
         }
     }
@@ -680,11 +680,11 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           rotSD[i,] <- sqrt(abs(diag(t(svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])%*%covB[seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design)),seq(i,(num.RR+num.lv.c)*ncol(object$lv.X.design),by=ncol(object$lv.X.design))]%*%svd_rotmat_sites[1:(num.lv.c+num.RR),1:(num.lv.c+num.RR)])))
         }
         rotSD <- rotSD[,which.lvs]
-        cilow <- LVcoef+qnorm( (1 - 0.95) / 2)*rotSD
-        ciup <-LVcoef+qnorm(1- (1 - 0.95) / 2)*rotSD
-        lty <- rep(arrow.lty,ncol(object$lv.X.design))
+        cilow <- LVcoef+qnorm( (1 - level) / 2)*rotSD
+        ciup <-LVcoef+qnorm(1- (1 - level) / 2)*rotSD
+        lty <- rep("solid",ncol(object$lv.X.design))
         col <- rep("red", ncol(object$lv.X.design))
-        lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- "solid"
+        lty[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- arrow.lty
         col[sign(cilow[,1])!=sign(ciup[,1])|sign(cilow[,2])!=sign(ciup[,2])] <- hcl(0, 100, 80)#rgb(1,0,0,alpha=0.3)
         
       }else{
