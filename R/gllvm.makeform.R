@@ -222,7 +222,7 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
     sm <- matrix(1, ncol = nrow(mm))
   }
   # row.names(fm) <- paste0(levels(ff),colnames(mm[,which(colnames(mm)!="(Intercept)"),drop=FALSE])) 
-  if(!is.factor(ff) && length(ff)==1|| is.factor(ff) && length(ff) == 1 && levels(ff)==as.character(1)){
+  if(!is.factor(ff) && length(ff)==1|| is.factor(ff) && length(ff) == 1 && all(levels(ff)==as.character(1))){
     ff <- factor(ff)
     levels(ff) <- ""
   }
