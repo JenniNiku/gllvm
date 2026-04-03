@@ -47,7 +47,6 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     } else {
       pred <- predict(object, type = "response")
       if(any(object$family == "ordinal")){
-        pred <- pred[1,,]
         pred[,object$family == "ordinal"] <- predict(object, type = "class")[,object$family == "ordinal"]
       }
     }
@@ -160,9 +159,9 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     }
     predAUC <- pred
     if(mispred){
-      predAUC <- predict(object, type = "response")
-    }else if(!mispred && any(object$family == "ordinal") && length(dim(pred))!=3){
-      stop("To calculate AUC, 'pred' should  be an array with 3 dimensions when ordinal responses are included.")
+      predAUC <- predict(object, type = "response", ordinal.cat = 1)
+    }else if(!mispred && any(object$family == "ordinal") && !is.matrix(pred)){
+      stop("To calculate AUC, 'pred' should be a matrix when ordinal responses are included.")
     }
     
     predAUC <- gllvm.presence.prob(predAUC, object)
