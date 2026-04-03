@@ -9,6 +9,7 @@ Version 2.0.8
 * Improved output of AICc.gllvm to be in line with the AIC and BIC returned tables
 * AUC added to goodnessOfFit statistics
 * Added VA-EVA hybrid approximation for the orderedBeta model with logit link
+* Added 'spp' argument to predict.gllvm, for when only predictions are needed for selected species
 
 ## Bugfixes
 * row.eff was ignoring 'diag'
