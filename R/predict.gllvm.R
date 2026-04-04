@@ -85,7 +85,6 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if(any(object$family == "betaH"))p <- p+ sum(object$family == "betaH")
 
   spp_idx <- if(!is.null(spp)) spp else seq_len(p)
-  p_pred  <- length(spp_idx)
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -110,7 +109,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
 
   b0_full <- object$params$beta0
   b0 <- b0_full[spp_idx]
-  eta <- matrix(b0, n, p_pred, byrow = TRUE)
+  eta <- matrix(b0, n, length(spp_idx), byrow = TRUE)
   if (!is.null(newTR)) 
     if (nrow(newTR) != p) 
       stop("Number of rows in newTR must match to the number of responses in the original data matrix.")
@@ -216,8 +215,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.d <- as.matrix(model.matrix(formula, data = yXT))
     }
     X.d <- as.matrix(X.d[, colnames(X.d) != "(Intercept)"])
-    eta_full <- matrix(b0_full, n, p, byrow = TRUE) + matrix(X.d %*% B, n, p)
-    eta <- eta_full[, spp_idx, drop = FALSE]
+    eta <- matrix(b0, n, length(spp_idx), byrow = TRUE) + matrix(X.d %*% B, n, p)[, spp_idx, drop = FALSE]
+    
     if (!is.null(object$randomX)) {
       if (!is.null(newdata)) {
         tr <- try(X.xr <- as.matrix(model.matrix(object$randomX, 
@@ -235,7 +234,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       } else {
         xr <- object$Xrandom
       }
-      eta <- eta + matrix(xr %*% object$params$Br, n, p)[, spp_idx, drop = FALSE]
+      eta <- eta + xr %*% object$params$Br[, spp_idx, drop = FALSE]
     }
   }
   if (level == 1 || (level == 0 && (object$num.lv.c + object$num.RR)>0)) {
@@ -334,7 +333,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           theta2C <- abs(theta2[, 1:(object$num.lv.c +
                                        object$num.RR), drop = F])
           lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
-          for (iter in seq_len(p_pred)) {
+          for (iter in seq_len(length(spp_idx))) {
             eta[, iter] <- eta[, iter] - lvs^2%*%theta2C[iter, ]
           }
         }
@@ -402,15 +401,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
       }
       
-    eta <- eta + as.matrix(rowSums(r0))%*%rep(1, p_pred)
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1, length(spp_idx))
     
   }
   
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
-    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)[, spp_idx, drop = FALSE]
-    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))[, spp_idx, drop = FALSE]
+    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br[, spp_idx, drop = FALSE])
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
@@ -424,18 +423,18 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
     spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
     
-    eta <- eta + as.matrix(spdr%*%object$params$Br)[, spp_idx, drop = FALSE]
-    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))[, spp_idx, drop = FALSE]
+    eta <- eta + as.matrix(spdr%*%object$params$Br[, spp_idx, drop = FALSE])
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){
     if(offset!=FALSE){
       if(is.matrix(offset)){
         if((NROW(offset) == NROW(eta))){
-          eta <- eta+object$offset
+          eta <- eta+object$offset[, spp_idx, drop = FALSE]
         } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
       } else if((NROW(object$offset) == NROW(eta))){
-        eta <- eta+object$offset
+        eta <- eta+object$offset[, spp_idx, drop = FALSE]
         } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
     }
   }
@@ -467,7 +466,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if ("link" %in% type)
     out <- eta
   if ("response" %in% type) {
-    out <- sapply(seq_len(p_pred), function(iter) ilinkfun[[pointer[iter]]](eta[, iter]))
+    out <- sapply(seq_len(length(spp_idx)), function(iter) ilinkfun[[pointer[iter]]](eta[, iter]))
     if(any(fam_pred %in% c("ZIP","ZINB")))
       out[, fam_pred %in% c("ZIP","ZINB")] <- out[, fam_pred %in% c("ZIP","ZINB")] * (1 - matrix(object$params$phi[spp_idx][fam_pred %in% c("ZIP","ZINB")], n, sum(fam_pred %in% c("ZIP","ZINB")), byrow = TRUE))
   }
@@ -485,7 +484,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     if (object$zeta.struc == "species") {
       k.max <- apply(object$params$zeta[spp_idx, , drop = FALSE], 1, function(x) length(x[!is.na(x)])) + 1
       preds <- array(NA, dim = c(max(k.max, na.rm = TRUE), nrow(eta),
-                                 p_pred), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE),
+                                 length(spp_idx)), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE),
                                                            sep = ""), NULL, NULL))
       if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
       for (iter in ordi_ind) {
@@ -501,7 +500,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     } else {
       kz <- any(fam_pred == "orderedBeta")*2
       k.max <- length(object$params$zeta) + 1 - kz
-      preds <- array(NA, dim = c(k.max, nrow(eta), p_pred),
+      preds <- array(NA, dim = c(k.max, nrow(eta), length(spp_idx)),
                      dimnames = list(paste("level", 1:max(k.max),
                                            sep = ""), NULL, NULL))
       if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
@@ -564,9 +563,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
     }
     }else if(any(object$family == "ordinal") && type == "response" && !is.null(alpha)){
-      ci <- array(dim=c(2,nrow(out), n,p))
-      for(j in 1:p){
-        if(object$family[j] != "ordinal"){
+      ci <- array(dim=c(2,nrow(out), n, length(spp_idx)))
+      for(j in seq_len(length(spp_idx))){
+        if(fam_pred[j] != "ordinal"){
           ci[,1,,j] <- apply(predSims[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
         }else{
           # here we need to be a bit more careful because of the simplex constraint
