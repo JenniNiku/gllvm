@@ -101,14 +101,14 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
 
     if("pmf" %in% ci){
       SR.ci      <- array(dim = c(2, n, length(SR)))
-      # store the full pmf [n, length(SR)] for each simulation
+
       predSR.sim <- array(0, dim = c(R, n, length(SR)))
 
       for(r in seq_len(R)){
         newobj  <- perturb.gllvm(object, params, r, type = "response")
         pred_r  <- predict(newobj, type = "response", se.fit = FALSE, ordinal.cat = 1L, spp = spp, ...)
         probs_r <- gllvm.presence.prob(pred_r, object, spp = spp)
-        predSR.sim[r, , ] <- poisbinom(probs_r)   # [n, length(SR)]
+        predSR.sim[r, , ] <- poisbinom(probs_r) 
       }
 
       for(i in seq_len(n)){
