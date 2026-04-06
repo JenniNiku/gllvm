@@ -435,8 +435,8 @@ se.gllvm <- function(object, ...){
         kz <- any(family == "orderedBeta")*2
         if(any(family %in% "ordinal")){
           y <- object$y
-          K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
-          if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
+          K = max(y[,family %in% "ordinal"], na.rm=TRUE)-min(y[,family %in% "ordinal"],na.rm=TRUE)
+          if(min(y[,family %in% "ordinal"],na.rm=TRUE)==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
         } 
         
         se.zetanew <- se.zetas <- se$zeta;
@@ -449,7 +449,7 @@ se.gllvm <- function(object, ...){
           for(j in o_ind){
             
             if(family[j]=="ordinal"){
-              k<-max(y[,j])-2
+              k<-max(y[,j], na.rm=TRUE)-2
               if(k>0){
                 sgns <- sign(zetas[(idx+1):(idx+k)])
                 cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
@@ -469,7 +469,7 @@ se.gllvm <- function(object, ...){
           out$sd$zeta <- se.zetanew
           row.names(out$sd$zeta) <- colnames(object$y); 
           if(any(family%in%c("ordinal"))){
-            colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+            colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"], na.rm=TRUE)-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"], na.rm=TRUE),sep="")
           } else {
             colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
           }
@@ -496,7 +496,7 @@ se.gllvm <- function(object, ...){
             }
             }
           out$sd$zeta <- se.zetanew
-          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
+          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y)+1):max(object$y, na.rm=TRUE),sep=""))
         }
       } # end se zeta
       
@@ -978,8 +978,8 @@ se.gllvm <- function(object, ...){
       kz <- any(object$family == "orderedBeta")*2
       if(any(family %in% "ordinal")){
         y <- object$y
-        K = max(y[,family %in% "ordinal"])-min(y[,family %in% "ordinal"])
-        if(min(y[,family %in% "ordinal"])==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
+        K = max(y[,family %in% "ordinal"], na.rm=TRUE)-min(y[,family %in% "ordinal"], na.rm=TRUE)
+        if(min(y[,family %in% "ordinal"], na.rm=TRUE)==0) y[,family %in% "ordinal"] <- y[,family %in% "ordinal", drop=FALSE]+1 
       } 
       
       se.zetanew <- se.zetas <- se$zeta;
@@ -992,7 +992,7 @@ se.gllvm <- function(object, ...){
         for(j in o_ind){
           
           if(family[j]=="ordinal"){
-            k<-max(y[,j])-2
+            k<-max(y[,j], na.rm=TRUE)-2
             if(k>0){
               sgns <- sign(zetas[(idx+1):(idx+k)])
               cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
@@ -1012,7 +1012,7 @@ se.gllvm <- function(object, ...){
         out$sd$zeta <- se.zetanew
         row.names(out$sd$zeta) <- colnames(object$y); 
         if(any(family%in%c("ordinal"))){
-          colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+          colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"], na.rm=TRUE):(max(object$y[,family=="ordinal"], na.rm=TRUE)-1),"|",(min(object$y[,family=="ordinal"], na.rm=TRUE)+1):max(object$y[,family=="ordinal"], na.rm=TRUE),sep="")
         } else {
           colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
         }
@@ -1038,7 +1038,7 @@ se.gllvm <- function(object, ...){
           se.zetanew <- sezetanew
         }
         out$sd$zeta <- se.zetanew
-        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
+        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y, na.rm=TRUE):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm=TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
       }
     }
     
