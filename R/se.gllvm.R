@@ -496,7 +496,7 @@ se.gllvm <- function(object, ...){
             }
             }
           out$sd$zeta <- se.zetanew
-          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y)+1):max(object$y, na.rm=TRUE),sep=""))
+          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm = TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
         }
       } # end se zeta
       

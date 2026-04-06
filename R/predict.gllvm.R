@@ -784,7 +784,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
     
     if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
       zetaO <- NULL
-      K <- if(any(object$family %in% "ordinal")) max(object$TMBfn$env$data$y) - min(object$TMBfn$env$data$y) else 2L
+      K <- if(any(object$family %in% "ordinal")) max(object$TMBfn$env$data$y, na.rm =TRUE) - min(object$TMBfn$env$data$y, na.rm =TRUE) else 2L
       if(object$zeta.struc == "common"){
         if(any(object$family %in% "orderedBeta")) zetaO <- c(zetaO, rep(TRUE,  2))
         if(any(object$family %in% "ordinal"))     zetaO <- c(zetaO, rep(FALSE, K - 1))
@@ -799,7 +799,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
         zetanew <- matrix(NA, nrow = p, ncol = K); zetanew[, 1] <- 0; idx <- 0
         for(j in which(object$family %in% c("ordinal","orderedBeta"))){
           if(object$family[j] == "ordinal"){
-            k <- max(object$y[, j]) - 2
+            k <- max(object$y[, j], na.rm = TRUE) - 2
             if(k > 0) zetanew[j, 2:(k + 1)] <- zetas[idx + seq_len(k)]
             idx <- idx + k
             zetanew[j, ] <- cumsum(abs(zetanew[j, ]))
