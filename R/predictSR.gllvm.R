@@ -383,7 +383,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   # ensure ordinal starts at 0
   if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min, na.rm = TRUE)
   
-  y = rowSums(ifelse(object$y[, predSR$spp]==0,0,1))
+  y = rowSums(ifelse(object$y[, predSR$spp]==0,0,1),na.rm=TRUE)
   n = length(y)
   pmf = predSR$predicted$fit
   
@@ -394,7 +394,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   b <- cdf[cbind(seq_len(n), pmin(y, K) + 1)]
   
   a <- numeric(n)
-  nz <- y > 0
+  nz <- y > 0 & !is.na(y)
   a[nz] <- cdf[cbind(which(nz), y[nz])]
   
   u <- a + (b - a) * runif(n)
