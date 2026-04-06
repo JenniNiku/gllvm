@@ -732,11 +732,17 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
     newpars <- relist_gllvm(ffs[r, ], skeleton)
     
     newobject$params$beta0 <- newpars$b[1, ]
-    if(nrow(newpars$b) > 1)
+    names(newobject$params$beta0) <- names(object$params$beta0)
+    if(nrow(newpars$b) > 1){
       newobject$params$Xcoef <- t(newpars$b[-1, , drop = FALSE])
-    
-    if((num.lv + num.lv.c) > 0)
+      rownames(newobject$params$Xcoef) <- rownames(object$params$Xcoef)
+      colnames(newobject$params$Xcoef) <- colnames(object$params$Xcoef)
+    }
+
+    if((num.lv + num.lv.c) > 0){
       newobject$params$sigma.lv <- abs(newpars$sigmaLV)
+      names(newobject$params$sigma.lv) <- names(object$params$sigma.lv)
+    }
     
     if((num.lv + num.lv.c + num.RR) > 0){
       theta <- matrix(0, p, num.lv + num.lv.c + num.RR)
@@ -774,12 +780,15 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
           theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
         }
       }
+      rownames(theta) <- rownames(object$params$theta)
+      colnames(theta) <- colnames(object$params$theta)[seq_len(ncol(theta))]
       newobject$params$theta <- theta
     }
-    
+
     if(any(object$family %in% c("ZIP","ZINB"))){
       lp0 <- newpars$lg_phi[object$disp.group]
-      newobject$params$phi <- (exp(lp0) / (1 + exp(lp0)))[object$family %in% c("ZIP","ZINB")]
+      newobject$params$phi <- object$params$phi
+      newobject$params$phi[object$family %in% c("ZIP","ZINB")] <- (exp(lp0) / (1 + exp(lp0)))[object$family %in% c("ZIP","ZINB")]
     }
     
     if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
@@ -822,18 +831,34 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
       newobject$params$B <- newpars$B[!is.na(newpars$B)]
       names(newobject$params$B) <- names(object$params$B)
     }
-    if(!is.null(newpars$r0f))
+    if(!is.null(newpars$r0f)){
       newobject$params$row.params.fixed <- c(newpars$r0f)
-    if(num.RR > 0 && isFALSE(object$randomB))
+      names(newobject$params$row.params.fixed) <- names(object$params$row.params.fixed)
+    }
+    if(num.RR > 0 && isFALSE(object$randomB)){
       newobject$params$LvXcoef <- newpars$b_lv
+      rownames(newobject$params$LvXcoef) <- rownames(object$params$LvXcoef)
+      colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
+    }
   }
-  
+
   if(sum(incla) > 0){
     newrfs <- relist_gllvm(rfs[r, ], skeleton)
-    if(!is.null(newrfs$Br))   newobject$params$Br <- newrfs$Br
+    if(!is.null(newrfs$Br)){
+      newobject$params$Br <- newrfs$Br
+      rownames(newobject$params$Br) <- rownames(object$params$Br)
+      colnames(newobject$params$Br) <- colnames(object$params$Br)
+    }
     if(!is.null(newrfs$u))    newobject$lvs        <- newrfs$u
-    if(!is.null(newrfs$b_lv)) newobject$params$LvXcoef <- newrfs$b_lv
-    if(!is.null(newrfs$r0r))  newobject$params$row.params.random <- c(newrfs$r0r)
+    if(!is.null(newrfs$b_lv)){
+      newobject$params$LvXcoef <- newrfs$b_lv
+      rownames(newobject$params$LvXcoef) <- rownames(object$params$LvXcoef)
+      colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
+    }
+    if(!is.null(newrfs$r0r)){
+      newobject$params$row.params.random <- c(newrfs$r0r)
+      names(newobject$params$row.params.random) <- names(object$params$row.params.random)
+    }
   }
   
   newobject
