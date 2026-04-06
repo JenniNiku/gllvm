@@ -155,7 +155,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     if(any(object$family%in%c("gamma","exponential","beta")))warning("AUC only makes sense for families that include absence.")
     if(any(object$family %in% c("ordinal"))){
       # just making sure the minimum is 0
-      y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min) 
+      y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min,na.rm=TRUE) 
     }
     predAUC <- pred
     if(mispred){
@@ -170,16 +170,16 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       out$AUC <- rep(NA, p)
       for(j in 1:p){
         ranks <- rank(predAUC[,j])
-        n_pos <- sum(y[,j] > 0)
-        n_neg <- sum(y[,j] == 0)
-        sum_ranks_pos <- sum(ranks[y[,j] >0])
+        n_pos <- sum(y[,j] > 0,na.rm=TRUE)
+        n_neg <- sum(y[,j] == 0,na.rm=TRUE)
+        sum_ranks_pos <- sum(ranks[y[,j] >0],na.rm=TRUE)
         out$AUC[j] <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
       }
     }else{
       ranks <- rank(c(predAUC))
-      n_pos <- sum(c(y) > 0)
-      n_neg <- sum(c(y) == 0)
-      sum_ranks_pos <- sum(ranks[c(y) >0])
+      n_pos <- sum(c(y) > 0,na.rm=TRUE)
+      n_neg <- sum(c(y) == 0,na.rm=TRUE)
+      sum_ranks_pos <- sum(ranks[c(y) >0],na.rm=TRUE)
       out$AUC <-  exp(log(sum_ranks_pos - n_pos*(n_pos + 1)/2) -log(n_pos)-log(n_neg))#(sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) # can overflow for large n_pos, n_neg
     }
   
