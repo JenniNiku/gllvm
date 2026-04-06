@@ -388,6 +388,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       # second, fixed effects part
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
+        xr <- xr[, colnames(xr) %in% names(object$params$row.params.fixed), drop = FALSE]
       }
     }
     
@@ -704,25 +705,31 @@ simulate.params.gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
 # previously in predict.gllvm, but lifted out
 # to separately call in predictSR.gllvm
 # for improved efficiency
-perturb.gllvm <- function(object, params, r, type = "response"){
+perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL, template = NULL){
   ffs   <- params$ffs
   rfs   <- params$rfs
   incl  <- params$incl
   incla <- params$incla
-  
+
   num.lv    <- object$num.lv
   num.RR    <- object$num.RR
   num.lv.c  <- object$num.lv.c
   quadratic <- object$quadratic
   p         <- ncol(object$y)
-  
+
+  if(is.null(skeleton)) skeleton <- object$TMBfn$env$parList()
+
   # blank all params so nothing leaks from the fitted values
-  newobject <- object
-  newobject$params <- lapply(object$params, function(x){ if(is.numeric(x)) x[] <- NA; x })
-  newobject$lvs[] <- NA
-  
+  if(!is.null(template)){
+    newobject <- template
+  } else {
+    newobject <- object
+    newobject$params <- lapply(object$params, function(x){ if(is.numeric(x)) x[] <- NA; x })
+    if(!is.null(newobject$lvs)) newobject$lvs[] <- NA
+  }
+
   if(sum(incl) > 0){
-    newpars <- relist_gllvm(ffs[r, ], object$TMBfn$env$parList())
+    newpars <- relist_gllvm(ffs[r, ], skeleton)
     
     newobject$params$beta0 <- newpars$b[1, ]
     if(nrow(newpars$b) > 1)
@@ -822,7 +829,7 @@ perturb.gllvm <- function(object, params, r, type = "response"){
   }
   
   if(sum(incla) > 0){
-    newrfs <- relist_gllvm(rfs[r, ], object$TMBfn$env$parList())
+    newrfs <- relist_gllvm(rfs[r, ], skeleton)
     if(!is.null(newrfs$Br))   newobject$params$Br <- newrfs$Br
     if(!is.null(newrfs$u))    newobject$lvs        <- newrfs$u
     if(!is.null(newrfs$b_lv)) newobject$params$LvXcoef <- newrfs$b_lv

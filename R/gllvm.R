@@ -1212,7 +1212,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         # warning(still check about intercept)
           xr <- model.matrix(row.eff, studyDesign)[,-1,drop=FALSE]
-          
+          red.cols <- colSums(xr == 0) == nrow(xr)
+          if(any(red.cols)){
+            warning("Some columns of the fixed row effects design matrix are all zeros and have been dropped: ", paste(colnames(xr)[red.cols], collapse = ", "), ".\n")
+            xr <- xr[, !red.cols, drop = FALSE]
+          }
+
           if(nrow(dr)!=n){
             if(!TMB)stop("Mixed effects row effects can only be fitted with 'TMB = TRUE'.")
           }else{
