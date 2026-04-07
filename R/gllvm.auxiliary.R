@@ -3148,7 +3148,7 @@ relist_gllvm <- function (flesh, skeleton = attr(flesh, "skeleton"))
   skeleton <- result <- skeleton[nam]
   for (i in nam) {
     skel_i <- result[[i]]
-    size <- length(unlist(skel_i))
+    size <- length(skel_i)
     result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
                           skel_i)
     
