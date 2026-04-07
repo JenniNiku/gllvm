@@ -22,8 +22,9 @@ enum Family : int {
     ORDERED_BETA = 12,
     ZIB = 13,
     ZNIB = 14,
-    
-    
+    BETA_BINOMIAL = 15,
+
+
     // lisää tarvittaessa muita perheitä: BINOMIAL=2, GAUSSIAN=3, ...
 };
 
@@ -5209,16 +5210,37 @@ Type objective_function<Type>::operator() ()
         // }
       }
       
+      case BETA_BINOMIAL: { // beta-binomial family 15
+        for (int i=0; i<n; i++) {
+          if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+          } else if(extra(j)==1){mu(i,j) = pnorm(eta(i,j));
+          }else if(extra(j)==2) mu(i,j) = 1-exp(-exp(eta(i,j)));
+          mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
+          mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));
+          if(!gllvmutils::isNA(y(i,j))){
+            // Beta-binomial log-likelihood using mean (mu) and overdispersion (phi = 1/iphi)
+            // alpha = mu/phi, beta_shape = (1-mu)/phi  where phi > 0
+            // log P(y | n, alpha, beta) = lbeta(alpha+y, beta+(n-y)) - lbeta(alpha, beta) + log C(n,y)
+            Type alpha = mu(i,j) * iphi(j);
+            Type beta_shape = (1 - mu(i,j)) * iphi(j);
+            nll -= lgamma(alpha + beta_shape) + lgamma(alpha + y(i,j)) + lgamma(beta_shape + Ntrials(i,j) - y(i,j))
+                   - lgamma(alpha) - lgamma(beta_shape) - lgamma(alpha + beta_shape + Ntrials(i,j))
+                   + lgamma(Ntrials(i,j) + 1.) - lgamma(y(i,j) + 1.) - lgamma(Ntrials(i,j) - y(i,j) + 1.);
+          }
+        }
+        break;
+      }
+
       default: {
         // Error message for non-available family
         error("%s", ("Unsupported family at column " + std::to_string(j) +
           std::string(": ") + std::to_string(static_cast<int>(family(j)))).c_str());
         break;
       }
-      
+
       } // switch
     } // for j end
-    
+
   } // LA end
   return nll;
 }

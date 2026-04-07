@@ -45,11 +45,11 @@ trait.TMB <- function(
   term <- NULL
   times = 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
-  if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
+  if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  } else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == 1){
+  } else if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == 1){
     Ntrials <- matrix(Ntrials, n, p)
-  }else if((any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == p)){
+  }else if((any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == p)){
     Ntrials <- matrix(Ntrials, n, p, byrow = TRUE)
   }
   
@@ -602,10 +602,10 @@ trait.TMB <- function(
         # }
         
         if(n.init > 1 && !is.null(res$mu) && starting.val == "res" && all(family != "tweedie")) {
-          if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB"))) {
+          if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
             famstart =family
             famstart[family %in% c("ZIP","ZINB")] <- "poisson"
-            famstart[family %in% c("ZIB", "ZNIB")] <- "binomial"
+            famstart[family %in% c("ZIB", "ZNIB", "beta.binomial")] <- "binomial"
             lastart <- FAstart(res$mu, family=famstart, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1],  zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
           } else {
             lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link)
@@ -630,7 +630,7 @@ trait.TMB <- function(
       ZINBphis <- NULL
       phi_family = c("negative.binomial","negative.binomial1", "tweedie",
                      "ZIP", "ZIB", "ZINB", "ZNIB",
-                     "gaussian", "gamma", "beta", "betaH", "orderedBeta")
+                     "gaussian", "gamma", "beta", "betaH", "orderedBeta", "beta.binomial")
       shape_family = c("gaussian", "gamma", "beta", "betaH", "orderedBeta")
       ZI_family = c("ZIP","ZIB", "ZINB", "ZNIB")
       
@@ -1314,6 +1314,11 @@ trait.TMB <- function(
       if(link=="probit") extra[family == "ZNIB"]=1
       if(link=="cloglog") extra[family == "ZNIB"]=2
     }
+    if(any(family == "beta.binomial")){
+      familyn[family == "beta.binomial"] =15
+      if(link=="probit") extra[family == "beta.binomial"]=1
+      if(link=="cloglog") extra[family == "beta.binomial"]=2
+    }
     ## To improve starting values for quadratic model
     if(starting.val!="zero" && start.struc != "LV" && quadratic == TRUE && num.lv>0 && method == "VA"){
       map.list2 <- map.list
@@ -1534,7 +1539,7 @@ trait.TMB <- function(
       } else {Au1<-Au}
       
       if(num.lv==0) {lambda1 <- 0; }
-      if(all(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta"))){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][map.list$lg_phi]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
+      if(all(family %in% c("poisson","binomial","ordinal","exponential", "betaH", "orderedBeta")) && !any(family == "beta.binomial")){ lg_phi1 <- log(phi)} else {lg_phi1 <- param1[nam=="lg_phi"][map.list$lg_phi]} #cat(range(exp(param1[nam=="lg_phi"])),"\n")
       if(any(family %in% c("ZINB", "ZNIB"))){lg_phiZINB1 <- param1[nam=="lg_phiZINB"][map.list$lg_phiZINB]}else{lg_phiZINB1<-log(ZINBphi)}
       if(any(family=="tweedie") && is.null(Power)) ePower = param1[nam == "ePower"]
 
@@ -2036,8 +2041,8 @@ trait.TMB <- function(
         names(out$params$inv.phi) <-  names(out$params$phi)
       }
 
-      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB"))) {
-        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")];
+      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
+        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")];
         names(out$params$phi) <- colnames(y);
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)

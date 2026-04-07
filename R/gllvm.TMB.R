@@ -17,7 +17,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   n <- nu <- dim(y)[1]
   p <- dim(y)[2]
-  p_binomials = sum(family %in% c("binomial","ZIB", "ZNIB"))
+  p_binomials = sum(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial"))
   p_betaH =  sum(family %in% c("betaH"))/2
   if(length(family)==1) family <- rep(family, p)
   
@@ -33,11 +33,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   times <- 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
   # if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p_binomials && !all.equal(dim(Ntrials), c(nrow(y),p_binomials)))){
-  if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
+  if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  } else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == 1){
+  } else if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == 1){
     Ntrials <- matrix(Ntrials, n, p)
-  }else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == p){
+  }else if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == p){
     Ntrials <- matrix(Ntrials, n, p, byrow = TRUE)
   }
   
@@ -550,7 +550,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     ZINBphis <- NULL
     phi_family = c("negative.binomial","negative.binomial1", "tweedie",
                    "ZIP", "ZIB", "ZINB", "ZNIB",
-                   "gaussian", "gamma", "beta", "betaH", "orderedBeta")
+                   "gaussian", "gamma", "beta", "betaH", "orderedBeta", "beta.binomial")
     shape_family = c("gaussian", "gamma", "beta", "betaH", "orderedBeta")
     ZI_family = c("ZIP","ZIB", "ZINB", "ZNIB")
     
@@ -1307,7 +1307,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(link=="probit") extra[family == "ZNIB"]=1
         if(link=="cloglog") extra[family == "ZNIB"]=2
       }
-      
+      if(any(family == "beta.binomial")){
+        familyn[family == "beta.binomial"] =15
+        if(link=="probit") extra[family == "beta.binomial"]=1
+        if(link=="cloglog") extra[family == "beta.binomial"]=2
+      }
+
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
         data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn, extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1, p_betaH = p_betaH)
@@ -1899,12 +1904,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(link=="probit") extra[family == "ZIB"]=1
         if(link=="cloglog") extra[family == "ZIB"]=2
       }
-      if(any(family == "ZNIB")){ 
+      if(any(family == "ZNIB")){
         familyn[family == "ZNIB"] =14;
         if(link=="probit") extra[family == "ZNIB"]=1
         if(link=="cloglog") extra[family == "ZNIB"]=2
       }
-      
+      if(any(family == "beta.binomial")){
+        familyn[family == "beta.binomial"] =15
+        if(link=="probit") extra[family == "beta.binomial"]=1
+        if(link=="cloglog") extra[family == "beta.binomial"]=2
+      }
+
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
         data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, dLV = dLV, csR = csR, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1, p_betaH = p_betaH)
@@ -2589,8 +2599,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           try(names(out$params$ZINB.phi) <- names(map.list$lg_phiZINB),silent=T)
         }
       }
-      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB"))) {
-        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")];
+      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
+        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")];
         names(out$params$phi) <- colnames(y);
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)

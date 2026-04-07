@@ -263,6 +263,22 @@ residuals.gllvm <- function(object, ...) {
     if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
     ds.res[,object$family == "ZNIB"] <- matrix(qnorm(u),n,p_f)
   }
+  if (any(object$family == "beta.binomial")) {
+    p_f = sum(object$family == "beta.binomial")
+    phis <- rep(object$params$phi[object$family == "beta.binomial"], each = n)
+    if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
+    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "beta.binomial"], each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "beta.binomial"])
+
+    b <- pbetabinom(as.vector(y[,object$family == "beta.binomial"]), mu = as.vector(mu[,object$family == "beta.binomial"]), phi = phis, Ntrials = Ntrials)
+    a <- pmin(b, pbetabinom(as.vector(y[,object$family == "beta.binomial"]) - 1, mu = as.vector(mu[,object$family == "beta.binomial"]), phi = phis, Ntrials = Ntrials))
+
+    u = a+(b-a)*runif(n*p_f)
+
+    if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
+    if(any(u==0, na.rm = TRUE)&&replace)u[u==0] <- 1e-16
+    ds.res[,object$family == "beta.binomial"] <- matrix(qnorm(u),n,p_f)
+  }
   if (any(object$family == "tweedie")) {
     p_f = sum(object$family == "tweedie")
     phis <- object$params$phi[object$family == "tweedie"] + 1e-05

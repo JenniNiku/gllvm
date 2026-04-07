@@ -16,6 +16,8 @@
   se.fit = FALSE,
   alpha = 0.95,
   seed = 42,
+  ordinal.cat = NULL,
+  spp = NULL,
   ...
 )
 }
@@ -39,6 +41,10 @@
 \item{alpha}{numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.}
 
 \item{seed}{numeric, defaults to 42. Seed used for simulation in se.fit.}
+
+\item{ordinal.cat}{integer or \code{NULL}, defaults to \code{NULL}. For ordinal models with \code{type = "response"}, selects a single category to return instead of the full K×n×p array. When set, the return value is an n×p matrix of probabilities for that category. Primarily used internally by \code{predictSR} and \code{goodnessOfFit} to reduce memory use.}
+
+\item{spp}{integer vector or \code{NULL}, defaults to \code{NULL}. If provided, predictions are computed only for the selected species (column indices into the response matrix), returning an \eqn{n \times \text{length(spp)}} matrix. All parameter-level computations (\code{beta0}, \code{Xcoef}, \code{theta}, etc.) are subsetted accordingly, so no unnecessary computation is performed for the remaining species.}
 
 \item{...}{not used.}
 }

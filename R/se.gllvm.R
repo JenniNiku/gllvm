@@ -75,7 +75,7 @@ se.gllvm <- function(object, ...){
   
   family = object$family
   familyn <- objrFinal$env$data$family
-  shape_family = c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta")
+  shape_family = c("gaussian","tweedie","gamma", "beta", "betaH", "orderedBeta", "beta.binomial")
   # disp.group <- object$disp.group
   disp.group <- object$TMBfn$env$map$lg_phi
   # disp.group <- object$TMBfn$env$map$lg_phi
@@ -311,7 +311,7 @@ se.gllvm <- function(object, ...){
         }
       }
       
-      if(any(family%in%c("ZIP","ZINB","ZIB", "ZNIB"))) {
+      if(any(family%in%c("ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
         pars <- object$TMBfn$par
         p0i <- names(pars)=="lg_phi"
         p0 <- pars[p0i]
@@ -505,7 +505,7 @@ se.gllvm <- function(object, ...){
   } else {
     #Without traits#
     pars <- objrFinal$par
-    if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB"))) {
+    if(any(family %in% c("ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
       p0i <- names(pars)=="lg_phi"
       p0 <- pars[p0i]
       p0 <- p0+runif(length(p0),0,0.000001)

@@ -350,6 +350,10 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
                                                     phi = phi_vec, p = object$Power), nrow = n)
     } else if(fam == "ordinal"){
       probs[, pos] <- 1 - mu # mu = p(y;k=1), i.e., 1- probability of absence
+    } else if(fam == "beta.binomial"){
+      phi_vec <- rep(object$params$phi[j], each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pbetabinom(0, mu = as.vector(mu), phi = phi_vec, Ntrials = Ntrials_vec), nrow = n)
     }
   }
 

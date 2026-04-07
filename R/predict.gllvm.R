@@ -442,7 +442,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
 
   fam_pred <- object$family[spp_idx]
   famgroup1 <- fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")
-  famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB")
+  famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB", "beta.binomial")
   famgroup3 <- fam_pred %in% c("ZIP","ZINB")
   famgroup4 <- fam_pred == "gaussian"
   famgroup5 <- fam_pred == "betaH"

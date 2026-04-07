@@ -82,7 +82,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
     if(any(object$family=="ZINB"))
       invPhis[,object$family %in% c("ZINB")] = matrix(rep(object$params$ZINB.inv.phi[object$family %in% c("ZINB")],each=nsim*nRows), ncol=sum(object$family %in% c("ZINB")))
   }
-  if(any(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB", "tweedie")))
+  if(any(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB", "tweedie", "beta.binomial")))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
 
   if(any(object$family == "ordinal")){
@@ -146,6 +146,12 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
                     Ntrials <- rep(object$Ntrials[object$family == fam], each = nsim * nRows)
                     sim1 <- rbinom(nTotfam, size = Ntrials, prob = prsfam)
                     (z==1)*zeros + (z==2)*Ntrials + (z==3)*sim1
+                  },
+                  "beta.binomial" = {
+                    Ntrials <- rep(object$Ntrials[,object$family == fam], each = nsim)
+                    phi_bb <- c(phis[,object$family == fam])
+                    p_bb <- rbeta(nTotfam, shape1 = prsfam * phi_bb, shape2 = (1 - prsfam) * phi_bb)
+                    rbinom(nTotfam, size = Ntrials, prob = p_bb)
                   },
                   stop(gettextf("family '%s' not implemented ", object$family), domain = NA))
                 ,ncol=sum(object$family == fam))

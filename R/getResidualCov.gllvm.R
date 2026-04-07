@@ -148,7 +148,7 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
   }
   
   
-  if(adjust > 0 && any(object$family %in% c("negative.binomial","binomial", "gaussian","ordinal", "ZIB", "ZNIB", "ZINB"))){
+  if(adjust > 0 && any(object$family %in% c("negative.binomial","binomial", "gaussian","ordinal", "ZIB", "ZNIB", "ZINB", "beta.binomial"))){
   if(any(object$family %in% c("negative.binomial", "ZINB"))){
     nbfam <- object$family %in% c("negative.binomial", "ZINB")
     if(adjust == 1) {
@@ -158,8 +158,8 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
      }
     
   }
-    if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))){
-      binfam <- object$family %in% c("binomial","ordinal","ZNIB","ZIB")
+    if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB","beta.binomial"))){
+      binfam <- object$family %in% c("binomial","ordinal","ZNIB","ZIB","beta.binomial")
       
       if(object$link == "probit"){
         ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))
