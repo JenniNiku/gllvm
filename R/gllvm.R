@@ -494,7 +494,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(any(!(family %in% accepted_families)))
       stop("Selected family: ", paste(family[!family %in% accepted_families], collapse = ", ")," not permitted...sorry!")
     
-    if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family)))
+    if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% LA_family)))
       stop("Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
            "\n For 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "),
            "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", ")
