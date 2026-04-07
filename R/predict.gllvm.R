@@ -439,44 +439,53 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
     }
   }
-  
-  ilinkfun <- list()
-  pointer  <- NULL
+
   fam_pred <- object$family[spp_idx]
-  if(any(fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))){
-    ilinkfun <- c(ilinkfun, exp)
-    pointer[fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] <- length(ilinkfun)
+  famgroup1 <- fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")
+  famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB")
+  famgroup3 <- fam_pred %in% c("ZIP","ZINB")
+  famgroup4 <- fam_pred == "gaussian"
+  famgroup5 <- fam_pred == "betaH"
+  ilinkfun <- vector("list", any(famgroup1)+any(famgroup2)+any(famgroup3)+any(famgroup4)+any(famgroup5))
+  pointer  <- NULL
+  if(any(famgroup1)){
+    ilinkfun[1] <- exp
+    pointer[famgroup1] <- 1
   }
-  if (any(fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB"))){
-    ilinkfun <- c(ilinkfun, binomial(link = object$link)$linkinv)
-    pointer[fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB")] <- length(ilinkfun)
+  if (any(famgroup2)){
+    ilinkfun[any(famgroup1)+1] <- binomial(link = object$link)$linkinv
+    pointer[famgroup2] <- any(famgroup1)+1
   }
-  if (any(fam_pred %in% c("ZIP","ZINB"))) {
-    ilinkfun <- c(ilinkfun, function(eta) exp(eta))
-    pointer[fam_pred %in% c("ZIP","ZINB")] <- length(ilinkfun)
+  if (any(famgroup3)) {
+    ilinkfun[any(famgroup1)+any(famgroup2)+1] <- exp
+    pointer[famgroup3] <- any(famgroup1)+any(famgroup2)+1
   }
-  if (any(fam_pred == "gaussian")) {
-    ilinkfun <- c(ilinkfun, gaussian()$linkinv)
-    pointer[fam_pred %in% c("gaussian")] <- length(ilinkfun)
+  if (any(famgroup4)) {
+    ilinkfun[any(famgroup1)+any(famgroup2)+any(famgroup3)+1] <- identity
+    pointer[famgroup4] <- any(famgroup1)+any(famgroup2)+any(famgroup3)+1
   }
-  if(any(fam_pred == "betaH")){
-    pointer <- c(pointer, rep(unique(pointer[fam_pred == "betaH"]), sum(fam_pred == "betaH")))
+  if(any(famgroup5)){
+    pointer <- c(pointer, rep(unique(pointer[famgroup5]), sum(famgroup5)))
   }
   out <- NULL
   preds <- NULL
   if ("link" %in% type)
     out <- eta
   if ("response" %in% type) {
-    out <- sapply(seq_len(length(spp_idx)), function(iter) ilinkfun[[pointer[iter]]](eta[, iter]))
-    if(any(fam_pred %in% c("ZIP","ZINB")))
-      out[, fam_pred %in% c("ZIP","ZINB")] <- out[, fam_pred %in% c("ZIP","ZINB")] * (1 - matrix(object$params$phi[spp_idx][fam_pred %in% c("ZIP","ZINB")], n, sum(fam_pred %in% c("ZIP","ZINB")), byrow = TRUE))
+    out <- matrix(NA_real_, nrow = nrow(eta), ncol = length(spp_idx))
+    for (j in unique(pointer)) {
+      cols <- which(pointer == j)
+      out[, cols] <- ilinkfun[[j]](eta[, cols, drop = FALSE])
+    }
+    if(any(famgroup3))
+      out[, famgroup3] <- out[, famgroup3] * (1 - matrix(object$params$phi[spp_idx][famgroup3], n, sum(famgroup3), byrow = TRUE))
   }
   if ("class" %in% type & any(fam_pred == "binomial")) {
     if(is.null(out)){ out <- eta; out[] <- NA}
     out[, fam_pred == "binomial"] <- round(sapply(which(fam_pred == "binomial"), function(iter) ilinkfun[[pointer[iter]]](eta[, iter])))
   }
-  if (is.null(newdata) && is.null(newTR) && is.null(newLV) && 
-      "logL" %in% type) 
+  if (is.null(newdata) && is.null(newTR) && is.null(newLV) &&
+      "logL" %in% type)
     out <- object$logL
   if (any(fam_pred == "ordinal") && (type == "response" | type == "class")) {
     if(is.null(out)){ out <- eta; out[] <- NA}
@@ -781,7 +790,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
         }
       }
       rownames(theta) <- rownames(object$params$theta)
-      colnames(theta) <- colnames(object$params$theta)[seq_len(ncol(theta))]
+      colnames(theta) <- colnames(object$params$theta)
       newobject$params$theta <- theta
     }
 
@@ -792,16 +801,10 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
     }
     
     if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
-      zetaO <- NULL
       K <- if(any(object$family %in% "ordinal")) max(object$TMBfn$env$data$y, na.rm =TRUE) - min(object$TMBfn$env$data$y, na.rm =TRUE) else 2L
       if(object$zeta.struc == "common"){
-        if(any(object$family %in% "orderedBeta")) zetaO <- c(zetaO, rep(TRUE,  2))
-        if(any(object$family %in% "ordinal"))     zetaO <- c(zetaO, rep(FALSE, K - 1))
-      } else {
-        o_ind <- which(object$family %in% c("ordinal","orderedBeta"))
-        for(j in o_ind)
-          zetaO <- c(zetaO, if(object$family[j] == "ordinal")
-            rep(FALSE, length(stats::na.omit(object$params$zeta[j, -1]))) else rep(TRUE, 2))
+        zetaO <- c(rep(TRUE,  2L * any(object$family %in% "orderedBeta")),
+                   rep(FALSE, (K - 1L) * any(object$family %in% "ordinal")))
       }
       zetas <- newpars$zeta
       if(object$zeta.struc == "species"){
