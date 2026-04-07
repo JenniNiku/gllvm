@@ -3060,54 +3060,63 @@ b_lvHEcorrect <- function(Lmult,K,d){
 # distribution functions for ZIP, ZINB, and ZIB
 pzip <- function(y, mu, sigma)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  ppois(y[tmp], lambda = mu[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(sigma))
+  y     <- rep_len(y,     m)
+  mu    <- rep_len(mu,    m)
+  sigma <- rep_len(sigma, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- ppois(y[tmp], lambda = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
 pzinb <- function(y, mu, p, sigma)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  pnbinom(y[tmp], mu = mu[tmp], size = 1 / sigma[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(p), length(sigma))
+  y     <- rep_len(y,     m)
+  mu    <- rep_len(mu,    m)
+  p     <- rep_len(p,     m)
+  sigma <- rep_len(sigma, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- pnbinom(y[tmp], mu = mu[tmp], size = 1 / sigma[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- p[tmp] + (1 - p[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
 pzib <- function(y, mu, sigma, Ntrials)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  pbinom(y[tmp], Ntrials[tmp], prob = mu[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(sigma), length(Ntrials))
+  y       <- rep_len(y,       m)
+  mu      <- rep_len(mu,      m)
+  sigma   <- rep_len(sigma,   m)
+  Ntrials <- rep_len(Ntrials, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- pbinom(y[tmp], Ntrials[tmp], prob = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
-pznib <- function(y, mu, p0, pN, Ntrials) 
-  {
-  pp <- numeric(length(y))
-  tmp <- y<Ntrials
-  
+pznib <- function(y, mu, p0, pN, Ntrials)
+{
+  m <- max(length(y), length(mu), length(p0), length(pN), length(Ntrials))
+  y       <- rep_len(y,       m)
+  mu      <- rep_len(mu,      m)
+  p0      <- rep_len(p0,      m)
+  pN      <- rep_len(pN,      m)
+  Ntrials <- rep_len(Ntrials, m)
+  pp <- numeric(m)
+  tmp <- y < Ntrials
   # For y < Ntrials
-  pp[tmp] <- p0[tmp] + (1 - p0[tmp] - pN[tmp]) * 
+  pp[tmp] <- p0[tmp] + (1 - p0[tmp] - pN[tmp]) *
       pbinom(y[tmp], size = Ntrials[tmp], prob = mu[tmp])
-
   # for y == Ntrials CDF = 1
   pp[!tmp] <- 1
-
-  
-  
   return(pp)
 }
 
