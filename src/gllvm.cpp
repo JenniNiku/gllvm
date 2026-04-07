@@ -5218,9 +5218,6 @@ Type objective_function<Type>::operator() ()
           mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
           mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));
           if(!gllvmutils::isNA(y(i,j))){
-            // Beta-binomial log-likelihood using mean (mu) and overdispersion (phi = 1/iphi)
-            // alpha = mu/phi, beta_shape = (1-mu)/phi  where phi > 0
-            // log P(y | n, alpha, beta) = lbeta(alpha+y, beta+(n-y)) - lbeta(alpha, beta) + log C(n,y)
             Type alpha = mu(i,j) * iphi(j);
             Type beta_shape = (1 - mu(i,j)) * iphi(j);
             nll -= lgamma(alpha + beta_shape) + lgamma(alpha + y(i,j)) + lgamma(beta_shape + Ntrials(i,j) - y(i,j))
