@@ -116,14 +116,19 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     }
   }
   if("TjurR2" %in% measure) {
-    if(all(unique(y) %in% c(0,1,NA))){
+    ntrialsfams <- c("binomial", "ZIB", "ZNIB", "beta.binomial")
+    hasntrials <- !is.null(object) && any(object$family %in% ntrialsfams)
+    # binarize observed y for Tjur R2: presence = y > 0
+    ybin <- if(hasntrials) (y > 0) * 1L else y
+    predbin <- if(hasntrials) gllvm.presence.prob(pred, object) else pred
+    if(all(unique(ybin) %in% c(0,1,NA))){
       tjurR2 <- function(y,pred){mean(pred[y==1], na.rm = TRUE) - mean(pred[y==0], na.rm = TRUE)}
       if(species) {
         for (j in 1:p) {
-          out$TjurR2[j] <- tjurR2(y[,j], pred[,j])
+          out$TjurR2[j] <- tjurR2(ybin[,j], predbin[,j])
         }
       } else {
-        out$TjurR2 <- tjurR2(unlist(c(y)), unlist(c(pred)))
+        out$TjurR2 <- tjurR2(unlist(c(ybin)), unlist(c(predbin)))
       }
     }
   }
