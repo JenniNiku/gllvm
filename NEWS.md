@@ -1,3 +1,8 @@
+Version 2.0.9
+=============
+
+* Added beta-binomial family with method = "LA"
+
 Version 2.0.8
 =============
 
@@ -17,7 +22,6 @@ Version 2.0.8
 * bugfix in plot.gllvm that left plots empty under particular settings
 * bugfix in nested random row effects
 * bugfix in phyloplot.gllvm that prevented uncertain random effects from being crossed out
-
 
 Version 2.0.7
 =============
