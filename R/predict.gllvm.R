@@ -449,19 +449,19 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   ilinkfun <- vector("list", any(famgroup1)+any(famgroup2)+any(famgroup3)+any(famgroup4)+any(famgroup5))
   pointer  <- NULL
   if(any(famgroup1)){
-    ilinkfun[1] <- exp
+    ilinkfun[[1]] <- exp
     pointer[famgroup1] <- 1
   }
   if (any(famgroup2)){
-    ilinkfun[any(famgroup1)+1] <- binomial(link = object$link)$linkinv
+    ilinkfun[[any(famgroup1)+1]] <- binomial(link = object$link)$linkinv
     pointer[famgroup2] <- any(famgroup1)+1
   }
   if (any(famgroup3)) {
-    ilinkfun[any(famgroup1)+any(famgroup2)+1] <- exp
+    ilinkfun[[any(famgroup1)+any(famgroup2)+1]] <- exp
     pointer[famgroup3] <- any(famgroup1)+any(famgroup2)+1
   }
   if (any(famgroup4)) {
-    ilinkfun[any(famgroup1)+any(famgroup2)+any(famgroup3)+1] <- identity
+    ilinkfun[[any(famgroup1)+any(famgroup2)+any(famgroup3)+1]] <- identity
     pointer[famgroup4] <- any(famgroup1)+any(famgroup2)+any(famgroup3)+1
   }
   if(any(famgroup5)){
