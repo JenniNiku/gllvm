@@ -303,8 +303,22 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
     fcols <- if(presubsetted) pos else j        # column indices into fit
     mu    <- fit[, fcols, drop = FALSE]
 
-    if(fam %in% c("binomial", "ZIB", "ZNIB")){
-      probs[, pos] <- mu
+    if(fam == "binomial"){
+      Ntrials_mat <- matrix(object$Ntrials[, j, drop = FALSE], nrow = n, ncol = length(pos))
+      probs[, pos] <- 1 - pbinom(0, size = Ntrials_mat, prob = mu)
+    } else if(fam == "ZIB"){
+      # params$phi for ZIB stores the zero-inflation probability directly (see gllvm.TMB.R line ~1669)
+      sigma_vec <- rep(object$params$phi[j], each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pzib(0, mu = as.vector(mu), sigma = sigma_vec, Ntrials = Ntrials_vec), nrow = n)
+    } else if(fam == "ZNIB"){
+      # params$phi stores p0 and ZINB.phi stores pN (already on probability scale, see residuals.gllvm)
+      phis0 <- (object$params$phi[j]      / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
+      phisN <- (object$params$ZINB.phi[j] / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
+      p0_vec  <- rep(phis0, each = n)
+      pN_vec  <- rep(phisN, each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pznib(0, mu = as.vector(mu), p0 = p0_vec, pN = pN_vec, Ntrials = Ntrials_vec), nrow = n)
     } else if(fam == "poisson"){
       probs[, pos] <- ppois(0, lambda = mu, lower.tail = FALSE)
     } else if(fam == "negative.binomial"){
