@@ -1089,7 +1089,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }
             spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks+1)/2)))
       }
-      } else {spAr <- 0}
+      } else {spAr <- 0;map.list$spAr <- factor(NA)}
       
       # Variational covariances for  random rows
       if(nrow(dr)==n){
@@ -1332,6 +1332,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list2$r0f = factor(rep(NA, length(r0f)))
         map.list2$b_lv = factor(rep(NA, length(b.lv)))
         map.list2$Ab_lv = factor(rep(NA, length(Ab_lv)))
+        map.list2$spAr = factor(rep(NA, length(spAr)))
         map.list2$sigmab_lv = factor(rep(NA, length(sigmab_lv)))
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
         map.list2$B = factor(rep(NA, length(B)))
@@ -1925,7 +1926,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list2$b_lv <- factor(rep(NA,length(b.lv)))
         map.list2$B <- factor(rep(NA, length(B)))
         
-        parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
+        parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = 0, b_lv = b.lv, sigmab_lv = 0, Ab_lv = 0, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
           data = data.list, silent=!trace,
