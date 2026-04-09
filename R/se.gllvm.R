@@ -36,7 +36,7 @@ se.gllvm <- function(object, ...){
   if(!is.finite(object$logL)) stop("Standard errors can not be calculated if log-likelihood value is not finite.")
   if(object$TMB == FALSE) stop("Function is not implemented for TMB = FALSE.")
   objrFinal <- object$TMBfn
-  
+
   if(any(object$family %in% "betaH")){
     Y01 = (object$y[,object$family %in% "betaH", drop=FALSE]>0)*1; colnames(Y01) = paste("H01",colnames(object$y)[object$family %in% "betaH"], sep = "_")
     object$y = cbind(object$y, Y01)
@@ -147,11 +147,16 @@ se.gllvm <- function(object, ...){
       }
       
       if(method=="LA" || (num.lv==0 && (is.null(object$params$row.params.random) && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
-        cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]))
+        cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]), silent = TRUE)
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-        se <- try(sqrt(diag(abs(cov.mat.mod))))
+        d <- diag(cov.mat.mod)
+        if(any(d < 0)){
+          neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
+          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+        }
+        se <- try(sqrt(pmax(d, 0)))
         names(se) = names(object$TMBfn$par[incl])
-        
+
         trpred<-try({
           if(num.lv > 0 || !is.null(object$params$row.params.random) || !is.null(object$randomX) || object$col.eff$col.eff == "random") {
             sd.random <- sdrandom(objrFinal, cov.mat.mod, incl)
@@ -191,12 +196,17 @@ se.gllvm <- function(object, ...){
           Ai <- try(solve(A.mat),silent=T)
           cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
         }
-        suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
-        
+        cov.mat.mod <- try(sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE)
+
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-        se <- sqrt(diag(abs(cov.mat.mod)))
+        d <- diag(cov.mat.mod)
+        if(any(d < 0)){
+          neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
+          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+        }
+        se <- sqrt(pmax(d, 0))
         names(se) = names(object$TMBfn$par[incl])
-        
+
         incla<-rep(FALSE, length(incl))
         incla[names(objrFinal$par)=="u"] <- TRUE
         out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
@@ -601,11 +611,16 @@ se.gllvm <- function(object, ...){
     }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
-      cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]))
+      cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]), silent = TRUE)
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-      se <- try(sqrt(diag(abs(cov.mat.mod))))
+      d <- diag(cov.mat.mod)
+      if(any(d < 0)){
+        neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
+        warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+      }
+      se <- try(sqrt(pmax(d, 0)))
       names(se) = names(object$TMBfn$par[incl])
-      
+
       trpred<-try({
         if((num.lv+num.lv.c) > 0 || !is.null(object$params$row.params.random) || object$col.eff$col.eff == "random"){
           sd.random <- sdrandom(objrFinal, cov.mat.mod, incl, ignore.u = FALSE)
@@ -639,9 +654,6 @@ se.gllvm <- function(object, ...){
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
       
     } else {
-      # cnrm <- apply(sdr,2,function(x)sqrt(sum(x^2)))
-      # rnrm <- apply(sdr,1,function(x)sqrt(sum(x^2)))
-      # sdr.s <- sweep(sweep(sdr,2,cnrm,"/"),1,rnrm,"/")
       sds <- sqrt(abs(diag(sdr)))
       if(any(sds<1e-12))sds[sds<1e-12]<-1
       
@@ -657,12 +669,17 @@ se.gllvm <- function(object, ...){
         Ai <- try(solve(A.mat),silent=T)
         cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
       }
-      suppressWarnings(try(cov.mat.mod <- sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE))
-      
+      cov.mat.mod <- try(sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE)
+
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
-      se <- sqrt(diag(abs(cov.mat.mod)))
+      d <- diag(cov.mat.mod)
+      if(any(d < 0)){
+        neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
+        warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+      }
+      se <- sqrt(pmax(d, 0))
       names(se) = names(object$TMBfn$par[incl])
-      
+
       incla<-rep(FALSE, length(incl))
       incla[names(objrFinal$par)=="u"] <- TRUE
       out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
