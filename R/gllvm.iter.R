@@ -87,22 +87,20 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   
   # Gradient check with n.i >2 so we don't get poorly converged models - relatively relaxed tolerance
   if(!is.null(fitFinal$TMBfn)){
-    gr1 <- fitFinal$TMBfn$gr()
-    gr1 <- as.matrix(gr1/length(gr1))
-    norm.gr1 <- norm(gr1)
+    norm.gr1 <- norm(as.matrix(fitFinal$TMBfn$gr()/length(fitFinal$TMBfn$par)))
   }else{
-    gr1 <- NaN
     norm.gr1 <- NaN
   }
   if(!is.null(fit$TMBfn$gr)){
-  gr2 <- fit$TMBfn$gr()
-  gr2 <- as.matrix(gr2/length(gr2))
-  norm.gr2 <- norm(gr2)
+  norm.gr2 <- norm(as.matrix(fit$TMBfn$gr()/length(fit$TMBfn$par)))
   n.i.i <- n.i.i +1
-  grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1, scale = 1)#check if gradients are similar when accepting on log-likelihood
-  grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = .1, scale = 1)#check if gradient are (sufficiently) different from each other, when accepting on gradient. Slightly more strict for norm(gr2)<norm(gr1)
+  grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1)
+  grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = 0.1, scale = 1)
+  accept <- (isTRUE(grad.test1) && fit$logL > fitFinal$logL) ||
+            (!isTRUE(grad.test2) && norm.gr2 < norm.gr1) ||
+            (isTRUE(grad.test1) && abs(fit$logL - fitFinal$logL) < 0.1 && norm.gr2 < norm.gr1)
 
-  if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && ((isTRUE(grad.test1) && fit$logL > (fitFinal$logL)) || (!isTRUE(grad.test2) && norm.gr2<norm.gr1))))  && is.finite(fit$logL)){
+  if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && accept))  && is.finite(fit$logL)){
     n.i.i <- 0
     fitFinal <- fit
     #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
@@ -137,6 +135,6 @@ n.i <- n.i+1;
 if(is.null(fitFinal)){
   fitFinal$logL <- -Inf
 }
-    
+
 return(fitFinal)
 }
