@@ -1089,7 +1089,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }
             spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks+1)/2)))
       }
-      } else {spAr <- 0;map.list$spAr <- factor(NA)}
+      } else {spAr <- 0;map.list$Abb <- factor(NA)}
       
       # Variational covariances for  random rows
       if(nrow(dr)==n){
@@ -2105,7 +2105,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace&!is.null(randomp),
+        data = data.list, silent=!trace&is.null(randomp),
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
@@ -2195,7 +2195,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         #### Call makeADFun
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace&!is.null(randomp),
+          data = data.list, silent=!trace&is.null(randomp),
           parameters = parameter.list, map = map.list,
           inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")
