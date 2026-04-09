@@ -1348,7 +1348,7 @@ trait.TMB <- function(
         data = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, randomB = 0, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0)), silent=!trace,
         parameters = parameter.list, map = map.list2,
         inner.control=list(mgcmax = 1e+200),
-        DLL = "gllvm")
+        DLL = "gllvm", silent=TRUE)
       
       if(optimizer=="nlminb") {
         timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
@@ -1372,7 +1372,7 @@ trait.TMB <- function(
       data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset=offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
@@ -1388,7 +1388,7 @@ trait.TMB <- function(
       }
       
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=!trace&!is.null(randomp),
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
@@ -1554,7 +1554,7 @@ trait.TMB <- function(
       data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), randomB = 0,family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
@@ -1618,7 +1618,7 @@ trait.TMB <- function(
       data.list = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm")
