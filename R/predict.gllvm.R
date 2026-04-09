@@ -252,7 +252,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
       
       if (!is.null(newLV)) {
-        if (ncol(newLV) != (object$num.lv + object$num.lv.c)) 
+        if ((object$num.lv+object$num.lv.c)>0 && ncol(newLV) != (object$num.lv + object$num.lv.c)) 
           stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
         if (!is.null(newdata)) {
           if (nrow(newLV) != nrow(newdata)) 
