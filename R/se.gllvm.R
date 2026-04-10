@@ -152,7 +152,9 @@ se.gllvm <- function(object, ...){
         d <- diag(cov.mat.mod)
         if(any(d < 0)){
           neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
-          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+          neg_counts <- table(neg_pnames)
+          neg_summary <- paste(names(neg_counts), neg_counts, sep = " x", collapse = ", ")
+          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), neg_summary))
         }
         se <- try(sqrt(pmax(d, 0)))
         names(se) = names(object$TMBfn$par[incl])
@@ -202,7 +204,9 @@ se.gllvm <- function(object, ...){
         d <- diag(cov.mat.mod)
         if(any(d < 0)){
           neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
-          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), paste(neg_pnames, collapse = ", ")))
+          neg_counts <- table(neg_pnames)
+          neg_summary <- paste(names(neg_counts), neg_counts, sep = " x", collapse = ", ")
+          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), neg_summary))
         }
         se <- sqrt(pmax(d, 0))
         names(se) = names(object$TMBfn$par[incl])
