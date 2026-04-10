@@ -96,9 +96,10 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   n.i.i <- n.i.i +1
   grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1)
   grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = 0.1, scale = 1)
-  accept <- (isTRUE(grad.test1) && fit$logL > fitFinal$logL) ||
-            (!isTRUE(grad.test2) && norm.gr2 < norm.gr1) ||
-            (isTRUE(grad.test1) && abs(fit$logL - fitFinal$logL) < 0.1 && norm.gr2 < norm.gr1)
+  logL.test <- all.equal(fit$logL, fitFinal$logL, tolerance = 0.5, scale = 1)
+  accept <- (norm.gr2 < norm.gr1 && fit$logL > fitFinal$logL) || # accept if gradient and logL are  better
+            (isTRUE(grad.test1) && fit$logL > fitFinal$logL) || # accept if gradients are similar and  logL are better
+            (!isTRUE(grad.test2) && isTRUE(logL.test) && norm.gr2 < norm.gr1) # Accept if gradient is better and logL is "similar"
 
   if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && accept))  && is.finite(fit$logL)){
     n.i.i <- 0
