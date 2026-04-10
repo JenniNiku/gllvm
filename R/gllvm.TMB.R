@@ -1958,7 +1958,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         data.list$method = 0
       }
       
-      randomp <- "u"
       map.list$Au <- map.list$lg_Ar <- map.list$Abb <- factor(NA)
       map.list$Ab_lv = factor(NA)
       if(quadratic==FALSE) map.list$lambda2 <- factor(NA)
