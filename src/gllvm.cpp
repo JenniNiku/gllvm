@@ -3236,8 +3236,8 @@ Type objective_function<Type>::operator() ()
               //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
               // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
               // nll -= (y(i,j)-Ntrials(i,j)/2)*eta(i,j) - Ntrials(i,j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(i,j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
-              Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j))); // catch floating point
-              // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j))));
+              Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+              // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*cQ(i,j)));
               nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*logspace_add(wij, -wij);
                // nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*gllvmutils::log1plus(exp(-2*wij));
               if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
@@ -3436,16 +3436,16 @@ Type objective_function<Type>::operator() ()
                   //yik = 1 if yi >=k and 0 otherwise
                   // p(yik = 0) for k<y(i,j)
                   for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j))); // catch floating point
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
                     nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
-                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
                     // nll -= -0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                   // p(yik = 1)  for k>= y(i,j)
                   for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j))); // catch floating point
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
                     nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
-                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
                     // nll -= 0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                 }
@@ -3537,12 +3537,12 @@ Type objective_function<Type>::operator() ()
                   //yik = 1 if yi >=k and 0 otherwise
                   // p(yik = 0) for k<y(i,j)
                   for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));  // catch floating point
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
                     nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                   // p(yik = 1)  for k>= y(i,j)
                   for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));  // catch floating point
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
                     nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                 }
@@ -3965,10 +3965,10 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               // logit link
               if((y(i,j)==0)){
-                  Type wij = 0.5*sqrt((zetacutoffnew(0)-eta(i,j))*(zetacutoffnew(0)-eta(i,j)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                  Type wij = 0.5*sqrt((zetacutoffnew(0)-eta(i,j))*(zetacutoffnew(0)-eta(i,j)) + 2*cQ(i,j));
                   nll -= 0.5*(zetacutoffnew(0)-eta(i,j)) - logspace_add(wij, -wij);
               } else if((y(i,j)==1)){
-                Type wij = 0.5*sqrt((eta(i,j)-zetacutoffnew(1))*(eta(i,j)-zetacutoffnew(1)) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt((eta(i,j)-zetacutoffnew(1))*(eta(i,j)-zetacutoffnew(1)) + 2*cQ(i,j));
                 nll -= 0.5*(eta(i,j)-zetacutoffnew(1)) - logspace_add(wij, -wij);
               } else{
                 nll -= -CppAD::CondExpLe(eta(i,j)-zetacutoffnew(0), Type(18.), gllvmutils::log1plus(exp(eta(i,j)-zetacutoffnew(0))), eta(i,j)-zetacutoffnew(0));
@@ -4101,7 +4101,7 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
                 nll -= log(1-iphij);
-                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 nll -= (y(i,j)-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
@@ -4109,7 +4109,7 @@ Type objective_function<Type>::operator() ()
                 }
               }else{
                 Type LL = 0;
-                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 LL += (-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
                 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
@@ -4204,7 +4204,7 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j)< Ntrials(i,j)){
                 nll -= log(1-iphi3);
-                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 nll -= (y(i,j)-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
@@ -4212,7 +4212,7 @@ Type objective_function<Type>::operator() ()
                 }
               }else if(y(i,j)==0){
                 Type LL = 0;
-                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 LL += (-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
 
                 pVA = exp(log(1-iphi3)+LL-log((1-iphi3)*exp(LL)+iphij));
@@ -4221,7 +4221,7 @@ Type objective_function<Type>::operator() ()
                 nll -= log(iphij)-log(1-pVA);
               }else if(y(i,j) == Ntrials(i,j)){
                 Type LL = 0;
-                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*CppAD::CondExpLt(cQ(i,j), Type(0), Type(0), cQ(i,j)));
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 LL += (y(i,j)-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
                 
                 pVA2 = exp(log(1-iphi3)+LL-log((1-iphi3)*exp(LL)+iphi2));
