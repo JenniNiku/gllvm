@@ -2104,7 +2104,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace&is.null(randomp),
+        data = data.list, silent=!(trace&!is.null(randomp)),
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
@@ -2194,7 +2194,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         #### Call makeADFun
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace&is.null(randomp),
+          data = data.list, silent=!(trace&!is.null(randomp)),
           parameters = parameter.list, map = map.list,
           inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")

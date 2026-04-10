@@ -1388,7 +1388,7 @@ trait.TMB <- function(
       }
       
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace&is.null(randomp),
+        data = data.list, silent=!(trace&!is.null(randomp)),
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
