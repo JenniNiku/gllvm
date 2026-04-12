@@ -225,7 +225,7 @@ Type objective_function<Type>::operator() ()
       // }
     }else if(randomB>0){
       //randomB="LV"
-        Sigmab_lv(0).diagonal().array() *= exp(sigmab_lv)*exp(sigmab_lv);
+        Sigmab_lv(0).diagonal().array() *= exp(2*sigmab_lv);
     }
     }else if((csb_lv.cols()==2) && (randomB<1)){
       matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
@@ -464,8 +464,8 @@ Type objective_function<Type>::operator() ()
         AB_lv(d).setZero();
       }
       
-      for (int q=0; q<(sbl12); q++){
-        for(int d=0; d<sbl3; d++){
+      for(int d=0; d<sbl3; d++){
+        for (int q=0; q<(sbl12); q++){
           AB_lv(d)(q,q)=exp(Ab_lv(q*sbl3+d));
         }
       }
@@ -486,10 +486,10 @@ Type objective_function<Type>::operator() ()
       //randomB and no correlation
       for(int q=0; q<sbl3; q++){
         if(randomB<1){
-          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).sum());
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().array()*AB_lv(q).rowwise().squaredNorm().array()).sum()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).value());
           nll -= 0.5*(sbl12- Sigmab_lv(q).diagonal().array().log().sum());
         }
-        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().array()*AB_lv(q).rowwise().squaredNorm().array()).sum()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).value());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
        }
       if(randomB>0)nll -= 0.5*(sbl3*sbl12- sbl3*Sigmab_lv(0).diagonal().array().log().sum());
       }else if((csb_lv.cols()==2) && (randomB<1)){
@@ -550,9 +550,10 @@ Type objective_function<Type>::operator() ()
         if(num_RR>0)RRgamma.bottomRows(num_RR) = RRgamma.topRows(num_RR); 
         RRgamma.topRows(num_lv_c) = newlam.topRows(num_lv_c);
       }
-      for (int j=0; j<p; j++){
-        for(int i=0; i<n; i++){
-          cQ(i,j) += 0.5*(RRgamma.col(j).transpose()*Ab_lvcov(i)*RRgamma.col(j)).value();
+      for(int i=0; i<n; i++){
+        matrix<Type> Av = Ab_lvcov(i)*RRgamma; // reuse Ab_lvcov(i) across all species
+        for(int j=0; j<p; j++){
+          cQ(i,j) += 0.5*(RRgamma.col(j).transpose()*Av.col(j)).value();
         }
       }
       if(quadratic<1){
@@ -604,7 +605,7 @@ Type objective_function<Type>::operator() ()
               tempRRCN = Ab_lvcov(i).bottomLeftCorner(num_RR,num_lv_c);
             }
             //resize to fit A
-            Ab_lvcov(i).conservativeResize(nlvr,nlvr);
+            Ab_lvcov(i).resize(nlvr,nlvr);
             Ab_lvcov(i).setZero();
             
             //re-assign
