@@ -188,7 +188,7 @@ Type objective_function<Type>::operator() ()
   int sbl3 = num_lv_c + num_RR;
 
   if(randomB>0){
-    sbl12 = num_lv_c + num_RR;;
+    sbl12 = num_lv_c + num_RR;
     sbl3 = Klv;
   }
   
