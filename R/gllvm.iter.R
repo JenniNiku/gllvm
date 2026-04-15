@@ -92,14 +92,16 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     norm.gr1 <- NaN
   }
   if(!is.null(fit$TMBfn$gr)){
-  norm.gr2 <- norm(as.matrix(fit$TMBfn$gr()/length(fit$TMBfn$par)))
+  gr2 <- fit$TMBfn$gr()/length(fit$TMBfn$par)
+  norm.gr2 <- norm(as.matrix(gr2))
+  max.gr2 <- max(abs(gr2))
   n.i.i <- n.i.i +1
-  grad.test1 <- all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1)
-  grad.test2 <- all.equal(norm.gr1, norm.gr2, tolerance = 0.1, scale = 1)
-  logL.test <- all.equal(fit$logL, fitFinal$logL, tolerance = 0.5, scale = 1)
-  accept <- (norm.gr2 < norm.gr1 && fit$logL > fitFinal$logL) || # accept if gradient and logL are  better
-            (isTRUE(grad.test1) && fit$logL > fitFinal$logL) || # accept if gradients are similar and  logL are better
-            (!isTRUE(grad.test2) && isTRUE(logL.test) && norm.gr2 < norm.gr1) # Accept if gradient is better and logL is "similar"
+  grad.similar <- isTRUE(all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1))
+  grad.better  <- !grad.similar && norm.gr2 < norm.gr1  # meaningfully better gradient (diff > 1)
+  logL.better  <- fit$logL > fitFinal$logL
+  logL.similar <- isTRUE(all.equal(fit$logL, fitFinal$logL, tolerance = 0.5, scale = 1))
+  accept <- (logL.better  && (grad.better || grad.similar)) || # better logL with non-worse gradient
+            (logL.similar && grad.better)                      # similar logL but meaningfully better gradient
 
   if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && accept))  && is.finite(fit$logL)){
     n.i.i <- 0
@@ -107,11 +109,16 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
     fitFinal$seed <- seed[n.i]
     if(args$trace & n.i>1){
-      cat("  -> Improved: logL =", fit$logL, "| grad norm =", norm.gr2, "\n")
+      cat("  -> Improved: logL =", fit$logL, "| grad norm =", norm.gr2, "| max grad =", max.gr2, "\n")
     }else if(args$trace){
-      cat("  -> logL =", fit$logL, "| grad norm =", norm.gr2, "\n")
+      cat("  -> logL =", fit$logL, "| grad norm =", norm.gr2, "| max grad =", max.gr2, "\n")
     }
   }
+  # else if(((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2))  && is.finite(fit$logL)){
+  #   if(args$trace & n.i>1){
+  #     cat("  -> Rejected: logL =", fit$logL, "| grad norm =", norm.gr2, "| max grad =", max.gr2, "\n")
+  #   }
+  # }
 
   if(n.i.i>=args$n.init.max){
     n.init <- n.i
