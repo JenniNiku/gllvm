@@ -109,7 +109,7 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     #Store the seed that gave the best results, so that we may reproduce results, even if a seed was not explicitly provided
     fitFinal$seed <- seed[n.i]
     if(args$trace & n.i>1){
-      cat("  -> Improved: logL =", fit$logL, "| grad norm =", norm.gr2, "| max grad =", max.gr2, "\n")
+      cat("  -> Improved: logL =", fit$logL, "| grad norm =", norm.gr2, "\n")
     }else if(args$trace){
       cat("  -> logL =", fit$logL, "| grad norm =", norm.gr2, "| max grad =", max.gr2, "\n")
     }
