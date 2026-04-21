@@ -178,7 +178,8 @@ se.gllvm <- function(object, ...){
         out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
       } else {
         sds <- sqrt(abs(diag(sdr)))
-        if(any(sds<1e-12))sds[sds<1e-12]<-1
+        if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
+        if(any(sds<1e-12, na.rm=TRUE))sds[sds<1e-12]<-1
         
         sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
         
@@ -469,7 +470,7 @@ se.gllvm <- function(object, ...){
           out$sd$zeta <- se.zetanew
           row.names(out$sd$zeta) <- colnames(object$y); 
           if(any(family%in%c("ordinal"))){
-            colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+            colnames(out$sd$zeta) <- paste((min(object$y[,family=="ordinal"]) + 0:(ncol(out$sd$zeta)-1)),"|",(min(object$y[,family=="ordinal"]) + 1:(ncol(out$sd$zeta))),sep="")
           } else {
             colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
           }
@@ -496,7 +497,7 @@ se.gllvm <- function(object, ...){
             }
             }
           out$sd$zeta <- se.zetanew
-          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
+          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste((min(object$y[,object$family=="ordinal"]) + 0:(length(out$sd$zeta)-1)),"|",((min(object$y[,object$family=="ordinal"]) + 1:length(out$sd$zeta))),sep=""))
         }
       } # end se zeta
       
@@ -643,7 +644,8 @@ se.gllvm <- function(object, ...){
       # rnrm <- apply(sdr,1,function(x)sqrt(sum(x^2)))
       # sdr.s <- sweep(sweep(sdr,2,cnrm,"/"),1,rnrm,"/")
       sds <- sqrt(abs(diag(sdr)))
-      if(any(sds<1e-12))sds[sds<1e-12]<-1
+      if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
+      if(any(sds<1e-12, na.rm = TRUE)) sds[sds<1e-12]<-1
       
       sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
       
@@ -1012,7 +1014,7 @@ se.gllvm <- function(object, ...){
         out$sd$zeta <- se.zetanew
         row.names(out$sd$zeta) <- colnames(object$y); 
         if(any(family%in%c("ordinal"))){
-          colnames(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"])-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"]),sep="")
+          colnames(out$sd$zeta) <- paste((min(object$y[,family=="ordinal"]) + 0:(ncol(out$sd$zeta)-1)),"|",(min(object$y[,family=="ordinal"]) + 1:(ncol(out$sd$zeta))),sep="")
         } else {
           colnames(out$sd$zeta) <- c("cutoff0","cutoff1")
         }
@@ -1038,7 +1040,7 @@ se.gllvm <- function(object, ...){
           se.zetanew <- sezetanew
         }
         out$sd$zeta <- se.zetanew
-        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y)-1),"|",(min(object$y)+1):max(object$y),sep=""))
+        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste((min(object$y[,object$family=="ordinal"]) + 0:(length(out$sd$zeta)-1)),"|",((min(object$y[,object$family=="ordinal"]) + 1:length(out$sd$zeta))),sep=""))
       }
     }
     
