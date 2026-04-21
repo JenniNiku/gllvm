@@ -3161,7 +3161,15 @@ Type objective_function<Type>::operator() ()
     
     
     int idx = 0; // initialize indexing for zeta
-
+    
+    bool has12 = false;
+    for (int j = 0; j < family.size(); ++j) {
+      if (family(j) == 12) {
+        has12 = true;
+        break;
+      }
+    }
+    
     // Distributions (family)
     // truep =p-p_betaH
   for (int j=0; j<(truep);j++){
@@ -3517,12 +3525,16 @@ Type objective_function<Type>::operator() ()
         }
         
       } else if(zetastruc==0){//ordinal with common cutoffs
-        int ymax =  CppAD::Integer(y.maxCoeff());
+        // int ymax =  CppAD::Integer(y.maxCoeff());
+        // int K = ymax - 1;
+        
+        int ymax = CppAD::Integer(y.col(j).maxCoeff());
         int K = ymax - 1;
         
         vector <Type> zetanew(K);
         zetanew.setZero();
-        if(zeta.size()>(K-1)) idx = 2; // start from 2 if there are orderedBeta columns in the model
+
+        if(has12) idx = 2; // start from 2 if there are orderedBeta columns in the model
         for(int k=0; k<(K-1); k++){
           zetanew(k+1) = zeta.segment(idx, k+1).array().abs().sum();//second cutoffs must be positive
         }
@@ -5045,7 +5057,7 @@ Type objective_function<Type>::operator() ()
           }
           }
         } else if(zetastruc==0){
-          int ymax =  CppAD::Integer(y.maxCoeff());
+          int ymax =  CppAD::Integer(y.col(j).maxCoeff());
           int K = ymax - 1;
           
           vector <Type> zetanew(K);
