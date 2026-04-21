@@ -49,7 +49,7 @@ where $\boldsymbol\psi$ includes all model parameters. In this expression we hav
 
 The **gllvm** package overcomes these computational problems using three key innovations:
 
-* maximizing an approximation to the log-likelihood that is (almost completely) closed form. We provide two ways to do this -- using Gaussian variational approximations for overdispersed counts, binary and ordinal responses, or using Laplace approximations for other exponential family distributions when a fully closed form variational approximation cannot be obtained *e.g.* biomass data can be modelled by the Tweedie distribution.
+* maximizing an approximation to the log-likelihood that is (almost completely) closed form. We provide two ways to do this -- using Gaussian variational approximations for example overdispersed counts, binary and ordinal responses etc, or using either extended variational approximation or Laplace approximations for these and other distributions when a fully closed form variational approximation cannot be obtained *e.g.* percent cover can be modelled by the beta distribution and beta models adjusted for zeros and ones.
 
 * Parameter estimation makes use of automatic differentiation software in C++ to accelerate computation times, via the interface provided by the R package TMB.
 
@@ -120,30 +120,36 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 | Response    | Distribution | Method  | Link  | Description                |
 | ----------- |:------------:|:------- |:------- |:---------------------------|
 |Counts  	    | Poisson 	   | VA/LA   |log	    | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$|
-|             | NB    	     | VA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
+|             | NB    	     | VA/EVA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
 |             | NB1    	     | VA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}$,|
 |		          |		           |		     |		    | where $\phi_j>0$ is a dispersion parameter | 
 |             | ZIP       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
 |             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
 |		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
-|             | binomial     | VA/LA   |probit/cloglog  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
-|             | binomial     |    VA/EVA/LA   |logit/cloglog   | 
-|zero-inflated| ZIB     | VA/LA   |probit/logit/cloglog  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
-|             | ZIB     |    VA/EVA/LA   |logit   | 
-|zero/N-inflated|ZIB    |VA/LA           |probit/logit/cloglog| $E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}$, $V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij} (1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2$|
+|             | binomial     | VA/LA   |probit/logit/cloglog  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
+|             | binomial     | EVA   |probit/logit   | 
+|zero-inflated| ZIB     | VA   |probit/logit/cloglog  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
+|             | ZIB     | LA   |probit/logit   | 
+|zero/N-inflated|ZNIB    |VA           |probit/logit/cloglog| $E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}$, $V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij} (1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2$|
+| |ZNIB    |LA           |probit/logit|
 |Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
 |             |              | EVA/LA 		 |logit   |                            |
 |Biomass    	| Tweedie 	   | EVA/VA/LA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
 |		          |		           |		     |		    | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
 |Ordinal 	    | Multinomial  | VA      |probit/logit  | Cumulative probit/logit model|
+| 	    |   | EVA      |logit  | |
 |Normal       | Gaussian     | VA/LA   |identity| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$|
 |Positive continuous| Gamma     | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$|
 |		          |		           |		     |		    | where $\phi_j$ is a shape parameter |
 |Positive continuous | Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
 |Percent cover| beta    	   | LA/EVA | probit/logit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
-|Percent cover with zeros/ones| ordered beta    	   | VA-EVA/EVA | probit/logit | details in Korhonen et al (2024) |
-|| beta hurdle    	   | EVA | probit | |
+|Percent cover with zeros/ones| ordered beta    	   | VA-EVA | probit/logit | details in Korhonen et al (2024) |
+|| ordered beta    	   | EVA | logit | details in Korhonen et al (2024) |
+|| beta hurdle    	   | EVA/ VA-EVA | probit/logit | |
+
+It is also possible to combine multiple response types in one model, for example counts, binary and ordinal data, and choose suitable family for each response variable by giving a vector of families to argument `family`, for example `family = c("poisson", "binomial", "ordinal")`. There is a restriction for families and links in the same model such that they all need to be implemented with same method, VA, EVA or LA.
+
 ## Model-based ordination
 
 GLLVMs can be used as a model-based approach to unconstrained ordination by including (*e.g.*) two latent variables in the model but no predictors. The corresponding ordination plot then provides a graphical representation of which sites are similar in terms of their species composition. Such a model can be fitted to the ant data using the function `gllvm` as below. We will consider two count distributions for the data -- the Poisson and negative binomial (NB).
