@@ -1280,8 +1280,8 @@ trait.TMB <- function(
     }
     if(any(family == "binomial")) { 
       familyn[family == "binomial"] <- 2
-      if(link=="probit") extra[family == "binomial"]=1
-      if(link=="cloglog")extra[family == "binomial"]=2
+      if(any(link=="probit")) extra[family == "binomial" & link=="probit"]=1
+      if(any(link=="cloglog"))extra[family == "binomial" & link=="cloglog"]=2
     }
     if(any(family == "gaussian")) {familyn[family == "gaussian"]=3}
     if(any(family == "gamma")) {familyn[family == "gamma"]=4}
@@ -1289,30 +1289,30 @@ trait.TMB <- function(
     if(any(family == "ZIP")){familyn[family == "ZIP"] =6}
     if(any(family == "ordinal")) {
       familyn[family == "ordinal"]=7
-      if(link=="probit")extra[family == "ordinal"]=1
+      if(any(link=="probit"))extra[family == "ordinal" & link=="probit"]=1
     }
     if(any(family == "exponential")) {familyn[family == "exponential"] =8}
     if(any(family == "beta")){ 
       familyn[family == "beta"] =9
-      if(link=="probit") extra[family == "beta"]=1
+      if(any(link=="probit")) extra[family == "beta" & link=="probit"]=1
     }
     if(any(family == "betaH")){ # EVA
       familyn[family == "betaH"] = 10
-      if(link=="probit") extra[family == "betaH"]=1
+      if(any(link=="probit")) extra[family == "betaH" & (link=="probit")]=1
     }
     if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
     if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
-    if(link=="probit")extra[family == "orderedBeta"]=1
+    if(any(link=="probit"))extra[family == "orderedBeta" & (link=="probit")]=1
     }    
     if(any(family == "ZIB")){
       familyn[family == "ZIB"] =13
-      if(link=="probit") extra[family == "ZIB"]=1
-      if(link=="cloglog") extra[family == "ZIB"]=2
+      if(any(link=="probit")) extra[family == "ZIB" & (link=="probit")]=1
+      if(any(link=="cloglog")) extra[family == "ZIB" & (link=="cloglog")]=2
     }
     if(any(family == "ZNIB")){
       familyn[family == "ZNIB"] =14
-      if(link=="probit") extra[family == "ZNIB"]=1
-      if(link=="cloglog") extra[family == "ZNIB"]=2
+      if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
+      if(any(link=="cloglog")) extra[family == "ZNIB" & (link=="cloglog")]=2
     }
     ## To improve starting values for quadratic model
     if(starting.val!="zero" && start.struc != "LV" && quadratic == TRUE && num.lv>0 && method == "VA"){

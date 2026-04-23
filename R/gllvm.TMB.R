@@ -1273,8 +1273,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
       if(any(family == "binomial")) { 
         familyn[family == "binomial"] <- 2
-        if(link=="probit") extra[family == "binomial"]=1
-        if(link=="cloglog")extra[family == "binomial"]=2
+        if(any(link=="probit")) extra[family == "binomial" & (link=="probit")]=1
+        if(any(link=="cloglog"))extra[family == "binomial" & (link=="cloglog")]=2
       }
       if(any(family == "gaussian")) {familyn[family == "gaussian"]=3}
       if(any(family == "gamma")) {familyn[family == "gamma"]=4}
@@ -1282,30 +1282,30 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "ZIP")){familyn[family == "ZIP"] =6}
       if(any(family == "ordinal")) {
         familyn[family == "ordinal"]=7
-        if(link=="probit")extra[family == "ordinal"]=1
+        if(any(link=="probit"))extra[family == "ordinal" & (link=="probit")]=1
       }
       if(any(family == "exponential")) {familyn[family == "exponential"] =8}
       if(any(family == "beta")){ 
         familyn[family == "beta"] =9
-        if(link=="probit") extra[family == "beta"]=1
+        if(any(link=="probit")) extra[family == "beta" & (link=="probit")]=1
       }
       if(any(family == "betaH")){ # EVA
         familyn[family == "betaH"] = 10
-        if(link=="probit") extra[family == "betaH"]=1
+        if(any(link=="probit")) extra[family == "betaH" &(link=="probit")]=1
       }
       if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
       if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
-      if(link=="probit")extra[family == "orderedBeta"]=1
+      if(any(link=="probit"))extra[family == "orderedBeta" & (link=="probit")]=1
       }
       if(any(family == "ZIB")){
         familyn[family == "ZIB"] =13
-        if(link=="probit") extra[family == "ZIB"]=1
-        if(link=="cloglog") extra[family == "ZIB"]=2
+        if(any(link=="probit")) extra[family == "ZIB" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "ZIB" & (link=="cloglog")]=2
       }
       if(any(family == "ZNIB")){
         familyn[family == "ZNIB"] =14
-        if(link=="probit") extra[family == "ZNIB"]=1
-        if(link=="cloglog") extra[family == "ZNIB"]=2
+        if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "ZNIB"]=2
       }
       
       ## generate starting values quadratic coefficients in some cases
@@ -1345,7 +1345,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list = list(r0r = matrix(r0r), sigmaijr =  sigmaijr, r0f = matrix(r0f), b = rbind(a,b), b_lv = b.lv, sigmab_lv = sigmab_lv, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma, sigmaB = sigmaB, rho_lvc=rho_lvc, Au=Au, lg_Ar =lg_Ar, Abb = spAr, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace,
+          data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list2,
           DLL = "gllvm")##GLLVM
         
@@ -1383,7 +1383,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=TRUE,
         parameters = parameter.list, map = map.list,
         DLL = "gllvm")##GLLVM
  
@@ -1597,7 +1597,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list <- list(r0r = r0r1, sigmaijr = sigmaijr1, r0f = r0f1, b = b1, b_lv = b.lv1, sigmaB = sigmaB1, Abb = spAr1, sigmab_lv = sigmab_lv1, Ab_lv = Ab_lv1, B = B1, Br=Br1,lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1,lg_phi=lg_phi1,sigmaij=sigmaij,log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc,thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace,
+          data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list,
           DLL = "gllvm")
         
@@ -1857,8 +1857,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
       if(any(family == "binomial")) {
         familyn[family == "binomial"] =2;
-        if(link=="probit") extra[family == "binomial"]=1
-        if(link=="cloglog") extra[family == "binomial"]=2
+        if(any(link=="probit")) extra[family == "binomial" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "binomial" & (link=="cloglog")]=2
       }
       if(any(family == "gaussian")) {familyn[family == "gaussian"] =3}
       if(any(family == "gamma")) {familyn[family == "gamma"] =4}
@@ -1868,11 +1868,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "exponential")){ familyn[family == "exponential"] =8}
       if(any(family == "beta")){ 
         familyn[family == "beta"] =9
-        if(link=="probit") extra[family == "beta"]=1
+        if(any(link=="probit")) extra[family == "beta" & (link=="probit")]=1
       }
       if(any(family == "betaH")){
         familyn[family == "betaH"] = 10
-        if(link=="probit") extra[family == "betaH"]=1
+        if(any(link=="probit")) extra[family == "betaH" & (link=="probit")]=1
         
         # bH <- rbind(a,b)
         # if(num.lv>0) {
@@ -1892,17 +1892,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       # }
       if(any(family == "ZINB")){familyn[family == "ZINB"] =11}
       if(any(family == "orderedBeta")) {familyn[family == "orderedBeta"] =12;       
-      if(link=="probit")extra[family == "orderedBeta"]=1
+      if(any(link=="probit"))extra[family == "orderedBeta" & (link=="probit")]=1
       }
       if(any(family == "ZIB")){ 
         familyn[family == "ZIB"] =13;
-        if(link=="probit") extra[family == "ZIB"]=1
-        if(link=="cloglog") extra[family == "ZIB"]=2
+        if(any(link=="probit")) extra[family == "ZIB" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "ZIB" & (link=="cloglog")]=2
       }
       if(any(family == "ZNIB")){ 
         familyn[family == "ZNIB"] =14;
-        if(link=="probit") extra[family == "ZNIB"]=1
-        if(link=="cloglog") extra[family == "ZNIB"]=2
+        if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "ZNIB" & (link=="cloglog")]=2
       }
       
       ## generate starting values quadratic coefficients in some cases
@@ -1918,7 +1918,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace,
+          data = data.list, silent=TRUE,
           parameters = parameter.list, map = map.list2,
           DLL = "gllvm")##GLLVM
         

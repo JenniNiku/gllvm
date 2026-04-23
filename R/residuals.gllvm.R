@@ -137,13 +137,14 @@ residuals.gllvm <- function(object, ...) {
     bH_ind <- c(1:p)[object$family == "betaH"]
     for (i in 1:n) {
       for (j in 1:p_f) {
+        linkj <- object$link[pmin(length(object$link), j)]
         # a = 0; b = 1
         if(!is.na(y[i, bH_ind[j]])){
           if(y[i, bH_ind[j]]==0){
-            b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j])
+            b = 1 - binomial(link = linkj)$linkinv(eta.mat[i,p+j])
             a = 0
           } else {
-            b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,p+j]) + binomial(link = object$link)$linkinv(eta.mat[i,p+j])*pbeta(as.vector(unlist(y[i, bH_ind[j]])), shape1 = object$params$phi[bH_ind[j]]*mu[i, bH_ind[j]], shape2 = object$params$phi[bH_ind[j]]*(1-mu[i, bH_ind[j]]))
+            b <- a <- 1 - binomial(link = linkj)$linkinv(eta.mat[i,p+j]) + binomial(link = linkj)$linkinv(eta.mat[i,p+j])*pbeta(as.vector(unlist(y[i, bH_ind[j]])), shape1 = object$params$phi[bH_ind[j]]*mu[i, bH_ind[j]], shape2 = object$params$phi[bH_ind[j]]*(1-mu[i, bH_ind[j]]))
           }
           
           u <- runif(n = 1, min = a, max = b)
@@ -160,16 +161,17 @@ residuals.gllvm <- function(object, ...) {
     oB_ind <- c(1:p)[object$family == "orderedBeta"]
     for (i in 1:n) {
       for (j in 1:p_f) {
+        linkj <- object$link[pmin(length(object$link), j)]
         # a = 0; b = 1
         if(!is.na(y[i, oB_ind[j]])){
           if(y[i, oB_ind[j]]==1){
             b = 1
-            a = 1 - binomial(link = object$link)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),2])
+            a = 1 - binomial(link = linkj)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),2])
           } else if(y[i, oB_ind[j]]==0){
-            b = 1 - binomial(link = object$link)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1])
+            b = 1 - binomial(link = linkj)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1])
             a = 0
           } else {
-            b <- a <- 1 - binomial(link = object$link)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1]) + (binomial(link = object$link)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1]) - binomial(link = object$link)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),2]))*pbeta(as.vector(unlist(y[i, oB_ind[j]])), shape1 = object$params$phi[oB_ind[j]]*mu[i, oB_ind[j]], shape2 = object$params$phi[oB_ind[j]]*(1-mu[i, oB_ind[j]]))
+            b <- a <- 1 - binomial(link = linkj)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1]) + (binomial(link = linkj)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),1]) - binomial(link = linkj)$linkinv(eta.mat[i,oB_ind[j]] - object$params$zeta[min(nrow(object$params$zeta),oB_ind[j]),2]))*pbeta(as.vector(unlist(y[i, oB_ind[j]])), shape1 = object$params$phi[oB_ind[j]]*mu[i, oB_ind[j]], shape2 = object$params$phi[oB_ind[j]]*(1-mu[i, oB_ind[j]]))
           }
           
           u <- try({runif(n = 1, min = a, max = b)})
@@ -284,12 +286,13 @@ residuals.gllvm <- function(object, ...) {
           k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
           
           for (j in o_ind) {
+            linkj <- object$link[pmin(length(object$link), j)]
             probK <- matrix(nrow=k.max[j],ncol=n)
-            probK[1:(k.max[j]-1),] <- binomial(link=object$link)$linkinv(outer(object$params$zeta[j,1:k.max[j]-1], eta.mat[,j], function(zeta, eta)zeta-eta))
+            probK[1:(k.max[j]-1),] <- binomial(link=linkj)$linkinv(outer(object$params$zeta[j,1:k.max[j]-1], eta.mat[,j], function(zeta, eta)zeta-eta))
               if(k.max[j]>2){
                 probK[2:(k.max[j]-1), ] <- probK[2:(k.max[j]-1),,drop=FALSE] - probK[1:(k.max[j]-2),,drop=FALSE]
               }
-            probK[k.max[j],] <- 1 - binomial(link=object$link)$linkinv(object$params$zeta[j,k.max[j] - 1] - eta.mat[, j])
+            probK[k.max[j],] <- 1 - binomial(link=linkj)$linkinv(object$params$zeta[j,k.max[j] - 1] - eta.mat[, j])
             probK <- rbind(0, probK)
             cumsum.b <- colSums(probK*outer(1:(k.max[j]+1),y[,j]+ifelse(min(y[,j])==0,1,0)+1,"<="))
             cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max[j],y[,j]+ifelse(min(y[,j])==0,1,0),"<=")))
@@ -306,12 +309,13 @@ residuals.gllvm <- function(object, ...) {
           k.max <- length(object$params$zeta) + 1 - kz
           
           for (j in o_ind) {
+            linkj <- object$link[pmin(length(object$link), j)]
             probK <- matrix(nrow=k.max,ncol=n)
-            probK[1:(k.max-1),] <- binomial(link=object$link)$linkinv(outer(tail(object$params$zeta,k.max-1), eta.mat[,j], function(zeta, eta)zeta-eta))
+            probK[1:(k.max-1),] <- binomial(link=linkj)$linkinv(outer(tail(object$params$zeta,k.max-1), eta.mat[,j], function(zeta, eta)zeta-eta))
             if(k.max>2){
               probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
             }
-            probK[k.max,] <- 1 - binomial(link=object$link)$linkinv(object$params$zeta[k.max - 1 + kz] - eta.mat[, j])
+            probK[k.max,] <- 1 - binomial(link=linkj)$linkinv(object$params$zeta[k.max - 1 + kz] - eta.mat[, j])
             probK <- rbind(0, probK)
             cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y[,o_ind])==0,1,0)+1,"<="))
             cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y[,o_ind])==0,1,0),"<=")))

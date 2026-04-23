@@ -485,23 +485,31 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   if(!all(family == "orderedBeta")) stop("Currently ordered Beta model is not implemented for mixed response type models.")
     # }
 
+    # utils::globalVariables("gllvmFML_allowed")
     
-    accepted_families = c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")
-    VA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "exponential", "betaH", "ZINB", "orderedBeta","ZIB", "ZNIB")
-    EVA_family = c("negative.binomial","negative.binomial1","binomial", "tweedie", "ordinal", "beta", "betaH", "orderedBeta")
-    LA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "ZINB", "exponential", "beta", "betaH", "ZINB", "ZIB", "ZNIB")
+    accepted_families = unique(gllvmFML_allowed$family)
+    VA_family = unique(gllvmFML_allowed$family[gllvmFML_allowed$method == "VA"])
+    EVA_family = unique(gllvmFML_allowed$family[gllvmFML_allowed$method == "EVA"])
+    LA_family = unique(gllvmFML_allowed$family[gllvmFML_allowed$method == "LA"])
+    
+    # accepted_families = c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")
+    # VA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "exponential", "betaH", "ZINB", "orderedBeta","ZIB", "ZNIB")
+    # EVA_family = c("negative.binomial","binomial", "tweedie", "ordinal", "beta", "betaH", "orderedBeta")
+    # LA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "ZINB", "exponential", "beta", "betaH", "ZINB", "ZIB", "ZNIB")
     
     if(any(!(family %in% accepted_families)))
       stop("Selected family: ", paste(family[!family %in% accepted_families], collapse = ", ")," not permitted...sorry!")
     
-    if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family)))
-      stop("Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
+    # if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family)))
+    not_valid_famMethod <- !is_allowed(family, method, NULL)
+    # if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family))){
+    if(any(not_valid_famMethod)){
+      fam_not_valid <- family[not_valid_famMethod]
+      stop(paste("Family(families): ",paste(fam_not_valid, collapse = ", ")," not implemented with method '", method,"'. Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
            "\n For 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "),
-           "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", ")
+           "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", "))
       )
-    # if(method =="VA" & !all(family %in% VA_family)) stop("Only families implemented with same method can be combined, for 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "))
-    # if(method =="EVA" & !all(family %in% EVA_family)) stop("Only families implemented with same method can be combined, for 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "))
-    # if(method =="LA" & !all(family %in% LA_family)) stop("Only families implemented with same method can be combined, for 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", "))
+    }
     
     fill_control = function(x){
       if (!("reltol" %in% names(x))) 
@@ -1390,8 +1398,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       #method <- "VA"
     }
     if (method == "LA" && quadratic != FALSE && (num.lv+num.lv.c)>0){
-      cat("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempting VA instead. \n")
-      method <- "VA"
+      stop("Laplace's method cannot model species responses as a quadratic function of the latent variables, so attempt VA instead, if compatible with the family. \n")
+      # method <- "VA"
     }
     if (method == "VA" && quadratic != FALSE && TMB == FALSE){
       cat("The quadratic model is not implemented without TMB, so 'TMB = TRUE' is used instead. \n")
@@ -1493,31 +1501,64 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     # Check that link is valid with distribution and method
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
+    
     if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))) {
       if (method %in% c("LA", "EVA","VA"))
         out$link <- link
     }
+    
+    if(length(link) == 1 & length(family)>1) {
+      link = rep(link, length(family))
+      out$link <- link
+    }
+    if (any(family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))) {
+      link[family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] = "log"
+      out$link <- link
+    }
+    if (any(family %in% c("gaussian"))) {
+      link[family %in% c("gaussian")] = "identity"
+      out$link <- link
+    }
+    
+    
+    
+    not_valid_f_M_L <- !is_allowed(family, method, link)
+    if(any(not_valid_f_M_L)){
+      fML_not_valid <- unique(paste(family, method, link, sep = " + ")[not_valid_f_M_L])
+      stop(paste("Following combinations of family, method and link are not implemented: ", fML_not_valid,"\n Options available for these families listed below: \n", paste(gllvmFML_allowed[gllvmFML_allowed$family %in% family[not_valid_f_M_L],4], collapse = ", \n")))
+    }
+    
+    # if(any(link[family %in% c("binomial", "ordinal", "ZIB", "ZNIB")] == "cloglog") && method == "EVA" && any(!(family %in% c("binomial", "ordinal", "ZIB", "ZNIB")))){
+    #   if(length(family) == 1){
+    #     stop(paste("Cloglog-link not available for method 'EVA' and family '",family,"'. Setting method = 'VA'.\n", sep=""))
+    #     method  = "VA"
+    #     out$method = "VA"
+    #   } else {
+    #     stop("Cloglog-link not available for method 'EVA'. Consider other link or method if possible.\n")
+    #   }
+    # }
+    # if(any(family == "ordinal") && any(link[family == "ordinal"] == "cloglog"))
+    #   stop("Cloglog link not available for 'ordinal' family.")
+    
     if (any(family %in% c("beta","betaH","orderedBeta"))) {
       if(any(family=="beta") && (any(range(y[,family=="beta"])==0)|any(range(y[,family=="beta"])>1))){
         stop("Data must be in the range 0-1 for the beta distribution.")
       }
-        out$link <- link
+      # if(any(link[family %in% c("beta","betaH","orderedBeta")] == "cloglog")) {
+      #   stop("Beta -based models ('beta', 'betaH','orderedBeta') are currently not available with cloglog link, choose logit or probit instead.")
+      # }
+      # out$link <- link
     }
-    if(link == "cloglog" && method == "EVA" && any(!(family %in% c("binomial", "ordinal", "ZIB", "ZNIB")))){
-      message("Cloglog-link not available for method 'EVA'. Setting method = 'VA'.\n")
-      method  = "VA"
-      out$method = "VA"
-    }
-    if(any(family == "ordinal") && link == "cloglog")stop("Cloglog link not available for 'ordinal' family.")
     # this following statement is problematic for mixed responses of orderedBeta with binomial
-    if (any(family %in% c("orderedBeta"))) {
-      # if (method == "VA") {
-      #   out$link <- "probit"  
-      # } else 
-        if (method=="EVA") {
-        out$link <- "logit"
-      }
-    }
+    # if (any(family %in% c("orderedBeta"))) {
+    #   # if (method == "VA") {
+    #   #   out$link <- "probit"  
+    #   # } else 
+    #   if (method=="EVA" & any(out$link[family %in% c("orderedBeta")] != "logit")) {
+    #     message("Ordered beta method with 'EVA' is currently implemented only for 'logit' link. Setting for 'orderedBeta' to logit.\n")
+    #     out$link[family %in% c("orderedBeta")] <- "logit"
+    #   }
+    # }
     # if(link == "logit" && method == "VA" && !(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))){
     #   message("Logit-link not available for method 'VA'. Setting method = 'EVA'.\n")
     #   method  = "EVA"

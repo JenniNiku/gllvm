@@ -440,8 +440,18 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     pointer[object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] <- length(ilinkfun)
   }
   if (any(object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB"))){
-    ilinkfun <- c(ilinkfun, binomial(link = object$link)$linkinv)
-    pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB")] <- length(ilinkfun)
+    if(any(object$link == "probit")){
+      ilinkfun <- c(ilinkfun, binomial(link = "probit")$linkinv)
+      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "probit")] <- length(ilinkfun)
+    }
+    if(any(object$link == "logit")){
+      ilinkfun <- c(ilinkfun, binomial(link = "logit")$linkinv)
+      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "logit")] <- length(ilinkfun)
+    }
+    if(any(object$link == "cloglog")){
+      ilinkfun <- c(ilinkfun, binomial(link = "cloglog")$linkinv)
+      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "cloglog")] <- length(ilinkfun)
+    }
   }
   if (any(object$family %in% c("ZIP","ZINB"))) {
     # ilinkfun <- c(ilinkfun, function(eta) exp(eta) * (1 - matrix(object$params$phi, n, p, byrow = TRUE)))

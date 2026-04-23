@@ -161,14 +161,14 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
     if(any(object$family %in% c("binomial","ordinal","ZNIB","ZIB"))){
       binfam <- object$family %in% c("binomial","ordinal","ZNIB","ZIB")
       
-      if(object$link == "probit"){
-        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))
+      if(any(object$link == "probit")){
+        ResCov[binfam & (object$link == "probit"),binfam & (object$link == "probit")] <- ResCov[binfam & (object$link == "probit"),binfam & (object$link == "probit"), drop=FALSE] + diag(sum(binfam & (object$link == "probit")))
       } 
-      if(object$link == "logit"){
-        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))*pi^2/3
+      if(any(object$link == "logit")){
+        ResCov[binfam & (object$link == "logit"),binfam & (object$link == "logit")] <- ResCov[binfam & (object$link == "logit"),binfam & (object$link == "logit"), drop=FALSE] + diag(sum(binfam & (object$link == "logit")))*pi^2/3
       } 
-      if(object$link == "cloglog"){
-        ResCov[binfam,binfam] <- ResCov[binfam,binfam, drop=FALSE] + diag(sum(binfam))*pi^2/6
+      if(any(object$link == "cloglog")){
+        ResCov[binfam & (object$link == "cloglog"),binfam & (object$link == "cloglog")] <- ResCov[binfam & (object$link == "cloglog"),binfam & (object$link == "cloglog"), drop=FALSE] + diag(sum(binfam & (object$link == "cloglog")))*pi^2/6
       } 
     }
     if(any(object$family == "gaussian")){
