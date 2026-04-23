@@ -11,6 +11,8 @@
 #' @param se.fit logical. If \code{TRUE}, performs 1000 simulations from the asymptotic covariance matrix for fixed effects, and from the CMSEP covariance matrix for the random effects. If an integer is provided, it is used as the number of simulations instead. 
 #' @param alpha numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.
 #' @param seed numeric, defaults to 42. Seed used for simulation in se.fit.
+#' @param ordinal.cat integer or \code{NULL}, defaults to \code{NULL}. For ordinal models with \code{type = "response"}, selects a single category to return instead of the full K×n×p array. When set, the return value is an n×p matrix of probabilities for that category. Primarily used internally by \code{predictSR} and \code{goodnessOfFit} to reduce memory use.
+#' @param spp integer vector or \code{NULL}, defaults to \code{NULL}. If provided, predictions are computed only for the selected species (column indices into the response matrix), returning an \eqn{n \times \text{length(spp)}} matrix. All parameter-level computations (\code{beta0}, \code{Xcoef}, \code{theta}, etc.) are subsetted accordingly, so no unnecessary computation is performed for the remaining species.
 #' @param ... not used.
 #'
 #' @details
@@ -57,7 +59,7 @@
 #'
 #'@export
 #'@export predict.gllvm
-predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
+predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ordinal.cat = NULL, spp = NULL, ...){
 
   # if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))warning("Confidence intervals for ordinal models can be sensitive to the number of simulations.")
   if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
@@ -79,8 +81,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   newdata <- newX
   p <- ncol(object$y)
   if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
-  
+
   if(any(object$family == "betaH"))p <- p+ sum(object$family == "betaH")
+
+  spp_idx <- if(!is.null(spp)) spp else seq_len(p)
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -103,8 +107,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     formula <- NULL
   }
 
-  b0 <- object$params$beta0
-  eta <- matrix(b0, n, p, byrow = TRUE)
+  b0_full <- object$params$beta0
+  b0 <- b0_full[spp_idx]
+  eta <- matrix(b0, n, length(spp_idx), byrow = TRUE)
   if (!is.null(newTR)) 
     if (nrow(newTR) != p) 
       stop("Number of rows in newTR must match to the number of responses in the original data matrix.")
@@ -112,7 +117,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     colnames(object$y) <- paste("y", 1:p, sep = "")
   }
   if (!is.null(object$X) && is.null(object$TR)) {
-    B <- object$params$Xcoef
+    B <- object$params$Xcoef[spp_idx, , drop = FALSE]
     if (is.null(newdata)) {
       X.d <- Xnew <- object$X
     }
@@ -210,7 +215,8 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.d <- as.matrix(model.matrix(formula, data = yXT))
     }
     X.d <- as.matrix(X.d[, colnames(X.d) != "(Intercept)"])
-    eta <- eta + matrix(X.d %*% B, n, p)
+    eta <- matrix(b0, n, length(spp_idx), byrow = TRUE) + matrix(X.d %*% B, n, p)[, spp_idx, drop = FALSE]
+    
     if (!is.null(object$randomX)) {
       if (!is.null(newdata)) {
         tr <- try(X.xr <- as.matrix(model.matrix(object$randomX, 
@@ -228,7 +234,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       } else {
         xr <- object$Xrandom
       }
-      eta <- eta + matrix(xr %*% object$params$Br, n, p)
+      eta <- eta + xr %*% object$params$Br[, spp_idx, drop = FALSE]
     }
   }
   if (level == 1 || (level == 0 && (object$num.lv.c + object$num.RR)>0)) {
@@ -246,7 +252,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       }
       
       if (!is.null(newLV)) {
-        if (ncol(newLV) != (object$num.lv + object$num.lv.c)) 
+        if ((object$num.lv+object$num.lv.c)>0 && ncol(newLV) != (object$num.lv + object$num.lv.c)) 
           stop("Number of latent variables in input doesn't equal to the number of latent variables in the model.")
         if (!is.null(newdata)) {
           if (nrow(newLV) != nrow(newdata)) 
@@ -307,7 +313,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       } else {
         lv.X <- object$lv.X.design
       }
-      theta <- (object$params$theta[, 1:(object$num.lv + 
+      theta <- (object$params$theta[spp_idx, 1:(object$num.lv +
                                           (object$num.lv.c + object$num.RR)), drop = F])
       eta <- eta + lvs %*% t(theta)
       if ((object$num.lv.c + object$num.RR) > 0) {
@@ -317,18 +323,18 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       if (object$quadratic != FALSE) {
         if(object$num.lv>0){
           # set theta2 as matrix to avoid dimensionality error
-          theta2 <- as.matrix(object$params$theta[, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F])
+          theta2 <- as.matrix(object$params$theta[spp_idx, -c(1:(object$num.lv.c + object$num.RR+object$num.lv)), drop = F])
           theta2 <- (theta2[, (object$num.lv.c + object$num.RR+1):ncol(theta2), drop = F])
           eta <- eta + (lvs[,(ncol(lvs)-object$num.lv+1):ncol(lvs), drop = F])^2 %*% t(theta2)
         }
         if ((object$num.lv.c + object$num.RR) > 0) {
           # set theta2 as matrix to avoid dimensionality error
-          theta2 <- as.matrix(object$params$theta[,-c(1:(object$num.lv+object$num.lv.c+object$num.RR))])
-          theta2C <- abs(theta2[, 1:(object$num.lv.c + 
+          theta2 <- as.matrix(object$params$theta[spp_idx, -c(1:(object$num.lv+object$num.lv.c+object$num.RR))])
+          theta2C <- abs(theta2[, 1:(object$num.lv.c +
                                        object$num.RR), drop = F])
           lvs <- lvs[,1:(object$num.lv.c+object$num.RR)] + lv.X%*%object$params$LvXcoef
-          for (j in 1:p) {
-            eta[, j] <- eta[, j] - lvs^2%*%theta2C[j, ]
+          for (iter in seq_len(length(spp_idx))) {
+            eta[, iter] <- eta[, iter] - lvs^2%*%theta2C[iter, ]
           }
         }
       }
@@ -382,6 +388,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       # second, fixed effects part
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         xr <- model.matrix(row.eff, newX)[,-1,drop=FALSE]
+        xr <- xr[, colnames(xr) %in% names(object$params$row.params.fixed), drop = FALSE]
       }
     }
     
@@ -395,15 +402,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
       }
       
-    eta <- eta + as.matrix(rowSums(r0))%*%rep(1,p)
+    eta <- eta + as.matrix(rowSums(r0))%*%rep(1, length(spp_idx))
     
   }
   
   if(is.null(object$col.eff$col.eff))object$col.eff$col.eff <- FALSE # backward compatibility
   
   if (object$col.eff$col.eff == "random" && is.null(newX) && is.null(object$TR)) {
-    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    eta <- eta + as.matrix(object$col.eff$spdr%*%object$params$Br[, spp_idx, drop = FALSE])
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(object$col.eff$spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
   }else if(object$col.eff$col.eff == "random" && !is.null(newX) && level == 1 && is.null(object$TR)){
     bar.f <- findbars1(object$col.eff$col.eff.formula) # list with 3 terms
     mf <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$col.eff$col.eff.formula), deparse1)))),data=data.frame(newdata))
@@ -417,120 +424,142 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
     spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
     
-    eta <- eta + as.matrix(spdr%*%object$params$Br)
-    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = ncol(object$y), nrow = length(object$params$B)))
+    eta <- eta + as.matrix(spdr%*%object$params$Br[, spp_idx, drop = FALSE])
+    if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
   }
 
   if(!is.null(object$offset)){
     if(offset!=FALSE){
       if(is.matrix(offset)){
         if((NROW(offset) == NROW(eta))){
-          eta <- eta+object$offset
+          eta <- eta+object$offset[, spp_idx, drop = FALSE]
         } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
       } else if((NROW(object$offset) == NROW(eta))){
-        eta <- eta+object$offset
+        eta <- eta+object$offset[, spp_idx, drop = FALSE]
         } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
     }
   }
-  
-  ilinkfun <- list()
-  pointer <- NULL
-  if(any(object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))){
-    ilinkfun <- c(ilinkfun, exp)
-    pointer[object$family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] <- length(ilinkfun)
+
+  fam_pred <- object$family[spp_idx]
+  famgroup1 <- fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")
+  famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB", "beta.binomial")
+  famgroup3 <- fam_pred %in% c("ZIP","ZINB")
+  famgroup4 <- fam_pred == "gaussian"
+  famgroup5 <- fam_pred == "betaH"
+  ilinkfun <- vector("list", any(famgroup1)+any(famgroup2)+any(famgroup3)+any(famgroup4)+any(famgroup5))
+  pointer  <- NULL
+  pointer_index <- 0
+  if(any(famgroup1)){
+    ilinkfun[[1]] <- exp
+    pointer_index <- pointer_index +1
+    pointer[famgroup1] <- pointer_index
   }
-  if (any(object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB"))){
+  if (any(famgroup2)){
     if(any(object$link == "probit")){
       ilinkfun <- c(ilinkfun, binomial(link = "probit")$linkinv)
-      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "probit")] <- length(ilinkfun)
+      pointer_index <- pointer_index +1
+      pointer[famgroup2 & (object$link == "probit")] <- pointer_index
     }
     if(any(object$link == "logit")){
       ilinkfun <- c(ilinkfun, binomial(link = "logit")$linkinv)
-      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "logit")] <- length(ilinkfun)
+      pointer_index <- pointer_index +1
+      pointer[famgroup2 & (object$link == "logit")] <- pointer_index
     }
     if(any(object$link == "cloglog")){
       ilinkfun <- c(ilinkfun, binomial(link = "cloglog")$linkinv)
-      pointer[object$family %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB") & (object$link == "cloglog")] <- length(ilinkfun)
+      pointer_index <- pointer_index +1
+      pointer[famgroup2 & (object$link == "cloglog")] <- pointer_index
     }
+    # ilinkfun[[any(famgroup1)+1]] <- binomial(link = object$link)$linkinv
+    # pointer[famgroup2] <- any(famgroup1)+1
   }
-  if (any(object$family %in% c("ZIP","ZINB"))) {
-    # ilinkfun <- c(ilinkfun, function(eta) exp(eta) * (1 - matrix(object$params$phi, n, p, byrow = TRUE)))
-    ilinkfun <- c(ilinkfun, function(eta) exp(eta))
-    pointer[object$family %in% c("ZIP","ZINB")] <- length(ilinkfun)
+  if (any(famgroup3)) {
+    ilinkfun[[any(famgroup1)+any(famgroup2)+1]] <- exp
+    pointer_index <- pointer_index +1
+    pointer[famgroup3] <- pointer_index
+    # pointer[famgroup3] <- any(famgroup1)+any(famgroup2)+1
   }
-  if (any(object$family == "gaussian")) {
-    ilinkfun <- c(ilinkfun, gaussian()$linkinv)
-    pointer[object$family %in% c("gaussian")] <- length(ilinkfun)
+  if (any(famgroup4)) {
+    ilinkfun[[any(famgroup1)+any(famgroup2)+any(famgroup3)+1]] <- identity
+    pointer_index <- pointer_index +1
+    pointer[famgroup4] <- pointer_index
+    # pointer[famgroup4] <- any(famgroup1)+any(famgroup2)+any(famgroup3)+1
   }
-  if(any(object$family == "betaH")){
-    pointer <- c(pointer, rep(unique(pointer[object$family == "betaH"]), sum(object$family == "betaH")))
+  if(any(famgroup5)){
+    pointer <- c(pointer, rep(unique(pointer[famgroup5]), sum(famgroup5)))
   }
   out <- NULL
   preds <- NULL
-  if ("link" %in% type) 
+  if ("link" %in% type)
     out <- eta
   if ("response" %in% type) {
-    out <- sapply(1:p, function(j) ilinkfun[[pointer[j]]](eta[,j]))
-    if(any(object$family %in% c("ZIP","ZINB"))) 
-      out[,object$family %in% c("ZIP","ZINB")] <- out[,object$family %in% c("ZIP","ZINB")]*(1 - matrix(object$params$phi[object$family %in% c("ZIP","ZINB")], n, sum(object$family %in% c("ZIP","ZINB")), byrow = TRUE))
+    out <- matrix(NA_real_, nrow = nrow(eta), ncol = length(spp_idx))
+    for (j in unique(pointer)) {
+      cols <- which(pointer == j)
+      out[, cols] <- ilinkfun[[j]](eta[, cols, drop = FALSE])
+    }
+    if(any(famgroup3))
+      out[, famgroup3] <- out[, famgroup3] * (1 - matrix(object$params$phi[spp_idx][famgroup3], n, sum(famgroup3), byrow = TRUE))
   }
-  if ("class" %in% type & any(object$family == "binomial")) {
+  if ("class" %in% type & any(fam_pred == "binomial")) {
     if(is.null(out)){ out <- eta; out[] <- NA}
-    out[,object$family == "binomial"] <- round(sapply((1:p)[object$family == "binomial"], function(j) ilinkfun[[pointer[j]]](eta[,j])))
+    out[, fam_pred == "binomial"] <- round(sapply(which(fam_pred == "binomial"), function(iter) ilinkfun[[pointer[iter]]](eta[, iter])))
   }
-  if (is.null(newdata) && is.null(newTR) && is.null(newLV) && 
-      "logL" %in% type) 
+  if (is.null(newdata) && is.null(newTR) && is.null(newLV) &&
+      "logL" %in% type)
     out <- object$logL
-  if (any(object$family == "ordinal") && (type == "response" | type == "class")) {
+  if (any(fam_pred == "ordinal") && (type == "response" | type == "class")) {
     if(is.null(out)){ out <- eta; out[] <- NA}
-    
-    ordi_ind <- c(1:p)[object$family == "ordinal"]
+
+    ordi_ind <- which(fam_pred == "ordinal")   # column indices into eta/out (1-based within spp_idx)
     if (object$zeta.struc == "species") {
-      k.max <- apply(object$params$zeta, 1, function(x) length(x[!is.na(x)])) + 1
-      preds <- array(NA, dim = c(max(k.max, na.rm = TRUE), nrow(eta), 
-                                 p), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE), 
+      k.max <- apply(object$params$zeta[spp_idx, , drop = FALSE], 1, function(x) length(x[!is.na(x)])) + 1
+      preds <- array(NA, dim = c(max(k.max, na.rm = TRUE), nrow(eta),
+                                 length(spp_idx)), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE),
                                                            sep = ""), NULL, NULL))
-      if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-      for (j in ordi_ind) {
-        probK <- matrix(nrow=k.max[j],ncol=n)
-        probK[1:(k.max[j]-1),] <- ilinkfun[[pointer[j]]](outer(object$params$zeta[j,1:k.max[j]-1], eta[,j], function(zeta, eta)zeta-eta))
-        if(k.max[j]>2){
-        probK[2:(k.max[j]-1), ] <- probK[2:(k.max[j]-1),,drop=FALSE] - probK[1:(k.max[j]-2),,drop=FALSE]
+      if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
+      for (iter in ordi_ind) {
+        j_full <- spp_idx[iter]  # index into object$params$zeta and object$family
+        probK <- matrix(nrow=k.max[iter],ncol=n)
+        probK[1:(k.max[iter]-1),] <- ilinkfun[[pointer[iter]]](outer(object$params$zeta[j_full,1:k.max[iter]-1], eta[,iter], function(zeta, eta)zeta-eta))
+        if(k.max[iter]>2){
+        probK[2:(k.max[iter]-1), ] <- probK[2:(k.max[iter]-1),,drop=FALSE] - probK[1:(k.max[iter]-2),,drop=FALSE]
         }
-        probK[k.max[j],] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[j,k.max[j] - 1] - eta[, j])
-        preds[1:k.max[j],, j] <- probK
+        probK[k.max[iter],] <- 1 - ilinkfun[[pointer[iter]]](object$params$zeta[j_full,k.max[iter] - 1] - eta[, iter])
+        preds[1:k.max[iter],, iter] <- probK
       }
     } else {
-      kz <- any(object$family == "orderedBeta")*2
+      kz <- any(fam_pred == "orderedBeta")*2
       k.max <- length(object$params$zeta) + 1 - kz
-      preds <- array(NA, dim = c(k.max, nrow(eta), p), 
-                     dimnames = list(paste("level", 1:max(k.max), 
+      preds <- array(NA, dim = c(k.max, nrow(eta), length(spp_idx)),
+                     dimnames = list(paste("level", 1:max(k.max),
                                            sep = ""), NULL, NULL))
-      if(!all(object$family == "orderedBeta")) preds[1,,] <- out
-        for (j in ordi_ind) {
+      if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
+        for (iter in ordi_ind) {
           probK <- matrix(nrow=k.max,ncol=n)
-          probK[1:(k.max-1),] <- ilinkfun[[pointer[j]]](outer(tail(object$params$zeta,k.max-1), eta[,j], function(zeta, eta)zeta-eta))
+          probK[1:(k.max-1),] <- ilinkfun[[pointer[iter]]](outer(tail(object$params$zeta,k.max-1), eta[,iter], function(zeta, eta)zeta-eta))
           if(k.max>2){
           probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
           }
-          probK[k.max,] <- 1 - ilinkfun[[pointer[j]]](object$params$zeta[k.max - 1 + kz] - eta[, j])
-          preds[1:k.max,, j] <- probK
+          probK[k.max,] <- 1 - ilinkfun[[pointer[iter]]](object$params$zeta[k.max - 1 + kz] - eta[, iter])
+          preds[1:k.max,, iter] <- probK
         }
-      dimnames(preds)[[3]] <- colnames(object$y)
+      dimnames(preds)[[3]] <- colnames(object$y)[spp_idx]
     }
     if(type == "response") {
       out <- preds
+      if(!is.null(ordinal.cat)) out <- preds[ordinal.cat,,]
     }
     if(type == "class") {
       pred_class <- matrix(NA, dim(preds)[2], dim(preds)[3])
-      for (j in ordi_ind) {
+      for (iter in ordi_ind) {
         for (i in 1:nrow(pred_class)) {
-          pred_class[i,j] <- (order(preds[,i,j], decreasing = TRUE)[1]-1)
+          pred_class[i, iter] <- (order(preds[,i,iter], decreasing = TRUE)[1]-1)
         }
       }
-      colnames(pred_class) <- colnames(object$y)
+      colnames(pred_class) <- colnames(object$y)[spp_idx]
       if(is.null(out)){ out <- eta; out[] <- NA}
-      out[,object$family == "ordinal"] <- pred_class[,object$family == "ordinal"]
+      out[, fam_pred == "ordinal"] <- pred_class[, fam_pred == "ordinal"]
     }
   }
   try(rownames(out) <- 1:NROW(out), silent = TRUE)
@@ -539,291 +568,25 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   if((is.numeric(se.fit) || se.fit) && isFALSE(object$sd)){
     stop("Cannot calculate standard errors for the prediction without standard errors of the parameter estimates. Please refit the model with 'sd.erors = TRUE', or use 'se.gllvm'.")
   }else if(is.numeric(se.fit) || se.fit){
-    num.lv <- object$num.lv
-    num.RR <- object$num.RR
-    num.lv.c <- object$num.lv.c
-    num.lv.cor <- object$num.lvcor
-    quadratic = object$quadratic
-    
-    incl <- object$Hess$incl
-    incla <- object$Hess$incla
-    if(object$method %in% c("VA","EVA")){
-      incla <- rep(FALSE, length(object$TMBfn$par))
-      if((num.lv.c+num.lv+num.lv.cor)>0)incla[names(object$TMBfn$par)=="u"] <- TRUE
-      if("Br" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="Br"] <- TRUE
-      if((num.RR+num.lv.c)>0 && !isFALSE(object$randomB))incla[names(object$TMBfn$par)=="b_lv"] <- TRUE
-      if("r0r" %in% names(object$TMBfn$par))incla[names(object$TMBfn$par)=="r0r"] <- TRUE
-    }
-    
-    if(is.null(incla)) incla <- 0
-    
     R <- 1e3
     if(is.numeric(se.fit))R <- se.fit
-    
-    set.seed(seed)
-    
-    if(sum(incl)>0){
-      Vf <- vcov(object)
-      if(min(diag(Vf))/max(diag(Vf))<.Machine$double.eps)warning("Seeing some odd things in the fixed effects covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
-      ffs <- try(MASS::mvrnorm(R, object$TMBfn$par[incl],Vf), silent = TRUE)
-      if(inherits(ffs, "try-error"))stop("Covariance matrix of fixed effects is not semi positive-definite.")
-      colnames(ffs) <- names(object$TMBfn$par)[incl]
-      
-      # Same code for organsing map as in se.gllvm
-      if(any(colnames(ffs)%in%names(object$TMBfn$env$map))){
-        map <- object$TMBfn$env$map[names(object$TMBfn$env$map)%in%colnames(ffs)]
-        # rebuild se matrix if mapped parameters
-        ffs.new <- NULL
-        for(nm in unique(colnames(ffs))){
-          if(!nm%in%names(map)){
-            ffs.new <- cbind(ffs.new,ffs[,colnames(ffs)==nm, drop=FALSE])
-          }else{
-            ffs.new <- cbind(ffs.new, ffs[,colnames(ffs)==nm, drop=FALSE][,map[[nm]],drop=FALSE])
-          }
-          
-        }
-        ffs <- ffs.new
-        rm(ffs.new)
-      }
-    
-    }
-    
-    if(sum(incla)>0 && level>0){
-      if(object$method == "LA"){
-        Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
-      }else{
-        Vr <- CMSEPf(object, return.covb = TRUE)
-        renms <- c("r0r","Br","u")
-        if(!isFALSE(object$randomB))renms <- c(renms, "b_lv")
-        colnames(Vr) <- row.names(Vr) <- names(object$TMBfn$par[names(object$TMBfn$par)%in%renms])
-        if(!is.null(object$Ar)){
-          # coefficients are sorted per random effect
-          Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] <- as.matrix(Vr[row.names(Vr) == "r0r",colnames(Vr) == "r0r"] + Matrix::bdiag(object$Ar))
-        }
-        if(object$col.eff$col.eff=="random"){
-          # coefficients are sorted per species
-          
-            if(object$col.eff$Ab.struct %in% c("diagonal", "blockdiagonal")){
-              Ab <- Matrix::bdiag(object$Ab)
-            }else if(object$col.eff$Ab.struct == "diagonalCL2"){
-              Ab <- Matrix::bdiag(object$Ab)[order(rep(1:p,times=nrow(object$params$Br))),order(rep(1:p,times=nrow(object$params$Br)))]
-            }else if(object$col.eff$Ab.struct %in% "unstructured"){
-              Ab <- object$Ab[[1]]
-            }else if(object$col.eff$Ab.struct %in% c("MNdiagonal", "MNunstructured")){
-              # Ab[[1]] is the row covariance, Ab[[2]] the species'
-              # sorting is per species, i.e., species number of covariate by covariate blocks on the diagonal
-              Ab <- kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]])
-            }else if(object$col.eff$Ab.struct %in% c("diagonalCL1", "CL1", "CL2")){
-              # sorting is also per species
-              Ab <- object$Ab
-            }
-          Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] <- Vr[row.names(Vr) == "Br",colnames(Vr) == "Br"] + Ab
-        }
-        if((object$num.lv+object$num.lv.c)>0 && n == nrow(object$y)){
-          # coefficients are sorted per LV
-          
-          A <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
-          d <- object$num.lv+object$num.lv.c
-          idx <- rep(1:n, each = d) + rep(c(0, rep(n,d-1)*(1:(d-1))), times=n)
-          Vr[row.names(Vr) == "u", colnames(Vr) == "u"] <- as.matrix(Vr[row.names(Vr) == "u", colnames(Vr) == "u"] + Matrix::bdiag(A)[order(idx),order(idx)])
-        }
-        if(!isFALSE(object$randomB)){
-          # coefficients are sorted per lV
-          
-          d <- object$num.RR+object$num.lv.c
-          K <- nrow(object$params$LvXcoef)
-          Ab.lv <- lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[ 1, , ])
-          Ab.lv <- Matrix::bdiag(Ab.lv)
-          idx <- 1:(d*K)
-          if(object$randomB=="LV") idx <- rep(1:K, each = d) + rep(c(0, rep(K,d-1)*(1:(d-1))), times=K)
-          Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] <- as.matrix(Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] + Ab.lv[order(idx),order(idx)])
-        }
-      }
-      if(min(diag(Vr))/max(diag(Vr))<.Machine$double.eps)warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
-      rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
-      if(inherits(rfs, "try-error"))stop("Covariance matrix of random effects is not semi positive-definite.")
-    }
-    
-    # set all parameters to NA to avoid potential issues if we miss something
-    object$params <- lapply(object$params, function(x) {
-      if (is.numeric(x)) {
-        x[] <- NA 
-      }
-      x
-    })
-    object$lvs[] <- NA
+
+    params <- simulate.params.gllvm(object, R, seed, level, n = n)
     
     predSims <- array(0.0, dim = c(R, dim(out)))
-    newobject <- object
-    
-    # parameter organisation, partly from gllvm.TMB and traitTMB.R, should really store this in a separate function so we don't keep copying the same code...
-    for(r in 1:R){
-      # fixed effects first
-      # fixed effects needed for prediction; beta0, Xcoef, sigmaLV, lambda, phi, zeta, 4th corner, r0f, b_lv, 
-      
-      if(sum(incl)>0){
-      newpars <- relist_gllvm(ffs[r,], object$TMBfn$env$parList())
-      newobject$params$beta0 <- newpars$b[1,]
-      if(nrow(newpars$b)>1)newobject$params$Xcoef <- t(newpars$b[-1,,drop=FALSE])
-      
-      # LV stuff
-      if((num.lv+num.lv.c)>0)newobject$params$sigma.lv <- abs(newpars$sigmaLV)
-      
-      # Organising theta is a pain, copied almost completely from gllvm.TMB.R
-      if((num.lv+num.lv.c+num.RR)){
-        theta <- matrix(0,p,num.lv+num.lv.c+num.RR)  
-        if((num.lv.c+num.RR)>1){diag(theta[,1:(num.lv.c+num.RR)])<-1}else if((num.lv.c+num.RR)==1){theta[1,1]<-1}
-        if(num.lv>1){diag(theta[,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)])<-1}else if(num.lv==1){theta[1,((num.lv.c+num.RR)+1):((num.lv.c+num.RR)+num.lv)]<-1}
-        if(num.lv>0&(num.lv.c+num.RR)==0){
-          
-          if(p>1) {
-            theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- newpars$lambda;
-            if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=num.lv,nrow=p,byrow=T))
-            }
-          } else {
-            if(quadratic==FALSE){
-              theta <- as.matrix(1)
-            }else{
-              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
-          }
-        }else if(num.lv==0&(num.lv.c+num.RR)>0){
-          if(p>1) {
-            theta[lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- newpars$lambda;
-            if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
-            }
-          } else {
-            if(quadratic==FALSE){
-              theta <- as.matrix(1)
-            }else{
-              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
-          }
-        }else if(num.lv>0&(num.lv.c+num.RR)>0){
-          if(p>1) {
-            theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- newpars$lambda[1:sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))];
-            theta[,((num.lv.c+num.RR)+1):ncol(theta)][lower.tri(theta[,((num.lv.c+num.RR)+1):ncol(theta),drop=F],diag=FALSE)] <- newpars$lambda[(sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))+1):length(newpars$lambda)];
-            if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(newpars$lambda2),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
-            }
-          } else {
-            if(quadratic==FALSE){
-              theta <- as.matrix(1)
-            }else{
-              theta <- c(as.matrix(1),-abs(newpars$lambda2))}  
-          }
-        }
-        newobject$params$theta <- theta
-        
-      }
-    
-      # Organising phi. Only necessary when predicing ZIP/ZINB stuff
-      if(any(object$family %in% c("ZIP","ZINB"))){
-        disp.group <- object$disp.group
-        lp0 <- newpars$lg_phi[disp.group]
-        object$params$phi <- (exp(lp0)/(1+exp(lp0)))[object$family %in% c("ZIP","ZINB")];
-      }
-      
-      if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
-        
-        zetaO = NULL
-          if(any(object$family%in%c("ordinal"))){
-            K = max(object$TMBfn$env$data$y)-min(object$TMBfn$env$data$y)
-          } else {K=2}
-        
-          if(object$zeta.struc =="common") {
-            if(any(object$family%in%c("orderedBeta"))){
-              zetaO <- c(zetaO, rep(TRUE,2))
-             }
-            if(any(object$family%in%c("ordinal"))){
-              zetaO <- c(zetaO, rep(FALSE,(K-1)))
-            }
-          } else if(object$zeta.struc =="species") {
-            o_ind <- c(1:ncol(object$y))[object$family%in%c("ordinal", "orderedBeta")]
-            for (j in o_ind) {
-              if(object$family[j]=="ordinal"){
-                zetaO <- c(zetaO, rep(FALSE,length(na.omit(object$params$zeta[j,-1]))))
-              } else {
-                zetaO <- c(zetaO, rep(TRUE,2))
-              }
-            }
-          }
- 
-        zetas <- newpars$zeta
 
-        if(object$zeta.struc=="species"){
-          zetanew <- matrix(NA,nrow=p,ncol=K)
-          zetanew[,1] <- 0 
-          idx<-0
-          o_ind <- c(1:p)[object$family %in%c("ordinal","orderedBeta")]
-          for(j in o_ind){
-            if(object$family[j] == "ordinal"){
-            k<-max(object$y[,j])-2
-            if(k>0){
-              for(l in 1:k){
-                zetanew[j,l+1]<-zetas[idx+l]
-              } 
-            }
-            idx<-idx+k
-            zetanew[j,] <- cumsum(abs(zetanew[j,]))
-          }else{
-            zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
-            idx<-idx+2
-          }
-          }
-        }else{
-          zetanew <- NULL
-          if(any(object$family == "orderedBeta")){
-            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
-            names(zetanew) <- c("cutoff0","cutoff1")
-          }
-          if(any(object$family%in%c("ordinal"))){
-            zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
-          }
-        }
-        newobject$params$zeta <- zetanew
-      }
-      # if(object$family == "orderedBeta"){
-      #   zetas <- matrix(newpars$zeta,p,2)
-      #   if(any(is.na(object$TMBfn$env$map$zeta))) zetas[is.na(object$env$TMBfn$map$zeta)] = attr(object$TMBfn$env$parameters$zeta, "shape")[is.na(object$TMBfn$env$map$zeta)]
-      #   zetas[,2] = exp(zetas[,2])
-      #   newobject$params$zeta <- zetas
-      # }
-      
-      if(!is.null(newpars$B)){
-        newobject$params$B <- newpars$B
-        newobject$params$B <- newobject$params$B[!is.na(newpars$B)]
-        names(newobject$params$B) <- names(object$params$B)
-      }
-      
-      if(!is.null(newpars$r0f))
-        newobject$params$row.params.fixed <- c(newpars$r0f)
-      
-      if(num.RR>0 && isFALSE(object$randomB))
-        newobject$params$LvXcoef <- newpars$b_lv
-      }
-      
-      # random effects next
-      # random effects needed for prediction; Br, r0r, u, b_lv, 
-      if(sum(incla)>0 && level>0){
-        newrfs <- relist_gllvm(rfs[r,], object$TMBfn$env$parList())
-        
-        if(!is.null(newrfs$Br))
-          newobject$params$Br = newrfs$Br
-        if(!is.null(newrfs$u))
-          newobject$lvs <- newrfs$u
-        if(!is.null(newrfs$b_lv))
-          newobject$params$LvXcoef <- newrfs$b_lv
-        if(!is.null(newrfs$r0r))
-          newobject$params$row.params.random  <- c(newrfs$r0r)
-      }
-      if(!any(object$family == "ordinal") || type == "link")
-        predSims[r,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+    for(r in 1:R){
+      newobject <- perturb.gllvm(object, params, r, type)
+      pred_r <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV,
+                        type = type, level = level, offset = offset,
+                        se.fit = FALSE, ordinal.cat = ordinal.cat, spp = spp)
+      if(!any(object$family == "ordinal") || type == "link" || !is.null(ordinal.cat))
+        predSims[r,,] <- pred_r
       else
-        predSims[r,,,] <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV, type = type, level = level, offset = offset, se.fit = FALSE)
+        predSims[r,,,] <- pred_r
     }
     
-    if(!any(object$family == "ordinal") || !is.null(alpha) && type == "link" || is.null(alpha)){
+    if(!any(object$family == "ordinal") || !is.null(alpha) && type == "link" || is.null(alpha) || !is.null(ordinal.cat)){
     if(is.null(alpha)){
     out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
     }else if(!is.null(alpha)){
@@ -831,9 +594,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
     }
     }else if(any(object$family == "ordinal") && type == "response" && !is.null(alpha)){
-      ci <- array(dim=c(2,nrow(out), n,p))
-      for(j in 1:p){
-        if(object$family[j] != "ordinal"){
+      ci <- array(dim=c(2,nrow(out), n, length(spp_idx)))
+      for(j in seq_len(length(spp_idx))){
+        if(fam_pred[j] != "ordinal"){
           ci[,1,,j] <- apply(predSims[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
         }else{
           # here we need to be a bit more careful because of the simplex constraint
@@ -844,7 +607,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             center = pmin(pmax(out[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
             dists = suppressWarnings(hilbert_to_provided_center(pmin(pmax(predSims[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center))
             threshold = quantile(dists, alpha, na.rm = TRUE)
-            ci[,,i,j] <- suppressWarnings(apply(predSims[,,i,j][dists <= threshold, ],2,range, na.rm = TRUE))
+            ci[,,i,j] <- suppressWarnings(apply(predSims[,,i,j][dists <= threshold, , drop=FALSE],2,range, na.rm = TRUE))
           }
           if(any(!is.finite(ci)))ci[!is.finite(ci)] <- NA # guaranteed to happen on zeta.struc = "species"
         }
@@ -854,4 +617,273 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
   
   return(out)
+}
+
+# function to simulate new parameters from the asymptotic covariance matrix
+# previously in predict.gllvm, but lifted out
+# to separately call in predictSR.gllvm
+# for improved efficiency
+simulate.params.gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
+  set.seed(seed)
+  
+  incl  <- object$Hess$incl
+  incla <- object$Hess$incla
+  
+  if(object$method %in% c("VA","EVA")){
+    num.lv    <- object$num.lv
+    num.RR    <- object$num.RR
+    num.lv.c  <- object$num.lv.c
+    num.lv.cor <- object$num.lvcor
+    incla <- rep(FALSE, length(object$TMBfn$par))
+    if((num.lv.c + num.lv + num.lv.cor) > 0)
+      incla[names(object$TMBfn$par) == "u"] <- TRUE
+    if("Br" %in% names(object$TMBfn$par))
+      incla[names(object$TMBfn$par) == "Br"] <- TRUE
+    if((num.RR + num.lv.c) > 0 && !isFALSE(object$randomB))
+      incla[names(object$TMBfn$par) == "b_lv"] <- TRUE
+    if("r0r" %in% names(object$TMBfn$par))
+      incla[names(object$TMBfn$par) == "r0r"] <- TRUE
+  }
+  if(is.null(incla)) incla <- 0
+  
+  ffs <- NULL
+  Vf  <- NULL
+  if(sum(incl) > 0){
+    Vf <- vcov(object)
+    if(min(diag(Vf)) / max(diag(Vf)) < .Machine$double.eps)
+      warning("Seeing some odd things in the fixed effects covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
+    ffs <- try(MASS::mvrnorm(R, object$TMBfn$par[incl], Vf), silent = TRUE)
+    if(inherits(ffs, "try-error"))
+      stop("Covariance matrix of fixed effects is not semi positive-definite.")
+    colnames(ffs) <- names(object$TMBfn$par)[incl]
+    
+    if(any(colnames(ffs) %in% names(object$TMBfn$env$map))){
+      map <- object$TMBfn$env$map[names(object$TMBfn$env$map) %in% colnames(ffs)]
+      ffs.new <- NULL
+      for(nm in unique(colnames(ffs))){
+        if(!nm %in% names(map)){
+          ffs.new <- cbind(ffs.new, ffs[, colnames(ffs) == nm, drop = FALSE])
+        } else {
+          ffs.new <- cbind(ffs.new, ffs[, colnames(ffs) == nm, drop = FALSE][, map[[nm]], drop = FALSE])
+        }
+      }
+      ffs <- ffs.new
+      rm(ffs.new)
+    }
+  }
+  
+  rfs <- NULL
+  if(sum(incla) > 0 && level > 0){
+    p <- ncol(object$y)
+    if(is.null(n)) n <- nrow(object$y)
+    if(object$method == "LA"){
+      Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
+    } else {
+      Vr    <- CMSEPf(object, return.covb = TRUE)
+      renms <- c("r0r","Br","u")
+      if(!isFALSE(object$randomB)) renms <- c(renms, "b_lv")
+      colnames(Vr) <- row.names(Vr) <- names(object$TMBfn$par[names(object$TMBfn$par) %in% renms])
+      if(!is.null(object$Ar))
+        Vr[row.names(Vr) == "r0r", colnames(Vr) == "r0r"] <-
+        as.matrix(Vr[row.names(Vr) == "r0r", colnames(Vr) == "r0r"] + Matrix::bdiag(object$Ar))
+      if(object$col.eff$col.eff == "random"){
+        Ab <- switch(object$col.eff$Ab.struct,
+                     diagonal      = ,
+                     blockdiagonal = Matrix::bdiag(object$Ab),
+                     diagonalCL2   = Matrix::bdiag(object$Ab)[
+                       order(rep(seq_len(p), times = nrow(object$params$Br))),
+                       order(rep(seq_len(p), times = nrow(object$params$Br)))],
+                     unstructured  = object$Ab[[1]],
+                     MNdiagonal    = ,
+                     MNunstructured = kronecker(cov2cor(object$Ab[[2]]), object$Ab[[1]]),
+                     object$Ab  # diagonalCL1 / CL1 / CL2
+        )
+        Vr[row.names(Vr) == "Br", colnames(Vr) == "Br"] <-
+          Vr[row.names(Vr) == "Br", colnames(Vr) == "Br"] + Ab
+      }
+      if((object$num.lv + object$num.lv.c) > 0 && n == nrow(object$y)){
+        A   <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
+        d   <- object$num.lv + object$num.lv.c
+        idx <- rep(seq_len(n), each = d) + rep(c(0, rep(n, d - 1) * seq_len(d - 1)), times = n)
+        Vr[row.names(Vr) == "u", colnames(Vr) == "u"] <-
+          as.matrix(Vr[row.names(Vr) == "u", colnames(Vr) == "u"] +
+                      Matrix::bdiag(A)[order(idx), order(idx)])
+      }
+      if(!isFALSE(object$randomB)){
+        d     <- object$num.RR + object$num.lv.c
+        K     <- nrow(object$params$LvXcoef)
+        Ab.lv <- Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[1, , ]))
+        idx   <- seq_len(d * K)
+        if(object$randomB == "LV")
+          idx <- rep(seq_len(K), each = d) + rep(c(0, rep(K, d - 1) * seq_len(d - 1)), times = K)
+        Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] <-
+          as.matrix(Vr[row.names(Vr) == "b_lv", colnames(Vr) == "b_lv"] +
+                      Ab.lv[order(idx), order(idx)])
+      }
+    }
+    if(min(diag(Vr)) / max(diag(Vr)) < .Machine$double.eps)
+      warning("Seeing some odd things in the random effects (asymptotic) covariance matrix (variances of effects are not on the same scale), uncertainties may be inaccurate.\n")
+    rfs <- try(MASS::mvrnorm(R, object$TMBfn$env$last.par.best[incla], Vr), silent = TRUE)
+    if(inherits(rfs, "try-error"))
+      stop("Covariance matrix of random effects is not semi positive-definite.")
+  }
+  
+  list(ffs = ffs, rfs = rfs, incl = incl, incla = incla)
+}
+
+# re-fills gllvm objects with simulations for se.fit
+# previously in predict.gllvm, but lifted out
+# to separately call in predictSR.gllvm
+# for improved efficiency
+perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL, template = NULL){
+  ffs   <- params$ffs
+  rfs   <- params$rfs
+  incl  <- params$incl
+  incla <- params$incla
+
+  num.lv    <- object$num.lv
+  num.RR    <- object$num.RR
+  num.lv.c  <- object$num.lv.c
+  quadratic <- object$quadratic
+  p         <- ncol(object$y)
+
+  if(is.null(skeleton)) skeleton <- object$TMBfn$env$parList()
+
+  # blank all params so nothing leaks from the fitted values
+  if(!is.null(template)){
+    newobject <- template
+  } else {
+    newobject <- object
+    newobject$params <- lapply(object$params, function(x){ if(is.numeric(x)) x[] <- NA; x })
+    if(!is.null(newobject$lvs)) newobject$lvs[] <- NA
+  }
+
+  if(sum(incl) > 0){
+    newpars <- relist_gllvm(ffs[r, ], skeleton)
+    
+    newobject$params$beta0 <- newpars$b[1, ]
+    names(newobject$params$beta0) <- names(object$params$beta0)
+    if(nrow(newpars$b) > 1){
+      newobject$params$Xcoef <- t(newpars$b[-1, , drop = FALSE])
+      rownames(newobject$params$Xcoef) <- rownames(object$params$Xcoef)
+      colnames(newobject$params$Xcoef) <- colnames(object$params$Xcoef)
+    }
+
+    if((num.lv + num.lv.c) > 0){
+      newobject$params$sigma.lv <- abs(newpars$sigmaLV)
+      names(newobject$params$sigma.lv) <- names(object$params$sigma.lv)
+    }
+    
+    if((num.lv + num.lv.c + num.RR) > 0){
+      theta <- matrix(0, p, num.lv + num.lv.c + num.RR)
+      if((num.lv.c + num.RR) > 1)  diag(theta[, seq_len(num.lv.c + num.RR)]) <- 1
+      else if((num.lv.c + num.RR) == 1) theta[1, 1] <- 1
+      if(num.lv > 1)  diag(theta[, (num.lv.c + num.RR + 1):(num.lv.c + num.RR + num.lv)]) <- 1
+      else if(num.lv == 1) theta[1, num.lv.c + num.RR + 1] <- 1
+      
+      if(num.lv > 0 && (num.lv.c + num.RR) == 0){
+        if(p > 1){
+          theta[lower.tri(theta[, seq_len(num.lv), drop = FALSE], diag = FALSE)] <- newpars$lambda
+          if(quadratic != FALSE)
+            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv, nrow = p, byrow = TRUE))
+        } else {
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+        }
+      } else if(num.lv == 0 && (num.lv.c + num.RR) > 0){
+        if(p > 1){
+          theta[lower.tri(theta[, seq_len(num.lv.c + num.RR), drop = FALSE], diag = FALSE)] <- newpars$lambda
+          if(quadratic != FALSE)
+            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv.c + num.RR, nrow = p, byrow = TRUE))
+        } else {
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+        }
+      } else {
+        if(p > 1){
+          nc1 <- num.lv.c + num.RR
+          theta[, seq_len(nc1)][lower.tri(theta[, seq_len(nc1), drop = FALSE], diag = FALSE)] <-
+            newpars$lambda[seq_len(sum(lower.tri(theta[, seq_len(nc1), drop = FALSE], diag = FALSE)))]
+          theta[, (nc1 + 1):ncol(theta)][lower.tri(theta[, (nc1 + 1):ncol(theta), drop = FALSE], diag = FALSE)] <-
+            newpars$lambda[(sum(lower.tri(theta[, seq_len(nc1), drop = FALSE], diag = FALSE)) + 1):length(newpars$lambda)]
+          if(quadratic != FALSE)
+            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv + nc1, nrow = p, byrow = TRUE))
+        } else {
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+        }
+      }
+      rownames(theta) <- rownames(object$params$theta)
+      colnames(theta) <- colnames(object$params$theta)
+      newobject$params$theta <- theta
+    }
+
+    if(any(object$family %in% c("ZIP","ZINB"))){
+      lp0 <- newpars$lg_phi[object$disp.group]
+      newobject$params$phi <- object$params$phi
+      newobject$params$phi[object$family %in% c("ZIP","ZINB")] <- (exp(lp0) / (1 + exp(lp0)))[object$family %in% c("ZIP","ZINB")]
+    }
+    
+    if(any(object$family %in% c("orderedBeta","ordinal")) && type == "response"){
+      K <- if(any(object$family %in% "ordinal")) max(object$TMBfn$env$data$y, na.rm =TRUE) - min(object$TMBfn$env$data$y, na.rm =TRUE) else 2L
+      if(object$zeta.struc == "common"){
+        zetaO <- c(rep(TRUE,  2L * any(object$family %in% "orderedBeta")),
+                   rep(FALSE, (K - 1L) * any(object$family %in% "ordinal")))
+      }
+      zetas <- newpars$zeta
+      if(object$zeta.struc == "species"){
+        zetanew <- matrix(NA, nrow = p, ncol = K); zetanew[, 1] <- 0; idx <- 0
+        for(j in which(object$family %in% c("ordinal","orderedBeta"))){
+          if(object$family[j] == "ordinal"){
+            k <- max(object$y[, j], na.rm = TRUE) - 2
+            if(k > 0) zetanew[j, 2:(k + 1)] <- zetas[idx + seq_len(k)]
+            idx <- idx + k
+            zetanew[j, ] <- cumsum(abs(zetanew[j, ]))
+          } else {
+            zetanew[j, ] <- c(zetas[idx + 1], exp(zetas[idx + 2])); idx <- idx + 2
+          }
+        }
+      } else {
+        zetanew <- NULL
+        if(any(object$family == "orderedBeta")){
+          zetanew <- c(zetas[1], exp(zetas[2])); names(zetanew) <- c("cutoff0","cutoff1")
+        }
+        if(any(object$family %in% "ordinal"))
+          zetanew <- c(zetanew, 0, cumsum(abs(zetas[!zetaO])))
+      }
+      newobject$params$zeta <- zetanew
+    }
+    
+    if(!is.null(newpars$B)){
+      newobject$params$B <- newpars$B[!is.na(newpars$B)]
+      names(newobject$params$B) <- names(object$params$B)
+    }
+    if(!is.null(newpars$r0f)){
+      newobject$params$row.params.fixed <- c(newpars$r0f)
+      names(newobject$params$row.params.fixed) <- names(object$params$row.params.fixed)
+    }
+    if(num.RR > 0 && isFALSE(object$randomB)){
+      newobject$params$LvXcoef <- newpars$b_lv
+      rownames(newobject$params$LvXcoef) <- rownames(object$params$LvXcoef)
+      colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
+    }
+  }
+
+  if(sum(incla) > 0){
+    newrfs <- relist_gllvm(rfs[r, ], skeleton)
+    if(!is.null(newrfs$Br)){
+      newobject$params$Br <- newrfs$Br
+      rownames(newobject$params$Br) <- rownames(object$params$Br)
+      colnames(newobject$params$Br) <- colnames(object$params$Br)
+    }
+    if(!is.null(newrfs$u))    newobject$lvs        <- newrfs$u
+    if(!is.null(newrfs$b_lv)){
+      newobject$params$LvXcoef <- newrfs$b_lv
+      rownames(newobject$params$LvXcoef) <- rownames(object$params$LvXcoef)
+      colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
+    }
+    if(!is.null(newrfs$r0r)){
+      newobject$params$row.params.random <- c(newrfs$r0r)
+      names(newobject$params$row.params.random) <- names(object$params$row.params.random)
+    }
+  }
+  
+  newobject
 }

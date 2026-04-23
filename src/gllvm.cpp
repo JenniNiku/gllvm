@@ -22,8 +22,9 @@ enum Family : int {
     ORDERED_BETA = 12,
     ZIB = 13,
     ZNIB = 14,
-    
-    
+    BETA_BINOMIAL = 15,
+
+
     // lisää tarvittaessa muita perheitä: BINOMIAL=2, GAUSSIAN=3, ...
 };
 
@@ -187,7 +188,7 @@ Type objective_function<Type>::operator() ()
   int sbl3 = num_lv_c + num_RR;
 
   if(randomB>0){
-    sbl12 = num_lv_c + num_RR;;
+    sbl12 = num_lv_c + num_RR;
     sbl3 = Klv;
   }
   
@@ -224,7 +225,7 @@ Type objective_function<Type>::operator() ()
       // }
     }else if(randomB>0){
       //randomB="LV"
-        Sigmab_lv(0).diagonal().array() *= exp(sigmab_lv)*exp(sigmab_lv);
+        Sigmab_lv(0).diagonal().array() *= exp(2*sigmab_lv);
     }
     }else if((csb_lv.cols()==2) && (randomB<1)){
       matrix<Type> sds = Eigen::MatrixXd::Zero(x_lv.cols(),x_lv.cols());
@@ -463,8 +464,8 @@ Type objective_function<Type>::operator() ()
         AB_lv(d).setZero();
       }
       
-      for (int q=0; q<(sbl12); q++){
-        for(int d=0; d<sbl3; d++){
+      for(int d=0; d<sbl3; d++){
+        for (int q=0; q<(sbl12); q++){
           AB_lv(d)(q,q)=exp(Ab_lv(q*sbl3+d));
         }
       }
@@ -485,10 +486,10 @@ Type objective_function<Type>::operator() ()
       //randomB and no correlation
       for(int q=0; q<sbl3; q++){
         if(randomB<1){
-          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).sum());
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(q).diagonal().cwiseInverse().array()*AB_lv(q).rowwise().squaredNorm().array()).sum()-0.5*(b_lv.col(q).transpose()*Sigmab_lv(q).diagonal().cwiseInverse().asDiagonal()*b_lv.col(q)).value());
           nll -= 0.5*(sbl12- Sigmab_lv(q).diagonal().array().log().sum());
         }
-        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().array()*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).sum());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
+        if(randomB>0)nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(Sigmab_lv(0).diagonal().cwiseInverse().array()*AB_lv(q).rowwise().squaredNorm().array()).sum()-0.5*(b_lv.row(q)*Sigmab_lv(0).diagonal().cwiseInverse().asDiagonal()*b_lv.row(q).transpose()).value());// log(det(A_bj))-sum(trace(S^(-1)A_bj))*0.5 + a_bj*(S^(-1))*a_bj
        }
       if(randomB>0)nll -= 0.5*(sbl3*sbl12- sbl3*Sigmab_lv(0).diagonal().array().log().sum());
       }else if((csb_lv.cols()==2) && (randomB<1)){
@@ -497,7 +498,7 @@ Type objective_function<Type>::operator() ()
           matrix<Type>Sigmab_lvI = (Sigmab_lv(0)*Sigmab_lv(0).transpose()).ldlt().solve(Iblv);
           vector<Type>sigma2(num_lv_c+num_RR);
           sigma2.fill(1.0);
-          sigma2.tail(num_lv_c+num_RR-1) = pow(exp(sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1)), -2);
+          sigma2.tail(num_lv_c+num_RR-1) = exp(-2*sigmab_lv.segment(x_lv.cols(), num_lv_c+num_RR-1));
           
           for(int q=0; q<(num_lv_c+num_RR); q++){
           nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(sigma2(q)*Sigmab_lvI*AB_lv(q)*AB_lv(q).transpose()).trace()-0.5*(b_lv.col(q).transpose()*(sigma2(q)*Sigmab_lvI)*b_lv.col(q)).sum());
@@ -509,13 +510,13 @@ Type objective_function<Type>::operator() ()
         matrix<Type>Iblv = Eigen::MatrixXd::Identity(x_lv.cols(),x_lv.cols());
         //note that Sigmab_lv(0) is the cholesky of the correlation matrix
         matrix<Type>Sigmab_lvCI = Sigmab_lv(0).template triangularView<Eigen::Lower>().solve(Iblv);
-        Sigmab_lvCI.transpose() *= Sigmab_lvCI;//inverse of correlation matrix via its cholesky
+        Sigmab_lvCI = Sigmab_lvCI.transpose() * Sigmab_lvCI;//inverse of correlation matrix via its cholesky
         for(int q=0; q<sbl3; q++){
-          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(exp(sigmab_lv.head(num_lv_c+num_RR)).pow(-2).array()*Sigmab_lvCI(q,q)*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum());//need to use sigmab_lv directly here, as Sigmab_lv is now of length x_lv.cols() for the correlation
+          nll -= (AB_lv(q).diagonal().array().log().sum() - 0.5*(exp(-2*sigmab_lv.head(num_lv_c+num_RR)).array()*Sigmab_lvCI(q,q)*(AB_lv(q)*AB_lv(q).transpose()).diagonal().array()).sum());//need to use sigmab_lv directly here, as Sigmab_lv is now of length x_lv.cols() for the correlation
         }
         
         for(int q=0; q<(num_lv_c+num_RR); q++){
-          nll -= -0.5*(b_lv.col(q).transpose()*Sigmab_lvCI*b_lv.col(q)).sum()*pow(exp(sigmab_lv(q)),-2);
+          nll -= -0.5*(b_lv.col(q).transpose()*Sigmab_lvCI*b_lv.col(q)).sum()*exp(-2*sigmab_lv(q));
           nll -= 0.5*Klv- Klv*sigmab_lv(q)-Sigmab_lv(0).diagonal().array().log().sum();
         }
       }
@@ -549,9 +550,10 @@ Type objective_function<Type>::operator() ()
         if(num_RR>0)RRgamma.bottomRows(num_RR) = RRgamma.topRows(num_RR); 
         RRgamma.topRows(num_lv_c) = newlam.topRows(num_lv_c);
       }
-      for (int j=0; j<p; j++){
-        for(int i=0; i<n; i++){
-          cQ(i,j) += 0.5*(RRgamma.col(j).transpose()*Ab_lvcov(i)*RRgamma.col(j)).value();
+      for(int i=0; i<n; i++){
+        matrix<Type> Av = Ab_lvcov(i)*RRgamma; // reuse Ab_lvcov(i) across all species
+        for(int j=0; j<p; j++){
+          cQ(i,j) += 0.5*(RRgamma.col(j).transpose()*Av.col(j)).value();
         }
       }
       if(quadratic<1){
@@ -603,7 +605,7 @@ Type objective_function<Type>::operator() ()
               tempRRCN = Ab_lvcov(i).bottomLeftCorner(num_RR,num_lv_c);
             }
             //resize to fit A
-            Ab_lvcov(i).conservativeResize(nlvr,nlvr);
+            Ab_lvcov(i).resize(nlvr,nlvr);
             Ab_lvcov(i).setZero();
             
             //re-assign
@@ -3548,12 +3550,12 @@ Type objective_function<Type>::operator() ()
                   //yik = 1 if yi >=k and 0 otherwise
                   // p(yik = 0) for k<y(i,j)
                   for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
                     nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                   // p(yik = 1)  for k>= y(i,j)
                   for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
+                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
                     nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
                   }
                 }
@@ -4114,7 +4116,7 @@ Type objective_function<Type>::operator() ()
                 nll -= log(1-iphij);
                 Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 nll -= (y(i,j)-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
-                
+
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
                 }
@@ -4217,7 +4219,7 @@ Type objective_function<Type>::operator() ()
                 nll -= log(1-iphi3);
                 Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 nll -= (y(i,j)-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
-                
+
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
                 }
@@ -4225,7 +4227,7 @@ Type objective_function<Type>::operator() ()
                 Type LL = 0;
                 Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
                 LL += (-Ntrials(i,j)*0.5)*eta(i,j) - Ntrials(i,j)*logspace_add(wij, -wij);
-                
+
                 pVA = exp(log(1-iphi3)+LL-log((1-iphi3)*exp(LL)+iphij));
                 pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
                 pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
@@ -5221,16 +5223,34 @@ Type objective_function<Type>::operator() ()
         // }
       }
       
+      case BETA_BINOMIAL: { // beta-binomial family 15
+        for (int i=0; i<n; i++) {
+          if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
+          } else if(extra(j)==1){mu(i,j) = pnorm(eta(i,j));
+          }else if(extra(j)==2) mu(i,j) = 1-exp(-exp(eta(i,j)));
+          mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
+          mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));
+          if(!gllvmutils::isNA(y(i,j))){
+            Type alpha = mu(i,j) * iphi(j);
+            Type beta_shape = (1 - mu(i,j)) * iphi(j);
+            nll -= lgamma(alpha + beta_shape) + lgamma(alpha + y(i,j)) + lgamma(beta_shape + Ntrials(i,j) - y(i,j))
+                   - lgamma(alpha) - lgamma(beta_shape) - lgamma(alpha + beta_shape + Ntrials(i,j))
+                   + lgamma(Ntrials(i,j) + 1.) - lgamma(y(i,j) + 1.) - lgamma(Ntrials(i,j) - y(i,j) + 1.);
+          }
+        }
+        break;
+      }
+
       default: {
         // Error message for non-available family
         error("%s", ("Unsupported family at column " + std::to_string(j) +
           std::string(": ") + std::to_string(static_cast<int>(family(j)))).c_str());
         break;
       }
-      
+
       } // switch
     } // for j end
-    
+
   } // LA end
   return nll;
 }

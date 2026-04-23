@@ -1,3 +1,8 @@
+Version 2.0.9
+=============
+
+* Added beta-binomial family with method = "LA"
+
 Version 2.0.8
 =============
 
@@ -9,6 +14,7 @@ Version 2.0.8
 * Improved output of AICc.gllvm to be in line with the AIC and BIC returned tables
 * AUC added to goodnessOfFit statistics
 * Added VA-EVA hybrid approximation for the orderedBeta model with logit link
+* Added 'spp' argument to predict.gllvm, for when only predictions are needed for selected species
 
 ## Bugfixes
 * row.eff was ignoring 'diag'
@@ -16,7 +22,6 @@ Version 2.0.8
 * bugfix in plot.gllvm that left plots empty under particular settings
 * bugfix in nested random row effects
 * bugfix in phyloplot.gllvm that prevented uncertain random effects from being crossed out
-
 
 Version 2.0.7
 =============

@@ -223,6 +223,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
               beta = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
               orderedBeta = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
               betaH = paste("Beta Shape phi", names(object$params$phi)[j], sep = "."),
+              beta.binomial = paste("Overdispersion phi", names(object$params$phi)[j], sep = "."),
               ""
       )
       rnames[(cal + 1):(cal+s)] <- sapply(1:ncol(object$y), namephi, fam = object$family, simplify = c)

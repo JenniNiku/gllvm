@@ -17,7 +17,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   # }else if(length(Ar.struc) != length(Ar.struc))stop("'Ar.struc' should be of the same length as the number of row effects.")
   n <- nu <- dim(y)[1]
   p <- dim(y)[2]
-  p_binomials = sum(family %in% c("binomial","ZIB", "ZNIB"))
+  p_binomials = sum(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial"))
   p_betaH =  sum(family %in% c("betaH"))/2
   if(length(family)==1) family <- rep(family, p)
   
@@ -33,11 +33,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
   times <- 1
   if(is.null(disp.group)) disp.group <- 1:NCOL(y)
   # if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p_binomials && !all.equal(dim(Ntrials), c(nrow(y),p_binomials)))){
-  if(any(family %in% c("binomial","ZIB", "ZNIB")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
+  if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && (length(Ntrials) != 1 && length(Ntrials) != p && !all.equal(dim(Ntrials), dim(y)))){
     stop("Supplied Ntrials is of the wrong length, should be of length 1 or the number of columns in y.")
-  } else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == 1){
+  } else if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == 1){
     Ntrials <- matrix(Ntrials, n, p)
-  }else if(any(family %in% c("binomial","ZIB", "ZNIB")) && length(Ntrials) == p){
+  }else if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")) && length(Ntrials) == p){
     Ntrials <- matrix(Ntrials, n, p, byrow = TRUE)
   }
   
@@ -550,7 +550,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     ZINBphis <- NULL
     phi_family = c("negative.binomial","negative.binomial1", "tweedie",
                    "ZIP", "ZIB", "ZINB", "ZNIB",
-                   "gaussian", "gamma", "beta", "betaH", "orderedBeta")
+                   "gaussian", "gamma", "beta", "betaH", "orderedBeta", "beta.binomial")
     shape_family = c("gaussian", "gamma", "beta", "betaH", "orderedBeta")
     ZI_family = c("ZIP","ZIB", "ZINB", "ZNIB")
     
@@ -1089,7 +1089,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }
             spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks+1)/2)))
       }
-      } else {spAr <- 0}
+      } else {spAr <- 0;map.list$Abb <- factor(NA)}
       
       # Variational covariances for  random rows
       if(nrow(dr)==n){
@@ -1307,7 +1307,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
         if(any(link=="cloglog")) extra[family == "ZNIB"]=2
       }
-      
+      if(any(family == "beta.binomial")){
+        familyn[family == "beta.binomial"] =15
+        if(link=="probit") extra[family == "beta.binomial"]=1
+        if(link=="cloglog") extra[family == "beta.binomial"]=2
+      }
+
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic != FALSE && (num.lv+num.lv.c+num.RR)>0){
         data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = Abstruc, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn, extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1, p_betaH = p_betaH)
@@ -1327,6 +1332,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list2$r0f = factor(rep(NA, length(r0f)))
         map.list2$b_lv = factor(rep(NA, length(b.lv)))
         map.list2$Ab_lv = factor(rep(NA, length(Ab_lv)))
+        map.list2$spAr = factor(rep(NA, length(spAr)))
         map.list2$sigmab_lv = factor(rep(NA, length(sigmab_lv)))
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
         map.list2$B = factor(rep(NA, length(B)))
@@ -1699,7 +1705,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           for (j in o_ind) {
             if(family[j]=="ordinal"){
               zetanew[j,1] <- 0 
-              k<-max(y[,j])-2
+              k<-max(y[,j], na.rm = TRUE)-2
               if(k>0){
                 for(l in 1:k){
                   zetanew[j,l+1]<-zetas[idx+l]
@@ -1899,12 +1905,17 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(any(link=="probit")) extra[family == "ZIB" & (link=="probit")]=1
         if(any(link=="cloglog")) extra[family == "ZIB" & (link=="cloglog")]=2
       }
-      if(any(family == "ZNIB")){ 
+      if(any(family == "ZNIB")){
         familyn[family == "ZNIB"] =14;
         if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
         if(any(link=="cloglog")) extra[family == "ZNIB" & (link=="cloglog")]=2
       }
-      
+      if(any(family == "beta.binomial")){
+        familyn[family == "beta.binomial"] =15
+        if(link=="probit") extra[family == "beta.binomial"]=1
+        if(link=="cloglog") extra[family == "beta.binomial"]=2
+      }
+
       ## generate starting values quadratic coefficients in some cases
       if(starting.val!="zero" && quadratic == TRUE && num.RR>0&(num.lv+num.lv.c)==0 && start.struc=="LV"){
         data.list = list(y = y, x = Xd, x_lv = lv.X, xr = xr, dr0 = dr, dLV = dLV, csR = csR, colMatBlocksI = blocks, Abranks = Abranks, Abstruc = 0, xb = spdr, cs = cs, offset=offset, trmsize = trmsize, num_lv = num.lv, num_lv_c = num.lv.c, num_RR = num.RR, num_corlv=num.lv.cor, quadratic = 1, randomB = as.integer(randomB=="LV"), family=familyn,extra=extra,method=switch(method, VA=0, EVA=2),model=0,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, nncolMat = nncolMat, csb_lv = csBlv, cw = corWithinLV*1, p_betaH = p_betaH)
@@ -1915,7 +1926,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list2$b_lv <- factor(rep(NA,length(b.lv)))
         map.list2$B <- factor(rep(NA, length(B)))
         
-        parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = spAr, b_lv = b.lv, sigmab_lv = 0, Ab_lv = Ab_lv, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
+        parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a,b), sigmaB = sigmaB, Abb = 0, b_lv = b.lv, sigmab_lv = 0, Ab_lv = 0, B = B, Br=Br,lambda = lambda, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u,lg_phi=log(phi),sigmaij=sigmaij,log_sigma=sigma,rho_lvc=rho_lvc, Au=0, lg_Ar =0, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
         
         objr <- TMB::MakeADFun(
           data = data.list, silent=TRUE,
@@ -1947,7 +1958,6 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         data.list$method = 0
       }
       
-      randomp <- "u"
       map.list$Au <- map.list$lg_Ar <- map.list$Abb <- factor(NA)
       map.list$Ab_lv = factor(NA)
       if(quadratic==FALSE) map.list$lambda2 <- factor(NA)
@@ -2094,7 +2104,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       
       #### Call makeADFun
       objr <- TMB::MakeADFun(
-        data = data.list, silent=!trace,
+        data = data.list, silent=!(trace&!is.null(randomp)),
         parameters = parameter.list, map = map.list,
         inner.control=list(mgcmax = 1e+200,tol10=0.01),
         random = randomp, DLL = "gllvm")
@@ -2184,7 +2194,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
         #### Call makeADFun
         objr <- TMB::MakeADFun(
-          data = data.list, silent=!trace,
+          data = data.list, silent=!(trace&!is.null(randomp)),
           parameters = parameter.list, map = map.list,
           inner.control=list(mgcmax = 1e+200,tol10=0.01),
           random = randomp, DLL = "gllvm")
@@ -2404,7 +2414,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           for (j in o_ind) {
             if(family[j]=="ordinal"){
               zetanew[j,1] <- 0 
-              k<-max(y[,j])-2
+              k<-max(y[,j], na.rm = TRUE)-2
               if(k>0){
                 for(l in 1:k){
                   zetanew[j,l+1]<-zetas[idx+l]
@@ -2589,8 +2599,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           try(names(out$params$ZINB.phi) <- names(map.list$lg_phiZINB),silent=T)
         }
       }
-      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB"))) {
-        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB")];
+      if(any(family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial"))) {
+        out$params$phi[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")] <- phis[family %in% c(shape_family, "tweedie", "ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")];
         names(out$params$phi) <- colnames(y);
         if(!is.null(names(disp.group))){
           try(names(out$params$phi) <- names(disp.group),silent=T)

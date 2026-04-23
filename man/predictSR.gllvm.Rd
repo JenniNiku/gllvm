@@ -7,29 +7,38 @@
 \usage{
 \method{predictSR}{gllvm}(
   object,
-  SR = NULL,
+  spp = NULL,
   expected = "mean",
-  se.fit = 10000,
+  se.fit = 1000,
+  level = 1,
+  ci = "expected",
   alpha = 0.95,
   seed = 42,
   return.pred = FALSE,
+  batch = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{SR}{integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.}
+\item{spp}{index vector, defaults to NULL. If omitted, returns a prediction with all species in the data.}
 
 \item{expected}{character, defaults to "mean", in which case the returned measure of central tendency for species richness is the Poisson-Binomial expectation. Alternatively can be "mode".}
 
-\item{se.fit}{integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.}
+\item{se.fit}{integer or logical, defaults to 1000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.}
+
+\item{level}{specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.}
+
+\item{ci}{character vector, defaults to "expected" but can also be "pmf" or both. If "pmf" provides CI on the whole pmf prediction.}
 
 \item{alpha}{numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.}
 
 \item{seed}{numeric, defaults to 42. Seed for the simulation of the confidence interval.}
 
-\item{return.pred}{logical, defaults to \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.}
+\item{return.pred}{logical, defaults to \code{FALSE}. Returns the point-estimate results from \code{"\link{predict.gllvm}"}.}
+
+\item{batch}{integer or \code{NULL}, defaults to 200. If provided, species predictions needed to calculate richness are processed in chunks of this size per simulation draw, reducing peak memory at the cost of more \code{predict} calls. \code{NULL} processes all (selected) species in one call.}
 
 \item{...}{arguments passed to \code{"\link{predict.gllvm}"}.}
 }

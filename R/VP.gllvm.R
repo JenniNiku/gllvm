@@ -393,9 +393,9 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
     if(any(object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta"))){
       r2s[object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")] <- goodnessOfFit(object = object, measure = "R2", species = TRUE)$R2[object$family %in% c("gaussian", "tweedie", "gamma", "exponential", "beta", "orderedBeta")]
     } 
-    if(any(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB"))) {
-      r2s[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")] <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB")]
-    } 
+    if(any(object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB", "beta.binomial"))) {
+      r2s[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB", "beta.binomial")] <- goodnessOfFit(object = object, measure = "sR2", species = TRUE)$sR2[object$family %in% c("poisson","negative.binomial","binomial","ZIP", "ZINB", "ZIB", "ZNIB", "beta.binomial")]
+    }
     if(any(object$family %in% "betaH")) {
       pred <- predict(object, type = "response")
       ycover<- object$y[,object$family %in% "betaH"]; ycover[ycover==0]<- NA;

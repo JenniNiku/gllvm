@@ -27,7 +27,7 @@ start_values_gllvm_TMB <- function(
   # if(length(family)!=p) family <- rep(family, p)[1:p]
   if(any(family == "tweedie")) {start.optimizer = "optim";start.optim.method = "L-BFGS-B"}
   
-  if(any(!(family %in% c("poisson","negative.binomial","negative.binomial1","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIP","ZINB",'ZIB', "ZNIB"))))
+  if(any(!(family %in% c("poisson","negative.binomial","negative.binomial1","binomial","ordinal","tweedie", "gaussian", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIP","ZINB",'ZIB', "ZNIB", "beta.binomial"))))
     stop("inputed family not allowed...sorry =(")
   
   # Use VA for starting values
@@ -313,7 +313,7 @@ start_values_gllvm_TMB <- function(
     }
   # }
   
-  phi_family = c("negative.binomial","negative.binomial1", "gaussian", "gamma", "beta", "betaH", "orderedBeta","tweedie","ZIP","ZINB","ZIB", "ZNIB")
+  phi_family = c("negative.binomial","negative.binomial1", "gaussian", "gamma", "beta", "betaH", "orderedBeta","tweedie","ZIP","ZINB","ZIB", "ZNIB", "beta.binomial")
   # if(family %in% c("negative.binomial","negative.binomial1")) {
   #   phi <- fit.mva$phi  + 1e-5
   # } else if(family %in% c("gaussian", "gamma", "beta", "betaH", "orderedBeta","tweedie","ZIP","ZINB","ZIB", "ZNIB")) {
@@ -387,7 +387,8 @@ start_values_gllvm_TMB <- function(
       # zeta <- matrix(NA,p,max.levels - 1)
       zeta[family == "ordinal",1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
     }else{
-      cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch((link[family == "ordinal"])[1], "logit" = "logistic","probit" = "probit"))
+      linko <- link[pmin(which(family == "ordinal"), length(link))][1]
+      cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(linko, "logit" = "logistic","probit" = "probit"))
       zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta
       zeta[(length(zeta)-length(cw.fit$zeta)+1)] <- 0
     }
@@ -423,7 +424,7 @@ start_values_gllvm_TMB <- function(
     if(starting.val=="random"){ # Coefs not needed for zero
       for(j in ordinal_p) {
         y.fac <- factor(y[,j])
-        linkj = link[pmax(j,1)]
+        linkj = link[min(j,length(link))]
         if(length(levels(y.fac)) > 2) {
           if((num.lv+num.lv.c)==0){
             if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
@@ -453,7 +454,7 @@ start_values_gllvm_TMB <- function(
       # For zero starting vals, only zeta parameters needed
       for(j in ordinal_p) {
         y.fac <- factor(y[,j])
-        linkj = link[pmax(j,1)]
+        linkj = link[min(j,length(link))]
         if(length(levels(y.fac)) > 2) {
           cw.fit <- try(MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
           zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
@@ -720,10 +721,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       if(any(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB"))) {
         mu[, family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")] <- exp(eta[,family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")])
       }
-      if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB"))) {
-        if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")])
-        if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")])
-        if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")])
+      if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial"))) {
+        if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")])
+        if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")])
+        if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")])
       }
       if(any(family %in% c("gaussian","ordinal"))) {
         mu[, family %in% c("gaussian","ordinal")]<-eta[,(family %in% c("gaussian","ordinal"))]
@@ -886,11 +887,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(any(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB"))) {
       mu[, family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")] <- exp(eta[,family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")])
     }
-    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB"))) {
-      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")])
-      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")])
-      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")])
-      # mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")] <-  binomial(link = link)$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")])
+    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial"))) {
+      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")])
+      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")])
+      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")])
     }
     if(any(family %in% c("gaussian","ordinal"))) {
       mu[, family %in% c("gaussian","ordinal")]<-eta[,(family %in% c("gaussian","ordinal"))]
@@ -992,11 +992,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(any(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB"))) {
       mu[, family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")] <- exp(eta[,family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")])
     }
-    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB"))) {
-      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")])
-      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")])
-      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")])
-      # mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")] <-  binomial(link = link)$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")])
+    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial"))) {
+      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")])
+      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")])
+      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")])
     }
     if(any(family %in% c("gaussian","ordinal"))) {
       mu[, family %in% c("gaussian","ordinal")]<-eta[,(family %in% c("gaussian","ordinal"))]
@@ -1096,11 +1095,10 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(any(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB"))) {
       mu[, family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")] <- exp(eta[,family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")])
     }
-    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB"))) {
-      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "probit")])
-      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "logit")])
-      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB") & (link == "cloglog")])
-      # mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")] <-  binomial(link = link)$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB")])
+    if(any(family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial"))) {
+      if(any(link == "probit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")] <-  binomial(link = "probit")$linkinv(eta[,family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "probit")])
+      if(any(link == "logit")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")] <-  binomial(link = "logit")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "logit")])
+      if(any(link == "cloglog")) mu[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")] <-  binomial(link = "cloglog")$linkinv(eta[, family %in% c("binomial","beta","betaH","orderedBeta","ZIB", "ZNIB", "beta.binomial") & (link == "cloglog")])
     }
     if(any(family %in% c("gaussian","ordinal"))) {
       mu[, family %in% c("gaussian","ordinal")]<-eta[,(family %in% c("gaussian","ordinal"))]
@@ -2340,6 +2338,7 @@ start_values_rows <- function(y, family, dr, csR, proptoMats = list(list(matrix(
       if(any(family == "ZINB")) family[family == "ZINB"] <- "negative.binomial"
       if(any(family == "ZIB")) family[family == "ZIB"] <- "binomial"
       if(any(family == "ZNIB")) family[family == "ZNIB"] <- "binomial"
+      if(any(family == "beta.binomial")) family[family == "beta.binomial"] <- "binomial"
       if(all(family != "tweedie")){
         f1 <- gllvm.TMB(y = y, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = start.optimizer, optim.method = start.optim.method, max.iter = max.iter, zeta.struc = zeta.struc) #, method=method
       } else if(any(family == "tweedie")){
@@ -3073,55 +3072,89 @@ b_lvHEcorrect <- function(Lmult,K,d){
 # distribution functions for ZIP, ZINB, and ZIB
 pzip <- function(y, mu, sigma)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  ppois(y[tmp], lambda = mu[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(sigma))
+  y     <- rep_len(y,     m)
+  mu    <- rep_len(mu,    m)
+  sigma <- rep_len(sigma, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- ppois(y[tmp], lambda = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
 pzinb <- function(y, mu, p, sigma)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  pnbinom(y[tmp], mu = mu[tmp], size = 1 / sigma[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(p), length(sigma))
+  y     <- rep_len(y,     m)
+  mu    <- rep_len(mu,    m)
+  p     <- rep_len(p,     m)
+  sigma <- rep_len(sigma, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- pnbinom(y[tmp], mu = mu[tmp], size = 1 / sigma[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- p[tmp] + (1 - p[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
 pzib <- function(y, mu, sigma, Ntrials)
 {
-  pp <- numeric(length(y))
-  tmp <- y>-1
-  pp <- rep(0, length(y))
-  cdf <-  pbinom(y[tmp], Ntrials[tmp], prob = mu[tmp], lower.tail = TRUE, log.p = FALSE)
+  m <- max(length(y), length(mu), length(sigma), length(Ntrials))
+  y       <- rep_len(y,       m)
+  mu      <- rep_len(mu,      m)
+  sigma   <- rep_len(sigma,   m)
+  Ntrials <- rep_len(Ntrials, m)
+  pp <- rep(0, m)
+  tmp <- y > -1
+  cdf <- pbinom(y[tmp], Ntrials[tmp], prob = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
-  
   pp
 }
 
-pznib <- function(y, mu, p0, pN, Ntrials) 
-  {
-  pp <- numeric(length(y))
-  tmp <- y<Ntrials
-  
+pznib <- function(y, mu, p0, pN, Ntrials)
+{
+  m <- max(length(y), length(mu), length(p0), length(pN), length(Ntrials))
+  y       <- rep_len(y,       m)
+  mu      <- rep_len(mu,      m)
+  p0      <- rep_len(p0,      m)
+  pN      <- rep_len(pN,      m)
+  Ntrials <- rep_len(Ntrials, m)
+  pp <- numeric(m)
+  tmp <- y < Ntrials
   # For y < Ntrials
-  pp[tmp] <- p0[tmp] + (1 - p0[tmp] - pN[tmp]) * 
+  pp[tmp] <- p0[tmp] + (1 - p0[tmp] - pN[tmp]) *
       pbinom(y[tmp], size = Ntrials[tmp], prob = mu[tmp])
-
   # for y == Ntrials CDF = 1
   pp[!tmp] <- 1
-
-  
-  
   return(pp)
+}
+
+pbetabinom <- function(y, mu, phi, Ntrials) {
+  # CDF of beta-binomial: P(Y <= y) = sum_{k=0}^{y} P(Y = k)
+  # P(Y = k) = C(N,k) * B(alpha+k, beta+N-k) / B(alpha, beta)
+  # where alpha = mu*phi, beta_shape = (1-mu)*phi
+  m <- max(length(y), length(mu), length(phi), length(Ntrials))
+  y       <- rep_len(y,       m)
+  mu      <- rep_len(mu,      m)
+  phi     <- rep_len(phi,     m)
+  Ntrials <- rep_len(Ntrials, m)
+  pp <- numeric(m)
+  for (i in seq_len(m)) {
+    if (y[i] < 0) {
+      pp[i] <- 0
+    } else {
+      N <- Ntrials[i]
+      alpha <- mu[i] * phi[i]
+      beta_shape <- (1 - mu[i]) * phi[i]
+      ks <- 0:min(floor(y[i]), N)
+      log_probs <- lchoose(N, ks) + lbeta(alpha + ks, beta_shape + N - ks) - lbeta(alpha, beta_shape)
+      pp[i] <- sum(exp(log_probs))
+    }
+  }
+  pmin(pp, 1)
 }
 
 # function to get the derivative w.r.t. the squared constraint function
@@ -3161,7 +3194,7 @@ relist_gllvm <- function (flesh, skeleton = attr(flesh, "skeleton"))
   skeleton <- result <- skeleton[nam]
   for (i in nam) {
     skel_i <- result[[i]]
-    size <- length(unlist(skel_i))
+    size <- length(skel_i)
     result[[i]] <- relist(flesh[seq.int(ind, length.out = size)], 
                           skel_i)
     

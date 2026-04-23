@@ -47,7 +47,6 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     } else {
       pred <- predict(object, type = "response")
       if(any(object$family == "ordinal")){
-        pred <- pred[1,,]
         pred[,object$family == "ordinal"] <- predict(object, type = "class")[,object$family == "ordinal"]
       }
     }
@@ -117,14 +116,19 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     }
   }
   if("TjurR2" %in% measure) {
-    if(all(unique(y) %in% c(0,1,NA))){
+    ntrialsfams <- c("binomial", "ZIB", "ZNIB", "beta.binomial")
+    hasntrials <- !is.null(object) && any(object$family %in% ntrialsfams)
+    # binarize observed y for Tjur R2: presence = y > 0
+    ybin <- if(hasntrials) (y > 0) * 1L else y
+    predbin <- if(hasntrials) gllvm.presence.prob(pred, object) else pred
+    if(all(unique(ybin) %in% c(0,1,NA))){
       tjurR2 <- function(y,pred){mean(pred[y==1], na.rm = TRUE) - mean(pred[y==0], na.rm = TRUE)}
       if(species) {
         for (j in 1:p) {
-          out$TjurR2[j] <- tjurR2(y[,j], pred[,j])
+          out$TjurR2[j] <- tjurR2(ybin[,j], predbin[,j])
         }
       } else {
-        out$TjurR2 <- tjurR2(unlist(c(y)), unlist(c(pred)))
+        out$TjurR2 <- tjurR2(unlist(c(ybin)), unlist(c(predbin)))
       }
     }
   }
@@ -156,13 +160,13 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     if(any(object$family%in%c("gamma","exponential","beta")))warning("AUC only makes sense for families that include absence.")
     if(any(object$family %in% c("ordinal"))){
       # just making sure the minimum is 0
-      y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min) 
+      y[,object$family == "ordinal"] <- object$y[,object$family == "ordinal"]-apply(object$y[,object$family == "ordinal"],2,min,na.rm=TRUE) 
     }
     predAUC <- pred
     if(mispred){
-      predAUC <- predict(object, type = "response")
-    }else if(!mispred && any(object$family == "ordinal") && length(dim(pred))!=3){
-      stop("To calculate AUC, 'pred' should  be an array with 3 dimensions when ordinal responses are included.")
+      predAUC <- predict(object, type = "response", ordinal.cat = 1)
+    }else if(!mispred && any(object$family == "ordinal") && !is.matrix(pred)){
+      stop("To calculate AUC, 'pred' should be a matrix when ordinal responses are included.")
     }
     
     predAUC <- gllvm.presence.prob(predAUC, object)
@@ -171,16 +175,16 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       out$AUC <- rep(NA, p)
       for(j in 1:p){
         ranks <- rank(predAUC[,j])
-        n_pos <- sum(y[,j] > 0)
-        n_neg <- sum(y[,j] == 0)
-        sum_ranks_pos <- sum(ranks[y[,j] >0])
+        n_pos <- sum(y[,j] > 0,na.rm=TRUE)
+        n_neg <- sum(y[,j] == 0,na.rm=TRUE)
+        sum_ranks_pos <- sum(ranks[y[,j] >0],na.rm=TRUE)
         out$AUC[j] <-  (sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) 
       }
     }else{
       ranks <- rank(c(predAUC))
-      n_pos <- sum(c(y) > 0)
-      n_neg <- sum(c(y) == 0)
-      sum_ranks_pos <- sum(ranks[c(y) >0])
+      n_pos <- sum(c(y) > 0,na.rm=TRUE)
+      n_neg <- sum(c(y) == 0,na.rm=TRUE)
+      sum_ranks_pos <- sum(ranks[c(y) >0],na.rm=TRUE)
       out$AUC <-  exp(log(sum_ranks_pos - n_pos*(n_pos + 1)/2) -log(n_pos)-log(n_neg))#(sum_ranks_pos - n_pos*(n_pos + 1)/2) / (n_pos * n_neg) # can overflow for large n_pos, n_neg
     }
   

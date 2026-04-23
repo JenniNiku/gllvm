@@ -107,10 +107,10 @@ glmmVA <- function(formula, data, family,
   Ntrials = matrix(1)
   
   # Facilitate y to be passed as a 2-column matrix for binomial responses
-  if((ncol(y) == 2) && family %in% c("binomial", "ZIB", "ZNIB") && !("Ntrials" %in% names(args))){
+  if((ncol(y) == 2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && !("Ntrials" %in% names(args))){
     Ntrials <- matrix(rowSums(y))
     y <- y[, 1,drop=FALSE]
-  }else if((ncol(y)==2) && family %in% c("binomial", "ZIB", "ZNIB") && ("Ntrials" %in% names(args))){
+  }else if((ncol(y)==2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && ("Ntrials" %in% names(args))){
     stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
   }
   

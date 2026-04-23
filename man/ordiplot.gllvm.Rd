@@ -75,7 +75,7 @@
 
 \item{arrow.ci}{represent statistical uncertainty for arrows in constrained or concurrent ordination using confidence or prediction interval? Defaults to \code{TRUE}}
 
-\item{arrow.lty}{linetype for arrows in constrained}
+\item{arrow.lty}{linetype for arrows in constrained ordination}
 
 \item{fac.center}{logical. If \code{TRUE} place labels for binary variables at their estimated location.}
 

@@ -168,7 +168,8 @@
 #'   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
 #'   \item{ \code{family = "ZIB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)}.}
 #'   \item{ \code{family = "ZNIB"}:}{ Expectation \eqn{E[Y_{ij}] = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^N_j)N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2}.}
-#'   
+#'   \item{ \code{family = "beta.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1 + (N_j-1)\phi_j/(\phi_j+1))} where \eqn{\phi_j > 0} is a species-specific overdispersion parameter. Only available for \code{method = "LA"}.}
+#'
 #'   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)}.}
 #'
 #'   \item{For positive continuous data \code{family = "gamma"}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}^2/\phi_j}, where \eqn{\phi_j} is species specific shape parameter.}
@@ -492,22 +493,25 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     EVA_family = unique(gllvmFML_allowed$family[gllvmFML_allowed$method == "EVA"])
     LA_family = unique(gllvmFML_allowed$family[gllvmFML_allowed$method == "LA"])
     
-    # accepted_families = c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB")
+    # accepted_families = c("poisson","negative.binomial","negative.binomial1","binomial","tweedie","ZIP", "ZINB", "gaussian", "ordinal", "gamma", "exponential", "beta", "betaH", "orderedBeta","ZIB", "ZNIB", "beta.binomial")
     # VA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "exponential", "betaH", "ZINB", "orderedBeta","ZIB", "ZNIB")
+    # EVA_family = c("negative.binomial","negative.binomial1","binomial", "tweedie", "ordinal", "beta", "betaH", "orderedBeta")
     # EVA_family = c("negative.binomial","binomial", "tweedie", "ordinal", "beta", "betaH", "orderedBeta")
-    # LA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "ZINB", "exponential", "beta", "betaH", "ZINB", "ZIB", "ZNIB")
-    
+    # LA_family = c("poisson","negative.binomial","negative.binomial1","binomial", "gaussian", "gamma", "tweedie", "ZIP", "ordinal", "ZINB", "exponential", "beta", "betaH", "ZINB", "ZIB", "ZNIB", "beta.binomial")
+
     if(any(!(family %in% accepted_families)))
       stop("Selected family: ", paste(family[!family %in% accepted_families], collapse = ", ")," not permitted...sorry!")
     
-    # if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family)))
     not_valid_famMethod <- !is_allowed(family, method, NULL)
-    # if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% VA_family))){
     if(any(not_valid_famMethod)){
       fam_not_valid <- family[not_valid_famMethod]
-      stop(paste("Family(families): ",paste(fam_not_valid, collapse = ", ")," not implemented with method '", method,"'. Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
+      stop(paste("Family(families): ",paste(fam_not_valid, collapse = ", ")," not implemented with method '", method,"." ))
+    }
+
+    if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% LA_family))){
+      stop("Only families implemented with same method (VA, EVA, LA) can be combined. \n For 'method =\"VA\"', those are: ", paste(VA_family, collapse = ", "),
            "\n For 'method =\"EVA\"', those are: ", paste(EVA_family, collapse = ", "),
-           "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", "))
+           "\n For 'method =\"LA\"', those are: ", paste(LA_family, collapse = ", ")
       )
     }
     
@@ -654,6 +658,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
     if(any(family %in% c("binomial","ZIB", "ZNIB")) && method == "EVA" && max(Ntrials) >1){
       stop("Binomial distribution not yet supported with the EVA method.")
+    }
+    if(any(family == "beta.binomial") && max(Ntrials) == 1 && !is.null(y) && max(y[,family == "beta.binomial", drop=FALSE], na.rm=TRUE)>1){
+      stop("Using the beta-binomial distribution requires setting the `Ntrials` argument.")
+    }
+    if(any(family == "beta.binomial") && method != "LA"){
+      stop("The beta-binomial distribution is only available for method = 'LA'.")
     }
     if(!colMat.rho.struct %in% c("single","term")){
       stop("Wrong input for 'colMat.rho.struct'. Must be one of 'single','term'.")
@@ -1220,7 +1230,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(inherits(row.eff, "formula") && length(all.vars(terms(row.eff)))>0){
         # warning(still check about intercept)
           xr <- model.matrix(row.eff, studyDesign)[,-1,drop=FALSE]
-          
+          red.cols <- colSums(xr == 0) == nrow(xr)
+          if(any(red.cols)){
+            warning("Some columns of the fixed row effects design matrix are all zeros and have been dropped: ", paste(colnames(xr)[red.cols], collapse = ", "), ".\n")
+            xr <- xr[, !red.cols, drop = FALSE]
+          }
+
           if(nrow(dr)!=n){
             if(!TMB)stop("Mixed effects row effects can only be fitted with 'TMB = TRUE'.")
           }else{
@@ -1430,7 +1445,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       TMB <- TRUE
     }
     
-    TMB_family_only <- c("gaussian","ZIP","ZINB","beta","betaH","orderedBeta","Tweedie","gamma","exponential")
+    TMB_family_only <- c("gaussian","ZIP","ZINB","beta","betaH","orderedBeta","Tweedie","gamma","exponential","beta.binomial")
     if (any(family %in% TMB_family_only) && !TMB) {
       TMB <- TRUE
       cat("Only TMB implementation available for ", paste(unique(family[family %in% TMB_family_only]), collapse = ", "), " family, so 'TMB = TRUE' is used instead. \n")
@@ -1501,8 +1516,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 
     # Check that link is valid with distribution and method
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
-    
-    if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB"))) {
+
+    if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB","beta.binomial"))) {
       if (method %in% c("LA", "EVA","VA"))
         out$link <- link
     }
@@ -1884,7 +1899,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         cat("Try scaling and centering your predictors before entering them into the model, if you haven't. \n")
       }
     }
-    if(any(family %in% c("binomial","ZIB", "ZNIB")))out$Ntrials = fitg$Ntrials
+    if(any(family %in% c("binomial","ZIB", "ZNIB", "beta.binomial")))out$Ntrials = fitg$Ntrials
     if (is.null(out$terms) && return.terms)
       out$terms <- fitg$terms
     if (is.finite(out$logL) && !is.null(TR) && NCOL(out$TR)>0 && NCOL(out$X)>0) {

@@ -2,12 +2,15 @@
 #' @description Obtains predictions from a fitted generalized linear latent variable model object.
 #'
 #' @param object an object of class 'gllvm'.
-#' @param SR integer, defaults to NULL. If omitted, returns a prediction for all integers up to the number of observed species.
+#' @param spp index vector, defaults to NULL. If omitted, returns a prediction with all species in the data.
 #' @param expected character, defaults to "mean", in which case the returned measure of central tendency for species richness is the Poisson-Binomial expectation. Alternatively can be "mode".
-#' @param se.fit integer or logical, defaults to 10.000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
+#' @param se.fit integer or logical, defaults to 1000. Number of simulations for confidence interval. No confidence interval is returned when set to \code{FALSE}.
+#' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
+#' @param ci character vector, defaults to "expected" but can also be "pmf" or both. If "pmf" provides CI on the whole pmf prediction.
 #' @param alpha numeric between 0 and 1, defaults to 0.95. Confidence level of the prediction.
 #' @param seed numeric, defaults to 42. Seed for the simulation of the confidence interval.
-#' @param return.pred logical, defaults to \code{FALSE}. Returns the results from \code{"\link{predict.gllvm}"}.
+#' @param return.pred logical, defaults to \code{FALSE}. Returns the point-estimate results from \code{"\link{predict.gllvm}"}.
+#' @param batch integer or \code{NULL}, defaults to 200. If provided, species predictions needed to calculate richness are processed in chunks of this size per simulation draw, reducing peak memory at the cost of more \code{predict} calls. \code{NULL} processes all (selected) species in one call.
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
 #'
 #' @details This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
@@ -46,169 +49,101 @@
 #'@export
 #'@export predictSR.gllvm
 
-predictSR.gllvm <- function(object, SR = NULL, expected = "mean", se.fit = 10000, alpha = 0.95, seed = 42, return.pred = FALSE, ...){
-  
-  set.seed(seed)
-  preds <- predict(object, type = "response", alpha = NULL, se.fit = se.fit, ...)
-  fit <- preds
-  
-  if(is.list(preds)){
-    R = dim(preds$ci.sim)[1]
-    n = dim(preds$ci.sim)[2]
-    
-    fit <- preds$fit
-    if(any(object$family == "ordinal")){
-      n = nrow(fit[1,,])
-    }
-    
-    probs <- gllvm.presence.prob(fit, object)
-    
-    eSR <- rowSums(probs)
-    if(expected == "mode"){
-      eSR <- sapply(eSR, pbMode, n = ncol(object$y))
-    }
-    
-    eSR.CI <- matrix(nrow = n, ncol = 2)
-    
-    if(is.null(SR))SR <-0:ncol(probs)
+predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000, level = 1, ci = "expected", alpha = 0.95, seed = 42, return.pred = FALSE, batch = NULL, ...){
 
-    if(TRUE){#type == "direct"){
-    # it's slow, but we can do our best
-    TMBcores <- TMB::openmp(DLL="gllvm")[1]
-    PoisBinCores <- get_omp_threads()
-    
-    if(PoisBinCores == 1 && TMBcores > 1)set_omp_threads(TMBcores)
-      
-    predSR  <-  poisbinom(probs)
-    colnames(predSR) <- paste0("SR_", SR)
-      
-    SR.ci <- array(dim=c(2,n,length(SR)))
-    predSR.sim = matrix(0, nrow = nrow(preds$ci.sim), ncol = length(SR))
-    dists = numeric(R)
-    center = numeric(length(SR))
+  fit <- predict(object, type = "response", se.fit = FALSE, ordinal.cat = 1L, spp = spp, level = level, ...)
 
-    for(i in 1:n){
-      if(!any(object$family == "ordinal")){
-        probs.sim <- gllvm.presence.prob(preds$ci.sim[,i,],object)
-      }else{
-        probs.sim <- gllvm.presence.prob(aperm(preds$ci.sim[,,i,],c(2,1,3)),object)
-      }
-      
-    eSR.temp <- rowSums(probs.sim)
-    
-    if(expected == "mode"){
-      eSR.temp <- sapply(eSR.temp, pbMode, n = ncol(object$y))
-    }
-    
-    type = 7 #R's default for quantile
-    if(expected == "mode")type = 1 # default doesn't work for integer problems
-    eSR.CI[i,]  <- quantile(eSR.temp, type = type, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+  probs <- gllvm.presence.prob(fit, object, spp = spp)
 
-    predSR.sim <- poisbinom(probs.sim)
-    
-    center = predSR[i,]         # point estimate for site i
-    dists = hilbert_to_provided_center(pmin(pmax(predSR.sim,.Machine$double.eps),1-.Machine$double.eps), pmin(pmax(center, .Machine$double.eps), 1-.Machine$double.eps))
-    
-    threshold = quantile(dists, alpha)
-    
-    # Keep points inside the simultaneous confidence region
-    SR.ci[,i,] <- apply(predSR.sim[dists <= threshold, ],2,range)
-    }
-    out <- list(predicted = list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,]), expected = list(fit = eSR, lower = eSR.CI[,1], upper = eSR.CI[,2]))
-    
-  }
-    # else if(type == "empirical"){
-    # p <- ncol(object$y)
-    # R <- se.fit
-    # n <- nrow(fit)
-    # if(any(object$family == "ordinal"))n <- nrow(fit[1,,])
-    # 
-    # if(!is.numical(se.fit))se.fit <- 1e3
-    # 
-    # predSR  <-  array(rbinom(R*nrow(fit)*ncol(fit), size = 1, prob = array(rep(probs, each = R), dim = c(R, n, p))), dim = c(R, n, p))
-    # 
-    # predSR <- rowSums(predSR, dims=2)
-    # predSR <- pmin(pmax(t(table(factor(predSR,levels=0:p), col(predSR))/R), 1e-15),1-1e-15)
-    # colnames(predSR) <- paste0("SR_", SR)
-    # 
-    # SR.ci <- array(dim=c(2,n,length(SR)))
-    # predSR.sim = array(0, dim=c(R,n,p))
-    # predSR.sim.mat <- matrix(0, nrow = n, ncol = p)
-    # dists = numeric(R)
-    # center = numeric(length(SR))
-    # 
-    # pred.sim.mat <- matrix(0, ncol = p+1)
-    # for(i in 1:n){
-    #   probs.sim <- gllvm.presence.prob(preds$ci.sim[,i,],object)
-    #   # bad idea to fit this into memory
-    #   # predSR.sim  <-  array(rbinom(R*R*ncol(fit), size = 1, prob = array(rep(probs.sim, each = R), dim = c(R, R, p))), dim = c(R, R, p))
-    #   # predSR.sim.mat <- rowSums(predSR.sim, dims = 2)
-    #   predSR.sim.mat <-  t(replicate(R, table(factor(replicate(R, sum(rbinom(p, 1, probs.sim[r, ]))), levels = 0:p))/R))
-    #   predSR.sim.mat <- pmin(pmax(predSR.sim.mat, 1e-15),1-1e-15)
-    # 
-    #   
-    #   center = predSR[i,] # point estimate for site i
-    #   dists = hilbert_to_provided_center(predSR.sim.mat, center)
-    #   
-    #   threshold = quantile(dists, alpha)
-    #   
-    #   # Keep points inside the simultaneous confidence region
-    #   SR.ci[,i,] <- apply(predSR.sim.mat[dists <= threshold, ],2,range)
-    # }
-    # out <- list(predicted = list(fit = predSR, lower = SR.ci[1,,], upper = SR.ci[2,,]), expected = list(eSR, lower = eSR.CI[,1], upper = eSR.CI[,2]))
-    # 
-    # }
-  }else if(!is.list(preds)){
-    n <- nrow(fit)
-    
-    probs <- gllvm.presence.prob(fit, object)  
-    
-    eSR <- rowSums(probs)
-    if(expected == "mode"){
-      eSR <- sapply(eSR, pbMode, n = ncol(object$y))
-    }
-    
-    if(is.null(SR))SR <-0:ncol(probs)
-    predSR  <-  poisbinom(probs)
-    colnames(predSR) <- paste0("SR_", SR)
-    out <- list(predicted = list(fit = predSR), expected  = list(fit = eSR))
-    
-    # if(type == "class"){
-    #   out <- apply(predSR, 1, which.max)-1
-    # }
-  }
-  
-  if(return.pred){
-    # code from predict.gllvm
-    if(is.list(preds)){
-    if(!any(object$family == "ordinal")){
-      ci <- apply(preds$ci.sim, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
-      out$predict.gllvm <- list(fit = preds$fit, lower = ci[1,,], upper = ci[2,,])
-  }else if(any(object$family == "ordinal")){
-    ci <- array(dim=c(2,nrow(preds$fit), nrow(object$y),ncol(object$y)))
-    for(j in 1:ncol(object$y)){
-      if(object$family[j] != "ordinal"){
-        ci[,1,,j] <- apply(preds$ci.sim[,,j], 2, prob = c((1-alpha)/2, 1-(1-alpha)/2)) 
-      }else{
-        # here we need to be a bit more careful because of the simplex constraint
-        # we take the same approach as in predictSR.gllvm.R
-        # we measure the distance to the center of the simplex (which we will consider the prediction on the point estimates)
-        # and threshold over the distances
-        for(i in 1:nrow(object$y)){
-          center = pmin(pmax(preds$fit[,i,j], .Machine$double.eps), 1-.Machine$double.eps)
-          dists = suppressWarnings(hilbert_to_provided_center(pmin(pmax(preds$ci.sim[,,i,j], .Machine$double.eps),1-.Machine$double.eps), center))
-          threshold = quantile(dists, alpha, na.rm = TRUE)
-          ci[,,i,j] <- suppressWarnings(apply(preds$ci.sim[,,i,j][dists <= threshold, ],2,range, na.rm = TRUE))
+  if(is.null(spp)) spp <- seq_len(ncol(probs))
+  SR  <- 0:ncol(probs)
+  n   <- nrow(probs)
+
+  eSR <- rowSums(probs)
+  if(expected == "mode") eSR <- sapply(eSR, pbMode, n = length(spp))
+
+  TMBcores    <- TMB::openmp(DLL = "gllvm")[1]
+  PoisBinCores <- get_omp_threads()
+  if(PoisBinCores == 1 && TMBcores > 1) set_omp_threads(TMBcores)
+
+  predSR <- poisbinom(probs)
+  colnames(predSR) <- paste0("SR_", SR)
+
+  out <- list(predicted = list(fit = predSR), expected = list(fit = eSR))
+
+  if(is.numeric(se.fit) || isTRUE(se.fit)){
+    R <- if(is.numeric(se.fit)) se.fit else 1000L
+
+    params <- simulate.params.gllvm(object, R, seed, level = level, n = n)
+
+    type <- if(expected == "mode") 1L else 7L
+
+    do_expected <- "expected" %in% ci
+    do_pmf      <- "pmf" %in% ci
+
+    if(do_expected) eSRmat     <- matrix(0.0, nrow = R, ncol = n)
+    if(do_pmf)      predSR.sim <- array(0, dim = c(R, n, length(SR)))
+
+    batches <- if(do_pmf || is.null(batch)) list(spp) else
+                 split(spp, ceiling(seq_along(spp) / batch))
+
+    # pre-compute constant objects to avoid repeating work inside the loop
+    skeleton     <- object$TMBfn$env$parList()
+    obj_template <- object
+    obj_template$params <- lapply(object$params, function(x){ if(is.numeric(x)) x[] <- NA; x })
+    if(!is.null(obj_template$lvs)) obj_template$lvs[] <- NA
+
+    for(r in seq_len(R)){
+      newobj <- perturb.gllvm(object, params, r, type = "response",
+                              skeleton = skeleton, template = obj_template)
+
+      if(do_pmf){
+        pred_r  <- predict(newobj, type = "response", se.fit = FALSE,
+                           ordinal.cat = 1L, spp = spp, ...)
+        probs_r <- gllvm.presence.prob(pred_r, object, spp = spp)
+        predSR.sim[r, , ] <- poisbinom(probs_r)
+        if(do_expected){
+          eSRmat[r, ] <- rowSums(probs_r)
+          if(expected == "mode")
+            eSRmat[r, ] <- sapply(eSRmat[r, ], pbMode, n = length(spp))
         }
-        if(any(!is.finite(ci)))ci[!is.finite(ci)] <- NA # guaranteed to happen on zeta.struc = "species"
+      } else if(do_expected){
+        for(b in batches){
+          pred_r <- predict(newobj, type = "response", se.fit = FALSE,
+                            ordinal.cat = 1L, spp = b, ...)
+          eSRmat[r, ] <- eSRmat[r, ] + rowSums(gllvm.presence.prob(pred_r, object, spp = b))
+        }
+        if(expected == "mode")
+          eSRmat[r, ] <- sapply(eSRmat[r, ], pbMode, n = length(spp))
       }
     }
-    out$predict.gllvm <- list(fit = preds$fit, lower = ci[1,,,], upper = ci[2,,,])
-  }
-    }else{
-      out$predict.gllvm <- list(fit = fit)
+
+    if(do_expected){
+      eSR.CI <- apply(eSRmat, 2, quantile,
+                      prob = c((1 - alpha) / 2, 1 - (1 - alpha) / 2),
+                      type = type)
+      out$expected$lower <- eSR.CI[1, ]
+      out$expected$upper <- eSR.CI[2, ]
+    }
+
+    if(do_pmf){
+      SR.ci <- array(dim = c(2, n, length(SR)))
+      for(i in seq_len(n)){
+        center    <- pmin(pmax(predSR[i, ], .Machine$double.eps), 1 - .Machine$double.eps)
+        sim_i     <- pmin(pmax(predSR.sim[, i, ], .Machine$double.eps), 1 - .Machine$double.eps)
+        dists     <- hilbert_to_provided_center(sim_i, center)
+        threshold <- quantile(dists, alpha)
+        SR.ci[, i, ] <- apply(predSR.sim[dists <= threshold, i, , drop = FALSE], 3, range)
+      }
+      out$predicted$lower <- SR.ci[1, , ]
+      out$predicted$upper <- SR.ci[2, , ]
     }
   }
+  if(return.pred){
+    out$predict.gllvm <- list(fit = fit)
+  }
+
+  out$spp <- spp
   
   class(out) <- "predictSR.gllvm"
   return(out)
@@ -282,7 +217,7 @@ hilbert_to_provided_center <- function(mat, center) {
 #'@export
 #'@export predictPairwise.gllvm
 predictPairwise.gllvm <- function(object, spp = NULL, se.fit = FALSE, alpha = 0.95, seed = 42, ...){
-
+  
   preds <- predict(object, type = "response", se.fit = se.fit, alpha = NULL, ...)
   fit <- preds
   
@@ -290,37 +225,37 @@ predictPairwise.gllvm <- function(object, spp = NULL, se.fit = FALSE, alpha = 0.
   spp.pairs <- t(combn(spp, 2))
   
   if(is.list(preds)){
-   fit <- preds$fit
-   
-   probs.fit <- gllvm.presence.prob(fit, object, spp)
-   n <- nrow(probs.fit)
-   p <- ncol(probs.fit)
-
-   colnames(probs.fit) <- spp
-   idx <- matrix(match(spp.pairs, colnames(probs.fit)), ncol = 2)
-   
-   probs.fit <- cbind(
-     probs.fit[, idx[,1 ], drop = FALSE],
-     probs.fit[, idx[,2 ], drop = FALSE]
-   )
-   probs.fit <- matrix(probs.fit, ncol = 2)
-   
-   predPair <- matrix(exp(rowSums(log(probs.fit))), ncol = 1) # rowProd via exp-sum-log
-   
-   predPair.sim <- matrix(nrow=dim(preds$ci.sim)[1], ncol =nrow(predPair))
-   for(r in 1:dim(preds$ci.sim)[1]){
-     probs.fit.sim <- gllvm.presence.prob(preds$ci.sim[r,,], object, spp)
-     colnames(probs.fit.sim) <- spp
-     probs.fit.sim <- cbind(
-       probs.fit.sim[, idx[,1 ], drop = FALSE],
-       probs.fit.sim[, idx[,2 ], drop = FALSE]
-     )
-     probs.fit.sim <- matrix(probs.fit.sim, ncol = 2)
-     predPair.sim[r,] <-  exp(rowSums(log(probs.fit.sim))) # rowProd via exp-sum-log
-
-   }
-   predPair.ci <- apply(predPair.sim, 2, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
-   out <- data.frame(prob = predPair,  site = rep(seq_len(n), times = nrow(spp.pairs)), spp1 = rep(spp.pairs[,1], each = n), spp2 = rep(spp.pairs[,2], each =n), lower = predPair.ci[1,], upper = predPair.ci[2,])
+    fit <- preds$fit
+    
+    probs.fit <- gllvm.presence.prob(fit, object, spp)
+    n <- nrow(probs.fit)
+    p <- ncol(probs.fit)
+    
+    colnames(probs.fit) <- spp
+    idx <- matrix(match(spp.pairs, colnames(probs.fit)), ncol = 2)
+    
+    probs.fit <- cbind(
+      probs.fit[, idx[,1 ], drop = FALSE],
+      probs.fit[, idx[,2 ], drop = FALSE]
+    )
+    probs.fit <- matrix(probs.fit, ncol = 2)
+    
+    predPair <- matrix(exp(rowSums(log(probs.fit))), ncol = 1) # rowProd via exp-sum-log
+    
+    predPair.sim <- matrix(nrow=dim(preds$ci.sim)[1], ncol =nrow(predPair))
+    for(r in 1:dim(preds$ci.sim)[1]){
+      probs.fit.sim <- gllvm.presence.prob(preds$ci.sim[r,,], object, spp)
+      colnames(probs.fit.sim) <- spp
+      probs.fit.sim <- cbind(
+        probs.fit.sim[, idx[,1 ], drop = FALSE],
+        probs.fit.sim[, idx[,2 ], drop = FALSE]
+      )
+      probs.fit.sim <- matrix(probs.fit.sim, ncol = 2)
+      predPair.sim[r,] <-  exp(rowSums(log(probs.fit.sim))) # rowProd via exp-sum-log
+      
+    }
+    predPair.ci <- apply(predPair.sim, 2, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+    out <- data.frame(prob = predPair,  site = rep(seq_len(n), times = nrow(spp.pairs)), spp1 = rep(spp.pairs[,1], each = n), spp2 = rep(spp.pairs[,2], each =n), lower = predPair.ci[1,], upper = predPair.ci[2,])
   }else{
     probs.fit <- gllvm.presence.prob(fit, object, spp)
     n <- nrow(probs.fit)
@@ -335,7 +270,7 @@ predictPairwise.gllvm <- function(object, spp = NULL, se.fit = FALSE, alpha = 0.
     probs.fit <- matrix(probs.fit, ncol = 2)
     
     predPair <- matrix(exp(rowSums(log(probs.fit))), ncol = 1)
-  
+    
     out <- data.frame(prob = predPair,  site = rep(seq_len(n), times = nrow(spp.pairs)), spp1 = rep(spp.pairs[,1], each = n),spp2 = rep(spp.pairs[,2], each =n))
   }
   return(out)
@@ -353,43 +288,75 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
 
   family <- object$family
   n <- nrow(fit)
-  if(any(object$family == "ordinal")) n <- nrow(fit[1,,])
-  if(is.null(spp))spp <- 1:ncol(object$y)
+  if(is.null(spp)) spp <- seq_len(ncol(object$y))
   probs <- matrix(0, nrow = n, ncol = length(spp))
-    
-  for(j in spp){
-  if(family[j] %in% c("binomial", "ZIB", "ZNIB"))probs[,j] <- fit[, j]
-  if(family[j] == "poisson") {
-    probs[,j] <- ppois(matrix(0, nrow = n, ncol = 1), lambda = fit[,j], lower.tail = FALSE)
-  } else if(family[j] == "negative.binomial") {
-    size <- 1 / rep(object$params$phi[j], n)
-    probs[,j] <- pnbinom(rep(0,n), mu = fit[,j], size = size, lower.tail = FALSE)
-  } else if(family[j] == "negative.binomial1") {
-    size <- fit[,j] * object$params$phi[j]
-    probs[,j] <- pnbinom(rep(0, n), mu = fit[,j], size = size, lower.tail = FALSE)
-  } else if(family[j] == "betaH") {
-    probs[,j] <- 1 - fit[,-seq_len(ncol(object$y)), drop = FALSE][,j]
-  } else if(family[j] == "orderedBeta"){
-    if(object$zeta.struc == "species"){
-      probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[j,1]-binomial(link = object$link)$linkfun(fit[,j]))  
-    }else{
-      probs[,j] <- 1 - binomial(link = object$link)$linkinv(object$params$zeta[1]-binomial(link = object$link)$linkfun(fit[,j]))
+
+  # fit may already be pre-subsetted to length(spp) columns (e.g. from predict(..., spp=))
+  # in that case use sequential column indices into fit, but spp[iter] for object lookups
+  presubsetted <- ncol(fit) == length(spp) && ncol(fit) < ncol(object$y)
+
+  fam_spp <- family[spp]
+
+  for(fam in unique(fam_spp)){
+    pos   <- which(fam_spp == fam)              # positions in spp / probs
+    j     <- spp[pos]                           # original species indices for object lookups
+    fcols <- if(presubsetted) pos else j        # column indices into fit
+    mu    <- fit[, fcols, drop = FALSE]
+
+    if(fam == "binomial"){
+      Ntrials_mat <- matrix(object$Ntrials[, j, drop = FALSE], nrow = n, ncol = length(pos))
+      probs[, pos] <- 1 - pbinom(0, size = Ntrials_mat, prob = mu)
+    } else if(fam == "ZIB"){
+      # params$phi for ZIB stores the zero-inflation probability directly (see gllvm.TMB.R line ~1669)
+      sigma_vec <- rep(object$params$phi[j], each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pzib(0, mu = as.vector(mu), sigma = sigma_vec, Ntrials = Ntrials_vec), nrow = n)
+    } else if(fam == "ZNIB"){
+      # params$phi stores p0 and ZINB.phi stores pN (already on probability scale, see residuals.gllvm)
+      phis0 <- (object$params$phi[j]      / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
+      phisN <- (object$params$ZINB.phi[j] / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
+      p0_vec  <- rep(phis0, each = n)
+      pN_vec  <- rep(phisN, each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pznib(0, mu = as.vector(mu), p0 = p0_vec, pN = pN_vec, Ntrials = Ntrials_vec), nrow = n)
+    } else if(fam == "poisson"){
+      probs[, pos] <- ppois(0, lambda = mu, lower.tail = FALSE)
+    } else if(fam == "negative.binomial"){
+      sizes <- matrix(1 / object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
+      probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
+    } else if(fam == "negative.binomial1"){
+      sizes <- mu * matrix(object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
+      probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
+    } else if(fam == "betaH"){
+      probs[, pos] <- 1 - fit[, -seq_len(ncol(object$y)), drop = FALSE][, j, drop = FALSE]
+    } else if(fam == "orderedBeta"){
+      linkinv <- binomial(link = object$link)$linkinv
+      linkfun <- binomial(link = object$link)$linkfun
+      zeta1 <- if(object$zeta.struc == "species")
+        matrix(object$params$zeta[j, 1], nrow = n, ncol = length(pos), byrow = TRUE)
+      else
+        object$params$zeta[1]
+      probs[, pos] <- 1 - linkinv(zeta1 - linkfun(mu))
+    } else if(fam == "ZIP"){
+      phi_vec <- rep(object$params$phi[j], each = n)
+      probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu), sigma = phi_vec), nrow = n)
+    } else if(fam == "ZINB"){
+      phi_vec  <- rep(object$params$phi[j],      each = n)
+      zphi_vec <- rep(object$params$ZINB.phi[j], each = n)
+      probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu), p = phi_vec, sigma = zphi_vec), nrow = n)
+    } else if(fam == "tweedie"){
+      phi_vec <- rep(object$params$phi[j], each = n)
+      probs[, pos] <- matrix(1 - fishMod::pTweedie(0, mu = as.vector(mu),
+                                                    phi = phi_vec, p = object$Power), nrow = n)
+    } else if(fam == "ordinal"){
+      probs[, pos] <- 1 - mu # mu = p(y;k=1), i.e., 1- probability of absence
+    } else if(fam == "beta.binomial"){
+      phi_vec <- rep(object$params$phi[j], each = n)
+      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
+      probs[, pos] <- matrix(1 - pbetabinom(0, mu = as.vector(mu), phi = phi_vec, Ntrials = Ntrials_vec), nrow = n)
     }
-  }else if(family[j] == "ZIP") {
-    probs[,j] <- 1 - pzip(rep(0, n), mu = fit[,j], sigma = rep(object$params$phi[j], each = n))
-  } else if(family[j] == "ZINB") {
-    probs[,j] <- 1 - pzinb(rep(0, n), mu = fit[,j],
-                              p = rep(object$params$phi[j], each = n),
-                              sigma = rep(object$params$ZINB.phi[j], each = n))
-  } else if(family[j] == "tweedie") {
-    probs[,j] <- 1 - fishMod::pTweedie(rep(0, n), mu = fit[,j],
-                                   phi = rep(object$params$phi[j], each = n),
-                                   p = object$Power)
-  } else if(family[j] == "ordinal") {
-    probs[,j] <- 1 - fit[1,,j]
   }
-  }
-  
+
   return(probs)
 }
 
@@ -434,7 +401,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   # ensure ordinal starts at 0
   if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min, na.rm = TRUE)
   
-  y = rowSums(ifelse(object$y==0,0,1))
+  y = rowSums(ifelse(object$y[, predSR$spp]==0,0,1),na.rm=TRUE)
   n = length(y)
   pmf = predSR$predicted$fit
   
@@ -445,7 +412,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   b <- cdf[cbind(seq_len(n), pmin(y, K) + 1)]
   
   a <- numeric(n)
-  nz <- y > 0
+  nz <- y > 0 & !is.na(y)
   a[nz] <- cdf[cbind(which(nz), y[nz])]
   
   u <- a + (b - a) * runif(n)
@@ -456,7 +423,7 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   if (any(u == 0, na.rm = TRUE))
     u[u == 0] <- 1e-16
   
-    list(fitted = predSR$expected$fit, residuals = qnorm(u))
+  list(fitted = predSR$expected$fit, residuals = qnorm(u))
 }
 
 #'@export
