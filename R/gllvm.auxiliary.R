@@ -3320,5 +3320,5 @@ is_allowed <- function(family = NULL, method = NULL, link = NULL) {
 is_keyallowed <- function(key) {
   # utils::globalVariables("gllvmFML_allowed")
   # stopifnot(exists("gllvmFML_allowed", inherits = FALSE))
-  key %in% gllvm:::gllvmFML_allowed$key
+  key %in% gllvmFML_allowed$key
 }
