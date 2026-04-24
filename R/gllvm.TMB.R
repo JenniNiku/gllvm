@@ -1332,7 +1332,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         map.list2$r0f = factor(rep(NA, length(r0f)))
         map.list2$b_lv = factor(rep(NA, length(b.lv)))
         map.list2$Ab_lv = factor(rep(NA, length(Ab_lv)))
-        map.list2$spAr = factor(rep(NA, length(spAr)))
+        map.list2$Abb = factor(rep(NA, length(spAr)))
         map.list2$sigmab_lv = factor(rep(NA, length(sigmab_lv)))
         map.list2$b = factor(rep(NA, length(rbind(a, b))))
         map.list2$B = factor(rep(NA, length(B)))
