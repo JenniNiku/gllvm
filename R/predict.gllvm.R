@@ -571,7 +571,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     R <- 1e3
     if(is.numeric(se.fit))R <- se.fit
 
-    params <- simulate.params.gllvm(object, R, seed, level, n = n)
+    params <- simulate_params_gllvm(object, R, seed, level, n = n)
     
     predSims <- array(0.0, dim = c(R, dim(out)))
 
@@ -623,7 +623,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
 # previously in predict.gllvm, but lifted out
 # to separately call in predictSR.gllvm
 # for improved efficiency
-simulate.params.gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
+simulate_params_gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
   set.seed(seed)
   
   incl  <- object$Hess$incl
