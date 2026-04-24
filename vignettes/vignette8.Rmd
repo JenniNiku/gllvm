@@ -126,13 +126,13 @@ so there is not much information to estimate the shape parameter of the beta dis
 
 ### Model fit
 
-Now we are ready to fit the model, we use probit-link function here but logit is also possible similarly to beta hurdle model:
+Now we are ready to fit the model:
 
 ```{r}
 # save the number of species to object m
 m <- ncol(Yalg)
 fit_ob <- gllvm(Yalg, X=Xenv, formula = Xformulai, family = "orderedBeta", 
-    method="EVA", num.lv = 2, link="probit",
+    method="EVA", num.lv = 2, link="logit",
     disp.formula = rep(1, m), zetacutoff = c(0, 20),
     setMap = list(zeta = factor(rbind(1:m, rep(NA, m)))) )
 fit_ob
