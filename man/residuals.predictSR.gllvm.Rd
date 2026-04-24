@@ -4,12 +4,12 @@
 \alias{residuals.predictSR.gllvm}
 \title{Dunn-Smyth residuals for species richness from a gllvm object}
 \usage{
-\method{residuals}{predictSR.gllvm}(predSR, object, ...)
+\method{residuals}{predictSR.gllvm}(object, model, ...)
 }
 \arguments{
-\item{predSR}{object returned by \code{"\link{predictSR.gllvm}"}}
+\item{object}{object returned by \code{"\link{predictSR.gllvm}"}}
 
-\item{object}{an object of class 'gllvm'.}
+\item{model}{an object of class 'gllvm'.}
 
 \item{...}{not used.}
 }

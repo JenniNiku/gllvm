@@ -37,7 +37,8 @@
 #'# Visualize the results
 #' par(mfrow = c(4,4))
 #' for(i in 0:ncol(fit$y)){
-#' plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
+#' plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", 
+#'      ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
 #' }
 #'
 #'}
@@ -74,7 +75,7 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
   if(is.numeric(se.fit) || isTRUE(se.fit)){
     R <- if(is.numeric(se.fit)) se.fit else 1000L
 
-    params <- simulate.params.gllvm(object, R, seed, level = level, n = n)
+    params <- simulate_params_gllvm(object, R, seed, level = level, n = n)
 
     type <- if(expected == "mode") 1L else 7L
 
@@ -99,7 +100,7 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
 
       if(do_pmf){
         pred_r  <- predict(newobj, type = "response", se.fit = FALSE,
-                           ordinal.cat = 1L, spp = spp, ...)
+                           ordinal.cat = 1L, spp = spp, level = level, ...)
         probs_r <- gllvm.presence.prob(pred_r, object, spp = spp)
         predSR.sim[r, , ] <- poisbinom(probs_r)
         if(do_expected){
@@ -110,7 +111,7 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
       } else if(do_expected){
         for(b in batches){
           pred_r <- predict(newobj, type = "response", se.fit = FALSE,
-                            ordinal.cat = 1L, spp = b, ...)
+                            ordinal.cat = 1L, spp = b, level = level, ...)
           eSRmat[r, ] <- eSRmat[r, ] + rowSums(gllvm.presence.prob(pred_r, object, spp = b))
         }
         if(expected == "mode")
@@ -206,7 +207,8 @@ hilbert_to_provided_center <- function(mat, center) {
 #'# fitted values
 #'newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),max(X[,"soil.dry"]),length.out=100))
 #'predPair <- predictPairwise(fit, spp = c(1,2), newX = newX, level = 0)
-#'plot(x = newX$soil.dry, y = predPair$prob, type = "l", xlab = "Soil dry moisture content", ylab = "Probability of co-occurrence", ylim = c(0,1))
+#'plot(x = newX$soil.dry, y = predPair$prob, type = "l", xlab = "Soil dry moisture content", 
+#'     ylab = "Probability of co-occurrence", ylim = c(0,1))
 #'
 #'}
 #'
@@ -377,8 +379,8 @@ poisbinom <- function(prob) {
 #' @title Dunn-Smyth residuals for species richness from a gllvm object
 #' @description Calculates Dunn-Smyth residuals for species richness.
 #'
-#' @param object an object of class 'gllvm'.
-#' @param predSR object returned by \code{"\link{predictSR.gllvm}"}
+#' @param object object returned by \code{"\link{predictSR.gllvm}"}
+#' @param model an object of class 'gllvm'.
 #' @param ... not used.
 #'
 #' @details
@@ -395,15 +397,17 @@ poisbinom <- function(prob) {
 #'@aliases residuals.predictSR.gllvm
 #'@method residuals predictSR.gllvm
 #'@export
+#'@rdname residuals.predictSR.gllvm 
 #'@export residuals.predictSR.gllvm
-residuals.predictSR.gllvm <- function(predSR, object, ...){
-  
+residuals.predictSR.gllvm <- function(object, model, ...){
+  if(!inherits(object, "predictSR.gllvm") ) stop("'object' need to be an object of class 'predictSR.gllvm'")
+  if(!inherits(model, "gllvm") ) stop("'model' need to be an object of class 'gllvm'")
   # ensure ordinal starts at 0
-  if(any(object$family == "ordinal"))object$y[,object$family=="ordinal"] <- object$y[,object$family=="ordinal"] - apply(object$y[,object$family=="ordinal"],2,min, na.rm = TRUE)
+  if(any(model$family == "ordinal"))model$y[,model$family=="ordinal"] <- model$y[,model$family=="ordinal"] - apply(model$y[,model$family=="ordinal"],2,min, na.rm = TRUE)
   
-  y = rowSums(ifelse(object$y[, predSR$spp]==0,0,1),na.rm=TRUE)
+  y = rowSums(ifelse(model$y[, object$spp]==0,0,1),na.rm=TRUE)
   n = length(y)
-  pmf = predSR$predicted$fit
+  pmf = object$predicted$fit
   
   K <- ncol(pmf) - 1
   
@@ -423,12 +427,19 @@ residuals.predictSR.gllvm <- function(predSR, object, ...){
   if (any(u == 0, na.rm = TRUE))
     u[u == 0] <- 1e-16
   
-  list(fitted = predSR$expected$fit, residuals = qnorm(u))
+  list(fitted = object$expected$fit, residuals = qnorm(u))
 }
 
-#'@export
-plot.predictSR.gllvm <- function(predSR, object, which = c(1,2), ...){
-  res <- residuals.predictSR.gllvm(predSR, object)
+#' @param x object of class predictSR
+#' @param object object of class gllvm
+#' @param which which plot to create, 1 is Dunn-Smyth residuals vs Expected species richness, 2 is QQ-plot
+#' @param ... not used for plot.predictSR.gllvm
+#'
+#' @method plot predictSR.gllvm 
+#' @export
+#' @rdname predictSR.gllvm 
+plot.predictSR.gllvm <- function(x, object, which = c(1,2), ...){
+  res <- residuals.predictSR.gllvm(object = x, model = object)
   
   par(mfrow=c(1,length(which)))
   

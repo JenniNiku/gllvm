@@ -3,6 +3,7 @@
 \name{predictSR.gllvm}
 \alias{predictSR.gllvm}
 \alias{predictSR}
+\alias{plot.predictSR.gllvm}
 \title{Predict species richness from a gllvm object}
 \usage{
 \method{predictSR}{gllvm}(
@@ -18,9 +19,11 @@
   batch = NULL,
   ...
 )
+
+\method{plot}{predictSR.gllvm}(x, object, which = c(1, 2), ...)
 }
 \arguments{
-\item{object}{an object of class 'gllvm'.}
+\item{object}{object of class gllvm}
 
 \item{spp}{index vector, defaults to NULL. If omitted, returns a prediction with all species in the data.}
 
@@ -40,7 +43,11 @@
 
 \item{batch}{integer or \code{NULL}, defaults to 200. If provided, species predictions needed to calculate richness are processed in chunks of this size per simulation draw, reducing peak memory at the cost of more \code{predict} calls. \code{NULL} processes all (selected) species in one call.}
 
-\item{...}{arguments passed to \code{"\link{predict.gllvm}"}.}
+\item{...}{not used for plot.predictSR.gllvm}
+
+\item{x}{object of class predictSR}
+
+\item{which}{which plot to create, 1 is Dunn-Smyth residuals vs Expected species richness, 2 is QQ-plot}
 }
 \value{
 list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
@@ -69,7 +76,8 @@ predSR <- predictSR(fit, newX = newX, level = 0)
 # Visualize the results
 par(mfrow = c(4,4))
 for(i in 0:ncol(fit$y)){
-plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
+plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", 
+     ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
 }
 
 }

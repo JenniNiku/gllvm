@@ -50,7 +50,8 @@ fit <- gllvm(y = y, X, formula = ~soil.dry, family = poisson())
 # fitted values
 newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),max(X[,"soil.dry"]),length.out=100))
 predPair <- predictPairwise(fit, spp = c(1,2), newX = newX, level = 0)
-plot(x = newX$soil.dry, y = predPair$prob, type = "l", xlab = "Soil dry moisture content", ylab = "Probability of co-occurrence", ylim = c(0,1))
+plot(x = newX$soil.dry, y = predPair$prob, type = "l", xlab = "Soil dry moisture content", 
+    ylab = "Probability of co-occurrence", ylim = c(0,1))
 
 }
 

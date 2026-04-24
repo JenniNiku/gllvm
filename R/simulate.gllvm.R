@@ -5,6 +5,7 @@
 #' @param nsim an optional positive integer specifying the number of simulated datasets. Defaults to 1.
 #' @param seed an optional integer to set seed number, passed to set.seed. Defaults to a random seed number.
 #' @param conditional if \code{conditional = FALSE} simulates marginally over the latent variables.
+#' @param newX A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.
 #' @param ... not used.
 #'
 #' @details

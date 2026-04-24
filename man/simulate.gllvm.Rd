@@ -16,6 +16,8 @@
 
 \item{conditional}{if \code{conditional = FALSE} simulates marginally over the latent variables.}
 
+\item{newX}{A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.}
+
 \item{...}{not used.}
 }
 \value{
