@@ -1526,8 +1526,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       link = rep(link, length(family))
       out$link <- link
     }
-    if (any(family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential"))) {
-      link[family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")] = "log"
+    if (any(family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP"))) {
+      link[family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP")] = "log"
       out$link <- link
     }
     if (any(family %in% c("gaussian"))) {
