@@ -835,7 +835,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
             k <- max(object$y[, j], na.rm = TRUE) - 2
             if(k > 0) zetanew[j, 2:(k + 1)] <- zetas[idx + seq_len(k)]
             idx <- idx + k
-            zetanew[j, ] <- cumsum(abs(zetanew[j, ]))
+            zetanew[j, ] <- cumsum(exp(zetanew[j, ]))
           } else {
             zetanew[j, ] <- c(zetas[idx + 1], exp(zetas[idx + 2])); idx <- idx + 2
           }
@@ -846,7 +846,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
           zetanew <- c(zetas[1], exp(zetas[2])); names(zetanew) <- c("cutoff0","cutoff1")
         }
         if(any(object$family %in% "ordinal"))
-          zetanew <- c(zetanew, 0, cumsum(abs(zetas[!zetaO])))
+          zetanew <- c(zetanew, 0, cumsum(exp(zetas[!zetaO])))
       }
       newobject$params$zeta <- zetanew
     }
