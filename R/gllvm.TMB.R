@@ -1693,7 +1693,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
-            zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
+            zetanew <- c(zetanew, 0,cumsum(exp(zetas[!zetaO])))
             names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
             # zetanew <- c(0,zetas)
             # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
@@ -1711,7 +1711,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                   zetanew[j,l+1]<-zetas[idx+l]
                 } 
               }
-              zetanew[j,] <- cumsum(abs(zetanew[j,]))
+              zetanew[j,] <- cumsum(exp(zetanew[j,]))
               idx<-idx+k
             } else {
               zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
@@ -2402,7 +2402,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
-            zetanew <- c(zetanew, 0,cumsum(abs(zetas[!zetaO])))
+            zetanew <- c(zetanew, 0,cumsum(exp(zetas[!zetaO])))
             names(zetanew)[(sum(zetaO)+1):length(zetanew)] <- paste(min(y00,na.rm=TRUE):(max(y00,na.rm=TRUE)-1),"|",(min(y00,na.rm=TRUE)+1):max(y00,na.rm=TRUE),sep="")
             # zetanew <- c(0,zetas)
             # names(zetanew) <- paste(min(y00):(max(y00)-1),"|",(min(y00)+1):max(y00),sep="")
@@ -2421,7 +2421,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                 } 
               }
               idx<-idx+k
-              zetanew[j,] <- cumsum(abs(zetanew[j,]))
+              zetanew[j,] <- cumsum(exp(zetanew[j,]))
             } else {
               zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
               idx<-idx+2

@@ -3431,7 +3431,7 @@ Type objective_function<Type>::operator() ()
           int Kj = ymaxj - 1;
           if(Kj>1){
             for(int k=0; k<(Kj-1); k++){
-              zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
+              zetanew(k+1) = zeta.segment(idx,k+1).array().exp().sum();
             }
             idx += Kj-1; 
           }
@@ -3538,7 +3538,7 @@ Type objective_function<Type>::operator() ()
 
         if(has12) idx = 2; // start from 2 if there are orderedBeta columns in the model
         for(int k=0; k<(K-1); k++){
-          zetanew(k+1) = zeta.segment(idx, k+1).array().abs().sum();//second cutoffs must be positive
+          zetanew(k+1) = zeta.segment(idx, k+1).array().exp().sum();//second cutoffs must be positive
         }
         
         if (method<1) {
@@ -5011,7 +5011,7 @@ Type objective_function<Type>::operator() ()
             int Kj = ymaxj - 1;
             if(Kj>1){
               for(int k=0; k<(Kj-1); k++){
-                zetanew(k+1) = zeta.segment(idx,k+1).array().abs().sum();
+                zetanew(k+1) = zeta.segment(idx,k+1).array().exp().sum();
               }
             }
             idx += Kj-1;
@@ -5065,7 +5065,7 @@ Type objective_function<Type>::operator() ()
           vector <Type> zetanew(K);
           zetanew.setZero();
           for(int k=0; k<(K-1); k++){
-            zetanew(k+1) = zeta.head(k+1).array().abs().sum();
+            zetanew(k+1) = zeta.head(k+1).array().exp().sum();
           }
 
           if(extra(j)==0){

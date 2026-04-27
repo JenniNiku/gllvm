@@ -469,10 +469,10 @@ start_values_gllvm_TMB <- function(
     kz <- 0
     if(any(family == "orderedBeta"))kz <- 2
     if(zeta.struc == "common"){
-        out.zeta[(kz+1):length(zeta)] <- c(zeta[kz+1][1], diff(zeta[(kz+1):length(zeta)]))  
+        out.zeta[(kz+1):length(zeta)] <- c(zeta[kz+1][1], log(diff(zeta[(kz+1):length(zeta)]))  )
     }else if(zeta.struc == "species"){
       out.zeta <- zeta
-      out.zeta[family=="ordinal",] <- t(apply(zeta[family=="ordinal",,drop=FALSE],1,function(zeta)c(zeta[1],diff(zeta))))
+      out.zeta[family=="ordinal",] <- t(apply(zeta[family=="ordinal",,drop=FALSE],1,function(zeta)c(zeta[1],log(diff(zeta)))))
     }
   }else if(any(family == "orderedBeta"))out.zeta <- zeta
 

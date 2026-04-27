@@ -466,11 +466,11 @@ se.gllvm <- function(object, ...){
             if(family[j]=="ordinal"){
               k<-max(y[,j], na.rm=TRUE)-2
               if(k>0){
-                sgns <- sign(zetas[(idx+1):(idx+k)])
-                cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
+                exps <- exp(zetas[(idx+1):(idx+k)])
+                cvs <- diag(exps, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(exps, nrow = k)
                 for(l in 1:k){
                   se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
-                } 
+                }
               }
               se.zetanew[j,1] <- 0
               idx<-idx+k
@@ -499,8 +499,8 @@ se.gllvm <- function(object, ...){
           if(any(family%in%c("ordinal"))){
             zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
             zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
-            sgns <- sign(zetas[(kz+ 1):(K-1+kz)])
-            cvs <- diag(sgns)%*%zeta.cov%*%diag(sgns)
+            exps <- exp(zetas[(kz+ 1):(K-1+kz)])
+            cvs <- diag(exps)%*%zeta.cov%*%diag(exps)
             sezetanew <- 0
             for(i in 1:(K-1)){
               sezetanew <- c(sezetanew, sqrt(sum(cvs[1:i,1:i])))
@@ -1023,11 +1023,11 @@ se.gllvm <- function(object, ...){
           if(family[j]=="ordinal"){
             k<-max(y[,j], na.rm=TRUE)-2
             if(k>0){
-              sgns <- sign(zetas[(idx+1):(idx+k)])
-              cvs <- diag(sgns, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(sgns, nrow = k)
+              exps <- exp(zetas[(idx+1):(idx+k)])
+              cvs <- diag(exps, nrow = k)%*%zeta.cov[(idx+1):(idx+k),(idx+1):(idx+k),drop=FALSE]%*%diag(exps, nrow = k)
               for(l in 1:k){
                 se.zetanew[j,l+1]<- sqrt(sum(cvs[l:k,l:k]))
-              } 
+              }
             }
             se.zetanew[j,1] <- 0
             idx<-idx+k
@@ -1055,8 +1055,8 @@ se.gllvm <- function(object, ...){
         if(any(family%in%c("ordinal"))){
           zetas <- object$TMBfn$par[names(object$TMBfn$par)=="zeta"]
           zeta.cov <- cov.mat.mod[(kz+ 1):(K-1),(kz+ 1):(K-1)]
-          sgns <- sign(zetas[(kz+ 1):(K+kz-1)])
-          cvs <- diag(sgns)%*%zeta.cov%*%diag(sgns)
+          exps <- exp(zetas[(kz+ 1):(K+kz-1)])
+          cvs <- diag(exps)%*%zeta.cov%*%diag(exps)
           sezetanew <- 0
           for(i in 1:(K-1)){
             sezetanew <- c(sezetanew, sqrt(sum(cvs[1:i,1:i])))
