@@ -446,44 +446,42 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   famgroup3 <- fam_pred %in% c("ZIP","ZINB")
   famgroup4 <- fam_pred == "gaussian"
   famgroup5 <- fam_pred == "betaH"
-  ilinkfun <- vector("list", any(famgroup1)+any(famgroup2)+any(famgroup3)+any(famgroup4)+any(famgroup5))
+  link_pred <- object$link[spp_idx]
+  nfamgroup2 <- any(famgroup2 & link_pred == "probit") + any(famgroup2 & link_pred == "logit") + any(famgroup2 & link_pred == "cloglog")
+  ilinkfun <- vector("list", any(famgroup1)+nfamgroup2+any(famgroup3)+any(famgroup4))
   pointer  <- NULL
   pointer_index <- 0
   if(any(famgroup1)){
-    ilinkfun[[1]] <- exp
     pointer_index <- pointer_index +1
+    ilinkfun[[pointer_index]] <- exp
     pointer[famgroup1] <- pointer_index
   }
-  if (any(famgroup2)){
-    if(any(object$link == "probit")){
-      ilinkfun <- c(ilinkfun, binomial(link = "probit")$linkinv)
+  if(any(famgroup2)){
+    if(any(link_pred == "probit")){
       pointer_index <- pointer_index +1
-      pointer[famgroup2 & (object$link == "probit")] <- pointer_index
+      ilinkfun[[pointer_index]] <- binomial(link = "probit")$linkinv
+      pointer[famgroup2 & link_pred == "probit"] <- pointer_index
     }
-    if(any(object$link == "logit")){
-      ilinkfun <- c(ilinkfun, binomial(link = "logit")$linkinv)
+    if(any(link_pred == "logit")){
       pointer_index <- pointer_index +1
-      pointer[famgroup2 & (object$link == "logit")] <- pointer_index
+      ilinkfun[[pointer_index]] <- binomial(link = "logit")$linkinv
+      pointer[famgroup2 & link_pred == "logit"] <- pointer_index
     }
-    if(any(object$link == "cloglog")){
-      ilinkfun <- c(ilinkfun, binomial(link = "cloglog")$linkinv)
+    if(any(link_pred == "cloglog")){
       pointer_index <- pointer_index +1
-      pointer[famgroup2 & (object$link == "cloglog")] <- pointer_index
+      ilinkfun[[pointer_index]] <- binomial(link = "cloglog")$linkinv
+      pointer[famgroup2 & link_pred == "cloglog"] <- pointer_index
     }
-    # ilinkfun[[any(famgroup1)+1]] <- binomial(link = object$link)$linkinv
-    # pointer[famgroup2] <- any(famgroup1)+1
   }
   if (any(famgroup3)) {
-    ilinkfun[[any(famgroup1)+any(famgroup2)+1]] <- exp
     pointer_index <- pointer_index +1
+    ilinkfun[[pointer_index]] <- exp
     pointer[famgroup3] <- pointer_index
-    # pointer[famgroup3] <- any(famgroup1)+any(famgroup2)+1
   }
   if (any(famgroup4)) {
-    ilinkfun[[any(famgroup1)+any(famgroup2)+any(famgroup3)+1]] <- identity
     pointer_index <- pointer_index +1
+    ilinkfun[[pointer_index]] <- identity
     pointer[famgroup4] <- pointer_index
-    # pointer[famgroup4] <- any(famgroup1)+any(famgroup2)+any(famgroup3)+1
   }
   if(any(famgroup5)){
     pointer <- c(pointer, rep(unique(pointer[famgroup5]), sum(famgroup5)))
