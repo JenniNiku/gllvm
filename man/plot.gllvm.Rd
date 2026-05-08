@@ -15,6 +15,7 @@
   reps = 150,
   envelope.col = c("blue", "lightblue"),
   n.plot = NULL,
+  spp = NULL,
   ...
 )
 }
@@ -36,6 +37,8 @@
 \item{envelope.col}{colors for envelopes, vector with length of two}
 
 \item{n.plot}{number of species (response variables) to be plotted. Defaults to \code{NULL} when all response variables are plotted. Might be useful when data is very high dimensional.}
+
+\item{spp}{integer vector or \code{NULL}, defaults to \code{NULL}. If provided, residuals are computed only for the selected species (column indices in response matrix).}
 
 \item{...}{additional graphical arguments.}
 }

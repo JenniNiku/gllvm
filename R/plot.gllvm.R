@@ -10,6 +10,7 @@
 #' @param envelopes logical, indicating if simulated point-wise confidence interval envelope will be added to Q-Q plot, defaults to \code{TRUE}
 #' @param reps number of replications when simulating confidence envelopes for normal Q-Q plot
 #' @param envelope.col colors for envelopes, vector with length of two
+#' @param spp integer vector or \code{NULL}, defaults to \code{NULL}. If provided, residuals are computed only for the selected species (column indices in response matrix).
 #' @param n.plot number of species (response variables) to be plotted. Defaults to \code{NULL} when all response variables are plotted. Might be useful when data is very high dimensional.
 #' @param ...	additional graphical arguments.
 #'
@@ -43,7 +44,7 @@
 plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predictors", "Normal Q-Q",
                                                    "Residuals vs row", "Residuals vs column", "Scale-Location"), 
                        var.colors = NULL, add.smooth = TRUE, envelopes = TRUE, reps = 150, 
-                       envelope.col = c("blue","lightblue"), n.plot = NULL, ...) {
+                       envelope.col = c("blue","lightblue"), n.plot = NULL, spp =NULL, ...) {
   if(inherits(x, "glmmVA") && length(which)>3){
     which <- unique(pmin(3, which))
   }
@@ -66,6 +67,9 @@ plot.gllvm <- function(x, which = 1:5, caption = c("Residuals vs linear predicto
   if(!is.null(n.plot)) {
     sppind <- sort(sample(1:p, n.plot))
     p <- n.plot
+  } else if(!is.null(spp)){
+    sppind = spp
+    p <- length(sppind)
   }
 
   res <- residuals(x)
