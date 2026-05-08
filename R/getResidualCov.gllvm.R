@@ -174,6 +174,21 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
     if(any(object$family == "gaussian")){
           ResCov[object$family == "gaussian",object$family == "gaussian"] <- ResCov[object$family == "gaussian",object$family == "gaussian", drop=FALSE] + diag((object$params$phi[object$family == "gaussian"]^2))
     }
+    # Adjust for Hurdle model
+    if(any(object$family %in% "betaH")){
+      famv <- c(object$family, rep("H", sum(object$family =="betaH")))
+      linkv <- c(object$link, object$link[object$family =="betaH"])
+      bhfam <- famv %in% c("H")
+      if(any(linkv == "probit")){
+        ResCov[bhfam & (linkv == "probit"),bhfam & (linkv == "probit")] <- ResCov[bhfam & (linkv == "probit"),bhfam & (linkv == "probit"), drop=FALSE] + diag(sum(bhfam & (linkv == "probit")))
+      } 
+      if(any(linkv == "logit")){
+        ResCov[bhfam & (linkv == "logit"),bhfam & (linkv == "logit")] <- ResCov[bhfam & (linkv == "logit"),bhfam & (linkv == "logit"), drop=FALSE] + diag(sum(bhfam & (linkv == "logit")))*pi^2/3
+      } 
+      if(any(linkv == "cloglog")){
+        ResCov[bhfam & (linkv == "cloglog"),bhfam & (linkv == "cloglog")] <- ResCov[bhfam & (linkv == "cloglog"),bhfam & (linkv == "cloglog"), drop=FALSE] + diag(sum(bhfam & (linkv == "cloglog")))*pi^2/6
+      } 
+    }
   }
   ResCov.q <- sapply(1:(object$num.lv+object$num.lv.c), function(q) sum(diag(ResCov.q[[q]])))
   if(object$num.lv.c==0)names(ResCov.q) <- paste("LV", 1:object$num.lv, sep = "")
@@ -200,9 +215,10 @@ getResidualCov.gllvm = function(object, adjust = 1, x = NULL, ...)
     }  
   }
   
-  
-  colnames(ResCov) <- colnames(object$y)
-  rownames(ResCov) <- colnames(object$y)
+  ynames <- colnames(object$y)
+  if(any(object$family=="betaH")) ynames <- c(ynames, paste0("H01_",ynames[object$family=="betaH"]))
+  colnames(ResCov) <- ynames
+  rownames(ResCov) <- ynames
   if(inherits(object,"gllvm.quadratic")){
     out <- list(cov = ResCov, trace = sum(diag(ResCov)), var.q = ResCov.q, var.q2 = ResCov.q2)
   }else if((object$num.lv+object$num.lv.c)>0){

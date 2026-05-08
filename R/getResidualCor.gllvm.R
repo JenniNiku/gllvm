@@ -46,8 +46,10 @@ getResidualCor.gllvm = function(object, adjust = 1, x = NULL, ...)
   ResCov <- getResidualCov.gllvm(object, adjust = adjust, x = x)$cov
   Res.sd <- 1 / sqrt(diag(ResCov))
   Res.Cor <- diag(Res.sd) %*% ResCov %*% diag(Res.sd)
-  colnames(Res.Cor) <- colnames(object$y)
-  rownames(Res.Cor) <- colnames(object$y)
+  ynames <- colnames(object$y)
+  if(any(object$family=="betaH")) ynames <- c(ynames, paste0("H01_",ynames[object$family=="betaH"]))
+  colnames(Res.Cor) <- ynames
+  rownames(Res.Cor) <- ynames
   Res.Cor[abs(Res.Cor) > 1] <- 1 * sign(Res.Cor[abs(Res.Cor) > 1])
   out <- Res.Cor
   return(out)
