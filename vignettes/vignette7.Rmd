@@ -296,7 +296,7 @@ Here is some code to visualize the model results (from @vanderVeen2024):
 ``` r
 # Making the term namees a bit prettier
 row.names(model1$params$Br) <- c("Intercept", "Deadwood size", "Decay stage", "Decay stage²", "Connectivity", "Temperature range", "Precipitation","ln(Reserve area)")
-model1$params$B[names(model1$params$B)%in%row.names(model1$params$Br)] <- row.names(model1$params$Br)[-1]
+names(model1$params$B) <- row.names(model1$params$Br)[-1]
 phyloplot(model1, tree)
 ```
 
@@ -418,8 +418,8 @@ The fourth corner model extends the previous model with functional traits. The i
 
 ``` r
 TR <- fungi$TR # the functional traits
-
-model2 <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR,
+rownames(TR)[8] = "Auricularia_auricula.judae"
+model2 <- gllvm(y = Y, X = cbind(int = 1, X), TR = TR[order,],
                      formula = ~DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 +
   TEMPR + PRECIP + log.AREA + (DBH.CM + AVERDP + I(AVERDP^2) + CONNECT10 + TEMPR + PRECIP + log.AREA):(PC1.1 + PC1.2 + PC1.3),
                       family = "binomial", num.lv = 0, studyDesign = X[, c("REGION", "RESERVE")],
@@ -447,7 +447,7 @@ references:
   type: article-journal
   issued:
     year: 2024
-  doi: https://www.arxiv.org/abs/2408.05333
+  doi: https://doi.org/10.48550/arXiv.2408.05333
 
 - id: lme4_software
   title: "Lme4: Linear Mixed-Effects Models Using 'Eigen' and S4"
