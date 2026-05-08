@@ -47,6 +47,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     } else {
       pred <- predict(object, type = "response")
       if(any(object$family == "ordinal")){
+        pred <- pred[1,,]
         pred[,object$family == "ordinal"] <- predict(object, type = "class")[,object$family == "ordinal"]
       }
     }
