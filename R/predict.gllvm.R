@@ -82,9 +82,16 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   p <- ncol(object$y)
   if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
 
-  if(any(object$family == "betaH"))p <- p+ sum(object$family == "betaH")
-
   spp_idx <- if(!is.null(spp)) spp else seq_len(p)
+  
+  if(any(object$family == "betaH"))
+  if(any(object$family == "betaH")) {
+    spp_idx <- c(spp_idx, p+spp_idx[object$family[spp_idx] == "betaH"])
+    p <- p+ sum(object$family == "betaH")
+    object$link = c(object$link, object$link[object$family == "betaH"])
+    object$family = c(object$family, rep("betaH", sum(object$family == "betaH")))
+  }
+  
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
     n <- nrow(newdata)
@@ -440,6 +447,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
   }
 
+
   fam_pred <- object$family[spp_idx]
   famgroup1 <- fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")
   famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB", "beta.binomial")
@@ -483,9 +491,9 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     ilinkfun[[pointer_index]] <- identity
     pointer[famgroup4] <- pointer_index
   }
-  if(any(famgroup5)){
-    pointer <- c(pointer, rep(unique(pointer[famgroup5]), sum(famgroup5)))
-  }
+  # if(any(famgroup5)){
+  #   pointer <- c(pointer, rep(unique(pointer[famgroup5]), sum(famgroup5)))
+  # }
   out <- NULL
   preds <- NULL
   if ("link" %in% type)
