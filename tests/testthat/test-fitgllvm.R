@@ -97,7 +97,7 @@ test_that("constrained ordination models work", {
   suppressWarnings({fc0<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999)})
   fc1<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 999, randomB="LV")
   fc2<-gllvm(y, X, num.RR = 2, family = "poisson", seed = 9, randomB="LV", row.eff="random")
-  fc3<-gllvm(y, X, num.RR = 2, quadratic=T, family = "poisson", seed = 9226, randomB="LV", row.eff="random")
+  fc3<-gllvm(y, X, num.RR = 2, quadratic=T, family = "poisson", seed = 9, randomB="LV", row.eff="random")
   expect_true(is.finite(fc0$logL))
   expect_true(is.finite(fc1$logL))
   expect_true(is.finite(fc2$logL))
