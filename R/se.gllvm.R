@@ -193,7 +193,9 @@ se.gllvm <- function(object, ...){
         A.mat <- sdr.s[incl,incl] # a x a
         D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
         B.mat <- sdr.s[incl,incld] # a x d
-        cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
+        I <-A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+        if(!isSymmetric(I)) I <- 0.5*I + 0.5*t(I)
+        cov.mat.mod<- try(MASS::ginv(I),silent=T)
         if(inherits(cov.mat.mod,"try-error")){
           # block inversion via inverse of fixed-effects block
           Ai <- try(solve(A.mat),silent=T)
@@ -673,7 +675,9 @@ se.gllvm <- function(object, ...){
       D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
       B.mat <- sdr.s[incl, incld] # a x d
       
-      cov.mat.mod<- try(MASS::ginv(A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))),silent=T)
+      I <- A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+      if(!isSymmetric(I)) I <- 0.5*I + 0.5*t(I)
+      cov.mat.mod<- try(MASS::ginv(I),silent=T)
       if(inherits(cov.mat.mod,"try-error")){
         # block inversion via inverse of fixed-effects block
         Ai <- try(solve(A.mat),silent=T)
