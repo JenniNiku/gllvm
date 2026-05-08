@@ -7,7 +7,7 @@
 \usage{
 \method{phyloplot}{gllvm}(
   object,
-  tree,
+  tree = NULL,
   comm.eff = TRUE,
   row.eff = FALSE,
   which.Xcoef = NULL,

@@ -21,7 +21,7 @@
 #' @param heights vector of length two. Relative row heights, defaults to \code{c(0.55, 0.35)}.
 #' @param widths vector of length two. Relative column widths, defaults to \code{c(0.64, 0.10)}.
 #' @param phy.place not (yet) in use.
-#' @param ...	additional not in use.
+#' @param ...	 additional not in use.
 #'
 #' @details
 #' Plots phylogenetically structured random effects together with the phylogeny,
@@ -61,7 +61,7 @@
 #'@export
 #'@export phyloplot.gllvm
 
-phyloplot.gllvm <- function(object, tree, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, tick.length = 2, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top", ...){
+phyloplot.gllvm <- function(object, tree = NULL, comm.eff = TRUE, row.eff = FALSE, which.Xcoef = NULL, xlim = NULL, level = 0.95, col = c("#E69F00","white","#009E73"), col.sym = TRUE, tick.length = 2, mar.spec = c(3, 2, 0, 0), mar.phy = c(0, 2, 2, 0), mar.comm = c(3, 0.5, 2, 1.5), cex = 0.6, lwd = 1, col.edge = "black", pch = "x", heights = c(0.55, 0.35), widths = c(0.64, 0.1),  phy.place = "top", ...){
 # add option to change the order of the plot
 # graphical pars for every plot
   
