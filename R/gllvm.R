@@ -420,7 +420,7 @@
 #'@importFrom graphics abline axis par plot segments text points boxplot barplot panel.smooth lines polygon arrows image layout mtext
 #'@importFrom grDevices rainbow hcl colorRampPalette dev.size
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict cov2cor reformulate update.formula aggregate setNames contrasts cor na.omit getCall plogis model.offset
-#'@importFrom Matrix bdiag chol2inv diag t
+#'@importFrom Matrix bdiag chol2inv diag t isSymmetric
 #'@importFrom MASS ginv polr mvrnorm
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
@@ -1517,7 +1517,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # Check that link is valid with distribution and method
     if("la.link.bin" %in% names(pp.pars)){link = pp.pars$la.link.bin}
 
-    if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB","beta.binomial"))) {
+    if (any(family %in% c("binomial", "ordinal", "ZIB", "ZNIB","beta.binomial", "beta", "orderedBeta", "betaH"))) {
       if (method %in% c("LA", "EVA","VA"))
         out$link <- link
     }
@@ -1526,8 +1526,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       link = rep(link, length(family))
       out$link <- link
     }
-    if (any(family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP"))) {
-      link[family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP")] = "log"
+    if (any(family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP", "ZINB"))) {
+      link[family %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential", "ZIP", "ZINB")] = "log"
       out$link <- link
     }
     if (any(family %in% c("gaussian"))) {
