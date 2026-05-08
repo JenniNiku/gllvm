@@ -505,7 +505,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     not_valid_famMethod <- !is_allowed(family, method, NULL)
     if(any(not_valid_famMethod)){
       fam_not_valid <- family[not_valid_famMethod]
-      stop(paste("Family(families): ",paste(fam_not_valid, collapse = ", ")," not implemented with method '", method,"." ))
+      stop(paste("Family(families): ",paste(unique(fam_not_valid), collapse = ", ")," not implemented with method '", method,"." ))
     }
 
     if(!(all(family %in% VA_family) | all(family %in% EVA_family) | all(family %in% LA_family))){

@@ -805,7 +805,11 @@ trait.TMB <- function(
           zetamap[zetaindex ==2] <- zetamap[zetaindex==2][1]
         map.list$zeta = factor( zetamap)
       }
-      if("zeta" %in% names(setMap)){ 
+      if(("zeta" %in% names(setMap)) | ("zetacutoff" %in% names(setMap))){ 
+        if(any(names(setMap) == "zetacutoff")) {
+          map.list$zetacutoff = NULL
+          names(setMap)[names(setMap) == "zetacutoff"] = "zeta"
+        }
         map.list$zeta= factor(setMap$zeta)
         if(all(family %in% c("orderedBeta")) & zeta.struc=="species"){
           if((all(is.na(setMap$zeta[(length(setMap$zeta)/2 +1):(length(setMap$zeta))])) & !all(is.na(setMap$zeta)) ) | 
@@ -822,8 +826,8 @@ trait.TMB <- function(
             }
             if((all(is.na(setMap$zeta[(length(setMap$zeta)/2 +1):(length(setMap$zeta))])) & !all(is.na(setMap$zeta)) )){
               message2<-
-                "- Looks like you are trying to fix the upper cutoff parameters (for ones) in your mapping, 
-              as the last half of the mapping vector is set to NA. \n"
+                "- The last half of the mapping vector is set to NA, 
+              so looks like you are trying to fix the upper cutoff parameters (for ones) in your mapping \n"
             }
             message(paste(message0, message1, message2, "Thus mapping vector is reordered."))
             
