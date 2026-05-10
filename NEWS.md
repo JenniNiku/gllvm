@@ -1,7 +1,19 @@
+Version 2.0.10
+=============
+
+* CRAN update version 2.0.10
+* See updates in 2.0.6-2.0.10
+
 Version 2.0.9
 =============
 
 * Added beta-binomial family with method = "LA"
+* Method is not automatically changed if family is not implemented. Instead informative message is printed about available options.
+* Added an option to choose which response variables residual diagnostics are plotted.
+
+## Bugfixes
+
+* Residual Correlation calculation didn't take into account adjustments for 01-model. Fixed.
 
 Version 2.0.8
 =============
