@@ -514,8 +514,15 @@ se.gllvm <- function(object, ...){
             }
             }
           out$sd$zeta <- se.zetanew
+          if(any(family%in%c("ordinal"))){
+            # colnames(out$sd$zeta) <- paste((min(object$y[,family=="ordinal"]) + 0:(ncol(out$sd$zeta)-1)),"|",(min(object$y[,family=="ordinal"]) + 1:(ncol(out$sd$zeta))),sep="")
+            names(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"], na.rm=TRUE)-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"], na.rm=TRUE),sep="")
+          } else {
+            names(out$sd$zeta) <- c("cutoff0","cutoff1")
+          }
           # names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste((min(object$y[,object$family=="ordinal"]) + 0:(length(out$sd$zeta)-1)),"|",((min(object$y[,object$family=="ordinal"]) + 1:length(out$sd$zeta))),sep=""))
-          names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm = TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
+          # names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm = TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
+
         }
       } # end se zeta
       
@@ -1072,8 +1079,12 @@ se.gllvm <- function(object, ...){
           se.zetanew <- sezetanew
         }
         out$sd$zeta <- se.zetanew
-        # names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste((min(object$y[,object$family=="ordinal"]) + 0:(length(out$sd$zeta)-1)),"|",((min(object$y[,object$family=="ordinal"]) + 1:length(out$sd$zeta))),sep=""))
-        names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y, na.rm=TRUE):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm=TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
+        # names(out$sd$zeta) <- c(names(se.zetanew[-((kz+ 1):length(se.zetanew))]), paste(min(object$y, na.rm=TRUE):(max(object$y, na.rm=TRUE)-1),"|",(min(object$y, na.rm=TRUE)+1):max(object$y, na.rm=TRUE),sep=""))
+        if(any(family%in%c("ordinal"))){
+          names(out$sd$zeta) <- paste(min(object$y[,family=="ordinal"]):(max(object$y[,family=="ordinal"], na.rm=TRUE)-1),"|",(min(object$y[,family=="ordinal"])+1):max(object$y[,family=="ordinal"], na.rm=TRUE),sep="")
+        } else {
+          names(out$sd$zeta) <- c("cutoff0","cutoff1")
+        }
       }
     }
     
