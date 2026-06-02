@@ -92,7 +92,8 @@ se.gllvm <- function(object, ...){
         pars <- objrFinal$par
         sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
       }
-      
+      rownames(sdr) <- colnames(sdr) <- names(objrFinal$par)
+
       m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m)
       incl[names(objrFinal$par)=="ePower"] <- FALSE
       # Variational params not included for incl
@@ -182,14 +183,15 @@ se.gllvm <- function(object, ...){
         }, silent=TRUE)
         if(inherits(trpred, "try-error")) { cat("Prediction errors for random effects could not be calculated.\n") }
         
+        rownames(cov.mat.mod) <- colnames(cov.mat.mod) <- names(objrFinal$par)[incl]
         out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
       } else {
         sds <- sqrt(abs(diag(sdr)))
         if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
         if(any(sds<1e-12, na.rm=TRUE))sds[sds<1e-12]<-1
-        
+
         sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
-        
+
         A.mat <- sdr.s[incl,incl] # a x a
         D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
         B.mat <- sdr.s[incl,incld] # a x d
@@ -216,6 +218,7 @@ se.gllvm <- function(object, ...){
 
         incla<-rep(FALSE, length(incl))
         incla[names(objrFinal$par)=="u"] <- TRUE
+        rownames(cov.mat.mod) <- colnames(cov.mat.mod) <- names(objrFinal$par)[incl]
         out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
         
       }
@@ -543,6 +546,7 @@ se.gllvm <- function(object, ...){
     if(method == "LA"){
       sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
     }
+    rownames(sdr) <- colnames(sdr) <- names(pars)
     # makes a small correction to the partial derivatives of LvXcoef if fixed-effect
     # because of constrained objective function
     # assumes L(x) = f(x) + lambda*c(x) for constraint function c(x)
@@ -668,20 +672,21 @@ se.gllvm <- function(object, ...){
         }
       }, silent=TRUE)
       if(inherits(trpred, "try-error")) { cat("Prediction errors for random effects could not be calculated.\n") }
-      
+
+      rownames(cov.mat.mod) <- colnames(cov.mat.mod) <- names(pars)[incl]
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
-      
+
     } else {
       sds <- sqrt(abs(diag(sdr)))
       if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
       if(any(sds<1e-12, na.rm = TRUE)) sds[sds<1e-12]<-1
-      
+
       sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
-      
+
       A.mat <- sdr.s[incl, incl] # a x a
       D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
       B.mat <- sdr.s[incl, incld] # a x d
-      
+
       I <- A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
       if(!isSymmetric(I)) I <- 0.5*I + 0.5*t(I)
       cov.mat.mod<- try(MASS::ginv(I),silent=T)
@@ -705,6 +710,7 @@ se.gllvm <- function(object, ...){
 
       incla<-rep(FALSE, length(incl))
       incla[names(objrFinal$par)=="u"] <- TRUE
+      rownames(cov.mat.mod) <- colnames(cov.mat.mod) <- names(pars)[incl]
       out$Hess <- list(Hess.full=sdr, incla = incla, incl=incl, incld=incld, cov.mat.mod=cov.mat.mod)
       
     }
