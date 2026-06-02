@@ -3,7 +3,7 @@
 #'
 #' @param object an object of class 'gllvm'.
 #' @param type the type of prediction required. The default (\code{"link"}) is on the scale of the linear predictors; the alternatives are \code{"response"} and \code{"class"} (predicted classes, works only for binomial model with 1 trial or ordinal model). \code{"response"} is on the scale of the response variable. That is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, \code{type = "response"} gives predicted probabilities for each level of ordinal variable.
-#' @param newX A new data frame of environmental variables. Should include all relevant variables from the \code{studyDesign} and \code{X} data frames. If omitted, the original matrices of environmental variables is used.
+#' @param newX A new data frame of environmental variables. Should include all relevant variables from the \code{studyDesign} and \code{X} data frames. If omitted, the original matrices are used.
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
 #' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
