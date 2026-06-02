@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
       </span>
     </div>
 
@@ -33,6 +33,9 @@
   </a>
   <ul class="dropdown-menu" role="menu"><li>
       <a href="../articles/vignette1.html">Analysing multivariate abundance data using gllvm</a>
+    </li>
+    <li>
+      <a href="../articles/vignette10.html">Assessing Convergence in gllvm models</a>
     </li>
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
@@ -82,11 +85,64 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.10" id="version-2010">Version 2.0.10<small>2026-05-10</small><a class="anchor" aria-label="anchor" href="#version-2010"></a></h2>
+<ul><li>CRAN update version 2.0.10</li>
+<li>See updates in 2.0.6-2.0.10</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.9" id="version-209">Version 2.0.9<a class="anchor" aria-label="anchor" href="#version-209"></a></h2>
+<ul><li>Added beta-binomial family with method = “LA”</li>
+<li>Method is not automatically changed if family is not implemented. Instead informative message is printed about available options.</li>
+<li>Added an option to choose which response variables residual diagnostics are plotted.</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-9">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-9"></a></h3>
+<ul><li>Residual Correlation calculation didn’t take into account adjustments for 01-model. Fixed.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.8" id="version-208">Version 2.0.8<a class="anchor" aria-label="anchor" href="#version-208"></a></h2>
+<ul><li>New predictSR function for predicting species richness</li>
+<li>New poisson-binomial PMF function (for predictSR)</li>
+<li>New residuals.predict.SR function for dunn-smyth residuals of species richness</li>
+<li>New predictPairwise function (simple wrapper for predicting joint occurrence)</li>
+<li>Implemented prediction functionality with when providing new measurements for covariates in the row effects</li>
+<li>Improved output of AICc.gllvm to be in line with the AIC and BIC returned tables</li>
+<li>AUC added to goodnessOfFit statistics</li>
+<li>Added VA-EVA hybrid approximation for the orderedBeta model with logit link</li>
+<li>Added ‘spp’ argument to predict.gllvm, for when only predictions are needed for selected species</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-8">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-8"></a></h3>
+<ul><li>row.eff was ignoring ‘diag’</li>
+<li>2.0.7 did not install on ubuntu due to string error in new enum check</li>
+<li>bugfix in plot.gllvm that left plots empty under particular settings</li>
+<li>bugfix in nested random row effects</li>
+<li>bugfix in phyloplot.gllvm that prevented uncertain random effects from being crossed out</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.7" id="version-207">Version 2.0.7<a class="anchor" aria-label="anchor" href="#version-207"></a></h2>
+<ul><li>Mixed response type model implemented</li>
+<li>Added simulated confidence intervals to predict.gllvm, see <a href="https://github.com/JenniNiku/gllvm/issues/24" class="external-link">#24</a></li>
+</ul></div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="2.0.6" id="version-206">Version 2.0.6<a class="anchor" aria-label="anchor" href="#version-206"></a></h2>
 <ul><li>Added cloglog link for binomial, ZIB and ZNIB.</li>
+<li>Added negative binomial (1) (VA via PIG augmentation)</li>
+<li>Ntrials can vary per site/species</li>
+<li>New function to fit univariate GLMMs: glmmVA</li>
+<li>New propto structure for random (row) effects (possibly with correlations)</li>
+<li>lvCor compatible with num.lv.c</li>
+<li>More generally expanded the (row.eff) formula interface for glmmVA to kronecker structures (e.g., corExp(0+a+b|group) has a 2x2 covarariance for the LHS and a nxn for the RHS)</li>
+<li>Added Nagelkerke’s, McFadden’s and Cox &amp; Snell’s Pseudo r2 measures in goodnessOfFit</li>
+<li>In predict.gllvm type = “class” implemented for ordinal and binomial models.</li>
+<li>corWithin fixed to work also for not balanced study designs</li>
 </ul><div class="section level3">
 <h3 id="bugfixes-2-0-6">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-6"></a></h3>
 <ul><li>Bugfix in VP for random effects in formula</li>
+<li>Bugfix in starting values for models involving both random row effects and random species effects</li>
+<li>Bugfix in predict for fourth-corner model with random effects species via lme4-style formula</li>
+<li>Bugfix in prediction with random and fixed row effects</li>
+<li>Bugfix goodnessOfFit fixed for ordinal model</li>
 </ul></div>
 </div>
     <div class="section level2">

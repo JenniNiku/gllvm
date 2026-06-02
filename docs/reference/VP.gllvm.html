@@ -18,7 +18,7 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
       </span>
     </div>
 
@@ -34,6 +34,9 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
   </a>
   <ul class="dropdown-menu" role="menu"><li>
       <a href="../articles/vignette1.html">Analysing multivariate abundance data using gllvm</a>
+    </li>
+    <li>
+      <a href="../articles/vignette10.html">Assessing Convergence in gllvm models</a>
     </li>
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
@@ -96,6 +99,7 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
 <span>  groupnames <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adj.cov <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  grouplvs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  calcr2scaled <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -110,6 +114,7 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
 <span>  legend.text <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  args.legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cex <span class="op">=</span> <span class="fl">0.7</span>, x <span class="op">=</span> <span class="st">"topright"</span>, bty <span class="op">=</span> <span class="st">"n"</span>, inset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="op">-</span><span class="fl">0.15</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  r2scaled <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -143,6 +148,10 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
 <dd><p>logical, whether or not to group latent variables to one group</p></dd>
 
 
+<dt id="arg-calcr-scaled">calcr2scaled<a class="anchor" aria-label="anchor" href="#arg-calcr-scaled"></a></dt>
+<dd><p>logical, whether or not to also calculate r2 scaled variance partitioning. Defaults to FALSE. If true, squared correlation between data and predictions is used for continuous data (normal, gamma, exponent, beta, tweedie), squared spearman correlation for count and ordinal data, and Tjur's R2 for binary data. Note, interpret these cautiously.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>additional graphical arguments passed to the barplot function</p></dd>
 
@@ -173,6 +182,10 @@ Function plotVarPartitioning() (alias plotVP() or just plot()) plots the results
 
 <dt id="arg-mar">mar<a class="anchor" aria-label="anchor" href="#arg-mar"></a></dt>
 <dd><p>Margins of the plot. Default <code>c(4,4,6,2)</code></p></dd>
+
+
+<dt id="arg-r-scaled">r2scaled<a class="anchor" aria-label="anchor" href="#arg-r-scaled"></a></dt>
+<dd><p>logical, whether or not to plot the response specific R2 -scaled variance partitioning. Defaults to FALSE.</p></dd>
 
 </dl></div>
     <div id="details">

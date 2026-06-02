@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
       </span>
     </div>
 
@@ -33,6 +33,9 @@
   </a>
   <ul class="dropdown-menu" role="menu"><li>
       <a href="../articles/vignette1.html">Analysing multivariate abundance data using gllvm</a>
+    </li>
+    <li>
+      <a href="../articles/vignette10.html">Assessing Convergence in gllvm models</a>
     </li>
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
@@ -120,7 +123,7 @@
 For the observation \(Y_{ij}\) Dunn-Smyth residuals are defined as</p>
 <p>$$r_{ij}=\Phi^{-1}(u_{ij}F_{ij}(y_{ij})  + (1-u_{ij})F_{ij}^-(y_{ij})),$$</p>
 <p>where \(\Phi(.)\) and \(F_{ij}(.)\) are the cumulative probability functions of the standard normal
-distribution, \(F_{ij}^-(y))\) is the limit as \(F_{ij}(y)\) is approached from the negative side, and \(u_{ij}\) has been
+distribution and distribution of the responses, respectively, \(F_{ij}^-(y))\) is the limit as \(F_{ij}(y)\) is approached from the negative side, and \(u_{ij}\) has been
 generated at random from the standard uniform distribution.</p>
     </div>
     <div id="references">
@@ -144,6 +147,7 @@ generated at random from the standard uniform distribution.</p>
 <span class="r-in"><span><span class="co"># residuals</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
       </span>
     </div>
 
@@ -33,6 +33,9 @@
   </a>
   <ul class="dropdown-menu" role="menu"><li>
       <a href="../articles/vignette1.html">Analysing multivariate abundance data using gllvm</a>
+    </li>
+    <li>
+      <a href="../articles/vignette10.html">Assessing Convergence in gllvm models</a>
     </li>
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
@@ -96,6 +99,11 @@
 <span>  type <span class="op">=</span> <span class="st">"link"</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  offset <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  se.fit <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">42</span>,</span>
+<span>  ordinal.cat <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  spp <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -121,7 +129,7 @@
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>the type of prediction required. The default (<code>"link"</code>) is on the scale of the linear predictors; the alternative <code>"response"</code> is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, <code>type = "response"</code> gives predicted probabilities for each level of ordinal variable.</p></dd>
+<dd><p>the type of prediction required. The default (<code>"link"</code>) is on the scale of the linear predictors; the alternatives are <code>"response"</code> and <code>"class"</code> (predicted classes, works only for binomial model with 1 trial or ordinal model). <code>"response"</code> is on the scale of the response variable. That is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, <code>type = "response"</code> gives predicted probabilities for each level of ordinal variable.</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
@@ -130,6 +138,26 @@
 
 <dt id="arg-offset">offset<a class="anchor" aria-label="anchor" href="#arg-offset"></a></dt>
 <dd><p>specification whether of not offset values are included to the predictions in case they are in the model, defaults to <code>TRUE</code> when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the <code>newX</code>) of new offset values or <code>FALSE</code>, when offsets are ignored.</p></dd>
+
+
+<dt id="arg-se-fit">se.fit<a class="anchor" aria-label="anchor" href="#arg-se-fit"></a></dt>
+<dd><p>logical. If <code>TRUE</code>, performs 1000 simulations from the asymptotic covariance matrix for fixed effects, and from the CMSEP covariance matrix for the random effects. If an integer is provided, it is used as the number of simulations instead.</p></dd>
+
+
+<dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
+<dd><p>numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>numeric, defaults to 42. Seed used for simulation in se.fit.</p></dd>
+
+
+<dt id="arg-ordinal-cat">ordinal.cat<a class="anchor" aria-label="anchor" href="#arg-ordinal-cat"></a></dt>
+<dd><p>integer or <code>NULL</code>, defaults to <code>NULL</code>. For ordinal models with <code>type = "response"</code>, selects a single category to return instead of the full K×n×p array. When set, the return value is an n×p matrix of probabilities for that category. Primarily used internally by <code>predictSR</code> and <code>goodnessOfFit</code> to reduce memory use.</p></dd>
+
+
+<dt id="arg-spp">spp<a class="anchor" aria-label="anchor" href="#arg-spp"></a></dt>
+<dd><p>integer vector or <code>NULL</code>, defaults to <code>NULL</code>. If provided, predictions are computed only for the selected species (column indices into the response matrix), returning an \(n \times \text{length(spp)}\) matrix. All parameter-level computations (<code>beta0</code>, <code>Xcoef</code>, <code>theta</code>, etc.) are subsetted accordingly, so no unnecessary computation is performed for the remaining species.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

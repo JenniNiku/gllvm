@@ -2,6 +2,7 @@
 <url><loc>/404.html</loc></url>
 <url><loc>/articles/index.html</loc></url>
 <url><loc>/articles/vignette1.html</loc></url>
+<url><loc>/articles/vignette10.html</loc></url>
 <url><loc>/articles/vignette2.html</loc></url>
 <url><loc>/articles/vignette3.html</loc></url>
 <url><loc>/articles/vignette4.html</loc></url>
@@ -28,6 +29,7 @@
 <url><loc>/reference/getResidualCor.gllvm.html</loc></url>
 <url><loc>/reference/getResidualCov.gllvm.html</loc></url>
 <url><loc>/reference/gllvm.html</loc></url>
+<url><loc>/reference/glmmVA.html</loc></url>
 <url><loc>/reference/goodnessOfFit.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/kelpforest.html</loc></url>
@@ -37,8 +39,11 @@
 <url><loc>/reference/plot.gllvm.html</loc></url>
 <url><loc>/reference/predict.gllvm.html</loc></url>
 <url><loc>/reference/predictLVs.gllvm.html</loc></url>
+<url><loc>/reference/predictPairwise.gllvm.html</loc></url>
+<url><loc>/reference/predictSR.gllvm.html</loc></url>
 <url><loc>/reference/randomCoefplot.gllvm.html</loc></url>
 <url><loc>/reference/residuals.gllvm.html</loc></url>
+<url><loc>/reference/residuals.predictSR.gllvm.html</loc></url>
 <url><loc>/reference/se.gllvm.html</loc></url>
 <url><loc>/reference/simulate.gllvm.html</loc></url>
 <url><loc>/reference/Skabbholmen.html</loc></url>

@@ -31,13 +31,15 @@
 #'# Fit gllvm model
 #'fit <- gllvm(y = y, X, formula = ~soil.dry, family = poisson())
 #'# Fitted values
-#'newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),max(X[,"soil.dry"]),length.out=100))
+#'newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),
+#'                  max(X[,"soil.dry"]),length.out=100))
 #'predSR <- predictSR(fit, newX = newX, level = 0)
 #'
 #'# Visualize the results
-#' par(mfrow = c(4,4))
+#' par(mfrow = c(2,2))
 #' for(i in 0:ncol(fit$y)){
-#' plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], xlab = "Soil dry matter content", 
+#' plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1], 
+#'      xlab = "Soil dry matter content", 
 #'      ylab = bquote(p(SR == .(i))), type = "l", ylim = c(0,1))
 #' }
 #'
@@ -205,9 +207,11 @@ hilbert_to_provided_center <- function(mat, center) {
 #'# Fit gllvm model
 #'fit <- gllvm(y = y, X, formula = ~soil.dry, family = poisson())
 #'# fitted values
-#'newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),max(X[,"soil.dry"]),length.out=100))
+#'newX = data.frame(soil.dry = seq(min(X[,"soil.dry"]),
+#'                  max(X[,"soil.dry"]), length.out=100))
 #'predPair <- predictPairwise(fit, spp = c(1,2), newX = newX, level = 0)
-#'plot(x = newX$soil.dry, y = predPair$prob, type = "l", xlab = "Soil dry moisture content", 
+#'plot(x = newX$soil.dry, y = predPair$prob, type = "l", 
+#'     xlab = "Soil dry moisture content", 
 #'     ylab = "Probability of co-occurrence", ylim = c(0,1))
 #'
 #'}

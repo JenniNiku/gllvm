@@ -58,6 +58,7 @@
 #' phyloplot(model, tree)
 #'}
 #'@aliases phyloplot phyloplot.gllvm
+#'@method phyloplot gllvm
 #'@export
 #'@export phyloplot.gllvm
 

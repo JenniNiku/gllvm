@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
       </span>
     </div>
 
@@ -50,6 +50,9 @@
   <ul class="dropdown-menu" role="menu">
 <li>
       <a href="../articles/vignette1.html">Analysing multivariate abundance data using gllvm</a>
+    </li>
+    <li>
+      <a href="../articles/vignette10.html">Assessing Convergence in gllvm models</a>
     </li>
     <li>
       <a href="../articles/vignette2.html">Analysing high-dimensional microbial community data using gllvm</a>
@@ -105,7 +108,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2025-07-24</h4>
+            <h4 data-toc-skip class="date">2026-06-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette5.Rmd" class="external-link"><code>vignettes/vignette5.Rmd</code></a></small>
       <div class="hidden name"><code>vignette5.Rmd</code></div>
@@ -164,7 +167,10 @@ argument in <code>start.control</code>.</p>
 fits the hunting spider data best.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/AICc.html">AICc</a></span><span class="op">(</span><span class="va">ftEqTol</span>,<span class="va">ftComTol</span>,<span class="va">ftUneqTol</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 1743.410 1673.141 1455.211</span></span></code></pre>
+<pre><code><span><span class="co">##           df     AICc</span></span>
+<span><span class="co">## ftEqTol   52 1687.337</span></span>
+<span><span class="co">## ftComTol  37 1634.074</span></span>
+<span><span class="co">## ftUneqTol 47 1404.973</span></span></code></pre>
 <p>The unequal tolerances model fits best, as measured by AICc. Species
 optima and tolerances, and their approximate standard errors, can be
 extracted:</p>
