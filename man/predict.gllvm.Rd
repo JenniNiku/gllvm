@@ -24,7 +24,7 @@
 \arguments{
 \item{object}{an object of class 'gllvm'.}
 
-\item{newX}{A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.}
+\item{newX}{A new data frame of environmental variables. Should include all relevant variables from the \code{studyDesign} and \code{X} data frames. If omitted, the original matrices are used.}
 
 \item{newTR}{A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.}
 

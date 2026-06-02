@@ -78,10 +78,20 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   
   if(!is.null(seed)) set.seed(seed[n.i])
   
+  fit_error <- NULL
   if(model == "gllvm.TMB"){
-  fit <- do.call(gllvm.TMB, args)
+    fit <- tryCatch(do.call(gllvm.TMB, args), error = function(e) { fit_error <<- conditionMessage(e); NULL })
   }else if(model == "trait.TMB"){
-    fit <- do.call(trait.TMB, args)
+    fit <- tryCatch(do.call(trait.TMB, args), error = function(e) { fit_error <<- conditionMessage(e); NULL })
+  }
+  if(!is.null(fit_error) || !is.finite(fit$logL)){
+    if(!is.null(fit_error)){
+      cat("  -> Iteration", n.i, "failed with error:", fit_error, "\n")
+    } else {
+      cat("  -> Iteration", n.i, "converged to infinity \n")
+    }
+    n.i <- n.i + 1
+    next
   }
   #### Check if model fit succeeded/improved on this iteration n.i
   
