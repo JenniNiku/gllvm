@@ -16,7 +16,7 @@ attribute \code{"condVar"} on the returned object. Defaults to \code{FALSE}.}
 }
 \value{
 A vector of random-effect estimates. When \code{condVar = TRUE}, the attribute \code{"condVar"}
-  is a list of conditional variance matrices, one per random-effect term, as
+  is a vector of conditional variances.
   returned by \code{\link{getPredictErr}}.
 }
 \description{
