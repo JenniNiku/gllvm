@@ -1213,10 +1213,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             # propto
             sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
           }else if(re == 0){
-            # diag
-            sigmanew = c(sigmanew, log(sigma[1]))
+            # diag: one sigma per LHS covariate
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
           }
-          
+
           # ustruc terms
           if(re %in% c(-1,6)){
             # ustruc, proptoustruc
@@ -2037,10 +2037,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               # propto
               sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
             }else if(re == 0){
-              # diag
-              sigmanew = c(sigmanew, log(sigma[1]))
+              # diag: one sigma per LHS covariate
+              sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
             }
-            
+
             # ustruc terms
             if(re %in% c(-1, 6)){
               # ustruc, proptoustruc
@@ -2736,8 +2736,33 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             LHS <- labels(trm)
             if(attr(trm, "intercept"))LHS <- c("(Intercept)", LHS)
             RHS <- form[[3]]
-            
-            colnames(D[[re]]) <- row.names(D[[re]]) <- paste0(LHS, "|", deparse(RHS))
+
+            D_names <- paste0(LHS, "|", deparse(RHS))
+            if(length(D_names) != trmsize[1L, re]) {
+              # LHS is a factor: term labels give 1 name but nc = nlevels.
+              # Recover LHS names from dr column names, stripping the group-level
+              # suffix by finding the common prefix across two consecutive groups.
+              col_start <- if(re > 1L) sum(trmsize[1L, seq_len(re - 1L)] * trmsize[2L, seq_len(re - 1L)]) + 1L else 1L
+              nc_re <- trmsize[1L, re]
+              nl_re <- trmsize[2L, re]
+              dr_colnames <- colnames(dr)
+              if(!is.null(dr_colnames) && length(dr_colnames) >= col_start + nc_re - 1L) {
+                names_g1 <- dr_colnames[col_start:(col_start + nc_re - 1L)]
+                if(nl_re >= 2L && length(dr_colnames) >= col_start + 2L * nc_re - 1L) {
+                  names_g2 <- dr_colnames[(col_start + nc_re):(col_start + 2L * nc_re - 1L)]
+                  D_names <- mapply(function(n1, n2) {
+                    i <- min(nchar(n1), nchar(n2))
+                    while(i > 0L && substr(n1, 1L, i) != substr(n2, 1L, i)) i <- i - 1L
+                    if(i == 0L) n1 else substr(n1, 1L, i)
+                  }, names_g1, names_g2, USE.NAMES = FALSE)
+                } else {
+                  D_names <- names_g1
+                }
+              } else {
+                D_names <- make.names(paste0(LHS, "_", seq_len(nc_re)))
+              }
+            }
+            colnames(D[[re]]) <- row.names(D[[re]]) <- D_names
             }
             
             out$params$sigmaijr=as.matrix(Matrix::bdiag(D))
