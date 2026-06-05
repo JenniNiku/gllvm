@@ -855,7 +855,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         } else if(length(rho.lv)==num.lv.cor) {
           rho.lv=c(log(rho.lv))
         }
-        rho_lvc<- matrix(c(rep(mean(scaledc), each=num.lv.cor*length(times)), rho.lv), num.lv.cor, length(times))
+        rho_lvc<- matrix(c(rep(mean(scaledc), each=num.lv.cor*length(times)), rho.lv), num.lv.cor, length(times)+1)
         # rho_lvc<- matrix(rho.lv,nrow = num.lv.cor)
       }
       # else {

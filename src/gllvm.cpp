@@ -2572,7 +2572,7 @@ Type objective_function<Type>::operator() ()
                 if(cstruclv(0)==2){// exp decaying
                   Slv(q) = gllvm::corExp(Type(1), Type(0), nu, dc_scaled_lv);
                 } else if(cstruclv(0)==4) {// Matern
-                  Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), nu, dc_scaled_lv);
+                  Slv(q) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,rho_lvc.cols()-1)), nu, dc_scaled_lv);
                 }
               }
               nll -= 0.5*(nu - atomic::logdet(Slv(q)));
@@ -2799,7 +2799,7 @@ Type objective_function<Type>::operator() ()
                   if(cstruclv(ics)==2){// exp decaying
                     Slv(i) = gllvm::corExp(Type(1), Type(0), times(0,i), dc_scaled_lv);
                   } else if(cstruclv(ics)==4) {// matern
-                    Slv(i) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times(0,i), dc_scaled_lv);
+                    Slv(i) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,rho_lvc.cols()-1)), times(0,i), dc_scaled_lv);
                   }
                 }
                 
@@ -2891,7 +2891,7 @@ Type objective_function<Type>::operator() ()
                   if(cstruclv(ics)==2){// exp decaying
                     Slv(i) = gllvm::corExp(Type(1), Type(0), times(0,i), dc_scaled_lv);
                   } else if(cstruclv(ics)==4) {// matern
-                    Slv(i) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times(0,i), dc_scaled_lv);
+                    Slv(i) = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,rho_lvc.cols()-1)), times(0,i), dc_scaled_lv);
                   }
                 }
                 
@@ -4821,7 +4821,7 @@ Type objective_function<Type>::operator() ()
                 Slv = gllvm::corExp(Type(1), Type(0), nu, dc_scaled_lv);
                 // Slv = gllvm::corExp(Type(1), (rho_lvc(q,0)), nu, DistM);
               } else if(cstruclv(0)==4) {// matern
-                Slv = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), nu, dc_scaled_lv);
+                Slv = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,rho_lvc.cols()-1)), nu, dc_scaled_lv);
               }
             }
             
@@ -4861,7 +4861,7 @@ Type objective_function<Type>::operator() ()
               if(cstruclv(ics)==2){// exp decaying
                 Slv = gllvm::corExp(Type(1), Type(0), times(0,i), dc_scaled_lv);
               } else if(cstruclv(ics)==4) {// matern
-                Slv = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,dc_lv.cols())), times(0,i), dc_scaled_lv);
+                Slv = gllvm::corMatern(Type(1), Type(1), exp(rho_lvc(q,rho_lvc.cols()-1)), times(0,i), dc_scaled_lv);
               }
             }
             
