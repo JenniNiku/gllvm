@@ -114,10 +114,65 @@ glmmVA <- function(formula, data, family,
     stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
   }
   
-  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff.formula, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va, control.start = control.start), args))
-  
+  # If the user specified no intercept (0+ or -1) in the fixed-effects part,
+  # fix beta0 to 0 via setMap
+  fixed_part <- nobars1_(row.eff.formula)
+  if(inherits(fixed_part, "formula") && length(all.vars(fixed_part)) > 0 &&
+     !attr(terms(fixed_part), "intercept")) {
+    if(!"setMap" %in% names(args)) {
+      args$setMap <- list(b = factor(NA))
+    } else if(!"b" %in% names(args$setMap)) {
+      args$setMap[["b"]] <- factor(NA)
+    }
+  }
+
+  no_intercept <- inherits(fixed_part, "formula") && length(all.vars(fixed_part)) > 0 &&
+    !attr(terms(fixed_part), "intercept")
+
+  row.eff_gllvm <- if(no_intercept) update(row.eff.formula, ~ . + 1) else row.eff.formula
+
+  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff_gllvm, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va, control.start = control.start), args))
+
+  # b is fixed at 0 via setMap; results in NA
+  if(no_intercept) object$params$beta0 <- rep(0, length(object$params$beta0))
+
   object$call <-  match.call()
   class(object) <-  c("glmmVA", "gllvm")
-  
+
   return(object)
+}
+
+#' @title Generic function for extracting random effects
+#' @description S3 generic dispatched on the model class.
+#' @param object a fitted model object of class glmmVA.
+#' @param ... additional arguments passed to the method.
+#' @export
+ranef <- function(object, ...) UseMethod("ranef")
+
+#' @title Extract random effects from a glmmVA object
+#'
+#' @description Returns the random effects estimate for a model fitted
+#'   with \code{\link{glmmVA}}, optionally with their conditional variances.
+#'
+#' @param object an object of class \code{"glmmVA"}.
+#' @param condVar logical; if \code{TRUE}, attach conditional variances as an
+#'   attribute \code{"condVar"} on the returned object. Defaults to \code{FALSE}.
+#' @param ... not used.
+#'
+#' @return A vector of random-effect estimates. When \code{condVar = TRUE}, the attribute \code{"condVar"}
+#'   is a vector of conditional variances.
+#'   returned by \code{\link{getPredictErr}}.
+#'
+#' @seealso \code{\link{glmmVA}}, \code{\link{getPredictErr}}
+#'
+#' @author Bert van der Veen
+#'
+#' @export
+ranef.glmmVA <- function(object, condVar = FALSE, ...) {
+  est <- coef(object, "row.params.random")
+  if (condVar) {
+    cv <- getPredictErr(object, cov = TRUE, ...)$row.effects
+    attr(est, "condVar") <- cv
+  }
+  est
 }

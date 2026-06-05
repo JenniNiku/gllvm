@@ -2398,17 +2398,43 @@ Type objective_function<Type>::operator() ()
               nll -= 0.5*(trmsize(0,re)*trmsize(1,re)-logdetSr);
             }
             
+          }else if(cstruc(re) == 0 && trmsize(0,re) > 1){
+            // diag() with nc > 1 covariates: nc independent per-covariate prior variances.
+            // Va covariance is nc x nc diagonal per group, looped over nl groups.
+            matrix<Type> sds = Eigen::MatrixXd::Zero(trmsize(0,re), trmsize(0,re));
+            sds.diagonal() = sigma.segment(sigmacounter, trmsize(0,re));
+            sigmacounter += trmsize(0,re);
+            matrix<Type> invSrDiag(trmsize(0,re), trmsize(0,re));
+            invSrDiag.setZero();
+            invSrDiag.diagonal() = sds.diagonal().array().pow(-2);
+            Type logdetSr = 2 * sds.diagonal().array().log().sum(); // log-det per group
+
+            matrix<Type> Arm(trmsize(0,re), trmsize(0,re));
+            for(int q = 0; q < trmsize(1,re); q++){
+              Arm.setZero();
+              for(int d = 0; d < trmsize(0,re); d++){
+                Arm(d,d) = exp(lg_Ar(sdcounter));
+                sdcounter++;
+              }
+              matrix<Type> ArmMat = Arm * Arm.transpose();
+              int col_offset = trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum() + trmsize(0,re)*q;
+              cQ += (0.5*(dr0.middleCols(col_offset, trmsize(0,re)) * ArmMat * dr0.middleCols(col_offset, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
+              int r0r_offset = trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum() + trmsize(0,re)*q;
+              nll -= Arm.diagonal().array().log().sum()
+                     - 0.5*((invSrDiag * ArmMat).trace() + (r0r.col(0).segment(r0r_offset, trmsize(0,re)).transpose() * (invSrDiag * r0r.col(0).segment(r0r_offset, trmsize(0,re)))).sum());
+              nll -= 0.5*(trmsize(0,re) - logdetSr);
+            }
           }else{
           Eigen::DiagonalMatrix<Type, Eigen::Dynamic> Arm(trmsize(1,re));
           matrix<Type> Sr(trmsize(1,re), trmsize(1,re));Sr.setZero();
-          
+
           for (int d=0; d<(trmsize(1,re)); d++){ // diagonals of varcov
             Arm.diagonal()(d)=exp(lg_Ar(sdcounter));
             sdcounter++;
           }
           // add terms to cQ
           cQ += (0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(1,re))*Arm*Arm*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(), trmsize(1,re)).transpose()).eval().diagonal()).replicate(1,p);
-          
+
           // We build the actual covariance matrix
           // This can straightforwardly be extended to estimate correlation between effects
           matrix <Type> invSr(trmsize(1,re), trmsize(1,re));invSr.setZero();

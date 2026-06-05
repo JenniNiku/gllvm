@@ -1109,6 +1109,23 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
 # Structured row parameters
     RElistRow <- list(); xr = matrix(0); dr = matrix(0); cstruc = "diag";row.eff.formula = row.eff;csR = matrix(0);trmsize = matrix(0);proptoMats <- list(list(matrix(0)))
     if(inherits(row.eff,"formula")) {
+      # Expand || (double-bar) to diag() before any formula processing.
+      # corstruc() counts one entry per top-level formula term, but findbars1()
+      # expands || to two separate | terms.  The length mismatch causes wrong
+      # sigma/lg_Ar vector lengths and a TMB segfault.  Converting here keeps
+      # both paths consistent: diag(LHS|RHS) is one term for both functions.
+      dbl2diag <- function(term) {
+        if (is.name(term) || !is.language(term)) return(term)
+        if (is.call(term) && term[[1]] == as.name("||"))
+          return(as.call(list(as.name("diag"),
+                              as.call(list(as.name("|"),
+                                           dbl2diag(term[[2]]),
+                                           dbl2diag(term[[3]]))))))
+        for (i in seq_along(term)) term[[i]] <- dbl2diag(term[[i]])
+        term
+      }
+      row.eff[[length(row.eff)]] <- dbl2diag(row.eff[[length(row.eff)]])
+
       # first, random effects part
       if(anyBars(row.eff)){
       row.form <- allbars(row.eff)
@@ -1179,8 +1196,10 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         # colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
         # first row: lhs size, second row: rhs size
         trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
-        trmsize[1,] <- unlist(lapply(bar.f, function(x)length(attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "term.labels")) + 
-                                       attr(terms(eval(base::substitute(~foo, list(foo = x[[2]])))), "intercept")))
+        # Use actual nc (number of LHS model-matrix columns) per term.
+        # Counting term.labels gives 1 for a factor variable regardless of its number of levels,
+        # which causes the covariance matrix to be treated as 1x1 (diag) for factor LHS variables.
+        trmsize[1,] <- as.integer(RElistRow$grps / RElistRow$nl)
         trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(interaction(mf.new[, all.vars(x[[3]])])))))
         
         if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
