@@ -54,6 +54,7 @@
 
 predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000, level = 1, ci = "expected", alpha = 0.95, seed = 42, return.pred = FALSE, batch = NULL, ...){
 
+  if(isFALSE(object$sd)) se.fit = FALSE
   fit <- predict(object, type = "response", se.fit = FALSE, ordinal.cat = 1L, spp = spp, level = level, ...)
 
   probs <- gllvm.presence.prob(fit, object, spp = spp)
