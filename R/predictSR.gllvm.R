@@ -54,7 +54,7 @@
 
 predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000, level = 1, ci = "expected", alpha = 0.95, seed = 42, return.pred = FALSE, batch = NULL, ...){
 
-  if(isFALSE(object$sd)) se.fit = FALSE
+  if(isFALSE(object$sd) || is.null(object$sd)) se.fit = FALSE
   fit <- predict(object, type = "response", se.fit = FALSE, ordinal.cat = 1L, spp = spp, level = level, ...)
 
   probs <- gllvm.presence.prob(fit, object, spp = spp)
@@ -311,21 +311,18 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
     mu    <- fit[, fcols, drop = FALSE]
 
     if(fam == "binomial"){
-      Ntrials_mat <- matrix(object$Ntrials[, j, drop = FALSE], nrow = n, ncol = length(pos))
-      probs[, pos] <- 1 - pbinom(0, size = Ntrials_mat, prob = mu)
+      probs[, pos] <- mu
     } else if(fam == "ZIB"){
       # params$phi for ZIB stores the zero-inflation probability directly (see gllvm.TMB.R line ~1669)
       sigma_vec <- rep(object$params$phi[j], each = n)
-      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
-      probs[, pos] <- matrix(1 - pzib(0, mu = as.vector(mu), sigma = sigma_vec, Ntrials = Ntrials_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pzib(0, mu = as.vector(mu), sigma = sigma_vec, Ntrials = 1L), nrow = n)
     } else if(fam == "ZNIB"){
       # params$phi stores p0 and ZINB.phi stores pN (already on probability scale, see residuals.gllvm)
       phis0 <- (object$params$phi[j]      / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
       phisN <- (object$params$ZINB.phi[j] / (1 + object$params$phi[j] + object$params$ZINB.phi[j]))
       p0_vec  <- rep(phis0, each = n)
       pN_vec  <- rep(phisN, each = n)
-      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
-      probs[, pos] <- matrix(1 - pznib(0, mu = as.vector(mu), p0 = p0_vec, pN = pN_vec, Ntrials = Ntrials_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pznib(0, mu = as.vector(mu), p0 = p0_vec, pN = pN_vec, Ntrials = 1L), nrow = n)
     } else if(fam == "poisson"){
       probs[, pos] <- ppois(0, lambda = mu, lower.tail = FALSE)
     } else if(fam == "negative.binomial"){
@@ -359,8 +356,7 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       probs[, pos] <- 1 - mu # mu = p(y;k=1), i.e., 1- probability of absence
     } else if(fam == "beta.binomial"){
       phi_vec <- rep(object$params$phi[j], each = n)
-      Ntrials_vec <- c(object$Ntrials[, j, drop = FALSE])
-      probs[, pos] <- matrix(1 - pbetabinom(0, mu = as.vector(mu), phi = phi_vec, Ntrials = Ntrials_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pbetabinom(0, mu = as.vector(mu), phi = phi_vec, Ntrials = 1L), nrow = n)
     }
   }
 
