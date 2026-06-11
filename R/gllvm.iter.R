@@ -85,9 +85,9 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
     fit <- tryCatch(do.call(trait.TMB, args), error = function(e) { fit_error <<- conditionMessage(e); NULL })
   }
   if(!is.null(fit_error) || !is.finite(fit$logL)){
-    if(!is.null(fit_error)){
+    if(!is.null(fit_error) && args$trace){
       cat("  -> Iteration", n.i, "failed with error:", fit_error, "\n")
-    } else {
+    } else if(args$trace){
       cat("  -> Iteration", n.i, "converged to infinity \n")
     }
     n.i <- n.i + 1
