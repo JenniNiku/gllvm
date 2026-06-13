@@ -231,31 +231,22 @@ glmmVA <- function(formula, data, family, response.group = NULL,
 #'   long-format numeric vector aligned with the original observations.
 #'
 #' @param object an object of class \code{"glmmVA"}.
-#' @param newX,newTR,newLV,type,level,offset,se.fit,alpha,seed,ordinal.cat,spp
-#'   passed to \code{\link{predict.gllvm}}.
 #' @param ... further arguments passed to \code{\link{predict.gllvm}}.
 #'
 #' @return For univariate models: the same object returned by
-#'   \code{\link{predict.gllvm}}. For mixed-response models without new data:
-#'   a numeric vector of length \code{nobs(object)} (one value per original
-#'   observation). When \code{newX} or \code{newLV} are supplied the raw
-#'   wide-format matrix is returned unchanged.
+#'   \code{\link{predict.gllvm}}. For mixed-response models:
+#'   a numeric vector of length \code{nobs(object)}.
 #'
 #' @seealso \code{\link{predict.gllvm}}, \code{\link{glmmVA}}
 #' @author Bert van der Veen
 #' @export
-predict.glmmVA <- function(object, newX = NULL, newTR = NULL, newLV = NULL,
-                           type = "link", level = 1, offset = TRUE,
-                           se.fit = FALSE, alpha = 0.95, seed = 42,
-                           ordinal.cat = NULL, spp = NULL, ...) {
-  out <- predict.gllvm(object, newX = newX, newTR = newTR, newLV = newLV,
-                       type = type, level = level, offset = offset,
-                       se.fit = se.fit, alpha = alpha, seed = seed,
-                       ordinal.cat = ordinal.cat, spp = spp, ...)
+predict.glmmVA <- function(object, ...) {
+  out <- predict.gllvm(object, ...)
 
-  # For mixed-response in-sample predictions: un-wide the n_obs x n_grp matrix
-  # to a length-n_obs vector by taking the non-NA column for each observation.
-  if (is.null(newX) && is.null(newLV) && any(is.na(object$y))) {
+  # For mixed-response models the wide matrix (n_obs x n_grp) has the same
+  # number of rows as the original long-format data; collapse to a vector by
+  # taking the non-NA column for each observation.
+  if (any(is.na(object$y))) {
     col_idx <- apply(object$y, 1L, function(row) which(!is.na(row))[1L])
     idx2    <- cbind(seq_len(nrow(object$y)), col_idx)
     if (is.matrix(out)) {
