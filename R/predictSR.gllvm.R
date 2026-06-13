@@ -334,8 +334,8 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
     } else if(fam == "betaH"){
       probs[, pos] <- 1 - fit[, -seq_len(ncol(object$y)), drop = FALSE][, j, drop = FALSE]
     } else if(fam == "orderedBeta"){
-      linkinv <- binomial(link = object$link)$linkinv
-      linkfun <- binomial(link = object$link)$linkfun
+      linkinv <- binomial(link = object$link[j])$linkinv
+      linkfun <- binomial(link = object$link[j])$linkfun
       zeta1 <- if(object$zeta.struc == "species")
         matrix(object$params$zeta[j, 1], nrow = n, ncol = length(pos), byrow = TRUE)
       else
