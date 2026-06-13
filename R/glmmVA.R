@@ -5,7 +5,8 @@
 #'
 #' @param formula a formula object describing both the fixed- and random-effects part of the model. A response should be present on the left-hand side of the operator, and otherwise passed as a named 'y' argument to the function. Random effects are written in \code{lme4}-style. Some structured random effects are supported, see \code{"\link{gllvm}"} for more information.
 #' @param data an optional data frame containing the variables named in formula.
-#' @param family a family as supported by the \code{"\link{gllvm}"} function.
+#' @param family a family as supported by the \code{"\link{gllvm}"} function. For mixed response type models, a character vector of length equal to the number of observations.
+#' @param response.group optional factor of length equal to the number of observations. Observations sharing a level are mapped to the same distribution.
 #' @param control A list with the following arguments controlling the optimization:
 #' \describe{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-10.}
@@ -55,15 +56,29 @@
 #' # Example 2: correlated random slopes
 #' model1 <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species),
 #'                  family = "poisson", data = data)
-#' 
+#'
+#' # Example 3: joint model for mixed Poisson and and negative-binomial responses.
+#' model2 <- update(model1, family=c(rep("poisson", 28), rep("negative.binomial", nrow(data)-28)), sd.errors=FALSE)
+#'
 #' @export
-glmmVA <- function(formula, data, family, 
-                   control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000, optim.method = "BFGS"), 
-                   control.va = list(Ar.struc="unstructured", diag.iter = 0, Lambda.start = 0.3), 
-                   control.start = list(starting.val = "zero", n.init = 1, n.init.max = 10, start.fit = NULL, scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"), 
+glmmVA <- function(formula, data, family, response.group = NULL,
+                   control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000, optim.method = "BFGS"),
+                   control.va = list(Ar.struc="unstructured", diag.iter = 0, Lambda.start = 0.3),
+                   control.start = list(starting.val = "zero", n.init = 1, n.init.max = 10, start.fit = NULL, scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"),
                    ...) {
-  
+
   args  <- list(...)
+
+  # Auto-infer response.group when family is a per-observation vector
+  mf_tmp <- model.frame(subbars1(formula), data = data)
+  y_tmp  <- model.response(mf_tmp)
+  n_tmp  <- if (is.null(y_tmp)) length(args[["y"]]) else NROW(y_tmp)
+  if (is.null(response.group) && is.character(family) && length(family) == n_tmp) {
+    response.group <- as.factor(family)
+  }
+  rm(mf_tmp, y_tmp, n_tmp)
+
+  mixed_mode <- !is.null(response.group)
   
   mf <- model.frame(subbars1(formula), data = data)
   y <- as.matrix(model.response(mf))
@@ -82,7 +97,47 @@ glmmVA <- function(formula, data, family,
   }else{
     row.eff.formula <- row.eff.formula[-2]
   }
-  
+
+  # Mixed response type: reshape long-format y into a wide matrix (n_obs x n_groups)
+  # with NA in cells where an observation does not belong to that response group.
+  if (mixed_mode) {
+    response.group <- as.factor(response.group)
+    if (length(response.group) != nrow(y))
+      stop("`response.group` must have the same length as the number of observations.")
+
+    groups <- levels(response.group)
+    n_obs  <- nrow(y)
+    n_grp  <- length(groups)
+
+    # Resolve family to a per-column character vector
+    if (length(family) == n_obs) {
+      family_col <- character(n_grp)
+      for (g in seq_along(groups)) {
+        idx  <- which(response.group == groups[g])
+        fams <- unique(family[idx])
+        if (length(fams) != 1L)
+          stop(sprintf("All observations in group '%s' must share the same family.", groups[g]))
+        family_col[g] <- fams
+      }
+      family <- family_col
+    } else if (length(family) == n_grp) {
+      # already per-column — nothing to do
+    } else if (length(family) == 1L) {
+      family <- rep(family, n_grp)
+    } else {
+      stop("`family` must have length 1, nrow(data), or nlevels(response.group) in mixed-response mode.")
+    }
+
+    # Build wide matrix: n_obs rows x n_grp columns, NA where obs is not in that group
+    y_wide <- matrix(NA_real_, nrow = n_obs, ncol = n_grp,
+                     dimnames = list(NULL, paste0("y", seq_len(n_grp))))
+    for (g in seq_along(groups)) {
+      idx <- which(response.group == groups[g])
+      y_wide[idx, g] <- y[idx, 1L]
+    }
+    y <- y_wide
+  }
+
   X = model.frame(subbars1(row.eff.formula), data)
   
   if (inherits(family,"family") || is.function(family) && inherits(family(), "family")) {
@@ -105,33 +160,59 @@ glmmVA <- function(formula, data, family,
   }
   
   Ntrials = matrix(1)
-  
-  # Facilitate y to be passed as a 2-column matrix for binomial responses
-  if((ncol(y) == 2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && !("Ntrials" %in% names(args))){
-    Ntrials <- matrix(rowSums(y))
-    y <- y[, 1,drop=FALSE]
-  }else if((ncol(y)==2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && ("Ntrials" %in% names(args))){
-    stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
+
+  # Facilitate y to be passed as a 2-column matrix for binomial responses (univariate only)
+  if (!mixed_mode) {
+    if((ncol(y) == 2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && !("Ntrials" %in% names(args))){
+      Ntrials <- matrix(rowSums(y))
+      y <- y[, 1,drop=FALSE]
+    }else if((ncol(y)==2) && family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial") && ("Ntrials" %in% names(args))){
+      stop("Cannot both pass 'y' as a matrix and provide the 'Ntrials' argument.")
+    }
   }
   
-  # If the user specified no intercept (0+ or -1) in the fixed-effects part,
-  # fix beta0 to 0 via setMap
+  # Detect no-intercept formula (0+ or -1 in fixed part) before deciding beta0com.
   fixed_part <- nobars1_(row.eff.formula)
-  if(inherits(fixed_part, "formula") && length(all.vars(fixed_part)) > 0 &&
-     !attr(terms(fixed_part), "intercept")) {
+  no_intercept <- inherits(fixed_part, "formula") &&
+    !attr(terms(fixed_part), "intercept")
+
+  # In mixed mode, collapse the p per-column intercepts to one shared intercept
+  # so the count matches the univariate case (one beta0, not p).
+  # Skip when no_intercept: fixing all p to 0 is equivalent to sharing one zero.
+  if (mixed_mode && !no_intercept && !"beta0com" %in% names(args)) {
+    args$beta0com <- TRUE
+  }
+
+  # If the user specified no intercept (0+ or -1), fix b to 0 via setMap.
+  # Use ncol(y) so the map length matches the number of intercept parameters
+  # (p=1 for univariate, p=n_grp for mixed), avoiding the beta0com else-branch conflict.
+  if (no_intercept) {
+    map_b <- factor(rep(NA_integer_, ncol(y)))
     if(!"setMap" %in% names(args)) {
-      args$setMap <- list(b = factor(NA))
+      args$setMap <- list(b = map_b)
     } else if(!"b" %in% names(args$setMap)) {
-      args$setMap[["b"]] <- factor(NA)
+      args$setMap[["b"]] <- map_b
     }
   }
 
-  no_intercept <- inherits(fixed_part, "formula") && length(all.vars(fixed_part)) > 0 &&
-    !attr(terms(fixed_part), "intercept")
-
   row.eff_gllvm <- if(no_intercept) update(row.eff.formula, ~ . + 1) else row.eff.formula
 
-  object <- do.call(gllvm, c(list(y = y, studyDesign = X, family = family, num.lv = 0, row.eff = row.eff_gllvm, offset = offset, link = link, Ntrials = Ntrials, control = control, control.va = control.va, control.start = control.start), args))
+  gllvm_args <- c(list(y = y, studyDesign = X, family = family, num.lv = 0,
+                       row.eff = row.eff_gllvm, offset = offset, link = link,
+                       Ntrials = Ntrials, control = control,
+                       control.va = control.va, control.start = control.start),
+                  args)
+  if (mixed_mode) {
+    object <- withCallingHandlers(
+      do.call(gllvm, gllvm_args),
+      warning = function(w) {
+        if (grepl("rows full of zeros", conditionMessage(w)))
+          invokeRestart("muffleWarning")
+      }
+    )
+  } else {
+    object <- do.call(gllvm, gllvm_args)
+  }
 
   # b is fixed at 0 via setMap; results in NA
   if(no_intercept) object$params$beta0 <- rep(0, length(object$params$beta0))
@@ -140,6 +221,52 @@ glmmVA <- function(formula, data, family,
   class(object) <-  c("glmmVA", "gllvm")
 
   return(object)
+}
+
+#' @title Predict method for glmmVA objects
+#'
+#' @description Wrapper around \code{\link{predict.gllvm}} that, for
+#'   mixed-response models (those fitted with a per-observation \code{family}
+#'   vector), collapses the internal wide-format prediction matrix back to a
+#'   long-format numeric vector aligned with the original observations.
+#'
+#' @param object an object of class \code{"glmmVA"}.
+#' @param newX,newTR,newLV,type,level,offset,se.fit,alpha,seed,ordinal.cat,spp
+#'   passed to \code{\link{predict.gllvm}}.
+#' @param ... further arguments passed to \code{\link{predict.gllvm}}.
+#'
+#' @return For univariate models: the same object returned by
+#'   \code{\link{predict.gllvm}}. For mixed-response models without new data:
+#'   a numeric vector of length \code{nobs(object)} (one value per original
+#'   observation). When \code{newX} or \code{newLV} are supplied the raw
+#'   wide-format matrix is returned unchanged.
+#'
+#' @seealso \code{\link{predict.gllvm}}, \code{\link{glmmVA}}
+#' @author Bert van der Veen
+#' @export
+predict.glmmVA <- function(object, newX = NULL, newTR = NULL, newLV = NULL,
+                           type = "link", level = 1, offset = TRUE,
+                           se.fit = FALSE, alpha = 0.95, seed = 42,
+                           ordinal.cat = NULL, spp = NULL, ...) {
+  out <- predict.gllvm(object, newX = newX, newTR = newTR, newLV = newLV,
+                       type = type, level = level, offset = offset,
+                       se.fit = se.fit, alpha = alpha, seed = seed,
+                       ordinal.cat = ordinal.cat, spp = spp, ...)
+
+  # For mixed-response in-sample predictions: un-wide the n_obs x n_grp matrix
+  # to a length-n_obs vector by taking the non-NA column for each observation.
+  if (is.null(newX) && is.null(newLV) && any(is.na(object$y))) {
+    col_idx <- apply(object$y, 1L, function(row) which(!is.na(row))[1L])
+    idx2    <- cbind(seq_len(nrow(object$y)), col_idx)
+    if (is.matrix(out)) {
+      out <- out[idx2]
+    } else if (is.list(out) && is.matrix(out$fit)) {
+      out$fit   <- out$fit[idx2]
+      out$lower <- out$lower[idx2]
+      out$upper <- out$upper[idx2]
+    }
+  }
+  out
 }
 
 #' @title Generic function for extracting random effects

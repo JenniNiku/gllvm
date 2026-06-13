@@ -252,6 +252,70 @@ test_that("row.eff corExp fits and produces Scale/range sigma parameters", {
                info = "corExp produces exactly 2 sigma values (scale + range)")
 })
 
+# ---- mixed-response (per-observation family vector) ---------------------------
+
+# Two response groups from the spider data: site-level random intercept,
+# first column Poisson, second column negative binomial.
+make_spider_mixed <- function() {
+  data(eSpider)
+  abund <- eSpider$abund[eSpider$nonNA, ]
+  X     <- eSpider$X[eSpider$nonNA, ]
+  n <- nrow(abund)
+  # Collapse species into 2 groups to keep the model small
+  grp1 <- rowSums(abund[, 1:6])
+  grp2 <- rowSums(abund[, 7:12])
+  data.frame(
+    y        = c(grp1, grp2),
+    site     = factor(c(seq_len(n), seq_len(n))),
+    family   = c(rep("poisson", n), rep("negative.binomial", n)),
+    BareSand = c(X[, "BareSand"], X[, "BareSand"])
+  )
+}
+
+test_that("glmmVA mixed: auto-infers response.group from per-obs family vector", {
+  dat <- make_spider_mixed()
+  m <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  expect_s3_class(m, "glmmVA")
+  # y stored as wide matrix with NAs
+  expect_true(is.matrix(m$y))
+  expect_equal(ncol(m$y), 2L)
+  expect_true(any(is.na(m$y)))
+})
+
+test_that("glmmVA mixed: nobs counts non-NA cells, not all matrix cells", {
+  dat <- make_spider_mixed()
+  n   <- nlevels(dat$site)
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  # Total observations = 2*n (one per long-format row), not 4*n (prod of matrix dims)
+  expect_equal(nobs(m), nrow(dat))
+  expect_equal(attributes(logLik(m))$nobs, nrow(dat))
+})
+
+test_that("glmmVA mixed: beta0com collapses intercepts to 1 shared value", {
+  dat <- make_spider_mixed()
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  expect_true(m$beta0com)
+  # Both columns share the same intercept
+  expect_equal(length(unique(m$params$beta0)), 1L)
+})
+
+test_that("glmmVA mixed: 0+ suppresses intercept without error", {
+  dat <- make_spider_mixed()
+  m   <- glmmVA(y ~ 0 + (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  expect_equal(unname(m$params$beta0), rep(0, length(m$params$beta0)),
+               tolerance = 1e-10,
+               info = "beta0 must be zero when 0+ is used in mixed mode")
+})
+
+test_that("predict.glmmVA mixed: returns long-format vector, not wide matrix", {
+  dat <- make_spider_mixed()
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  preds <- predict(m, type = "response")
+  expect_false(is.matrix(preds), info = "predict() must collapse wide matrix to vector")
+  expect_equal(length(preds), nrow(dat))
+  expect_true(all(is.finite(preds)))
+})
+
 test_that("row.eff propto fits and produces sigma parameter", {
   data(eSpider)
   y  <- eSpider$abund[eSpider$nonNA, ]

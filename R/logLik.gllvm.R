@@ -82,7 +82,7 @@ logLik.gllvm <- function(object, ...)
   if(length(unique(object$disp.group))<ncol(object$y)){
     attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
   }
-  attributes(logL)$nobs <- prod(dim(object$y))
+  attributes(logL)$nobs <- sum(!is.na(object$y))
   }
   class(logL) <- "logLik"
   return(logL)

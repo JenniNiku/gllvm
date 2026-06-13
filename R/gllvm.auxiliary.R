@@ -1977,15 +1977,14 @@ inf.criteria <- function(fit)
   family=fit$family
   abund=fit$y
   num.lv=fit$num.lv
-  n <- dim(abund)[1]
-  p <- dim(abund)[2]
+  n_obs <- sum(!is.na(abund))
   k<-attributes(logLik.gllvm(fit))$df
-  
-  BIC <- -2*fit$logL + (k) * log(n*p)
+
+  BIC <- -2*fit$logL + (k) * log(n_obs)
   # AIC
   AIC <- -2*fit$logL + (k) * 2
   # AICc
-  AICc <- AIC + 2*k*(k+1)/(n*p-k-1)
+  AICc <- AIC + 2*k*(k+1)/(n_obs-k-1)
   list(BIC = BIC, AIC = AIC, AICc = AICc, k = k)
 }
 

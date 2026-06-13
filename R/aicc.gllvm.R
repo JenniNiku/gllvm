@@ -48,6 +48,5 @@ AICc <- function(object, ...)
 #'@rdname AICc
 #'@export
 nobs.gllvm <- function(object, ...){
-  n <- prod(dim(object$y))
-  return(n)
+  sum(!is.na(object$y))
 }

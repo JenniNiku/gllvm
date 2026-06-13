@@ -8,6 +8,7 @@ glmmVA(
   formula,
   data,
   family,
+  response.group = NULL,
   control = list(reltol = 1e-10, optimizer = "optim", max.iter = 6000, maxit = 6000,
     optim.method = "BFGS"),
   control.va = list(Ar.struc = "unstructured", diag.iter = 0, Lambda.start = 0.3),
@@ -22,7 +23,9 @@ glmmVA(
 
 \item{data}{an optional data frame containing the variables named in formula.}
 
-\item{family}{a family as supported by the \code{"\link{gllvm}"} function.}
+\item{family}{a family as supported by the \code{"\link{gllvm}"} function. For mixed response type models, a character vector of length equal to the number of observations.}
+
+\item{response.group}{optional factor of length equal to the number of observations. Observations sharing a level are mapped to the same distribution.}
 
 \item{control}{A list with the following arguments controlling the optimization:
 \describe{
@@ -77,6 +80,9 @@ model <- glmmVA(y~species + ConWate + ConHumu + (0+ConHumu|species) + (0+ConWate
 # Example 2: correlated random slopes
 model1 <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species),
                  family = "poisson", data = data)
+
+# Example 3: joint model for mixed Poisson and and negative-binomial responses.
+model2 <- update(model1, family=c(rep("poisson", 28), rep("negative.binomial", nrow(data)-28)), sd.errors=FALSE)
 
 }
 \seealso{

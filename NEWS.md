@@ -2,12 +2,14 @@ Version 2.0.11
 =============
 
 * New `ranef` S3 generic and `ranef.glmmVA` method: extracts random-effect estimates from a `glmmVA` object.
+* New multiple response types support for `glmmVA`
 
 ## Bugfixes
 
 * Fixed `glmmVA` ignoring `0+`/`-1` intercept suppression in the formula (issue #250).
 * Fixed `diag(a+b|grp)`  (issue #241).
 * Fixed incorrect `trmsize[1,]` computation in `row.eff` formula processing. 
+* Number of observations was calculated incorrectly in multiple places with NA in the data
 
 Version 2.0.10
 =============
