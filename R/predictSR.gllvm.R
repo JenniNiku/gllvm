@@ -334,13 +334,18 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
     } else if(fam == "betaH"){
       probs[, pos] <- 1 - fit[, -seq_len(ncol(object$y)), drop = FALSE][, j, drop = FALSE]
     } else if(fam == "orderedBeta"){
-      linkinv <- binomial(link = object$link[j])$linkinv
-      linkfun <- binomial(link = object$link[j])$linkfun
-      zeta1 <- if(object$zeta.struc == "species")
-        matrix(object$params$zeta[j, 1], nrow = n, ncol = length(pos), byrow = TRUE)
-      else
-        object$params$zeta[1]
-      probs[, pos] <- 1 - linkinv(zeta1 - linkfun(mu))
+      for(lnk in unique(object$link[j])){
+        lnk_idx  <- which(object$link[j] == lnk)
+        lnk_j    <- j[lnk_idx]
+        lnk_pos  <- pos[lnk_idx]
+        linkinv  <- binomial(link = lnk)$linkinv
+        linkfun  <- binomial(link = lnk)$linkfun
+        zeta1 <- if(object$zeta.struc == "species")
+          matrix(object$params$zeta[lnk_j, 1], nrow = n, ncol = length(lnk_pos), byrow = TRUE)
+        else
+          object$params$zeta[1]
+        probs[, lnk_pos] <- 1 - linkinv(zeta1 - linkfun(mu[, lnk_idx, drop = FALSE]))
+      }
     } else if(fam == "ZIP"){
       phi_vec <- rep(object$params$phi[j], each = n)
       probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu), sigma = phi_vec), nrow = n)
