@@ -107,11 +107,10 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   max.gr2 <- max(abs(gr2))
   n.i.i <- n.i.i +1
   grad.similar <- isTRUE(all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1))
-  grad.better  <- !grad.similar && norm.gr2 < norm.gr1  # meaningfully better gradient (diff > 1)
+  grad.better  <- !is.nan(norm.gr1) && !isTRUE(all.equal(norm.gr1, norm.gr2, tolerance = 0.1, scale = 1)) && norm.gr2 < norm.gr1
   logL.better  <- fit$logL > fitFinal$logL
-  logL.similar <- isTRUE(all.equal(fit$logL, fitFinal$logL, tolerance = 0.5, scale = 1))
-  accept <- (logL.better  && (grad.better || grad.similar)) || # better logL with non-worse gradient
-            (logL.similar && grad.better)                      # similar logL but meaningfully better gradient
+  accept <- (grad.similar && logL.better) || # similar gradients and logL improved
+            grad.better                      # gradient meaningfully better (>0.1), regardless of logL
 
   if((n.i==1 || ((is.nan(norm.gr1) && !is.nan(norm.gr2)) || !is.nan(norm.gr2) && accept))  && is.finite(fit$logL)){
     n.i.i <- 0

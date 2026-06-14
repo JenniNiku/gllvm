@@ -10,6 +10,7 @@ Version 2.0.11
 * Fixed `diag(a+b|grp)`  (issue #241).
 * Fixed incorrect `trmsize[1,]` computation in `row.eff` formula processing. 
 * Number of observations was calculated incorrectly in multiple places with NA in the data
+* Adjusted convergence checks for n.init>1 accepted poorly converged fits at times; reverted to old checks.
 
 Version 2.0.10
 =============
