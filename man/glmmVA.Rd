@@ -82,7 +82,8 @@ model1 <- glmmVA(y~species + ConWate + ConHumu + (0+ConWate+ConHumu|species),
                  family = "poisson", data = data)
 
 # Example 3: joint model for mixed Poisson and and negative-binomial responses.
-model2 <- update(model1, family=c(rep("poisson", 28), rep("negative.binomial", nrow(data)-28)), sd.errors=FALSE)
+fam <- c(rep("poisson", 28), rep("negative.binomial", nrow(data)-28))
+model2 <- update(model1, family=fam, sd.errors=FALSE)
 
 }
 \seealso{
