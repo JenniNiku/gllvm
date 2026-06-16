@@ -106,8 +106,8 @@ while(n.i <= args$n.init && n.i.i<args$n.init.max){
   norm.gr2 <- norm(as.matrix(gr2))
   max.gr2 <- max(abs(gr2))
   n.i.i <- n.i.i +1
-  grad.similar <- isTRUE(all.equal(norm.gr1, norm.gr2, tolerance = 1,   scale = 1))
-  grad.better  <- !is.nan(norm.gr1) && !isTRUE(all.equal(norm.gr1, norm.gr2, tolerance = 0.1, scale = 1)) && norm.gr2 < norm.gr1
+  grad.similar <- norm.gr2/norm.gr1 < 2 # arbitrary cut-off
+  grad.better  <- norm.gr2/norm.gr1 < 0.1 # grad better scale invariant
   logL.better  <- fit$logL > fitFinal$logL
   accept <- (grad.similar && logL.better) || # similar gradients and logL improved
             grad.better                      # gradient meaningfully better (>0.1), regardless of logL
