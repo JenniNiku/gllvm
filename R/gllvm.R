@@ -1321,7 +1321,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           stop("Multiple structured terms in 'lvCor' not yet supported.")
         }else{
           cstruclv <- unique(cstruclv)
-          }
+        }
+        if(any(sapply(dist, function(d) nrow(d) > 1 || ncol(d) > 1)) &&
+           nrow(distLV) <= 1 &&
+           any(cstruclv %in% c("corExp", "corMatern"))){
+          stop("'dist' is for row effect correlation structures (corExp/corMatern in 'row.eff'). For LV correlation structures (corExp/corMatern in 'lvCor'), use 'distLV' instead.")
+        }
         if(!is.null(bar.lv)) {
           mf <- model.frame(subbars1(lv.form),data=studyDesign)
           # adjust correlated terms for "corWithin = TRUE"; site-specific random effects with group-specific structure
