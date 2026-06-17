@@ -82,28 +82,11 @@ matrix<Type> corCS(Type s0, Type s1, int nr)
 }
 
 // Exp decaying correlation matrix
+// dc is a pre-computed square pairwise distance matrix (nr x nr), already scaled by range parameter
 template <class Type>
 matrix<Type> corExp(Type s0, Type s1, int nr, matrix<Type> dc)
-{  //matrix<Type> corExp(Type s0, CppAD::vector<Type> s1, int nr, matrix<Type> dc)
-  matrix<Type> S(nr,nr);
-  // matrix<Type> alf(dc.cols(),dc.cols());
-  // for(int i=0; i<dc.cols(); i++){//old
-  //     alf(i,i) = 1/(exp(s1)*exp(s1));
-  // }
-  // matrix<Type> alf = 1/exp(s1);
-  Type alf = 1/exp(s1*2);
-  
-  
-  for (int d=0;d<nr;d++) {
-    S(d,d)=s0*s0;
-    for (int j=0;j<d;j++){
-      S(d,j)=s0*exp(-sqrt( (((dc.row(d)-dc.row(j))*alf)*(dc.row(d)-dc.row(j)).transpose()).sum() ) )*s0;//
-      // // S(d,j)=s0*exp(-sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum())/alf)*s0;
-      // S(d,j)=s0*exp(-dc(d,j)*alf )*s0;
-      S(j,d)=S(d,j);
-    }
-  }
-  return S;
+{
+  return (s0*s0) * (-dc).array().exp().matrix();
 }
 
 // // Exp decaying correlation matrix
@@ -127,18 +110,15 @@ matrix<Type> corExp(Type s0, Type s1, int nr, matrix<Type> dc)
 
 
 // Matern correlation matrix
+// dc is a pre-computed square pairwise distance matrix (nr x nr), already scaled by range parameter
 template <class Type>
 matrix<Type> corMatern(Type s0, Type phi, Type kappa, int nr, matrix<Type> dc)
 {
-//   // s0 covariance
-//   //phi range
-//   //kappa smoothness
   matrix<Type> S(nr,nr);
   for (int d=0;d<nr;d++) {
     S(d,d)=s0*s0;
     for (int j=0;j<d;j++){
-      // S(d,j)=s0*matern(dc(d,j), ph, kappa)*s0;
-      S(d,j)=s0*matern(sqrt(((dc.row(d)-dc.row(j))*(dc.row(d)-dc.row(j)).transpose()).sum()), phi, kappa)*s0; //old
+      S(d,j)=s0*matern(dc(d,j), phi, kappa)*s0;
       S(j,d)=S(d,j);
     }
   }
