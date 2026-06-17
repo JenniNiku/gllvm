@@ -1322,10 +1322,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         }else{
           cstruclv <- unique(cstruclv)
         }
-        if(any(sapply(dist, function(d) nrow(d) > 1 || ncol(d) > 1)) &&
-           nrow(distLV) <= 1 &&
-           any(cstruclv %in% c("corExp", "corMatern"))){
-          stop("'dist' is for row effect correlation structures (corExp/corMatern in 'row.eff'). For LV correlation structures (corExp/corMatern in 'lvCor'), use 'distLV' instead.")
+        if(any(cstruclv %in% c("corExp", "corMatern")) && nrow(distLV) <= 1) {
+          if(any(sapply(dist, function(d) nrow(d) > 1 || ncol(d) > 1))) {
+            stop("'dist' is for row effect correlation structures (corExp/corMatern in 'row.eff'). For LV correlation structures (corExp/corMatern in 'lvCor'), use 'distLV' instead.")
+          } else {
+            stop("'distLV' must be provided when using corExp or corMatern in 'lvCor'.")
+          }
         }
         if(!is.null(bar.lv)) {
           mf <- model.frame(subbars1(lv.form),data=studyDesign)
