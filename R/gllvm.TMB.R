@@ -991,7 +991,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             # }
           }
         }
-        if(is.null(start.params)) sigma.lv <- (sigma.lv*0.5) #
+        # if(is.null(start.params)) sigma.lv <- (sigma.lv*0.5)
         Au = Au + 1e-3
       }
       
