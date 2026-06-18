@@ -188,7 +188,7 @@ se.gllvm <- function(object, ...){
       } else {
         sds <- sqrt(abs(diag(sdr)))
         if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
-        if(any(sds<1e-12, na.rm=TRUE))sds[sds<1e-12]<-1
+        if(any(!is.finite(sds) | sds<1e-12, na.rm=TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
         sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
@@ -679,7 +679,7 @@ se.gllvm <- function(object, ...){
     } else {
       sds <- sqrt(abs(diag(sdr)))
       if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
-      if(any(sds<1e-12, na.rm = TRUE)) sds[sds<1e-12]<-1
+      if(any(!is.finite(sds) | sds<1e-12, na.rm = TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
       sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
