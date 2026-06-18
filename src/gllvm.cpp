@@ -442,6 +442,7 @@ Type objective_function<Type>::operator() ()
         A(i) = Delta*A(i);
       }
       
+      
     } else if(num_corlv > 0) {
       u *= Delta;
       if((num_RR*random(2))>0 && (quadratic)>0){
@@ -452,6 +453,8 @@ Type objective_function<Type>::operator() ()
         }
       }
     } // ad else for num_corlv to create ucopy & create D*u*= Delta;
+    
+    
     
     //random slopes for constr. ord.
     vector<matrix<Type>> Ab_lvcov;  //covariance of LVs due to random slopes
@@ -2482,6 +2485,7 @@ Type objective_function<Type>::operator() ()
     
     vector<Eigen::DiagonalMatrix<Type, Eigen::Dynamic>> D(p);
     
+
     // LVs in model:
     if(nlvr>0){
       matrix<Type> b_lv2(x_lv.cols(),nlvr);
@@ -2507,6 +2511,9 @@ Type objective_function<Type>::operator() ()
             cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
           }
         }
+        // REPORT(cQ);
+        // REPORT(A);
+        
       } else if(num_corlv>0) { //CorLV // Correlated LVs
         int i,j,d;
         int arank = 2;
@@ -2544,7 +2551,7 @@ Type objective_function<Type>::operator() ()
                   }}
               }
             
-              nll -= Alvm.diagonal().array().log().sum() - (Alvm.array().square()).sum() - 0.5*((ucopy.row(d)*ucopy.row(d).transpose()).sum());  // nll -= atomic::logdet(Alvm.col(d).matrix()) + 0.5*( - (Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()).diagonal().sum() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
+              nll -= Alvm.diagonal().array().log().sum() - 0.5*(Alvm.array().square()).sum() - 0.5*((ucopy.row(d)*ucopy.row(d).transpose()).sum());  // nll -= atomic::logdet(Alvm.col(d).matrix()) + 0.5*( - (Alvm.col(d).matrix()*Alvm.col(d).matrix().transpose()).diagonal().sum() - (ucopy.row(d).matrix()*ucopy.row(d).matrix().transpose()).sum());
               
               AAT = Alvm*Alvm.transpose();
               DAATD = Delta * AAT * Delta.transpose();
@@ -2554,6 +2561,9 @@ Type objective_function<Type>::operator() ()
             }
             nll -= 0.5*(nu*num_corlv);
             
+            // REPORT(AAT);
+            // REPORT(DAATD);
+
           } else {
             vector<matrix<Type> > Slv(num_corlv);
             
@@ -2709,6 +2719,8 @@ Type objective_function<Type>::operator() ()
             }
             
           }
+          // REPORT(cQ);
+          
         } else {
           // Correlation within group
           // eta += ucopy*newlamCor;
@@ -2898,6 +2910,7 @@ Type objective_function<Type>::operator() ()
             REPORT(Alvm);
           }
           
+          // REPORT(cQ);
           
         }
         REPORT(AQ);
