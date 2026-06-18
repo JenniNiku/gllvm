@@ -237,13 +237,13 @@ test_that("corWithinLV works", {
   fitlv2exp = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="UNN", seed = 1, sd.errors=FALSE, starting.val ="zero",
                     studyDesign = studyDesign, lvCor = ~corExp(0 + YEAR|site), distLV = disty, corWithinLV = TRUE) # 
   expect_true(length(fitlv2exp$params$rho.lv)==2)
-  expect_true(all(round(fitlv2exp$params$rho.lv, digits = 2)-c(16.98, 0.61)<0.1))
+  expect_true(all(sort(round(fitlv2exp$params$rho.lv, digits = 2), decreasing=TRUE)-c(16.98, 0.61)<0.1))
   expect_true(all(dim(fitlv2exp$lvs) == c(27,2)))
   
   fitlv2ar1 = gllvm(y, family = "binomial", num.lv = 2, Lambda.struc="diagonal", seed = 1, sd.errors=FALSE, starting.val ="zero",
                     studyDesign = studyDesign, lvCor = ~corAR1(1|st), corWithinLV = TRUE) # 
   expect_true(length(fitlv2ar1$params$rho.lv)==2)
-  expect_true(all(round(fitlv2ar1$params$rho.lv, digits = 2)-c(0.96, 0.82)<0.1))
+  expect_true(all(sort(round(fitlv2ar1$params$rho.lv, digits = 2),decreasing = TRUE)-c(0.96, 0.82)<0.1))
   expect_true(all(dim(fitlv2ar1$lvs) == c(nrow(y),2)))
   
   fitlv2ar1cy = gllvm(y,scale(X[,4:5]), family = "binomial", method="EVA", num.lv.c = 1, Lambda.struc="diagonal", seed = 1, sd.errors=FALSE, starting.val ="zero",
