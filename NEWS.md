@@ -3,7 +3,8 @@ Version 2.0.11
 
 * New `ranef` S3 generic and `ranef.glmmVA` method: extracts random-effect estimates from a `glmmVA` object.
 * New multiple response types support for `glmmVA`
-* Distance matrix for spatial models is now calculated once in R, in contast to repeatedly in C++
+* Distance matrix for spatial models is now calculated once in R, in contarst to repeatedly in C++
+* Better generation of starting values with NAs in the response data.
 
 ## Bugfixes
 

@@ -670,8 +670,24 @@ start_values_gllvm_TMB <- function(
   return(out)
 }
 
+# Factor loadings via pairwise-complete correlation matrix
+factanal_gllvm <- function(Y, k) {
+  n <- nrow(Y)
+  cor_pw <- cor(Y, use = "pairwise.complete.obs")
+  cor_pw[is.na(cor_pw)] <- 0
+  diag(cor_pw) <- 1
+  cor_pw <- as.matrix(Matrix::nearPD(cor_pw, corr = TRUE)$mat)
+  fa <- factanal(covmat = cor_pw, factors = k, n.obs = n)
+  gamma <- as.matrix(fa$loadings)
+  d <- 1 / fa$uniquenesses
+  tmp <- t(gamma * d)
+  Y_sc <- scale(Y)
+  Y_sc[is.na(Y_sc) | is.infinite(Y_sc) | is.nan(Y_sc)] <- 0
+  scores <- t(solve(tmp %*% gamma, tmp %*% t(Y_sc)))
+  list(loadings = gamma, scores = scores)
+}
 
-FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta = NULL, zeta.struc = "species", phis = NULL, 
+FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta = NULL, zeta.struc = "species", phis = NULL,
                     jitter.var = 0, resi = NULL, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL, disp.group = NULL, randomB = FALSE, method = "VA", Ntrials = matrix(1), ZINB.phi = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"){
   
   n<-NROW(y); p <- NCOL(y)
@@ -773,42 +789,27 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       } else {
         ds.res <- resi
       }
-      resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+      resi <- as.matrix(ds.res)
+      resi[is.infinite(resi) | is.nan(resi)] <- NA
 
-      if(n>p){
-        fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
-        if(any(family=="gaussian")&inherits(fa,"try-error")){
-          fa <- princomp(resi)
-          fa$scores <- fa$scores[,1:num.lv.c,drop=F]
-          fa$loadings <- fa$loadings[,1:num.lv.c,drop=F]
-        }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
-        index <- fa$scores
-      } else if(n<p) {
-        fa  <-  try(factanal(t(resi),factors=num.lv.c,scores = "regression"),silent=T)
-        if(any(family=="gaussian")&inherits(fa,"try-error")){
-          fa <- princomp(t(resi))
-          fa$loadings <- fa$loadings[,1:num.lv.c, drop=F]
-          fa$scores <- fa$scores[,1:num.lv.c, drop=F]
-        }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
-      } else {
-        tryfit <- TRUE; tryi <- 1
-        while(tryfit && tryi<5) {
-          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv.c,scores = "regression"), silent = TRUE)
-          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
-        }
-        if(inherits(fa,"try-error")) {
-          warning(attr(fa,"condition")$message, "\n Factor analysis for Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead. /n")
-          fa <- princomp(resi)
+      resi_fa <- if(n >= p) resi else t(resi)
+      fa <- try(factanal_gllvm(resi_fa, num.lv.c), silent = TRUE)
+      if(inherits(fa, "try-error")) {
+        if(any(family == "gaussian")) {
+          resi0 <- resi_fa; resi0[is.na(resi0)] <- 0
+          pc <- princomp(resi0)
+          fa <- list(scores  = as.matrix(pc$scores)[,  1:num.lv.c, drop = FALSE],
+                     loadings = as.matrix(pc$loadings)[, 1:num.lv.c, drop = FALSE])
+        } else {
+          stop("Calculating starting values failed. Try centering and scaling your predictors, a smaller 'num.lv.c' value, or change 'starting.val' to 'zero' or 'random'.")
         }
       }
-      if(n>p){
-        index<-as.matrix(fa$scores)[1:n,, drop=FALSE]
-        gamma <- as.matrix(fa$loadings)[1:p,,drop=F]
-      }else{
-        index<-as.matrix(fa$loadings)
-        gamma <- as.matrix(fa$scores[1:p,,drop=F])
+      if(n >= p) {
+        index <- as.matrix(fa$scores)[1:n,, drop = FALSE]
+        gamma <- as.matrix(fa$loadings)[1:p,, drop = FALSE]
+      } else {
+        index <- as.matrix(fa$loadings)
+        gamma <- as.matrix(fa$scores)[1:p,, drop = FALSE]
       }
       index <- residuals(lm(index~0+lv.X%*%b.lv))
       
@@ -1046,45 +1047,27 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     } else {
       ds.res <- resi
     }
-    resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    resi <- as.matrix(ds.res)
+    resi[is.infinite(resi) | is.nan(resi)] <- NA
     if(p>2 && n>2){
-      if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
-      
-      if(n>p){
-        fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
-        if(any(family=="gaussian")&inherits(fa,"try-error")){
-          fa <- princomp(resi)
-          fa$scores <- fa$scores[,1:num.lv,drop=F]
-          fa$loadings <- fa$loadings[,1:num.lv,drop=F]
+      resi_fa <- if(n >= p) resi else t(resi)
+      fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
+      if(inherits(fa, "try-error")) {
+        if(any(family == "gaussian")) {
+          resi0 <- resi_fa; resi0[is.na(resi0)] <- 0
+          pc <- princomp(resi0)
+          fa <- list(scores  = as.matrix(pc$scores)[,  1:num.lv, drop = FALSE],
+                     loadings = as.matrix(pc$loadings)[, 1:num.lv, drop = FALSE])
+        } else {
+          stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
         }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-        gamma<-matrix(fa$loadings,p,num.lv)
-        index <- fa$scores
-      } else if(n<p) {
-        fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
-        if(any(family=="gaussian")&inherits(fa,"try-error")){
-          fa <- princomp(t(resi))
-          fa$loadings <- fa$loadings[,1:num.lv,drop=F]
-          fa$scores <- fa$scores[,1:num.lv,drop=F]
-        }
-        if(inherits(fa,"try-error")) stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-        gamma<-fa$scores
-        index <- matrix(fa$loadings,n,num.lv)
+      }
+      if(n >= p) {
+        gamma <- matrix(fa$loadings, p, num.lv)
+        index <- as.matrix(fa$scores)[1:n,, drop = FALSE]
       } else {
-        tryfit <- TRUE; tryi <- 1
-        while(tryfit && tryi<5) {
-          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
-          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
-        }
-        if(tryfit) {
-          warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
-          pr <- princomp(resi)
-          gamma <- matrix(pr$loadings[,1:num.lv],p,num.lv)
-          index <- matrix(pr$scores[,1:num.lv],n,num.lv)
-        }else{
-          gamma <- matrix(fa$loadings,p,num.lv)
-          index <- fa$scores[1:num.lv,]
-        }
+        gamma <- as.matrix(fa$scores)[1:p,, drop = FALSE]
+        index <- matrix(fa$loadings, n, num.lv)
       }
       # index <- residuals(lm(index ~ lv.X%*%cbind(b.lv,RRcoef)))
     } else {
@@ -1147,34 +1130,20 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     } else {
       ds.res <- resi
     }
-    resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
+    resi <- as.matrix(ds.res)
+    resi[is.infinite(resi) | is.nan(resi)] <- NA
     if(p>2 && n>2){
-      if(any(is.nan(resi))){stop("Method 'res' for starting values can not be used, when glms fit too poorly to the data. Try other starting value methods 'zero' or 'random' or change the model.")}
-      
-      if(n>p){
-        fa  <-  try(factanal(resi,factors=num.lv,scores = "regression"))
-        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-        gamma<-matrix(fa$loadings,p,num.lv)
-        index <- fa$scores
-      } else if(n<p) {
-        fa  <-  try(factanal(t(resi),factors=num.lv,scores = "regression"))
-        if(inherits(fa,"try-error")) stop("Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
-        gamma<-fa$scores
-        index <- matrix(fa$loadings,n,num.lv)
+      resi_fa <- if(n >= p) resi else t(resi)
+      fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
+      if(inherits(fa, "try-error")) {
+        stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
+      }
+      if(n >= p) {
+        gamma <- matrix(fa$loadings, p, num.lv)
+        index <- as.matrix(fa$scores)[1:n,, drop = FALSE]
       } else {
-        tryfit <- TRUE; tryi <- 1
-        while(tryfit && tryi<5) {
-          fa  <-  try(factanal(rbind(resi,rnorm(p,0,0.01)),factors=num.lv,scores = "regression"), silent = TRUE)
-          tryfit <- inherits(fa,"try-error"); tryi <- tryi + 1;
-        }
-        if(tryfit) {
-          warning(attr(fa,"condition")$message, "\n Factor analysis for calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'. Using solution from Principal Component Analysis instead./n")
-          fa <- princomp(resi)
-          
-        }else{
-          gamma<-matrix(fa$loadings[,1:num.lv],p,num.lv)
-          index<-matrix(fa$scores[1:n,1:num.lv],n,num.lv)
-        }
+        gamma <- as.matrix(fa$scores)[1:p,, drop = FALSE]
+        index <- matrix(fa$loadings, n, num.lv)
       }
     } else {
       gamma <- matrix(1,p,num.lv)
