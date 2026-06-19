@@ -2506,8 +2506,9 @@ Type objective_function<Type>::operator() ()
       //Binomial, Gaussian, Ordinal
       if(num_corlv==0){
         for (int i=0; i<n; i++) {
+          matrix <Type> Atemp = A(i)*A(i).transpose();
           for (int j=0; j<p;j++){
-            cQ(i,j) += 0.5*(newlam.col(j).transpose()*A(i)*A(i).transpose()*newlam.col(j)).value();
+            cQ(i,j) += 0.5*(newlam.col(j).transpose()*Atemp*newlam.col(j)).value();
           }
         }
         // REPORT(cQ);
