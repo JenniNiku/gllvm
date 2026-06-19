@@ -1005,7 +1005,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           ab3 <- num.RR+num.lv.c
         }
         if(is.null(start.params) || start.params$method=="LA" || isFALSE(start.params$randomB)){
-          if(Lambda.struc=="diagonal" || diag.iter>0){
+          if(!is.null(fit$fitstart$Ab_lv) && starting.val == "res" &&
+             length(fit$fitstart$Ab_lv) == ab12*ab3) {
+            Ab_lv <- pmin(pmax(fit$fitstart$Ab_lv, log(1e-5)), log(Lambda.start[1]))
+            if(Lambda.struc != "diagonal" && diag.iter == 0)
+              Ab_lv <- c(Ab_lv, rep(0, ab12*(ab12-1)/2*ab3))
+          } else if(Lambda.struc=="diagonal" || diag.iter>0){
             Ab_lv <- log(rep(Lambda.start[1],ab12*ab3)) #1/2, 1
           } else{
             Ab_lv <- c(log(rep(Lambda.start[1],ab12*ab3)),rep(0.01,ab12*(ab12-1)/2*ab3)) #1/2, 1

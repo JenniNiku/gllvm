@@ -492,6 +492,8 @@ start_values_gllvm_TMB <- function(
     }else if(num.RR>0){
       b.lv <- lastart$b.lv
     }
+    if(!is.null(lastart$Ab_lv))
+      out$fitstart$Ab_lv <- lastart$Ab_lv
   }
   
   if(starting.val=="random"&(num.lv.c+num.RR)>0){
@@ -674,6 +676,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   
   n<-NROW(y); p <- NCOL(y)
   b.lv <- NULL
+  Ab_lv <- NULL
   RRcoef <- NULL
   RRgamma <- NULL
   gamma <- NULL
@@ -716,7 +719,11 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       }
       
       b.lv <- fit$params$LvXcoef
-      
+      if(!isFALSE(randomB) && !is.null(fit$TMBfn)) {
+        p_aux <- fit$TMBfn$env$last.par.best
+        Ab_lv <- p_aux[names(p_aux) == "Ab_lv"]
+      }
+
       mu <- matrix(0, nrow(eta), ncol(eta))
       if(any(family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB"))) {
         mu[, family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")] <- exp(eta[,family %in% c("poisson", "negative.binomial","negative.binomial1","gamma", "exponential","tweedie","ZIP","ZINB")])
@@ -767,7 +774,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         ds.res <- resi
       }
       resi <- as.matrix(ds.res); resi[is.na(resi)] <- 0; resi[is.infinite(resi)] <- 0; resi[is.nan(resi)] <- 0
-      
+
       if(n>p){
         fa  <-  try(factanal(resi,factors=num.lv.c,scores = "regression"),silent=T)
         if(any(family=="gaussian")&inherits(fa,"try-error")){
@@ -1302,7 +1309,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(num.lv>0)gammaU <- gamma[,(ncol(gamma)-num.lv+1):ncol(gamma)]
     gamma <- cbind(gammaC,RRgamma,gammaU)
   }
-  return(list(index = index, gamma = gamma, b.lv = cbind(b.lv,RRcoef)))
+  return(list(index = index, gamma = gamma, b.lv = cbind(b.lv,RRcoef), Ab_lv = Ab_lv))
 }
 
 
