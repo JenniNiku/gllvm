@@ -675,10 +675,10 @@ trait.TMB <- function(
       # ZIP probability if not initialized
       if (any(family %in%ZI_family) && (starting.val != "res")) {
         if(length(unique(disp.group))!=p){
-          phis1 <- sapply(1:length(na.omit(unique(disp.group))),function(x)mean(y[,which(disp.group==x)]==0))*0.98 + 0.01  
+          phis1 <- sapply(1:length(na.omit(unique(disp.group))),function(x)mean(y[,which(disp.group==x)]==0, na.rm=TRUE))*0.98 + 0.01
           phis[family %in%ZI_family] <- (phis1[disp.group])[family %in%ZI_family]
         }else{
-          phis[family %in%ZI_family] <- (colMeans(y[,family %in%ZI_family, drop=FALSE] == 0) * 0.98) + 0.01  
+          phis[family %in%ZI_family] <- (colMeans(y[,family %in%ZI_family, drop=FALSE] == 0, na.rm=TRUE) * 0.98) + 0.01
         }
       }
     
