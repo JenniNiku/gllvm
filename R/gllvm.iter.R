@@ -37,9 +37,11 @@ gllvm.iter <- function(...){
     if((sum(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE) + sum(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE))==0){
       stop("No zeros or ones in the data, please use 'family = `beta`' instead.")
     }
-    if(!all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE)>0) & !all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE)>0)){
+    if(!all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE)>0) & !all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE)>0) && is.null(args$setMap$zeta)){
       warning("Not all species have zeros and ones. Setting 'zeta.struc = `common`'.")
       args$zeta.struc = "common"
+    }else if(!all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE)>0) & !all(colSums(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE)>0) && !is.null(args$setMap$zeta)){
+      warning("Not all species have zeros and ones. You may want to set 'zeta.struc = `common`'.")
     }
   }
   
