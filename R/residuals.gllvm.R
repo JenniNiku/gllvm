@@ -235,9 +235,9 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "ZIB")) {
     p_f = sum(object$family == "ZIB")
     if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials)
-    
+    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "ZIB"], each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "ZIB"])
+
     b <- pzib(as.vector(y[,object$family == "ZIB"]), Ntrials = Ntrials, mu = as.vector(mu[,object$family == "ZIB"]), sigma = rep(object$params$phi[object$family == "ZIB"], each = n))
     a <- pmin(b, pzib(as.vector(y[,object$family == "ZIB"]) - 1, Ntrials = Ntrials, mu = as.vector(mu[,object$family == "ZIB"]), sigma = rep(object$params$phi[object$family == "ZIB"], each = n)))
     
@@ -250,9 +250,9 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "ZNIB")) {
     p_f = sum(object$family == "ZNIB")
     if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials, each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials)
-    
+    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "ZNIB"], each = n)
+    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "ZNIB"])
+
     phis0 = (object$params$phi/(1+object$params$phi + object$params$ZINB.phi))[object$family == "ZNIB"];
     phisN = (object$params$ZINB.phi/(1+object$params$phi + object$params$ZINB.phi))[object$family == "ZNIB"];
     
