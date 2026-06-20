@@ -377,7 +377,7 @@ start_values_gllvm_TMB <- function(
       
     ordinal_p <- c(1:p)[family == "ordinal"]
 
-    max.levels <- length(unique(c(y[,family == "ordinal"])))
+    max.levels <- length(unique(na.omit(c(y[,family == "ordinal"]))))
     # params <- matrix(0,p,ncol(cbind(1,Xdesign))+(num.lv+num.lv.c+num.RR))
     env <- rep(0,num.X)
     trait <- rep(0,num.T)
@@ -1139,7 +1139,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     resi[is.infinite(resi) | is.nan(resi)] <- NA
     if(p>2 && n>2){
       resi_fa <- if(n >= p) resi else t(resi)
-      fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
+      fa <- factanal_gllvm(resi_fa, num.lv)
       if(inherits(fa, "try-error")) {
         stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
       }
@@ -3055,8 +3055,10 @@ pzip <- function(y, mu, sigma)
   y     <- rep_len(y,     m)
   mu    <- rep_len(mu,    m)
   sigma <- rep_len(sigma, m)
-  pp <- rep(0, m)
-  tmp <- y > -1
+  pp  <- rep(NA_real_, m)
+  obs <- !is.na(y)
+  pp[obs & y < 0] <- 0
+  tmp <- obs & y >= 0
   cdf <- ppois(y[tmp], lambda = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
@@ -3070,8 +3072,10 @@ pzinb <- function(y, mu, p, sigma)
   mu    <- rep_len(mu,    m)
   p     <- rep_len(p,     m)
   sigma <- rep_len(sigma, m)
-  pp <- rep(0, m)
-  tmp <- y > -1
+  pp  <- rep(NA_real_, m)
+  obs <- !is.na(y)
+  pp[obs & y < 0] <- 0
+  tmp <- obs & y >= 0
   cdf <- pnbinom(y[tmp], mu = mu[tmp], size = 1 / sigma[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- p[tmp] + (1 - p[tmp]) * cdf
   pp[tmp] <- cdf
@@ -3085,8 +3089,10 @@ pzib <- function(y, mu, sigma, Ntrials)
   mu      <- rep_len(mu,      m)
   sigma   <- rep_len(sigma,   m)
   Ntrials <- rep_len(Ntrials, m)
-  pp <- rep(0, m)
-  tmp <- y > -1
+  pp  <- rep(NA_real_, m)
+  obs <- !is.na(y)
+  pp[obs & y < 0] <- 0
+  tmp <- obs & y >= 0
   cdf <- pbinom(y[tmp], Ntrials[tmp], prob = mu[tmp], lower.tail = TRUE, log.p = FALSE)
   cdf <- sigma[tmp] + (1 - sigma[tmp]) * cdf
   pp[tmp] <- cdf
@@ -3101,13 +3107,13 @@ pznib <- function(y, mu, p0, pN, Ntrials)
   p0      <- rep_len(p0,      m)
   pN      <- rep_len(pN,      m)
   Ntrials <- rep_len(Ntrials, m)
-  pp <- numeric(m)
-  tmp <- y < Ntrials
-  # For y < Ntrials
+  pp  <- rep(NA_real_, m)
+  obs <- !is.na(y)
+  pp[obs & y < 0] <- 0
+  tmp <- obs & y >= 0 & y < Ntrials
   pp[tmp] <- p0[tmp] + (1 - p0[tmp] - pN[tmp]) *
       pbinom(y[tmp], size = Ntrials[tmp], prob = mu[tmp])
-  # for y == Ntrials CDF = 1
-  pp[!tmp] <- 1
+  pp[obs & y >= Ntrials] <- 1
   return(pp)
 }
 
@@ -3120,8 +3126,9 @@ pbetabinom <- function(y, mu, phi, Ntrials) {
   mu      <- rep_len(mu,      m)
   phi     <- rep_len(phi,     m)
   Ntrials <- rep_len(Ntrials, m)
-  pp <- numeric(m)
+  pp <- rep(NA_real_, m)
   for (i in seq_len(m)) {
+    if (is.na(y[i])) next
     if (y[i] < 0) {
       pp[i] <- 0
     } else {
