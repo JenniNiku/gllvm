@@ -867,20 +867,25 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(all(family!=c("ordinal", "orderedBeta"))){
       zeta.struc<-"species"
     }
-    if(num.lv.c>1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = start.optim.method))
-    if(num.lv.c<=1)start.fit <- suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method))
-    
-    gamma <- start.fit$params$theta
-    index <- start.fit$lvs
-    b.lv <- start.fit$params$LvXcoef
-    
-    # To ensure we do not start off at a point that fully satisfies the constraints
-    # Especially optimizer="alabama" seems to not like that
-    if(num.lv.c>1 && isFALSE(randomB)){
-      mat <- matrix(0,ncol=num.lv.c,nrow=num.lv.c)
-      mat[upper.tri(mat)]<- 0.01
-      diag(mat) <- 1
-      b.lv <- b.lv%*%mat
+    if(num.lv.c>1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = start.optim.method)), silent = TRUE)
+    if(num.lv.c<=1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method)), silent = TRUE)
+
+    if(inherits(start.fit, "try-error") || is.null(start.fit$params$LvXcoef)) {
+      b.lv  <- matrix(1, nrow = ncol(lv.X), ncol = num.lv.c)
+      gamma <- matrix(1, p, num.lv.c); gamma[upper.tri(gamma)] <- 0
+      index <- matrix(0, n, num.lv.c)
+    } else {
+      gamma <- start.fit$params$theta
+      index <- start.fit$lvs
+      b.lv  <- start.fit$params$LvXcoef
+      # To ensure we do not start off at a point that fully satisfies the constraints
+      # Especially optimizer="alabama" seems to not like that
+      if(num.lv.c>1 && isFALSE(randomB)){
+        mat <- matrix(0,ncol=num.lv.c,nrow=num.lv.c)
+        mat[upper.tri(mat)]<- 0.01
+        diag(mat) <- 1
+        b.lv <- b.lv%*%mat
+      }
     }
     eta <-  eta+(index+lv.X%*%b.lv)%*%t(gamma)
     if(num.lv>0){
