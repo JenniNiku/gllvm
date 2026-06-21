@@ -1139,7 +1139,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     resi[is.infinite(resi) | is.nan(resi)] <- NA
     if(p>2 && n>2){
       resi_fa <- if(n >= p) resi else t(resi)
-      fa <- factanal_gllvm(resi_fa, num.lv)
+      fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
       if(inherits(fa, "try-error")) {
         stop("Calculating starting values failed. Maybe too many latent variables. Try smaller 'num.lv' value or change 'starting.val' to 'zero' or 'random'.")
       }
