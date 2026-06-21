@@ -607,8 +607,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
     # ZIP probability
     if (any(family %in%ZI_family) && starting.val != "res") {
       if(length(unique(disp.group))!=p){
-        phis1 <- sapply(1:length(na.omit(unique(disp.group))),function(x)mean(y[,which(disp.group==x)]==0, na.rm=TRUE))*0.98 + 0.01
-        phis[family %in%ZI_family] <- (phis1[disp.group])[family %in%ZI_family]
+        phis1 <- sapply(sort(na.omit(unique(disp.group))),function(x)mean(y[,which(disp.group==x)]==0, na.rm=TRUE))*0.98 + 0.01
+        phis[family %in%ZI_family] <- (phis1[match(disp.group, sort(na.omit(unique(disp.group))))])[family %in%ZI_family]
       }else{
         phis[family %in%ZI_family] <- (colMeans(y[,family %in%ZI_family, drop=FALSE] == 0, na.rm=TRUE) * 0.98) + 0.01
       }
@@ -2380,11 +2380,11 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         phis <- exp(param[names(param)=="lg_phi"])[map.list$lg_phi]
         if(any(family %in% c("ZINB", "ZNIB")))ZINBphis <- exp(param[names(param)=="lg_phiZINB"])[map.list$lg_phiZINB]
         if(any(family %in% c("ZIP","ZINB","ZIB"))) {
-          lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0[family %in% c("ZIP","ZINB","ZIB")] <- lp0[family %in% c("ZIP","ZINB","ZIB")]
+          lp0 <- param[names(param)=="lg_phi"][map.list$lg_phi]; out$lp0[family %in% c("ZIP","ZINB","ZIB")] <- lp0[family %in% c("ZIP","ZINB","ZIB")]
           phis[family %in% c("ZIP","ZINB","ZIB")] <- (exp(lp0)/(1+exp(lp0)))[family %in% c("ZIP","ZINB","ZIB")];
         }
         if(any(family %in% c("ZNIB"))) {
-          lp0 <- param[names(param)=="lg_phi"][disp.group]; out$lp0[family %in% c("ZNIB")] <- lp0[family %in% c("ZNIB")]
+          lp0 <- param[names(param)=="lg_phi"][map.list$lg_phi]; out$lp0[family %in% c("ZNIB")] <- lp0[family %in% c("ZNIB")]
           phis[family %in% c("ZNIB")] <- exp(lp0)[family %in% c("ZNIB")]
         }
         if(any(family=="tweedie") && is.null(Power)){
