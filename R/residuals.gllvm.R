@@ -310,9 +310,9 @@ residuals.gllvm <- function(object, ...) {
               }
             probK[k.max[j],] <- 1 - binomial(link=linkj)$linkinv(object$params$zeta[j,k.max[j] - 1] - eta.mat[, j])
             probK <- rbind(0, probK)
-            cumsum.b <- colSums(probK*outer(1:(k.max[j]+1),y[,j]+ifelse(min(y[,j])==0,1,0)+1,"<="))
-            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max[j],y[,j]+ifelse(min(y[,j])==0,1,0),"<=")))
-          
+            cumsum.b <- colSums(probK*outer(1:(k.max[j]+1),y[,j]+ifelse(min(y[,j], na.rm=TRUE)==0,1,0)+1,"<="))
+            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max[j],y[,j]+ifelse(min(y[,j], na.rm=TRUE)==0,1,0),"<=")))
+
             u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
           
             if(any(u==1, na.rm = TRUE)&&replace)u[u==1] <- 1-1e-16
@@ -333,8 +333,8 @@ residuals.gllvm <- function(object, ...) {
             }
             probK[k.max,] <- 1 - binomial(link=linkj)$linkinv(object$params$zeta[k.max - 1 + kz] - eta.mat[, j])
             probK <- rbind(0, probK)
-            cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y[,o_ind])==0,1,0)+1,"<="))
-            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y[,o_ind])==0,1,0),"<=")))
+            cumsum.b <- colSums(probK*outer(1:(k.max+1),y[,j]+ifelse(min(y[,o_ind], na.rm=TRUE)==0,1,0)+1,"<="))
+            cumsum.a <- pmin(cumsum.b, colSums(probK[-nrow(probK),]*outer(1:k.max,y[,j]+ifelse(min(y[,o_ind], na.rm=TRUE)==0,1,0),"<=")))
             
             u = cumsum.a+(cumsum.b-cumsum.a)*runif(n)
             
