@@ -1,3 +1,11 @@
+Version 2.0.12
+=============
+
+## Bugfixes
+
+* getPredictErr produced incorrect results with randomB = "LV" due to wrong ordering
+* predict.gllvm produced incorrect results with randomB (both cases) due to a typo
+
 Version 2.0.11
 =============
 
