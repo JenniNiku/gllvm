@@ -119,18 +119,15 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           if((num.lv.c+num.lv)==1) A <- A[,1,1]
         }
         
-        if(object$num.lv.c > 0 |object$num.RR > 0){
-          # if(NROW(A) != n) {
-          if(inherits(object$lvCor,"formula")){
-            if(length(dim(A)) <3) {
-              object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%A)
-            } else {
-              object$A <- array(0,dim=c(n,dim(A)[2:3]))
-              for (k in 1:dim(A)[3]) {
-                object$A[,,k] = as.matrix(object$TMBfn$env$data$dLV%*%A[,,k]) # !!!
-              }
-              A <- object$A
+        if(inherits(object$lvCor,"formula")){
+          if(length(dim(A)) <3) {
+            object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%A)
+          } else {
+            object$A <- array(0,dim=c(n,dim(A)[2:3]))
+            for (k in 1:dim(A)[3]) {
+              object$A[,,k] = as.matrix(object$TMBfn$env$data$dLV%*%A[,,k])
             }
+            A <- object$A
           }
         }
         if(num.RR>0){
@@ -170,27 +167,36 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
 
       if((num.lv+num.lv.c)>0){ object$A<-sdb$A+A} else{object$A <- sdb$A}
       if(num.RR>0&object$randomB!=FALSE){
+        A <- object$A
        covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(k) object$Ab.lv[k , ,])))
-        
+
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
-          temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-          temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+          if(object$randomB == "LV") {
+            Q <- kronecker(object$lv.X.design[i,,drop=F], diag(num.RR+num.lv.c))
+          } else {
+            Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
+          }
+          temp <- Q%*%covsB%*%t(Q)
           A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
         }
         object$A <- A
-        
+
       }
     }else if(!CMSEP&(num.RR+num.lv.c)>0){
       sdb <- list(Ab_lv = 0)
-      
+
       if(num.RR>0&object$randomB!=FALSE){
+        A <- array(0,dim=c(n,num.lv.c+num.RR+num.lv,num.lv.c+num.RR+num.lv))
+        if((num.lv.c+num.lv)>0) A[,-c((num.lv.c+1):(num.lv.c+num.RR)),-c((num.lv.c+1):(num.lv.c+num.RR))] <- object$A
         covsB <- as.matrix(Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(q) object$Ab.lv[q , ,])))
 
         for(i in 1:n){
-          Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
-          temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-          # temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+          if(object$randomB == "LV") {
+            Q <- kronecker(object$lv.X.design[i,,drop=F], diag(num.RR+num.lv.c))
+          } else {
+            Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
+          }
+          temp <- Q%*%covsB%*%t(Q)
           A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
         }
         object$A <- A
