@@ -718,7 +718,7 @@ simulate_params_gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
       if(!isFALSE(object$randomB)){
         d     <- object$num.RR + object$num.lv.c
         K     <- nrow(object$params$LvXcoef)
-        Ab.lv <- Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[1, , ]))
+        Ab.lv <- Matrix::bdiag(lapply(seq(dim(object$Ab.lv)[1]), function(x) object$Ab.lv[x, , ]))
         idx   <- seq_len(d * K)
         if(object$randomB == "LV")
           idx <- rep(seq_len(K), each = d) + rep(c(0, rep(K, d - 1) * seq_len(d - 1)), times = K)
