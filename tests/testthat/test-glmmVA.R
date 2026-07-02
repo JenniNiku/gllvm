@@ -46,8 +46,8 @@ test_that("glmmVA: continuous random slope gives 1x1 sigmaijr", {
 test_that("glmmVA: factor LHS gives nc x nc sigmaijr (bug fix)", {
   dat   <- make_spider_long()
   nspec <- nlevels(dat$Species)
-  m <- glmmVA(abund ~ BareSand + Species + (0 + Species|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+  suppressWarnings(m <- glmmVA(abund ~ BareSand + Species + (0 + Species|id), data = dat,
+              family = "poisson", sd.errors = FALSE)) 
   trmsize <- m$TMBfn$env$data$trmsize
   expect_equal(unname(trmsize[1, 1]), nspec,
                info = "trmsize should equal nlevels(Species), not 1")
