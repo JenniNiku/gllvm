@@ -302,8 +302,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   idx <- matrix(TRUE,ncol=num.lv+num.lv.c+num.RR,nrow=p)
     # }
     # 
-    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object,type = type)^2)), length(bothnorms))%*%svd_rotmat_sites)  
-    
+    B<-(diag((bothnorms^alpha)/sqrt(colSums(getLV(object,type = type)^2)), length(bothnorms))%*%svd_rotmat_sites)
+
     # testcov <- object$lvs %*% t(object$params$theta)
     # do.svd <- svd(testcov, num.lv, num.lv)
     # choose.lvs <- do.svd$u * matrix( do.svd$d[1:num.lv] ^ alpha,
@@ -314,7 +314,20 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     #   type <- "marginal"
     #   warning("still need to adjust this, not clean.")
     # }
-    
+
+    # Deduplicate site scores: for lvCor models, the group-level LV columns are
+    # identical for all observations within a group. When those axes are plotted,
+    # duplicate rows in choose.lvs cause overplotting of points, ellipses, and labels.
+    keep_sites <- seq_len(Nlv)
+    if(inherits(object$lvCor, "formula")) {
+      uniq <- !duplicated(choose.lvs[, which.lvs, drop = FALSE])
+      if(any(!uniq)) {
+        keep_sites <- which(uniq)
+        choose.lvs <- choose.lvs[keep_sites, , drop = FALSE]
+        Nlv <- length(keep_sites)
+      }
+    }
+
     if (!biplot) {
       if(is.null(main)&!is.null(type)){
         main <- paste("Ordination (type='", type, "')",sep="")
@@ -329,6 +342,9 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         if (object$method == "LA") {
           if((type%in%c("marginal","residual")&(num.lv.c+num.RR)>0)){#have to recalculate prediction errors
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
+          }
+          if(length(keep_sites) < NROW(object$prediction.errors$lvs)) {
+            object$prediction.errors$lvs <- object$prediction.errors$lvs[keep_sites, , , drop = FALSE]
           }
           for (i in 1:Nlv) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
@@ -355,7 +371,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             object$A <- A
           }
-          if((object$num.lv.c > 0 |object$num.RR > 0) & type!="residual"){
+          if(inherits(object$lvCor,"formula") & type!="residual"){
             if(NROW(object$A) != n) {
               if(length(dim(object$A)) <3) {
                 object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%object$A)
@@ -366,6 +382,13 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
                 }
                 object$A <- A
               }
+            }
+          }
+          if(length(keep_sites) < NROW(object$A)) {
+            if(length(dim(object$A)) == 3) {
+              object$A <- object$A[keep_sites, , , drop = FALSE]
+            } else {
+              object$A <- object$A[keep_sites, , drop = FALSE]
             }
           }
           #If not marginal add variational covariances
@@ -406,15 +429,19 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             
             for(i in 1:Nlv){
-              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
-              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              if(object$randomB == "LV") {
+                Q <- kronecker(object$lv.X.design[i,,drop=F], diag(num.RR+num.lv.c))
+              } else {
+                Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
+              }
+              temp <- Q%*%covsB%*%t(Q)
+
               A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
             object$A <- A
-            
+
           }
-          
+
           r=0
           for (i in 1:Nlv) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
@@ -428,7 +455,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           }
         }
       }
-      
+
       
       if (!jitter)
         if (symbols) {
@@ -437,7 +464,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           if(is.null(row.names(lv))){
             text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
           }else{
-            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
+            text(choose.lvs[, which.lvs], label = row.names(lv)[keep_sites], cex = s.cex, col = s.colors)
           }
         }
       if (jitter)
@@ -447,14 +474,14 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           if(is.null(row.names(lv))){
             text(
-              (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
-              (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-              label = 1:Nlv, cex = s.cex, col = s.colors )          
+              (choose.lvs[, which.lvs][, 1] + runif(Nlv,-a,a)),
+              (choose.lvs[, which.lvs][, 2] + runif(Nlv,-a,a)),
+              label = 1:Nlv, cex = s.cex, col = s.colors )
           }else{
             text(
-              (choose.lvs[, which.lvs][, 1] + runif(n,-a,a)),
-              (choose.lvs[, which.lvs][, 2] + runif(n,-a,a)),
-              label = row.names(lv), cex = s.cex, col = s.colors )
+              (choose.lvs[, which.lvs][, 1] + runif(Nlv,-a,a)),
+              (choose.lvs[, which.lvs][, 2] + runif(Nlv,-a,a)),
+              label = row.names(lv)[keep_sites], cex = s.cex, col = s.colors )
           }
         }
     }
@@ -477,13 +504,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           if((type%in%c("marginal","residual")&(num.lv.c+num.RR)>0)){#have to recalculate prediction errors
             object$prediction.errors$lvs <- sdrandom(object$TMBfn, object$Hess$cov.mat.mod, object$Hess$incl,ignore.u = F, type = type)$A
           }
-          
+          if(length(keep_sites) < NROW(object$prediction.errors$lvs)) {
+            object$prediction.errors$lvs <- object$prediction.errors$lvs[keep_sites, , , drop = FALSE]
+          }
           for (i in 1:Nlv) {
             covm <- (t(B)%*%object$prediction.errors$lvs[i,,]%*%B)[which.lvs,which.lvs];
             ellipse( choose.lvs[i, which.lvs], covM = covm, rad = sqrt(qchisq(level, df=num.lv+num.lv.c+num.RR)), col = col.ellips[i], lwd = lwd.ellips, lty = lty.ellips)
           }
         } else {
-          
+
           sdb<-CMSEPf(object, type = type)$A
           
           #If not marginal add variational covariances
@@ -529,14 +558,18 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
             }
             
             for(i in 1:Nlv){
-              Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
-              temp <- Q%*%covsB%*%t(Q) #variances and single dose of covariances
-              temp[col(temp)!=row(temp)] <- 2*temp[col(temp)!=row(temp)] ##should be double the covariance
+              if(object$randomB == "LV") {
+                Q <- kronecker(object$lv.X.design[i,,drop=F], diag(num.RR+num.lv.c))
+              } else {
+                Q <- as.matrix(Matrix::bdiag(replicate(num.RR+num.lv.c,object$lv.X.design[i,,drop=F],simplify=F)))
+              }
+              temp <- Q%*%covsB%*%t(Q)
+
               A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] <- A[i,1:(num.RR+num.lv.c),1:(num.RR+num.lv.c)] + temp
             }
             object$A <- A
           }
-          
+
           r=0
           for (i in 1:Nlv) {
             if(!object$TMB && object$Lambda.struc == "diagonal"){
@@ -579,8 +612,8 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
           if(is.null(row.names(lv))){
             text(choose.lvs[, which.lvs], label = 1:Nlv, cex = s.cex, col = s.colors)
           }else{
-            text(choose.lvs[, which.lvs], label = row.names(lv), cex = s.cex, col = s.colors)
-          }        
+            text(choose.lvs[, which.lvs], label = row.names(lv)[keep_sites], cex = s.cex, col = s.colors)
+          }
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
@@ -595,15 +628,15 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
         } else {
           if(is.null(row.names(lv))){
             text(
-              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
-              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
+              (choose.lvs[, which.lvs[1]] + runif(Nlv,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(Nlv,-a,a)),
               label = 1:Nlv, cex = s.cex, col = s.colors )
           }else{
             text(
-              (choose.lvs[, which.lvs[1]] + runif(n,-a,a)),
-              (choose.lvs[, which.lvs[2]] + runif(n,-a,a)),
-              label = row.names(lv), cex = s.cex, col = s.colors )
-          }          
+              (choose.lvs[, which.lvs[1]] + runif(Nlv,-a,a)),
+              (choose.lvs[, which.lvs[2]] + runif(Nlv,-a,a)),
+              label = row.names(lv)[keep_sites], cex = s.cex, col = s.colors )
+          }
         }
         text(
           matrix(choose.lv.coefs[largest.lnorms[1:ind.spp],which.lvs,drop=F][apply(idx[largest.lnorms[1:ind.spp],which.lvs,drop=F],1,function(x)all(x)),], nrow = sum(apply(!idx[largest.lnorms[1:ind.spp],which.lvs],1,function(x)!any(x)))),
