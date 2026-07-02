@@ -677,7 +677,12 @@ factanal_gllvm <- function(Y, k) {
   cor_pw[is.na(cor_pw)] <- 0
   diag(cor_pw) <- 1
   cor_pw <- as.matrix(Matrix::nearPD(cor_pw, corr = TRUE)$mat)
-  fa <- factanal(covmat = cor_pw, factors = k, n.obs = n)
+  fa <- try(factanal(covmat = cor_pw, factors = k, n.obs = n), silent = TRUE)
+  
+  # If not succeed, try other starting values:
+  if(inherits(fa, "try-error")){
+    fa <- try(factanal(covmat = cor_pw, factors = 2, n.obs = n, start = rep(0.5, ncol(cor_pw))))
+  }
   gamma <- as.matrix(fa$loadings)
   d <- 1 / fa$uniquenesses
   tmp <- t(gamma * d)

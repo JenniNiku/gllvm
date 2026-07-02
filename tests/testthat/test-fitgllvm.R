@@ -57,7 +57,7 @@ test_that("binomial works", {
   y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[160:175]]
   y01<-(y>0)*1
   fb0<-gllvm(y01, family = binomial(link = "logit"), seed = 999, method = "LA", num.lv = 1)
-  fb2<-gllvm(y01, family = binomial(link = "probit"), seed = 999)
+  suppressWarnings( fb2<-gllvm(y01, family = binomial(link = "probit"), seed = 999))
   expect_true(is.finite(fb0$logL))
   expect_true(is.finite(fb2$logL))
 })
@@ -79,9 +79,9 @@ test_that("quadratic models work", {
   spider$x <- spider$X[spider$nonNA,]
   X <- scale(spider$x)
   y <- spider$abund
-  fq0<-gllvm(y, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999)
-  fq1<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999)
-  fq2<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", row.eff="random", seed = 999)
+  suppressWarnings(fq0<-gllvm(y, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999))
+  suppressWarnings(fq1<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", seed = 999))
+  suppressWarnings(fq2<-gllvm(y, X, num.lv = 2, quadratic=TRUE, family = "poisson", row.eff="random", seed = 999))
   expect_true(is.finite(fq0$logL))
   expect_true(is.finite(fq1$logL))
   expect_true(is.finite(fq2$logL))
@@ -115,7 +115,7 @@ test_that("concurrent ordination models work", {
   fc1<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999, randomB="LV")
   #this has a warning for overfitting that can be ignored
   suppressWarnings(fc2<-gllvm(y, X, num.lv.c = 2, family = "poisson", seed = 999, randomB="LV", row.eff="random"))
-  fc3<-gllvm(y, X, num.lv.c = 2, quadratic=T, family = "poisson", seed = 999, randomB="LV")
+  suppressWarnings(fc3<-gllvm(y, X, num.lv.c = 2, quadratic=T, family = "poisson", seed = 999, randomB="LV"))
   expect_true(is.finite(fc0$logL))
   expect_true(is.finite(fc1$logL))
   expect_true(is.finite(fc2$logL))
