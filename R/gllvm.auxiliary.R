@@ -973,10 +973,17 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     # betaSD=apply(beta,1,sd)
     # beta=beta/betaSD
     # }
-    qr.beta=qr(t(beta))
-    R=t(qr.R(qr.beta))[,1:num.RR,drop=F]
-    # R=R[,1:num.RR,drop=F]/sqrt(num.RR*nrow(RRmod$coefficients))
-    Q=t(qr.Q(qr.beta))[1:num.RR,,drop=F]
+    # Best rank-num.RR approximation of beta (Eckart-Young), rotated into the
+    # triangular/orthogonal shape the num.RR parameterization requires (theta's
+    # leading block unit lower-triangular, LvXcoef's columns orthogonal) via a
+    # single num.RR x num.RR QR of the leading block, instead of a full QR of beta
+    # itself - which is order-dependent on species/predictor order and can produce
+    # badly-scaled starting values.
+    sv <- svd(beta, nu=num.RR, nv=num.RR)
+    Ud <- sv$u %*% diag(sv$d[1:num.RR], num.RR, num.RR)
+    Trot <- qr.Q(qr(t(Ud[1:num.RR,,drop=F])))
+    R <- Ud %*% Trot
+    Q <- t(sv$v %*% Trot)
     
     # To ensure we do not start off at a point that fully satisfies the constraints
     # Especially optimizer="alabama" seems to not like that
