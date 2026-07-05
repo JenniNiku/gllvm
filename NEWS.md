@@ -5,6 +5,7 @@ Version 2.0.12
 
 * getPredictErr produced incorrect results with randomB = "LV" due to wrong ordering
 * predict.gllvm produced incorrect results with randomB (both cases) due to a typo
+* `starting.val = "res"` occasionally failed with "Calculating starting values failed" for complete (no-NA) response data, because factor analysis for starting values always forced the residual correlation matrix to its nearest positive-definite matrix; this is now only done when the response data contains NAs, restoring the previous, more numerically stable behaviour for the common complete-data case
 
 Version 2.0.11
 =============

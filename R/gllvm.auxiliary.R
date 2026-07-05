@@ -670,9 +670,16 @@ start_values_gllvm_TMB <- function(
   return(out)
 }
 
-# Factor loadings via pairwise-complete correlation matrix
+# Factor loadings. Without missing values, fit factanal directly on the data
+# (numerically more stable than forcing a correlation matrix to be PD). With
+# missing values, fall back to a pairwise-complete correlation matrix nudged
+# to the nearest PD matrix, since factanal() cannot handle NAs itself.
 factanal_gllvm <- function(Y, k) {
   n <- nrow(Y)
+  if (!anyNA(Y)) {
+    fa <- factanal(Y, factors = k, scores = "regression")
+    return(list(loadings = as.matrix(fa$loadings), scores = as.matrix(fa$scores)))
+  }
   cor_pw <- cor(Y, use = "pairwise.complete.obs")
   cor_pw[is.na(cor_pw)] <- 0
   diag(cor_pw) <- 1
@@ -696,6 +703,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
                     jitter.var = 0, resi = NULL, lv.X, link = NULL, maxit=NULL,max.iter=NULL, Power = NULL, disp.group = NULL, randomB = FALSE, method = "VA", Ntrials = matrix(1), ZINB.phi = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"){
   
   n<-NROW(y); p <- NCOL(y)
+  has_na_y <- anyNA(y)
   b.lv <- NULL
   Ab_lv <- NULL
   RRcoef <- NULL
@@ -795,7 +803,11 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
         ds.res <- resi
       }
       resi <- as.matrix(ds.res)
-      resi[is.infinite(resi) | is.nan(resi)] <- NA
+      if (has_na_y) {
+        resi[is.infinite(resi) | is.nan(resi)] <- NA
+      } else {
+        resi[is.na(resi) | is.infinite(resi) | is.nan(resi)] <- 0
+      }
 
       resi_fa <- if(n >= p) resi else t(resi)
       fa <- try(factanal_gllvm(resi_fa, num.lv.c), silent = TRUE)
@@ -1058,7 +1070,11 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       ds.res <- resi
     }
     resi <- as.matrix(ds.res)
-    resi[is.infinite(resi) | is.nan(resi)] <- NA
+    if (has_na_y) {
+      resi[is.infinite(resi) | is.nan(resi)] <- NA
+    } else {
+      resi[is.na(resi) | is.infinite(resi) | is.nan(resi)] <- 0
+    }
     if(p>2 && n>2){
       resi_fa <- if(n >= p) resi else t(resi)
       fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
@@ -1141,7 +1157,11 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
       ds.res <- resi
     }
     resi <- as.matrix(ds.res)
-    resi[is.infinite(resi) | is.nan(resi)] <- NA
+    if (has_na_y) {
+      resi[is.infinite(resi) | is.nan(resi)] <- NA
+    } else {
+      resi[is.na(resi) | is.infinite(resi) | is.nan(resi)] <- 0
+    }
     if(p>2 && n>2){
       resi_fa <- if(n >= p) resi else t(resi)
       fa <- try(factanal_gllvm(resi_fa, num.lv), silent = TRUE)
