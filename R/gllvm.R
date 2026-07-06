@@ -1188,19 +1188,24 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         colnames(mf.new) <- colnames(mf)
         RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
         dr <- Matrix::t(RElistRow$Zt)
-        
+
         # This line errs for formulations such as (cov|1), which includes an intercept
-        # Can be easily fixed by adding a try(..., silent = TRUE) but probably needs something more robust
-        # The bigger problem is that (cov|1) only generates a single "cstruc" entry anove, while it requires two
-        # So that the term needs to be expanded to (1|1)+(0+cov|1) first, which is not yet implemented
+        # Fixed: (cov|1) has no true grouping factor, so mkReTrms1 reports nl = 0 for that term;
+        # treat that as a single implicit group (nl = 1) rather than dividing by zero.
         # colnames(dr) <- rep(names(RElistRow$grps),RElistRow$grps)
         # first row: lhs size, second row: rhs size
         trmsize <- matrix(0, ncol = length(bar.f), nrow = 2)
         # Use actual nc (number of LHS model-matrix columns) per term.
         # Counting term.labels gives 1 for a factor variable regardless of its number of levels,
         # which causes the covariance matrix to be treated as 1x1 (diag) for factor LHS variables.
-        trmsize[1,] <- as.integer(RElistRow$grps / RElistRow$nl)
-        trmsize[2,] <- unlist(lapply(bar.f, function(x)length(unique(interaction(mf.new[, all.vars(x[[3]])])))))
+        nl <- RElistRow$nl
+        nl[nl==0] <- 1
+        trmsize[1,] <- as.integer(RElistRow$grps / nl)
+        trmsize[2,] <- unlist(lapply(bar.f, function(x){
+          grpvars <- all.vars(x[[3]])
+          if(length(grpvars)==0) return(1L) # e.g. (cov|1): no grouping variable, a single implicit group
+          length(unique(interaction(mf.new[, grpvars])))
+        }))
         
         if(any(cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1))cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1] <- paste0(cstruc[cstruc %in% c("propto", "corExp", "corMatern", "corAR1", "corCS") & trmsize[1,]>1], "ustruc")
         

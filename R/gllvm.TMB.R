@@ -2728,18 +2728,20 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           out$params$sigma=sigma; 
           out$params$row.params.random <- row.params.random; 
           if(ncol(csR)>1){
-            D = vector("list", length=sum(cstrucn%in%c(-1,6:10)))
-            
+            ustruc.terms <- which(cstrucn%in%c(-1,6:10))
+            D = vector("list", length=length(ustruc.terms))
+
             ucount = 1
-            for(re in 1:sum(cstrucn%in%c(-1, 6:10))){
+            for(re_i in seq_along(ustruc.terms)){
+            re <- ustruc.terms[re_i]
             sigmaij <- rep(0,(trmsize[1,re]^2-trmsize[1,re])/2)
             for(i in 1:length(sigmaij)){
               sigmaij[(csR[ucount,1]-1) * (csR[ucount,1] - 2) / 2 + csR[ucount,2]] = sigmaijr[ucount]
               ucount = ucount + 1
             }
             L <- constructL(sigmaij)
-            D[[re]] <- L%*%t(L)
-            
+            D[[re_i]] <- L%*%t(L)
+
             form <- parse(text = colnames(trmsize)[re])[[1]]
             trm <- terms(as.formula(bquote(~ .(substitute(foo, list(foo=form))[[2]]))))
             LHS <- labels(trm)
@@ -2771,9 +2773,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                 D_names <- make.names(paste0(LHS, "_", seq_len(nc_re)))
               }
             }
-            colnames(D[[re]]) <- row.names(D[[re]]) <- D_names
+            colnames(D[[re_i]]) <- row.names(D[[re_i]]) <- D_names
             }
-            
+
             out$params$sigmaijr=as.matrix(Matrix::bdiag(D))
             
           }

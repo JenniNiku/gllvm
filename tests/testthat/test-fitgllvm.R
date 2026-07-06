@@ -52,6 +52,35 @@ test_that("row effects works", {
   expect_true(round(fr5$params$sigma, digits = 2)- result[5]<0.1)
 })
 
+test_that("row.eff random slopes without a grouping factor work", {
+  data(microbialdata)
+  y <- microbialdata$Y[1:30, 1:15]
+  StudyDesign <- data.frame(Site = factor(microbialdata$Xenv$Site[1:30]),
+                            pH = as.numeric(scale(microbialdata$Xenv$pH[1:30])),
+                            Phosp = as.numeric(scale(microbialdata$Xenv$Phosp[1:30])))
+
+  fr6 <- gllvm(y, family = "negative.binomial", seed = 999, num.lv = 0,
+               studyDesign = StudyDesign, row.eff = ~(0+pH|1))
+  expect_true(is.finite(fr6$logL))
+  expect_equal(length(fr6$params$sigma), 1)
+  expect_true(!is.null(fr6$sd))
+
+  fr7 <- gllvm(y, family = "negative.binomial", seed = 999, num.lv = 0,
+               studyDesign = StudyDesign, row.eff = ~(0+pH+Phosp|1))
+  expect_true(is.finite(fr7$logL))
+  expect_equal(length(fr7$params$sigma), 2)
+  expect_equal(dim(fr7$params$sigmaijr), c(2,2))
+  expect_true(!is.null(fr7$sd))
+
+  fr8 <- gllvm(y, family = "negative.binomial", seed = 999, num.lv = 0,
+               studyDesign = StudyDesign, row.eff = ~(1|Site) + (0+pH+Phosp|1))
+  expect_true(is.finite(fr8$logL))
+  expect_equal(length(fr8$params$sigma), 3)
+  expect_equal(dim(fr8$params$sigmaijr), c(2,2))
+  expect_true(!is.null(fr8$sd))
+  expect_error(summary(fr8), NA)
+})
+
 test_that("binomial works", {
   data(microbialdata)
   y <- microbialdata$Y[, order(colMeans(microbialdata$Y > 0), decreasing = TRUE)[160:175]]
