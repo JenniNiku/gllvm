@@ -57,7 +57,7 @@ getLV.gllvm <- function(object, type = NULL, ...)
   } 
 
   if(type == "residual"){
-    if(!is.null(object$lvs) && inherits(object$lvCor,"formula") & (nrow(object$lvs) ==n)){
+    if(!is.null(object$lvs) && inherits(object$lvCor,"formula") && (nrow(object$lvs) ==n)){
       object$lvs = as.matrix(object$TMBfn$env$data$dLV%*%object$lvs)
     }
     lvs <- object$lvs
