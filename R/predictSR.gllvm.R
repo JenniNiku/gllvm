@@ -445,6 +445,7 @@ residuals.predictSR.gllvm <- function(object, model, ...){
 #' @export
 #' @rdname predictSR.gllvm 
 plot.predictSR.gllvm <- function(x, object, which = c(1,2), ...){
+  if(is.null(x)){ x <-  predictSR(object, se.fit = FALSE)}else if(length(x$fitted)!=nrow(object$y))stop("Provided predictSR object should not be based on new data.")
   res <- residuals.predictSR.gllvm(object = x, model = object)
   
   par(mfrow=c(1,length(which)))
