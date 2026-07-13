@@ -1,3 +1,16 @@
+Version 2.0.14
+=============
+
+## Bugfixes
+
+* Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo
+
+Version 2.0.13
+=============
+
+* CRAN update version 2.0.13
+* See updates in 2.0.11-2.0.12
+
 Version 2.0.12
 =============
 
