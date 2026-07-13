@@ -7,7 +7,7 @@
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
 #' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
-#' @param offset specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
+#' @param offset logical or numerical, defaults to \code{TRUE} when offset values that are used to fit the model are included in the prediction. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
 #' @param se.fit logical. If \code{TRUE}, performs 1000 simulations from the asymptotic covariance matrix for fixed effects, and from the CMSEP covariance matrix for the random effects. If an integer is provided, it is used as the number of simulations instead. 
 #' @param alpha numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.
 #' @param seed numeric, defaults to 42. Seed used for simulation in se.fit.
@@ -436,10 +436,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
 
   if(!is.null(object$offset)){
-    if(offset!=FALSE){
+    if(!isFALSE(offset)){
       if(is.matrix(offset)){
         if((NROW(offset) == NROW(eta))){
-          eta <- eta+object$offset[, spp_idx, drop = FALSE]
+          eta <- eta+offset[, spp_idx, drop = FALSE]
         } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
       } else if((NROW(object$offset) == NROW(eta))){
         eta <- eta+object$offset[, spp_idx, drop = FALSE]
