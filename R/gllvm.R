@@ -426,7 +426,7 @@
 #'@importFrom nloptr nloptr
 #'@importFrom alabama auglag
 #'@importFrom utils combn tail relist head
-#'@importFrom methods cbind2 rbind2 is as
+#'@importFrom methods cbind2 rbind2 is as new
 #'
 
 gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, family,

@@ -32,10 +32,6 @@
 #'@method se gllvm
 #'@export
 #'@export se.gllvm
-isNullPointer <- function(x) {
-  attributes(x) <- NULL
-  identical(x, new("externalptr"))
-}
 
 se.gllvm <- function(object, ...){
   if(!is.finite(object$logL)) stop("Standard errors can not be calculated if log-likelihood value is not finite.")
@@ -1109,4 +1105,9 @@ se.gllvm <- function(object, ...){
 se <- function(object, ...)
 {
   UseMethod(generic = "se")
+}
+
+isNullPointer <- function(x) {
+  attributes(x) <- NULL
+  identical(x, new("externalptr"))
 }

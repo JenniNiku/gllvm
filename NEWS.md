@@ -1,3 +1,8 @@
+Version 2.0.13
+=============
+
+* CRAN release gllvm 2.0.13, see also news for 2.0.12
+
 Version 2.0.12
 =============
 
