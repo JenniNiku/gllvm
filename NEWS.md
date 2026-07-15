@@ -4,6 +4,7 @@ Version 2.0.14
 ## Bugfixes
 
 * Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo
+* Fixed a bug that prevented ordering randomCoefPlot.gllvm with order = TRUE
 
 Version 2.0.13
 =============
