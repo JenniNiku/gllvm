@@ -87,6 +87,12 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
   if(any(object$family %in% c("gaussian", "gamma", "beta","ZIP","ZINB","ZIB", "ZNIB", "tweedie", "beta.binomial")))
     phis = matrix(rep(object$params$phi, each = nsim*nRows), ncol = nCols)
 
+  if(any(object$family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial"))){
+    Nt <- object$Ntrials
+    if(!is.matrix(Nt)) Nt <- matrix(Nt, nrow(object$y), nCols, byrow = length(Nt) == nCols)
+    NtMat <- Nt[rep(rep_len(seq_len(nrow(Nt)), nRows), nsim), , drop = FALSE]
+  }
+
   if(any(object$family == "ordinal")){
     ordi_ind <- c(1:nCols)[object$family == "ordinal"]
     sims = matrix(0, nrow = nsim * nRows, ncol = length(ordi_ind))
@@ -129,7 +135,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
     nTotfam = nsim*nRows*sum(object$family == fam) # total number of values to generate for given family fam
     newDat[,object$family == fam] = matrix(
                 switch(fam, #object$family[1], 
-                  "binomial"=rbinom(nTotfam, size = rep(object$Ntrials,each=nsim*nRows), prob = prsfam),
+                  "binomial"=rbinom(nTotfam, size = c(NtMat[,object$family == fam, drop=FALSE]), prob = prsfam),
                   "poisson" = rpois(nTotfam, prsfam),
                   "negative.binomial" = rnbinom(nTotfam, size = invPhis[,object$family == fam], mu = prsfam),
                   "negative.binomial1" = rnbinom(nTotfam, size = prsfam*(invPhis[,object$family == fam]), mu = prsfam),
@@ -141,16 +147,16 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
                   "beta" = rbeta(nTotfam, shape1 = phis[,object$family == fam]*prsfam, shape2 = phis[,object$family == fam]*(1-prsfam)),
                   "ZIP" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rpois(nTotfam, lambda = prsfam)),
                   "ZINB" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rnbinom(nTotfam, size = invPhis[,object$family == fam], mu = prsfam)),
-                  "ZIB" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rbinom(nTotfam, size = rep(object$Ntrials[object$family == fam],each=nsim*nRows), prob = prsfam)),
+                  "ZIB" = ifelse(rbinom(nTotfam, size = 1, prob = phis[,object$family == fam]) > 0, 0, rbinom(nTotfam, size = c(NtMat[,object$family == fam, drop=FALSE]), prob = prsfam)),
                   "ZNIB" = {
                     z <- mapply(function(prob) sample(3, 1, prob = prob, replace = TRUE), prob = as.list(data.frame(rbind(c(phis1[,object$family == fam]),c(phis2[,object$family == fam]),c(1-phis3[,object$family == fam])))))
                     zeros <- rep(0, nTotfam)
-                    Ntrials <- rep(object$Ntrials[object$family == fam], each = nsim * nRows)
+                    Ntrials <- c(NtMat[,object$family == fam, drop=FALSE])
                     sim1 <- rbinom(nTotfam, size = Ntrials, prob = prsfam)
                     (z==1)*zeros + (z==2)*Ntrials + (z==3)*sim1
                   },
                   "beta.binomial" = {
-                    Ntrials <- rep(object$Ntrials[,object$family == fam], each = nsim)
+                    Ntrials <- c(NtMat[,object$family == fam, drop=FALSE])
                     phi_bb <- c(phis[,object$family == fam])
                     p_bb <- rbeta(nTotfam, shape1 = prsfam * phi_bb, shape2 = (1 - prsfam) * phi_bb)
                     rbinom(nTotfam, size = Ntrials, prob = p_bb)
