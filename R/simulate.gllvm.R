@@ -59,7 +59,8 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
   }
   if(is.null(object$X))   {
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
-  }  else if(is.null(object$TR)){ 
+    if(is.null(lvsNew)) prs = prs[rep(1:nRows, nsim), , drop = FALSE]
+  }  else if(is.null(object$TR)){
     if(is.null(newX)){
     Xnew <- object$X[rep(1:nRows,nsim),,drop=FALSE]; colnames(Xnew) <- colnames(object$X)
     }else{
@@ -131,7 +132,7 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
                   "binomial"=rbinom(nTotfam, size = rep(object$Ntrials,each=nsim*nRows), prob = prsfam),
                   "poisson" = rpois(nTotfam, prsfam),
                   "negative.binomial" = rnbinom(nTotfam, size = invPhis[,object$family == fam], mu = prsfam),
-                  "negative.binomial1" = rnbinom(nTotfam, size = prsfam/(invPhis[,object$family == fam]), mu = prsfam),
+                  "negative.binomial1" = rnbinom(nTotfam, size = prsfam*(invPhis[,object$family == fam]), mu = prsfam),
                   "gaussian" = rnorm(nTotfam, mean = prsfam, sd = phis[,object$family == fam]),
                   "gamma" = rgamma(nTotfam, shape = phis[,object$family == fam], scale = prsfam/(phis[,object$family == fam])),
                   "exponential" = rexp(nTotfam, rate = 1/prsfam),

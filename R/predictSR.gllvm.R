@@ -289,8 +289,8 @@ predictPairwise <- function(object, ...) {
 }
 
 # prediction of binomial-based distributions can be used as-is (including orderedBeta)
-# not implemented because not based (indirectly) on binary data: gaussian, beta, betaH, gamma, exponential
-# families implemented: poisson, NB, NB1, ZIP, ZINB, Tweedie, ordinal
+# not implemented because not based (indirectly) on binary data: gaussian, beta, gamma, exponential
+# families implemented: poisson, NB, NB1, ZIP, ZINB, Tweedie, ordinal, betaH
 gllvm.presence.prob <- function(fit, object, spp = NULL) {
 
   family <- object$family
@@ -329,7 +329,7 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       sizes <- matrix(1 / object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
       probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
     } else if(fam == "negative.binomial1"){
-      sizes <- mu * matrix(object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
+      sizes <- mu / matrix(object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
       probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
     } else if(fam == "betaH"){
       probs[, pos] <- 1 - fit[, -seq_len(ncol(object$y)), drop = FALSE][, j, drop = FALSE]

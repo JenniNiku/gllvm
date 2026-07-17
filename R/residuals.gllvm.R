@@ -88,8 +88,8 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "negative.binomial1")) {
     p_f = sum(object$family == "negative.binomial1")
     phis <- object$params$phi[object$family == "negative.binomial1"] + 1e-05
-    b <- pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n))
-    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]) - 1, mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n)))
+    b <- pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])/rep(phis, each = n))
+    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]) - 1, mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])/rep(phis, each = n)))
     
     u = a+(b-a)*runif(n*p_f)
     
