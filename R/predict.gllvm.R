@@ -841,7 +841,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
             k <- max(object$y[, j], na.rm = TRUE) - 2
             if(k > 0) zetanew[j, 2:(k + 1)] <- zetas[idx + seq_len(k)]
             idx <- idx + k
-            zetanew[j, ] <- cumsum(exp(zetanew[j, ]))
+            zetanew[j, ] <- c(0, cumsum(exp(zetanew[j, -1])))
           } else {
             zetanew[j, ] <- c(zetas[idx + 1], exp(zetas[idx + 2])); idx <- idx + 2
           }

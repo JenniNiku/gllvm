@@ -1704,7 +1704,7 @@ trait.TMB <- function(
                 zetanew[j,l+1]<-zetas[idx+l]
               } 
             }
-            zetanew[j,] <- cumsum(exp(zetanew[j,]))
+            zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
             idx<-idx+k
           } else {
             zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))

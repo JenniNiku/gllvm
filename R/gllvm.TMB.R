@@ -1723,7 +1723,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                   zetanew[j,l+1]<-zetas[idx+l]
                 } 
               }
-              zetanew[j,] <- cumsum(exp(zetanew[j,]))
+              zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
               idx<-idx+k
             } else {
               zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
@@ -2433,7 +2433,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
                 } 
               }
               idx<-idx+k
-              zetanew[j,] <- cumsum(exp(zetanew[j,]))
+              zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
             } else {
               zetanew[j,] <- c(zetas[idx +1], exp(zetas[idx +2]))
               idx<-idx+2

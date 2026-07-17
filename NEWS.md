@@ -8,6 +8,7 @@ Version 2.0.14
 * Fixed a bug that resulted in incorrect simulations from simulate.gllvm with num.lv=0
 * Fixed the parameterisation of nb1 in residuals.gllvm, simulate, and predictSR: the dispersion parameter was inverted relative to the C++ parameterisation
 * Fixed a bug that made predictSR underestimate richness for ZIP/ZINB
+* Fixed a bug in ordinal models with zeta.struc = "species": zeta was inappropriately offset by 1
 
 Version 2.0.13
 =============
