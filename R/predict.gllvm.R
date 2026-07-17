@@ -309,7 +309,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(anyBars(object$lv.formula)){
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
-          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula)), drop.unused.levels = FALSE) #still add find double bars
+          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(object$lv.formula), drop.unused.levels = FALSE)
           # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
           lv.X = t(as.matrix(RElistLV$Zt))
           lv.X <- lv.X[,colnames(lv.X)%in%colnames(object$lv.X.design),drop=FALSE]
@@ -426,7 +426,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(object$y)))
     }
     
-    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)), drop.unused.levels = FALSE)
+    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(object$col.eff$col.eff.formula), drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
     # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
     spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
