@@ -348,11 +348,11 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       }
     } else if(fam == "ZIP"){
       phi_vec <- rep(object$params$phi[j], each = n)
-      probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu), sigma = phi_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu)/(1 - phi_vec), sigma = phi_vec), nrow = n)
     } else if(fam == "ZINB"){
       phi_vec  <- rep(object$params$phi[j],      each = n)
       zphi_vec <- rep(object$params$ZINB.phi[j], each = n)
-      probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu), p = phi_vec, sigma = zphi_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu)/(1 - phi_vec), p = phi_vec, sigma = zphi_vec), nrow = n)
     } else if(fam == "tweedie"){
       phi_vec <- rep(object$params$phi[j], each = n)
       probs[, pos] <- matrix(1 - fishMod::pTweedie(0, mu = as.vector(mu),
