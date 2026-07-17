@@ -5,6 +5,8 @@ Version 2.0.14
 
 * Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo
 * Fixed a bug that prevented ordering randomCoefPlot.gllvm with order = TRUE
+* Fixed a bug that resulted in incorrect simulations from simulate.gllvm with num.lv=0
+* Fixed the parameterisation of nb1 in residuals.gllvm, simulate, and predictSR: the dispersion parameter was inverted relative to the C++ parameterisation
 
 Version 2.0.13
 =============
