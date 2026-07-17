@@ -5223,8 +5223,9 @@ Type objective_function<Type>::operator() ()
             }
           }
         // }
+        break;
       }
-      
+
       case BETA_BINOMIAL: { // beta-binomial family 15
         for (int i=0; i<n; i++) {
           if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
