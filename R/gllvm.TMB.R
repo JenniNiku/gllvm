@@ -1317,12 +1317,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "ZNIB")){
         familyn[family == "ZNIB"] =14
         if(any(link=="probit")) extra[family == "ZNIB" & (link=="probit")]=1
-        if(any(link=="cloglog")) extra[family == "ZNIB"]=2
+        if(any(link=="cloglog")) extra[family == "ZNIB" & (link=="cloglog")]=2
       }
       if(any(family == "beta.binomial")){
         familyn[family == "beta.binomial"] =15
-        if(link=="probit") extra[family == "beta.binomial"]=1
-        if(link=="cloglog") extra[family == "beta.binomial"]=2
+        if(any(link=="probit")) extra[family == "beta.binomial" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "beta.binomial" & (link=="cloglog")]=2
       }
 
       ## generate starting values quadratic coefficients in some cases
@@ -1924,8 +1924,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       if(any(family == "beta.binomial")){
         familyn[family == "beta.binomial"] =15
-        if(link=="probit") extra[family == "beta.binomial"]=1
-        if(link=="cloglog") extra[family == "beta.binomial"]=2
+        if(any(link=="probit")) extra[family == "beta.binomial" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "beta.binomial" & (link=="cloglog")]=2
       }
 
       ## generate starting values quadratic coefficients in some cases
