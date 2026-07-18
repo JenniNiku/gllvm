@@ -3465,20 +3465,19 @@ Type objective_function<Type>::operator() ()
               // for(int j=0; j<p; j++){
                 if(!gllvmutils::isNA(y(i,j))){
                   int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
-                  //yik = 1 if yi >=k and 0 otherwise
-                  // p(yik = 0) for k<y(i,j)
-                  for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
-                    nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
-                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
-                    // nll -= -0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
-                  }
-                  // p(yik = 1)  for k>= y(i,j)
-                  for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j));
-                    nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
-                    // Type wij = 0.5*sqrt((zetanew(j,l)-eta(i,j))*(zetanew(j,l)-eta(i,j)) + 2*cQ(i,j));
-                    // nll -= 0.5*(zetanew(j,l)-eta(i,j)) - logspace_add(wij, -wij);
+                  if(y(i,j) == 1){
+                    Type wij = 0.5*sqrt((zetanew(0)-eta(i,j))*(zetanew(0)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= 0.5*(zetanew(0)-eta(i,j)) - logspace_add(wij, -wij);
+                  } else if(y(i,j) == ymaxj){
+                    int idxj = ymaxj-2;
+                    Type wij = 0.5*sqrt((zetanew(idxj)-eta(i,j))*(zetanew(idxj)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= -0.5*(zetanew(idxj)-eta(i,j)) - logspace_add(wij, -wij);
+                  } else {
+                    int idxj = CppAD::Integer(y(i,j));
+                    Type delta = zetanew(idxj-1)-zetanew(idxj-2);
+                    Type wu = 0.5*sqrt((zetanew(idxj-1)-eta(i,j))*(zetanew(idxj-1)-eta(i,j)) + 2*cQ(i,j));
+                    Type wl = 0.5*sqrt((zetanew(idxj-2)-eta(i,j))*(zetanew(idxj-2)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= gllvmutils::logsinh(delta/2) + log(Type(2.0)) - logspace_add(wu, -wu) - logspace_add(wl, -wl);
                   }
                 }
               // }
@@ -3502,16 +3501,12 @@ Type objective_function<Type>::operator() ()
                     mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
                   }else if(ymaxj>2){
-                    for (int l=2; l<ymaxj; l++) {
-                      if((y(i,j)==l) && (l != ymaxj)){
-                        mu(i,j) = pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1));
-                        // mu(i,j) = pnorm(zetanew(j,l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(j,l-2)-eta(i,j), Type(0), Type(1));
-                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
-                        nll -= log(mu(i,j));
-                      }
-                    }
+                    int idxj = CppAD::Integer(y(i,j));
+                    mu(i,j) = pnorm(zetanew(idxj-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(idxj-2)-eta(i,j), Type(0), Type(1));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                    nll -= log(mu(i,j));
                   }
-                  
+
                   nll += cQ(i,j);
                 }
                 //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
@@ -3566,20 +3561,24 @@ Type objective_function<Type>::operator() ()
         
         if (method<1) {
           if(extra(j) == 0){ // va logit
+            // Cumulative logit VA bound via the tanh subtraction identity; see the
+            // zetastruc==1 branch above for the derivation.
             for (int i=0; i<n; i++) {
               // for(int j=0; j<p; j++){
                 if(!gllvmutils::isNA(y(i,j))){
-                  int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
-                  //yik = 1 if yi >=k and 0 otherwise
-                  // p(yik = 0) for k<y(i,j)
-                  for (int l=0; l<CppAD::Integer(y(i,j)-1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
-                    nll -= -0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
-                  }
-                  // p(yik = 1)  for k>= y(i,j)
-                  for (int l=CppAD::Integer(y(i,j)-1); l< (ymaxj -1); l++) {
-                    Type wij = 0.5*sqrt((zetanew(l)-eta(i,j))*(zetanew(l)-eta(i,j)) + 2*cQ(i,j)); 
-                    nll -= 0.5*(zetanew(l)-eta(i,j)) - logspace_add(wij, -wij);
+                  if(y(i,j) == 1){
+                    Type wij = 0.5*sqrt((zetanew(0)-eta(i,j))*(zetanew(0)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= 0.5*(zetanew(0)-eta(i,j)) - logspace_add(wij, -wij);
+                  } else if(y(i,j) == ymax){
+                    int idxj = ymax-2;
+                    Type wij = 0.5*sqrt((zetanew(idxj)-eta(i,j))*(zetanew(idxj)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= -0.5*(zetanew(idxj)-eta(i,j)) - logspace_add(wij, -wij);
+                  } else {
+                    int idxj = CppAD::Integer(y(i,j));
+                    Type delta = zetanew(idxj-1)-zetanew(idxj-2);
+                    Type wu = 0.5*sqrt((zetanew(idxj-1)-eta(i,j))*(zetanew(idxj-1)-eta(i,j)) + 2*cQ(i,j));
+                    Type wl = 0.5*sqrt((zetanew(idxj-2)-eta(i,j))*(zetanew(idxj-2)-eta(i,j)) + 2*cQ(i,j));
+                    nll -= gllvmutils::logsinh(delta/2) + log(Type(2.0)) - logspace_add(wu, -wu) - logspace_add(wl, -wl);
                   }
                 }
               // }
@@ -3599,13 +3598,10 @@ Type objective_function<Type>::operator() ()
                     mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
                   }else if(ymax>2){
-                    for (int l=2; l<ymax; l++) {
-                      if((y(i,j)==l) && (l != ymax)){
-                        mu(i,j) = pnorm(zetanew(l-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(l-2)-eta(i,j), Type(0), Type(1));
-                        mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
-                        nll -= log(mu(i,j));
-                      }
-                    }
+                    int idxj = CppAD::Integer(y(i,j));
+                    mu(i,j) = pnorm(zetanew(idxj-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(idxj-2)-eta(i,j), Type(0), Type(1));
+                    mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
+                    nll -= log(mu(i,j));
                   }
                   nll += cQ(i,j);
                 }

@@ -9,6 +9,7 @@ Version 2.0.14
 * Fixed the parameterisation of nb1 in residuals.gllvm, simulate, and predictSR: the dispersion parameter was inverted relative to the C++ parameterisation
 * Fixed a bug that made predictSR underestimate richness for ZIP/ZINB
 * Fixed a bug in ordinal models with zeta.struc = "species": zeta was inappropriately offset by 1
+* Improved implementation (and VA derivation) of the cumulative logit likelihood
 
 Version 2.0.13
 =============
