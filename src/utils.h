@@ -280,12 +280,18 @@ TMB_ATOMIC_VECTOR_FUNCTION(
   px[0] = py[0]/(tx[0]+1);
 )
 
-// more stable way to compute log(1+x) 
+// more stable way to compute log(1+x)
 template<class Type>
 Type log1plus(Type x) {
   CppAD::vector<Type> tx(1);
   tx[0] = x;
   return log1plus(tx)[0];
+}
+
+// stable log(sinh(x)) for x > 0, avoiding overflow in sinh(x) for large x
+template<class Type>
+Type logsinh(Type x) {
+  return x - Type(log(2.0)) + log1plus(-exp(-2*x));
 }
 
 double expminus1(double x) {
