@@ -1882,7 +1882,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "gamma")) {familyn[family == "gamma"] =4}
       if(any(family == "tweedie")){ familyn[family == "tweedie"] =5}
       if(any(family == "ZIP")){ familyn[family == "ZIP"] =6;}
-      if(any(family == "ordinal")){ familyn[family == "ordinal"] =7}
+      if(any(family == "ordinal")){
+        familyn[family == "ordinal"] =7
+        if(any(link=="probit")) extra[family == "ordinal" & (link=="probit")]=1
+      }
       if(any(family == "exponential")){ familyn[family == "exponential"] =8}
       if(any(family == "beta")){ 
         familyn[family == "beta"] =9
