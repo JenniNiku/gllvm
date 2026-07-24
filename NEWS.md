@@ -1,7 +1,21 @@
+Version 2.0.14
+=============
+
+## Bugfixes
+
+* Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo
+* Fixed a bug that prevented ordering randomCoefPlot.gllvm with order = TRUE
+* Fixed a bug that resulted in incorrect simulations from simulate.gllvm with num.lv=0
+* Fixed the parameterisation of nb1 in residuals.gllvm, simulate, and predictSR: the dispersion parameter was inverted relative to the C++ parameterisation
+* Fixed a bug that made predictSR underestimate richness for ZIP/ZINB
+* Fixed a bug in ordinal models with zeta.struc = "species": zeta was inappropriately offset by 1
+* Improved implementation (and VA derivation) of the cumulative logit likelihood
+
 Version 2.0.13
 =============
 
-* CRAN release gllvm 2.0.13, see also news for 2.0.12
+* CRAN update version 2.0.13
+* See updates in 2.0.11-2.0.12
 
 Version 2.0.12
 =============

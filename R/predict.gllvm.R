@@ -7,7 +7,7 @@
 #' @param newTR A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.
 #' @param newLV A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for \code{newX} (if X covariates are included in the model).
 #' @param level specification for how to predict. Level one (\code{level = 1}) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in \code{newLV}. Level 0 sets the latent variable to zero. Defaults to 1.
-#' @param offset specification whether of not offset values are included to the predictions in case they are in the model, defaults to \code{TRUE} when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
+#' @param offset logical or numerical, defaults to \code{TRUE} when offset values that are used to fit the model are included in the prediction. Alternatives are matrix/vector (number of rows must match with the \code{newX}) of new offset values or \code{FALSE}, when offsets are ignored.
 #' @param se.fit logical. If \code{TRUE}, performs 1000 simulations from the asymptotic covariance matrix for fixed effects, and from the CMSEP covariance matrix for the random effects. If an integer is provided, it is used as the number of simulations instead. 
 #' @param alpha numerical between 0 and 1, defaults to 0.95. The confidence level for se.fit.
 #' @param seed numeric, defaults to 42. Seed used for simulation in se.fit.
@@ -309,7 +309,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(anyBars(object$lv.formula)){
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
-          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(object$lv.formula)), drop.unused.levels = FALSE) #still add find double bars
+          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(object$lv.formula), drop.unused.levels = FALSE)
           # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
           lv.X = t(as.matrix(RElistLV$Zt))
           lv.X <- lv.X[,colnames(lv.X)%in%colnames(object$lv.X.design),drop=FALSE]
@@ -426,7 +426,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(object$y)))
     }
     
-    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(object$col.eff$col.eff.formula)), drop.unused.levels = FALSE)
+    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(object$col.eff$col.eff.formula), drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
     # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
     spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
@@ -436,10 +436,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }
 
   if(!is.null(object$offset)){
-    if(offset!=FALSE){
+    if(!isFALSE(offset)){
       if(is.matrix(offset)){
         if((NROW(offset) == NROW(eta))){
-          eta <- eta+object$offset[, spp_idx, drop = FALSE]
+          eta <- eta+offset[, spp_idx, drop = FALSE]
         } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
       } else if((NROW(object$offset) == NROW(eta))){
         eta <- eta+object$offset[, spp_idx, drop = FALSE]
@@ -841,7 +841,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
             k <- max(object$y[, j], na.rm = TRUE) - 2
             if(k > 0) zetanew[j, 2:(k + 1)] <- zetas[idx + seq_len(k)]
             idx <- idx + k
-            zetanew[j, ] <- cumsum(exp(zetanew[j, ]))
+            zetanew[j, ] <- c(0, cumsum(exp(zetanew[j, -1])))
           } else {
             zetanew[j, ] <- c(zetas[idx + 1], exp(zetas[idx + 2])); idx <- idx + 2
           }

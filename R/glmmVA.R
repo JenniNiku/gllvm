@@ -84,6 +84,7 @@ glmmVA <- function(formula, data, family, response.group = NULL,
   mf <- model.frame(subbars1(formula), data = data)
   y <- as.matrix(model.response(mf))
   offset <- model.offset(mf)
+  if(!is.null(offset)) offset <- matrix(offset, nrow = NROW(y), ncol = NCOL(y))
   row.eff.formula = remove.offset(formula)
   
   if("Lambda.start" %in% names(control.va)){

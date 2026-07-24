@@ -80,9 +80,10 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
       if(nrow(Xcoef)<2) names(Xc) <- rownames(Xcoef)
       lower <- Xc - 1.96 * sdXcoef[, i]
       upper <- Xc + 1.96 * sdXcoef[, i]
-      if(order) Xc <- sort(Xc)
-      lower <- lower[names(Xc)]
-      upper <- upper[names(Xc)]
+      if(order){
+        ord <- order(Xc)
+        Xc <- Xc[ord]; lower <- lower[ord]; upper <- upper[ord]
+      }
 
       col.seq <- rep("black", m)
       col.seq[lower < 0 & upper > 0] <- "grey"
@@ -132,9 +133,10 @@ coefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, order = T
     
     lower <- Xc - 1.96 * sdXcoef
     upper <- Xc + 1.96 * sdXcoef
-    if(order) Xc <- sort(Xc)
-    lower <- lower[names(Xc)]
-    upper <- upper[names(Xc)]
+    if(order){
+      ord <- order(Xc)
+      Xc <- Xc[ord]; lower <- lower[ord]; upper <- upper[ord]
+    }
 
     col.seq <- rep("black", m)
     col.seq[lower < 0 & upper > 0] <- "grey"

@@ -66,10 +66,11 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       Xc <- Xcoef[, i]
       lower <- Xc - 1.96 * sdXcoef[, i]
       upper <- Xc + 1.96 * sdXcoef[, i]
+      labely.i <- labely
       if(order){
-        Xc <- sort(Xc)
-        lower <- lower[names(Xc)]
-        upper <- upper[names(Xc)]
+        ord <- order(Xc)
+        Xc <- Xc[ord]; lower <- lower[ord]; upper <- upper[ord]
+        labely.i <- labely.i[ord]
       }
       col.seq <- rep("black", m)
       col.seq[lower < 0 & upper > 0] <- "grey"
@@ -84,7 +85,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
       abline(v = 0, lty = 1)
       if (y.label)
-        axis( 2, at = At.y, labels = labely, las = 1, cex.axis = cex.ylab)
+        axis( 2, at = At.y, labels = labely.i, las = 1, cex.axis = cex.ylab)
     }
   }
   
@@ -130,13 +131,14 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
     if (is.null(mfrow))
       par(mar = mar)
     for (i in 1:k) {
-      Xc <- Xcoef[ind.spp, i,drop=FALSE]
+      Xc <- Xcoef[ind.spp, i]
       lower <- Xc - 1.96 * sdXcoef[, i]
       upper <- Xc + 1.96 * sdXcoef[, i]
+      labely.i <- labely
       if(order){
-        Xc <- sort(Xc)
-        lower <- lower[names(Xc)]
-        upper <- upper[names(Xc)]
+        ord <- order(Xc)
+        Xc <- Xc[ord]; lower <- lower[ord]; upper <- upper[ord]
+        labely.i <- labely.i[ord]
       }
       col.seq <- rep("black", m)
       col.seq[lower < 0 & upper > 0] <- "grey"
@@ -151,7 +153,7 @@ randomCoefplot.gllvm <- function(object, y.label = TRUE, which.Xcoef = NULL, cex
       segments( x0 = lower, y0 = At.y, x1 = upper, y1 = At.y, col = col.seq )
       abline(v = 0, lty = 1)
       if (y.label)
-        axis( 2, at = At.y, labels = labely, las = 1, cex.axis = cex.ylab)
+        axis( 2, at = At.y, labels = labely.i, las = 1, cex.axis = cex.ylab)
     }
   }
 }

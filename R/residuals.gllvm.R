@@ -47,7 +47,14 @@ residuals.gllvm <- function(object, ...) {
   args <- list(...)
   replace = TRUE
   if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
-  
+
+  getNtrials <- function(famname){
+    Nt <- object$Ntrials
+    if(is.matrix(Nt) && ncol(Nt) == p) return(c(Nt[, object$family == famname]))
+    if(length(Nt) == p) return(rep(Nt[object$family == famname], each = n))
+    rep(Nt, length.out = n * sum(object$family == famname))
+  }
+
   if(!all(c("mu", "eta.mat")%in%names(args))){
     eta.mat = predict(object, type = "link")
     mu = predict(object, type = "response")
@@ -88,8 +95,8 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "negative.binomial1")) {
     p_f = sum(object$family == "negative.binomial1")
     phis <- object$params$phi[object$family == "negative.binomial1"] + 1e-05
-    b <- pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n))
-    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]) - 1, mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])*rep(phis, each = n)))
+    b <- pnbinom(as.vector(y[,object$family == "negative.binomial1"]), mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])/rep(phis, each = n))
+    a <- pmin(b,  pnbinom(as.vector(y[,object$family == "negative.binomial1"]) - 1, mu = as.vector(mu[,object$family == "negative.binomial1"]), size = as.vector(mu[,object$family == "negative.binomial1"])/rep(phis, each = n)))
     
     u = a+(b-a)*runif(n*p_f)
     
@@ -219,10 +226,8 @@ residuals.gllvm <- function(object, ...) {
   }
   if (any(object$family == "binomial")) {
     p_f = sum(object$family == "binomial")
-    if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "binomial"], each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "binomial"])
-    
+    Ntrials <- getNtrials("binomial")
+
     b <- pbinom(as.vector(y[,object$family == "binomial"]), Ntrials, as.vector(mu[,object$family == "binomial"]))
     a <- pmin(b, pbinom(as.vector(y[,object$family == "binomial"]) - 1, Ntrials, as.vector(mu[,object$family == "binomial"])))
     
@@ -234,9 +239,7 @@ residuals.gllvm <- function(object, ...) {
   }
   if (any(object$family == "ZIB")) {
     p_f = sum(object$family == "ZIB")
-    if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "ZIB"], each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "ZIB"])
+    Ntrials <- getNtrials("ZIB")
 
     b <- pzib(as.vector(y[,object$family == "ZIB"]), Ntrials = Ntrials, mu = as.vector(mu[,object$family == "ZIB"]), sigma = rep(object$params$phi[object$family == "ZIB"], each = n))
     a <- pmin(b, pzib(as.vector(y[,object$family == "ZIB"]) - 1, Ntrials = Ntrials, mu = as.vector(mu[,object$family == "ZIB"]), sigma = rep(object$params$phi[object$family == "ZIB"], each = n)))
@@ -249,9 +252,7 @@ residuals.gllvm <- function(object, ...) {
   }
   if (any(object$family == "ZNIB")) {
     p_f = sum(object$family == "ZNIB")
-    if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "ZNIB"], each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "ZNIB"])
+    Ntrials <- getNtrials("ZNIB")
 
     phis0 = (object$params$phi/(1+object$params$phi + object$params$ZINB.phi))[object$family == "ZNIB"];
     phisN = (object$params$ZINB.phi/(1+object$params$phi + object$params$ZINB.phi))[object$family == "ZNIB"];
@@ -268,9 +269,7 @@ residuals.gllvm <- function(object, ...) {
   if (any(object$family == "beta.binomial")) {
     p_f = sum(object$family == "beta.binomial")
     phis <- rep(object$params$phi[object$family == "beta.binomial"], each = n)
-    if(length(Ntrials)==1)Ntrials <- rep(Ntrials,p_f)
-    if(length(Ntrials)==p)Ntrials <- rep(Ntrials[object$family == "beta.binomial"], each = n)
-    if(is.matrix(Ntrials))Ntrials <- c(Ntrials[,object$family == "beta.binomial"])
+    Ntrials <- getNtrials("beta.binomial")
 
     b <- pbetabinom(as.vector(y[,object$family == "beta.binomial"]), mu = as.vector(mu[,object$family == "beta.binomial"]), phi = phis, Ntrials = Ntrials)
     a <- pmin(b, pbetabinom(as.vector(y[,object$family == "beta.binomial"]) - 1, mu = as.vector(mu[,object$family == "beta.binomial"]), phi = phis, Ntrials = Ntrials))

@@ -59,7 +59,7 @@ VP.gllvm <- function(object, group = NULL, groupnames=NULL, adj.cov = TRUE, grou
   n <- nrow(object$y)
 
   if (!is.null(object$X)) {
-    formula <- formula(terms(object))
+    formula <- as.formula(object$formula)
   } else {
     formula <- NULL
   }

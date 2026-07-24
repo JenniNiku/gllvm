@@ -289,8 +289,8 @@ predictPairwise <- function(object, ...) {
 }
 
 # prediction of binomial-based distributions can be used as-is (including orderedBeta)
-# not implemented because not based (indirectly) on binary data: gaussian, beta, betaH, gamma, exponential
-# families implemented: poisson, NB, NB1, ZIP, ZINB, Tweedie, ordinal
+# not implemented because not based (indirectly) on binary data: gaussian, beta, gamma, exponential
+# families implemented: poisson, NB, NB1, ZIP, ZINB, Tweedie, ordinal, betaH
 gllvm.presence.prob <- function(fit, object, spp = NULL) {
 
   family <- object$family
@@ -329,7 +329,7 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       sizes <- matrix(1 / object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
       probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
     } else if(fam == "negative.binomial1"){
-      sizes <- mu * matrix(object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
+      sizes <- mu / matrix(object$params$phi[j], nrow = n, ncol = length(pos), byrow = TRUE)
       probs[, pos] <- pnbinom(0, mu = mu, size = sizes, lower.tail = FALSE)
     } else if(fam == "betaH"){
       probs[, pos] <- 1 - fit[, -seq_len(ncol(object$y)), drop = FALSE][, j, drop = FALSE]
@@ -348,11 +348,11 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       }
     } else if(fam == "ZIP"){
       phi_vec <- rep(object$params$phi[j], each = n)
-      probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu), sigma = phi_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pzip(0, mu = as.vector(mu)/(1 - phi_vec), sigma = phi_vec), nrow = n)
     } else if(fam == "ZINB"){
       phi_vec  <- rep(object$params$phi[j],      each = n)
       zphi_vec <- rep(object$params$ZINB.phi[j], each = n)
-      probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu), p = phi_vec, sigma = zphi_vec), nrow = n)
+      probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu)/(1 - phi_vec), p = phi_vec, sigma = zphi_vec), nrow = n)
     } else if(fam == "tweedie"){
       phi_vec <- rep(object$params$phi[j], each = n)
       probs[, pos] <- matrix(1 - fishMod::pTweedie(0, mu = as.vector(mu),
@@ -445,7 +445,7 @@ residuals.predictSR.gllvm <- function(object, model, ...){
 #' @export
 #' @rdname predictSR.gllvm 
 plot.predictSR.gllvm <- function(x, object, which = c(1,2), ...){
-  if(is.null(x)){ x <-  predictSR(object, se.fit = FALSE)}else if(length(x$fitted)!=nrow(object$y))stop("Provided predictSR object should not be based on new data.")
+  if(is.null(x)){ x <-  predictSR(object, se.fit = FALSE)}else if(length(x$expected$fit)!=nrow(object$y))stop("Provided predictSR object should not be based on new data.")
   res <- residuals.predictSR.gllvm(object = x, model = object)
   
   par(mfrow=c(1,length(which)))

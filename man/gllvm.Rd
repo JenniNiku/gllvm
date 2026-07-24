@@ -67,7 +67,7 @@ gllvm(
 
 \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted (for column-specific effects).}
 
-\item{family}{distribution function for responses, or a vector of families for mixed response type model. Options are \code{"negative.binomial"} and \code{"negative.binomial1"} (with log link), \code{poisson(link = "log")}, \code{binomial} (with probit, logit, or cloglog link), zero-inflated binomial (\code{ZIB}), zero-and-N-inflated binomial (\code{ZNIB}) zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"} and \code{"EVA"}-method, with probit or logit link), beta hurdle \code{"betaH"} (for \code{"VA"} and \code{"EVA"}-method) and \code{"orderedBeta"} (for \code{"VA"} and \code{"EVA"}-method). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.}
+\item{family}{distribution function for responses, or a vector of families for mixed response type model. Options are \code{"negative.binomial"} and \code{"negative.binomial1"} (with log link), \code{poisson(link = "log")}, \code{binomial} (with probit, logit, or cloglog link), beta-binomial (\code{"beta.binomial"}) (with probit, logit, or cloglog link, for \code{"LA"}-method only), zero-inflated binomial (\code{ZIB}), zero-and-N-inflated binomial (\code{ZNIB}) zero-inflated poisson (\code{"ZIP"}), zero-inflated negative-binomial (\code{"ZINB"}), \code{gaussian(link = "identity")}, Tweedie (\code{"tweedie"}) (with log link), \code{"gamma"} (with log link), \code{"exponential"} (with log link), beta (\code{"beta"}) (with logit and probit link, for \code{"LA"} and  \code{"EVA"}-method), \code{"ordinal"} (with \code{"VA"}-method with probit or logit link, or with \code{"EVA"}-method with logit link; not available with \code{"LA"}-method), beta hurdle \code{"betaH"} (with probit or logit link, for \code{"VA"}, \code{"EVA"} and \code{"LA"}-method) and \code{"orderedBeta"} (with \code{"VA"}-method with probit or logit link, or with \code{"EVA"}-method with logit link). Note: \code{"betaH"} and \code{"orderedBeta"} with \code{"VA"}-method are actually fitted using a hybrid approach such that EVA is applied to the beta distribution part of the likelihood.}
 
 \item{num.lv}{number of latent variables, d, in gllvm model. Non-negative integer, less than number of response variables (m). Defaults to 2, if \code{num.lv.c=0} and \code{num.RR=0}, otherwise 0.}
 
@@ -339,9 +339,13 @@ With ordinal family response classes must start from 0 or 1.
   \item{For binary data \code{family = binomial()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_{trials}\mu_{ij}(1-\mu_{ij})}.}
   \item{ \code{family = "ZIB"}:}{ Expectation \eqn{E[Y_{ij}] = (1-p_j)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)}.}
   \item{ \code{family = "ZNIB"}:}{ Expectation \eqn{E[Y_{ij}] = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^N_j)N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2}.}
-  \item{ \code{family = "beta.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1 + (N_j-1)\phi_j/(\phi_j+1))} where \eqn{\phi_j > 0} is a species-specific overdispersion parameter. Only available for \code{method = "LA"}.}
+  \item{ \code{family = "beta.binomial"}:}{ Expectation \eqn{E[Y_{ij}] = N_j\mu_{ij}}, variance \eqn{V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1 + (N_j-1)\phi_j/(\phi_j+1))}. Only available for \code{method = "LA"}.}
 
   \item{For percent cover data \eqn{0 < Y_{ij} < 1} \code{family = "beta"}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)}.}
+
+  \item{For percent cover data with absences \eqn{0 \le Y_{ij} < 1} \code{family = "betaH"}:}{ Beta hurdle model (Korhonen et al., 2024): a separate linear predictor \eqn{\eta^0_{ij}} models the probability of presence, so that \eqn{p^0_{ij} = p(Y_{ij} = 0) = 1-g^{-1}(\eta^0_{ij})}, and the non-zero responses follow the beta distribution above with mean \eqn{\mu_{ij}}. Expectation \eqn{E[Y_{ij}] = (1-p^0_{ij})\mu_{ij}}, variance \eqn{V(\mu_{ij}) = (1-p^0_{ij})\mu_{ij}(1-\mu_{ij})/(1+\phi_j) + p^0_{ij}(1-p^0_{ij})\mu_{ij}^2}.}
+
+  \item{For percent cover data with absences and full cover \eqn{0 \le Y_{ij} \le 1} \code{family = "orderedBeta"}:}{ Ordered beta model (Korhonen et al., 2024), which extends the beta distribution above with point masses at zero and one by means of two cut-off parameters \eqn{\zeta_{j0} < \zeta_{j1}} (reported as \code{cutoff0} and \code{cutoff1}; species-common or species-specific as set by \code{zeta.struc}, with starting values set by \code{zetacutoff} in \code{control.start}). With \eqn{\rho^k_{ij} = g^{-1}(\zeta_{jk} - \eta_{ij})}, we have \eqn{p(Y_{ij} = 0) = \rho^0_{ij}} and \eqn{p(Y_{ij} = 1) = 1-\rho^1_{ij}}, while responses in \eqn{(0,1)} occur with probability \eqn{\rho^1_{ij}-\rho^0_{ij}} and follow the beta distribution with mean \eqn{\mu_{ij} = g^{-1}(\eta_{ij})}. Expectation \eqn{E[Y_{ij}] = (1-\rho^1_{ij}) + (\rho^1_{ij}-\rho^0_{ij})\mu_{ij}}, variance \eqn{V(\mu_{ij}) = (1-\rho^1_{ij}) + (\rho^1_{ij}-\rho^0_{ij})\{\mu_{ij}(1-\mu_{ij})/(1+\phi_j)+\mu_{ij}^2\} - E[Y_{ij}]^2}.}
 
   \item{For positive continuous data \code{family = "gamma"}:}{Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \mu_{ij}^2/\phi_j}, where \eqn{\phi_j} is species specific shape parameter.}
   
@@ -349,7 +353,7 @@ With ordinal family response classes must start from 0 or 1.
   
   \item{For non-negative continuous or biomass data \code{family = "tweedie"}}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(\mu_{ij}) = \phi_j*\mu_{ij}^\nu}, where \eqn{\nu} is a power parameter of Tweedie distribution. See details Dunn and Smyth (2005).}
 
-  \item{For ordinal data \code{family = "ordinal"}:}{ Cumulative probit model, see Hui et.al. (2016).}
+  \item{For ordinal data \code{family = "ordinal"}:}{ Cumulative link model, with probit or logit link (logit only for \code{method = "EVA"}), not available for \code{method = "LA"}. With cut-offs \eqn{\zeta_{j1} < \ldots < \zeta_{jK-1}} for \eqn{K} classes (species-common or species-specific as set by \code{zeta.struc}), \eqn{p(Y_{ij} \le k) = g^{-1}(\zeta_{jk} - \eta_{ij})}, so that \eqn{p(Y_{ij} = k) = g^{-1}(\zeta_{jk} - \eta_{ij}) - g^{-1}(\zeta_{j,k-1} - \eta_{ij})}. As the classes are ordinal, the mean and variance are only defined once numerical scores are assigned to the classes; with the class labels \eqn{k = 1, \ldots, K} as scores, expectation \eqn{E[Y_{ij}] = \sum_k k p(Y_{ij} = k)} and variance \eqn{V(Y_{ij}) = \sum_k k^2 p(Y_{ij} = k) - E[Y_{ij}]^2}.}
   
   \item{For normal distributed data \code{family = gaussian()}:}{ Expectation \eqn{E[Y_{ij}] = \mu_{ij}}, variance \eqn{V(y_{ij}) = \phi_j^2.}}
 }
@@ -504,6 +508,8 @@ Hui, F. K. C., Warton, D., Ormerod, J., Haapaniemi, V., and Taskinen, S. (2017).
 Kasper Kristensen, Anders Nielsen, Casper W. Berg, Hans Skaug, Bradley M. Bell (2016). TMB: Automatic Differentiation and Laplace Approximation. Journal of Statistical Software, 70(5), 1-21.
 
 Korhonen, P., Hui, F. K. C., Niku, J., and Taskinen, S. (2021). Fast, universal estimation of latent variable models using extended variational approximations. Stat Comput 33, 26 (2023).
+
+Korhonen, P., Hui, F. K. C., Niku, J., Taskinen, S., and van der Veen, B. (2024). A comparison of joint species distribution models for percent cover data. Methods in Ecology and Evolution, 15:2359-2372.
 
 Niku, J., Warton,  D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological, and Environmental Statistics, 22:498-522.
 
