@@ -35,7 +35,7 @@ raw <- data.frame(
     "identity",
     "log","log",
     "probit/logit",
-    "probit/logit","logit",
+    "probit/logit","probit/logit",
     "probit/logit",
     "probit/logit/cloglog"
   ),
