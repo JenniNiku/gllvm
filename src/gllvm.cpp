@@ -3202,11 +3202,19 @@ Type objective_function<Type>::operator() ()
     switch (family(j)) {
     
     case POISSON: {//poisson family 0
-      for (int i=0; i<n; i++) {
-        // for (int j=0; j<p;j++){
-        if(!gllvmutils::isNA(y(i,j)))nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
-        // }
-        // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
+      if(method<1){
+        for (int i=0; i<n; i++) {
+          // for (int j=0; j<p;j++){
+          if(!gllvmutils::isNA(y(i,j)))nll -= dpois(y(i,j), exp(eta(i,j)+cQ(i,j)), true)-y(i,j)*cQ(i,j);
+          // }
+          // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
+        }
+      } else if (method>1) {
+        for (int i=0; i<n; i++) {
+          if(!gllvmutils::isNA(y(i,j))){
+            nll -= dpois(y(i,j), exp(eta(i,j)), true) - exp(eta(i,j))*cQ(i,j);
+          }
+        }
       }
       break;
     }

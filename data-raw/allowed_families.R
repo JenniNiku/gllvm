@@ -15,7 +15,7 @@ raw <- data.frame(
   ),
   method = c(
     "VA/LA","EVA",
-    "VA/LA","VA/EVA/LA","VA/LA","VA/LA","VA/LA",
+    "VA/EVA/LA","VA/EVA/LA","VA/LA","VA/LA","VA/LA",
     "VA","LA",
     "VA","LA",
     "EVA/VA/LA","VA/LA", "EVA",
