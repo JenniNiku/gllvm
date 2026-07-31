@@ -81,9 +81,9 @@ gllvm(
 
 \item{studyDesign}{variables related to eg. sampling/study design, used for defining correlation structure of the latent variables and row effects.}
 
-\item{dist}{list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.}
+\item{dist}{list of length equal to the number of row effects with correlation structure \code{corExp}, \code{corMatern} that holds the matrix of coordinates or time points.}
 
-\item{distLV}{matrix of coordinates or time points used for LV correlation structure \code{corExp}.}
+\item{distLV}{matrix of coordinates or time points used for LV correlation structure \code{corExp}, \code{corMatern}.}
 
 \item{colMat}{either a list of length 2 with matrix of similarity for the column effects and named matrix "dist" of pairwise distances (of columns, to use in selecting nearest neighbours) for a sparse approximation of the matrix inverse in the likelihood, or only a (p.d.) matrix of similarity for the column effects for a normal inverse calculation.}
 
@@ -313,7 +313,9 @@ Now we can set random intercept for each group \eqn{t}, (see argument '\code{row
 \describe{
   \item{\code{corAR1} }{ autoregressive process of order 1.}
   \item{\code{corExp} }{ exponentially decaying, see argument '\code{dist}'.}
+  \item{\code{corMatern} }{ compound symmetry.}
   \item{\code{corCS} }{ compound symmetry.}
+  \item{\code{propto.}}{ proportional to a known matrix}
 }  
 }
 

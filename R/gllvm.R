@@ -18,8 +18,8 @@
 #' @param row.eff  \code{FALSE}, \code{fixed}, \code{"random"} or an object of class "formula": defines the community-level or row effects, i.e. terms that (unlike \code{formula}) are the same for all species (columns) rather than species-specific. Defaults to \code{FALSE} when row effects are not included. \code{"fixed"} and \code{"random"} give, respectively, a single fixed or i.i.d. random intercept per row. Supports both fixed effects and random effects, e.g. \code{~ x1 + (1|group)}. The variable(s) must be included in \code{studyDesign}. Correlation structure between random group effects/intercepts can also be set using \code{~struc(1|groups)}, where option to 'struc' are \code{corAR1} (AR(1) covariance), \code{corExp} (exponentially decaying, see argument '\code{dist}'), \code{corCS} (compound symmetry), and \code{corMatern} (Matern covariance, see argument '\code{dist}'), or \code{propto} (proportional covariance, used as propto(a+b|group, matrix)). Correlation structure can be set between or within groups, see argument '\code{corWithin}'.
 #' @param corWithin logical. Vector of length equal to the number of row effects. For structured row effects with correlation, If \code{TRUE}, correlation is set between row effects of the observation units within group. Correlation and groups can be defined using \code{row.eff}. Defaults to \code{FALSE}, when correlation is set for row parameters between groups.
 #' @param corWithinLV logical. For LVs with correlation, If \code{TRUE}, correlation is set between rows of the observation units within group. Defaults to \code{FALSE}, when correlation is set for rows between groups.
-#' @param dist list of length equal to the number of row effects with correlation structure \code{corExp} that holds the matrix of coordinates or time points.
-#' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}.
+#' @param dist list of length equal to the number of row effects with correlation structure \code{corExp}, \code{corMatern} that holds the matrix of coordinates or time points.
+#' @param distLV matrix of coordinates or time points used for LV correlation structure \code{corExp}, \code{corMatern}.
 #' @param colMat either a list of length 2 with matrix of similarity for the column effects and named matrix "dist" of pairwise distances (of columns, to use in selecting nearest neighbours) for a sparse approximation of the matrix inverse in the likelihood, or only a (p.d.) matrix of similarity for the column effects for a normal inverse calculation.
 #' @param colMat.rho.struct either \code{single} (default) or \code{term} indicating whether the signal parameter should be shared for covariates, or not.
 #' @param quadratic either \code{FALSE}(default), \code{TRUE}, or \code{LV}. If \code{FALSE} models species responses as a linear function of the latent variables. If \code{TRUE} models species responses as a quadratic function of the latent variables. If \code{LV} assumes species all have the same quadratic coefficient per latent variable.
@@ -142,7 +142,9 @@
 #'\describe{
 #'   \item{\code{corAR1} }{ autoregressive process of order 1.}
 #'   \item{\code{corExp} }{ exponentially decaying, see argument '\code{dist}'.}
+#'   \item{\code{corMatern} }{ compound symmetry.}
 #'   \item{\code{corCS} }{ compound symmetry.}
+#'   \item{\code{propto.}}{ proportional to a known matrix}
 #' }  
 #' }
 #'
