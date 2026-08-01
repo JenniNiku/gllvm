@@ -3930,7 +3930,7 @@ Type objective_function<Type>::operator() ()
       Type pVA;
       if(method<1) {
         //ZINB VA
-        for (int j=0; j<p;j++){
+        // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
@@ -3943,11 +3943,11 @@ Type objective_function<Type>::operator() ()
               }
             }
           }
-        }
+        // }
       } else if(method>1){
         //ZINB EVA
         Type qu;
-        for (int j=0; j<p;j++){
+        // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
             if(!gllvmutils::isNA(y(i,j))){
               mu(i,j) = exp(eta(i,j));
@@ -3965,7 +3965,7 @@ Type objective_function<Type>::operator() ()
               }
             }
           }
-        }
+        // }
         
       }
       break;
