@@ -1,6 +1,9 @@
 Version 2.0.14
 =============
 
+* Poisson, ZIP, ZINB, gamma and ordered beta model with probit link implemented with EVA
+* ordered beta model with logit and probit link implemented with LA
+
 ## Bugfixes
 
 * Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo

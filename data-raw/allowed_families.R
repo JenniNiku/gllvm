@@ -10,19 +10,19 @@ raw <- data.frame(
     "gaussian",
     "gamma","exponential",
     "beta",
-    "orderedBeta","orderedBeta",
+    "orderedBeta",
     "betaH", "beta.binomial"
   ),
   method = c(
     "VA/LA","EVA",
-    "VA/EVA/LA","VA/EVA/LA","VA/LA","VA/LA","VA/LA",
+    "VA/EVA/LA","VA/EVA/LA","VA/LA","VA/EVA/LA","VA/EVA/LA",
     "VA","LA",
     "VA","LA",
     "EVA/VA/LA","VA/LA", "EVA",
     "VA/LA",
-    "VA/LA","VA/LA",
+    "VA/EVA/LA","VA/LA",
     "LA/EVA",
-    "VA","EVA",
+    "VA/EVA/LA",
     "EVA/VA/LA",
     "LA"
   ),
@@ -35,7 +35,7 @@ raw <- data.frame(
     "identity",
     "log","log",
     "probit/logit",
-    "probit/logit","probit/logit",
+    "probit/logit",
     "probit/logit",
     "probit/logit/cloglog"
   ),

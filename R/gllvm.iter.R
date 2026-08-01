@@ -31,8 +31,8 @@ gllvm.iter <- function(...){
   }
   
   if(any(args$family == "orderedBeta")) {
-    if (!(args$method %in% c("VA", "EVA"))) #"tweedie", 
-      stop("family=\"", "orderedBeta", "\" : family not implemented with LA method, change the method to 'VA'.")
+    # if (!(args$method %in% c("VA", "EVA"))) #"tweedie", 
+    #   stop("family=\"", "orderedBeta", "\" : family not implemented with LA method, change the method to 'VA'.")
     
     if((sum(args$y[,args$family == "orderedBeta", drop=FALSE]==1, na.rm = TRUE) + sum(args$y[,args$family == "orderedBeta", drop=FALSE]==0, na.rm = TRUE))==0){
       stop("No zeros or ones in the data, please use 'family = `beta`' instead.")
