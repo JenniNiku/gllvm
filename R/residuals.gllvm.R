@@ -168,7 +168,7 @@ residuals.gllvm <- function(object, ...) {
     oB_ind <- c(1:p)[object$family == "orderedBeta"]
     for (i in 1:n) {
       for (j in 1:p_f) {
-        linkj <- object$link[pmin(length(object$link), j)]
+        linkj <- object$link[pmin(length(object$link), oB_ind[j])]
         # a = 0; b = 1
         if(!is.na(y[i, oB_ind[j]])){
           if(y[i, oB_ind[j]]==1){
