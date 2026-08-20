@@ -1,7 +1,7 @@
 Version 2.0.14
 =============
 
-* Poisson, ZIP, ZINB, gamma and ordered beta model with probit link implemented with EVA
+* Poisson, ZIP, ZINB, gaussian, gamma and ordered beta model with probit link implemented with EVA
 * ordered beta model with logit and probit link implemented with LA
 
 ## Bugfixes
