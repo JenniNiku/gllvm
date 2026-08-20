@@ -3380,8 +3380,14 @@ Type objective_function<Type>::operator() ()
     }
     
     case GAUSSIAN: {//gaussian family 3
-      for (int i=0; i<n; i++) {
-          if(!gllvmutils::isNA(y(i,j)))nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
+      if (method<1) {
+        for (int i=0; i<n; i++) {
+            if(!gllvmutils::isNA(y(i,j)))nll -= (y(i,j)*eta(i,j) - 0.5*eta(i,j)*eta(i,j) - cQ(i,j))/(iphi(j)*iphi(j)) - 0.5*(y(i,j)*y(i,j)/(iphi(j)*iphi(j)) + log(2*iphi(j)*iphi(j))) - log(M_PI)/2;
+        }
+      } else if (method>1) {
+        for (int i=0; i<n; i++) {
+          if(!gllvmutils::isNA(y(i,j)))nll -= - 0.5*(y(i,j) - eta(i,j))*(y(i,j) - eta(i,j))/(iphi(j)*iphi(j)) - 0.5*log(2*iphi(j)*iphi(j)) - log(M_PI)/2 - cQ(i,j)/(iphi(j)*iphi(j));
+        }
       }
       break;
     }

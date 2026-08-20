@@ -19,7 +19,7 @@ raw <- data.frame(
     "VA","LA",
     "VA","LA",
     "EVA/VA/LA","VA/LA", "EVA",
-    "VA/LA",
+    "VA/EVA/LA",
     "VA/EVA/LA","VA/LA",
     "LA/EVA",
     "VA/EVA/LA",
