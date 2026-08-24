@@ -194,8 +194,8 @@ auxFun <- function(x) {
   return(out)
 }
 
-mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
-  frloc <- factorize(x, frloc, drop.unused.levels = drop.unused.levels)
+mkModMlist <- function (x, frloc) {
+  frloc <- factorize(x, frloc)
   # safeguard for issues with numeric in factor levels
   # There is probably a better way to do this
   if(suppressWarnings(any(!is.na(as.numeric(unlist(frloc[,all.vars(x[[3]])])))))){
@@ -207,14 +207,14 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
   }
   ff <- eval(substitute(fac, list(fac = x[[3]])), frloc)
   # interactions with unobserved combinations need to be caught
-  if(is.factor(ff) && drop.unused.levels)ff <- droplevels(ff) 
+  if(is.factor(ff))ff <- droplevels(ff) 
   nl <- length(levels(ff))
   
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
   cntrsts <- lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE)
   mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[-which(!names(cntrsts)%in%labels(trms))])
   
-  sm <- Matrix::fac2sparse(ff, to = "d", drop.unused.levels = drop.unused.levels)
+  sm <- Matrix::fac2sparse(ff, to = "d")
   
   fm <- NULL
   
@@ -245,7 +245,7 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
   if("(Intercept)"%in%colnames(mm)){
     levels(ff2)[1]<- NA # exclude reference category for identifiability
     if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
-      fm2 <- Matrix::fac2sparse(ff2, to = "d", drop.unused.levels = drop.unused.levels)
+      fm2 <- Matrix::fac2sparse(ff2, to = "d")
     }else{
       fm2 <- matrix(ncol = nrow(mm),nrow=0) # no categorical variables, nothing should be happening here
     }
@@ -270,8 +270,22 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
   list(ff = ff, sm = sm, nl = nl, nc = ncol(mm), cnms = row.names(sm), fm = fm)
 }
 
+csIndices <- function(grps, nocorr){
+  if(!any(grps>1)) return(NULL)
+  # diag enters to remove any potential correlations
+  offs <- cumsum(c(0L, grps))
+  cs <- do.call(rbind, mapply(function(L, off, nc){
+    if(L < 2 || nc == "diag") return(NULL)
+    len <- (L-1L):1L
+    j <- rep.int(seq_len(L-1L), len)
+    cbind(row = off + sequence(len) + j, col = off + j)
+  }, grps, offs[seq_along(grps)], nocorr, SIMPLIFY = FALSE))
+  if(is.null(cs) || nrow(cs)==0) cs <- matrix(0)
+  cs
+}
+
 # for formula
-mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, calc.cs = TRUE, ...)
+mkReTrms1 <- function (bars, fr, ...)
 {
   # drop.unused.levels = TRUE; 
   reorder.vars = FALSE
@@ -287,25 +301,11 @@ mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, calc.cs = TRUE, ...)
   term.names <- vapply(bars, safeDeparse, "")
   
   #
-  blist <- lapply(bars, mkModMlist, fr, drop.unused.levels = drop.unused.levels)#, reorder.vars = reorder.vars)
+  blist <- lapply(bars, mkModMlist, fr)#, reorder.vars = reorder.vars)
   nl <- vapply(blist, `[[`, 0L, "nl")
   cnms <- lapply(blist,`[[`,"cnms")
   names(nl) <- unlist(lapply(cnms, auxFun))
   grps <- unlist(lapply(cnms,length))
-  if(calc.cs && any(grps>1)){
-  # diag enters to remove any potential correlations
-  nocorr <- if("nocorr" %in% names(list(...))) list(...)$nocorr else rep("", length(cnms))
-  offs <- cumsum(c(0L, grps))
-  cs <- do.call(rbind, mapply(function(L, off, nc){
-    if(L < 2 || nc == "diag") return(NULL)
-    len <- (L-1L):1L
-    j <- rep.int(seq_len(L-1L), len)
-    cbind(row = off + sequence(len) + j, col = off + j)
-  }, grps, offs[seq_along(grps)], nocorr, SIMPLIFY = FALSE))
-  if(is.null(cs) || nrow(cs)==0) cs <- matrix(0)
-  }else{
-    cs <- NULL
-  }
   Ztlist <- lapply(blist, `[[`, "sm")
   Zt <- do.call(rbind, Ztlist)
   # try({row.names(Zt) <- unlist(lapply(blist, function(x)if(x$nl>1 && all(x$cnms!="(Intercept)")){paste0(x$cnms, row.names(x$sm))}else if(all(x$cnms!="(Intercept)")){make.unique(x$cnms)}else{row.names(x$sm)}))}, silent = TRUE)
@@ -314,8 +314,8 @@ mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, calc.cs = TRUE, ...)
   # Design matrix RE means
   Xtlist <- lapply(blist, `[[`, "fm")
   Xt <- do.call(rbind, Xtlist)
-  
-  ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
+
+  ll <- list(Zt = Zt, grps = grps, nl = nl, Xt = Xt)
   ll
 }
 
@@ -361,10 +361,10 @@ mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, calc.cs = TRUE, ...)
 #   ll <- list(Zt = Zt, grps = grps,  cs = cs, nl = nl, Xt = Xt)
 #   ll
 # }
-factorize <- function (x, frloc, char.only = FALSE, drop.unused.levels = TRUE) {
+factorize <- function (x, frloc, char.only = FALSE) {
   for (i in all.vars(x[[length(x)]])) {
     if (!is.null(curf <- frloc[[i]])) 
-      frloc[[i]] <- factor(curf, levels = if(!is.factor(curf)||is.factor(curf)&&drop.unused.levels){unique(curf)}else if(is.factor(curf)){levels(curf)})
+      frloc[[i]] <- factor(curf, levels = unique(curf))
   }
   return(frloc)
 }
