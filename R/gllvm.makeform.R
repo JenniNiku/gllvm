@@ -271,7 +271,7 @@ mkModMlist <- function (x, frloc, drop.unused.levels = TRUE) {
 }
 
 # for formula
-mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, ...) 
+mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, calc.cs = TRUE, ...)
 {
   # drop.unused.levels = TRUE; 
   reorder.vars = FALSE
@@ -292,15 +292,17 @@ mkReTrms1 <- function (bars, fr, drop.unused.levels = TRUE, ...)
   cnms <- lapply(blist,`[[`,"cnms")
   names(nl) <- unlist(lapply(cnms, auxFun))
   grps <- unlist(lapply(cnms,length))
-  if(any(grps>1)){
+  if(calc.cs && any(grps>1)){
   # diag enters to remove any potential correlations
-  if(!"nocorr"%in%names(list(...))){
-    cs <- which(as.matrix(Matrix::bdiag(lapply(cnms,function(x)lower.tri(matrix(ncol=length(x),nrow=length(x)))*1)))==1, arr.ind = TRUE)
-  }else{
-  nocorr <- list(...)$nocorr
-  cs <- which(as.matrix(Matrix::bdiag(mapply(function(x, nc)lower.tri(matrix(ncol=length(x),nrow=length(x)))*(nc!="diag"), cnms, nocorr, SIMPLIFY=FALSE)))==1, arr.ind = TRUE)
-  if(nrow(cs)==0)cs<-matrix(0)
-  }
+  nocorr <- if("nocorr" %in% names(list(...))) list(...)$nocorr else rep("", length(cnms))
+  offs <- cumsum(c(0L, grps))
+  cs <- do.call(rbind, mapply(function(L, off, nc){
+    if(L < 2 || nc == "diag") return(NULL)
+    len <- (L-1L):1L
+    j <- rep.int(seq_len(L-1L), len)
+    cbind(row = off + sequence(len) + j, col = off + j)
+  }, grps, offs[seq_along(grps)], nocorr, SIMPLIFY = FALSE))
+  if(is.null(cs) || nrow(cs)==0) cs <- matrix(0)
   }else{
     cs <- NULL
   }
