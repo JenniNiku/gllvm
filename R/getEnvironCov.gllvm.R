@@ -146,7 +146,7 @@ if(object$col.eff$col.eff=="random" || !is.null(object$randomX)){
       }
     }else if(object$randomB=="single" | object$randomB=="iid"){
       cov.environ.randomB <- sapply(1:(object$num.lv.c+object$num.RR), function(q)object$params$theta[,q,drop=F]%*%t(object$params$theta[,q,drop=F])*object$params$sigmaLvXcoef^2,simplify=F)
-      cov.environ.randomB.trace <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
+      trace.environ.randomB <- lapply(cov.environ.randomB, function(x)sum(diag(x)))  
       if(!isFALSE(object$quadratic)){
         Sigmaz <- Reduce("+", sapply(x,function(xk)xk^2*object$params$sigmaLvXcoef,simplify=F))
         # add tr(D_jSigma_zD_kSigma_z) for z = B^t x
