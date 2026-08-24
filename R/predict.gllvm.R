@@ -442,7 +442,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
           eta <- eta+offset[, spp_idx, drop = FALSE]
         } else {stop(paste("Incorrect dimension for the 'offset', number of rows should now be ", NROW(eta)))}
       } else if((NROW(object$offset) == NROW(eta))){
-        eta <- eta+object$offset[, spp_idx, drop = FALSE]
+        if(NCOL(object$offset) == 1){ # a vector offset is common to all species, as in gllvm()
+          eta <- eta+matrix(object$offset, NROW(eta), length(spp_idx))
+        } else {
+          eta <- eta+object$offset[, spp_idx, drop = FALSE]
+        }
         } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
     }
   }

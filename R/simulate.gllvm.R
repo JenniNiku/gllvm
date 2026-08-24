@@ -59,7 +59,13 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
   }
   if(is.null(object$X))   {
     prs = predict.gllvm(object,newLV = lvsNew,type="response")
-    if(is.null(lvsNew)) prs = prs[rep(1:nRows, nsim), , drop = FALSE]
+    if(is.null(lvsNew)){
+      if(length(dim(prs)) == 3L){
+        prs = prs[, rep(1:nRows, nsim), , drop = FALSE]
+      } else {
+        prs = prs[rep(1:nRows, nsim), , drop = FALSE]
+      }
+    }
   }  else if(is.null(object$TR)){
     if(is.null(newX)){
     Xnew <- object$X[rep(1:nRows,nsim),,drop=FALSE]; colnames(Xnew) <- colnames(object$X)
