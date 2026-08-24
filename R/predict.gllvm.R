@@ -309,10 +309,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         if(anyBars(object$lv.formula)){
           bar.f <- findbars1(object$lv.formula) # list with 3 terms
           lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(object$lv.formula), deparse1)))),data=as.data.frame(newdata))
-          RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(object$lv.formula), drop.unused.levels = FALSE, calc.cs = FALSE)
+          RElistLV <- mkReTrms1(bar.f,lv.X, drop.unused.levels = FALSE)
           # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
           lv.X = t(as.matrix(RElistLV$Zt))
-          lv.X <- lv.X[,colnames(lv.X)%in%colnames(object$lv.X.design),drop=FALSE]
+          lv.X <- matchCols(lv.X, colnames(object$lv.X.design))
           
         }else{
           lv.X <- model.matrix(object$lv.formula, as.data.frame(newdata))[,-1, drop = F]
@@ -385,10 +385,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
             mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
           }
           colnames(mf.new) <- colnames(mf)
-          RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc, drop.unused.levels = FALSE, calc.cs = FALSE)
+          RElistRow <- mkReTrms1(bar.f, mf.new, drop.unused.levels = FALSE)
           dr <- Matrix::t(RElistRow$Zt)
           # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
-          dr <- dr[,colnames(dr)%in%colnames(object$dr),drop=FALSE]
+          dr <- matchCols(dr, colnames(object$dr))
         }
         row.eff <- nobars1_(row.eff)
       }
@@ -426,10 +426,10 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
       X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(object$y)))
     }
     
-    RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(object$col.eff$col.eff.formula), drop.unused.levels = FALSE, calc.cs = FALSE)
+    RElistSP<- mkReTrms1(bar.f, mf, drop.unused.levels = FALSE)
     spdr <- Matrix::t(RElistSP$Zt)
     # double check column names, because we may now have unobserved combinations of random effect levels in the matrix
-    spdr <- spdr[,colnames(spdr)%in%colnames(object$col.eff$spdr),drop=FALSE]
+    spdr <- matchCols(spdr, colnames(object$col.eff$spdr))
     
     eta <- eta + as.matrix(spdr%*%object$params$Br[, spp_idx, drop = FALSE])
     if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
