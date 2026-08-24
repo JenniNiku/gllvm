@@ -784,7 +784,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         X.col.eff <- mf <- data.frame(Intercept=rep(1,nrow(y)))
       }
 
-      RElistSP<- mkReTrms1(bar.f, mf, nocorr=corstruc(expandDoubleVerts2(col.eff.formula))) #still add find double bars
+      nocorrSP <- corstruc(expandDoubleVerts2(col.eff.formula))
+      RElistSP<- mkReTrms1(bar.f, mf) #still add find double bars
+      RElistSP$cs <- csIndices(RElistSP$grps, nocorrSP)
       
       if(is.null(formula) && is.null(lv.formula)){
         X <- NULL
@@ -892,7 +894,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and random effects at the same time.")
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
-            RElistLV <- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
+            nocorrLV <- corstruc(expandDoubleVerts2(lv.formula))
+            RElistLV <- mkReTrms1(bar.f,lv.X) #still add find double bars
+            RElistLV$cs <- csIndices(RElistLV$grps, nocorrLV)
             lv.X.design = t(as.matrix(RElistLV$Zt))
             if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
               warning("Correlated random canonical coefficients only allowed with randomB = 'P' or and randomB='LV'. Setting randomB = 'P'.\n")
@@ -924,7 +928,9 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             if(!is.null(nobars1_(lv.formula)))stop("lv.formula cannot yet incorporate fixed and rando effects at the same time.")
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
-            RElistLV<- mkReTrms1(bar.f,lv.X, nocorr=corstruc(expandDoubleVerts2(lv.formula))) #still add find double bars
+            nocorrLV <- corstruc(expandDoubleVerts2(lv.formula))
+            RElistLV<- mkReTrms1(bar.f,lv.X) #still add find double bars
+            RElistLV$cs <- csIndices(RElistLV$grps, nocorrLV)
             lv.X.design = t(as.matrix(RElistLV$Zt))
             if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
               warning("Correlated random canonical coefficients only allowed with randomB = 'P' or randomB = 'LV'. Setting randomB = 'P'.\n")
@@ -1194,7 +1200,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
         }
         colnames(mf.new) <- colnames(mf)
-        RElistRow <- mkReTrms1(bar.f, mf.new, nocorr=cstruc)
+        RElistRow <- mkReTrms1(bar.f, mf.new)
         dr <- Matrix::t(RElistRow$Zt)
 
         # This line errs for formulations such as (cov|1), which includes an intercept

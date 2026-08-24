@@ -2001,6 +2001,15 @@ inf.criteria <- function(fit)
   list(BIC = BIC, AIC = AIC, AICc = AICc, k = k)
 }
 
+# Aligns the columns of x to 'cols', filling absent columns with zeroes
+matchCols <- function(x, cols){
+  idx <- match(cols, colnames(x))
+  x <- cbind(x, 0)
+  out <- x[, ifelse(is.na(idx), ncol(x), idx), drop = FALSE]
+  colnames(out) <- cols
+  out
+}
+
 # Creates matrix of fourth corner terms from a vector
 getFourthCorner<- function(object){
   if(is.null(object$X) || is.null(object$TR)) stop();
