@@ -213,7 +213,7 @@ se.gllvm <- function(object, ...){
           neg_pnames <- names(object$TMBfn$par[incl])[d < 0]
           neg_counts <- table(neg_pnames)
           neg_summary <- paste(names(neg_counts), neg_counts, sep = " x", collapse = ", ")
-          warning(sprintf("%d parameter(s) have negative variance estimates (%s). Standard errors are 0 for these. The model likely has not converged - consider re-fitting.", sum(d < 0), neg_summary))
+          warning(sprintf("%d parameter(s) have negative variance estimates (%s). The model likely has not converged, consider re-fitting.", sum(d < 0), neg_summary))
         }
         se <- sqrt(pmax(d, 0))
         names(se) = names(object$TMBfn$par[incl])
