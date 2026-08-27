@@ -13,6 +13,7 @@ Version 2.0.14
 * Fixed a bug that made predictSR underestimate richness for ZIP/ZINB
 * Fixed a bug in ordinal models with zeta.struc = "species": zeta was inappropriately offset by 1
 * Improved implementation (and VA derivation) of the cumulative logit likelihood
+* Fixed a bug in the ordinal likelihood with common cut-offs, introduced with mixed response types in v2.0.8
 
 Version 2.0.13
 =============
