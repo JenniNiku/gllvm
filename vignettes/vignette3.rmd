@@ -28,9 +28,6 @@ knitr::opts_chunk$set(
 
 - **R** package **gllvm** fits Generalized linear latent variable models (GLLVM) for multivariate data^[Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. Gllvm - Fast Analysis of Multivariate Abundance Data with Generalized Linear Latent Variable Models in R. 10. Methods in Ecology and Evolution: 2173–82].
 
-- Developed by J. Niku, W.Brooks, R. Herliansyah, F.K.C. Hui, S. Taskinen, D.I. Warton, B. van der Veen.
-
-
 - The package available in
    - GitHub: <https://github.com/JenniNiku/gllvm> 
    - CRAN: <https://CRAN.R-project.org/package=gllvm>
@@ -70,19 +67,33 @@ devtools::install_github("JenniNiku/gllvm")
 
 ## Distributions
 
-| Response    | Distribution | Method  | Link  |
-| ----------- |:------------:|:------- |:------- |
-|Counts  	    | Poisson 	   | VA/LA   |log	    |
-|             | NB    	     | VA/LA   |log		  |
-|             | ZIP       	 | LA      |log		  |
-|Binary       | Bernoulli 	 | VA/LA   |probit  |
-|             |              | EVA/LA  |logit   | 
-|Ordinal 	    | Ordinal  | VA      |probit  |
-|Normal       | Gaussian     | VA/LA   |identity|
-|Positive continuous| Gamma     | VA/LA   |log|
-|Non-negative continuous| Exponential | VA/LA   |log|
-|Biomass    	| Tweedie 	   | LA/EVA |log 	  |
-|Percent cover| beta    	   | LA/EVA |probit/logit |
+| Response    | Distribution | Link | Method |
+| ----------- |:------------:|:---- |:------ |
+| Counts 	| Poisson 		| log 		| VA/EVA/LA 	|
+| 		| NB 			| log 		| VA/EVA/LA 	|
+| 		| NB1 			| log 		| VA/LA 	|
+| 		| ZIP 			| log 		| VA/EVA/LA 	|
+| 		| ZINB 			| log 		| VA/EVA/LA 	|
+| 		| binomial 		| probit/logit 	| VA/EVA/LA 	|
+| 		|  			| cloglog 	| VA/LA 	|
+| zero-inflated | ZIB 			| probit/logit 	| VA/LA 	|
+| 		|  			| cloglog 	| VA 		|
+| zero/N-inflated | ZNIB 		| probit/logit 	| VA/LA 	|
+| 		|  			| cloglog 	| VA 		|
+| Overdispersed counts | beta-binomial 	| probit/logit/cloglog | LA 	|
+| Binary 	| Bernoulli 		| probit/logit 	| VA/EVA/LA 	|
+| 		| 			| cloglog 	| VA/LA 	|
+| Biomass 	| Tweedie 		| log 		| VA/EVA/LA 	|
+| Ordinal 	| Multinomial 		| probit 	| VA 		|
+| 		| 			| logit 	| VA/EVA 	|
+| Normal 	| Gaussian 		| identity 	| VA/EVA/LA 	|
+| Positive continuous | Gamma 		| log 		| VA/EVA/LA 	|
+| Positive continuous | Exponential 	| log 		| VA/LA 	|
+| Percent cover | beta 			| probit/logit 	| EVA/LA 	|
+| Percent cover with zeros/ones | ordered beta 	| probit 	| VA-EVA |
+| 		| ordered beta 		| logit 	| VA-EVA/EVA 		|
+| 		| beta hurdle 		| probit/logit 	| EVA/VA-EVA 	|
+
 
 ## Data input
 
