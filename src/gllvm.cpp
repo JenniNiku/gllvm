@@ -3601,10 +3601,7 @@ Type objective_function<Type>::operator() ()
         }
         
       } else if(zetastruc==0){//ordinal with common cutoffs
-        // int ymax =  CppAD::Integer(y.maxCoeff());
-        // int K = ymax - 1;
-        
-        int ymax = CppAD::Integer(y.col(j).maxCoeff());
+        int ymax = zeta.size() - (has12 ? 2 : 0) + 2;//categories from the shared cutoffs, not from y.col(j)
         int K = ymax - 1;
         
         vector <Type> zetanew(K);
