@@ -4,7 +4,7 @@
 #' @param object an object of class 'gllvm', to calculate goodness of a model fit.
 #' @param y a response matrix of new observations
 #' @param pred predicted values for response matrix y if you want to calculate prediction accuracy for new values. Note that for ordinal model, you need to give the predicted classes.
-#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation), "AUC", \code{"sR2"} (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures \code{"NagelkerkeR2"}, \code{"McFaddenR2"}, \code{"CoxSnellR2"} can be calculated currently only for training data to measure the model's goodness of fit for full data, not response specific.
+#' @param measure a goodness-of-fit measure to be calculated. Options are \code{"cor"} (correlation between observed and predicted values), \code{"scor"} (Spearman correlation between observed and predicted values), \code{"RMSE"} (root mean squared error of prediction), \code{"MAE"} (Mean Absolute Error), \code{"MARNE"} (Mean Absolute Range Normalized Error), \code{"TjurR2"} (Tjur's R2 measure, only for binary data), \code{"R2"} (R-squared as the square of the correlation), "AUC", \code{"sR2"} (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures \code{"NagelkerkeR2"}, \code{"McFaddenR2"}, \code{"CoxSnellR2"} can be calculated currently only for training data to measure the model's (in sample) goodness of fit for full data, not response specific.
 #' @param species logical, if \code{TRUE}, goodness-of-fit measures are calculated for each species separately. If FALSE,  goodness-of-fit measures are calculated for all species together.
 #'
 #' @details
@@ -17,7 +17,15 @@
 #' 
 #' \deqn{MARNE(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n}\Sigma_{i=1}^{n} \frac{|y_{ij} - \hat y_{ij}|}{max(\boldsymbol{y_{j}}) - min(\boldsymbol{y_{j}})} }
 #' 
-#' \deqn{Tjur's R2(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n_1}\Sigma \hat y_{ij}\boldsymbol{1}_{y=1}(y_{ij}) - \frac{1}{n_0}\Sigma \hat y_{ij}\boldsymbol{1}_{y=0}(y_{ij}) }
+#' \deqn{\text{Tjur's } R2(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n_1}\Sigma \hat y_{ij}\boldsymbol{1}_{y=1}(y_{ij}) - \frac{1}{n_0}\Sigma \hat y_{ij}\boldsymbol{1}_{y=0}(y_{ij}) }
+#' 
+#' Pseudo R-squared measures based on likelihood of the evaluated model \eqn{L_M} and null model \eqn{L_M} with intercept only and total number of observations N:
+#' 
+#'  \deqn{\text{McFadden } R2 = 1- (\frac{log L_M}{log L_0}) }
+#' 
+#'  \deqn{\text{Cox and Snell } R2 = 1- (\frac{L_0}{L_M})^{\frac{2}{N}} }
+#' 
+#'  \deqn{\text{Nagelkerke } R2 =  \frac{1- (\frac{L_0}{L_M})^{\frac{2}{N}} }{1- (L_0)^{\frac{2}{N}}} }
 #' 
 #' 
 #' 
@@ -193,6 +201,9 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
   if(any(c("NagelkerkeR2", "McFaddenR2", "CoxSnellR2") %in% measure) & !is.null(object)) {
     #Fit null model to calculate 
     nob <- nobs(object)
+    if(any(object$family == "betaH")){ # Fix y for betaH
+      y <- object$y
+    } 
     if(any(object$family == "ordinal")){
       modelnull<- update(object, formula = ~1, lv.formula = NULL, row.eff = NULL, num.lv=0, num.lv.c=0, num.RR=0, sd.errors = FALSE, starting.val="zero", zeta.struc=object$zeta.struc)
     } else {
