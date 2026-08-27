@@ -117,38 +117,40 @@ The number of latent variables can be defined using the argument `num.lv`. The d
 
 List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $V(\mu_{ij})$, functions, estimation methods and link functions for various response types are in the table below.
 
-| Response    | Distribution | Method  | Link  | Description                |
-| ----------- |:------------:|:------- |:------- |:---------------------------|
-|Counts  	    | Poisson 	   | VA/LA   |log	    | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$|
-|             | NB    	     | VA/EVA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$,|
-|             | NB1    	     | VA/LA   |log		  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}$,|
-|		          |		           |		     |		    | where $\phi_j>0$ is a dispersion parameter | 
-|             | ZIP       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
-|		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$|
-|             | ZINB       	 | VA/LA   |log		  | $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$,|
-|		          |		           |		     |		    | $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$|
-|             | binomial     | VA/LA   |probit/logit/cloglog  | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$|
-|             | binomial     | EVA   |probit/logit   | 
-|zero-inflated| ZIB     | VA   |probit/logit/cloglog  | $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$|
-|             | ZIB     | LA   |probit/logit   | 
-|zero/N-inflated|ZNIB    |VA           |probit/logit/cloglog| $E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}$, $V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij} (1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2$|
-| |ZNIB    |LA           |probit/logit|
-|Overdispersed counts| beta-binomial | LA | probit/logit/cloglog | $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1+(N_j-1)\phi_j/(\phi_j+1))$,|
-|             |               |    |       | where $\phi_j > 0$ is a species-specific overdispersion parameter |
-|Binary       | Bernoulli 	 | EVA/VA/LA   |probit  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$|
-|             |              | EVA/LA 		 |logit   |                            |
-|Biomass    	| Tweedie 	   | EVA/VA/LA  |log 	  | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$,|
-|		          |		           |		     |		    | where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
-|Ordinal 	    | Multinomial  | VA      |probit/logit  | Cumulative probit/logit model|
-| 	    |   | EVA      |logit  | |
-|Normal       | Gaussian     | VA/LA   |identity| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$|
-|Positive continuous| Gamma     | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$|
-|		          |		           |		     |		    | where $\phi_j$ is a shape parameter |
-|Positive continuous | Exponential | VA/LA   |log| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$|
-|Percent cover| beta    	   | LA/EVA | probit/logit | $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
-|Percent cover with zeros/ones| ordered beta    	   | VA-EVA | probit/logit | details in Korhonen et al (2024) |
-|| ordered beta    	   | EVA | logit | details in Korhonen et al (2024) |
-|| beta hurdle    	   | EVA/ VA-EVA | probit/logit | |
+
+
+| Response    | Distribution | Link | Method | Description |
+| ----------- |:------------:|:---- |:------ |:----------- |
+| Counts 	| Poisson 		| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}$ |
+| 		| NB 			| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2$, |
+| 		| NB1 			| log 		| VA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}$, |
+| 		| 			| 		| 		| where $\phi_j>0$ is a dispersion parameter |
+| 		| ZIP 			| log 		| VA/EVA/LA 	| $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$, |
+| 		| 			| 		| 		| $V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)$ |
+| 		| ZINB 			| log 		| VA/EVA/LA 	| $E(y_{ij}) = (1-p_j)\mu_{ij}$, $P(y_{ij}=0)=p_j$, |
+| 		| 			| 		| 		| $V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))$ |
+| 		| binomial 		| probit/logit 	| VA/EVA/LA 	| $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})$ |
+| 		|  			| cloglog 	| VA/LA 	| |
+| zero-inflated | ZIB 			| probit/logit 	| VA/LA 	| $E(y_{ij}) = (1-p_j)N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)$ |
+| 		|  			| cloglog 	| VA 		| |
+| zero/N-inflated | ZNIB 		| probit/logit 	| VA/LA 	| $E(y_{ij}) = p_j^N N_j + (1-p_j^0-p_j^N)N_j\mu_{ij}$, $V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2$ |
+| 		|  			| cloglog 	| VA 		| |
+| Overdispersed counts | beta-binomial 	| probit/logit/cloglog | LA 	| $E(y_{ij}) = N_j\mu_{ij}$, $V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1+(N_j-1)\phi_j/(\phi_j+1))$, |
+| 		| 			| 		| 		| where $\phi_j > 0$ is a species-specific overdispersion parameter |
+| Binary 	| Bernoulli 		| probit/logit 	| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})$ |
+| 		| 			| cloglog 	| VA/LA 	| |
+| Biomass 	| Tweedie 		| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$, |
+| 		| 			| 		| 		| where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
+| Ordinal 	| Multinomial 		| probit 	| VA 		| Cumulative probit/logit model |
+| 		| 			| logit 	| VA/EVA 	| |
+| Normal 	| Gaussian 		| identity 	| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$ |
+| Positive continuous | Gamma 		| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$ |
+| 		| 			| 		| 		| where $\phi_j$ is a shape parameter |
+| Positive continuous | Exponential 	| log 		| VA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2$ |
+| Percent cover | beta 			| probit/logit 	| EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)$ |
+| Percent cover with zeros/ones | ordered beta 	| probit 	| VA-EVA | details in Korhonen et al (2024) |
+| 		| ordered beta 		| logit 	| VA-EVA/EVA 		|  |
+| 		| beta hurdle 		| probit/logit 	| EVA/VA-EVA 	| |
 
 It is also possible to combine multiple response types in one model, for example counts, binary and ordinal data, and choose suitable family for each response variable by giving a vector of families to argument `family`, for example `family = c("poisson", "binomial", "ordinal")`. There is a restriction for families and links in the same model such that they all need to be implemented with same method, VA, EVA or LA.
 
