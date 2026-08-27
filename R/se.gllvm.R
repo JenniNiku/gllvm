@@ -483,7 +483,7 @@ se.gllvm <- function(object, ...){
               idx<-idx+k
             } else {
               if(!is.null(se.zetas)){
-              se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              se.zetanew[j,1:2] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
               idx<-idx+2
               }
             }
@@ -1052,7 +1052,7 @@ se.gllvm <- function(object, ...){
             idx<-idx+k
           } else {
             if(!is.null(se.zetas)){
-              se.zetanew[j,] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              se.zetanew[j,1:2] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
               idx<-idx+2
             }
           }

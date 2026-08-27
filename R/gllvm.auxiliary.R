@@ -469,6 +469,7 @@ start_values_gllvm_TMB <- function(
     kz <- 0
     if(any(family == "orderedBeta"))kz <- 2
     if(zeta.struc == "common"){
+        out.zeta <- zeta # keeps the orderedBeta cutoffs when families are mixed
         out.zeta[(kz+1):length(zeta)] <- c(zeta[kz+1][1], log(diff(zeta[(kz+1):length(zeta)]))  )
     }else if(zeta.struc == "species"){
       out.zeta <- zeta
@@ -714,8 +715,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
   if(any(family %in% c("ordinal", "orderedBeta")) & !is.matrix(zeta)) {
     if(any(family %in% "orderedBeta")) {kz =2} else {kz=0}
     zetanew <- matrix(NA, p, ncol = max(length(zeta)-kz, kz), byrow=TRUE)
-    if(any(family %in% "orderedBeta")) {zetanew[family %in% "orderedBeta", ] = matrix(zeta[1:kz], sum(family %in% "orderedBeta"), kz, byrow = TRUE)}
-    if(any(family %in% "ordinal")) {zetanew[family %in% "ordinal", ] = matrix(zeta[(kz+1):length(zeta)], sum(family %in% "ordinal"), length(zeta)-kz, byrow = TRUE)}
+    if(any(family %in% "orderedBeta")) {zetanew[family %in% "orderedBeta", 1:kz] = matrix(zeta[1:kz], sum(family %in% "orderedBeta"), kz, byrow = TRUE)}
+    if(any(family %in% "ordinal")) {zetanew[family %in% "ordinal", 1:(length(zeta)-kz)] = matrix(zeta[(kz+1):length(zeta)], sum(family %in% "ordinal"), length(zeta)-kz, byrow = TRUE)}
     zeta <- zetanew
   }
   

@@ -5080,7 +5080,15 @@ Type objective_function<Type>::operator() ()
     
     
     int idx = 0; // initialize indexing for zeta
-    
+
+    bool has12 = false;
+    for (int j = 0; j < family.size(); ++j) {
+      if (family(j) == 12) {
+        has12 = true;
+        break;
+      }
+    }
+
     //likelihood model with the log link function
     for (int j=0; j<truep; j++){
       
@@ -5227,7 +5235,7 @@ Type objective_function<Type>::operator() ()
           }
           }
         } else if(zetastruc==0){
-          int ymax =  CppAD::Integer(y.col(j).maxCoeff());
+          int ymax = zeta.size() - (has12 ? 2 : 0) + 2;//categories from the shared cutoffs, not from y.col(j)
           int K = ymax - 1;
           
           vector <Type> zetanew(K);
