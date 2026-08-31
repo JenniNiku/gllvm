@@ -1041,6 +1041,19 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
     }
     
+    .rownames <- function(x) if (.row_names_info(x) < 0) NULL else rownames(x)
+    
+    nmrY <- .rownames(y)
+    nmcY <- colnames(y)
+    
+    nmrX <- NULL
+    if(!missing(X)) nmrX <- .rownames(X)
+    if(!is.null(nmrY) && !is.null(nmrX) && !identical(nmrY,nmrX))warning("Row names of y and X do not match.")
+    
+    nmrTR <- NULL
+    if(!missing(TR))nmrTR <- .rownames(TR)
+    if(!is.null(nmcY) && !is.null(nmrTR) && !identical(nmcY, nmrTR))warning("Species names in y and TR do not match.")
+    
     if(length(family) != NCOL(y)) family = rep(family, NCOL(y))[1:NCOL(y)]
     
     # Check that percent covers are between [0,1]

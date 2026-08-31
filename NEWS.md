@@ -3,6 +3,7 @@ Version 2.0.14
 
 * Poisson, ZIP, ZINB, gaussian, gamma and ordered beta model with probit link implemented with EVA
 * ordered beta model with logit and probit link implemented with LA
+* gllvm() now issues a warning if row/column names in y and X or y and TR do not match, see #258
 
 ## Bugfixes
 
