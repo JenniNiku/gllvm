@@ -426,7 +426,7 @@ poisbinom <- function(prob) {
 residuals.predictSR.gllvm <- function(object, ...){
   if(!inherits(object, "predictSR.gllvm") ) stop("'object' need to be an object of class 'predictSR.gllvm'")
 
-  if(length(object$observed) != nrow(object$predicted$fit)) stop("Cannot plot residuals for new observations.")
+  if(length(object$observed) != length(object$expected$fit)) stop("Cannot extract residuals for new observations.")
 
   y = object$observed
   n = length(y)
@@ -491,7 +491,7 @@ plot.predictSR.gllvm <- function(x, object = NULL, which = 1:3,
 
   if(length(caption) != length(which)) stop("'caption' should have the same length as 'which'.")
 
-  if(length(object$observed) != nrow(object$predicted$fit)) stop("Cannot plot residuals for new observations.")
+  if(length(object$observed) != length(object$expected$fit)) stop("Cannot plot residuals for new observations.")
   
   res <- residuals(x)
 
