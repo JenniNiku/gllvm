@@ -491,7 +491,7 @@ plot.predictSR.gllvm <- function(x, object = NULL, which = 1:3,
 
   if(length(caption) != length(which)) stop("'caption' should have the same length as 'which'.")
 
-  if(length(object$observed) != length(object$expected$fit)) stop("Cannot plot residuals for new observations.")
+  if(length(x$observed) != length(x$expected$fit)) stop("Cannot plot residuals for new observations.")
   
   res <- residuals(x)
 
