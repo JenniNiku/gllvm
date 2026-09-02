@@ -3,7 +3,6 @@
 \name{predictSR.gllvm}
 \alias{predictSR.gllvm}
 \alias{predictSR}
-\alias{plot.predictSR.gllvm}
 \title{Predict species richness from a gllvm object}
 \usage{
 \method{predictSR}{gllvm}(
@@ -19,11 +18,9 @@
   batch = NULL,
   ...
 )
-
-\method{plot}{predictSR.gllvm}(x, object, which = c(1, 2), ...)
 }
 \arguments{
-\item{object}{object of class gllvm}
+\item{object}{an object of class 'gllvm'.}
 
 \item{spp}{index vector, defaults to NULL. If omitted, returns a prediction with all species in the data.}
 
@@ -43,20 +40,23 @@
 
 \item{batch}{integer or \code{NULL}, defaults to 200. If provided, species predictions needed to calculate richness are processed in chunks of this size per simulation draw, reducing peak memory at the cost of more \code{predict} calls. \code{NULL} processes all (selected) species in one call.}
 
-\item{...}{not used for plot.predictSR.gllvm}
-
-\item{x}{object of class predictSR}
-
-\item{which}{which plot to create, 1 is Dunn-Smyth residuals vs Expected species richness, 2 is QQ-plot}
+\item{...}{arguments passed to \code{"\link{predict.gllvm}"}.}
 }
 \value{
-list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
+An object of class "predictSR.gllvm" with the following components:
+\item{predicted}{a list with the predicted Poisson-Binomial distribution as "fit", a matrix of dimension sites by \code{length(SR)} with columns named "SR_0", "SR_1", and so on, and, if \code{se.fit} is not \code{FALSE} and \code{"pmf" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both matrices of the same dimension).}
+\item{expected}{a list with the predicted mean or mode for species richness as "fit", a vector of length \eqn{n}, and, if \code{se.fit} is not \code{FALSE} and \code{"expected" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both vectors of length \eqn{n}).}
+\item{observed}{the observed species richness of the data the model was fitted to, a vector of length \eqn{n}. Omitted when predicting with new data (i.e., when \code{newX}, \code{newTR} or \code{newLV} is passed on to \code{"\link{predict.gllvm}"}).}
+\item{predict.gllvm}{only present if \code{return.pred = TRUE}; a list with the species-specific predictions from \code{"\link{predict.gllvm}"}.}
+\item{spp}{the indices of the species that richness was calculated for.}
 }
 \description{
 Obtains predictions from a fitted generalized linear latent variable model object.
 }
 \details{
 This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
+
+With \code{expected = "mode"} the mode of the Poisson-Binomial distribution is determined from its mean \eqn{\mu}, following Darroch (1964). The distribution can be bimodal with modes \eqn{\lfloor \mu \rfloor} and \eqn{\lfloor \mu \rfloor + 1}, in which case the lower of the two is returned.
 }
 \note{
 The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.
@@ -85,8 +85,11 @@ plot(x = newX$soil.dry, y = predSR$predicted$fit[,i+1],
 }
 
 }
+\references{
+Darroch, J. N. (1964). On the distribution of the number of successes in independent trials. The Annals of Mathematical Statistics, 35, 1317-1321.
+}
 \seealso{
-\code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}
+\code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}, \code{\link{plot.predictSR.gllvm}}
 }
 \author{
 Bert van der Veen

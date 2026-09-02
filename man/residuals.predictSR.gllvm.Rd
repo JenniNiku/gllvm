@@ -4,17 +4,15 @@
 \alias{residuals.predictSR.gllvm}
 \title{Dunn-Smyth residuals for species richness from a gllvm object}
 \usage{
-\method{residuals}{predictSR.gllvm}(object, model, ...)
+\method{residuals}{predictSR.gllvm}(object, ...)
 }
 \arguments{
 \item{object}{object returned by \code{"\link{predictSR.gllvm}"}}
 
-\item{model}{an object of class 'gllvm'.}
-
 \item{...}{not used.}
 }
 \value{
-A list of length 2 with 1) the fitted and 2) the dunn-smyth residuals.
+A list of length 3 with the fitted, the dunn-smyth residuals, and the observed species richness.
 }
 \description{
 Calculates Dunn-Smyth residuals for species richness.
@@ -23,7 +21,7 @@ Calculates Dunn-Smyth residuals for species richness.
 See \code{"\link{residuals.gllvm}"} for details.
 }
 \seealso{
-\code{\link{predict.gllvm}}, \code{\link{predictSR.gllvm}}, \code{\link{residuals.gllvm}}
+\code{\link{predict.gllvm}}, \code{\link{predictSR.gllvm}}, \code{\link{plot.predictSR.gllvm}}, \code{\link{residuals.gllvm}}
 }
 \author{
 Bert van der Veen

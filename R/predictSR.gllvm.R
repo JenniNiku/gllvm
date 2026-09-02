@@ -14,12 +14,23 @@
 #' @param ... arguments passed to \code{"\link{predict.gllvm}"}.
 #'
 #' @details This function returns probabilities of richness for species richness from gllvm objects, by first calling \code{"\link{predict.gllvm}"}, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.
+#'
+#' With \code{expected = "mode"} the mode of the Poisson-Binomial distribution is determined from its mean \eqn{\mu}, following Darroch (1964). The distribution can be bimodal with modes \eqn{\lfloor \mu \rfloor} and \eqn{\lfloor \mu \rfloor + 1}, in which case the lower of the two is returned.
 #' @note The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in \code{"\link{gllvm}"}) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.
 #'
-#' @return list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.
+#' @return An object of class "predictSR.gllvm" with the following components:
+#' \item{predicted}{a list with the predicted Poisson-Binomial distribution as "fit", a matrix of dimension sites by \code{length(SR)} with columns named "SR_0", "SR_1", and so on, and, if \code{se.fit} is not \code{FALSE} and \code{"pmf" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both matrices of the same dimension).}
+#' \item{expected}{a list with the predicted mean or mode for species richness as "fit", a vector of length \eqn{n}, and, if \code{se.fit} is not \code{FALSE} and \code{"expected" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both vectors of length \eqn{n}).}
+#' \item{observed}{the observed species richness of the data the model was fitted to, a vector of length \eqn{n}. Omitted when predicting with new data (i.e., when \code{newX}, \code{newTR} or \code{newLV} is passed on to \code{"\link{predict.gllvm}"}).}
+#' \item{predict.gllvm}{only present if \code{return.pred = TRUE}; a list with the species-specific predictions from \code{"\link{predict.gllvm}"}.}
+#' \item{spp}{the indices of the species that richness was calculated for.}
 #' 
-#' @seealso \code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}
-#' 
+#' @references
+#'
+#' Darroch, J. N. (1964). On the distribution of the number of successes in independent trials. The Annals of Mathematical Statistics, 35, 1317-1321.
+#'
+#' @seealso \code{\link{predict.gllvm}}, \code{\link{residuals.predictSR.gllvm}}, \code{\link{plot.predictSR.gllvm}}
+#'
 #' @author Bert van der Veen
 #'
 #' @examples
@@ -74,6 +85,17 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
   colnames(predSR) <- paste0("SR_", SR)
 
   out <- list(predicted = list(fit = predSR), expected = list(fit = eSR))
+
+  # observed richness when predicting on the data
+  if(!any(c("newX", "newTR", "newLV") %in% names(list(...)))){
+    yobs <- as.matrix(object$y)
+    ord <- object$family == "ordinal"
+    if(any(ord)){
+      if(length(ord) == 1) ord <- rep(ord, ncol(yobs))
+      yobs[, ord] <- sweep(yobs[, ord, drop = FALSE], 2, apply(yobs[, ord, drop = FALSE], 2, min, na.rm = TRUE), "-")
+    }
+    out$observed <- rowSums(ifelse(yobs[, spp, drop = FALSE] == 0, 0, 1), na.rm = TRUE)
+  }
 
   if(is.numeric(se.fit) || isTRUE(se.fit)){
     R <- if(is.numeric(se.fit)) se.fit else 1000L
@@ -386,15 +408,14 @@ poisbinom <- function(prob) {
 #' @description Calculates Dunn-Smyth residuals for species richness.
 #'
 #' @param object object returned by \code{"\link{predictSR.gllvm}"}
-#' @param model an object of class 'gllvm'.
 #' @param ... not used.
 #'
 #' @details
 #' See \code{"\link{residuals.gllvm}"} for details.
+#'
+#' @return A list of length 3 with the fitted, the dunn-smyth residuals, and the observed species richness.
 #' 
-#' @return A list of length 2 with 1) the fitted and 2) the dunn-smyth residuals.
-#' 
-#' @seealso \code{\link{predict.gllvm}}, \code{\link{predictSR.gllvm}}, \code{\link{residuals.gllvm}}
+#' @seealso \code{\link{predict.gllvm}}, \code{\link{predictSR.gllvm}}, \code{\link{plot.predictSR.gllvm}}, \code{\link{residuals.gllvm}}
 #' 
 #' @author Bert van der Veen
 #'
@@ -405,13 +426,12 @@ poisbinom <- function(prob) {
 #'@export
 #'@rdname residuals.predictSR.gllvm 
 #'@export residuals.predictSR.gllvm
-residuals.predictSR.gllvm <- function(object, model, ...){
+residuals.predictSR.gllvm <- function(object, ...){
   if(!inherits(object, "predictSR.gllvm") ) stop("'object' need to be an object of class 'predictSR.gllvm'")
-  if(!inherits(model, "gllvm") ) stop("'model' need to be an object of class 'gllvm'")
-  # ensure ordinal starts at 0
-  if(any(model$family == "ordinal"))model$y[,model$family=="ordinal"] <- model$y[,model$family=="ordinal"] - apply(model$y[,model$family=="ordinal"],2,min, na.rm = TRUE)
-  
-  y = rowSums(ifelse(model$y[, object$spp]==0,0,1),na.rm=TRUE)
+
+  if(is.null(object$observed)) stop("The provided predictSR object does not include the observed species richness, so that residuals cannot be calculated. Predictions with new data are not supported.")
+
+  y = object$observed
   n = length(y)
   pmf = object$predicted$fit
   
@@ -433,25 +453,74 @@ residuals.predictSR.gllvm <- function(object, model, ...){
   if (any(u == 0, na.rm = TRUE))
     u[u == 0] <- 1e-16
   
-  list(fitted = object$expected$fit, residuals = qnorm(u))
+  list(fitted = object$expected$fit, residuals = qnorm(u), observed = y)
 }
 
-#' @param x object of class predictSR
-#' @param object object of class gllvm
-#' @param which which plot to create, 1 is Dunn-Smyth residuals vs Expected species richness, 2 is QQ-plot
-#' @param ... not used for plot.predictSR.gllvm
+#' @title Plot diagnostics for species richness predicted from a gllvm object
+#' @description Three plots are available: 1) Dunn-Smyth residuals for species richness against the expected species richness, 2) a Normal Q-Q plot of those residuals, and 3) observed against predicted species richness, with a one-to-one line and, if the \code{predictSR} object includes one, the confidence interval of the prediction.
 #'
-#' @method plot predictSR.gllvm 
+#' @param x an object of class 'predictSR.gllvm'.
+#' @param object an object of class 'gllvm', defaults to \code{NULL}. Only used if \code{x} is \code{NULL}, in which case \code{"\link{predictSR.gllvm}"} is called on \code{object} first.
+#' @param which if a subset of the plots is required, specify a subset of the numbers 1:3, see the description above.
+#' @param caption captions to appear above the plots.
+#' @param ... additional graphical arguments.
+#'
+#' @details
+#' plot.predictSR.gllvm is used for diagnostics of predicted species richness. Dunn-Smyth residuals (randomized quantile residuals) (Dunn and Smyth, 1996) for species richness are used in the first two plots, see \code{"\link{residuals.predictSR.gllvm}"}.
+#'
+#' @author Bert van der Veen
+#'
+#' @references
+#'
+#' Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
+#'
+#' @seealso \code{\link{predictSR.gllvm}}, \code{\link{residuals.predictSR.gllvm}}, \code{\link{plot.gllvm}}
+#'
+#' @method plot predictSR.gllvm
 #' @export
-#' @rdname predictSR.gllvm 
-plot.predictSR.gllvm <- function(x, object, which = c(1,2), ...){
-  if(is.null(x)){ x <-  predictSR(object, se.fit = FALSE)}else if(length(x$expected$fit)!=nrow(object$y))stop("Provided predictSR object should not be based on new data.")
-  res <- residuals.predictSR.gllvm(object = x, model = object)
-  
-  par(mfrow=c(1,length(which)))
-  
-  if(1%in%which)plot(xlab = "Expected species richness", ylab = "Dunn-Smyth residuals", x = res$fitted, y = res$residuals)
-  if(2%in%which)qqnorm(res$residuals);qqline(res$residuals)
+plot.predictSR.gllvm <- function(x, object = NULL, which = 1:3,
+                                 caption = c("Residuals vs fitted", "Normal Q-Q",
+                                             "Observed vs fitted"), ...){
+  if(is.null(x)){
+    if(is.null(object)) stop("Either 'x' or 'object' should be provided.")
+    x <- predictSR(object, se.fit = FALSE)
+  }
+
+  which <- sort(unique(which))
+  if(!all(which %in% 1:3)) stop("'which' should be a subset of 1:3.")
+
+  if(missing(caption)) caption <- c("Residuals vs fitted", "Normal Q-Q",
+                                    "Observed vs fitted")[which]
+
+  if(length(caption) != length(which)) stop("'caption' should have the same length as 'which'.")
+
+  res <- residuals(x)
+
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar))
+  if(!par("ask")) par(mfrow = c(1, length(which)))
+
+  if(1 %in% which){
+    plot(x = res$fitted, y = res$residuals, xlab = "Fitted",
+         ylab = "Dunn-Smyth residuals", main = caption[which == 1], ...)
+    abline(h = 0, col = "grey", lty = 3)
+  }
+  if(2 %in% which){
+    qqnorm(res$residuals, main = caption[which == 2], ylab = "Dunn-Smyth residuals", ...)
+    qqline(res$residuals)
+  }
+  if(3 %in% which){
+    xlims <- range(c(res$fitted, res$observed, x$expected$lower, x$expected$upper), na.rm = TRUE)
+    ylims <- range(res$observed, na.rm = TRUE)
+    plot(x = res$fitted, y = res$observed, xlab = "Fitted",
+         ylab = "Observed species richness", main = caption[which == 3],
+         xlim = xlims, ylim = ylims, type = "n", ...)
+    if(!is.null(x$expected$lower) && !is.null(x$expected$upper))
+      segments(x0 = x$expected$lower, x1 = x$expected$upper,
+               y0 = res$observed, y1 = res$observed, col = "grey")
+    points(x = res$fitted, y = res$observed, ...)
+    abline(0, 1, col = "grey", lty = 3)
+  }
 }
 
 pbMode <- function(mu, n) {
