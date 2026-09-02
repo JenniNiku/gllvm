@@ -21,7 +21,7 @@
 #' @return An object of class "predictSR.gllvm" with the following components:
 #' \item{predicted}{a list with the predicted Poisson-Binomial distribution as "fit", a matrix of dimension sites by \code{length(SR)} with columns named "SR_0", "SR_1", and so on, and, if \code{se.fit} is not \code{FALSE} and \code{"pmf" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both matrices of the same dimension).}
 #' \item{expected}{a list with the predicted mean or mode for species richness as "fit", a vector of length \eqn{n}, and, if \code{se.fit} is not \code{FALSE} and \code{"expected" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both vectors of length \eqn{n}).}
-#' \item{observed}{the observed species richness of the data the model was fitted to, a vector of length \eqn{n}. Omitted when predicting with new data (i.e., when \code{newX}, \code{newTR} or \code{newLV} is passed on to \code{"\link{predict.gllvm}"}).}
+#' \item{observed}{the observed species richness of the data, a vector of length \eqn{n}.}
 #' \item{predict.gllvm}{only present if \code{return.pred = TRUE}; a list with the species-specific predictions from \code{"\link{predict.gllvm}"}.}
 #' \item{spp}{the indices of the species that richness was calculated for.}
 #' 
@@ -86,16 +86,13 @@ predictSR.gllvm <- function(object, spp = NULL, expected = "mean", se.fit = 1000
 
   out <- list(predicted = list(fit = predSR), expected = list(fit = eSR))
 
-  # observed richness when predicting on the data
-  if(!any(c("newX", "newTR", "newLV") %in% names(list(...)))){
-    yobs <- as.matrix(object$y)
-    ord <- object$family == "ordinal"
-    if(any(ord)){
-      if(length(ord) == 1) ord <- rep(ord, ncol(yobs))
-      yobs[, ord] <- sweep(yobs[, ord, drop = FALSE], 2, apply(yobs[, ord, drop = FALSE], 2, min, na.rm = TRUE), "-")
-    }
-    out$observed <- rowSums(ifelse(yobs[, spp, drop = FALSE] == 0, 0, 1), na.rm = TRUE)
+  yobs <- as.matrix(object$y)
+  ord <- object$family == "ordinal"
+  if(any(ord)){
+    if(length(ord) == 1) ord <- rep(ord, ncol(yobs))
+    yobs[, ord] <- sweep(yobs[, ord, drop = FALSE], 2, apply(yobs[, ord, drop = FALSE], 2, min, na.rm = TRUE), "-")
   }
+  out$observed <- rowSums(ifelse(yobs[, spp, drop = FALSE] == 0, 0, 1), na.rm = TRUE)
 
   if(is.numeric(se.fit) || isTRUE(se.fit)){
     R <- if(is.numeric(se.fit)) se.fit else 1000L
@@ -429,7 +426,7 @@ poisbinom <- function(prob) {
 residuals.predictSR.gllvm <- function(object, ...){
   if(!inherits(object, "predictSR.gllvm") ) stop("'object' need to be an object of class 'predictSR.gllvm'")
 
-  if(is.null(object$observed)) stop("The provided predictSR object does not include the observed species richness, so that residuals cannot be calculated. Predictions with new data are not supported.")
+  if(length(object$observed) != nrow(object$predicted$fit)) stop("Cannot plot residuals for new observations.")
 
   y = object$observed
   n = length(y)
@@ -494,6 +491,8 @@ plot.predictSR.gllvm <- function(x, object = NULL, which = 1:3,
 
   if(length(caption) != length(which)) stop("'caption' should have the same length as 'which'.")
 
+  if(length(object$observed) != nrow(object$predicted$fit)) stop("Cannot plot residuals for new observations.")
+  
   res <- residuals(x)
 
   oldpar <- par(no.readonly = TRUE)

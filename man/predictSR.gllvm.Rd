@@ -46,7 +46,7 @@
 An object of class "predictSR.gllvm" with the following components:
 \item{predicted}{a list with the predicted Poisson-Binomial distribution as "fit", a matrix of dimension sites by \code{length(SR)} with columns named "SR_0", "SR_1", and so on, and, if \code{se.fit} is not \code{FALSE} and \code{"pmf" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both matrices of the same dimension).}
 \item{expected}{a list with the predicted mean or mode for species richness as "fit", a vector of length \eqn{n}, and, if \code{se.fit} is not \code{FALSE} and \code{"expected" \%in\% ci}, the simulated lower and upper confidence bounds "lower" and "upper" (both vectors of length \eqn{n}).}
-\item{observed}{the observed species richness of the data the model was fitted to, a vector of length \eqn{n}. Omitted when predicting with new data (i.e., when \code{newX}, \code{newTR} or \code{newLV} is passed on to \code{"\link{predict.gllvm}"}).}
+\item{observed}{the observed species richness of the data, a vector of length \eqn{n}.}
 \item{predict.gllvm}{only present if \code{return.pred = TRUE}; a list with the species-specific predictions from \code{"\link{predict.gllvm}"}.}
 \item{spp}{the indices of the species that richness was calculated for.}
 }
