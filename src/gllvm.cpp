@@ -3458,7 +3458,7 @@ Type objective_function<Type>::operator() ()
                 Type pVA = exp(log1p(-iphij)-mu(i,j)-log((1-iphij)*exp(-mu(i,j))+iphij));
                 // Type pVA = exp(log(-iphij+1)-exp(eta(i,j)+cQ(i,j))-log((1-iphij)*exp(-exp(eta(i,j)+cQ(i,j)))+iphij));
                 pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
-                pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
+                //pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(iphij)-log(1-pVA);
               }
             }
@@ -3943,7 +3943,7 @@ Type objective_function<Type>::operator() ()
               }else{
                 pVA = exp(log(1-iphij)- iphiZINB*log(iphiZINB+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB) - iphiZINB*cQ(i,j) + iphiZINB*log(iphiZINB) - lgamma(iphiZINB)-log((1-iphij)*exp(- iphiZINB*log(iphiZINB+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB) - iphiZINB*cQ(i,j) + iphiZINB*log(iphiZINB) - lgamma(iphiZINB))+iphij));
                 pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
-                pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
+                // pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(iphij)-log(1-pVA);
               }
             }
@@ -3962,7 +3962,7 @@ Type objective_function<Type>::operator() ()
               }else{
                 qu = pow(iphiZINB/(iphiZINB + mu(i,j)),iphiZINB);
                 pVA = iphij + (1-iphij)*qu;
-                pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
+                // pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
                 pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(pVA);
                 nll -= -cQ(i,j)*(((1-iphij)*iphiZINB*iphiZINB*mu(i,j)*(1-mu(i,j))*qu)/((iphiZINB+mu(i,j))*(iphiZINB+mu(i,j))*pVA) + pow((1-iphij)*iphiZINB*mu(i,j)*qu/((iphiZINB+mu(i,j))*pVA),2) );
