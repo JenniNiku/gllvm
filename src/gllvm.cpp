@@ -3276,12 +3276,14 @@ Type objective_function<Type>::operator() ()
               //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
               // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
               // nll -= (y(i,j)-Ntrials(i,j)/2)*eta(i,j) - Ntrials(i,j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(i,j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
-              Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
-              // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*cQ(i,j)));
-              nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*logspace_add(wij, -wij);
-               // nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*gllvmutils::log1plus(exp(-2*wij));
-              if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+              if(!gllvmutils::isNA(y(i,j))){
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+                // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*cQ(i,j)));
+                nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*logspace_add(wij, -wij);
+                 // nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*gllvmutils::log1plus(exp(-2*wij));
+                if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
+                  nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+                }
               }
             }
             // nll += n*Ntrials(i,j)*log(2.0);
