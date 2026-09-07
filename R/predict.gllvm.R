@@ -709,7 +709,7 @@ simulate_params_gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
                      object$Ab  # diagonalCL1 / CL1 / CL2
         )
         Vr[row.names(Vr) == "Br", colnames(Vr) == "Br"] <-
-          Vr[row.names(Vr) == "Br", colnames(Vr) == "Br"] + Ab
+          as.matrix(Vr[row.names(Vr) == "Br", colnames(Vr) == "Br"] + Ab)
       }
       if((object$num.lv + object$num.lv.c) > 0 && n == nrow(object$y)){
         A   <- lapply(seq(dim(object$A)[1]), function(i) object$A[i, , ])
