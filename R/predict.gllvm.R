@@ -869,7 +869,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
       newobject$params$row.params.fixed <- c(newpars$r0f)
       names(newobject$params$row.params.fixed) <- names(object$params$row.params.fixed)
     }
-    if(num.RR > 0 && isFALSE(object$randomB)){
+    if((num.RR+num.lv.c) > 0 && isFALSE(object$randomB)){
       newobject$params$LvXcoef <- newpars$b_lv
       rownames(newobject$params$LvXcoef) <- rownames(object$params$LvXcoef)
       colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
