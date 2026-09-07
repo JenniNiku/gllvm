@@ -690,6 +690,10 @@ simulate_params_gllvm <- function(object, R, seed = 42, level = 1, n = NULL){
       Vr <- sdrandom(object$TMBfn, Vf, object$Hess$incl, return.covb = TRUE)
     } else {
       Vr    <- CMSEPf(object, return.covb = TRUE)
+      if(object$num.RR > 0 && isFALSE(object$randomB) && !is.null(colnames(Vr))){
+        keep <- colnames(Vr) != "XB"
+        Vr   <- Vr[keep, keep, drop = FALSE]
+      }
       renms <- c("r0r","Br","u")
       if(!isFALSE(object$randomB)) renms <- c(renms, "b_lv")
       colnames(Vr) <- row.names(Vr) <- names(object$TMBfn$par[names(object$TMBfn$par) %in% renms])
