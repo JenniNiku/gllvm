@@ -374,7 +374,7 @@ gllvm.presence.prob <- function(fit, object, spp = NULL) {
       probs[, pos] <- matrix(1 - pzinb(0, mu = as.vector(mu)/(1 - phi_vec), p = phi_vec, sigma = zphi_vec), nrow = n)
     } else if(fam == "tweedie"){
       phi_vec <- rep(object$params$phi[j], each = n)
-      probs[, pos] <- matrix(1 - fishMod::pTweedie(0, mu = as.vector(mu),
+      probs[, pos] <- matrix(1 - fishMod::pTweedie(rep(0,length(j)*n), mu = as.vector(mu),
                                                     phi = phi_vec, p = object$Power), nrow = n)
     } else if(fam == "ordinal"){
       probs[, pos] <- 1 - mu # mu = p(y;k=1), i.e., 1- probability of absence
