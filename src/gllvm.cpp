@@ -3276,12 +3276,14 @@ Type objective_function<Type>::operator() ()
               //Type b = CppAD::CondExpGt(a, 10, a/8-log(2.0), gllvmutils::logcosh(0.5*sqrt(a)));
               // Type b = CppAD::CondExpGt(a, 10, 10, gllvmutils::logcosh(0.5*sqrt(squeeze(eta(i,j)*eta(i,j) + 2*cQ(i,j)))));
               // nll -= (y(i,j)-Ntrials(i,j)/2)*eta(i,j) - Ntrials(i,j)*(0.5*a+softplus_neg_a);//logspace_add(Type(0),-a));//gllvmutils::log1plus(exp(-a)));//log(invlogit(a)));//Ntrials(i,j)*gllvmutils::logcosh(a);//-0.5*tanh(0.5)*(eta(i,j)*eta(i,j)+2*cQ(i,j))+0.5*tanh(a)*(eta(i,j)*eta(i,j)+2*cQ(i,j));
-              Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
-              // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*cQ(i,j)));
-              nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*logspace_add(wij, -wij);
-               // nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*gllvmutils::log1plus(exp(-2*wij));
-              if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+              if(!gllvmutils::isNA(y(i,j))){
+                Type wij = 0.5*sqrt(eta(i,j)*eta(i,j) + 2*cQ(i,j));
+                // Type wij = 0.5*gllvmutils::hypo(eta(i,j), sqrt(2*cQ(i,j)));
+                nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*logspace_add(wij, -wij);
+                 // nll -= (y(i,j)-Ntrials(i, j)*0.5)*eta(i,j) - Ntrials(i, j)*gllvmutils::log1plus(exp(-2*wij));
+                if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
+                  nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+                }
               }
             }
             // nll += n*Ntrials(i,j)*log(2.0);
@@ -3289,11 +3291,14 @@ Type objective_function<Type>::operator() ()
         }else if(extra(j)==1){//probit
         for (int i=0; i<n; i++) {
           // for (int j=0; j<p;j++){
-            mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
-              nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
+              Type mu = pnorm(Type(eta(i,j)),Type(0),Type(1));
+              mu = Type(CppAD::CondExpEq(mu, Type(1), mu-Type(1e-12), mu));//check if on the boundary
+              if(y(i,j)>0){ // reduce overhead for y == 0
+              mu = Type(CppAD::CondExpEq(mu, Type(0), mu+Type(1e-12), mu));//check if on the boundary
+              nll -= y(i,j)*log(mu);
+              }
+              if(Ntrials(i,j)>y(i,j)) nll -= log(1-mu)*(Ntrials(i,j)-y(i,j));
               nll += cQ(i,j)*Ntrials(i,j);
               if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                 nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
@@ -3456,7 +3461,7 @@ Type objective_function<Type>::operator() ()
                 Type pVA = exp(log1p(-iphij)-mu(i,j)-log((1-iphij)*exp(-mu(i,j))+iphij));
                 // Type pVA = exp(log(-iphij+1)-exp(eta(i,j)+cQ(i,j))-log((1-iphij)*exp(-exp(eta(i,j)+cQ(i,j)))+iphij));
                 pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
-                pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
+                //pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(iphij)-log(1-pVA);
               }
             }
@@ -3941,7 +3946,7 @@ Type objective_function<Type>::operator() ()
               }else{
                 pVA = exp(log(1-iphij)- iphiZINB*log(iphiZINB+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB) - iphiZINB*cQ(i,j) + iphiZINB*log(iphiZINB) - lgamma(iphiZINB)-log((1-iphij)*exp(- iphiZINB*log(iphiZINB+exp(eta(i,j)-cQ(i,j))) + lgamma(iphiZINB) - iphiZINB*cQ(i,j) + iphiZINB*log(iphiZINB) - lgamma(iphiZINB))+iphij));
                 pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
-                pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
+                // pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(iphij)-log(1-pVA);
               }
             }
@@ -3960,7 +3965,7 @@ Type objective_function<Type>::operator() ()
               }else{
                 qu = pow(iphiZINB/(iphiZINB + mu(i,j)),iphiZINB);
                 pVA = iphij + (1-iphij)*qu;
-                pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
+                // pVA = Type(CppAD::CondExpEq(pVA, Type(1), pVA-Type(1e-12), pVA));//check if pVA is on the boundary
                 pVA = Type(CppAD::CondExpEq(pVA, Type(0), pVA+Type(1e-12), pVA));//check if pVA is on the boundary
                 nll -= log(pVA);
                 nll -= -cQ(i,j)*(((1-iphij)*iphiZINB*iphiZINB*mu(i,j)*(1-mu(i,j))*qu)/((iphiZINB+mu(i,j))*(iphiZINB+mu(i,j))*pVA) + pow((1-iphij)*iphiZINB*mu(i,j)*qu/((iphiZINB+mu(i,j))*pVA),2) );
