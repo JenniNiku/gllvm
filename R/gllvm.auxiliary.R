@@ -3087,7 +3087,15 @@ b_lvHEcorrect <- function(Lmult,K,d){
     diag(corHE[(combs[1,q]*K-K+1):(combs[1,q]*K),(combs[2,q]*K-K+1):(combs[2,q]*K)])<- Lmult[q]
     diag(corHE[(combs[2,q]*K-K+1):(combs[2,q]*K),(combs[1,q]*K-K+1):(combs[1,q]*K)])<- Lmult[q]
   }
-  corHE  
+  corHE
+}
+
+# covariance of an equality-constrained MLE, eq. (8) in
+# Moore, Sadler & Kozick (2008) IEEE Trans. Signal Process. 56(3)
+cov_constrained <- function(H, J){
+  qrJ <- qr(t(J))
+  U <- qr.Q(qrJ, complete = TRUE)[, -seq_len(qrJ$rank), drop = FALSE]
+  U %*% MASS::ginv(crossprod(U, H %*% U)) %*% t(U)
 }
 
 # distribution functions for ZIP, ZINB, and ZIB
