@@ -885,8 +885,8 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(all(family!=c("ordinal", "orderedBeta"))){
       zeta.struc<-"species"
     }
-    if(num.lv.c>1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = start.optim.method)), silent = TRUE)
-    if(num.lv.c<=1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method)), silent = TRUE)
+    if(num.lv.c>1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = start.optim.method, link = link)), silent = TRUE)
+    if(num.lv.c<=1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method, link = link)), silent = TRUE)
 
     if(inherits(start.fit, "try-error") || is.null(start.fit$params$LvXcoef)) {
       b.lv  <- matrix(1, nrow = ncol(lv.X), ncol = num.lv.c)
