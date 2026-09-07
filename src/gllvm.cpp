@@ -3309,9 +3309,10 @@ Type objective_function<Type>::operator() ()
         }else if(extra(j)==2){//cloglog
           for (int i=0; i<n; i++) {
             // for (int j=0; j<p;j++){
-              mu(i,j) = exp(eta(i,j)+cQ(i,j));
               if(!gllvmutils::isNA(y(i,j))){
-                nll -= y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                Type expeta = exp(eta(i,j));
+                nll += (Ntrials(i,j)-y(i,j)+1)*exp(eta(i,j)+cQ(i,j)) - expeta;
+                if(y(i,j)>0) nll -= y(i,j)*logspace_sub(Type(0),-expeta);//if branch reduces overhead of expensive logspace_sub on y = 0
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
                 }
