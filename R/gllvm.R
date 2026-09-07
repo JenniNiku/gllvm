@@ -1556,6 +1556,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         method = method, family = family, row.eff = row.eff.formula, col.eff = list(col.eff = col.eff, col.eff.formula = col.eff.formula, spdr = Matrix::t(RElistSP$Zt), Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat.rho.struct = colMat.rho.struct), corP=list(cstruc = cstruc, cstruclv = cstruclv, corWithin = corWithin, corWithinLV = corWithinLV, Astruc=0), dist=dist, distLV = distLV, randomX = randomX, n.init = n.init,
         sd = FALSE, Lambda.struc = Lambda.struc, TMB = TMB, beta0com = beta0com, optim.method=optim.method, disp.group = disp.group, NN=NN, Ntrials = Ntrials, quadratic = quadratic, randomB = randomB, zeta.struc = zeta.struc)
     if(any(out$corP$cstruc=="corMatern")) out$corP$MaternSmoothness = MaternKappa
+    if(any(out$corP$cstruclv=="corMatern")) out$corP$MaternSmoothness = MaternKappa
     if(inherits(row.eff.formula, "formula"))out$row.eff <- row.eff.formula
     if(return.terms) {out$terms = term} #else {terms <- }
 

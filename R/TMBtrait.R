@@ -1532,7 +1532,8 @@ trait.TMB <- function(
           if(cstruclvn %in% c(2,4)){ #cstruc=="corExp" || cstruc=="corMatern"
             if(num.lv.cor>0){
               rho_lvc <- matrix((param1[nam=="rho_lvc"])[map.list$rho_lvc],nrow(rho_lvc),ncol(rho_lvc)); 
-              rho_lvc[is.na(rho_lvc)]=0 
+              rho_lvc[is.na(rho_lvc)]=parameter.list$rho_lvc[is.na(rho_lvc)]
+              # rho_lvc[is.na(rho_lvc)]=0 
             } #rho_lvc[-1]<- param1[nam=="rho_lvc"]
           } else {
             rho_lvc[1:length(rho_lvc)]<- param1[nam=="rho_lvc"]
