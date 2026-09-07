@@ -3291,11 +3291,14 @@ Type objective_function<Type>::operator() ()
         }else if(extra(j)==1){//probit
         for (int i=0; i<n; i++) {
           // for (int j=0; j<p;j++){
-            mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
-              nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
+              Type mu = pnorm(Type(eta(i,j)),Type(0),Type(1));
+              mu = Type(CppAD::CondExpEq(mu, Type(1), mu-Type(1e-12), mu));//check if on the boundary
+              if(y(i,j)>0){ // reduce overhead for y == 0
+              mu = Type(CppAD::CondExpEq(mu, Type(0), mu+Type(1e-12), mu));//check if on the boundary
+              nll -= y(i,j)*log(mu);
+              }
+              if(Ntrials(i,j)>y(i,j)) nll -= log(1-mu)*(Ntrials(i,j)-y(i,j));
               nll += cQ(i,j)*Ntrials(i,j);
               if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                 nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
