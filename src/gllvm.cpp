@@ -5278,6 +5278,26 @@ Type objective_function<Type>::operator() ()
               }
             // }
           }
+          }else if(extra(j)==2){
+            for (int i=0; i<n; i++) {
+              if(!gllvmutils::isNA(y(i,j))){
+                int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                //minimum category
+                if(y(i,j)==1){
+                  nll -= logspace_sub(Type(0), -exp(zetanew(0) - eta(i,j)));
+                }else if(y(i,j)==ymaxj){
+                  //maximum category
+                  int idxj = ymaxj-2;
+                  nll += exp(zetanew(idxj) - eta(i,j));
+                }else if(ymaxj>2){
+                  for (int l=2; l<ymaxj; l++) {
+                    if((y(i,j)==l) && (l != ymaxj)){
+                      nll -= logspace_sub(-exp(zetanew(l-2)-eta(i,j)), -exp(zetanew(l-1)-eta(i,j)));
+                    }
+                  }
+                }
+              }
+            }
           }
         } else if(zetastruc==0){
           int ymax = zeta.size() - (has12 ? 2 : 0) + 2;//categories from the shared cutoffs, not from y.col(j)
@@ -5330,6 +5350,25 @@ Type objective_function<Type>::operator() ()
                   }
                 }
               // }
+            }
+          }else if(extra(j)==2){
+            for (int i=0; i<n; i++) {
+                if(!gllvmutils::isNA(y(i,j))){
+                  //minimum category
+                  if(y(i,j)==1){
+                    nll -= logspace_sub(Type(0), -exp(zetanew(0) - eta(i,j)));
+                  }else if(y(i,j)==ymax){
+                    //maximum category
+                    int idxj = ymax-2;
+                    nll += exp(zetanew(idxj) - eta(i,j));
+                  }else if(ymax>2){
+                    for (int l=2; l<ymax; l++) {
+                      if((y(i,j)==l) && (l != ymax)){
+                        nll -= logspace_sub(-exp(zetanew(l-2)-eta(i,j)), -exp(zetanew(l-1)-eta(i,j)));
+                      }
+                    }
+                  }
+                }
             }
           }
         }
