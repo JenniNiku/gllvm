@@ -141,8 +141,9 @@ List of available distributions with the mean, $E(y_{ij})$, and mean-variance, $
 | 		| 			| cloglog 	| VA/LA 	| |
 | Biomass 	| Tweedie 		| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(\mu_{ij}) = \phi_j\mu_{ij}^\nu$, |
 | 		| 			| 		| 		| where $1<\nu<2$ is a power parameter and $\phi_j>0$ is a dispersion parameter |
-| Ordinal 	| Multinomial 		| probit 	| VA 		| Cumulative probit/logit model |
+| Ordinal 	| Multinomial 		| probit 	| VA 		| Cumulative probit/logit/cloglog model |
 | 		| 			| logit 	| VA/EVA 	| |
+| 		| 			| cloglog 	| VA 		| |
 | Normal 	| Gaussian 		| identity 	| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \phi_j^2$ |
 | Positive continuous | Gamma 		| log 		| VA/EVA/LA 	| $E(y_{ij}) = \mu_{ij}$, $V(y_{ij}) = \mu_{ij}^2/\phi_j$ |
 | 		| 			| 		| 		| where $\phi_j$ is a shape parameter |

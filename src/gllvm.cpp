@@ -3544,7 +3544,7 @@ Type objective_function<Type>::operator() ()
                 }
               // }
             }
-          }else{//va probit
+          }else if(extra(j) == 1){//va probit
             for (int i=0; i<n; i++) {
               // for(int j=0; j<p; j++){
                 if(!gllvmutils::isNA(y(i,j))){
@@ -3573,6 +3573,26 @@ Type objective_function<Type>::operator() ()
                 }
                 //log(pow(mu(i,j),y(i,j))*pow(1-mu(i,j),(1-y(i,j))));//
               // }
+            }
+          }else{//va cloglog
+            for (int i=0; i<n; i++) {
+                if(!gllvmutils::isNA(y(i,j))){
+                  int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
+                  //minimum category
+                  if(y(i,j)==1){
+                    Type expeta = exp(zetanew(0) - eta(i,j));
+                    nll -= logspace_sub(Type(0),-expeta) - expeta*gllvmutils::expminus1(cQ(i,j));
+                  }else if(y(i,j)==ymaxj){
+                    //maximum category
+                    int idxj = ymaxj-2;
+                    nll += exp(zetanew(idxj) - eta(i,j) + cQ(i,j));
+                  }else if(ymaxj>2){
+                    int idxj = CppAD::Integer(y(i,j));
+                    Type e1me2 = exp(zetanew(idxj-2) - eta(i,j)) - exp(zetanew(idxj-1)-eta(i,j));
+                    Type d = logspace_sub(Type(0), e1me2);
+                    nll -= d - e1me2 - exp(zetanew(idxj-1)-eta(i,j)+cQ(i,j));
+                  }
+                }
             }
           }
         } else if (method>1) { // EVA ordinal
@@ -3642,7 +3662,7 @@ Type objective_function<Type>::operator() ()
                 }
               // }
             }
-          }else{ // va probit
+          }else if(extra(j) == 1){ // va probit
             for (int i=0; i<n; i++) {
                 if(!gllvmutils::isNA(y(i,j))){
                   //minimum category
@@ -3665,6 +3685,25 @@ Type objective_function<Type>::operator() ()
                   nll += cQ(i,j);
                 }
               // nll -= 0.5*(log(Ar(i)) - Ar(i)/pow(sigma,2) - pow(r0r(i)/sigma,2))*random(0);
+            }
+          }else{ // va cloglog
+            for (int i=0; i<n; i++) {
+                if(!gllvmutils::isNA(y(i,j))){
+                  //minimum category
+                  if(y(i,j)==1){
+                    Type expeta = exp(zetanew(0) - eta(i,j));
+                    nll -= logspace_sub(Type(0),-expeta) - expeta*gllvmutils::expminus1(cQ(i,j));
+                  }else if(y(i,j)==ymax){
+                    //maximum category
+                    int idxj = ymax-2;
+                    nll += exp(zetanew(idxj) - eta(i,j) + cQ(i,j));
+                  }else if(ymax>2){
+                    int idxj = CppAD::Integer(y(i,j));
+                    Type e1me2 = exp(zetanew(idxj-2) - eta(i,j)) - exp(zetanew(idxj-1)-eta(i,j));
+                    Type d = logspace_sub(Type(0), e1me2);
+                    nll -= d - e1me2 - exp(zetanew(idxj-1)-eta(i,j)+cQ(i,j));
+                  }
+                }
             }
           }
         } else if (method>1) {

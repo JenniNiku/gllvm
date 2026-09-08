@@ -86,6 +86,7 @@ devtools::install_github("JenniNiku/gllvm")
 | Biomass 	| Tweedie 		| log 		| VA/EVA/LA 	|
 | Ordinal 	| Multinomial 		| probit 	| VA 		|
 | 		| 			| logit 	| VA/EVA 	|
+| 		| 			| cloglog 	| VA 		|
 | Normal 	| Gaussian 		| identity 	| VA/EVA/LA 	|
 | Positive continuous | Gamma 		| log 		| VA/EVA/LA 	|
 | Positive continuous | Exponential 	| log 		| VA/LA 	|

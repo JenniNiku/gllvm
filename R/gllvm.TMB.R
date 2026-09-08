@@ -1295,6 +1295,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "ordinal")) {
         familyn[family == "ordinal"]=7
         if(any(link=="probit"))extra[family == "ordinal" & (link=="probit")]=1
+        if(any(link=="cloglog"))extra[family == "ordinal" & (link=="cloglog")]=2
       }
       if(any(family == "exponential")) {familyn[family == "exponential"] =8}
       if(any(family == "beta")){ 
@@ -1885,6 +1886,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(any(family == "ordinal")){
         familyn[family == "ordinal"] =7
         if(any(link=="probit")) extra[family == "ordinal" & (link=="probit")]=1
+        if(any(link=="cloglog")) extra[family == "ordinal" & (link=="cloglog")]=2
       }
       if(any(family == "exponential")){ familyn[family == "exponential"] =8}
       if(any(family == "beta")){ 

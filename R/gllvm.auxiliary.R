@@ -388,7 +388,7 @@ start_values_gllvm_TMB <- function(
       zeta[family == "ordinal",1] <- 0 ## polr parameterizes as no intercepts and all cutoffs vary freely. Change this to free intercept and first cutoff to zero
     }else{
       linko <- link[pmin(which(family == "ordinal"), length(link))][1]
-      cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(linko, "logit" = "logistic","probit" = "probit"))
+      cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(linko, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog"))
       zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta
       zeta[(length(zeta)-length(cw.fit$zeta)+1)] <- 0
     }
@@ -427,11 +427,11 @@ start_values_gllvm_TMB <- function(
         linkj = link[min(j,length(link))]
         if(length(levels(y.fac)) > 2) {
           if((num.lv+num.lv.c)==0){
-            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
-            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ Xdesign, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
+            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog")),silent = TRUE)
+            if(!is.null(X) ) try(cw.fit <- MASS::polr(y.fac ~ Xdesign, method = switch(linkj, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog")),silent = TRUE)
           } else {
-            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
-            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ Xdesign+index, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
+            if(is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ index, method = switch(linkj, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog")),silent = TRUE)
+            if(!is.null(X)) try(cw.fit <- MASS::polr(y.fac ~ Xdesign+index, method = switch(linkj, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog")),silent = TRUE)
           }
           params[j,1:length(c(cw.fit$zeta[1],-cw.fit$coefficients))] <- c(cw.fit$zeta[1],-cw.fit$coefficients)
           if(zeta.struc == "species"){
@@ -456,7 +456,7 @@ start_values_gllvm_TMB <- function(
         y.fac <- factor(y[,j])
         linkj = link[min(j,length(link))]
         if(length(levels(y.fac)) > 2) {
-          cw.fit <- try(MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic","probit" = "probit")),silent = TRUE)
+          cw.fit <- try(MASS::polr(y.fac ~ 1, method = switch(linkj, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog")),silent = TRUE)
           zeta[j,2:length(cw.fit$zeta)] <- cw.fit$zeta[-1]-cw.fit$zeta[1]
         }
       } # end for j

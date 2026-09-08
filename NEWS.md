@@ -1,3 +1,8 @@
+Version 2.0.15
+=============
+
+* Ordinal with cloglog link implemented
+
 Version 2.0.14
 =============
 
