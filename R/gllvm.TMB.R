@@ -4,7 +4,7 @@
 ########################################################################################
 gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, family = "poisson", 
                       num.lv = 2, num.lv.c = 0, num.RR = 0, num.lv.cor=0, lv.formula = NULL, corWithinLV = FALSE, LVgroups = NULL, randomB = FALSE, 
-                      method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 1, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
+                      method = "VA",Lambda.struc = "unstructured", Ar.struc = "diagonal", sp.Ar.struc = "diagonal",  sp.Ar.struc.rank = NULL, Ab.diag.iter = 0, row.eff = FALSE, col.eff = FALSE, colMat = matrix(0), nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single", randomX.start = "res", reltol = 1e-8, reltol.c = 1e-8,
                       maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL,
                       trace = FALSE, optimizer.trace = 0, link = "logit", n.init = 1, n.init.max = 10, restrict = 30, start.params = NULL, RElist = NULL, dr = matrix(0), trmsize = matrix(0), csR = matrix(0), proptoMats = list(list(matrix(0))), dLV=NULL, cstruc = "diag", cstruclv = "diag", dist = list(matrix(0)), distLV = matrix(0),
                       optimizer = "optim", starting.val = "res", Power = 1.5, diag.iter = 1, scalmax = 10, MaternKappa = 1.5, rangeP = NULL, zetacutoff = NULL,
@@ -1460,7 +1460,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | ((nrow(dr)==n) & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","diagonalCL2","CL1","CL2")))){
         objr1 <- objr
         optr1 <- optr
-        param1 <- optr$par
+        param1 <- optr$parz
         nam <- names(param1)
         if(length(param1[nam=="r0r"])>0){ r0r1 <- matrix(param1[nam=="r0r"]);
         if(any(grepl("ustruc", cstruc)|cstruc == "ustruc")){sigmaijr1 <- param1[nam=="sigmaijr"]}else{sigmaijr1 <- sigmaijr}
