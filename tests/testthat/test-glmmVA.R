@@ -18,7 +18,7 @@ make_spider_long <- function() {
 test_that("glmmVA: fixed effects only returns glmmVA object", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ BareSand + Species, data = dat, family = "poisson",
-              sd.errors = FALSE)
+              sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_s3_class(m, "glmmVA")
   expect_s3_class(m, "gllvm")
   expect_null(m$params$row.params.random)
@@ -27,7 +27,7 @@ test_that("glmmVA: fixed effects only returns glmmVA object", {
 test_that("glmmVA: random intercept per group returns random effects", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ BareSand + Species + (1|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_s3_class(m, "glmmVA")
   expect_false(is.null(m$params$row.params.random))
   # one random intercept per level (minus reference); may vary by implementation
@@ -37,7 +37,7 @@ test_that("glmmVA: random intercept per group returns random effects", {
 test_that("glmmVA: continuous random slope gives 1x1 sigmaijr", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ Species + (0 + BareSand|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   trmsize <- m$TMBfn$env$data$trmsize
   expect_equal(unname(trmsize[1, 1]), 1L)
   expect_equal(m$corP$cstruc, "diag")
@@ -47,7 +47,7 @@ test_that("glmmVA: factor LHS gives nc x nc sigmaijr (bug fix)", {
   dat   <- make_spider_long()
   nspec <- nlevels(dat$Species)
   suppressWarnings(m <- glmmVA(abund ~ BareSand + Species + (0 + Species|id), data = dat,
-              family = "poisson", sd.errors = FALSE)) 
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1)))
   trmsize <- m$TMBfn$env$data$trmsize
   expect_equal(unname(trmsize[1, 1]), nspec,
                info = "trmsize should equal nlevels(Species), not 1")
@@ -58,7 +58,7 @@ test_that("glmmVA: factor LHS gives nc x nc sigmaijr (bug fix)", {
 test_that("glmmVA: correlated slopes give correct sigmaijr dimensions", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ Species + (0 + BareSand + ConWate|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   trmsize <- m$TMBfn$env$data$trmsize
   expect_equal(unname(trmsize[1, 1]), 2L)
   expect_equal(m$corP$cstruc, "ustruc")
@@ -72,7 +72,7 @@ test_that("row.eff formula: continuous LHS stays diag", {
   sd <- cbind(data.frame(id = factor(seq_len(nrow(y)))), X)
   m <- gllvm(y, studyDesign = sd,
              row.eff = ~(0 + BareSand|id),
-             family = "negative.binomial", num.lv = 0, sd.errors = FALSE)
+             family = "negative.binomial", num.lv = 0, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_equal(m$corP$cstruc, "diag")
   expect_equal(unname(m$TMBfn$env$data$trmsize[1, 1]), 1L)
 })
@@ -84,7 +84,7 @@ test_that("formula: random slope gives correct sigmaB", {
   m <- gllvm(y, X = X,
              formula = ~(0 + BareSand|1),
              family = "negative.binomial", num.lv = 0,
-             beta0com = TRUE, sd.errors = FALSE)
+             beta0com = TRUE, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$sigmaB))
   expect_equal(dim(m$params$sigmaB), c(1L, 1L))
 })
@@ -92,7 +92,7 @@ test_that("formula: random slope gives correct sigmaB", {
 test_that("ranef.glmmVA: returns object without condVar by default", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ BareSand + Species + (1|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   re <- ranef(m)
   expect_null(attr(re, "condVar"))
   expect_true(length(re) > 0L)
@@ -116,7 +116,7 @@ test_that("formula: uncorrelated random slopes give diagonal sigmaB", {
   m <- gllvm(y, X = X,
              formula = ~diag(0 + BareSand + ConWate|1),
              family = "negative.binomial", num.lv = 0,
-             beta0com = TRUE, sd.errors = FALSE)
+             beta0com = TRUE, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$sigmaB))
   expect_equal(dim(m$params$sigmaB), c(2L, 2L))
   expect_equal(unname(m$params$sigmaB[1, 2]), 0)
@@ -130,7 +130,7 @@ test_that("formula: correlated random slopes give non-diagonal sigmaB", {
   m <- gllvm(y, X = X,
              formula = ~(0 + BareSand + ConWate|1),
              family = "negative.binomial", num.lv = 0,
-             beta0com = TRUE, sd.errors = FALSE)
+             beta0com = TRUE, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$sigmaB))
   expect_equal(dim(m$params$sigmaB), c(2L, 2L))
 })
@@ -140,7 +140,7 @@ test_that("formula: random intercept (1|1) gives scalar sigmaB", {
   y <- eSpider$abund[eSpider$nonNA, ]
   m <- gllvm(y, formula = ~(1|1),
              family = "negative.binomial", num.lv = 0,
-             beta0com = TRUE, sd.errors = FALSE)
+             beta0com = TRUE, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$sigmaB))
   expect_equal(dim(m$params$sigmaB), c(1L, 1L))
 })
@@ -155,7 +155,8 @@ test_that("lv.formula: random slope in ordination gives sigmaLvXcoef", {
   m <- gllvm(y, X = X, lv.formula = ~(0 + BareSand|1),
              family = "negative.binomial", num.lv.c = 2,
              randomB = "LV", sd.errors = FALSE,
-             control.start = list(starting.val = "zero"))
+             control.start = list(starting.val = "zero"),
+             control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$sigmaLvXcoef))
   expect_equal(m$randomB, "LV")
 })
@@ -167,7 +168,7 @@ test_that("lv.formula: fixed effects in ordination give LvXcoef", {
   # num.RR cannot exceed predictors in lv.formula; use 1
   m <- gllvm(y, X = X, lv.formula = ~BareSand,
              family = "negative.binomial", num.RR = 1,
-             sd.errors = FALSE)
+             sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_false(is.null(m$params$LvXcoef))
   expect_equal(m$num.RR, 1L)
 })
@@ -205,7 +206,7 @@ test_that("glmmVA: diag(a+b|grp) gives same logLik as (0+a|grp)+(0+b|grp) (issue
 test_that("glmmVA: diag(nc>1|grp) uses nc lg_Ar entries (not nl)", {
   dat <- make_spider_long_dummy()
   m <- glmmVA(abund ~ Species + diag(0 + BareSand + ConWate|dummy),
-              family = "negative.binomial", data = dat, sd.errors = FALSE)
+              family = "negative.binomial", data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   trmsize <- m$TMBfn$env$data$trmsize
   nc <- unname(trmsize[1, 1]); nl <- unname(trmsize[2, 1])
   expect_equal(length(m$TMBfn$env$parameters$lg_Ar), nc * nl,
@@ -219,7 +220,7 @@ test_that("glmmVA: diag(nc>1|grp) uses nc lg_Ar entries (not nl)", {
 test_that("glmmVA: 0+ suppresses global intercept (beta0 == 0)", {
   dat <- make_spider_long()
   m <- glmmVA(abund ~ 0 + Species + (0 + BareSand|id), data = dat,
-              family = "poisson", sd.errors = FALSE)
+              family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_equal(unname(m$params$beta0), rep(0, length(m$params$beta0)),
                tolerance = 1e-10, info = "beta0 must be zero when formula starts with 0+")
 })
@@ -227,7 +228,7 @@ test_that("glmmVA: 0+ suppresses global intercept (beta0 == 0)", {
 test_that("glmmVA: 0+ model random effects are non-trivial", {
   dat <- make_spider_long()
   m0 <- glmmVA(abund ~ 0 + Species + (0 + BareSand|id), data = dat,
-               family = "poisson", sd.errors = FALSE)
+               family = "poisson", sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_gt(length(m0$params$row.params.random), 0L)
   expect_false(all(m0$params$row.params.random == 0))
 })
@@ -244,7 +245,7 @@ test_that("row.eff corExp fits and produces Scale/range sigma parameters", {
   m <- gllvm(y, studyDesign = sd,
              row.eff = ~corExp(1|id),
              dist = list(coords),
-             family = "negative.binomial", num.lv = 0, sd.errors = FALSE)
+             family = "negative.binomial", num.lv = 0, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_equal(m$corP$cstruc, "corExp")
   expect_true(any(grepl("\\.Scale$", names(m$params$sigma))),
               info = "corExp must produce a sigma entry named '<term>.Scale'")
@@ -274,7 +275,7 @@ make_spider_mixed <- function() {
 
 test_that("glmmVA mixed: auto-infers response.group from per-obs family vector", {
   dat <- make_spider_mixed()
-  m <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  m <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_s3_class(m, "glmmVA")
   # y stored as wide matrix with NAs
   expect_true(is.matrix(m$y))
@@ -285,7 +286,7 @@ test_that("glmmVA mixed: auto-infers response.group from per-obs family vector",
 test_that("glmmVA mixed: nobs counts non-NA cells, not all matrix cells", {
   dat <- make_spider_mixed()
   n   <- nlevels(dat$site)
-  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   # Total observations = 2*n (one per long-format row), not 4*n (prod of matrix dims)
   expect_equal(nobs(m), nrow(dat))
   expect_equal(attributes(logLik(m))$nobs, nrow(dat))
@@ -293,7 +294,7 @@ test_that("glmmVA mixed: nobs counts non-NA cells, not all matrix cells", {
 
 test_that("glmmVA mixed: beta0com collapses intercepts to 1 shared value", {
   dat <- make_spider_mixed()
-  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_true(m$beta0com)
   # Both columns share the same intercept
   expect_equal(length(unique(m$params$beta0)), 1L)
@@ -301,7 +302,7 @@ test_that("glmmVA mixed: beta0com collapses intercepts to 1 shared value", {
 
 test_that("glmmVA mixed: 0+ suppresses intercept without error", {
   dat <- make_spider_mixed()
-  m   <- glmmVA(y ~ 0 + (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  m   <- glmmVA(y ~ 0 + (1|site), family = dat$family, data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_equal(unname(m$params$beta0), rep(0, length(m$params$beta0)),
                tolerance = 1e-10,
                info = "beta0 must be zero when 0+ is used in mixed mode")
@@ -309,7 +310,7 @@ test_that("glmmVA mixed: 0+ suppresses intercept without error", {
 
 test_that("predict.glmmVA mixed: returns long-format vector, not wide matrix", {
   dat <- make_spider_mixed()
-  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE)
+  m   <- glmmVA(y ~ (1|site), family = dat$family, data = dat, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   preds <- predict(m, type = "response")
   expect_false(is.matrix(preds), info = "predict() must collapse wide matrix to vector")
   expect_equal(length(preds), nrow(dat))
@@ -326,7 +327,7 @@ test_that("row.eff propto fits and produces sigma parameter", {
   sd <- data.frame(id = factor(seq_len(n)))
   m <- gllvm(y, studyDesign = sd,
              row.eff = ~propto(1|id, M_propto_test),
-             family = "negative.binomial", num.lv = 0, sd.errors = FALSE)
+             family = "negative.binomial", num.lv = 0, sd.errors = FALSE, control = list(max.iter = 1, maxit = 1))
   expect_equal(m$corP$cstruc, "propto")
   expect_true(length(m$params$sigma) > 0L,
               info = "propto must produce at least one sigma value")
