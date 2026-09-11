@@ -1,7 +1,7 @@
 ---
 title: "Introduction to gllvm Part 2: Species correlations"
 author: "Jenni Niku"
-date: "2026-09-11"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to gllvm Part 2: Species correlations}
@@ -10,7 +10,17 @@ vignette: >
 ---
 
 
-
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  warning = FALSE,
+  fig.width=5, fig.height=5,
+  fig.align = "center",
+  dev = "png",
+  fig.pos = 'H'
+  )
+```
 
 # Introduction to gllvm
 
@@ -26,8 +36,7 @@ vignette: >
    - CRAN: <https://CRAN.R-project.org/package=gllvm>
 
 - Package installation:
-
-``` r
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
 # From CRAN
 install.packages(gllvm)
 # OR
@@ -79,8 +88,7 @@ devtools::install_github("JenniNiku/gllvm")
 ## Data input
 
 Main function of the **gllvm** package is `gllvm()`, which can be used to fit GLLVMs for multivariate data with the most important arguments listed in the following:
-
-``` r
+```{r, eval = FALSE, echo=TRUE}
 gllvm(y = NULL, X = NULL, TR = NULL, family, num.lv = 2, 
  formula = NULL, method = "VA", row.eff = FALSE, n.init=1, starting.val ="res", ...)
 ```
@@ -96,8 +104,7 @@ gllvm(y = NULL, X = NULL, TR = NULL, family, num.lv = 2,
 - starting.val: starting value method
 
 
-
-``` r
+```{r, eval = TRUE, echo=TRUE}
 library(gllvm)
 ```
 
@@ -116,64 +123,39 @@ library(gllvm)
 ## Data fitting
 
 Fit GLLVM with environmental variables $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ using **gllvm**: 
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 library(gllvm)
 data("spider", package = "mvabund")
 fitx <- gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", num.lv = 2)
 fitx
-## Call: 
-## gllvm(y = spider$abund, X = spider$x, family = "negative.binomial", 
-##     num.lv = 2)
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -593.6749 
-## Residual degrees of freedom:  217 
-## AIC:  1425.35 
-## AICc:  1557.572 
-## BIC:  1879.586
 ```
 
 ## Model selection
 
 - Number of latent variables is not necessarily clear beforehand when goal is not primarily in ordination, so information criteria can be used for model selection. For example, using Akaike information criterion:
 
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 X=spider$x
 fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
 fitx2 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 2)
 fitx3 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 3)
 AIC(fitx1)
-## [1] 1393.837
 AIC(fitx2)
-## [1] 1415.837
 AIC(fitx3)
-## [1] 1445.35
 ```
 
 ## Residual analysis
 
 - Residual analysis can be used to  assess the appropriateness of the fitted model (eg. in terms of mean-variance relationship). Can be performed using `plot()`: 
-
-``` r
+```{r v4res, eval = TRUE, echo=TRUE, fig.width=7, fig.height=3.5}
 par(mfrow = c(1,2))
 plot(fitx1, which = 1:2)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v4res-1.png" alt="plot of chunk v4res"  />
-<p class="caption">plot of chunk v4res</p>
-</div>
-
 # Exercises
 
 <span style="color:blue"> E1. Load spider data from **mvabund** package and take a look at the dataset. </span>
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 library(gllvm)
 #Package **mvabund** is loaded with **gllvm** so just load with a function `data()`.
 data("spider")
@@ -184,113 +166,19 @@ data("spider")
 <details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> Package **mvabund** is loaded with **gllvm** so just load with a function `data()`. </span>
-
-``` r
+```{r v4boxplot, eval = TRUE, echo=TRUE, warning=FALSE}
 # response matrix:
 spider$abund
-##       Alopacce Alopcune Alopfabr Arctlute Arctperi Auloalbi Pardlugu Pardmont
-##  [1,]       25       10        0        0        0        4        0       60
-##  [2,]        0        2        0        0        0       30        1        1
-##  [3,]       15       20        2        2        0        9        1       29
-##  [4,]        2        6        0        1        0       24        1        7
-##  [5,]        1       20        0        2        0        9        1        2
-##  [6,]        0        6        0        6        0        6        0       11
-##  [7,]        2        7        0       12        0       16        1       30
-##  [8,]        0       11        0        0        0        7       55        2
-##  [9,]        1        1        0        0        0        0        0       26
-## [10,]        3        0        1        0        0        0        0       22
-## [11,]       15        1        2        0        0        1        0       95
-## [12,]       16       13        0        0        0        0        0       96
-## [13,]        3       43        1        2        0       18        1       24
-## [14,]        0        2        0        1        0        4        3       14
-## [15,]        0        0        0        0        0        0        6        0
-## [16,]        0        3        0        0        0        0        6        0
-## [17,]        0        0        0        0        0        0        2        0
-## [18,]        0        1        0        0        0        0        5        0
-## [19,]        0        1        0        0        0        0       12        0
-## [20,]        0        2        0        0        0        0       13        0
-## [21,]        0        1        0        0        0        0       16        1
-## [22,]        7        0       16        0        4        0        0        2
-## [23,]       17        0       15        0        7        0        2        6
-## [24,]       11        0       20        0        5        0        0        3
-## [25,]        9        1        9        0        0        2        1       11
-## [26,]        3        0        6        0       18        0        0        0
-## [27,]       29        0       11        0        4        0        0        1
-## [28,]       15        0       14        0        1        0        0        6
-##       Pardnigr Pardpull Trocterr Zoraspin
-##  [1,]       12       45       57        4
-##  [2,]       15       37       65        9
-##  [3,]       18       45       66        1
-##  [4,]       29       94       86       25
-##  [5,]      135       76       91       17
-##  [6,]       27       24       63       34
-##  [7,]       89      105      118       16
-##  [8,]        2        1       30        3
-##  [9,]        1        1        2        0
-## [10,]        0        0        1        0
-## [11,]        0        1        4        0
-## [12,]        1        8       13        0
-## [13,]       53       72       97       22
-## [14,]       15       72       94       32
-## [15,]        0        0       25        3
-## [16,]        2        0       28        4
-## [17,]        0        0       23        2
-## [18,]        0        0       25        0
-## [19,]        1        0       22        3
-## [20,]        0        0       22        2
-## [21,]        0        1       18        2
-## [22,]        0        0        1        0
-## [23,]        0        0        1        0
-## [24,]        0        0        0        0
-## [25,]        6        0       16        6
-## [26,]        0        0        1        0
-## [27,]        0        0        0        0
-## [28,]        0        0        2        0
 # Environmental variables
 spider$x
-##    soil.dry bare.sand fallen.leaves   moss herb.layer reflection
-## 1    2.3321    0.0000        0.0000 3.0445     4.4543     3.9120
-## 2    3.0493    0.0000        1.7918 1.0986     4.5643     1.6094
-## 3    2.5572    0.0000        0.0000 2.3979     4.6052     3.6889
-## 4    2.6741    0.0000        0.0000 2.3979     4.6151     2.9957
-## 5    3.0155    0.0000        0.0000 0.0000     4.6151     2.3026
-## 6    3.3810    2.3979        3.4340 2.3979     3.4340     0.6931
-## 7    3.1781    0.0000        0.0000 0.6931     4.6151     2.3026
-## 8    2.6247    0.0000        4.2627 1.0986     3.4340     0.6931
-## 9    2.4849    0.0000        0.0000 4.3307     3.2581     3.4012
-## 10   2.1972    3.9318        0.0000 3.4340     3.0445     3.6889
-## 11   2.2192    0.0000        0.0000 4.1109     3.7136     3.6889
-## 12   2.2925    0.0000        0.0000 3.8286     4.0254     3.6889
-## 13   3.5175    1.7918        1.7918 0.6931     4.5109     3.4012
-## 14   3.0865    0.0000        0.0000 1.7918     4.5643     1.0986
-## 15   3.2696    0.0000        4.3944 0.6931     3.0445     0.6931
-## 16   3.0301    0.0000        4.6052 0.6931     0.6931     0.0000
-## 17   3.3322    0.0000        4.4543 0.6931     3.0445     1.0986
-## 18   3.1224    0.0000        4.3944 0.0000     3.0445     1.0986
-## 19   2.9232    0.0000        4.5109 1.6094     1.6094     0.0000
-## 20   3.1091    0.0000        4.5951 0.6931     0.6931     0.0000
-## 21   2.9755    0.0000        4.5643 0.6931     1.7918     0.0000
-## 22   1.2528    3.2581        0.0000 4.3307     0.6931     3.9120
-## 23   1.1939    3.0445        0.0000 4.0254     3.2581     4.0943
-## 24   1.6487    3.2581        0.0000 4.0254     3.0445     4.0073
-## 25   1.8245    3.5835        0.0000 1.0986     4.1109     2.3026
-## 26   0.9933    4.5109        0.0000 1.7918     1.7918     4.3820
-## 27   0.9555    2.3979        0.0000 3.8286     3.4340     3.6889
-## 28   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889
 # Plot data using boxplot:
 boxplot(spider$abund)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v4boxplot-1.png" alt="plot of chunk v4boxplot"  />
-<p class="caption">plot of chunk v4boxplot</p>
-</div>
-
 </details>
 
 <span style="color:blue"> E2. Fit GLLVM with two latent variables to spider data with a suitable distribution. Data consists of counts of spider species.</span>
-
-``` r
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
 # Take a look at the function documentation for help: 
 ?gllvm
 ```
@@ -299,64 +187,24 @@ boxplot(spider$abund)
 
 <span style="color:red"> 2. Response variables in spider data are counts, so Poisson, negative binomial and zero inflated Poisson are possible. However, ZIP is implemented only with Laplace method, so it need to be noticed, that if models are fitted with different methods they can not be compared with information criteria. Let's try just with a Poisson and NB.</span> 
 <span style="color:red"> **NOTE THAT** the results may not be exactly the same as below, as the initial values for each model fit are slightly different, so the results may</span>
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8, fig.height=5}
 # Fit a GLLVM to data
 fitp <- gllvm(y=spider$abund, family = poisson(), num.lv = 2)
 fitp
-## Call: 
-## gllvm(y = spider$abund, family = poisson(), num.lv = 2)
-## family: 
-## [1] "poisson"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -845.8277 
-## Residual degrees of freedom:  301 
-## AIC:  1761.655 
-## AICc:  1770.055 
-## BIC:  1895.254
 fitnb <- gllvm(y=spider$abund, family = "negative.binomial", num.lv = 2)
 fitnb
-## Call: 
-## gllvm(y = spider$abund, family = "negative.binomial", num.lv = 2)
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -733.6806 
-## Residual degrees of freedom:  289 
-## AIC:  1561.361 
-## AICc:  1577.028 
-## BIC:  1740.765
 ```
 Based on AIC, NB distribution suits better. How about residual analysis:
 <span style="color:red"> **NOTE THAT** The package uses randomized quantile residuals so each time you plot the residuals, they look a little different.</span>
-
-``` r
+```{r v4res2, eval = TRUE, echo=TRUE, warning=FALSE, fig.width=8}
 # Fit a GLLVM to data
 par(mfrow = c(1,2))
 plot(fitp, which = 1:2)
-```
-
-<div class="figure" style="text-align: center">
-<img src="v4res2-1.png" alt="plot of chunk v4res2"  />
-<p class="caption">plot of chunk v4res2</p>
-</div>
-
-``` r
 plot(fitnb, which = 1:2)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v4res2-2.png" alt="plot of chunk v4res2"  />
-<p class="caption">plot of chunk v4res2</p>
-</div>
-
 You could do these comparisons with Laplace method as well, using the code below, and it would give the same conclusion that NB distribution suits best:
-
-``` r
+```{r, eval = FALSE, echo=TRUE, warning=FALSE}
 fitLAp <- gllvm(y=spider$abund, family = poisson(), method = "LA", num.lv = 2)
 fitLAnb <- gllvm(y=spider$abund, family = "negative.binomial", method = "LA", num.lv = 2)
 fitLAzip <- gllvm(y=spider$abund, family = "ZIP", method = "LA", num.lv = 2)
@@ -373,35 +221,18 @@ GLLVM with two latent variables can be used as a model-based approach to unconst
 <details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> We can extract the two columns from the environmental variable matrix or define the model using formula. </span>
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 # `soil.dry` and `reflection` are in columns 1 and 6
 X <- spider$x[,c(1,6)]
 fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
 fitx2 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 2)
 fitx3 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 3)
 AIC(fitx1)
-## [1] 1449.428
 AIC(fitx2)
-## [1] 1471.428
 AIC(fitx3)
-## [1] 1491.326
 # Or alternatively using formula:
 fitx1 <- gllvm(spider$abund, spider$x, formula = ~soil.dry + reflection, family = "negative.binomial", num.lv = 1)
 fitx1
-## Call: 
-## gllvm(y = spider$abund, X = spider$x, formula = ~soil.dry + reflection, 
-##     family = "negative.binomial", num.lv = 1)
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -664.7138 
-## Residual degrees of freedom:  276 
-## AIC:  1449.428 
-## AICc:  1476.046 
-## BIC:  1678.454
 ```
 Model with one latent variable gave the lowest AIC value.
 </details>
@@ -413,88 +244,11 @@ Model with one latent variable gave the lowest AIC value.
 <details><summary><span style="color:red"> Show the answers. </span></summary>
 
 <span style="color:red"> Estimated parameters can be obtained with `coef()` function. Confidence intervals for parameters are obtained with `confint()`. </span>
-
-``` r
+```{r, eval = TRUE, echo=TRUE, warning=FALSE}
 coef(fitx1)
-## $Species.scores
-##                   LV1
-## Alopacce 1.000000e+00
-## Alopcune 1.286750e+00
-## Alopfabr 4.410900e-01
-## Arctlute 2.261609e+00
-## Arctperi 7.106293e-08
-## Auloalbi 2.499171e+00
-## Pardlugu 3.974201e-01
-## Pardmont 9.559773e-01
-## Pardnigr 2.566378e+00
-## Pardpull 2.528363e+00
-## Trocterr 9.659240e-01
-## Zoraspin 1.751375e+00
-## 
-## $sigma.lv
-##       LV1 
-## 0.8536261 
-## 
-## $Intercept
-##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu 
-##  -3.009561  -7.407341   2.077958 -21.475948  -7.919465 -12.966728   4.567807 
-##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin 
-##  -6.091420 -14.644757 -16.455779  -3.711656  -9.214782 
-## 
-## $Xcoef
-##            soil.dry reflection
-## Alopacce -0.3440794  1.5943440
-## Alopcune  2.6111918  0.6246936
-## Alopfabr -1.8669348  0.7467994
-## Arctlute  6.3217139  0.8206592
-## Arctperi -1.7567107  2.8890774
-## Auloalbi  4.1814224  0.6832101
-## Pardlugu -0.5453081 -1.2605057
-## Pardmont  1.7925512  1.4691971
-## Pardnigr  4.9043040  0.8602193
-## Pardpull  5.3496960  1.2823453
-## Trocterr  2.3357872  0.2234689
-## Zoraspin  3.5553552  0.1198450
-## 
-## $inv.phi
-##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi 
-## 9.379429e+00 1.699502e+00 1.577606e+00 1.064238e+00 3.734674e+07 1.511532e+00 
-##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin 
-## 1.543684e+00 9.784555e-01 2.517838e+00 2.339478e+00 1.470955e+01 3.625229e+00 
-## 
-## $phi
-##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi 
-## 1.066163e-01 5.884078e-01 6.338717e-01 9.396399e-01 2.677610e-08 6.615804e-01 
-##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin 
-## 6.478008e-01 1.022019e+00 3.971661e-01 4.274457e-01 6.798302e-02 2.758446e-01
 # Coefficients for covariates are named as `Xcoef`
 # Confidence intervals for these coefficients:
 confint(fitx1, parm = "Xcoef")
-##               cilow       ciup
-## Xcoef1  -1.02678964  0.3386309
-## Xcoef2   1.34779847  3.8745851
-## Xcoef3  -2.85515462 -0.8787150
-## Xcoef4   2.24726612 10.3961616
-## Xcoef5  -2.87610917 -0.6373123
-## Xcoef6   1.79157916  6.5712655
-## Xcoef7  -1.64586901  0.5552527
-## Xcoef8   0.73372751  2.8513749
-## Xcoef9   2.78591085  7.0226972
-## Xcoef10  3.14367369  7.5557182
-## Xcoef11  1.64620140  3.0253730
-## Xcoef12  1.97725185  5.1334585
-## Xcoef13  0.95836174  2.2303263
-## Xcoef14  0.13818262  1.1112046
-## Xcoef15 -0.24254371  1.7361425
-## Xcoef16 -0.34247281  1.9837912
-## Xcoef17  1.63802402  4.1401308
-## Xcoef18 -0.18421936  1.5506396
-## Xcoef19 -1.73558481 -0.7854266
-## Xcoef20  0.89996780  2.0384263
-## Xcoef21  0.01742757  1.7030110
-## Xcoef22  0.40743692  2.1572537
-## Xcoef23 -0.08589193  0.5328298
-## Xcoef24 -0.46472458  0.7044146
 # The first 12 intervals are for soil.dry and next 12 for reflection
 ```
 </details>
@@ -520,8 +274,7 @@ The results may not be exactly the same as in the answers, as the initial values
 
 - Let's consider first the correlation matrix based on a model without predictors:
 $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j$
-
-``` r
+```{r, eval = TRUE, echo=TRUE, fig.width=4.5}
 fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 ```
 - The correlation matrix based on such model does not take into account the environmental conditions driving species abundances at sites, and reflects only what has been observed.
@@ -531,35 +284,27 @@ fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 - The residual correlations can be visualized either using biplot, which shows the species ordination, or visualizing the actual correlation matrix using, eg., a `corrplot` package.
 
 - The biplot can be produced using a function `ordiplot()` with an argument `biplot = TRUE`:
-
-``` r
+```{r v4ordi1, eval = FALSE, echo=TRUE, fig.width=4.5}
 fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 ordiplot(fitnb, biplot = TRUE)
 abline(h = 0, v = 0, lty=2)
 ```
-<div class="figure" style="text-align: center">
-<img src="v4ordi2-1.png" alt="plot of chunk v4ordi2"  />
-<p class="caption">plot of chunk v4ordi2</p>
-</div>
+```{r v4ordi2, eval = TRUE, echo=FALSE, fig.width=4.5, fig.height=3.8}
+par(mfrow=c(1,1), mar=c(4,4,0.1,0.1))
+ordiplot(fitnb, biplot = TRUE)
+abline(h = 0, v = 0, lty=2)
+```
 
 - Correlations can be visualized more precisely using `corrplot()` function:
-
-``` r
+```{r v4corr, eval = TRUE, echo=TRUE, fig.height=5}
 fitnb <- gllvm(spider$abund, family = "negative.binomial", num.lv = 2)
 cr <- getResidualCor(fitnb)
 library(corrplot);
-## corrplot 0.95 loaded
 corrplot(cr, diag = FALSE, type = "lower", method = "square", tl.srt = 25)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v4corr-1.png" alt="plot of chunk v4corr"  />
-<p class="caption">plot of chunk v4corr</p>
-</div>
-
 - The same correlations can also be visualized with species ordination in biplot:
-
-``` r
+```{r v4ordi3, eval = FALSE, echo=TRUE, fig.width=5}
 ordiplot(fitnb, biplot = TRUE)
 abline(h = 0, v = 0, lty=2)
 ```
@@ -572,8 +317,7 @@ abline(h = 0, v = 0, lty=2)
 - $\boldsymbol{\beta}_{j}$ is a vector of species specific coefficients for environmental variables.
 - Next consider for example two environmental variables, `soil.dry` (soil dry mass) and `reflection` (reflection of the soil surface with a cloudless sky), which shows different environmental gradients in ordination: 
 
-
-``` r
+```{r v4ordi4, eval = TRUE, echo=TRUE, fig.width=8, fig.height=4}
 rbPal <- c("#00FA9A", "#00EC9F", "#00DFA4", "#00D2A9", "#00C5AF", "#00B8B4", "#00ABB9", "#009DBF", "#0090C4", "#0083C9", "#0076CF", "#0069D4", "#005CD9", "#004EDF", "#0041E4", "#0034E9", "#0027EF", "#001AF4", "#000DF9", "#0000FF")
 X <- spider$x[,c(1,6)]
 par(mfrow = c(1,2), mar=c(4,4,2,2))
@@ -585,40 +329,23 @@ abline(h=0,v=0, lty=2)
 }
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v4ordi4-1.png" alt="plot of chunk v4ordi4"  />
-<p class="caption">plot of chunk v4ordi4</p>
-</div>
-
 ## Coefficient plot
 
 - `coefplot()` plots point estimates of the species specific environmental coefficients $\boldsymbol{\beta}_{j}$ with confidence intervals.
 - As biplots with environmental gradients indicated that, for example, species named Arctperi prefers sites with low amount of dry soil mass and high amount of reflection with sky, the similar effects can be seen in the coefficients plotted with their confidence intervals.
-
-``` r
+```{r v4coef, eval = TRUE, echo=TRUE, fig.width=8, fig.height=3.5}
 fitx1 <- gllvm(spider$abund, X, family = "negative.binomial", num.lv = 1)
 coefplot(fitx1, mfrow = c(1,2), cex.ylab = 0.8)
 ```
-
-<div class="figure" style="text-align: center">
-<img src="v4coef-1.png" alt="plot of chunk v4coef"  />
-<p class="caption">plot of chunk v4coef</p>
-</div>
 
 
 ## Correlation matrix
 - Correlation matrix for model with predictors shows correlation patterns between species when the effect of the predictors are taken into account. 
 - When the effects of covariates `dry.soil` and `reflection` were accounted, negative correlation between species do not seem to exist anymore, indicating that negative correlations were explained by different environmental conditions at sites and how species respond to them, rather than direct species interactions.
-
-``` r
+```{r v4corr2, eval = TRUE, echo=TRUE, fig.height=5}
 crx <- getResidualCor(fitx1)
 corrplot(crx, diag = FALSE, type = "lower", method = "square", tl.srt = 25)
 ```
-
-<div class="figure" style="text-align: center">
-<img src="v4corr2-1.png" alt="plot of chunk v4corr2"  />
-<p class="caption">plot of chunk v4corr2</p>
-</div>
 
 ## Fourth corner models
 - If species trait variables $\boldsymbol{t}_j$, measuring eg. species behaviour or physical appearance, would be available, fourth corner models should be considered: $g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{x}_i'\boldsymbol{B}_{I}\boldsymbol{t}_j  + \boldsymbol{u}_i'\boldsymbol{\theta}_j$ 

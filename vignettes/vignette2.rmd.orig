@@ -1,7 +1,7 @@
 ---
 title: 'Analysing high-dimensional microbial community data using gllvm'
 author: "Jenni Niku"
-date: "2026-09-11"
+date: "`r Sys.Date()`"
 output:  rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Analysing high-dimensional microbial community data using gllvm}
@@ -9,41 +9,41 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size="footnotesize", fig.width=5, fig.height=5, fig.align="center",dev="png", code.frame = TRUE, warning = FALSE, fig.pos='H')
+```
 
 
 In this example we apply generalized linear latent variable model (GLLVMs) on the bacterial species data discussed in @Nissinen2012. The sequence data is published in European Nucleotide Archive with the project number PRJEB17695. The subset of the data used in our analyses is included in the gllvm package. This example follows the one provided in @Niku2017, except that here we use variational approximation method to fit GLLVMs instead of the Laplace approximation method. Altogether eight different sampling sites were selected from three locations. Three of the sites were in Kilpisjarvi, Finland, three in Ny-Alesund, Svalbard, Norway, and two in Mayrhofen, Austria. From each sampling site, several soil samples were taken and their bacterial species were recorded. The data consist of $m = 985$ bacterial species counts measured from $n = 56$ sites. The sites can be considered as independent from each other since bacterial communities are known to be very location specific.  In addition to bacteria counts, three continuous environmental variables (pH, available phosphorous and soil organic matter) were measured from each soil sample. The data set is available in object `Ysoil` and the environmental variables and information regarding the sampling sites are given in object `Xenv`. In addition to environmental variables, `Xenv` contains information from the sampling location (`Region`), sampling site at each region (`Site`) and soil sample type (`Soiltype`, top soil (T) or bottom soil (B)). Using GLLVMs we try to find out if soils physico-chemical properties or region affect the structure of bacterial communities. The package and the dataset can be loaded along the following lines:
 
-
-``` r
+```{r}
 library(gllvm)
 data("microbialdata")
 Ysoil <- microbialdata$Y
 Xenv <- microbialdata$Xenv
 dim(Ysoil)
-```
-
-```
-## [1]  56 985
-```
-
-``` r
 head(Xenv, 3)
 ```
 
+```{r, echo=FALSE}
+load(file = "ftXi.RData")
+load(file = "ftXph.RData")
+load(file = "ftX.RData")
+load(file = "ftNULL.RData")
+ftXi$randomB<-ftXph$randomB<-ftX$randomB<-ftNULL$randomB<-FALSE
+ftXi$y<-ftXph$y<-ftX$y<-ftNULL$y<-Ysoil
+ftXi$num.RR <- ftXi$num.lv.c <- ftXph$num.RR <- ftXph$num.lv.c <- 0
+ftX$num.RR <- ftX$num.lv.c <- 0
+ftNULL$num.RR <- ftNULL$num.lv.c <- 0
+ftXi$quadratic<-ftXph$quadratic<-ftX$quadratic<-ftNULL$quadratic<-FALSE
+#ftXi$num.lvcor<-ftXph$num.lvcor<-ftX$num.lvcor<-ftNULL$num.lvcor<-0
+ftNULL$TMBfn$env$data$dr0=model.matrix(~Site-1, Xenv)
+ftXi$col.eff$col.eff<-ftXph$col.eff$col.eff<-ftX$col.eff$col.eff<-ftNULL$col.eff$col.eff<-FALSE
 ```
-##      SOM   pH Phosp Region Site Soiltype
-## AB2 0.01 6.70  2.63    Aus    A        B
-## AB3 0.01 6.67  2.16    Aus    A        B
-## AB4 0.00 8.19  0.62    Aus    A        B
-```
-
-
 
 
 Let's take a look at the means and variances of the species counts:
-
-``` r
+```{r v2p1, fig.height=4, fig.width=8}
 meanY <- apply(Ysoil,2, mean)
 varY <- apply(Ysoil,2, var)
 plot(log(meanY),varY, log = "y", main = "Species mean-variance relationship")
@@ -51,64 +51,33 @@ points(log(sort(meanY)), sort(meanY), type = "l")
 points(log(sort(meanY)), sort(meanY+ 1*meanY^2), type = "l", col=2, lty=2)
 legend("bottomright", lty=1:2, legend = c("var = mean", "var = mean+phi*mu^2"), bty="n", col = 1:2)
 ```
-
-<div class="figure" style="text-align: center">
-<img src="v2p1-1.png" alt="plot of chunk v2p1"  />
-<p class="caption">plot of chunk v2p1</p>
-</div>
 As species variances increases faster than mean, it is a clear indication of the overdispersion in the data.
 
 In order to study if the effect of environmental variables is seen in an unconstrained ordination plot, we first consider a GLLVM with two latent variables and no predictors, and constructed an ordination plot based on the predicted latent variables.
 For count data with overdispersion we consider here the negative binomial (NB) distribution. We also include random effects for sites in order to account for the differences in site totals. This can be done by defining the structure for community level random row effects in an argument `row.eff` and including a data frame with 'Site' variable as factor to an argument 'studyDesign'. Note that in the examples we consider below we don't necessarily need standard errors for the parameters for this specific model so we define `sd.errors = FALSE` in the function call. When needed, standard errors can also be calculated afterwards using function `se`.
 
-
-``` r
+```{r}
 sDesign<-data.frame(Site=Xenv$Site)
 ```
-
-``` r
+```{r, eval = FALSE}
 ftNULL <- gllvm(Ysoil, studyDesign = sDesign, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2, sd.errors = FALSE)
 ```
 The print of the model object:
 
-
-``` r
+```{r}
 ftNULL
-```
-
-```
-## Call: 
-## gllvm(y = Ysoil, X = data.frame(Site = Xenv$Site), num.lv = 2, 
-##     family = "negative.binomial", row.eff = ~(1 | Site), sd.errors = FALSE)
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -59822.73 
-## Residual degrees of freedom:  52197 
-## AIC:  125571.5 
-## AICc:  125908 
-## BIC:  151995.5
 ```
 
 Using the residual diagnostic plot we can check that the chosen NB distribution is suitable for the data at hand. The Dunn-Smyth residuals given by the NB model are normally distributed around zero, thus supporting the choice. Using argument `n.plot` we can choose a number of randomly selected species to be plotted in order to make any patterns in the residual plots more apparent. This can be useful argument when data is high-dimensional.
 
-
-``` r
+```{r v2p2, fig.height=4, fig.width=8}
 par(mfrow = c(1, 2))
 plot(ftNULL, which = 1:2, var.colors = 1, n.plot = 100)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p2-1.png" alt="plot of chunk v2p2"  />
-<p class="caption">plot of chunk v2p2</p>
-</div>
-
 The ordination of sites based on the fitted negative binomial GLLVM can be plotted using function `ordiplot`. The sites can be colored according to their environmental variable values, `pH`, `SOM` and `phosp` using an argument `s.colors`. In addition, the ordination points are labeled according to the sampling location (Kilpisjarvi, Ny-Alesund and Innsbruck). This can be done by setting `symbols = TRUE` and defining the symbols for each site using argument `pch`, see below:
 
-
-``` r
+```{r v2p3, out.width='70%'}
 # Define colors according to the values of pH, SOM and phosp
 library(grDevices)
 ph <- Xenv$pH
@@ -131,39 +100,20 @@ pchr[Xenv$Region == "Aus"] = 3
 ordiplot(ftNULL, main = "Ordination of sites, color: pH",
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
-```
 
-<div class="figure" style="text-align: center">
-<img src="v2p3-1.png" alt="plot of chunk v2p3" width="70%" />
-<p class="caption">plot of chunk v2p3</p>
-</div>
-
-``` r
 ordiplot(ftNULL, main = "Ordination of sites, color: SOM", 
          symbols = TRUE, pch = pchr, s.colors = Colorssom)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
-```
 
-<div class="figure" style="text-align: center">
-<img src="v2p3-2.png" alt="plot of chunk v2p3" width="70%" />
-<p class="caption">plot of chunk v2p3</p>
-</div>
-
-``` r
 ordiplot(ftNULL, main = "Ordination of sites, color: phosphorous",
          symbols = TRUE, pch = pchr, s.colors = Colorsphosp)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
-```
 
-<div class="figure" style="text-align: center">
-<img src="v2p3-3.png" alt="plot of chunk v2p3" width="70%" />
-<p class="caption">plot of chunk v2p3</p>
-</div>
+```
 
 A clear gradient in the pH values of sites is observed, whereas there is less evidence of such pattern with the two other soil variables. It is also clear that the three sampling locations differ in terms of species composition. Standard deviation for the random site effects can be extracted by `ftNULL$params$sigma`. By plotting the predicted random site effects, we can possibly see differences in sampling intensity of the eight sites.
 
-
-``` r
+```{r v2p4, fig.height=4, fig.width=6, out.width='70%'}
 # Sampling locations of the eight sampling sites:
 locaSites<-c(3,3,1,1,2,2,2,1)
 plot(ftNULL$params$row.params, xlab = "site", col = locaSites, pch = locaSites, 
@@ -173,15 +123,9 @@ legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3),
        col = c(1, 2, 3), bty = "n")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p4-1.png" alt="plot of chunk v2p4" width="70%" />
-<p class="caption">plot of chunk v2p4</p>
-</div>
-
 Next we produce a biplot based on GLLVM. Below, column indices of the 15 species with largest factor loadings are added in the (rotated) ordination plot. The biplot suggests a small set of indicator species which prefer sites with low pH values and a larger set of indicator species for high pH sites.
 
-
-``` r
+```{r v2p5, fig.height=8, fig.width=8}
 # Plot the species using column indices of the species:
 rownames(ftNULL$params$theta) <- 1:ncol(Ysoil)
 ordiplot(ftNULL, main = "Ordination of sites and species", xlim = c(-6, 5), 
@@ -190,181 +134,85 @@ ordiplot(ftNULL, main = "Ordination of sites and species", xlim = c(-6, 5),
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch=c(1, 2, 3), bty = "n")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p5-1.png" alt="plot of chunk v2p5"  />
-<p class="caption">plot of chunk v2p5</p>
-</div>
-
 
 In order to study if pH value alone is capable of explaining the variation in species composition across sites, we included it as explanatory variable in the GLLVM. When the Poisson distribution performed so poorly on the null model, we consider only NB GLLVMs in the following examples.
 
-
-``` r
+```{r}
 # Scale environmental variables
 Xsoils <- scale(Xenv[, 1:3])
 ```
-
-``` r
+```{r, eval = FALSE}
 ftXph <- gllvm(Ysoil, X = Xsoils, studyDesign = sDesign, formula = ~pH, family = "negative.binomial", 
                row.eff = ~(1|Site), num.lv = 2)
 ```
-
-``` r
+```{r}
 ftXph
-```
-
-```
-## Call: 
-## gllvm(y = Ysoil, X = Xsoils, formula = ~pH, num.lv = 2, family = "negative.binomial", 
-##     row.eff = ~(1 | Site))
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -58976.08 
-## Residual degrees of freedom:  51212 
-## AIC:  125848.2 
-## AICc:  126457 
-## BIC:  161056.4
 ```
 
 Ranked point estimates with 95% confidence intervals are plotted below using function `coefplot` and indicate that pH value strongly affects to the species composition as so many of the confidence intervals do not contain zero value (black). The species names are not informative in the coefficient plot when the number of species is so large and can be removed using an argument `y.label`.
 
-
-``` r
+```{r v2p6, fig.height=7, fig.width=7}
 coefplot(ftXph, cex.ylab = 0.5, y.label = FALSE)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p6-1.png" alt="plot of chunk v2p6"  />
-<p class="caption">plot of chunk v2p6</p>
-</div>
-
 The corresponding ordination plot given below indicates that the gradient in the pH values of the sites vanishes, but the ordination still exhibits a sampling location effect. In particular, several Kilpisjarvi sites seem to differ what comes to the bacterial species composition and all Mayrhofen sites are located at the top of the ordination.
 
-
-``` r
+```{r v2p7, out.width='70%'}
 ordiplot(ftXph, main = "Ordination of sites", 
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p7-1.png" alt="plot of chunk v2p7" width="70%" />
-<p class="caption">plot of chunk v2p7</p>
-</div>
-
 Next we include all environmental variables as explanatory variables in the GLLVM.
 
-
-``` r
+```{r, eval = FALSE}
 ftX <- gllvm(Ysoil, X = Xsoils, studyDesign = sDesign, family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2)
 ```
-
-``` r
+```{r}
 ftX
-```
-
-```
-## Call: 
-## gllvm(y = Ysoil, X = Xsoils, num.lv = 2, family = "negative.binomial", 
-##     row.eff = ~(1 | Site))
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -57178.88 
-## Residual degrees of freedom:  49242 
-## AIC:  126193.8 
-## AICc:  127616.5 
-## BIC:  178970.5
 ```
 The information criteria for the model with all covariates were worse than for the model with only pH as a covariate.
 Below, point estimates with 95% confidence intervals below indicate that pH value is the main covariate affecting the species composition. 
 
-
-``` r
+```{r v2p8, fig.height=10, fig.width=7}
 coefplot(ftX, cex.ylab = 0.5, y.label = FALSE, mar = c(4, 2, 2, 1))
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p8-1.png" alt="plot of chunk v2p8"  />
-<p class="caption">plot of chunk v2p8</p>
-</div>
-
 The corresponding ordination plot given below is very similar to the ordination plot of the model which includes only pH value as a covariate, and the ordination still exhibits a sampling location effect.
 
-
-``` r
+```{r v2p9, out.width='70%'}
 ordiplot(ftX, main = "Ordination of sites", 
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p9-1.png" alt="plot of chunk v2p9" width="70%" />
-<p class="caption">plot of chunk v2p9</p>
-</div>
-
 To account for this we add the sampling location as a categorical covariate into the model.
 
-
-``` r
+```{r, eval = FALSE}
 Xenv <- data.frame(Xsoils, Region = factor(Xenv$Region),
                    Soiltype = factor(Xenv$Soiltype))
 ftXi <- gllvm(Ysoil, X = Xenv, studyDesign = sDesign, formula = ~ SOM + pH + Phosp + Region, 
               family = "negative.binomial", row.eff = ~(1|Site), num.lv = 2,
               sd.errors = FALSE)
 ```
-
-``` r
+```{r}
 ftXi
-```
-
-```
-## Call: 
-## gllvm(y = Ysoil, X = Xenv, formula = ~SOM + pH + Phosp + Region, 
-##     num.lv = 2, family = "negative.binomial", row.eff = ~(1 | 
-##         Site), sd.errors = FALSE)
-## family: 
-## [1] "negative.binomial"
-## method: 
-## [1] "VA"
-## 
-## log-likelihood:  -54759.57 
-## Residual degrees of freedom:  47272 
-## AIC:  125295.1 
-## AICc:  127928 
-## BIC:  195640.3
 ```
 
 The resulting ordination plot shows that there is no more visible pattern in sampling location.
 
-
-``` r
+```{r v2p10, warning=FALSE, out.width='70%'}
 ordiplot(ftXi, main = "Ordination of sites",  
          symbols = TRUE, pch = pchr, s.colors = Colorsph)
 legend("topleft", legend = c("Kil", "NyA", "Mayr"), pch = c(1, 2, 3), bty = "n")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="v2p10-1.png" alt="plot of chunk v2p10" width="70%" />
-<p class="caption">plot of chunk v2p10</p>
-</div>
-
 
 
 When comparing nested models, in particular, the model with environmental covariates to the null model, variance explained can be quantified by using methods like extensions of pseudo R2. For example, below we compare the total covariation in the `ftNULL` and `ftX` based on the traces of the residual covariance matrices. This suggests that environmental variables explain 43% of the total covariation.
 
-
-``` r
+```{r}
 1 - getResidualCov(ftX)$trace/getResidualCov(ftNULL)$trace
-```
-
-```
-## [1] 0.4391057
 ```
 
 # References

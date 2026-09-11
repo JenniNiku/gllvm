@@ -352,12 +352,12 @@ plot.4th <- levelplot((as.matrix(fourth)), xlab = "Environmental Variables",
 plot.4th
 ```
 <div class="figure" style="text-align: center">
-<img src="F4coef.png" alt="plot of chunk F4 1"  />
+<img src="figure/F4coef.png" alt="plot of chunk F4 1"  />
 <p class="caption"> coefplot</p>
 </div>
 
 <div class="figure" style="text-align: center">
-<img src="F4.png" alt="plot of chunk F4 2"  />
+<img src="figure/F4.png" alt="plot of chunk F4 2"  />
 <p class="caption"> fourth corner plot</p>
 </div>
 
