@@ -627,9 +627,16 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(control$optimizer=="optim" && !control$optim.method%in%c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")){
       stop("Invalid optim.method '", control$optim.method,"'")
     }
+    if(control.start$start.optimizer=="optim" && !control.start$start.optim.method%in%c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")){
+      stop("Invalid start.optim.method '", control.start$start.optim.method,"'")
+    }
   if(!control$optimizer%in%c("optim","nlminb","alabama","nloptr(sqp)","nloptr(agl)")){
     stop("Optimizer must be one of 'optim', 'nlminb', 'alabama', 'nloptr(sqp)' or 'nloptr(agl)'.")
-  }else if(control$optimizer%in%c("nloptr(sqp)","nloptr(agl)")){
+  }
+  if(!control.start$start.optimizer%in%c("optim","nlminb","alabama","nloptr(sqp)","nloptr(agl)")){
+    stop("start.optimizer must be one of 'optim', 'nlminb', 'alabama', 'nloptr(sqp)' or 'nloptr(agl)'.")
+  }
+  if(control$optimizer%in%c("nloptr(sqp)","nloptr(agl)")){
     # Change to NLOPT algorithm names
     if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
   }
@@ -640,7 +647,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if(all(family!="tweedie"))control$optim.method <- "BFGS"
       if(any(family=="tweedie"))control$optim.method <- "L-BFGS-B"
     }
-    
+
+
   if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
