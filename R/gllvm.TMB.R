@@ -623,10 +623,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         } else {K=2}
         if(zeta.struc =="common") {
           if(any(family%in%c("orderedBeta"))){
-            zeta <- c(zeta, fit$zeta[1], log(fit$zeta[2]))
+            zeta <- c(zeta, fit$zeta[1], log(fit$zeta[2]-fit$zeta[1]))
             zetaO <- c(zetaO, rep(TRUE,2))
             if(!is.null(zetacutoff)){
-              zeta<- c(zetacutoff[1], log(zetacutoff[2]))
+              zeta<- c(zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
             }
           }
           if(any(family%in%c("ordinal"))){
@@ -641,9 +641,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               zetaO <- c(zetaO, rep(FALSE,length(na.omit(fit$zeta[j,-1]))))
             } else {
               if(!is.null(zetacutoff)){
-                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]))
+                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
               } else {
-                zeta <- c(zeta, fit$zeta[j,1], log(fit$zeta[j,2]))
+                zeta <- c(zeta, fit$zeta[j,1], log(fit$zeta[j,2]-fit$zeta[j,1]))
               }
               zetaO <- c(zetaO, rep(TRUE,2))
             }
@@ -1101,6 +1101,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }
             spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks+1)/2)))
       }
+      spAr <- pmin(pmax(spAr, log(1e-5)), log(Lambda.start[2]))
       } else {spAr <- 0;map.list$Abb <- factor(NA)}
       
       # Variational covariances for  random rows
@@ -1454,8 +1455,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
       }
       if(inherits(optr,"try-error")) warning(optr[1]);
-      
-      
+
+
       ### Now diag.iter, improves the model fit sometimes
       if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | ((nrow(dr)==n) & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","diagonalCL2","CL1","CL2")))){
         objr1 <- objr
@@ -1702,7 +1703,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(zeta.struc =="common") {
           zetanew <- NULL
           if(any(family%in%c("orderedBeta"))){
-            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+            zetanew <- c(zetanew, zetas[1], zetas[1] + exp(zetas[2]))
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
@@ -1727,7 +1728,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
               idx<-idx+k
             } else {
-              zetanew[j,1:2] <- c(zetas[idx +1], exp(zetas[idx +2]))
+              zetanew[j,1:2] <- c(zetas[idx +1], zetas[idx +1] + exp(zetas[idx +2]))
               idx<-idx+2
             }
           } # end for j
@@ -2416,7 +2417,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(zeta.struc =="common") {
           zetanew <- NULL
           if(any(family%in%c("orderedBeta"))){
-            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+            zetanew <- c(zetanew, zetas[1], zetas[1] + exp(zetas[2]))
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
@@ -2441,7 +2442,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               idx<-idx+k
               zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
             } else {
-              zetanew[j,1:2] <- c(zetas[idx +1], exp(zetas[idx +2]))
+              zetanew[j,1:2] <- c(zetas[idx +1], zetas[idx +1] + exp(zetas[idx +2]))
               idx<-idx+2
             }
           } # end for j
@@ -2512,7 +2513,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               covsigmaB <- tail(sigmab_lv, -ifelse(randomB=="P", ncol(lv.X), num.lv.c+num.RR))
               sigmaBij <- rep(0,(ncol(lv.X)^2-ncol(lv.X))/2)
               for(i in 1:nrow(csBlv)){
-                sigmaBij[(csBlv[i,1] - 1) * (csBlv[i,1] - 2) / 2 + csBlv[i,2]] = covsigmaB[i]
+                sigmaBij[(csBlv[i,2] - 1) * (2*ncol(lv.X) - csBlv[i,2]) / 2 + (csBlv[i,1] - csBlv[i,2])] = covsigmaB[i]
               }
               bL <-  constructL(sigmaBij)
               out$params$corsLvXcoef <- bL%*%t(bL)
@@ -2819,7 +2820,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(ncol(cs)==2){
           sigmaSPij <- rep(0,(ncol(spdr)^2-ncol(spdr))/2)
             for(i in 1:nrow(cs)){
-              sigmaSPij[(cs[i,1] - 1) * (cs[i,1] - 2) / 2 + cs[i,2]] = covsigma.sp[i]
+              sigmaSPij[(cs[i,2] - 1) * (2*ncol(spdr) - cs[i,2]) / 2 + (cs[i,1] - cs[i,2])] = covsigma.sp[i]
             }
           SprL <- out$params$sigmaB%*%constructL(sigmaSPij)
           out$params$sigmaB <- SprL%*%t(SprL)
@@ -3306,10 +3307,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       objrFinal <- list()
       optrFinal <- list()
     }
-  
+
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
-  
-  
+
+
   # DW, 7/5/19: adding TMBfn to output:
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values

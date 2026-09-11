@@ -851,13 +851,13 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
             idx <- idx + k
             zetanew[j, ] <- c(0, cumsum(exp(zetanew[j, -1])))
           } else {
-            zetanew[j, ] <- c(zetas[idx + 1], exp(zetas[idx + 2])); idx <- idx + 2
+            zetanew[j, ] <- c(zetas[idx + 1], zetas[idx + 1] + exp(zetas[idx + 2])); idx <- idx + 2
           }
         }
       } else {
         zetanew <- NULL
         if(any(object$family == "orderedBeta")){
-          zetanew <- c(zetas[1], exp(zetas[2])); names(zetanew) <- c("cutoff0","cutoff1")
+          zetanew <- c(zetas[1], zetas[1] + exp(zetas[2])); names(zetanew) <- c("cutoff0","cutoff1")
         }
         if(any(object$family %in% "ordinal"))
           zetanew <- c(zetanew, 0, cumsum(exp(zetas[!zetaO])))
