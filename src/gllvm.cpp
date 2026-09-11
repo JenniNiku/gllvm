@@ -3780,6 +3780,8 @@ Type objective_function<Type>::operator() ()
               mu_prime = dnorm(eta(i,j), Type(0), Type(1));
               mu_prime2 = (-eta(i,j))*mu_prime;
             }
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             a[0] = mu(i,j)*iphi(j);
             a[1] = 1;
             b[0] = (1-mu(i,j))*iphi(j);
@@ -3854,7 +3856,9 @@ Type objective_function<Type>::operator() ()
                 nll -= log( 1.0 - mu(i,truep+j) ) - cQ(i,truep+j);
               } else{
                 nll -= log( mu(i,truep+j) ) - cQ(i,truep+j);
-                
+
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a[0] = mu(i,j)*iphi(j);
                 a[1] = 1;
                 b[0] = (1-mu(i,j))*iphi(j);
@@ -3946,7 +3950,9 @@ Type objective_function<Type>::operator() ()
                 nll -= log( mu(i,truep+j) );
                 //nll -= -dlogis(eta(i,truep+j), Type(0.0), Type(1), 0)*cQ(i,truep+j);
                 nll -= (mu(i,truep+j)*mu0_prime2-pow(mu0_prime,2))/pow(mu(i,truep+j),2) * cQ(i,truep+j);
-                
+
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a[0] = mu(i,j)*iphi(j);
                 a[1] = 1;
                 b[0] = (1-mu(i,j))*iphi(j);
@@ -4085,6 +4091,8 @@ Type objective_function<Type>::operator() ()
                   mu_prime2 = (-eta(i,j))*mu_prime;
                   pmp = iphi(j)*mu_prime;
                   // }
+                  mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                  mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                   a[0] = mu(i,j)*iphi(j);
                   a[1] = 1;
                   b[0] = (1-mu(i,j))*iphi(j);
@@ -4141,7 +4149,9 @@ Type objective_function<Type>::operator() ()
                 mu_prime = mu(i,j) * (1-mu(i,j));
                 mu_prime2 = mu_prime * (1-2*mu(i,j));
                 pmp = iphi(j)*mu_prime;
-                
+
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a[0] = mu(i,j)*iphi(j);
                 a[1] = 1;
                 b[0] = (1-mu(i,j))*iphi(j);
@@ -4237,6 +4247,8 @@ Type objective_function<Type>::operator() ()
                 mu_prime2 = (-eta(i,j))*mu_prime;
                 pmp = iphi(j)*mu_prime;
                 // }
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a[0] = mu(i,j)*iphi(j);
                 a[1] = 1;
                 b[0] = (1-mu(i,j))*iphi(j);
@@ -4312,7 +4324,9 @@ Type objective_function<Type>::operator() ()
                   mu_prime = mu(i,j) * (1-mu(i,j));
                   mu_prime2 = mu_prime * (1-2*mu(i,j));
                   pmp = iphi(j)*mu_prime;
-                  
+
+                  mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                  mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                   a[0] = mu(i,j)*iphi(j);
                   a[1] = 1;
                   b[0] = (1-mu(i,j))*iphi(j);
@@ -5389,6 +5403,8 @@ Type objective_function<Type>::operator() ()
           // for (int j=0; j<p;j++){
             if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
             } else {mu(i,j) = pnorm(eta(i,j));}
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j)))nll -= dbeta(squeeze(y(i,j)), Type(mu(i,j)*iphi(j)), Type((1-mu(i,j))*iphi(j)), 1);
           // }
         }
@@ -5407,6 +5423,8 @@ Type objective_function<Type>::operator() ()
               mu(i,j) = pnorm(eta(i,j));
               mu(i,truep+j) = pnorm(eta(i,truep+j));
             }
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
             if(!gllvmutils::isNA(y(i,j))){
               if (y(i,j) == 0) {
                 // nll -= log(1-mu(i,j));
@@ -5473,6 +5491,8 @@ Type objective_function<Type>::operator() ()
                 nll -= log(mu(i,j)); //
 
                 mu(i,j) = pnorm(eta(i,j), Type(0), Type(1));
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a0 = mu(i,j)*iphi(j);
                 b0 = (1-mu(i,j))*iphi(j);
 
@@ -5509,6 +5529,8 @@ Type objective_function<Type>::operator() ()
                 z[3] = exp(z[0])/(exp(z[0])+1);
 
                 mu(i,j) = Type(CppAD::CondExpGe(z[0], z[1], z[2], z[3]));
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
+                mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
                 a0 = mu(i,j)*iphi(j);
                 b0 = (1-mu(i,j))*iphi(j);
 
