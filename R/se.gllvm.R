@@ -483,7 +483,10 @@ se.gllvm <- function(object, ...){
               idx<-idx+k
             } else {
               if(!is.null(se.zetas)){
-              se.zetanew[j,1:2] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              gap <- object$params$zeta[j,2] - object$params$zeta[j,1]
+              cv2 <- zeta.cov[(idx+1):(idx+2),(idx+1):(idx+2),drop=FALSE]
+              jac <- c(1, gap)
+              se.zetanew[j,1:2] <- c(se.zetas[idx +1], sqrt(as.numeric(t(jac) %*% cv2 %*% jac)))
               idx<-idx+2
               }
             }
@@ -498,7 +501,11 @@ se.gllvm <- function(object, ...){
           }
         }else{
           if(any(family%in%c("orderedBeta"))){
-            se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
+            zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta",drop=FALSE]
+            gap <- object$params$zeta[2] - object$params$zeta[1]
+            cv2 <- zeta.cov[1:2,1:2,drop=FALSE]
+            jac <- c(1, gap)
+            se.zetanew[2] <- sqrt(as.numeric(t(jac) %*% cv2 %*% jac))
             names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
             se.zetanew <- se.zetanew[-((kz+ 1):length(se.zetanew))]
           }
@@ -1049,7 +1056,10 @@ se.gllvm <- function(object, ...){
             idx<-idx+k
           } else {
             if(!is.null(se.zetas)){
-              se.zetanew[j,1:2] <- c(se.zetas[idx +1], se.zetas[idx +2]*object$params$zeta[j,2])
+              gap <- object$params$zeta[j,2] - object$params$zeta[j,1]
+              cv2 <- zeta.cov[(idx+1):(idx+2),(idx+1):(idx+2),drop=FALSE]
+              jac <- c(1, gap)
+              se.zetanew[j,1:2] <- c(se.zetas[idx +1], sqrt(as.numeric(t(jac) %*% cv2 %*% jac)))
               idx<-idx+2
             }
           }
@@ -1064,7 +1074,11 @@ se.gllvm <- function(object, ...){
         }
       }else{
         if(any(family%in%c("orderedBeta"))){
-          se.zetanew[2] <- object$params$zeta[2]*se.zetanew[2]
+          zeta.cov <- cov.mat.mod[names(object$TMBfn$par)[incl]=="zeta",names(object$TMBfn$par)[incl]=="zeta", drop=FALSE]
+          gap <- object$params$zeta[2] - object$params$zeta[1]
+          cv2 <- zeta.cov[1:2,1:2,drop=FALSE]
+          jac <- c(1, gap)
+          se.zetanew[2] <- sqrt(as.numeric(t(jac) %*% cv2 %*% jac))
           names(se.zetanew)[1:2] <- c("cutoff0","cutoff1")
         }
         sezetanew  <- NULL

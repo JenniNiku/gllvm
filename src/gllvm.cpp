@@ -4031,10 +4031,11 @@ Type objective_function<Type>::operator() ()
       
       if(zetastruc==0){ // common cutoffs
         zetacutoffnew(0)= zeta(0);
-        zetacutoffnew(1)= exp(zeta(1));
+        zetacutoffnew(1)= zetacutoffnew(0) + exp(zeta(1));
       } else { // species specific cutoffs
         zetacutoffnew(0)= zeta(idx);
         zetacutoffnew(1)= exp(zeta(idx+1));
+        zetacutoffnew(1)= zetacutoffnew(0) + exp(zeta(idx+1));
         idx += 2;
       }
       if(method<1) { // ordered Beta VA-EVA hybrid
@@ -5465,10 +5466,10 @@ Type objective_function<Type>::operator() ()
         
         if(zetastruc==0){ // common cutoffs
           zetacutoffnew(0)= zeta(0);
-          zetacutoffnew(1)= exp(zeta(1));
+          zetacutoffnew(1)= zetacutoffnew(0) + exp(zeta(1));
         } else { // species specific cutoffs
           zetacutoffnew(0)= zeta(idx);
-          zetacutoffnew(1)= exp(zeta(idx+1));
+          zetacutoffnew(1)= zetacutoffnew(0) + exp(zeta(idx+1));
           idx += 2;
         }
         

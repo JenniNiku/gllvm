@@ -623,10 +623,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         } else {K=2}
         if(zeta.struc =="common") {
           if(any(family%in%c("orderedBeta"))){
-            zeta <- c(zeta, fit$zeta[1], log(fit$zeta[2]))
+            zeta <- c(zeta, fit$zeta[1], log(fit$zeta[2]-fit$zeta[1]))
             zetaO <- c(zetaO, rep(TRUE,2))
             if(!is.null(zetacutoff)){
-              zeta<- c(zetacutoff[1], log(zetacutoff[2]))
+              zeta<- c(zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
             }
           }
           if(any(family%in%c("ordinal"))){
@@ -641,9 +641,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               zetaO <- c(zetaO, rep(FALSE,length(na.omit(fit$zeta[j,-1]))))
             } else {
               if(!is.null(zetacutoff)){
-                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]))
+                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
               } else {
-                zeta <- c(zeta, fit$zeta[j,1], log(fit$zeta[j,2]))
+                zeta <- c(zeta, fit$zeta[j,1], log(fit$zeta[j,2]-fit$zeta[j,1]))
               }
               zetaO <- c(zetaO, rep(TRUE,2))
             }
@@ -1702,7 +1702,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(zeta.struc =="common") {
           zetanew <- NULL
           if(any(family%in%c("orderedBeta"))){
-            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+            zetanew <- c(zetanew, zetas[1], zetas[1] + exp(zetas[2]))
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
@@ -1727,7 +1727,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
               idx<-idx+k
             } else {
-              zetanew[j,1:2] <- c(zetas[idx +1], exp(zetas[idx +2]))
+              zetanew[j,1:2] <- c(zetas[idx +1], zetas[idx +1] + exp(zetas[idx +2]))
               idx<-idx+2
             }
           } # end for j
@@ -2416,7 +2416,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(zeta.struc =="common") {
           zetanew <- NULL
           if(any(family%in%c("orderedBeta"))){
-            zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+            zetanew <- c(zetanew, zetas[1], zetas[1] + exp(zetas[2]))
             names(zetanew) <- c("cutoff0","cutoff1")
           }
           if(any(family%in%c("ordinal"))){
@@ -2441,7 +2441,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               idx<-idx+k
               zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
             } else {
-              zetanew[j,1:2] <- c(zetas[idx +1], exp(zetas[idx +2]))
+              zetanew[j,1:2] <- c(zetas[idx +1], zetas[idx +1] + exp(zetas[idx +2]))
               idx<-idx+2
             }
           } # end for j

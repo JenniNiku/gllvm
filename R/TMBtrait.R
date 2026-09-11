@@ -692,11 +692,11 @@ trait.TMB <- function(
         
         if(zeta.struc =="common") {
           if(any(family%in%c("orderedBeta"))){
-            zeta <- c(zeta, res$zeta[1], log(res$zeta[2]))
+            zeta <- c(zeta, res$zeta[1], log(res$zeta[2]-res$zeta[1]))
             zetaO <- c(zetaO, rep(TRUE,2))
-            
+
             if(!is.null(zetacutoff)){
-              zeta<- c(zetacutoff[1], log(zetacutoff[2]))
+              zeta<- c(zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
             }
           }
           if(any(family%in%c("ordinal"))){
@@ -711,9 +711,9 @@ trait.TMB <- function(
               zetaO <- c(zetaO, rep(FALSE,length(na.omit(res$zeta[j,-1]))))
             } else {
               if(!is.null(zetacutoff)){
-                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]))
+                zeta<- c(zeta, zetacutoff[1], log(zetacutoff[2]-zetacutoff[1]))
               } else {
-                zeta <- c(zeta, res$zeta[j,1], log(res$zeta[j,2]))
+                zeta <- c(zeta, res$zeta[j,1], log(res$zeta[j,2]-res$zeta[j,1]))
               }
               zetaO <- c(zetaO, rep(TRUE,2))
             }
@@ -1684,7 +1684,7 @@ trait.TMB <- function(
       if(zeta.struc =="common") {
         zetanew <- NULL
         if(any(family%in%c("orderedBeta"))){
-          zetanew <- c(zetanew, zetas[1], exp(zetas[2]))
+          zetanew <- c(zetanew, zetas[1], zetas[1] + exp(zetas[2]))
           names(zetanew) <- c("cutoff0","cutoff1")
         }
         if(any(family%in%c("ordinal"))){
@@ -1709,7 +1709,7 @@ trait.TMB <- function(
             zetanew[j,] <- c(0, cumsum(exp(zetanew[j,-1])))
             idx<-idx+k
           } else {
-            zetanew[j,1:2] <- c(zetas[idx +1], exp(zetas[idx +2]))
+            zetanew[j,1:2] <- c(zetas[idx +1], zetas[idx +1] + exp(zetas[idx +2]))
             idx<-idx+2
           }
         } # end for j
