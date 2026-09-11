@@ -4064,13 +4064,13 @@ Type objective_function<Type>::operator() ()
                   nll -= (1-y(i,j))*log(mu(i,j)) - cQ(i,j); //
                 } else if((y(i,j)==1)){
                   mu(i,j) = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1));
-                  mu(i,j) = CppAD::CondExpLt(mu(i,j), Type(1.0), mu(i,j), mu(i,j)-1e-12);
+                  mu(i,j) = CppAD::CondExpGt(mu(i,j), Type(1.0-1e-12), mu(i,j)-1e-12, mu(i,j));
                   nll -= y(i,j)*log(1.0 - mu(i,j)) - cQ(i,j); //
                 } else{
                   // if (extra(j) == 1) { // probit
                   // if(zetacutoff.size()>p) {
                   mu(i,j) = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1)) - pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
-                  mu(i,j) = CppAD::CondExpGt(mu(i,j), Type(1e-12), mu(i,j), mu(i,j)+1e-12);  
+                  mu(i,j) = CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+1e-12, mu(i,j));
                   nll -= log(mu(i,j)) - cQ(i,j); //
                     // Type a1 = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1)) - pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
                     // a1 = CppAD::CondExpLe(a1, Type(1.0), a1, a1-1e-12);  
