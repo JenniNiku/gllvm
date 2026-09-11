@@ -3304,8 +3304,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         }
       }
     }else{
-      objrFinal <- list()
-      optrFinal <- list()
+      objrFinal <- objr
+      optrFinal <- optr
+      if(is.null(out$logL)) out$logL <- Inf
     }
 
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
@@ -3313,8 +3314,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
 
   # DW, 7/5/19: adding TMBfn to output:
   out$TMBfn <- objrFinal
-  out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
-  out$convergence <- optrFinal$convergence == 0
+  out$TMBfn$par <- if(!inherits(optrFinal,"try-error")) optrFinal$par else objrFinal$par #ensure params in this fn take final values
+  out$convergence <- !inherits(optrFinal,"try-error") && optrFinal$convergence == 0
   out$logL <- -out$logL
   
   # if((method %in% c("VA", "EVA"))){ # These have been moved to gllvm.cpp

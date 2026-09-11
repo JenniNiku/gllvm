@@ -160,13 +160,13 @@ start_values_gllvm_TMB <- function(
         if(!is.null(RElist)){
           fit.mvaR <- gllvm.TMB(y, X = X, formula=formula(formula), family = family, num.lv = 0, RElist = RElist, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, Lambda.struc = "diagonal", trace = FALSE, maxit = 1000, max.iter=200, n.init=1,starting.val="zero", diag.iter = 0, optimizer = start.optimizer, optim.method = start.optim.method, link = link, Power = Power, disp.group = disp.group, method = method, Ntrials = Ntrials, sp.Ar.struc = Ab.struct, sp.Ar.struc.rank = Ab.struct.rank, colMat = colMat, nn.colMat = nn.colMat, col.eff = "random", beta0com = beta0com, zeta.struc = zeta.struc)
           if(!inherits(fit.mvaR,"try-error") && is.finite(fit.mvaR$logL)){
-            if(nrow(dr)==n) { # !!!!  
+            if(nrow(dr)==n) { # !!!!
               sigma=c(max(fit.mvaR$params$sigma[1],sigma),fit.mvaR$params$sigma[-1])
               fit.mva$params$row.params.random <- fit.mvaR$params$row.params.random/sd(fit.mvaR$params$row.params.random)*sigma[1]
             }
             if(any(family=="tweedie"))Power = fit.mvaR$Power
-            
-            out$fitstart <- list(A=fit.mvaR$A, Ab=fit.mvaR$Ab, TMBfnpar=fit.mvaR$TMBfn$par, B = fit.mvaR$params$B, Br = fit.mvaR$params$Br, sigmaB = fit.mvaR$params$sigmaB) #params = fit.mva$params, 
+
+            out$fitstart <- list(A=fit.mvaR$A, Ab=fit.mvaR$Ab, TMBfnpar=fit.mvaR$TMBfn$par, B = fit.mvaR$params$B, Br = fit.mvaR$params$Br, sigmaB = fit.mvaR$params$sigmaB) #params = fit.mva$params,
           }
         }
         
@@ -2315,33 +2315,39 @@ start_values_randomX <- function(y, X, family, formula =NULL, starting.val, Powe
   tr0 <- try({
     
     if(starting.val %in% c("res", "random")){
-      if(any(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB"))){
+      if(any(family %in% c("poisson", "negative.binomial", "negative.binomial1","binomial", "ZIP", "ZINB","gaussian", "tweedie","ZIB", "ZNIB", "orderedBeta"))){
         if(any(family == "tweedie")){
           start.optimizer <- "optim"
           optim.method  =  "L-BFGS-B"
         }
         f1 <- gllvm.TMB(y=y, X=X, family = family, formula=formula, num.lv=0, starting.val = "zero", link =link, Ntrials = Ntrials, optimizer = start.optimizer, optim.method = start.optim.method, max.iter = max.iter) #, method=method
+        if(!is.finite(f1$logL)){
+          Br <- matrix(0, ncol(Xb), p)
+          sigmaB <- diag(ncol(Xb))
+          B <- rep(1e-3,ncol(Xb))
+        } else {
         B <- attr(scale(f1$params$Xcoef),"scaled:center")
         coefs0 <- as.matrix(scale((f1$params$Xcoef), scale = FALSE))
         Br <- coefs0/max(apply(coefs0, 2, sd))
         sigmaB <- cov(Br)
         Br <- t(Br)
+        }
       } else {
         Br <- matrix(0, ncol(Xb), p)
         sigmaB <- diag(ncol(Xb))
-        B <- rep(1,ncol(Xb))
+        B <- rep(1e-3,ncol(Xb))
       }
     } else {
       Br <- matrix(0, ncol(Xb), p)
       sigmaB <- diag(ncol(Xb))
-      B <- rep(1,ncol(Xb))
+      B <- rep(1e-3,ncol(Xb))
     }
   }, silent = TRUE)
   
   if(inherits(tr0, "try-error")){
     Br <- matrix(0, ncol(Xb), p)
     sigmaB <- diag(ncol(Xb))
-    B <- rep(1,ncol(Xb))
+    B <- rep(1e-3,ncol(Xb))
   }
   
   
