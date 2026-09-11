@@ -239,7 +239,7 @@ Type objective_function<Type>::operator() ()
       if(csb_lv.cols()>1){
         //need a vector with covariances and zeros in the right places
         for(int i=0; i<csb_lv.rows(); i++){
-          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(x_lv.cols()+num_lv_c+num_RR-1+i);
+          corsb_lv((csb_lv(i,1)-1) * (2*x_lv.cols()-csb_lv(i,1)) / 2 + (csb_lv(i,0)-csb_lv(i,1)-1)) = sigmab_lv(x_lv.cols()+num_lv_c+num_RR-1+i);
         }
         Sigmab_lvL = sds*gllvmutils::constructL(corsb_lv);
     }
@@ -266,7 +266,7 @@ Type objective_function<Type>::operator() ()
       if(csb_lv.cols()>1){
         //need a vector with covariances and zeros in the right places
         for(int i=0; i<csb_lv.rows(); i++){
-          corsb_lv((csb_lv(i,0) - 1) * (csb_lv(i,0) - 2) / 2 + csb_lv(i,1)-1) = sigmab_lv(num_lv_c+num_RR+i);
+          corsb_lv((csb_lv(i,1)-1) * (2*x_lv.cols()-csb_lv(i,1)) / 2 + (csb_lv(i,0)-csb_lv(i,1)-1)) = sigmab_lv(num_lv_c+num_RR+i);
         }
         Sigmab_lvL = gllvmutils::constructL(corsb_lv);
       }
@@ -700,7 +700,7 @@ Type objective_function<Type>::operator() ()
         if(cs.cols()>1){
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaij(i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaij(i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
         }else{
@@ -725,7 +725,7 @@ Type objective_function<Type>::operator() ()
         if(cs.cols()>1){
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaB(xb.cols()+i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(xb.cols()+i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
         }else{
@@ -2052,7 +2052,7 @@ Type objective_function<Type>::operator() ()
               if(csR.cols()>1){
                 //need a vector with covariances and zeros in the right places
                 for(int i=0; i<sigmaRij.size(); i++){
-                  sigmaRij((csR(ucount,0) - 1) * (csR(ucount,0) - 2) / 2 + csR(ucount,1)-1) = sigmaijr(ucount);
+                  sigmaRij((csR(ucount,1)-1) * (2*trmsize(0,re)-csR(ucount,1)) / 2 + (csR(ucount,0)-csR(ucount,1)-1)) = sigmaijr(ucount);
                   ucount++;
                 }
                 SrL = sds*gllvmutils::constructL(sigmaRij);
@@ -2276,7 +2276,7 @@ Type objective_function<Type>::operator() ()
             if(csR.cols()>1){
               //need a vector with covariances and zeros in the right places
               for(int i=0; i<sigmaRij.size(); i++){
-                sigmaRij((csR(ucount,0) - 1) * (csR(ucount,0) - 2) / 2 + csR(ucount,1)-1) = sigmaijr(ucount);
+                sigmaRij((csR(ucount,1)-1) * (2*trmsize(0,re)-csR(ucount,1)) / 2 + (csR(ucount,0)-csR(ucount,1)-1)) = sigmaijr(ucount);
                 ucount++;
               }
               SrL = sds*gllvmutils::constructL(sigmaRij);
@@ -4694,7 +4694,7 @@ Type objective_function<Type>::operator() ()
         if(cs.cols()>1){
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaij(i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaij(i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
         }else{
@@ -4720,7 +4720,7 @@ Type objective_function<Type>::operator() ()
         if(cs.cols()>1){
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,0) - 1) * (cs(i,0) - 2) / 2 + cs(i,1)-1) = sigmaB(xb.cols()+i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(xb.cols()+i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
         }else{
@@ -4872,7 +4872,7 @@ Type objective_function<Type>::operator() ()
           if(csR.cols()>1){
             //need a vector with covariances and zeros in the right places
             for(int i=0; i<sigmaRij.size(); i++){
-              sigmaRij((csR(ucount,0) - 1) * (csR(ucount,0) - 2) / 2 + csR(ucount,1)-1) = sigmaijr(ucount);
+              sigmaRij((csR(ucount,1)-1) * (2*trmsize(0,re)-csR(ucount,1)) / 2 + (csR(ucount,0)-csR(ucount,1)-1)) = sigmaijr(ucount);
               ucount++;
             }
             SrL = sds*gllvmutils::constructL(sigmaRij);

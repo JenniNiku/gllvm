@@ -1809,7 +1809,7 @@ trait.TMB <- function(
         if(ncol(cs)==2){
           sigmaij <- rep(0,(ncol(xb)^2-ncol(xb))/2)
             for(i in 1:nrow(cs)){
-              sigmaij[(cs[i,1] - 1) * (cs[i,1] - 2) / 2 + cs[i,2]] = Sr[i]
+              sigmaij[(cs[i,2] - 1) * (2*ncol(xb) - cs[i,2]) / 2 + (cs[i,1] - cs[i,2])] = Sr[i]
             }
           Sr <- sigmaij
           L <- constructL(Sr)

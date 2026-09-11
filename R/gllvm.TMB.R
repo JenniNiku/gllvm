@@ -1455,8 +1455,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         
       }
       if(inherits(optr,"try-error")) warning(optr[1]);
-      
-      
+
+
       ### Now diag.iter, improves the model fit sometimes
       if((diag.iter>0) && (!(Lambda.struc %in% c("diagonal", "diagU")) && (((nlvr+randoml[3]*num.RR)>1) | (num.lv.cor>0)) && !inherits(optr,"try-error") | ((nrow(dr)==n) & Ar.struc=="unstructured")) | ((Ab.diag.iter>0) && (col.eff=="random" && sp.Ar.struc%in%c("blockdiagonal","MNunstructured","unstructured","diagonalCL2","CL1","CL2")))){
         objr1 <- objr
@@ -2513,7 +2513,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
               covsigmaB <- tail(sigmab_lv, -ifelse(randomB=="P", ncol(lv.X), num.lv.c+num.RR))
               sigmaBij <- rep(0,(ncol(lv.X)^2-ncol(lv.X))/2)
               for(i in 1:nrow(csBlv)){
-                sigmaBij[(csBlv[i,1] - 1) * (csBlv[i,1] - 2) / 2 + csBlv[i,2]] = covsigmaB[i]
+                sigmaBij[(csBlv[i,2] - 1) * (2*ncol(lv.X) - csBlv[i,2]) / 2 + (csBlv[i,1] - csBlv[i,2])] = covsigmaB[i]
               }
               bL <-  constructL(sigmaBij)
               out$params$corsLvXcoef <- bL%*%t(bL)
@@ -2820,7 +2820,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         if(ncol(cs)==2){
           sigmaSPij <- rep(0,(ncol(spdr)^2-ncol(spdr))/2)
             for(i in 1:nrow(cs)){
-              sigmaSPij[(cs[i,1] - 1) * (cs[i,1] - 2) / 2 + cs[i,2]] = covsigma.sp[i]
+              sigmaSPij[(cs[i,2] - 1) * (2*ncol(spdr) - cs[i,2]) / 2 + (cs[i,1] - cs[i,2])] = covsigma.sp[i]
             }
           SprL <- out$params$sigmaB%*%constructL(sigmaSPij)
           out$params$sigmaB <- SprL%*%t(SprL)
@@ -3307,10 +3307,10 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       objrFinal <- list()
       optrFinal <- list()
     }
-  
+
   if(is.null(formula1)){ out$formula <- formula} else {out$formula <- formula1}
-  
-  
+
+
   # DW, 7/5/19: adding TMBfn to output:
   out$TMBfn <- objrFinal
   out$TMBfn$par <- optrFinal$par #ensure params in this fn take final values
