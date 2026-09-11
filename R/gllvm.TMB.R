@@ -487,7 +487,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       }
       
       if(col.eff == "random"){
-        if(!is.null(RElist) && starting.val == "res" && randomX.start=="res" && (num.lv.c+num.RR+num.lv)>0){ # getting some improved starting values
+        if(!is.null(RElist) && starting.val == "res" && randomX.start=="res" && (num.lv.c+num.RR+num.lv)>0 && !is.null(fit$fitstart)){ # getting some improved starting values
           if(nrow(Xt)==n){
           B <- rep(0, ncol(spdr))
           B[colnames(spdr)%in%colnames(Xt)] <- fit$fitstart$B
