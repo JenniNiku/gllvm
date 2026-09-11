@@ -1101,6 +1101,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             }
             spAr <- c(spAr,rep(1e-3, sum(ncol(spdr)*blocksp*Abranks-Abranks*(Abranks+1)/2)))
       }
+      spAr <- pmin(pmax(spAr, log(1e-5)), log(Lambda.start[2]))
       } else {spAr <- 0;map.list$Abb <- factor(NA)}
       
       # Variational covariances for  random rows

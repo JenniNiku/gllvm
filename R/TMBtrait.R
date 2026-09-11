@@ -1124,7 +1124,8 @@ trait.TMB <- function(
             Abb <- c(rep(log(a.var), p*ncol(xb)),rep(1e-3, sum(ncol(xb)*blocksp*Abranks-Abranks*(Abranks-1)/2-Abranks)))
         }
       }
-       
+      Abb <- pmin(pmax(Abb, log(1e-5)), log(Lambda.start[2]))
+
       }else{ Abb <- 0 }
     
       
