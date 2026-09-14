@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -108,7 +108,7 @@
 correlations</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2026-06-02</h4>
+            <h4 data-toc-skip class="date">2026-09-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette4.rmd" class="external-link"><code>vignettes/vignette4.rmd</code></a></small>
       <div class="hidden name"><code>vignette4.rmd</code></div>
@@ -287,13 +287,7 @@ data with the most important arguments listed in the following:</p>
 <li>starting.val: starting value method</li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span>
-<span><span class="co">## Loading required package: TMB</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## Attaching package: 'gllvm'</span></span>
-<span><span class="co">## The following object is masked from 'package:stats':</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">##     simulate</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="example-spiders">Example: Spiders<a class="anchor" aria-label="anchor" href="#example-spiders"></a>
@@ -324,7 +318,7 @@ cloudless sky</li>
 <h3 id="data-fitting">Data fitting<a class="anchor" aria-label="anchor" href="#data-fitting"></a>
 </h3>
 <p>Fit GLLVM with environmental variables
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐮</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math>
 using <strong>gllvm</strong>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span>
@@ -339,11 +333,11 @@ using <strong>gllvm</strong>:</p>
 <span><span class="co">## method: </span></span>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## log-likelihood:  -588.9187 </span></span>
+<span><span class="co">## log-likelihood:  -593.6749 </span></span>
 <span><span class="co">## Residual degrees of freedom:  217 </span></span>
-<span><span class="co">## AIC:  1415.837 </span></span>
-<span><span class="co">## AICc:  1548.06 </span></span>
-<span><span class="co">## BIC:  1870.074</span></span></code></pre></div>
+<span><span class="co">## AIC:  1425.35 </span></span>
+<span><span class="co">## AICc:  1557.572 </span></span>
+<span><span class="co">## BIC:  1879.586</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="model-selection">Model selection<a class="anchor" aria-label="anchor" href="#model-selection"></a>
@@ -364,7 +358,7 @@ criterion:</li>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1415.837</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1435.837</span></span></code></pre></div>
+<span><span class="co">## [1] 1445.35</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="residual-analysis">Residual analysis<a class="anchor" aria-label="anchor" href="#residual-analysis"></a>
@@ -377,7 +371,11 @@ performed using <code><a href="https://rdrr.io/r/graphics/plot.default.html" cla
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitx1</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4res-1.png" alt="plot of chunk v4res"><p class="caption">
+plot of chunk v4res
+</p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -490,7 +488,11 @@ with <strong>gllvm</strong> so just load with a function
 <span><span class="co">## 28   0.9555    3.4340        0.0000 3.7136     3.4340     3.6889</span></span>
 <span><span class="co"># Plot data using boxplot:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">boxplot</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-8-1.png" width="480" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4boxplot-1.png" alt="plot of chunk v4boxplot"><p class="caption">
+plot of chunk v4boxplot
+</p>
+</div>
 </details><p><span style="color:blue"> E2. Fit GLLVM with two latent variables to
 spider data with a suitable distribution. Data consists of counts of
 spider species.</span></p>
@@ -545,10 +547,18 @@ residuals, they look a little different.</span></p>
 <code class="sourceCode R"><span><span class="co"># Fit a GLLVM to data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitp</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-11-1.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4res2-1.png" alt="plot of chunk v4res2"><p class="caption">
+plot of chunk v4res2
+</p>
+</div>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fitnb</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-11-2.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4res2-2.png" alt="plot of chunk v4res2"><p class="caption">
+plot of chunk v4res2
+</p>
+</div>
 <p>You could do these comparisons with Laplace method as well, using the
 code below, and it would give the same conclusion that NB distribution
 suits best:</p>
@@ -578,9 +588,9 @@ environmental variable matrix or define the model using formula.
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
 <span><span class="co">## [1] 1449.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx2</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1486.451</span></span>
+<span><span class="co">## [1] 1471.428</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fitx3</span><span class="op">)</span></span>
-<span><span class="co">## [1] 1491.428</span></span>
+<span><span class="co">## [1] 1491.326</span></span>
 <span><span class="co"># Or alternatively using formula:</span></span>
 <span><span class="va">fitx1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">spider</span><span class="op">$</span><span class="va">x</span>, formula <span class="op">=</span> <span class="op">~</span><span class="va">soil.dry</span> <span class="op">+</span> <span class="va">reflection</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">fitx1</span></span>
@@ -592,7 +602,7 @@ environmental variable matrix or define the model using formula.
 <span><span class="co">## method: </span></span>
 <span><span class="co">## [1] "VA"</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## log-likelihood:  -664.7139 </span></span>
+<span><span class="co">## log-likelihood:  -664.7138 </span></span>
 <span><span class="co">## Residual degrees of freedom:  276 </span></span>
 <span><span class="co">## AIC:  1449.428 </span></span>
 <span><span class="co">## AICc:  1476.046 </span></span>
@@ -609,82 +619,82 @@ obtained with <code><a href="../reference/confint.gllvm.html">confint()</a></cod
 <span><span class="co">## $Species.scores</span></span>
 <span><span class="co">##                   LV1</span></span>
 <span><span class="co">## Alopacce 1.000000e+00</span></span>
-<span><span class="co">## Alopcune 1.286709e+00</span></span>
-<span><span class="co">## Alopfabr 4.410521e-01</span></span>
-<span><span class="co">## Arctlute 2.261516e+00</span></span>
-<span><span class="co">## Arctperi 1.884618e-07</span></span>
-<span><span class="co">## Auloalbi 2.499122e+00</span></span>
-<span><span class="co">## Pardlugu 3.974171e-01</span></span>
-<span><span class="co">## Pardmont 9.559432e-01</span></span>
-<span><span class="co">## Pardnigr 2.566334e+00</span></span>
-<span><span class="co">## Pardpull 2.528334e+00</span></span>
-<span><span class="co">## Trocterr 9.659057e-01</span></span>
-<span><span class="co">## Zoraspin 1.751386e+00</span></span>
+<span><span class="co">## Alopcune 1.286750e+00</span></span>
+<span><span class="co">## Alopfabr 4.410900e-01</span></span>
+<span><span class="co">## Arctlute 2.261609e+00</span></span>
+<span><span class="co">## Arctperi 7.106293e-08</span></span>
+<span><span class="co">## Auloalbi 2.499171e+00</span></span>
+<span><span class="co">## Pardlugu 3.974201e-01</span></span>
+<span><span class="co">## Pardmont 9.559773e-01</span></span>
+<span><span class="co">## Pardnigr 2.566378e+00</span></span>
+<span><span class="co">## Pardpull 2.528363e+00</span></span>
+<span><span class="co">## Trocterr 9.659240e-01</span></span>
+<span><span class="co">## Zoraspin 1.751375e+00</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $sigma.lv</span></span>
 <span><span class="co">##       LV1 </span></span>
-<span><span class="co">## 0.8536342 </span></span>
+<span><span class="co">## 0.8536261 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Intercept</span></span>
 <span><span class="co">##   Alopacce   Alopcune   Alopfabr   Arctlute   Arctperi   Auloalbi   Pardlugu </span></span>
-<span><span class="co">##  -3.009403  -7.406861   2.078345 -21.475090  -7.919796 -12.966229   4.567886 </span></span>
+<span><span class="co">##  -3.009561  -7.407341   2.077958 -21.475948  -7.919465 -12.966728   4.567807 </span></span>
 <span><span class="co">##   Pardmont   Pardnigr   Pardpull   Trocterr   Zoraspin </span></span>
-<span><span class="co">##  -6.090827 -14.644247 -16.455537  -3.711475  -9.214750 </span></span>
+<span><span class="co">##  -6.091420 -14.644757 -16.455779  -3.711656  -9.214782 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Xcoef</span></span>
 <span><span class="co">##            soil.dry reflection</span></span>
-<span><span class="co">## Alopacce -0.3441403  1.5943250</span></span>
-<span><span class="co">## Alopcune  2.6110483  0.6246417</span></span>
-<span><span class="co">## Alopfabr -1.8670096  0.7467258</span></span>
-<span><span class="co">## Arctlute  6.3214607  0.8205739</span></span>
-<span><span class="co">## Arctperi -1.7566702  2.8891458</span></span>
-<span><span class="co">## Auloalbi  4.1812812  0.6831263</span></span>
-<span><span class="co">## Pardlugu -0.5453314 -1.2605181</span></span>
-<span><span class="co">## Pardmont  1.7923930  1.4691108</span></span>
-<span><span class="co">## Pardnigr  4.9041572  0.8601350</span></span>
-<span><span class="co">## Pardpull  5.3496269  1.2822802</span></span>
-<span><span class="co">## Trocterr  2.3357334  0.2234399</span></span>
-<span><span class="co">## Zoraspin  3.5553517  0.1197931</span></span>
+<span><span class="co">## Alopacce -0.3440794  1.5943440</span></span>
+<span><span class="co">## Alopcune  2.6111918  0.6246936</span></span>
+<span><span class="co">## Alopfabr -1.8669348  0.7467994</span></span>
+<span><span class="co">## Arctlute  6.3217139  0.8206592</span></span>
+<span><span class="co">## Arctperi -1.7567107  2.8890774</span></span>
+<span><span class="co">## Auloalbi  4.1814224  0.6832101</span></span>
+<span><span class="co">## Pardlugu -0.5453081 -1.2605057</span></span>
+<span><span class="co">## Pardmont  1.7925512  1.4691971</span></span>
+<span><span class="co">## Pardnigr  4.9043040  0.8602193</span></span>
+<span><span class="co">## Pardpull  5.3496960  1.2823453</span></span>
+<span><span class="co">## Trocterr  2.3357872  0.2234689</span></span>
+<span><span class="co">## Zoraspin  3.5553552  0.1198450</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $inv.phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 9.379417e+00 1.699533e+00 1.577621e+00 1.064240e+00 2.600246e+07 1.511541e+00 </span></span>
+<span><span class="co">## 9.379429e+00 1.699502e+00 1.577606e+00 1.064238e+00 3.734674e+07 1.511532e+00 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 1.543680e+00 9.784674e-01 2.517813e+00 2.339440e+00 1.471003e+01 3.625192e+00 </span></span>
+<span><span class="co">## 1.543684e+00 9.784555e-01 2.517838e+00 2.339478e+00 1.470955e+01 3.625229e+00 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $phi</span></span>
 <span><span class="co">##     Alopacce     Alopcune     Alopfabr     Arctlute     Arctperi     Auloalbi </span></span>
-<span><span class="co">## 1.066164e-01 5.883969e-01 6.338657e-01 9.396378e-01 3.845790e-08 6.615766e-01 </span></span>
+<span><span class="co">## 1.066163e-01 5.884078e-01 6.338717e-01 9.396399e-01 2.677610e-08 6.615804e-01 </span></span>
 <span><span class="co">##     Pardlugu     Pardmont     Pardnigr     Pardpull     Trocterr     Zoraspin </span></span>
-<span><span class="co">## 6.478028e-01 1.022006e+00 3.971701e-01 4.274528e-01 6.798084e-02 2.758474e-01</span></span>
+<span><span class="co">## 6.478008e-01 1.022019e+00 3.971661e-01 4.274457e-01 6.798302e-02 2.758446e-01</span></span>
 <span><span class="co"># Coefficients for covariates are named as `Xcoef`</span></span>
 <span><span class="co"># Confidence intervals for these coefficients:</span></span>
 <span><span class="fu"><a href="../reference/confint.gllvm.html">confint</a></span><span class="op">(</span><span class="va">fitx1</span>, parm <span class="op">=</span> <span class="st">"Xcoef"</span><span class="op">)</span></span>
 <span><span class="co">##               cilow       ciup</span></span>
-<span><span class="co">## Xcoef1  -1.02685696  0.3385764</span></span>
-<span><span class="co">## Xcoef2   1.34772102  3.8743756</span></span>
-<span><span class="co">## Xcoef3  -2.85522227 -0.8787970</span></span>
-<span><span class="co">## Xcoef4   2.24721893 10.3957025</span></span>
-<span><span class="co">## Xcoef5  -2.87606822 -0.6372722</span></span>
-<span><span class="co">## Xcoef6   1.79150509  6.5710574</span></span>
-<span><span class="co">## Xcoef7  -1.64588276  0.5552199</span></span>
-<span><span class="co">## Xcoef8   0.73359573  2.8511903</span></span>
-<span><span class="co">## Xcoef9   2.78581679  7.0224976</span></span>
-<span><span class="co">## Xcoef10  3.14360889  7.5556450</span></span>
-<span><span class="co">## Xcoef11  1.64615990  3.0253070</span></span>
-<span><span class="co">## Xcoef12  1.97722939  5.1334740</span></span>
-<span><span class="co">## Xcoef13  0.95834524  2.2303048</span></span>
-<span><span class="co">## Xcoef14  0.13814100  1.1111424</span></span>
-<span><span class="co">## Xcoef15 -0.24256329  1.7360149</span></span>
-<span><span class="co">## Xcoef16 -0.34252250  1.9836702</span></span>
-<span><span class="co">## Xcoef17  1.63806338  4.1402282</span></span>
-<span><span class="co">## Xcoef18 -0.18428911  1.5505418</span></span>
-<span><span class="co">## Xcoef19 -1.73559558 -0.7854407</span></span>
-<span><span class="co">## Xcoef20  0.89990489  2.0383166</span></span>
-<span><span class="co">## Xcoef21  0.01735094  1.7029190</span></span>
-<span><span class="co">## Xcoef22  0.40737105  2.1571893</span></span>
-<span><span class="co">## Xcoef23 -0.08591795  0.5327978</span></span>
-<span><span class="co">## Xcoef24 -0.46478490  0.7043712</span></span>
+<span><span class="co">## Xcoef1  -1.02678964  0.3386309</span></span>
+<span><span class="co">## Xcoef2   1.34779847  3.8745851</span></span>
+<span><span class="co">## Xcoef3  -2.85515462 -0.8787150</span></span>
+<span><span class="co">## Xcoef4   2.24726612 10.3961616</span></span>
+<span><span class="co">## Xcoef5  -2.87610917 -0.6373123</span></span>
+<span><span class="co">## Xcoef6   1.79157916  6.5712655</span></span>
+<span><span class="co">## Xcoef7  -1.64586901  0.5552527</span></span>
+<span><span class="co">## Xcoef8   0.73372751  2.8513749</span></span>
+<span><span class="co">## Xcoef9   2.78591085  7.0226972</span></span>
+<span><span class="co">## Xcoef10  3.14367369  7.5557182</span></span>
+<span><span class="co">## Xcoef11  1.64620140  3.0253730</span></span>
+<span><span class="co">## Xcoef12  1.97725185  5.1334585</span></span>
+<span><span class="co">## Xcoef13  0.95836174  2.2303263</span></span>
+<span><span class="co">## Xcoef14  0.13818262  1.1112046</span></span>
+<span><span class="co">## Xcoef15 -0.24254371  1.7361425</span></span>
+<span><span class="co">## Xcoef16 -0.34247281  1.9837912</span></span>
+<span><span class="co">## Xcoef17  1.63802402  4.1401308</span></span>
+<span><span class="co">## Xcoef18 -0.18421936  1.5506396</span></span>
+<span><span class="co">## Xcoef19 -1.73558481 -0.7854266</span></span>
+<span><span class="co">## Xcoef20  0.89996780  2.0384263</span></span>
+<span><span class="co">## Xcoef21  0.01742757  1.7030110</span></span>
+<span><span class="co">## Xcoef22  0.40743692  2.1572537</span></span>
+<span><span class="co">## Xcoef23 -0.08589193  0.5328298</span></span>
+<span><span class="co">## Xcoef24 -0.46472458  0.7044146</span></span>
 <span><span class="co"># The first 12 intervals are for soil.dry and next 12 for reflection</span></span></code></pre></div>
 </details><details><summary><span style="color:red"> Problems? See hints:</span>
 </summary><p><span style="color:red"> I have problems in model fitting. My model
@@ -718,12 +728,12 @@ co-occurrence that is not explained by environmental variables, can be
 calculated as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚺</mi><mo>=</mo><mi>𝚪</mi><msup><mi>𝚪</mi><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\boldsymbol\Sigma=\boldsymbol\Gamma \boldsymbol\Gamma^\top</annotation></semantics></math>,
 where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚪</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>𝛉</mi><mn>1</mn></msub><mi>…</mi><msub><mi>𝛉</mi><mi>m</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>′</mi></mrow><annotation encoding="application/x-tex">\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'</annotation></semantics></math>.</p></li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚪</mi><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mi>𝛉</mi><mn>1</mn></msub><mi>…</mi><msub><mi>𝛉</mi><mi>m</mi></msub><msup><mo stretchy="false" form="postfix">]</mo><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'</annotation></semantics></math>.</p></li>
 <li><p><code>getResidualCor</code> function can be used to estimate the
 correlation matrix of the linear predictor across species.</p></li>
 <li><p>Let’s consider first the correlation matrix based on a model
 without predictors:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐮</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math></p></li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math></p></li>
 </ul>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
@@ -748,7 +758,11 @@ correlation matrix using, eg., a <code>corrplot</code> package.</p></li>
 <code class="sourceCode R"><span><span class="va">fitnb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">fitnb</span>, biplot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fl">0</span>, v <span class="op">=</span> <span class="fl">0</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-17-1.png" width="432" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4ordi2-1.png" alt="plot of chunk v4ordi2"><p class="caption">
+plot of chunk v4ordi2
+</p>
+</div>
 <ul>
 <li>Correlations can be visualized more precisely using
 <code><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot()</a></code> function:</li>
@@ -759,7 +773,11 @@ correlation matrix using, eg., a <code>corrplot</code> package.</p></li>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/taiyun/corrplot" class="external-link">corrplot</a></span><span class="op">)</span>;</span>
 <span><span class="co">## corrplot 0.95 loaded</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot</a></span><span class="op">(</span><span class="va">cr</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, method <span class="op">=</span> <span class="st">"square"</span>, tl.srt <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-18-1.png" width="480" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4corr-1.png" alt="plot of chunk v4corr"><p class="caption">
+plot of chunk v4corr
+</p>
+</div>
 <ul>
 <li>The same correlations can also be visualized with species ordination
 in biplot:</li>
@@ -780,7 +798,7 @@ in biplot:</li>
 including environmental variables
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐱</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\boldsymbol{x}_i</annotation></semantics></math>
 to GLLVM:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐮</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math>.</li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math>.</li>
 <li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\beta}_{j}</annotation></semantics></math>
 is a vector of species specific coefficients for environmental
@@ -800,7 +818,11 @@ different environmental gradients in ordination:</li>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h<span class="op">=</span><span class="fl">0</span>,v<span class="op">=</span><span class="fl">0</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-20-1.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4ordi4-1.png" alt="plot of chunk v4ordi4"><p class="caption">
+plot of chunk v4ordi4
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="coefficient-plot">Coefficient plot<a class="anchor" aria-label="anchor" href="#coefficient-plot"></a>
@@ -819,7 +841,11 @@ in the coefficients plotted with their confidence intervals.</li>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fitx1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">spider</span><span class="op">$</span><span class="va">abund</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, num.lv <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">fitx1</span>, mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>, cex.ylab <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-21-1.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4coef-1.png" alt="plot of chunk v4coef"><p class="caption">
+plot of chunk v4coef
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="correlation-matrix">Correlation matrix<a class="anchor" aria-label="anchor" href="#correlation-matrix"></a>
@@ -838,7 +864,11 @@ interactions.</li>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">crx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCor.gllvm.html">getResidualCor</a></span><span class="op">(</span><span class="va">fitx1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/corrplot/man/corrplot.html" class="external-link">corrplot</a></span><span class="op">(</span><span class="va">crx</span>, diag <span class="op">=</span> <span class="cn">FALSE</span>, type <span class="op">=</span> <span class="st">"lower"</span>, method <span class="op">=</span> <span class="st">"square"</span>, tl.srt <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette4_files/figure-html/unnamed-chunk-22-1.png" width="480" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v4corr2-1.png" alt="plot of chunk v4corr2"><p class="caption">
+plot of chunk v4corr2
+</p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="fourth-corner-models">Fourth corner models<a class="anchor" aria-label="anchor" href="#fourth-corner-models"></a>
@@ -848,7 +878,7 @@ interactions.</li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐭</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{t}_j</annotation></semantics></math>,
 measuring eg. species behaviour or physical appearance, would be
 available, fourth corner models should be considered:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝐁</mi><mi>I</mi></msub><msub><mi>𝐭</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐮</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{x}_i'\boldsymbol{B}_{I}\boldsymbol{t}_j  + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math></p></li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝐁</mi><mi>I</mi></msub><msub><mi>𝐭</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">g(E(y_{ij})) = \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_{j} + \boldsymbol{x}_i'\boldsymbol{B}_{I}\boldsymbol{t}_j  + \boldsymbol{u}_i'\boldsymbol{\theta}_j</annotation></semantics></math></p></li>
 <li><p>Such models can also be fitted with <code><a href="../reference/gllvm.html">gllvm()</a></code> function
 by including a matrix of traits with argument <code>TR</code>.</p></li>
 <li><p>Examples can be found in the <strong>gllvm</strong> package’s

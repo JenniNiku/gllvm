@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -108,7 +108,7 @@
                         <h4 data-toc-skip class="author">Bert van der
 Veen</h4>
             
-            <h4 data-toc-skip class="date">2026-06-02</h4>
+            <h4 data-toc-skip class="date">2026-09-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette5.Rmd" class="external-link"><code>vignettes/vignette5.Rmd</code></a></small>
       <div class="hidden name"><code>vignette5.Rmd</code></div>
@@ -123,7 +123,7 @@ community ecology, specifically to describe the response of species to
 the environment. When one has measured predictor variables, a quadratic
 function can straightforwardly be included in a regression in R using
 the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>o</mi><mi>l</mi><mi>y</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>⋅</mi><mo>,</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">poly(\cdot,2)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>o</mi><mi>l</mi><mi>y</mi><mo stretchy="false" form="prefix">(</mo><mi>⋅</mi><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">poly(\cdot,2)</annotation></semantics></math>
 function. However, in a GLLVM, latent variables are included that can
 represent unmeasured predictors. As such, we might want to test if
 species respond to those unknown predictors too. This is similar to the
@@ -149,7 +149,7 @@ row-effects:</p>
 same for all species, but unique per latent variable, which we will
 refer to as species common tolerances. We do this using the
 <code>quadratic</code> flag in the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">gllvm</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>.</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{gllvm}(.)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">gllvm</mtext><mo stretchy="false" form="prefix">(</mo><mi>.</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\text{gllvm}(.)</annotation></semantics></math>
 function, which has the options <code>FALSE</code>, <code>LV</code>
 (common tolerances), and <code>TRUE</code> (unique tolerances for all
 species).</p>
@@ -208,7 +208,7 @@ extracted:</p>
 <span><span class="co">## Zoraspin 5.994577e-01 8.675581e-01</span></span></code></pre>
 <p>The standard deviation of the latent variables can be printed using
 the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">summary</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>.</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{summary}(.)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">summary</mtext><mo stretchy="false" form="prefix">(</mo><mi>.</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\text{summary}(.)</annotation></semantics></math>
 function. Since latent variable models are scale invariant, this scale
 parameter is relative to the identifiability constraint (diagonal of the
 species scores matrix). It can be understood as a measure of gradient
@@ -230,7 +230,7 @@ GLLVM:</p>
 <pre><code><span><span class="co">##     LV1^2     LV2^2 </span></span>
 <span><span class="co">##  95.95021 120.62052</span></span></code></pre>
 <p>Finally, we can use the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">ordiplot</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>.</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{ordiplot}(.)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">ordiplot</mtext><mo stretchy="false" form="prefix">(</mo><mi>.</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\text{ordiplot}(.)</annotation></semantics></math>
 function to visualize the species optima. However, since species optima
 can be quite large if they are unobserved, or if too little information
 is present in the data, creating a nice figure can be challenging. One
@@ -297,11 +297,11 @@ unimodal.</p>
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-vanderVeen2021a" class="csl-entry">
 Veen, B. van der, F.K.C. Hui, K.A. Hovstad, E.B. Solbu, and R.B. O’Hara.
-2021. <span>“Model-Based Ordination for Species with Unequal Niche
-Widths.”</span> 12: 1288–1300.
+2021. <em>Model-Based Ordination for Species with Unequal Niche
+Widths.</em> 12: 1288–300.
 </div>
 </div>
 </div>

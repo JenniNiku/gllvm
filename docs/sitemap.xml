@@ -37,11 +37,15 @@
 <url><loc>/reference/ordiplot.gllvm.html</loc></url>
 <url><loc>/reference/phyloplot.gllvm.html</loc></url>
 <url><loc>/reference/plot.gllvm.html</loc></url>
+<url><loc>/reference/plot.predictSR.gllvm.html</loc></url>
 <url><loc>/reference/predict.gllvm.html</loc></url>
+<url><loc>/reference/predict.glmmVA.html</loc></url>
 <url><loc>/reference/predictLVs.gllvm.html</loc></url>
 <url><loc>/reference/predictPairwise.gllvm.html</loc></url>
 <url><loc>/reference/predictSR.gllvm.html</loc></url>
 <url><loc>/reference/randomCoefplot.gllvm.html</loc></url>
+<url><loc>/reference/ranef.glmmVA.html</loc></url>
+<url><loc>/reference/ranef.html</loc></url>
 <url><loc>/reference/residuals.gllvm.html</loc></url>
 <url><loc>/reference/residuals.predictSR.gllvm.html</loc></url>
 <url><loc>/reference/se.gllvm.html</loc></url>

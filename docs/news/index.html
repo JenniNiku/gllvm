@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -84,6 +84,70 @@
       <small>Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.15" id="version-2015">Version 2.0.15<small>2026-09-11</small><a class="anchor" aria-label="anchor" href="#version-2015"></a></h2>
+<ul><li>CRAN update version 2.0.15, see also news for 2.0.14</li>
+<li>Ordinal with cloglog link implemented</li>
+<li>Parametrization of ordered beta cutoffs changed to cumulative parametrization</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-15">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-15"></a></h3>
+<ul><li>Bug related to NaNs in SigmaB and starting values fixed</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.14" id="version-2014">Version 2.0.14<a class="anchor" aria-label="anchor" href="#version-2014"></a></h2>
+<ul><li>Poisson, ZIP, ZINB, gaussian, gamma and ordered beta model with probit link implemented with EVA</li>
+<li>ordered beta model with logit and probit link implemented with LA</li>
+<li>gllvm() now issues a warning if row/column names in y and X or y and TR do not match, see <a href="https://github.com/JenniNiku/gllvm/issues/258" class="external-link">#258</a></li>
+<li>plot.predictSR.gllvm() gained a third plot of observed against predicted species richness</li>
+<li>predictSR() now stores the observed species richness, so that plot.predictSR.gllvm() and residuals.predictSR.gllvm() no longer require the gllvm object</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-14">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-14"></a></h3>
+<ul><li>Fixed a fatal bug in plot.predictSR.gllvm due to a naming typo</li>
+<li>Fixed the ‘which’ argument of plot.predictSR.gllvm, which drew the qq-line regardless of the requested plots, and which no longer leaves ‘mfrow’ changed</li>
+<li>Fixed observed species richness for ordinal responses in residuals.predictSR.gllvm: the per-species minimum categories were recycled over rows instead of columns</li>
+<li>Fixed a bug that prevented ordering randomCoefPlot.gllvm with order = TRUE</li>
+<li>Fixed a bug that resulted in incorrect simulations from simulate.gllvm with num.lv=0</li>
+<li>Fixed the parameterisation of nb1 in residuals.gllvm, simulate, and predictSR: the dispersion parameter was inverted relative to the C++ parameterisation</li>
+<li>Fixed a bug that made predictSR underestimate richness for ZIP/ZINB</li>
+<li>Fixed a bug in ordinal models with zeta.struc = “species”: zeta was inappropriately offset by 1</li>
+<li>Improved implementation (and VA derivation) of the cumulative logit likelihood</li>
+<li>Fixed a bug in the ordinal likelihood with common cut-offs, introduced with mixed response types in v2.0.8</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.13" id="version-2013">Version 2.0.13<small>2026-07-09</small><a class="anchor" aria-label="anchor" href="#version-2013"></a></h2>
+<ul><li>CRAN update version 2.0.13</li>
+<li>See updates in 2.0.11-2.0.12</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.12" id="version-2012">Version 2.0.12<a class="anchor" aria-label="anchor" href="#version-2012"></a></h2>
+<ul><li>Improved starting values for fixed-effects constrained ordination</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-12">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-12"></a></h3>
+<ul><li>getPredictErr produced incorrect results with randomB = “LV” due to wrong ordering</li>
+<li>predict.gllvm produced incorrect results with randomB (both cases) due to a typo</li>
+<li>
+<code>starting.val = "res"</code> occasionally failed with “Calculating starting values failed” for complete (no-NA) response data, because factor analysis for starting values always forced the residual correlation matrix to its nearest positive-definite matrix; this is now only done when the response data contains NAs, restoring the previous, more numerically stable behaviour for the common complete-data case</li>
+<li>Fixed row.eff with (…|1) terms</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="2.0.11" id="version-2011">Version 2.0.11<small>2026-06-22</small><a class="anchor" aria-label="anchor" href="#version-2011"></a></h2>
+<ul><li>New <code>ranef</code> S3 generic and <code>ranef.glmmVA</code> method: extracts random-effect estimates from a <code>glmmVA</code> object.</li>
+<li>New multiple response types support for <code>glmmVA</code>
+</li>
+<li>Distance matrix for spatial models is now calculated once in R, in contarst to repeatedly in C++</li>
+<li>Better generation of starting values with NAs in the response data.</li>
+</ul><div class="section level3">
+<h3 id="bugfixes-2-0-11">Bugfixes<a class="anchor" aria-label="anchor" href="#bugfixes-2-0-11"></a></h3>
+<ul><li>Fixed <code>glmmVA</code> ignoring <code>0+</code>/<code>-1</code> intercept suppression in the formula (issue <a href="https://github.com/JenniNiku/gllvm/issues/250" class="external-link">#250</a>).</li>
+<li>Fixed <code>diag(a+b|grp)</code> (issue <a href="https://github.com/JenniNiku/gllvm/issues/241" class="external-link">#241</a>).</li>
+<li>Fixed incorrect <code>trmsize[1,]</code> computation in <code>row.eff</code> formula processing.</li>
+<li>Number of observations was calculated incorrectly in multiple places with NA in the data</li>
+<li>Adjusted convergence checks for n.init&gt;1 accepted poorly converged fits at times; reverted to old checks.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="2.0.10" id="version-2010">Version 2.0.10<small>2026-05-10</small><a class="anchor" aria-label="anchor" href="#version-2010"></a></h2>
 <ul><li>CRAN update version 2.0.10</li>

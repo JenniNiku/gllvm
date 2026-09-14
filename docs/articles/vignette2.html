@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -108,27 +108,26 @@
 data using gllvm</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2026-06-02</h4>
+            <h4 data-toc-skip class="date">2026-09-11</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette2.rmd" class="external-link"><code>vignettes/vignette2.rmd</code></a></small>
-      <div class="hidden name"><code>vignette2.rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette2.Rmd" class="external-link"><code>vignettes/vignette2.Rmd</code></a></small>
+      <div class="hidden name"><code>vignette2.Rmd</code></div>
 
     </div>
 
     
     
 <p>In this example we apply generalized linear latent variable model
-(GLLVMs) on the bacterial species data discussed in <span class="citation">Nissinen, Mannisto, and van Elsas (2012)</span>. The
-sequence data is published in European Nucleotide Archive with the
-project number PRJEB17695. The subset of the data used in our analyses
-is included in the gllvm package. This example follows the one provided
-in <span class="citation">Niku et al. (2017)</span>, except that here we
-use variational approximation method to fit GLLVMs instead of the
-Laplace approximation method. Altogether eight different sampling sites
-were selected from three locations. Three of the sites were in
-Kilpisjarvi, Finland, three in Ny-Alesund, Svalbard, Norway, and two in
-Mayrhofen, Austria. From each sampling site, several soil samples were
-taken and their bacterial species were recorded. The data consist of
+(GLLVMs) on the bacterial species data discussed in <span class="citation">Nissinen et al. (2012)</span>. The sequence data is
+published in European Nucleotide Archive with the project number
+PRJEB17695. The subset of the data used in our analyses is included in
+the gllvm package. This example follows the one provided in <span class="citation">Niku et al. (2017)</span>, except that here we use
+variational approximation method to fit GLLVMs instead of the Laplace
+approximation method. Altogether eight different sampling sites were
+selected from three locations. Three of the sites were in Kilpisjarvi,
+Finland, three in Ny-Alesund, Svalbard, Norway, and two in Mayrhofen,
+Austria. From each sampling site, several soil samples were taken and
+their bacterial species were recorded. The data consist of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><mn>985</mn></mrow><annotation encoding="application/x-tex">m = 985</annotation></semantics></math>
 bacterial species counts measured from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>56</mn></mrow><annotation encoding="application/x-tex">n = 56</annotation></semantics></math>
@@ -147,20 +146,13 @@ physico-chemical properties or region affect the structure of bacterial
 communities. The package and the dataset can be loaded along the
 following lines:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Loading required package: TMB</span></span></code></pre>
-<pre><code><span><span class="co">## </span></span>
-<span><span class="co">## Attaching package: 'gllvm'</span></span></code></pre>
-<pre><code><span><span class="co">## The following object is masked from 'package:stats':</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">##     simulate</span></span></code></pre>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"microbialdata"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jenniniku.github.io/gllvm/" class="external-link">gllvm</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"microbialdata"</span><span class="op">)</span></span>
 <span><span class="va">Ysoil</span> <span class="op">&lt;-</span> <span class="va">microbialdata</span><span class="op">$</span><span class="va">Y</span></span>
 <span><span class="va">Xenv</span> <span class="op">&lt;-</span> <span class="va">microbialdata</span><span class="op">$</span><span class="va">Xenv</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">Ysoil</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1]  56 985</span></span></code></pre>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">Xenv</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##      SOM   pH Phosp Region Site Soiltype</span></span>
 <span><span class="co">## AB2 0.01 6.70  2.63    Aus    A        B</span></span>
@@ -168,15 +160,19 @@ following lines:</p>
 <span><span class="co">## AB4 0.00 8.19  0.62    Aus    A        B</span></span></code></pre>
 <p>Let’s take a look at the means and variances of the species
 counts:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">meanY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">Ysoil</span>,<span class="fl">2</span>, <span class="va">mean</span><span class="op">)</span></span>
 <span><span class="va">varY</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">Ysoil</span>,<span class="fl">2</span>, <span class="va">var</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span>,<span class="va">varY</span>, log <span class="op">=</span> <span class="st">"y"</span>, main <span class="op">=</span> <span class="st">"Species mean-variance relationship"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"l"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">meanY</span><span class="op">+</span> <span class="fl">1</span><span class="op">*</span><span class="va">meanY</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"l"</span>, col<span class="op">=</span><span class="fl">2</span>, lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"bottomright"</span>, lty<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"var = mean"</span>, <span class="st">"var = mean+phi*mu^2"</span><span class="op">)</span>, bty<span class="op">=</span><span class="st">"n"</span>, col <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-3-1.png" width="768" style="display: block; margin: auto;">
-As species variances increases faster than mean, it is a clear
+<div class="figure" style="text-align: center">
+<img src="v2p1-1.png" alt="plot of chunk v2p1"><p class="caption">
+plot of chunk v2p1
+</p>
+</div>
+<p>As species variances increases faster than mean, it is a clear
 indication of the overdispersion in the data.</p>
 <p>In order to study if the effect of environmental variables is seen in
 an unconstrained ordination plot, we first consider a GLLVM with two
@@ -193,12 +189,12 @@ parameters for this specific model so we define
 <code>sd.errors = FALSE</code> in the function call. When needed,
 standard errors can also be calculated afterwards using function
 <code>se</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sDesign</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Site<span class="op">=</span><span class="va">Xenv</span><span class="op">$</span><span class="va">Site</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftNULL</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Ysoil</span>, studyDesign <span class="op">=</span> <span class="va">sDesign</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, row.eff <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Site</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span>, sd.errors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>The print of the model object:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftNULL</span></span></code></pre></div>
 <pre><code><span><span class="co">## Call: </span></span>
 <span><span class="co">## gllvm(y = Ysoil, X = data.frame(Site = Xenv$Site), num.lv = 2, </span></span>
@@ -220,10 +216,14 @@ supporting the choice. Using argument <code>n.plot</code> we can choose
 a number of randomly selected species to be plotted in order to make any
 patterns in the residual plots more apparent. This can be useful
 argument when data is high-dimensional.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ftNULL</span>, which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, var.colors <span class="op">=</span> <span class="fl">1</span>, n.plot <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-7-1.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p2-1.png" alt="plot of chunk v2p2"><p class="caption">
+plot of chunk v2p2
+</p>
+</div>
 <p>The ordination of sites based on the fitted negative binomial GLLVM
 can be plotted using function <code>ordiplot</code>. The sites can be
 colored according to their environmental variable values,
@@ -233,7 +233,7 @@ labeled according to the sampling location (Kilpisjarvi, Ny-Alesund and
 Innsbruck). This can be done by setting <code>symbols = TRUE</code> and
 defining the symbols for each site using argument <code>pch</code>, see
 below:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define colors according to the values of pH, SOM and phosp</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">grDevices</span><span class="op">)</span></span>
 <span><span class="va">ph</span> <span class="op">&lt;-</span> <span class="va">Xenv</span><span class="op">$</span><span class="va">pH</span></span>
@@ -256,17 +256,29 @@ below:</p>
 <span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftNULL</span>, main <span class="op">=</span> <span class="st">"Ordination of sites, color: pH"</span>,</span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsph</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-8-1.png" width="70%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="figure" style="text-align: center">
+<img src="v2p3-1.png" alt="plot of chunk v2p3" width="70%"><p class="caption">
+plot of chunk v2p3
+</p>
+</div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftNULL</span>, main <span class="op">=</span> <span class="st">"Ordination of sites, color: SOM"</span>, </span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorssom</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-8-2.png" width="70%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="figure" style="text-align: center">
+<img src="v2p3-2.png" alt="plot of chunk v2p3" width="70%"><p class="caption">
+plot of chunk v2p3
+</p>
+</div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftNULL</span>, main <span class="op">=</span> <span class="st">"Ordination of sites, color: phosphorous"</span>,</span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsphosp</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-8-3.png" width="70%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p3-3.png" alt="plot of chunk v2p3" width="70%"><p class="caption">
+plot of chunk v2p3
+</p>
+</div>
 <p>A clear gradient in the pH values of sites is observed, whereas there
 is less evidence of such pattern with the two other soil variables. It
 is also clear that the three sampling locations differ in terms of
@@ -274,7 +286,7 @@ species composition. Standard deviation for the random site effects can
 be extracted by <code>ftNULL$params$sigma</code>. By plotting the
 predicted random site effects, we can possibly see differences in
 sampling intensity of the eight sites.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sampling locations of the eight sampling sites:</span></span>
 <span><span class="va">locaSites</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">3</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ftNULL</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">row.params</span>, xlab <span class="op">=</span> <span class="st">"site"</span>, col <span class="op">=</span> <span class="va">locaSites</span>, pch <span class="op">=</span> <span class="va">locaSites</span>, </span>
@@ -282,32 +294,40 @@ sampling intensity of the eight sites.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">1</span>, at<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">8</span>, labels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">sDesign</span><span class="op">$</span><span class="va">Site</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, </span>
 <span>       col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-9-1.png" width="70%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p4-1.png" alt="plot of chunk v2p4" width="70%"><p class="caption">
+plot of chunk v2p4
+</p>
+</div>
 <p>Next we produce a biplot based on GLLVM. Below, column indices of the
 15 species with largest factor loadings are added in the (rotated)
 ordination plot. The biplot suggests a small set of indicator species
 which prefer sites with low pH values and a larger set of indicator
 species for high pH sites.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot the species using column indices of the species:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">ftNULL</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">theta</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">Ysoil</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftNULL</span>, main <span class="op">=</span> <span class="st">"Ordination of sites and species"</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">6</span>, <span class="fl">5</span><span class="op">)</span>, </span>
 <span>         ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">4</span>, <span class="fl">4</span><span class="op">)</span>, symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsph</span>, </span>
 <span>         biplot <span class="op">=</span> <span class="cn">TRUE</span>, ind.spp <span class="op">=</span> <span class="fl">15</span>, cex.spp <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p5-1.png" alt="plot of chunk v2p5"><p class="caption">
+plot of chunk v2p5
+</p>
+</div>
 <p>In order to study if pH value alone is capable of explaining the
 variation in species composition across sites, we included it as
 explanatory variable in the GLLVM. When the Poisson distribution
 performed so poorly on the null model, we consider only NB GLLVMs in the
 following examples.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Scale environmental variables</span></span>
 <span><span class="va">Xsoils</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftXph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Ysoil</span>, X <span class="op">=</span> <span class="va">Xsoils</span>, studyDesign <span class="op">=</span> <span class="va">sDesign</span>, formula <span class="op">=</span> <span class="op">~</span><span class="va">pH</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, </span>
 <span>               row.eff <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Site</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftXph</span></span></code></pre></div>
 <pre><code><span><span class="co">## Call: </span></span>
 <span><span class="co">## gllvm(y = Ysoil, X = Xsoils, formula = ~pH, num.lv = 2, family = "negative.binomial", </span></span>
@@ -328,25 +348,33 @@ strongly affects to the species composition as so many of the confidence
 intervals do not contain zero value (black). The species names are not
 informative in the coefficient plot when the number of species is so
 large and can be removed using an argument <code>y.label</code>.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">ftXph</span>, cex.ylab <span class="op">=</span> <span class="fl">0.5</span>, y.label <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p6-1.png" alt="plot of chunk v2p6"><p class="caption">
+plot of chunk v2p6
+</p>
+</div>
 <p>The corresponding ordination plot given below indicates that the
 gradient in the pH values of the sites vanishes, but the ordination
 still exhibits a sampling location effect. In particular, several
 Kilpisjarvi sites seem to differ what comes to the bacterial species
 composition and all Mayrhofen sites are located at the top of the
 ordination.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftXph</span>, main <span class="op">=</span> <span class="st">"Ordination of sites"</span>, </span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsph</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-15-1.png" width="70%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p7-1.png" alt="plot of chunk v2p7" width="70%"><p class="caption">
+plot of chunk v2p7
+</p>
+</div>
 <p>Next we include all environmental variables as explanatory variables
 in the GLLVM.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftX</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Ysoil</span>, X <span class="op">=</span> <span class="va">Xsoils</span>, studyDesign <span class="op">=</span> <span class="va">sDesign</span>, family <span class="op">=</span> <span class="st">"negative.binomial"</span>, row.eff <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Site</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftX</span></span></code></pre></div>
 <pre><code><span><span class="co">## Call: </span></span>
 <span><span class="co">## gllvm(y = Ysoil, X = Xsoils, num.lv = 2, family = "negative.binomial", </span></span>
@@ -365,27 +393,35 @@ in the GLLVM.</p>
 than for the model with only pH as a covariate. Below, point estimates
 with 95% confidence intervals below indicate that pH value is the main
 covariate affecting the species composition.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/coefplot.gllvm.html">coefplot</a></span><span class="op">(</span><span class="va">ftX</span>, cex.ylab <span class="op">=</span> <span class="fl">0.5</span>, y.label <span class="op">=</span> <span class="cn">FALSE</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p8-1.png" alt="plot of chunk v2p8"><p class="caption">
+plot of chunk v2p8
+</p>
+</div>
 <p>The corresponding ordination plot given below is very similar to the
 ordination plot of the model which includes only pH value as a
 covariate, and the ordination still exhibits a sampling location
 effect.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftX</span>, main <span class="op">=</span> <span class="st">"Ordination of sites"</span>, </span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsph</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-19-1.png" width="70%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p9-1.png" alt="plot of chunk v2p9" width="70%"><p class="caption">
+plot of chunk v2p9
+</p>
+</div>
 <p>To account for this we add the sampling location as a categorical
 covariate into the model.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Xenv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">Xsoils</span>, Region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">$</span><span class="va">Region</span><span class="op">)</span>,</span>
 <span>                   Soiltype <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">Xenv</span><span class="op">$</span><span class="va">Soiltype</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ftXi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gllvm.html">gllvm</a></span><span class="op">(</span><span class="va">Ysoil</span>, X <span class="op">=</span> <span class="va">Xenv</span>, studyDesign <span class="op">=</span> <span class="va">sDesign</span>, formula <span class="op">=</span> <span class="op">~</span> <span class="va">SOM</span> <span class="op">+</span> <span class="va">pH</span> <span class="op">+</span> <span class="va">Phosp</span> <span class="op">+</span> <span class="va">Region</span>, </span>
 <span>              family <span class="op">=</span> <span class="st">"negative.binomial"</span>, row.eff <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Site</span><span class="op">)</span>, num.lv <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>              sd.errors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ftXi</span></span></code></pre></div>
 <pre><code><span><span class="co">## Call: </span></span>
 <span><span class="co">## gllvm(y = Ysoil, X = Xenv, formula = ~SOM + pH + Phosp + Region, </span></span>
@@ -403,11 +439,15 @@ covariate into the model.</p>
 <span><span class="co">## BIC:  195640.3</span></span></code></pre>
 <p>The resulting ordination plot shows that there is no more visible
 pattern in sampling location.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ordiplot.gllvm.html">ordiplot</a></span><span class="op">(</span><span class="va">ftXi</span>, main <span class="op">=</span> <span class="st">"Ordination of sites"</span>,  </span>
 <span>         symbols <span class="op">=</span> <span class="cn">TRUE</span>, pch <span class="op">=</span> <span class="va">pchr</span>, s.colors <span class="op">=</span> <span class="va">Colorsph</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Kil"</span>, <span class="st">"NyA"</span>, <span class="st">"Mayr"</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vignette2_files/figure-html/unnamed-chunk-22-1.png" width="70%" style="display: block; margin: auto;"></p>
+<div class="figure" style="text-align: center">
+<img src="v2p10-1.png" alt="plot of chunk v2p10" width="70%"><p class="caption">
+plot of chunk v2p10
+</p>
+</div>
 <p>When comparing nested models, in particular, the model with
 environmental covariates to the null model, variance explained can be
 quantified by using methods like extensions of pseudo R2. For example,
@@ -415,22 +455,22 @@ below we compare the total covariation in the <code>ftNULL</code> and
 <code>ftX</code> based on the traces of the residual covariance
 matrices. This suggests that environmental variables explain 43% of the
 total covariation.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">ftX</span><span class="op">)</span><span class="op">$</span><span class="va">trace</span><span class="op">/</span><span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">ftNULL</span><span class="op">)</span><span class="op">$</span><span class="va">trace</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 0.4391057</span></span></code></pre>
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Niku2017" class="csl-entry">
 Niku, J., D.I. Warton, F.K.C. Hui, and S. Taskinen. 2017.
-<span>“Generalized Linear Latent Variable Models for Multivariate Count
-and Biomass Data in Ecology.”</span> 22: 498–522.
+<em>Generalized Linear Latent Variable Models for Multivariate Count and
+Biomass Data in Ecology.</em> 22: 498–522.
 </div>
 <div id="ref-Nissinen2012" class="csl-entry">
-Nissinen, R., M. Mannisto, and J van Elsas. 2012. <span>“Endophytic
+Nissinen, R., M. Mannisto, and J van Elsas. 2012. <em>Endophytic
 Bacterial Communities in Three Arctic Plants from Low Arctic Fell Tundra
-Are Cold-Adapted and Host-Plant Specific.”</span> 82: 510–22.
+Are Cold-Adapted and Host-Plant Specific.</em> 82: 510–22.
 </div>
 </div>
 </div>

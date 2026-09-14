@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -136,18 +136,18 @@ as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">y_{ij}</annotation></semantics></math>.
 A set of k environmental variables, or experimental treatments, may also
 be recorded at each site and stored in the vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐱</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>x</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{x}_i = (x_{i1}, ..., x_{ik})</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐱</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>x</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\boldsymbol{x}_i = (x_{i1}, ..., x_{ik})</annotation></semantics></math>.
 A common form for the GLLVM is then defined for the mean abundance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\mu_{ij}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>r</mi><mrow><msub><mi>s</mi><mi>a</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐮</mi><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij} = r_{s_a(i)} + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_j + \boldsymbol{u}_{s_u(i)}'\boldsymbol{\theta}_j,</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>r</mi><mrow><msub><mi>s</mi><mi>a</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mrow><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij} = r_{s_a(i)} + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_j + \boldsymbol{u}_{s_u(i)}'\boldsymbol{\theta}_j,</annotation></semantics></math></p>
 <p>Now we can specify a correlation structure for latent variables
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>u</mi><mrow><mn>1</mn><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>d</mi><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>′</mi></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_{s_u(i)} = ({u}_{1,s_u(i)}, \dots, {u}_{d,s_u(i)})'</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mrow><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>u</mi><mrow><mn>1</mn><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>d</mi><mo>,</mo><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><msup><mo stretchy="false" form="postfix">)</mo><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_{s_u(i)} = ({u}_{1,s_u(i)}, \dots, {u}_{d,s_u(i)})'</annotation></semantics></math>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo></mrow><annotation encoding="application/x-tex">d=</annotation></semantics></math>
 number of latent variables, defined by <code>num.lv</code> in
 <strong>gllvm</strong>) and/or community level row effects
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><msub><mi>s</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><annotation encoding="application/x-tex">r_{s_r(i)}</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><msub><mi>s</mi><mi>r</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></msub><annotation encoding="application/x-tex">r_{s_r(i)}</annotation></semantics></math>.
 The subscripts
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_u(i)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">s_u(i)</annotation></semantics></math>
 defines the structure of the latent variables. For instance, assume that
 we have a hierarchical sampling design with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>s</mi></msub><mo>&lt;</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">n_s&lt;n</annotation></semantics></math>
@@ -155,16 +155,16 @@ sites and sites are sampled
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>t</mi></msub><annotation encoding="application/x-tex">n_t</annotation></semantics></math>
 times in consecutive years. Thus we could want to include a site level
 latent variables such that
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>u</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">s_u(i) = k</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>u</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">s_u(i) = k</annotation></semantics></math>
 if sampling unit
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
 is from site
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>n</mi><mi>s</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">k\in \{1,\dots, n_s\}</annotation></semantics></math>).
 Similarly, we can set a structure for the row effects defining subscript
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_r(i)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>r</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">s_r(i)</annotation></semantics></math>,
 eg. for time
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">s_r(i) = t</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>r</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">s_r(i) = t</annotation></semantics></math>
 if sampling unit
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
 is from sampling year
@@ -172,10 +172,10 @@ is from sampling year
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>n</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">t\in \{1,\dots, n_t\}</annotation></semantics></math>).
 Then we can define the correlation structures for latent variables
 and/or row effects: denote
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mrow><mi>q</mi><mi>.</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>u</mi><mrow><mi>q</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>q</mi><msub><mi>n</mi><mi>s</mi></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_{q.} = (u_{q1}, ..., u_{qn_s})</annotation></semantics></math><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mrow><mi>q</mi><mi>.</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>𝟎</mn><mo>,</mo><msub><mi>Σ</mi><mi>q</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="0.167em"></mspace><mi>q</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>d</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mrow><mi>q</mi><mi>.</mi></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>u</mi><mrow><mi>q</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>q</mi><msub><mi>n</mi><mi>s</mi></msub></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_{q.} = (u_{q1}, ..., u_{qn_s})</annotation></semantics></math><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mrow><mi>q</mi><mi>.</mi></mrow></msub><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>𝟎</mn><mo>,</mo><msub><mi mathvariant="normal">Σ</mi><mi>q</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="0.167em"></mspace><mi>q</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>d</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 {u}_{q.} \sim N(\boldsymbol{0}, \Sigma_q), \,  q=1,\dots, d.
 </annotation></semantics></math> The covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Σ</mi><mi>q</mi></msub><annotation encoding="application/x-tex">\Sigma_q</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Σ</mi><mi>q</mi></msub><annotation encoding="application/x-tex">\Sigma_q</annotation></semantics></math>
 defines the correlation structure and has unit variances on diagonal.
 The options are identity (independent), AR(1) correlation, exponentially
 decaying correlation structure and Matern correlation. Currently we can
@@ -185,12 +185,12 @@ but the parameters defining the strength of the correlation is estimated
 uniquely for each latent variable.</p>
 <p>Similarly, we can define the correlation structure for random row
 effect, denote
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐫</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>r</mi><msub><mi>n</mi><mi>t</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{r} = (r_{1}, ..., r_{n_t})</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐫</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>r</mi><mn>1</mn></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>r</mi><msub><mi>n</mi><mi>t</mi></msub></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\boldsymbol{r} = (r_{1}, ..., r_{n_t})</annotation></semantics></math>,
 and set
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>𝟎</mn><mo>,</mo><msub><mi>Σ</mi><mi>r</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>𝟎</mn><mo>,</mo><msub><mi mathvariant="normal">Σ</mi><mi>r</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
 {r} \sim N(\boldsymbol{0}, \Sigma_r),
 </annotation></semantics></math> where the covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Σ</mi><mi>r</mi></msub><annotation encoding="application/x-tex">\Sigma_r</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Σ</mi><mi>r</mi></msub><annotation encoding="application/x-tex">\Sigma_r</annotation></semantics></math>
 is a
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>t</mi></msub><mo>×</mo><msub><mi>n</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">n_t \times n_t</annotation></semantics></math>
 matrix and defines the correlation structure for random row effect. For
@@ -575,12 +575,12 @@ plot of chunk lvAR
 <div class="section level2 unnumbered">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-SBCLTER2023" class="csl-entry">
 Reed, D., and R. Miller. 2023. <span>“SBC LTER; Reef; Kelp Forest
 Community Dynamics, Cover of Sessile Organisms, Uniform Point Contact.
-Environmental Data Initiative.”</span> Environmental Data Initiative.
-https://doi.org/<a href="https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c" class="external-link">https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c</a>.
+Environmental Data Initiative.”</span> Version 33. Environmental Data
+Initiative. https://doi.org/<a href="https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c" class="external-link">https://doi.org/10.6073/pasta/0af1a5b0d9dde5b4e5915c0012ccf99c</a>.
 </div>
 </div>
 </div>

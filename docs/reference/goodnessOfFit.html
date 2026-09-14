@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -116,7 +116,7 @@
 
 
 <dt id="arg-measure">measure<a class="anchor" aria-label="anchor" href="#arg-measure"></a></dt>
-<dd><p>a goodness-of-fit measure to be calculated. Options are <code>"cor"</code> (correlation between observed and predicted values), <code>"scor"</code> (Spearman correlation between observed and predicted values), <code>"RMSE"</code> (root mean squared error of prediction), <code>"MAE"</code> (Mean Absolute Error), <code>"MARNE"</code> (Mean Absolute Range Normalized Error), <code>"TjurR2"</code> (Tjur's R2 measure, only for binary data), <code>"R2"</code> (R-squared as the square of the correlation), "AUC", <code>"sR2"</code> (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures <code>"NagelkerkeR2"</code>, <code>"McFaddenR2"</code>, <code>"CoxSnellR2"</code> can be calculated currently only for training data to measure the model's goodness of fit for full data, not response specific.</p></dd>
+<dd><p>a goodness-of-fit measure to be calculated. Options are <code>"cor"</code> (correlation between observed and predicted values), <code>"scor"</code> (Spearman correlation between observed and predicted values), <code>"RMSE"</code> (root mean squared error of prediction), <code>"MAE"</code> (Mean Absolute Error), <code>"MARNE"</code> (Mean Absolute Range Normalized Error), <code>"TjurR2"</code> (Tjur's R2 measure, only for binary data), <code>"R2"</code> (R-squared as the square of the correlation), "AUC", <code>"sR2"</code> (R-squared as the square of the spearman correlation). Likelihood based pseudo R2 meaures <code>"NagelkerkeR2"</code>, <code>"McFaddenR2"</code>, <code>"CoxSnellR2"</code> can be calculated currently only for training data to measure the model's (in sample) goodness of fit for full data, not response specific.</p></dd>
 
 
 <dt id="arg-species">species<a class="anchor" aria-label="anchor" href="#arg-species"></a></dt>
@@ -130,7 +130,11 @@ Denote an observed response j (species) at sample i, \(i=1,...,n\), as \(y_{ij}\
 <p>$$RMSE(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \sqrt{\frac{1}{n}\Sigma_{i=1}^{n} {(y_{ij} - \hat y_{ij})^2}} $$</p>
 <p>$$MAE(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n}\Sigma_{i=1}^{n} |y_{ij} - \hat y_{ij}| $$</p>
 <p>$$MARNE(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n}\Sigma_{i=1}^{n} \frac{|y_{ij} - \hat y_{ij}|}{max(\boldsymbol{y_{j}}) - min(\boldsymbol{y_{j}})} $$</p>
-<p>$$Tjur's R2(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n_1}\Sigma \hat y_{ij}\boldsymbol{1}_{y=1}(y_{ij}) - \frac{1}{n_0}\Sigma \hat y_{ij}\boldsymbol{1}_{y=0}(y_{ij}) $$</p>
+<p>$$\text{Tjur's } R2(\boldsymbol{y_{j}}, \boldsymbol{\hat y_{j}}) =  \frac{1}{n_1}\Sigma \hat y_{ij}\boldsymbol{1}_{y=1}(y_{ij}) - \frac{1}{n_0}\Sigma \hat y_{ij}\boldsymbol{1}_{y=0}(y_{ij}) $$</p>
+<p>Pseudo R-squared measures based on likelihood of the evaluated model \(L_M\) and null model \(L_M\) with intercept only and total number of observations N:</p>
+<p>$$\text{McFadden } R2 = 1- (\frac{log L_M}{log L_0}) $$</p>
+<p>$$\text{Cox and Snell } R2 = 1- (\frac{L_0}{L_M})^{\frac{2}{N}} $$</p>
+<p>$$\text{Nagelkerke } R2 =  \frac{1- (\frac{L_0}{L_M})^{\frac{2}{N}} }{1- (L_0)^{\frac{2}{N}}} $$</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>

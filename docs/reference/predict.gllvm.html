@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -117,7 +117,7 @@
 
 
 <dt id="arg-newx">newX<a class="anchor" aria-label="anchor" href="#arg-newx"></a></dt>
-<dd><p>A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.</p></dd>
+<dd><p>A new data frame of environmental variables. Should include all relevant variables from the <code>studyDesign</code> and <code>X</code> data frames. If omitted, the original matrices are used.</p></dd>
 
 
 <dt id="arg-newtr">newTR<a class="anchor" aria-label="anchor" href="#arg-newtr"></a></dt>
@@ -137,7 +137,7 @@
 
 
 <dt id="arg-offset">offset<a class="anchor" aria-label="anchor" href="#arg-offset"></a></dt>
-<dd><p>specification whether of not offset values are included to the predictions in case they are in the model, defaults to <code>TRUE</code> when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the <code>newX</code>) of new offset values or <code>FALSE</code>, when offsets are ignored.</p></dd>
+<dd><p>logical or numerical, defaults to <code>TRUE</code> when offset values that are used to fit the model are included in the prediction. Alternatives are matrix/vector (number of rows must match with the <code>newX</code>) of new offset values or <code>FALSE</code>, when offsets are ignored.</p></dd>
 
 
 <dt id="arg-se-fit">se.fit<a class="anchor" aria-label="anchor" href="#arg-se-fit"></a></dt>

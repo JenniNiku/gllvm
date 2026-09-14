@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -187,19 +187,19 @@ plot of chunk grad1
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>0.01</mn></mrow><annotation encoding="application/x-tex">&lt;0.01</annotation></semantics></math>
 suggesting that model is converged.</p>
 <p><strong>Hessian matrix condition</strong>: Hessian
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>
 for log likelihood should be negative definite so that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi></mrow><annotation encoding="application/x-tex">log L</annotation></semantics></math>
 is a concave surface around
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat{\boldsymbol \theta}</annotation></semantics></math>.
 That is, negative hessian
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">- H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mi>H</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">- H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>
 should then be positive definite and invertible, so that standard errors
 can be computed reliably and variances are positive, as <span class="math inline">$Cov(\hat{\boldsymbol \theta}) = \[- H(log
 L(\hat{\boldsymbol \theta}))\]^{-1}$</span>. <strong>Note that, in gllvm
 we find the maximum by minimizing the negative log-likelihood so then
 things flip around and we straight get negative Hessian
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>−</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H(- log L(\hat{\boldsymbol \theta})) = - H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>−</mi><mi>H</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mi>o</mi><mi>g</mi><mi>L</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>𝛉</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H(- log L(\hat{\boldsymbol \theta})) = - H(log L(\hat{\boldsymbol \theta}))</annotation></semantics></math>,
 which should be positive definite. Or alternatively, we need to multiply
 it with minus like below.</strong></p>
 <p>Let’s check concavity of likelihood with the Hessian</p>

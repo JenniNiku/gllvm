@@ -18,7 +18,7 @@ Both fixed and random effects are specified in lme4-style via the formula argume
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -96,6 +96,7 @@ Both fixed and random effects are specified in <code>lme4</code>-style via the f
 <span>  <span class="va">formula</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">family</span>,</span>
+<span>  response.group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>reltol <span class="op">=</span> <span class="fl">1e-10</span>, optimizer <span class="op">=</span> <span class="st">"optim"</span>, max.iter <span class="op">=</span> <span class="fl">6000</span>, maxit <span class="op">=</span> <span class="fl">6000</span>,</span>
 <span>    optim.method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span>,</span>
 <span>  control.va <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Ar.struc <span class="op">=</span> <span class="st">"unstructured"</span>, diag.iter <span class="op">=</span> <span class="fl">0</span>, Lambda.start <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span>,</span>
@@ -119,7 +120,11 @@ Both fixed and random effects are specified in <code>lme4</code>-style via the f
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
-<dd><p>a family as supported by the <code>"<a href="gllvm.html">gllvm</a>"</code> function.</p></dd>
+<dd><p>a family as supported by the <code>"<a href="gllvm.html">gllvm</a>"</code> function. For mixed response type models, a character vector of length equal to the number of observations.</p></dd>
+
+
+<dt id="arg-response-group">response.group<a class="anchor" aria-label="anchor" href="#arg-response-group"></a></dt>
+<dd><p>optional factor of length equal to the number of observations. Observations sharing a level are mapped to the same distribution.</p></dd>
 
 
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
@@ -223,6 +228,10 @@ Both fixed and random effects are specified in <code>lme4</code>-style via the f
 <span class="r-in"><span><span class="co"># Example 2: correlated random slopes</span></span></span>
 <span class="r-in"><span><span class="va">model1</span> <span class="op">&lt;-</span> <span class="fu">glmmVA</span><span class="op">(</span><span class="va">y</span><span class="op">~</span><span class="va">species</span> <span class="op">+</span> <span class="va">ConWate</span> <span class="op">+</span> <span class="va">ConHumu</span> <span class="op">+</span> <span class="op">(</span><span class="fl">0</span><span class="op">+</span><span class="va">ConWate</span><span class="op">+</span><span class="va">ConHumu</span><span class="op">|</span><span class="va">species</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                 family <span class="op">=</span> <span class="st">"poisson"</span>, data <span class="op">=</span> <span class="va">data</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Example 3: joint model for mixed Poisson and and negative-binomial responses.</span></span></span>
+<span class="r-in"><span><span class="va">fam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"poisson"</span>, <span class="fl">28</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"negative.binomial"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">-</span><span class="fl">28</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="update.gllvm.html">update</a></span><span class="op">(</span><span class="va">model1</span>, family<span class="op">=</span><span class="va">fam</span>, sd.errors<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

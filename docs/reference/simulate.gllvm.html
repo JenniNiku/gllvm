@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -144,7 +144,7 @@
 <span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">antTraits</span><span class="op">$</span><span class="va">env</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Fit gllvm model</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="gllvm.html">gllvm</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, <span class="va">X</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>65 parameter(s) have negative variance estimates (lambda x63, sigmaLV x2). The model likely has not converged - consider re-fitting.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>68 parameter(s) have negative variance estimates (lambda x66, sigmaLV x2). The model likely has not converged - consider re-fitting.</span>
 <span class="r-in"><span><span class="co"># Simulate data</span></span></span>
 <span class="r-in"><span><span class="va">newdata</span> <span class="op">&lt;-</span> <span class="fu">simulate</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -103,10 +103,7 @@
 <span>  return.pred <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  batch <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S3 method for class 'predictSR.gllvm'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">object</span>, which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -114,7 +111,7 @@
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>object of class gllvm</p></dd>
+<dd><p>an object of class 'gllvm'.</p></dd>
 
 
 <dt id="arg-spp">spp<a class="anchor" aria-label="anchor" href="#arg-spp"></a></dt>
@@ -154,32 +151,44 @@
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>not used for plot.predictSR.gllvm</p></dd>
-
-
-<dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>object of class predictSR</p></dd>
-
-
-<dt id="arg-which">which<a class="anchor" aria-label="anchor" href="#arg-which"></a></dt>
-<dd><p>which plot to create, 1 is Dunn-Smyth residuals vs Expected species richness, 2 is QQ-plot</p></dd>
+<dd><p>arguments passed to <code>"<a href="predict.gllvm.html">predict.gllvm</a>"</code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>list with entries "predicted" and "expected". "predicted" includes the prediction from the Poisson-Binomial distribution, returning a matrix of size sites by length(SR), with statistical uncertianty if se.fit = TRUE. "expected" includes the expected species' richness, i.e., a vector of size n, with statistical uncertianty if se.fit = TRUE.</p>
-    </div>
+    <p>An object of class "predictSR.gllvm" with the following components:</p>
+<dl><dt>predicted</dt>
+<dd><p>a list with the predicted Poisson-Binomial distribution as "fit", a matrix of dimension sites by <code>length(SR)</code> with columns named "SR_0", "SR_1", and so on, and, if <code>se.fit</code> is not <code>FALSE</code> and <code>"pmf" %in% ci</code>, the simulated lower and upper confidence bounds "lower" and "upper" (both matrices of the same dimension).</p></dd>
+
+<dt>expected</dt>
+<dd><p>a list with the predicted mean or mode for species richness as "fit", a vector of length \(n\), and, if <code>se.fit</code> is not <code>FALSE</code> and <code>"expected" %in% ci</code>, the simulated lower and upper confidence bounds "lower" and "upper" (both vectors of length \(n\)).</p></dd>
+
+<dt>observed</dt>
+<dd><p>the observed species richness of the data, a vector of length \(n\).</p></dd>
+
+<dt>predict.gllvm</dt>
+<dd><p>only present if <code>return.pred = TRUE</code>; a list with the species-specific predictions from <code>"<a href="predict.gllvm.html">predict.gllvm</a>"</code>.</p></dd>
+
+<dt>spp</dt>
+<dd><p>the indices of the species that richness was calculated for.</p></dd>
+
+</dl></div>
     <div id="details">
     <h2>Details</h2>
     <p>This function returns probabilities of richness for species richness from gllvm objects, by first calling <code>"<a href="predict.gllvm.html">predict.gllvm</a>"</code>, and following by predicting from a Poisson-Binomial distribution for richness. The distribution for species richness follows from a sum of binary responses (i.e., occurrence), and is naturally extended to non-normal data types as the probability to get a non-zero observation. Especially with many species and rows, the calculation may take a while.</p>
+<p>With <code>expected = "mode"</code> the mode of the Poisson-Binomial distribution is determined from its mean \(\mu\), following Darroch (1964). The distribution can be bimodal with modes \(\lfloor \mu \rfloor\) and \(\lfloor \mu \rfloor + 1\), in which case the lower of the two is returned.</p>
     </div>
     <div id="note">
     <h2>Note</h2>
     <p>The point estimate ("fit") can sometimes be outside of the simulated intervals when the model fit is poor, the standard errors of parameter estimates are on very different scales, or the number of simulations is too low. Try either 1) scaling and centering covariates in the model, 2) repeatedly refitting the model (see the n.init argument in <code>"<a href="gllvm.html">gllvm</a>"</code>) to find a better set of starting values and improve the fit, or  3) increasing the number of simulations via 'n.init'.</p>
     </div>
+    <div id="references">
+    <h2>References</h2>
+    <p>Darroch, J. N. (1964). On the distribution of the number of successes in independent trials. The Annals of Mathematical Statistics, 35, 1317-1321.</p>
+    </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p><code><a href="predict.gllvm.html">predict.gllvm</a></code>, <code><a href="residuals.predictSR.gllvm.html">residuals.predictSR.gllvm</a></code></p></div>
+    <div class="dont-index"><p><code><a href="predict.gllvm.html">predict.gllvm</a></code>, <code><a href="residuals.predictSR.gllvm.html">residuals.predictSR.gllvm</a></code>, <code><a href="plot.predictSR.gllvm.html">plot.predictSR.gllvm</a></code></p></div>
     </div>
     <div id="author">
     <h2>Author</h2>

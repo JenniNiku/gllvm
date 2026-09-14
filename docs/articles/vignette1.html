@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gllvm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.15</span>
       </span>
     </div>
 
@@ -108,7 +108,7 @@
 gllvm</h1>
                         <h4 data-toc-skip class="author">Jenni Niku</h4>
             
-            <h4 data-toc-skip class="date">2026-06-02</h4>
+            <h4 data-toc-skip class="date">2026-09-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/JenniNiku/gllvm/blob/HEAD/vignettes/vignette1.Rmd" class="external-link"><code>vignettes/vignette1.Rmd</code></a></small>
       <div class="hidden name"><code>vignette1.Rmd</code></div>
@@ -152,14 +152,14 @@ site as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">y_{ij}</annotation></semantics></math>.
 A set of k environmental variables, or experimental treatments, may also
 be recorded at each site and stored in the vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐱</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>x</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\boldsymbol{x}_i = (x_{i1}, ..., x_{ik})</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐱</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>x</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>x</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\boldsymbol{x}_i = (x_{i1}, ..., x_{ik})</annotation></semantics></math>.
 A GLLVM regresses the mean abundance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\mu_{ij}</annotation></semantics></math>
 against environmental variables and a vector of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>&lt;</mo><mi>m</mi></mrow><annotation encoding="application/x-tex">d&lt;m</annotation></semantics></math>
 latent variables,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>u</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>d</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>′</mi></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_i = (u_{i1}, ..., u_{id})'</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msub><mi>𝐮</mi><mi>i</mi></msub><mi>′</mi><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_j + \boldsymbol{u}_i'\boldsymbol{\theta}_j,</annotation></semantics></math></p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐮</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>u</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>d</mi></mrow></msub><msup><mo stretchy="false" form="postfix">)</mo><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">\boldsymbol{u}_i = (u_{i1}, ..., u_{id})'</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛃</mi><mi>j</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mo>′</mo></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + \boldsymbol{x}_i'\boldsymbol{\beta}_j + \boldsymbol{u}_i'\boldsymbol{\theta}_j,</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\beta}_j</annotation></semantics></math>
 and
@@ -178,7 +178,7 @@ are species specific intercepts, while
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>
 are optional community level row effects which can be chosen as either
 fixed or random effects
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>;</mo><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha_i \sim N(0; \sigma^2))</annotation></semantics></math>.
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>;</mo><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha_i \sim N(0; \sigma^2))</annotation></semantics></math>.
 If community level row effects for each sample
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math>
 are included, all other terms in the model can be subsequently
@@ -187,7 +187,7 @@ interpreted as modelling relative abundance or compositional effects
 <p>If
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
 trait covariates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐭</mi><mi>j</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>t</mi><mrow><mi>i</mi><mi>q</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\boldsymbol{t}_j=(t_{i1}, \dots,t_{iq})^\top</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐭</mi><mi>j</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>t</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>t</mi><mrow><mi>i</mi><mi>q</mi></mrow></msub><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\boldsymbol{t}_j=(t_{i1}, \dots,t_{iq})^\top</annotation></semantics></math>
 are also recorded, we can use them to help explain inter-specific
 variation in environmental response. This leads to an extension of the
 so-called “fourth corner model” where multivariate abundance is
@@ -197,7 +197,7 @@ between traits and environment. We also include species-specific random
 slopes for environmental covariates in order to take into account the
 inters-pecific variation in responses that is not explained by the
 covariates. The associated fourth corner GLLVM then has mean model:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mi>⊤</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝛃</mi><mi>e</mi></msub><mo>+</mo><msub><mi>𝐛</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐭</mi><mi>j</mi></msub><mo>⊗</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><msub><mi>𝛃</mi><mi>I</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i (\boldsymbol\beta_e + \boldsymbol b_j) + (\boldsymbol t_j \otimes \boldsymbol x_i)^\top \boldsymbol \beta_I + \boldsymbol u_i^\top\boldsymbol\theta_j,</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>+</mo><msubsup><mi>𝐱</mi><mi>i</mi><mi>⊤</mi></msubsup><mo stretchy="false" form="prefix">(</mo><msub><mi>𝛃</mi><mi>e</mi></msub><mo>+</mo><msub><mi>𝐛</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>𝐭</mi><mi>j</mi></msub><mo>⊗</mo><msub><mi>𝐱</mi><mi>i</mi></msub><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><msub><mi>𝛃</mi><mi>I</mi></msub><mo>+</mo><msubsup><mi>𝐮</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝛉</mi><mi>j</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">g(\mu_{ij}) = \eta_{ij}= \alpha_i + \beta_{0j} + \boldsymbol x^\top_i (\boldsymbol\beta_e + \boldsymbol b_j) + (\boldsymbol t_j \otimes \boldsymbol x_i)^\top \boldsymbol \beta_I + \boldsymbol u_i^\top\boldsymbol\theta_j,</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>e</mi></msub><annotation encoding="application/x-tex">\boldsymbol\beta_e</annotation></semantics></math>
 is a vector of main effects for environmental covariates, and
@@ -328,54 +328,54 @@ or random, or multiple and/or sructured via formula),
 distribution and <code>starting.val</code> for judicious choice of
 starting values for the latent variables.</p>
 <p>List of available distributions with the mean,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">E(y_{ij})</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">E(y_{ij})</annotation></semantics></math>,
 and mean-variance,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij})</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij})</annotation></semantics></math>,
 functions, estimation methods and link functions for various response
 types are in the table below.</p>
 <table class="table">
 <colgroup>
-<col width="15%">
-<col width="20%">
-<col width="11%">
-<col width="11%">
-<col width="40%">
+<col width="22%">
+<col width="28%">
+<col width="10%">
+<col width="14%">
+<col width="24%">
 </colgroup>
 <thead><tr class="header">
 <th>Response</th>
 <th align="center">Distribution</th>
-<th align="left">Method</th>
 <th align="left">Link</th>
+<th align="left">Method</th>
 <th align="left">Description</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>Counts</td>
 <td align="center">Poisson</td>
-<td align="left">VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}</annotation></semantics></math>
 </td>
 </tr>
 <tr class="even">
 <td></td>
 <td align="center">NB</td>
-<td align="left">VA/EVA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}^2</annotation></semantics></math>,</td>
 </tr>
 <tr class="odd">
 <td></td>
 <td align="center">NB1</td>
-<td align="left">VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">V(\mu_{ij})=\mu_{ij}+\phi_j\mu_{ij}</annotation></semantics></math>,</td>
 </tr>
 <tr class="even">
 <td></td>
@@ -389,94 +389,94 @@ is a dispersion parameter</td>
 <tr class="odd">
 <td></td>
 <td align="center">ZIP</td>
-<td align="left">VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>p</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">P(y_{ij}=0)=p_j</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>p</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">P(y_{ij}=0)=p_j</annotation></semantics></math>,</td>
 </tr>
 <tr class="even">
 <td></td>
 <td align="center"></td>
 <td align="left"></td>
 <td align="left"></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)</annotation></semantics></math></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-p_j) (1+\mu_{ij}p_j)</annotation></semantics></math></td>
 </tr>
 <tr class="odd">
 <td></td>
 <td align="center">ZINB</td>
-<td align="left">VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>p</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">P(y_{ij}=0)=p_j</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>p</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">P(y_{ij}=0)=p_j</annotation></semantics></math>,</td>
 </tr>
 <tr class="even">
 <td></td>
 <td align="center"></td>
 <td align="left"></td>
 <td align="left"></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mi>j</mi></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))</annotation></semantics></math></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>p</mi><mi>j</mi></msub><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-p_j)(1+\mu_{ij}(p_j+\phi_j))</annotation></semantics></math></td>
 </tr>
 <tr class="odd">
 <td></td>
 <td align="center">binomial</td>
-<td align="left">VA/LA</td>
-<td align="left">probit/logit/cloglog</td>
+<td align="left">probit/logit</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = N_j\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = N_j\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})</annotation></semantics></math>
 </td>
 </tr>
 <tr class="even">
 <td></td>
-<td align="center">binomial</td>
-<td align="left">EVA</td>
-<td align="left">probit/logit</td>
+<td align="center"></td>
+<td align="left">cloglog</td>
+<td align="left">VA/LA</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
 <td>zero-inflated</td>
 <td align="center">ZIB</td>
-<td align="left">VA</td>
-<td align="left">probit/logit/cloglog</td>
+<td align="left">probit/logit</td>
+<td align="left">VA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)N_j\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = (1-p_j)N_j\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>p</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-p_j) (1+N_j\mu_{ij}p_j)</annotation></semantics></math>
 </td>
 </tr>
 <tr class="even">
 <td></td>
-<td align="center">ZIB</td>
-<td align="left">LA</td>
-<td align="left">probit/logit</td>
+<td align="center"></td>
+<td align="left">cloglog</td>
+<td align="left">VA</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
 <td>zero/N-inflated</td>
 <td align="center">ZNIB</td>
-<td align="left">VA</td>
-<td align="left">probit/logit/cloglog</td>
+<td align="left">probit/logit</td>
+<td align="left">VA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><msub><mi>N</mi><mi>j</mi></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mn>0</mn></msubsup><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = p_j^N N_j + (1-p^0_j-p_j^N)N_j\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><msubsup><mi>N</mi><mi>j</mi><mn>2</mn></msubsup><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mn>0</mn></msubsup><mo>−</mo><msup><mi>p</mi><msub><mi>N</mi><mi>j</mi></msub></msup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>E</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij} (1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><msub><mi>N</mi><mi>j</mi></msub><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mn>0</mn></msubsup><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><mo stretchy="false" form="postfix">)</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = p_j^N N_j + (1-p_j^0-p_j^N)N_j\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>p</mi><mi>j</mi><mi>N</mi></msubsup><msubsup><mi>N</mi><mi>j</mi><mn>2</mn></msubsup><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>p</mi><mi>j</mi><mn>0</mn></msubsup><mo>−</mo><msup><mi>p</mi><msub><mi>N</mi><mi>j</mi></msub></msup><mo stretchy="false" form="postfix">)</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mi>E</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mo stretchy="false" form="postfix">]</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = p_j^N N_j^2 + (1-p_j^0-p^{N_j}) N_j\mu_{ij}(1-\mu_{ij}+N_j\mu_{ij})-E[Y_{ij}]^2</annotation></semantics></math>
 </td>
 </tr>
 <tr class="even">
 <td></td>
-<td align="center">ZNIB</td>
-<td align="left">LA</td>
-<td align="left">probit/logit</td>
+<td align="center"></td>
+<td align="left">cloglog</td>
+<td align="left">VA</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
 <td>Overdispersed counts</td>
 <td align="center">beta-binomial</td>
-<td align="left">LA</td>
 <td align="left">probit/logit/cloglog</td>
+<td align="left">LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = N_j\mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>N</mi><mi>j</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>ϕ</mi><mi>j</mi></msub><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1+(N_j-1)\phi_j/(\phi_j+1))</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = N_j\mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>N</mi><mi>j</mi></msub><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>N</mi><mi>j</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mi>/</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = N_j\mu_{ij}(1-\mu_{ij})(1+(N_j-1)\phi_j/(\phi_j+1))</annotation></semantics></math>,</td>
 </tr>
 <tr class="even">
 <td></td>
@@ -490,28 +490,28 @@ is a species-specific overdispersion parameter</td>
 <tr class="odd">
 <td>Binary</td>
 <td align="center">Bernoulli</td>
-<td align="left">EVA/VA/LA</td>
-<td align="left">probit</td>
+<td align="left">probit/logit</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})</annotation></semantics></math>
 </td>
 </tr>
 <tr class="even">
 <td></td>
 <td align="center"></td>
-<td align="left">EVA/LA</td>
-<td align="left">logit</td>
+<td align="left">cloglog</td>
+<td align="left">VA/LA</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
 <td>Biomass</td>
 <td align="center">Tweedie</td>
-<td align="left">EVA/VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>ν</mi></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \phi_j\mu_{ij}^\nu</annotation></semantics></math>,</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>ϕ</mi><mi>j</mi></msub><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>ν</mi></msubsup></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \phi_j\mu_{ij}^\nu</annotation></semantics></math>,</td>
 </tr>
 <tr class="even">
 <td></td>
@@ -527,38 +527,45 @@ is a dispersion parameter</td>
 <tr class="odd">
 <td>Ordinal</td>
 <td align="center">Multinomial</td>
+<td align="left">probit</td>
 <td align="left">VA</td>
-<td align="left">probit/logit</td>
-<td align="left">Cumulative probit/logit model</td>
+<td align="left">Cumulative probit/logit/cloglog model</td>
 </tr>
 <tr class="even">
 <td></td>
 <td align="center"></td>
-<td align="left">EVA</td>
 <td align="left">logit</td>
+<td align="left">VA/EVA</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td>Normal</td>
-<td align="center">Gaussian</td>
-<td align="left">VA/LA</td>
-<td align="left">identity</td>
-<td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>ϕ</mi><mi>j</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \phi_j^2</annotation></semantics></math>
-</td>
+<td></td>
+<td align="center"></td>
+<td align="left">cloglog</td>
+<td align="left">VA</td>
+<td align="left"></td>
 </tr>
 <tr class="even">
-<td>Positive continuous</td>
-<td align="center">Gamma</td>
-<td align="left">VA/LA</td>
-<td align="left">log</td>
+<td>Normal</td>
+<td align="center">Gaussian</td>
+<td align="left">identity</td>
+<td align="left">VA/EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup><mi>/</mi><msub><mi>ϕ</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2/\phi_j</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>ϕ</mi><mi>j</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \phi_j^2</annotation></semantics></math>
 </td>
 </tr>
 <tr class="odd">
+<td>Positive continuous</td>
+<td align="center">Gamma</td>
+<td align="left">log</td>
+<td align="left">VA/EVA/LA</td>
+<td align="left">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup><mi>/</mi><msub><mi>ϕ</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2/\phi_j</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
 <td></td>
 <td align="center"></td>
 <td align="left"></td>
@@ -567,45 +574,45 @@ is a dispersion parameter</td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϕ</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\phi_j</annotation></semantics></math>
 is a shape parameter</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Positive continuous</td>
 <td align="center">Exponential</td>
-<td align="left">VA/LA</td>
 <td align="left">log</td>
+<td align="left">VA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">V(y_{ij}) = \mu_{ij}^2</annotation></semantics></math>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Percent cover</td>
 <td align="center">beta</td>
-<td align="left">LA/EVA</td>
 <td align="left">probit/logit</td>
+<td align="left">EVA/LA</td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">E(y_{ij}) = \mu_{ij}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>μ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V(\mu_{ij}) = \mu_{ij}(1-\mu_{ij})/(1+\phi_j)</annotation></semantics></math>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Percent cover with zeros/ones</td>
 <td align="center">ordered beta</td>
+<td align="left">probit</td>
 <td align="left">VA-EVA</td>
-<td align="left">probit/logit</td>
 <td align="left">details in Korhonen et al (2024)</td>
+</tr>
+<tr class="even">
+<td></td>
+<td align="center">ordered beta</td>
+<td align="left">logit</td>
+<td align="left">VA-EVA/EVA</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td></td>
-<td align="center">ordered beta</td>
-<td align="left">EVA</td>
-<td align="left">logit</td>
-<td align="left">details in Korhonen et al (2024)</td>
-</tr>
-<tr class="even">
-<td></td>
 <td align="center">beta hurdle</td>
-<td align="left">EVA/ VA-EVA</td>
 <td align="left">probit/logit</td>
+<td align="left">EVA/VA-EVA</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -694,7 +701,7 @@ although there is clear evidence of such a need in this example.</p>
 construct an ordination as a scatter plot of the predicted latent
 variables via the <code>ordiplot</code> function. The species with the
 largest factor loadings (largest norms,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">|</mo><mo stretchy="true" form="postfix">|</mo></mrow><msub><mi>𝛉</mi><mi>j</mi></msub><mrow><mo stretchy="true" form="prefix">|</mo><mo stretchy="true" form="postfix">|</mo></mrow></mrow><annotation encoding="application/x-tex">||\boldsymbol\theta_j||</annotation></semantics></math>),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mo stretchy="false" form="prefix">|</mo><msub><mi>𝛉</mi><mi>j</mi></msub><mo stretchy="false" form="prefix">|</mo><mo stretchy="false" form="prefix">|</mo></mrow><annotation encoding="application/x-tex">||\boldsymbol\theta_j||</annotation></semantics></math>),
 and hence most strongly associated with ordination scores, can be added
 using the logical argument <code>biplot</code>, leading to a biplot for
 finding indicator species corresponding to specific sites. The
@@ -826,7 +833,7 @@ co-occurrence that is not explained by environmental variables, can be
 calculated as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚺</mi><mo>=</mo><mi>𝚪</mi><msup><mi>𝚪</mi><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\boldsymbol\Sigma=\boldsymbol\Gamma \boldsymbol\Gamma^\top</annotation></semantics></math>,
 where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚪</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>𝛉</mi><mn>1</mn></msub><mi>…</mi><msub><mi>𝛉</mi><mi>m</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>′</mi></mrow><annotation encoding="application/x-tex">\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝚪</mi><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mi>𝛉</mi><mn>1</mn></msub><mi>…</mi><msub><mi>𝛉</mi><mi>m</mi></msub><msup><mo stretchy="false" form="postfix">]</mo><mo>′</mo></msup></mrow><annotation encoding="application/x-tex">\boldsymbol\Gamma = [\boldsymbol\theta_1\dots\boldsymbol\theta_m]'</annotation></semantics></math>.
 The <code>getResidualCor</code> function can be used to estimate the
 correlation matrix of the linear predictor across species. This can be
 visualised using the <code>corrplot</code> package:</p>
@@ -894,10 +901,10 @@ approximately 40% of the (co)variation in ant species abundances.</p>
 <code class="sourceCode R"><span><span class="va">rcov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit_env</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getResidualCov.gllvm.html">getResidualCov</a></span><span class="op">(</span><span class="va">fit1lv</span>, adjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span>; <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 44.15512</span></span>
-<span><span class="co">#&gt; [1] 25.85983</span></span>
+<span><span class="co">#&gt; [1] 44.15561</span></span>
+<span><span class="co">#&gt; [1] 25.84996</span></span>
 <span><span class="fl">1</span> <span class="op">-</span> <span class="va">rcov</span><span class="op">$</span><span class="va">trace</span> <span class="op">/</span> <span class="va">rcov0</span><span class="op">$</span><span class="va">trace</span></span>
-<span><span class="co">#&gt; [1] 0.4143413</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.4145712</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="incorporating-functional-traits-into-fourth-corner-models">Incorporating functional traits into fourth corner models<a class="anchor" aria-label="anchor" href="#incorporating-functional-traits-into-fourth-corner-models"></a>
@@ -943,12 +950,12 @@ abundances.</p>
 <span>                      at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="va">a</span>, <span class="va">a</span>, length <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>, scales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rot <span class="op">=</span> <span class="fl">45</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">plot.4th</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="F4coef.png" alt="plot of chunk F4 1"><p class="caption">
+<img src="figure/F4coef.png" alt="plot of chunk F4 1"><p class="caption">
 coefplot
 </p>
 </div>
 <div class="figure" style="text-align: center">
-<img src="F4.png" alt="plot of chunk F4 2"><p class="caption">
+<img src="figure/F4.png" alt="plot of chunk F4 2"><p class="caption">
 fourth corner plot
 </p>
 </div>
@@ -996,11 +1003,11 @@ specific coefficients for environmental variables, we include
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Niku2019" class="csl-entry">
-Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. <span>“Gllvm -
+Niku, J., F.K.C. Hui, S. Taskinen, and D.I. Warton. 2019. <em>Gllvm -
 Fast Analysis of Multivariate Abundance Data with Generalized Linear
-Latent Variable Models in R.”</span> 10: 2173–82.
+Latent Variable Models in R.</em> 10: 2173–82.
 </div>
 </div>
 </div>
