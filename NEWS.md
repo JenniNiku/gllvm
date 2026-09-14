@@ -1,7 +1,14 @@
 Version 2.0.15
 =============
 
+* CRAN update version 2.0.15, see also news for 2.0.14
 * Ordinal with cloglog link implemented
+* Parametrization of ordered beta cutoffs changed to cumulative parametrization
+
+## Bugfixes
+
+* Bug related to NaNs in SigmaB and starting values fixed
+
 
 Version 2.0.14
 =============
