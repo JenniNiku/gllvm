@@ -2059,7 +2059,7 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   num.RR <- obj$env$data$num_RR
   nu<-nrow(obj$env$data$y)
   
-  xb<- obj$env$data$xb
+  xb<- get_xb(obj$env$data)
   
   random <- obj$env$data$random
   radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0r","Br","b_lv"))
@@ -3363,4 +3363,8 @@ is_keyallowed <- function(key) {
   # utils::globalVariables("gllvmFML_allowed")
   # stopifnot(exists("gllvmFML_allowed", inherits = FALSE))
   key %in% gllvmFML_allowed$key
+}
+get_xb <- function(dat) {
+  if (!is.null(dat$xb) && nrow(dat$xb) > 0) return(dat$xb)
+  as.matrix(dat$xbS)
 }

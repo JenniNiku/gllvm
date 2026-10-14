@@ -31,6 +31,7 @@ gllvm(
   randomB = FALSE,
   randomX = NULL,
   beta0com = FALSE,
+  xbSparse = FALSE,
   zeta.struc = "species",
   plot = FALSE,
   link = "probit",
@@ -108,6 +109,8 @@ gllvm(
 \item{randomX}{formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, so that no random slopes are included by default.}
 
 \item{beta0com}{logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, column-specific intercepts are collected to a common value.}
+
+\item{xbSparse}{logical. If \code{TRUE} the design matrix of the species random effects given through \code{formula} is passed to TMB as a sparse matrix, which can save time and memory when it has many columns and few non-zeroes, as with factor terms. Defaults to \code{FALSE}. Only available for \code{Ab.struct} "diagonal", "blockdiagonal", "MNdiagonal" or "MNunstructured", and not for \code{randomX}.}
 
 \item{zeta.struc}{structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".}
 
