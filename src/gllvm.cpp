@@ -42,6 +42,7 @@ Type objective_function<Type>::operator() ()
   DATA_IMATRIX(csb_lv);
   DATA_MATRIX(xr); // design matrix for fixed row effects
   DATA_MATRIX(xb); // design matrix for random species effects, (n, spnr)
+  DATA_SPARSE_MATRIX(xbS);
   DATA_SPARSE_MATRIX(dr0); // design matrix for rows, ( n, nr)
   DATA_SPARSE_MATRIX(dLV); // design matrix for latent variables, (n, nu)
   DATA_IMATRIX(cs); // matrix with indices for correlations of random species effects
@@ -94,6 +95,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(extra); // extra values, power of 
   DATA_INTEGER(method);// 0=VA, 1=LA, 2=EVA
   DATA_INTEGER(Abstruc); //0 = diagonal, blockdiagonal, 1 = MNdiagonal, MNunstructured, 2 = diagonalCL2, 3 = diagonalCL1, CL1, 4 = CL2, 5 = unstructured
+  bool xbSparse = (xb.rows() == 0) && (xb.cols() == 0);
+  int nxb = xbSparse ? xbS.cols() : xb.cols();
   DATA_INTEGER(model);// which model, basic or 4th corner
   DATA_IVECTOR(random);//(0)1=random, (0)0=fixed row params, for Br: (1)1 = random slopes, (1)0 = fixed, for b_lv: (2)1 = random slopes, (2)0 = fixed slopes, for Br: (3) 1 = random
   DATA_INTEGER(zetastruc); //zeta param structure for ordinal model
@@ -671,84 +674,86 @@ Type objective_function<Type>::operator() ()
     if((random(1)>0) || (random(3)>0)){
       if(random(1)>0){
         // random slopes in TMBtrait.R
-        eta += xb*Br;  
+        if(xbSparse){ eta += matrix<Type>(xbS*Br); }else{ eta += xb*Br; }
       }else if(random(3)>0){
         //random slopes in gllvm.TMB
-        if(B.rows()==xb.cols()){
+        if(B.rows()==nxb){
           //RE means or community-level effects
-          eta += (xb*B).replicate(1,p);
+          if(xbSparse){ eta += matrix<Type>(xbS*B).replicate(1,p); }else{ eta += (xb*B).replicate(1,p); }
         }
-        eta += xb*Br;
+        if(xbSparse){ eta += matrix<Type>(xbS*Br); }else{ eta += xb*Br; }
       }
-      matrix <Type> Spr(xb.cols(),xb.cols());
-      matrix <Type> SprI(xb.cols(),xb.cols());
-      matrix <Type> SprIL(xb.cols(),xb.cols());
+      matrix <Type> SprI(nxb,nxb);
+      matrix <Type> SprIL;
       
       Type logdetSpr = 0;
       
-      int l = xb.cols();
+      int l = nxb;
+      bool SprDiag = (cs.cols() <= 1);
       if(random(1)>0){
-        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
-        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
-        sds.diagonal() =  exp(sigmaB);
-        
-        vector<Type>sigmaSPij((l*l-l)/2);
-        sigmaSPij.fill(0.0);
-        //covariances of random effects
-        matrix<Type> SprL(l,l);
-        SprL.fill(0.0);
-        if(cs.cols()>1){
+        if(SprDiag){
+          SprI.setZero();
+          SprI.diagonal() = exp(-2.0*sigmaB);
+          logdetSpr = 2*sigmaB.sum();
+        }else{
+          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+          matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+          sds.diagonal() =  exp(sigmaB);
+          
+          vector<Type>sigmaSPij((l*l-l)/2);
+          sigmaSPij.fill(0.0);
+          //covariances of random effects
+          matrix<Type> SprL(l,l);
+          SprL.fill(0.0);
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
             sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaij(i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
-        }else{
-          SprL = sds;
+          matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
+          SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+          SprI = SprIL.transpose()*SprIL;
+          logdetSpr = 2*SprL.diagonal().array().log().sum();
         }
-        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
-        SprI = SprIL.transpose()*SprIL;
-        Spr=SprL*SprL.transpose();
-        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
       
       if(random(3)>0){
-        // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
-        matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
-        sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
-        
-        vector<Type>sigmaSPij((l*l-l)/2);
-        sigmaSPij.fill(0.0);
-        //covariances of random effects
-        matrix<Type> SprL;
-        if(cs.cols()>1){
+        if(SprDiag){
+          SprI.setZero();
+          SprI.diagonal() = exp(-2.0*sigmaB.segment(0,nxb));
+          logdetSpr = 2*sigmaB.segment(0,nxb).sum();
+        }else{
+          // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
+          matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
+          sds.diagonal() =  exp(sigmaB.segment(0,nxb));
+          
+          vector<Type>sigmaSPij((l*l-l)/2);
+          sigmaSPij.fill(0.0);
+          //covariances of random effects
+          matrix<Type> SprL;
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(xb.cols()+i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(nxb+i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
-        }else{
-          SprL = sds;
+          matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
+          SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
+          SprI = SprIL.transpose()*SprIL;
+          logdetSpr = 2*SprL.diagonal().array().log().sum();
         }
-        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
-        SprI = SprIL.transpose()*SprIL;
-        Spr=SprL*SprL.transpose();
-        logdetSpr = 2*SprL.diagonal().array().log().sum();
       }
       
       
       // vector<matrix<Type>> colCorMatIblocks(colMatBlocksI.size()-1);
       // Type logdetColCorMat =0;
       vector <Type> rhoSP(1);
-      if(random(1)>0 && sigmaB.size()>xb.cols()){
-        rhoSP.resize(sigmaB.size()-xb.cols());
+      if(random(1)>0 && sigmaB.size()>nxb){
+        rhoSP.resize(sigmaB.size()-nxb);
         
         if(colMatBlocksI(0)(0,0) == p){ //extra check, just in case
           rhoSP.fill(1.0);
-          if(sigmaB.size()>xb.cols()){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
-            rhoSP = exp(-exp(sigmaB.segment(xb.cols(),sigmaB.size()-xb.cols())));
+          if(sigmaB.size()>nxb){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
+            rhoSP = exp(-exp(sigmaB.segment(nxb,sigmaB.size()-nxb)));
             if(nncolMat.rows()<p){
               //need to cap this on the lower end for numerical stability
               for(int re=0; re<rhoSP.size(); re++){
@@ -759,12 +764,12 @@ Type objective_function<Type>::operator() ()
         }
         
       }else if(random(3)>0){
-        rhoSP.resize(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+        rhoSP.resize(sigmaB.size()-nxb-cs.rows()*(cs.cols()>1));
         
         if(colMatBlocksI(0)(0,0) == p){
           rhoSP.fill(1.0);
-          if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
-            rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+          if(sigmaB.size()>(nxb+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
+            rhoSP = exp(-exp(sigmaB.segment(nxb+cs.rows()*(cs.cols()>1),sigmaB.size()-nxb-cs.rows()*(cs.cols()>1))));
             if(nncolMat.rows()<p){
               //need to cap this on the lower end for numerical stability
               for(int re=0; re<rhoSP.size(); re++){
@@ -776,7 +781,7 @@ Type objective_function<Type>::operator() ()
       }
       
       //Variational components
-      int ncov = xb.cols();
+      int ncov = nxb;
       
       if(Abstruc == 0){
         //((Abb.size() ==(p*ncov)) || (Abb.size() == (p*ncov+p*ncov*(ncov-1)/2))) && Abranks(0) == 0
@@ -787,6 +792,21 @@ Type objective_function<Type>::operator() ()
         int covscounter = p*ncov;
         // vector<Type> SprIAtrace(p);
         vector<matrix <Type>> SArm(p);
+        
+        bool diagOnly = (Abb.size() == (p*ncov));
+        nll -= Abb.head(p*ncov).sum();
+        
+        matrix<Type> D2;
+        if(diagOnly){
+          D2.resize(ncov, p);
+          for(int j=0; j<p; j++) D2.col(j) = (Abb.segment(j*ncov, ncov)*Type(2.0)).exp().matrix();
+          if(xbSparse){
+            Eigen::SparseMatrix<Type> xbS2 = xbS.cwiseProduct(xbS);
+            cQ += 0.5*matrix<Type>(xbS2*D2);
+          }else{
+            cQ += 0.5*(xb.array().square().matrix()*D2);
+          }
+        }
         
         for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
           SArm(j).resize(ncov,ncov);
@@ -804,8 +824,10 @@ Type objective_function<Type>::operator() ()
               }}
           }
           
-          nll -= SArm(j).diagonal().array().log().sum();
-          cQ.col(j) += 0.5*((xb*SArm(j)*SArm(j).transpose()).cwiseProduct(xb)).rowwise().sum();
+          if(!diagOnly){
+            if(xbSparse){ cQ.col(j) += 0.5*matrix<Type>(xbS*SArm(j)).rowwise().squaredNorm(); }
+            else{ cQ.col(j) += 0.5*(xb*SArm(j)).rowwise().squaredNorm(); }
+          }
         }
         // tr(S⁻¹A)+Br'S⁻¹Br+logdet(S)
         if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size()==1)){
@@ -818,7 +840,7 @@ Type objective_function<Type>::operator() ()
               nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatI*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()*SprI).trace();
               
               for(int j=0; j<(colMatBlocksI(cb+1).cols()); j++){
-                nll -= -0.5*colCorMatI(j,j)*(SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace();  
+                nll -= -0.5*colCorMatI(j,j)*(diagOnly ? (SprI.diagonal().array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
               }
               sp += colMatBlocksI(cb+1).cols();
             }
@@ -830,7 +852,7 @@ Type objective_function<Type>::operator() ()
               nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatI*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()*SprI).trace();
               vector<Type>colCorMatIdiag = colCorMatI.diagonal();
               for(int j=0; j<(colMatBlocksI(cb+1).cols()); j++){
-                nll -= -0.5*colCorMatIdiag(j)*(SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace();  
+                nll -= -0.5*colCorMatIdiag(j)*(diagOnly ? (SprI.diagonal().array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
               }
               sp += colMatBlocksI(cb+1).cols();
             }
@@ -853,7 +875,11 @@ Type objective_function<Type>::operator() ()
               Br.row(d).middleCols(sp, blocksize) *= colCorMatUI(d);
               colCorMatUI(d) = colCorMatUI(d).transpose(); //now lower triangular, needed to expose .col below
             }
-            nll -= -0.5*(Br.middleCols(sp, blocksize)*Br.middleCols(sp, blocksize).transpose()*SprI).trace();
+            if(SprDiag){
+              nll -= -0.5*(Br.middleCols(sp, blocksize).rowwise().squaredNorm().array()*SprI.diagonal().array()).sum();
+            }else{
+              nll -= -0.5*(Br.middleCols(sp, blocksize)*Br.middleCols(sp, blocksize).transpose()*SprI).trace();
+            }
             
             matrix<Type>tempMat(ncov,ncov);
             for(int j=0; j<blocksize; j++){
@@ -864,7 +890,7 @@ Type objective_function<Type>::operator() ()
                 }
                 tempMat(d,d) = (colCorMatUI(d).col(j).transpose()*colCorMatUI(d).col(j)).sum()*SprI(d,d);
               }
-              nll -= -0.5*(tempMat*SArm(sp+j)*SArm(sp+j).transpose()).trace();
+              nll -= -0.5*(diagOnly ? (tempMat.diagonal().array()*D2.col(sp+j).array()).sum() : (tempMat*SArm(sp+j)*SArm(sp+j).transpose()).trace());
             }
             sp += colMatBlocksI(cb+1).cols();
           }
@@ -872,10 +898,14 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-logdetColCorMat);
         }else{
           for(int j=0; j<p; j++){
-            nll -= -0.5*(SprI*SArm(j)*SArm(j).transpose()).trace();
+            nll -= -0.5*(diagOnly ? (SprI.diagonal().array()*D2.col(j).array()).sum() : (SprI*SArm(j)*SArm(j).transpose()).trace());
           }
           nll -= 0.5*(p*ncov-p*logdetSpr); 
-          nll -= -0.5*(Br*Br.transpose()*SprI).trace();
+          if(SprDiag){
+            nll -= -0.5*(Br.rowwise().squaredNorm().array()*SprI.diagonal().array()).sum();
+          }else{
+            nll -= -0.5*(Br*Br.transpose()*SprI).trace();
+          }
         }
 
         
@@ -906,10 +936,12 @@ Type objective_function<Type>::operator() ()
         
         // determinant of kronecker product of two matrices based on their cholesky factors: first part
         nll -= p*SArmR.diagonal().array().log().sum();
-        SArmR *= SArmR.transpose();
         
         //for later use
-        matrix<Type> xbSArmxb = ((xb*SArmR).cwiseProduct(xb)).rowwise().sum();
+        matrix<Type> xbL = xbSparse ? matrix<Type>(xbS*SArmR) : matrix<Type>(xb*SArmR);
+        matrix<Type> xbSArmxb = xbL.rowwise().squaredNorm();
+        
+        SArmR *= SArmR.transpose();
         
         int sp = 0;//tracking how many species we have had so far
         for(int cb=0; cb<(colMatBlocksI.size()-1); cb++){
@@ -4670,17 +4702,17 @@ Type objective_function<Type>::operator() ()
     if((random(1)>0) || (random(3)>0)){
       if(random(1)>0){
         // random slopes in TMBtrait.R
-        eta += xb*Br;  
+        if(xbSparse){ eta += matrix<Type>(xbS*Br); }else{ eta += xb*Br; }
       }else if(random(3)>0){
         //random slopes in gllvm.TMB
-        eta += xb*(Br.colwise()+B.col(0));
+        if(xbSparse){ eta += matrix<Type>(xbS*(Br.colwise()+B.col(0)).matrix()); }else{ eta += xb*(Br.colwise()+B.col(0)); }
       }
       
-      matrix <Type> Spr(xb.cols(),xb.cols());
-      matrix <Type> SprI(xb.cols(),xb.cols());
+      matrix <Type> Spr(nxb,nxb);
+      matrix <Type> SprI(nxb,nxb);
       Type logdetSpr = 0;
       
-      int l = xb.cols();
+      int l = nxb;
       if(random(1)>0){
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
@@ -4700,8 +4732,8 @@ Type objective_function<Type>::operator() ()
         }else{
           SprL = sds;
         }
-        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        matrix <Type> SprIL(xb.cols(),xb.cols());
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
+        matrix <Type> SprIL(nxb,nxb);
         SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
         SprI = SprIL.transpose()*SprIL;
         Spr=SprL*SprL.transpose();
@@ -4711,7 +4743,7 @@ Type objective_function<Type>::operator() ()
       if(random(3)>0){
         // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
         matrix<Type> sds = Eigen::MatrixXd::Zero(l,l);
-        sds.diagonal() =  exp(sigmaB.segment(0,xb.cols()));
+        sds.diagonal() =  exp(sigmaB.segment(0,nxb));
         
         vector<Type>sigmaSPij((l*l-l)/2);
         sigmaSPij.fill(0.0);
@@ -4720,14 +4752,14 @@ Type objective_function<Type>::operator() ()
         if(cs.cols()>1){
           //need a vector with covariances and zeros in the right places
           for(int i=0; i<cs.rows(); i++){
-            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(xb.cols()+i);
+            sigmaSPij((cs(i,1)-1) * (2*l-cs(i,1)) / 2 + (cs(i,0)-cs(i,1)-1)) = sigmaB(nxb+i);
           }
           SprL = sds*gllvmutils::constructL(sigmaSPij);
         }else{
           SprL = sds;
         }
-        matrix <Type> Ir = Eigen::MatrixXd::Identity(xb.cols(),xb.cols());
-        matrix <Type> SprIL(xb.cols(),xb.cols());
+        matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
+        matrix <Type> SprIL(nxb,nxb);
         SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
         SprI = SprIL.transpose()*SprIL;
         Spr=SprL*SprL.transpose();
@@ -4738,12 +4770,12 @@ Type objective_function<Type>::operator() ()
         Type logdetColCorMat = 0;
         vector <Type> rhoSP(1);
         
-        if(random(1)>0 && sigmaB.size()>xb.cols()){
-          rhoSP.resize(sigmaB.size()-xb.cols());
+        if(random(1)>0 && sigmaB.size()>nxb){
+          rhoSP.resize(sigmaB.size()-nxb);
           
           rhoSP.fill(1.0);
-            if(sigmaB.size()>xb.cols()){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
-              rhoSP = exp(-exp(sigmaB.segment(xb.cols(),sigmaB.size()-xb.cols())));
+            if(sigmaB.size()>nxb){//traitTMB has correlation parameters in sigmaij. Ultimately, these should also go via sigmaij in gllvm.TMB.
+              rhoSP = exp(-exp(sigmaB.segment(nxb,sigmaB.size()-nxb)));
               if(nncolMat.rows()<p){
                 //need to cap this on the lower end for numerical stability
                 for(int re=0; re<rhoSP.size(); re++){
@@ -4753,11 +4785,11 @@ Type objective_function<Type>::operator() ()
             }
 
         }else if(random(3)>0){
-          rhoSP.resize(sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1));
+          rhoSP.resize(sigmaB.size()-nxb-cs.rows()*(cs.cols()>1));
           
             rhoSP.fill(1.0);
-            if(sigmaB.size()>(xb.cols()+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
-              rhoSP = exp(-exp(sigmaB.segment(xb.cols()+cs.rows()*(cs.cols()>1),sigmaB.size()-xb.cols()-cs.rows()*(cs.cols()>1))));
+            if(sigmaB.size()>(nxb+cs.rows()*(cs.cols()>1))){//unLike traitTMB, gllvm.TMB has correlation parameters also in sigmaB. Ultimately, these should also go via sigmaij in gllvm.TMB.
+              rhoSP = exp(-exp(sigmaB.segment(nxb+cs.rows()*(cs.cols()>1),sigmaB.size()-nxb-cs.rows()*(cs.cols()>1))));
               if(nncolMat.rows()<p){
                 //need to cap this on the lower end for numerical stability
                 for(int re=0; re<rhoSP.size(); re++){
@@ -4782,7 +4814,7 @@ Type objective_function<Type>::operator() ()
             sp += colCorMatI.cols();
           }
           //add cheap normalizing constant
-          nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
+          nll -= 0.5*(p*nxb-p*logdetSpr-nxb*logdetColCorMat);
         }else if(nncolMat.rows()==p){
           if(rhoSP.size()==1){//p(block) sized matrix
             int sp = 0;
@@ -4793,7 +4825,7 @@ Type objective_function<Type>::operator() ()
               sp += colMatBlocksI(cb).cols();
             }
             //add cheap normalizing constant
-            nll -= 0.5*(p*xb.cols()-p*logdetSpr-xb.cols()*logdetColCorMat);
+            nll -= 0.5*(p*nxb-p*logdetSpr-nxb*logdetColCorMat);
             
           }else{//now colCorMatI is updated for every covariate
             int sp = 0;
@@ -4806,7 +4838,7 @@ Type objective_function<Type>::operator() ()
               sp += colMatBlocksI(cb).cols();
             }
             nll += 0.5*(Br*Br.transpose()*SprI).trace();
-            nll -= 0.5*(p*xb.cols()-p*logdetSpr-logdetColCorMat);
+            nll -= 0.5*(p*nxb-p*logdetSpr-logdetColCorMat);
           }
           
         }

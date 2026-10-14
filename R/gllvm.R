@@ -34,6 +34,7 @@
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, so that no random slopes are included by default.
 #' @param beta0com logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, column-specific intercepts are collected to a common value.
+#' @param xbSparse logical. If \code{TRUE} the design matrix of the species random effects, given either through \code{formula} or through \code{randomX}, is passed to TMB as a sparse matrix, which can save time and memory when it has many columns and few non-zeroes, as with factor terms. Defaults to \code{FALSE}. Without \code{colMat} nothing further is required, since \code{Ab.struct} is in that case reduced to "diagonal" or "blockdiagonal" anyway; with \code{colMat} it additionally requires \code{Ab.struct} to be "diagonal", "blockdiagonal", "MNdiagonal" or "MNunstructured".
 #' @param scale.X logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical. If \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
@@ -441,7 +442,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
                   lvCor = NULL, studyDesign=NULL, dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, colMat.rho.struct = "single", corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
-                  randomX = NULL, beta0com = FALSE, zeta.struc = "species",
+                  randomX = NULL, beta0com = FALSE, xbSparse = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = matrix(1),
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
@@ -1711,6 +1712,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             RElist = RElistSP,
             randomX.start = randomX.start,
             beta0com = beta0com, 
+            xbSparse = xbSparse,
             scale.X = scale.X,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
@@ -1789,6 +1791,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             # spdr = spdr,
             # cs = cs,
             beta0com = beta0com,
+            xbSparse = xbSparse,
             zetacutoff = zetacutoff,
             start.optimizer = start.optimizer,
             start.optim.method = start.optim.method,
