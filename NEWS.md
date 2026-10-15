@@ -1,3 +1,9 @@
+Version 2.0.16
+=============
+
+* New argument `xbSparse` in `gllvm()` that treats the design matrix of the species random effects as sparse
+* Faster VA for species random effects with `Ab.struct = "diagonal"` and when the species random effects covariance matrix is diagonal
+
 Version 2.0.15
 =============
 
