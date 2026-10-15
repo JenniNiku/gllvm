@@ -143,7 +143,8 @@ se.gllvm <- function(object, ...){
       if(is.null(object$randomX)) {
         incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
       } else {
-        xb <- get_xb(objrFinal$env$data)
+        xb <- objrFinal$env$data$xb
+        if(is.null(xb) || nrow(xb) == 0) xb <- as.matrix(objrFinal$env$data$xbS)
         incl[names(objrFinal$par)=="Abb"] <- FALSE; incld[names(objrFinal$par)=="Abb"] <- TRUE
         incl[names(objrFinal$par)=="Br"] <- FALSE; incld[names(objrFinal$par)=="Br"] <- TRUE
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
