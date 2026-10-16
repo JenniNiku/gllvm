@@ -507,6 +507,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             sigmaB <- c(sigmaB, fit$fitstart$TMBfnpar[names(fit$fitstart$TMBfnpar) == "sigmaB"][(ncol(spdr)+1):(ncol(spdr)+nrow(cs))])
           }
           Br <- fit$fitstart$Br
+        }else if(randomX.start == "zero"){
+          B <- rep(1e-3, ncol(spdr))
+          Br <- matrix(0, ncol(spdr), p)
+          if(jitter.var.br>0)Br <- Br + matrix(rnorm(prod(dim(B)), sd=sqrt(jitter.var.br)), nrow(Br), ncol(Br))
+          sigmaB <- rep(0, ncol(spdr))
+          if(ncol(cs)==2) sigmaB <- c(sigmaB, rep(0, nrow(cs)))
         }else{
         bstart <- start_values_randomX(y, as.matrix(spdr), family, formula=formula(paste0("~",paste0(make.unique(colnames(spdr)),collapse="+"))), starting.val = randomX.start, Power = Power, link = link, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
         B <- bstart$B
