@@ -59,7 +59,11 @@ logLik.gllvm <- function(object, ...)
   if(object$beta0com) object$params$beta0 <- 1
   if (!is.null(object$randomX) || object$col.eff$col.eff == "random"){
     object$params$Br <- NULL
-    object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
+    if(inherits(object$params$sigmaB, "diagonalMatrix")){
+      object$params$sigmaB <- Matrix::diag(object$params$sigmaB)
+    }else{
+      object$params$sigmaB <- object$params$sigmaB[lower.tri(object$params$sigmaB, diag = TRUE)]
+    }
     object$params$sigmaB <- unique(object$params$sigmaB[object$params$sigmaB!=0])
   }
   if(object$randomB!=FALSE){
