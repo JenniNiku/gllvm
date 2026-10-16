@@ -267,6 +267,10 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     
     M <- M[!is.na(unlist(object$params[parmincl])),]
   } else {
+    if(inherits(object$params$sigmaB, "diagonalMatrix")){
+      object$params$sigmaB <- Matrix::diag(object$params$sigmaB)
+      object$sd$sigmaB <- diag(object$sd$sigmaB)
+    }
     if ("beta0" %in% parm) {
       object$params$Intercept = object$params$beta0
       object$sd$Intercept = object$sd$beta0

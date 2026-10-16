@@ -132,7 +132,7 @@ summary.gllvm <- function(object, by = "all", digits = max(3L, getOption("digits
     if(!is.null(object$params$rho.sp)){
       REcovs <- do.call(cbind, list(data.frame(Name = REcovs$Name), data.frame(Signal = format(round(object$params$rho.sp, digits), nsmall = digits), row.names = NULL), REcovs[,-1]))
     }
-    if(!all(object$params$sigmaB[row(object$params$sigmaB)!=col(object$params$sigmaB)]==0)){
+    if(!inherits(object$params$sigmaB, "diagonalMatrix") && !all(object$params$sigmaB[row(object$params$sigmaB)!=col(object$params$sigmaB)]==0)){
       cors <- format(round(cov2cor(object$params$sigmaB), digits), nsmall = digits)
       cors[upper.tri(cors, diag = TRUE)] <- ""
       REcovs <- cbind(REcovs, cors, deparse.level = 0L)

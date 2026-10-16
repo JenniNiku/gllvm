@@ -2824,7 +2824,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         out$params$B <- B
         names(out$params$B) <- colnames(Xt)
         }
-        out$params$sigmaB <- diag(sigma.sp[1:ncol(spdr)], ncol(spdr))
+        out$params$sigmaB <- if(ncol(cs)==2) diag(sigma.sp[1:ncol(spdr)], ncol(spdr)) else Matrix::Diagonal(x = sigma.sp[1:ncol(spdr)])
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
           if(colMat.rho.struct == "term"){
             names(rho.sp) <- colnames(spdr)
@@ -3151,20 +3151,21 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             Ar.sds <- exp((spAr)[1:(p*ncol(spdr))])
             spAr <- spAr[-c(1:(p*ncol(spdr)))]
             k=1;
+            AbDiag <- !(sp.Ar.struc == "blockdiagonal" && ncol(spdr) > 1 && length(spAr) > 0)
             
             for(j in 1:p){
-              spArs[[j]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
-              Ar.sds <- Ar.sds[-c(1:ncol(spdr))]
-              if(sp.Ar.struc == "blockdiagonal" && ncol(spdr) > 1){
-                if(length(spAr)>0){
-                  for(d in 1:(ncol(spdr)-1)){
-                    for(r in (d+1):ncol(spdr)){
-                      spArs[[j]][r,d] = spAr[k];
-                      k=k+1;
-                    }}
-                }
+              if(AbDiag){
+                spArs[[j]] <- Matrix::Diagonal(x = Ar.sds[1:ncol(spdr)]^2)
+              }else{
+                spArs[[j]] <- diag(Ar.sds[1:ncol(spdr)], ncol(spdr))
+                for(d in 1:(ncol(spdr)-1)){
+                  for(r in (d+1):ncol(spdr)){
+                    spArs[[j]][r,d] = spAr[k];
+                    k=k+1;
+                  }}
+                spArs[[j]] <- spArs[[j]]%*%t(spArs[[j]])
               }
-              spArs[[j]] <- spArs[[j]]%*%t(spArs[[j]])
+              Ar.sds <- Ar.sds[-c(1:ncol(spdr))]
             }
           }else if(sp.Ar.struc %in% c("MNdiagonal","MNunstructured")){
             spAr <- param[names(param)=="Abb"]
