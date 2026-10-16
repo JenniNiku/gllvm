@@ -683,7 +683,8 @@ Type objective_function<Type>::operator() ()
         }
         if(xbSparse){ eta += matrix<Type>(xbS*Br); }else{ eta += xb*Br; }
       }
-      matrix <Type> SprI(nxb,nxb);
+      matrix <Type> SprI;
+      vector <Type> SprIdiag(nxb);
       matrix <Type> SprIL;
       
       Type logdetSpr = 0;
@@ -692,8 +693,7 @@ Type objective_function<Type>::operator() ()
       bool SprDiag = (cs.cols() <= 1);
       if(random(1)>0){
         if(SprDiag){
-          SprI.setZero();
-          SprI.diagonal() = exp(-2.0*sigmaB);
+          SprIdiag = exp(-2.0*sigmaB);
           logdetSpr = 2*sigmaB.sum();
         }else{
           // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
@@ -713,14 +713,14 @@ Type objective_function<Type>::operator() ()
           matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
           SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
           SprI = SprIL.transpose()*SprIL;
+          SprIdiag = SprI.diagonal();
           logdetSpr = 2*SprL.diagonal().array().log().sum();
         }
       }
       
       if(random(3)>0){
         if(SprDiag){
-          SprI.setZero();
-          SprI.diagonal() = exp(-2.0*sigmaB.segment(0,nxb));
+          SprIdiag = exp(-2.0*sigmaB.segment(0,nxb));
           logdetSpr = 2*sigmaB.segment(0,nxb).sum();
         }else{
           // Eigen::DiagonalMatrix<Type, Eigen::Dynamic>sds(l);
@@ -739,6 +739,7 @@ Type objective_function<Type>::operator() ()
           matrix <Type> Ir = Eigen::MatrixXd::Identity(nxb,nxb);
           SprIL = SprL.template triangularView<Eigen::Lower>().solve(Ir);
           SprI = SprIL.transpose()*SprIL;
+          SprIdiag = SprI.diagonal();
           logdetSpr = 2*SprL.diagonal().array().log().sum();
         }
       }
@@ -808,6 +809,7 @@ Type objective_function<Type>::operator() ()
           }
         }
         
+        if(!diagOnly){
         for(int j=0; j<p; j++){//limit the scope of SArmLst(j) to this iteration for memory efficiency
           SArm(j).resize(ncov,ncov);
           SArm(j).setZero();
@@ -824,13 +826,13 @@ Type objective_function<Type>::operator() ()
               }}
           }
           
-          if(!diagOnly){
-            if(xbSparse){ cQ.col(j) += 0.5*matrix<Type>(xbS*SArm(j)).rowwise().squaredNorm(); }
-            else{ cQ.col(j) += 0.5*(xb*SArm(j)).rowwise().squaredNorm(); }
-          }
+          if(xbSparse){ cQ.col(j) += 0.5*matrix<Type>(xbS*SArm(j)).rowwise().squaredNorm(); }
+          else{ cQ.col(j) += 0.5*(xb*SArm(j)).rowwise().squaredNorm(); }
+        }
         }
         // tr(S⁻¹A)+Br'S⁻¹Br+logdet(S)
         if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size()==1)){
+          if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
           int sp = 0;
           if(nncolMat.rows()<p){
             for(int cb=0; cb<(colMatBlocksI.size()-1); cb++){
@@ -840,7 +842,7 @@ Type objective_function<Type>::operator() ()
               nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatI*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()*SprI).trace();
               
               for(int j=0; j<(colMatBlocksI(cb+1).cols()); j++){
-                nll -= -0.5*colCorMatI(j,j)*(diagOnly ? (SprI.diagonal().array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
+                nll -= -0.5*colCorMatI(j,j)*(diagOnly ? (SprIdiag.array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
               }
               sp += colMatBlocksI(cb+1).cols();
             }
@@ -852,7 +854,7 @@ Type objective_function<Type>::operator() ()
               nll -= -0.5*(Br.middleCols(sp, colMatBlocksI(cb+1).cols())*colCorMatI*Br.middleCols(sp, colMatBlocksI(cb+1).cols()).transpose()*SprI).trace();
               vector<Type>colCorMatIdiag = colCorMatI.diagonal();
               for(int j=0; j<(colMatBlocksI(cb+1).cols()); j++){
-                nll -= -0.5*colCorMatIdiag(j)*(diagOnly ? (SprI.diagonal().array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
+                nll -= -0.5*colCorMatIdiag(j)*(diagOnly ? (SprIdiag.array()*D2.col(sp+j).array()).sum() : (SprI*SArm(sp+j)*SArm(sp+j).transpose()).trace());  
               }
               sp += colMatBlocksI(cb+1).cols();
             }
@@ -862,6 +864,7 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-ncov*logdetColCorMat);
           
         }else if((colMatBlocksI(0)(0,0)==p) && (rhoSP.size()>1)){
+          if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
           // calculate trace term without building the covariance matrix
           // requires a little bit of work with a temporary matrix..
           int sp = 0;
@@ -876,7 +879,7 @@ Type objective_function<Type>::operator() ()
               colCorMatUI(d) = colCorMatUI(d).transpose(); //now lower triangular, needed to expose .col below
             }
             if(SprDiag){
-              nll -= -0.5*(Br.middleCols(sp, blocksize).rowwise().squaredNorm().array()*SprI.diagonal().array()).sum();
+              nll -= -0.5*(Br.middleCols(sp, blocksize).rowwise().squaredNorm().array()*SprIdiag.array()).sum();
             }else{
               nll -= -0.5*(Br.middleCols(sp, blocksize)*Br.middleCols(sp, blocksize).transpose()*SprI).trace();
             }
@@ -898,11 +901,17 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-logdetColCorMat);
         }else{
           for(int j=0; j<p; j++){
-            nll -= -0.5*(diagOnly ? (SprI.diagonal().array()*D2.col(j).array()).sum() : (SprI*SArm(j)*SArm(j).transpose()).trace());
+            if(diagOnly){
+              nll -= -0.5*(SprIdiag.array()*D2.col(j).array()).sum();
+            }else if(SprDiag){
+              nll -= -0.5*(SprIdiag.array()*SArm(j).rowwise().squaredNorm().array()).sum();
+            }else{
+              nll -= -0.5*(SprI*SArm(j)*SArm(j).transpose()).trace();
+            }
           }
           nll -= 0.5*(p*ncov-p*logdetSpr); 
           if(SprDiag){
-            nll -= -0.5*(Br.rowwise().squaredNorm().array()*SprI.diagonal().array()).sum();
+            nll -= -0.5*(Br.rowwise().squaredNorm().array()*SprIdiag.array()).sum();
           }else{
             nll -= -0.5*(Br*Br.transpose()*SprI).trace();
           }
@@ -910,6 +919,7 @@ Type objective_function<Type>::operator() ()
 
         
       }else if(Abstruc == 1){
+        if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
         //(Abb.size()==(ncov+p-1+p*(p-1)/2)) || (Abb.size() == (p+ncov-1 + p*(p-1)/2 + ncov*(ncov-1)/2)) || (Abb.size() == (p+ncov-1+ncov*(ncov-1)/2+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p+ncov-1+(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "MNdiagonal" OR "MNunstructured" with blocks due to Phylogeny
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
@@ -1146,6 +1156,7 @@ Type objective_function<Type>::operator() ()
         }
         
       }else if(Abstruc == 2){
+        if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
         //(Abb.size() == ((ncov*p +ncov*p*(p-1)/2))) || (Abb.size()==(ncov*p+sum(nsp)*(colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "diagonalCL2" with block structure due to phylogeny
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
@@ -1273,6 +1284,7 @@ Type objective_function<Type>::operator() ()
         }
         
       }else if(Abstruc == 3){
+        if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
         //(Abb.size() == (p*ncov + p*(p-1)/2 + p-colCorMatIblocks.size())) || (Abb.size() == (p*ncov + p-colCorMatIblocks.size() + p*ncov*(ncov-1)/2 + p*(p-1)/2)) || (Abb.size() == (p*ncov + p-colCorMatIblocks.size() + p*ncov*(ncov-1)/2 + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum())) || (Abb.size() == (p*ncov + p-colCorMatIblocks.size() + (colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // Ab.struct == "CL1" OR "diagonalCL1". Only here as reference and should not be used unless "colMat" is present
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
@@ -1534,6 +1546,7 @@ Type objective_function<Type>::operator() ()
         }
         
       }else if(Abstruc == 4){
+        if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
         // Ab.struct == "CL2". Only here as reference and should not be used unless "colMat" is present
         // ASSUMED THAT THERE IS A PHYLOGENY WHEN GOING HERE
         // always has k*k matrix with fixed diagonals, in combination with k p*p matrices
@@ -1841,6 +1854,7 @@ Type objective_function<Type>::operator() ()
           nll -= 0.5*(p*ncov-p*logdetSpr-logdetColCorMat);
         }
       }else if(Abstruc == 5){
+        if(SprI.rows()==0){ SprI.setZero(nxb, nxb); SprI.diagonal() = SprIdiag; }
         // (Abb.size() == ((ncov*p)*(ncov*p)-(ncov*p)*((ncov*p)-1)/2)) || (Abb.size() == (ncov*p+(sum(nsp)*colMatBlocksI(0).col(0).segment(1,colMatBlocksI.size()-1).array()*Abranks-Abranks*(Abranks-1)/2-Abranks).sum()))
         // matrix<Type> SArm(p*ncov,p*ncov);
         // Ab.struct == "unstructured". Only here as reference and should not be used unless "colMat" is present
