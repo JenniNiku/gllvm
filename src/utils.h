@@ -288,12 +288,6 @@ Type log1plus(Type x) {
   return log1plus(tx)[0];
 }
 
-// stable log(sinh(x)) for x > 0, avoiding overflow in sinh(x) for large x
-template<class Type>
-Type logsinh(Type x) {
-  return x - Type(log(2.0)) + log1plus(-exp(-2*x));
-}
-
 double expminus1(double x) {
   return expm1(x);  
 }
@@ -321,6 +315,10 @@ Type expminus1(Type x) {
     
 VECTORIZE1_t(expminus1)
 
+template<class Type>
+Type logsinh(Type x) {
+  return x - Type(log(2.0)) + log(-expminus1(-2*x));
+}
 
 extern "C" {
   /* See 'R-API: entry points to C-code' (Writing R-extensions) */
