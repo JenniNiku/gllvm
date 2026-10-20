@@ -139,8 +139,7 @@ Type objective_function<Type>::operator() ()
     nu = dLV.cols();
     // }
     // nlvr=0; num_lv=0; num_lv_c=0;
-    //Not yet combined with num_RR or quadratic
-    quadratic=0;
+    //Not yet combined with num_RR
     // num_RR=0;
   }
   
@@ -2489,26 +2488,29 @@ Type objective_function<Type>::operator() ()
     if(nlvr>0){
       matrix<Type> b_lv2(x_lv.cols(),nlvr);
       b_lv2.setZero();
+      matrix<Type> XB;
       
       if((num_lv_c>0) && (random(2)<1)){
         //concurrent ordination terms
         //predictor coefficients for constrained ordination
         b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
-        eta += x_lv*b_lv2*newlam;
+        XB = x_lv*b_lv2;
+        eta += XB*newlam;
         
       }else if((nlvr>0) && (random(2)>0) && (quadratic > 0)){
         if(num_lv_c>0)b_lv2.leftCols(num_lv_c) = b_lv.leftCols(num_lv_c);
         if(num_RR>0) b_lv2.rightCols(num_RR) = b_lv.rightCols(num_RR);
       }
       lam = u*newlam;
+      vector<matrix<Type>> AAt(n);
       
       // Update cQ for linear term
       //Binomial, Gaussian, Ordinal
       if(num_corlv==0){
         for (int i=0; i<n; i++) {
-          matrix <Type> Atemp = A(i)*A(i).transpose();
+          AAt(i) = A(i)*A(i).transpose();
           for (int j=0; j<p;j++){
-            cQ(i,j) += 0.5*(newlam.col(j).transpose()*Atemp*newlam.col(j)).value();
+            cQ(i,j) += 0.5*(newlam.col(j).transpose()*AAt(i)*newlam.col(j)).value();
           }
         }
         // REPORT(cQ);
@@ -2558,6 +2560,7 @@ Type objective_function<Type>::operator() ()
               for (j=0; j<p;j++){
                 cQ.col(j) += 0.5*dLV.col(d)*((newlam.col(j).transpose()*DAATD)*newlam.col(j));
               }
+              if(quadratic>0) for (typename Eigen::SparseMatrix<Type>::InnerIterator it(dLV,d); it; ++it) AAt(it.row()) = DAATD;
             }
             nll -= 0.5*(nu*num_corlv);
             
@@ -2567,6 +2570,7 @@ Type objective_function<Type>::operator() ()
           } else {
 
             if(Astruc<3){
+              if(quadratic>0) for (i=0; i<n; i++) AAt(i) = matrix<Type>::Zero(nlvr,nlvr);
               // Single loop: build Slv_q, get logdet+inverse via one invpd call, apply all NLL terms.
               for(int q=0; q<num_corlv; q++){
                 matrix<Type> Slv_q;
@@ -2601,11 +2605,13 @@ Type objective_function<Type>::operator() ()
                   Type trSinvA = (Slvinv.diagonal().array() * AtempSq.array()).sum();
                   nll -= -0.5 * trSinvA;
 
+                  matrix<Type> dLVA = dLV*AtempSq.matrix();
                   // 0.5*lambda_qj*A_qii*lambda_qj
                   for (j=0; j<p;j++){
                     Type sca = 0.5*pow(newlam(q,j),2)*pow(Delta(q,q),2);
-                    cQ.col(j) += sca*(dLV*AtempSq.matrix());
+                    cQ.col(j) += sca*dLVA;
                   }
+                  if(quadratic>0) for (i=0; i<n; i++) AAt(i)(q,q) = Delta(q,q)*Delta(q,q)*dLVA(i,0);
                   // 0.5*logdet(A)
                   nll -= Atemp.array().log().sum();
 
@@ -2635,10 +2641,12 @@ Type objective_function<Type>::operator() ()
 
                   // 0.5*lambda_qj*A_qii*lambda_qj
                   AAT = Atemp*Atemp.transpose();
+                  matrix<Type> dLVA = dLV*AAT.diagonal().matrix();
                   for (j=0; j<p;j++){
                     Type sca = 0.5*pow(newlam(q,j),2)*pow(Delta(q,q),2);
-                    cQ.col(j) += sca*(dLV*AAT.diagonal().matrix()); //this works
+                    cQ.col(j) += sca*dLVA; //this works
                   }
+                  if(quadratic>0) for (i=0; i<n; i++) AAt(i)(q,q) = Delta(q,q)*Delta(q,q)*dLVA(i,0);
 
                   // 0.5*logdet(A) -0.5*tr(Sinv*A); trace(Slvinv*AAT) = (Slvinv⊙AAT).sum() since both symmetric
                   nll -= Atemp.diagonal().array().log().sum() - 0.5*((Slvinv.array() * AAT.array()).sum());
@@ -2709,6 +2717,7 @@ Type objective_function<Type>::operator() ()
               // nll -= num_corlv*Alvm.diagonal().array().log().sum() + nu*AQ.diagonal().array().log().sum();
               // nll -= num_corlv*log(Alvm.determinant()) + nu*log(AQ.determinant()) + 0.5*num_corlv*nu;
 
+              matrix<Type> dLVA = dLV*matrix<Type>(Alvm.rowwise().squaredNorm());
               // Alvm *= Alvm.transpose();
               // AQ *= AQ.transpose();
               Alvm = Alvm*Alvm.transpose();
@@ -2723,10 +2732,11 @@ Type objective_function<Type>::operator() ()
               }
 
               matrix<Type> AQt = Delta * AQ * Delta.transpose();
+              if(quadratic>0) for (i=0; i<n; i++) AAt(i) = dLVA(i,0)*AQt;
               // 0.5*lambda_qj*A_qii*lambda_qj
               for (j=0; j<p;j++){
                 Type sca = 0.5 * (newlam.col(j).transpose() * AQt * newlam.col(j)).sum();
-                cQ.col(j) += sca * (dLV * Alvm.diagonal());
+                cQ.col(j) += sca * dLVA;
                 // cQ.col(j) += 0.5*(dLV*Alvm.diagonal())*((newlam.col(j).transpose()*(Delta*AQ*Delta.transpose()))*newlam.col(j));
               }
 
@@ -2756,6 +2766,7 @@ Type objective_function<Type>::operator() ()
           }
           
           if(Astruc<3){
+            if(quadratic>0) for (int r=0; r<n; r++) AAt(r) = matrix<Type>::Zero(nlvr,nlvr);
             for(int q=0; q<num_corlv; q++){
               
               // site specific LVs, which are correlated within groups
@@ -2795,14 +2806,17 @@ Type objective_function<Type>::operator() ()
               
               
               it_ind = 0;
+              matrix<Type> dLVA = matrix<Type>::Zero(n,1);
               for(i=0; i<nu; i++){
                 // Compute Alvm*Alvm'
                 AlvAlvT = Alvm(i) * Alvm(i).transpose();
+                matrix<Type> dLVAi = dLV.block(0,it_ind, dLV.rows(), times(0,i))*AlvAlvT.diagonal();
+                dLVA += dLVAi;
                 
                 // Update cQ with 0.5*gamma'A gamma
                 for (j=0; j<p;j++){
                   Type sca = 0.5*pow(newlam(q,j),2)*pow(Delta(q,q),2);
-                  cQ.col(j) += sca*(dLV.block(0,it_ind, dLV.rows(), times(0,i))*AlvAlvT.diagonal());
+                  cQ.col(j) += sca*dLVAi;
                 }
                 nll -= Alvm(i).diagonal().array().log().sum(); //log(Alvm(i).determinant());
                 
@@ -2834,6 +2848,7 @@ Type objective_function<Type>::operator() ()
                 it_ind += times(0,i);
 
               }
+              if(quadratic>0) for (int r=0; r<n; r++) AAt(r)(q,q) = Delta(q,q)*Delta(q,q)*dLVA(r,0);
             }
             
             // REPORT(Alvm);
@@ -2881,16 +2896,20 @@ Type objective_function<Type>::operator() ()
               }
             }
             matrix<Type> AQAQT = AQ *AQ.transpose();
+            matrix<Type> DAQD = (Delta*AQAQT*Delta.transpose());
+            vector<Type> sca(p);
+            for (j=0; j<p;j++) sca(j) = 0.5 * (newlam.col(j).transpose() * DAQD * newlam.col(j)).sum();
             
             it_ind = 0;
+            matrix<Type> dLVA = matrix<Type>::Zero(n,1);
             for(i=0; i<nu; i++){
               // Compute Alvm*Alvm'
               AlvAlvT = Alvm(i) * Alvm(i).transpose();
+              matrix<Type> dLVAi = dLV.block(0,it_ind, dLV.rows(), times(0,i))*AlvAlvT.diagonal();
+              dLVA += dLVAi;
               
-              matrix<Type> DAQD = (Delta*AQAQT*Delta.transpose());
               for (j=0; j<p;j++){
-                Type sca = 0.5 * (newlam.col(j).transpose() * DAQD * newlam.col(j)).sum();
-                cQ.col(j) += sca*(dLV.block(0,it_ind, dLV.rows(), times(0,i))*AlvAlvT.diagonal());
+                cQ.col(j) += sca(j)*dLVAi;
               }
               
               nll -= num_corlv*Alvm(i).diagonal().array().log().sum() + times(0,i)*AQ.diagonal().array().log().sum(); //log(Alvm(i).determinant());
@@ -2927,6 +2946,7 @@ Type objective_function<Type>::operator() ()
               }
               it_ind += times(0,i); 
             }
+            if(quadratic>0) for (int r=0; r<n; r++) AAt(r) = dLVA(r,0)*DAQD;
             REPORT(Alvm);
           }
           
@@ -3009,14 +3029,6 @@ Type objective_function<Type>::operator() ()
             }
           }
         }
-        if((num_lv_c>0) && (random(2)<1)){
-          //quadratic reduced rank term for concurrent ordination
-          for (int j=0; j<p;j++){
-            for (int i=0; i<n; i++) {
-              eta(i,j) -=  x_lv.row(i)*b_lv2*D(j)*(x_lv.row(i)*b_lv2).transpose();
-            }
-          }
-        }
         
         // do not take this route not with quadratic model, (fixed-effect) constrained LVs and random row-effects.
         if(((nlvr > 0) && (num_lv+num_lv_c)>0) || ((quadratic>0) && (random(2) > 0))){
@@ -3026,8 +3038,16 @@ Type objective_function<Type>::operator() ()
           matrix<Type> Id(nlvr,nlvr);
           Id.setIdentity();
           
-          matrix<Type> B(nlvr,nlvr);
-          matrix<Type> Binv(nlvr,nlvr);
+          matrix<Type> R(nlvr,nlvr);
+          matrix<Type> DR(nlvr,nlvr);
+          matrix<Type> BinvD(nlvr,nlvr);
+          matrix<Type> z(nlvr,1);
+          matrix<Type> w(nlvr,1);
+          
+          //quadratic reduced rank term for concurrent ordination
+          //extra cQ contribution for  XB,e cross term in concurrent model
+          if((num_lv_c>0) && (random(2)<1))
+            u += XB;
           
           for (int j = 0; j < p; j++) {
             
@@ -3055,34 +3075,33 @@ Type objective_function<Type>::operator() ()
             //   //uses the identity (2D + A^-1) = A - 2A(I+2DA)^-1DA
             for (int i = 0; i < n; i++) {
               // Precompute Acov
-              Acov.noalias() = A(i) * A(i).transpose();
+              Acov = AAt(i);
               if (random(2)>0 && (num_lv_c+num_RR)>0)
                 Acov += Ab_lvcov(i);
               
               // group Poisson, ZIP, Tweedie, NB, gamma, exponential
               if (is_group1) {
                 // B = I - sign * 2 * D(j) * Acov
-                B = Id - sign*2*D(j)*Acov;
-                
-                Eigen::PartialPivLU<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>> lu(B);
-                Binv = lu.inverse();
-                Type logdetC = -lu.matrixLU().diagonal().array().log().sum();
-                //the calculation generally prevents having to explicitly invert A*A^t, or having to invert A(i).
-                Type vBinvv = ( 2*sign*newlam.col(j).transpose() * Acov * Binv * D(j) * Acov * newlam.col(j)
-                      - 4*u.row(i) * Binv * D(j) * Acov * newlam.col(j)
-                      + 2*sign*u.row(i) * Binv * D(j) * u.row(i).transpose()
-                  ).value();
-                
-                //extra cQ contribution for  XB,e cross term in concurrent model
-                if((random(2)<1) && (num_lv_c>0)){
-                  vBinvv += (-4*x_lv.row(i)*b_lv2*Binv*D(j)*Acov*newlam.col(j)+2*sign*x_lv.row(i)*b_lv2*Binv*D(j)*u.row(i).transpose()+2*sign*u.row(i)*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()+2*sign*x_lv.row(i)*b_lv2*Binv*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
-                  // get rid of extra terms that will occur due to the use of eta + cQ in the likelihood
-                  cQ(i,j) -= (sign*2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose()+sign*x_lv.row(i)*b_lv2*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
-                }
-                
+                // with Acov = R * R^t, B has the same determinant as T = I - sign * 2 * R^t * D(j) * R
+                R = Acov.llt().matrixL();
+                DR = D(j)*R;
+                Eigen::LDLT<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>> ldlt(Id - sign*2*R.transpose()*DR);
                 //-logdetA + logdetB = logdetQ + logdetB = logdetC = det(QB^-1)
-                // partialPivLU because B is asymmetric, and it ensures that it is invertible.
-                logdetC = Binv.partialPivLu().matrixLU().diagonal().array().log().sum();
+                // LDLT because T is symmetric, and its pivots are only positive where the approximation is valid
+                Type logdetC = -ldlt.vectorD().array().log().sum();
+                //the calculation generally prevents having to explicitly invert A*A^t, or having to invert A(i).
+                z = Acov*newlam.col(j) - sign*u.row(i).transpose();
+                Type vBinvv;
+                if(lambda2.cols()==1){
+                  //common tolerances model
+                  BinvD = sign*2*DR*ldlt.solve(DR.transpose());
+                  BinvD.diagonal() += D(j).diagonal();
+                  vBinvv = 2*sign*(z.transpose()*BinvD*z).value();
+                }else{
+                  //full quadratic model
+                  w = DR.transpose()*z;
+                  vBinvv = 2*sign*(z.transpose()*D(j)*z).value() + 4*(w.transpose()*ldlt.solve(w)).value();
+                }
                 
                 cQ(i,j) += 0.5*(vBinvv+logdetC);
                 // get rid of extra terms that will occur due to the use of eta + cQ in the likelihood
@@ -3091,18 +3110,11 @@ Type objective_function<Type>::operator() ()
               
               // Binomial, Gaussian, Ordinal
               if (is_group2) {
-                cQ(i,j) += (D(j)*Acov*D(j)*Acov).trace() +2*(u.row(i)*D(j)*Acov*D(j)*u.row(i).transpose()).value() - 2*(u.row(i)*D(j)*Acov*newlam.col(j)).value();
-                if((num_lv_c>0) && (random(2)<1)){
-                  //extra terms for concurrent ordination
-                  cQ(i,j) += (2*x_lv.row(i)*b_lv2*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose() -2*x_lv.row(i)*b_lv2*D(j)*Acov*newlam.col(j)+4*u.row(i)*D(j)*Acov*D(j)*(x_lv.row(i)*b_lv2).transpose()).value();
-                }
+                cQ(i,j) += (D(j).diagonal().transpose()*Acov.cwiseProduct(Acov)*D(j).diagonal()).value() +2*(u.row(i)*D(j)*Acov*D(j)*u.row(i).transpose()).value() - 2*(u.row(i)*D(j)*Acov*newlam.col(j)).value();
               }
               
               // Eta-update
               eta(i,j) +=-(u.row(i)*D(j)*u.row(i).transpose()).sum() - (D(j)*Acov).trace();
-              if ((num_lv_c>0) && (random(2)<1)) {
-                eta(i,j) -= 2*u.row(i)*D(j)*(x_lv.row(i)*b_lv2).transpose();
-              }
               
             } //end for i
           } //end for j
