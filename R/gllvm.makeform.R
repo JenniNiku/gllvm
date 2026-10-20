@@ -212,7 +212,7 @@ mkModMlist <- function (x, frloc) {
   
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
   cntrsts <- lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE)
-  mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[-which(!names(cntrsts)%in%labels(trms))])
+  mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[names(cntrsts)%in%labels(trms)])
   
   sm <- Matrix::fac2sparse(ff, to = "d")
   
