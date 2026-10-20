@@ -785,7 +785,7 @@ ordiplot.gllvm <- function(object, biplot = FALSE, ind.spp = NULL, alpha = 0.5, 
     coords$loadings <- choose.lv.coefs 
   }
   # add coefs if predictors are included (condition copied from further up)
-  if(num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal") {
+  if((num.lv+num.lv.c+num.RR) > 1 & ncol(lv) > 1 & length(which.lvs)>1 & (num.lv==0&(num.lv.c+num.RR)>0&type!="residual"|(num.lv.c+num.RR)>0&num.lv>0&type=="marginal")) {
     # adding only the SD-error scaled coefficient loadings, not the plot-window scaled (i.e. "ends" object)
     coords$coefs <- LVcoef
   }

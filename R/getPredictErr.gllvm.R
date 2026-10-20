@@ -105,7 +105,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
             A[i,,]<-A[i,,]*object$AQ
           }
         } else if((object$num.lvcor > 0) & (object$corP$cstruclv !="diag")) {
-          A<-array(0, dim = c(nrow(object$A[,,1]), object$num.lvcor,object$num.lvcor))
+          A<-array(0, dim = c(dim(object$A)[1], object$num.lvcor,object$num.lvcor))
           if(all(dim(A) == dim(object$A))){
             A<- object$A
           } else {
@@ -119,7 +119,7 @@ getPredictErr.gllvm = function(object, CMSEP = TRUE, cov = FALSE, ...)
           if((num.lv.c+num.lv)==1) A <- A[,1,1]
         }
         
-        if(inherits(object$lvCor,"formula")){
+        if(inherits(object$lvCor,"formula") && (num.lv.c+num.RR)>0){
           if(length(dim(A)) <3) {
             object$A <- A <- as.matrix(object$TMBfn$env$data$dLV%*%A)
           } else {
