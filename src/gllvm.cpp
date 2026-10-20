@@ -3511,8 +3511,8 @@ Type objective_function<Type>::operator() ()
         vector <Type> zetanew(K);
         zetanew.setZero();
         
-        vector <Type> zdeltanew(K);//gaps between consecutive cutoffs, kept rather than
-        zdeltanew.setZero();       //recovered by subtraction, which cancels for small gaps
+        vector <Type> zdeltanew(K);//gaps between cutoffs
+        zdeltanew.setZero();       //stored for stability to avoid cancellation cases
         // int idx = 0; // indexing for zeta moved before for j
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
           int Kj = ymaxj - 1;
