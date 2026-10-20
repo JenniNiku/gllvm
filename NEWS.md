@@ -1,3 +1,11 @@
+Version 2.0.16
+=============
+
+* Minor numerical improvements to ordinal link = "logit"
+* Numerical improvements for quadratic != FALSE. This fixed inefficiencies introduced by V2.0.7 (mixed-response types), but also improvements relative to the code prior that version.
+* Implements quadratic with lvCor
+
+
 Version 2.0.15
 =============
 
