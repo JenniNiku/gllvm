@@ -3511,12 +3511,15 @@ Type objective_function<Type>::operator() ()
         vector <Type> zetanew(K);
         zetanew.setZero();
         
+        vector <Type> zdeltanew(K);//gaps between consecutive cutoffs, kept rather than
+        zdeltanew.setZero();       //recovered by subtraction, which cancels for small gaps
         // int idx = 0; // indexing for zeta moved before for j
           int ymaxj = CppAD::Integer(y.col(j).maxCoeff());
           int Kj = ymaxj - 1;
           if(Kj>1){
             for(int k=0; k<(Kj-1); k++){
               zetanew(k+1) = zeta.segment(idx,k+1).array().exp().sum();
+              zdeltanew(k+1) = exp(zeta(idx+k));
             }
             idx += Kj-1; 
           }
@@ -3536,7 +3539,7 @@ Type objective_function<Type>::operator() ()
                     nll -= -0.5*(zetanew(idxj)-eta(i,j)) - logspace_add(wij, -wij);
                   } else {
                     int idxj = CppAD::Integer(y(i,j));
-                    Type delta = zetanew(idxj-1)-zetanew(idxj-2);
+                    Type delta = zdeltanew(idxj-1);
                     Type wu = 0.5*sqrt((zetanew(idxj-1)-eta(i,j))*(zetanew(idxj-1)-eta(i,j)) + 2*cQ(i,j));
                     Type wl = 0.5*sqrt((zetanew(idxj-2)-eta(i,j))*(zetanew(idxj-2)-eta(i,j)) + 2*cQ(i,j));
                     nll -= gllvmutils::logsinh(delta/2) + log(Type(2.0)) - logspace_add(wu, -wu) - logspace_add(wl, -wl);
@@ -3633,9 +3636,12 @@ Type objective_function<Type>::operator() ()
         vector <Type> zetanew(K);
         zetanew.setZero();
 
+        vector <Type> zdeltanew(K);//gaps between consecutive cutoffs, kept rather than
+        zdeltanew.setZero();       //recovered by subtraction, which cancels for small gaps
         if(has12) idx = 2; // start from 2 if there are orderedBeta columns in the model
         for(int k=0; k<(K-1); k++){
           zetanew(k+1) = zeta.segment(idx, k+1).array().exp().sum();//second cutoffs must be positive
+          zdeltanew(k+1) = exp(zeta(idx+k));
         }
         
         if (method<1) {
@@ -3654,7 +3660,7 @@ Type objective_function<Type>::operator() ()
                     nll -= -0.5*(zetanew(idxj)-eta(i,j)) - logspace_add(wij, -wij);
                   } else {
                     int idxj = CppAD::Integer(y(i,j));
-                    Type delta = zetanew(idxj-1)-zetanew(idxj-2);
+                    Type delta = zdeltanew(idxj-1);
                     Type wu = 0.5*sqrt((zetanew(idxj-1)-eta(i,j))*(zetanew(idxj-1)-eta(i,j)) + 2*cQ(i,j));
                     Type wl = 0.5*sqrt((zetanew(idxj-2)-eta(i,j))*(zetanew(idxj-2)-eta(i,j)) + 2*cQ(i,j));
                     nll -= gllvmutils::logsinh(delta/2) + log(Type(2.0)) - logspace_add(wu, -wu) - logspace_add(wl, -wl);
