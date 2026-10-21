@@ -6,6 +6,12 @@ Version 2.0.16
 * Implements quadratic with lvCor
 
 
+## Bugfixes
+
+* Bugfix cloglog binomial
+* Numerical improvement zero-inflated models
+* glmmVA() no longer fails when additional arguments are supplied
+
 Version 2.0.15
 =============
 
