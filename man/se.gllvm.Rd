@@ -5,10 +5,12 @@
 \alias{se}
 \title{Standard errors for gllvm model}
 \usage{
-\method{se}{gllvm}(object, ...)
+\method{se}{gllvm}(object, sparse = FALSE, ...)
 }
 \arguments{
 \item{object}{an object of class 'gllvm'.}
+
+\item{sparse}{logical. If \code{TRUE}, for models fitted with \code{method = "VA"} or \code{"EVA"} the Hessian is calculated as a sparse matrix, from a copy of the model with all parameters profiled, and the variational parameters are profiled out of it with sparse matrix algebra. This saves time and memory when the model has many variational parameters, for example with many random effects. \code{Hess$Hess.full} is then returned as a sparse matrix. Ignored for \code{method = "LA"}. Defaults to \code{FALSE}.}
 
 \item{...}{not used.}
 }
