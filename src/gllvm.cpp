@@ -3059,11 +3059,16 @@ Type objective_function<Type>::operator() ()
             // group Binomial/Gaussian/Ordinal
             bool is_group2 =
               (family(j)==2 || family(j)==3 || family(j)==7);
+            bool is_cloglog = (extra(j)==2) && (family(j)==2 || family(j)==7 || family(j)==13 || family(j)==14);
+            if(is_cloglog){
+              is_group1 = true;
+              is_group2 = false;
+            }
             
             // sign only if Poisson/NB/gamma/exponential/ZIP/Tweedie
             int sign = 0;
             if (is_group1) {
-              if ((family(j) > 0) && (family(j) != 6) && (family(j) != 5))
+              if ((family(j) > 0) && (family(j) != 6) && (family(j) != 5) && !(is_cloglog && (family(j) != 7)))
                 sign = 1;   // NB, gamma, exponential, ZIP
               else
                 sign = -1;  // Poisson, ZIP, Tweedie
@@ -4438,14 +4443,14 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
                 nll -= log(1-iphij);
-                nll -= y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                nll -= y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + y(i,j)*mu(i,j)*(exp(-cQ(i,j))-1);
                 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
                 }
               }else{
                 Type LL = 0;
-                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + y(i,j)*mu(i,j)*(exp(-cQ(i,j))-1);
                 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   LL += lgamma(Ntrials(i,j)+1.) - lgamma(Ntrials(i,j)+1.);//norm.const.
@@ -4541,21 +4546,21 @@ Type objective_function<Type>::operator() ()
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j)< Ntrials(i,j)){
                 nll -= log(1-iphi3);
-                nll -= y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                nll -= y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + y(i,j)*mu(i,j)*(exp(-cQ(i,j))-1);
                 
                 if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
                   nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
                 }
               }else if(y(i,j)==0){
                 Type LL = 0;
-                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + y(i,j)*mu(i,j)*(exp(-cQ(i,j))-1);
 
 
                 pVA = logspace_add(log(iphij), log(1-iphi3) + LL);
                 nll -= pVA;
               }else if(y(i,j) == Ntrials(i,j)){
                 Type LL = 0;
-                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + mu(i,j)*(exp(-cQ(i,j))-1);
+                LL += y(i,j)*log1p(-exp(-mu(i,j)*exp(-cQ(i,j))))-(Ntrials(i,j)-y(i,j))*mu(i,j) + y(i,j)*mu(i,j)*(exp(-cQ(i,j))-1);
                 
                 pVA2 = logspace_add(log(iphi2), log(1-iphi3) + LL);
                 nll -= pVA2;

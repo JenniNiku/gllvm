@@ -8,7 +8,7 @@ Version 2.0.16
 
 ## Bugfixes
 
-* Bugfix cloglog binomial
+* Bugfix cloglog models
 * Numerical improvement zero-inflated models
 * glmmVA() no longer fails when additional arguments are supplied
 
