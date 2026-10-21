@@ -153,7 +153,7 @@ glmmVA <- function(formula, data, family, response.group = NULL,
   }else if("link" %in% names(args)){
     link <- args[["link"]]
     if(length(args)>1){
-    args <- args[[names(args)!="link"]]
+    args <- args[names(args)!="link"]
     }else{
       args <- NULL
     }
