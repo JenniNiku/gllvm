@@ -3058,7 +3058,7 @@ Type objective_function<Type>::operator() ()
             
             // group Binomial/Gaussian/Ordinal
             bool is_group2 =
-              (family(j)==2 || family(j)==3 || family(j)==7);
+              (family(j)==2 || family(j)==3 || family(j)==7 || family(j)==13 || family(j)==14);
             bool is_cloglog = (extra(j)==2) && (family(j)==2 || family(j)==7 || family(j)==13 || family(j)==14);
             if(is_cloglog){
               is_group1 = true;
