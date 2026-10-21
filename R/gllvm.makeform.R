@@ -194,7 +194,7 @@ auxFun <- function(x) {
   return(out)
 }
 
-mkModMlist <- function (x, frloc) {
+mkModMlist <- function (x, frloc, means = TRUE) {
   frloc <- factorize(x, frloc)
   # safeguard for issues with numeric in factor levels
   # There is probably a better way to do this
@@ -211,8 +211,9 @@ mkModMlist <- function (x, frloc) {
   nl <- length(levels(ff))
   
   trms <- terms(eval(base::substitute(~foo, list(foo = x[[2]]))))
-  cntrsts <- lapply(data.frame(lapply(frloc[, sapply(frloc, is.factor)|sapply(frloc, is.character),drop=FALSE],as.factor)),contrasts,contrasts=FALSE)
-  mm <- model.matrix(trms, frloc, contrasts.arg = cntrsts[-which(!names(cntrsts)%in%labels(trms))])
+  fcts <- names(frloc)[(sapply(frloc, is.factor)|sapply(frloc, is.character)) & names(frloc)%in%labels(trms)]
+  cntrsts <- lapply(frloc[, fcts, drop=FALSE], function(f)contrasts(as.factor(f), contrasts=FALSE, sparse=TRUE))
+  mm <- Matrix::sparse.model.matrix(trms, frloc, contrasts.arg = cntrsts)
   
   sm <- Matrix::fac2sparse(ff, to = "d")
   
@@ -227,33 +228,35 @@ mkModMlist <- function (x, frloc) {
     levels(ff) <- ""
   }
   
-  ## design matrix for RE means always needs to have the reference category included in the design matrix
-  ## So that the RE means are properly contrasted
-  ## IF a categorical variables is included LHS
-  if(!attr(trms, "intercept"))attr(trms,"intercept") <- 1
-  mm2 <- model.matrix(trms, frloc)
+  if(means){
+    ## design matrix for RE means always needs to have the reference category included in the design matrix
+    ## So that the RE means are properly contrasted
+    ## IF a categorical variables is included LHS
+    if(!attr(trms, "intercept"))attr(trms,"intercept") <- 1
+    mm2 <- Matrix::sparse.model.matrix(trms, frloc)
   
-  # design matrix for RE means
-  if(any(colnames(mm2)!="(Intercept)")){
-    fm <- Matrix::KhatriRao(sm, t(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]))
-    row.names(fm) <- make.names(paste0(rep(colnames(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm2[,colnames(mm2)!="(Intercept)", drop = FALSE]))))
-  }
+    # design matrix for RE means
+    if(any(colnames(mm2)!="(Intercept)")){
+      fm <- Matrix::KhatriRao(sm, t(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]))
+      row.names(fm) <- make.names(paste0(rep(colnames(mm2[,which(colnames(mm2)!="(Intercept)"),drop=FALSE]), length(levels(ff))), rep(levels(ff), each=ncol(mm2[,colnames(mm2)!="(Intercept)", drop = FALSE]))))
+    }
   
-  fm2 <- NULL
-  ff2 <- ff
-  # now intercept part if present
-  if("(Intercept)"%in%colnames(mm)){
-    levels(ff2)[1]<- NA # exclude reference category for identifiability
-    if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
-      fm2 <- Matrix::fac2sparse(ff2, to = "d")
-    }else{
-      fm2 <- matrix(ncol = nrow(mm),nrow=0) # no categorical variables, nothing should be happening here
+    fm2 <- NULL
+    ff2 <- ff
+    # now intercept part if present
+    if("(Intercept)"%in%colnames(mm)){
+      levels(ff2)[1]<- NA # exclude reference category for identifiability
+      if(length(levels(ff2))>1 | length(ff2) == nrow(mm)){
+        fm2 <- Matrix::fac2sparse(ff2, to = "d")
+      }else{
+        fm2 <- matrix(ncol = nrow(mm),nrow=0) # no categorical variables, nothing should be happening here
+      }
+      fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
+      if(length(levels(ff2))>0){
+        row.names(fm2) <- make.names(levels(ff2))  
+      }
+      fm <- rbind(fm, fm2)
     }
-    fm2 <- Matrix::KhatriRao(fm2, matrix(1,ncol=nrow(mm)))
-    if(length(levels(ff2))>0){
-      row.names(fm2) <- make.names(levels(ff2))  
-    }
-    fm <- rbind(fm, fm2)
   }
   # design matrix REs
   sm <- Matrix::KhatriRao(sm, t(mm))
@@ -285,7 +288,7 @@ csIndices <- function(grps, nocorr){
 }
 
 # for formula
-mkReTrms1 <- function (bars, fr, ...)
+mkReTrms1 <- function (bars, fr, means = TRUE, ...)
 {
   # drop.unused.levels = TRUE; 
   reorder.vars = FALSE
@@ -301,7 +304,7 @@ mkReTrms1 <- function (bars, fr, ...)
   term.names <- vapply(bars, safeDeparse, "")
   
   #
-  blist <- lapply(bars, mkModMlist, fr)#, reorder.vars = reorder.vars)
+  blist <- lapply(bars, mkModMlist, fr, means = means)#, reorder.vars = reorder.vars)
   nl <- vapply(blist, `[[`, 0L, "nl")
   cnms <- lapply(blist,`[[`,"cnms")
   names(nl) <- unlist(lapply(cnms, auxFun))
@@ -313,7 +316,7 @@ mkReTrms1 <- function (bars, fr, ...)
   
   # Design matrix RE means
   Xtlist <- lapply(blist, `[[`, "fm")
-  Xt <- do.call(rbind, Xtlist)
+  Xt <- if(means) do.call(rbind, Xtlist) else matrix(0)
 
   ll <- list(Zt = Zt, grps = grps, nl = nl, Xt = Xt)
   ll
