@@ -644,7 +644,7 @@ Type objective_function<Type>::operator() ()
         //quadratic coefficients for RRR
         if(lambda2.cols()==1){
           for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
-            D_RR.diagonal()(d-num_lv_c) = fabs(lambda2(d,0));
+            D_RR.diagonal()(d-num_lv_c) = pow(lambda2(d,0),2);
           }
           // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
@@ -655,7 +655,7 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             D_RR.setZero();
             for (int d=num_lv_c; d<(num_lv_c+num_RR);d++){
-              D_RR.diagonal()(d-num_lv_c) = fabs(lambda2(d,j));
+              D_RR.diagonal()(d-num_lv_c) = pow(lambda2(d,j),2);
             }
             for (int i=0; i<n; i++) {
               eta(i,j) -=  x_lv.row(i)*b_lv.rightCols(num_RR)*D_RR*(x_lv.row(i)*b_lv.rightCols(num_RR)).transpose();
@@ -2984,13 +2984,13 @@ Type objective_function<Type>::operator() ()
             if(lambda2.cols()==1){
               for (int j=0; j<p; j++){
                 for (int q=0; q<num_lv_c; q++){
-                  D(j).diagonal()(q) = fabs(lambda2(q,0)); //common tolerances model
+                  D(j).diagonal()(q) = pow(lambda2(q,0),2); //common tolerances model
                 }
               }
             }else{
               for (int j=0; j<p; j++){
                 for (int q=0; q<num_lv_c; q++){
-                  D(j).diagonal()(q) = fabs(lambda2(q,j)); //full quadratic model
+                  D(j).diagonal()(q) = pow(lambda2(q,j),2); //full quadratic model
                 }
               }
             }
@@ -3001,13 +3001,13 @@ Type objective_function<Type>::operator() ()
               //like this due to the difference between fixed and random Bs
               for (int j=0; j<p; j++){
                 for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-                  D(j).diagonal()(q) = fabs(lambda2(q-num_lv,0)); //common tolerances model
+                  D(j).diagonal()(q) = pow(lambda2(q-num_lv,0),2); //common tolerances model
                 }
               }
             }else{
               for (int j=0; j<p; j++){
                 for (int q=(num_lv+num_lv_c); q<nlvr; q++){
-                  D(j).diagonal()(q) = fabs(lambda2(q-num_lv,j)); //full quadratic model
+                  D(j).diagonal()(q) = pow(lambda2(q-num_lv,j),2); //full quadratic model
                 }
               }
             }
@@ -3017,13 +3017,13 @@ Type objective_function<Type>::operator() ()
               //make sure that num_lv is taken from the middle even with num_RR
               for (int j=0; j<p; j++){
                 for (int q=(num_lv_c+num_RR*random(2)); q<(num_lv_c+num_RR*random(2)+num_lv); q++){
-                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q,0)); //common tolerances model
+                  D(j).diagonal()(q-num_RR*random(2)) = pow(lambda2(q,0),2); //common tolerances model
                 }
               }
             }else{
               for (int j=0; j<p; j++){
                 for (int q=(num_lv_c+num_RR*random(2)); q<(num_lv_c+num_RR*random(2)+num_lv); q++){
-                  D(j).diagonal()(q-num_RR*random(2)) = fabs(lambda2(q,j)); //full quadratic model
+                  D(j).diagonal()(q-num_RR*random(2)) = pow(lambda2(q,j),2); //full quadratic model
                 }
               }
             }
@@ -4635,7 +4635,7 @@ Type objective_function<Type>::operator() ()
         D_RR.setZero();
         if(lambda2.cols()==1){
           for (int d=0; d<num_RR;d++){
-            D_RR.diagonal()(d) = fabs(lambda2(d,0));
+            D_RR.diagonal()(d) = pow(lambda2(d,0),2);
           }
           for (int i=0; i<n; i++) {
             eta.row(i).array() -=  (x_lv.row(i)*b_lv3*D_RR*(x_lv.row(i)*b_lv3).transpose()).value();
@@ -4645,7 +4645,7 @@ Type objective_function<Type>::operator() ()
           for (int j=0; j<p;j++){
             D_RR.setZero();
             for (int d=0; d<num_RR;d++){
-              D_RR.diagonal()(d) = fabs(lambda2(d,j));
+              D_RR.diagonal()(d) = pow(lambda2(d,j),2);
             }
             
             for (int i=0; i<n; i++) {

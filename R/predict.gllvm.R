@@ -799,17 +799,17 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
         if(p > 1){
           theta[lower.tri(theta[, seq_len(num.lv), drop = FALSE], diag = FALSE)] <- newpars$lambda
           if(quadratic != FALSE)
-            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv, nrow = p, byrow = TRUE))
+            theta <- cbind(theta, matrix(-newpars$lambda2^2, ncol = num.lv, nrow = p, byrow = TRUE))
         } else {
-          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -newpars$lambda2^2)
         }
       } else if(num.lv == 0 && (num.lv.c + num.RR) > 0){
         if(p > 1){
           theta[lower.tri(theta[, seq_len(num.lv.c + num.RR), drop = FALSE], diag = FALSE)] <- newpars$lambda
           if(quadratic != FALSE)
-            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv.c + num.RR, nrow = p, byrow = TRUE))
+            theta <- cbind(theta, matrix(-newpars$lambda2^2, ncol = num.lv.c + num.RR, nrow = p, byrow = TRUE))
         } else {
-          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -newpars$lambda2^2)
         }
       } else {
         if(p > 1){
@@ -819,9 +819,9 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
           theta[, (nc1 + 1):ncol(theta)][lower.tri(theta[, (nc1 + 1):ncol(theta), drop = FALSE], diag = FALSE)] <-
             newpars$lambda[(sum(lower.tri(theta[, seq_len(nc1), drop = FALSE], diag = FALSE)) + 1):length(newpars$lambda)]
           if(quadratic != FALSE)
-            theta <- cbind(theta, matrix(-abs(newpars$lambda2), ncol = num.lv + nc1, nrow = p, byrow = TRUE))
+            theta <- cbind(theta, matrix(-newpars$lambda2^2, ncol = num.lv + nc1, nrow = p, byrow = TRUE))
         } else {
-          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -abs(newpars$lambda2))
+          theta <- if(quadratic == FALSE) as.matrix(1) else c(as.matrix(1), -newpars$lambda2^2)
         }
       }
       rownames(theta) <- rownames(object$params$theta)

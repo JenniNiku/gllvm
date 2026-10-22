@@ -107,6 +107,12 @@ optima.gllvm <- function(object,sd.errors = TRUE, ...) {
       }
     }
     
+    l2 <- matrix(object$TMBfn$par[names(object$TMBfn$par)=="lambda2"], ncol = num.lv.c+num.lv, byrow=TRUE)
+    if(quadratic=="LV"){
+      l2 <- l2[rep(1,p),,drop=FALSE]
+    }
+    du2 <- -2*c(l2)*du2
+
     #re-arrange quadratic coefficients to similar order as linear: per species per latent variable (now per latent variable and then species)
     #this makes thing easier further on
     if(quadratic==TRUE){
@@ -198,7 +204,7 @@ tolerances.gllvm <- function(object,sd.errors = TRUE, ...) {
       cat("Standard errors not present in model, calculating...\n")
       object$Hess<-se.gllvm(object)$Hess 
     }
-    thetasig = sign(matrix(object$TMBfn$par[names(object$TMBfn$par)=="lambda2"], ncol = num.lv.c+num.lv, byrow=TRUE))
+    thetasig = 2*matrix(object$TMBfn$par[names(object$TMBfn$par)=="lambda2"], ncol = num.lv.c+num.lv, byrow=TRUE)
     if(quadratic=="LV"){
       thetasig <- thetasig[rep(1,p),,drop=FALSE]
     }

@@ -242,6 +242,7 @@ se.gllvm <- function(object, ...){
       }
       # reformat SEs based on the list that went into TMB
       se <- relist_gllvm(se, object$TMBfn$env$parList())
+      if(!isFALSE(quadratic)) se$lambda2 <- 2*abs(objrFinal$env$parList(objrFinal$par)$lambda2)*se$lambda2
       
       if(!is.null(object$params$row.params.fixed)) {
         se.row.params <- se$r0f;
@@ -738,6 +739,7 @@ se.gllvm <- function(object, ...){
     }
     # reformat SEs based on the list that went into TMB
     se <- relist_gllvm(se, object$TMBfn$env$parList())
+    if(!isFALSE(quadratic)) se$lambda2 <- 2*abs(objrFinal$env$parList(objrFinal$par)$lambda2)*se$lambda2
     
     num.X <- 0; if(!is.null(object$X) || !isFALSE(object$col.eff$col.eff) && !is.null(object$X.design)) num.X <- dim(object$X.design)[2]
     if(!is.null(object$params$row.params.fixed)) {
