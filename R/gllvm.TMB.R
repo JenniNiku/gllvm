@@ -440,9 +440,9 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         sigma.lv <- (fit$sigma.lv)
         lambdas <- as.matrix(fit$params[, (ncol(fit$params) - num.lv - (num.lv.c+num.RR) + 1):ncol(fit$params)])
         if(start.struc=="LV"&quadratic!=FALSE|quadratic=="LV"){
-          lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = 1)  
+          lambda2 <- matrix(sqrt(quad.start), ncol = num.lv + (num.lv.c+num.RR), nrow = 1)  
         }else if(start.struc=="all"&quadratic!=FALSE){
-          lambda2 <- matrix(quad.start, ncol = num.lv + (num.lv.c+num.RR), nrow = p)
+          lambda2 <- matrix(sqrt(quad.start), ncol = num.lv + (num.lv.c+num.RR), nrow = p)
         }else if(quadratic==FALSE){
           lambda2 <- 0
         }
@@ -1779,38 +1779,38 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           if(p>1) {
             theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=num.lv,nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }else if(num.lv==0&(num.lv.c+num.RR)>0){
           if(p>1) {
             theta[lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }else if(num.lv>0&(num.lv.c+num.RR)>0){
           if(p>1) {
             theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li][1:sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))];
             theta[,((num.lv.c+num.RR)+1):ncol(theta)][lower.tri(theta[,((num.lv.c+num.RR)+1):ncol(theta),drop=F],diag=FALSE)] <- param[li][(sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))+1):length(param[li])];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!
@@ -2307,38 +2307,38 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           if(p>1) {
             theta[lower.tri(theta[,1:num.lv,drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=num.lv,nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }else if(num.lv==0&(num.lv.c+num.RR)>0){
           if(p>1) {
             theta[lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=(num.lv.c+num.RR),nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }else if(num.lv>0&(num.lv.c+num.RR)>0){
           if(p>1) {
             theta[,1:(num.lv.c+num.RR)][lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE)] <- param[li][1:sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))];
             theta[,((num.lv.c+num.RR)+1):ncol(theta)][lower.tri(theta[,((num.lv.c+num.RR)+1):ncol(theta),drop=F],diag=FALSE)] <- param[li][(sum(lower.tri(theta[,1:(num.lv.c+num.RR),drop=F],diag=FALSE))+1):length(param[li])];
             if(quadratic!=FALSE){
-              theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
+              theta<-cbind(theta,matrix(-param[li2]^2,ncol=num.lv+(num.lv.c+num.RR),nrow=p,byrow=T))
             }
           } else {
             if(quadratic==FALSE){
               theta <- as.matrix(1)
             }else{
-              theta <- c(as.matrix(1),-abs(param[li2]))}  
+              theta <- c(as.matrix(1),-param[li2]^2)}  
           }
         }
         #diag(theta) <- exp(diag(theta)) # !!!

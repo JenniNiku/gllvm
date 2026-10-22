@@ -563,9 +563,9 @@ trait.TMB <- function(
           }
         }
         if(start.struc=="LV"&quadratic!=FALSE){
-          lambda2 <- matrix(quad.start, ncol = num.lv, nrow = 1)  
+          lambda2 <- matrix(sqrt(quad.start), ncol = num.lv, nrow = 1)  
         }else if(start.struc=="all"&quadratic!=FALSE){
-          lambda2 <- matrix(quad.start, ncol = num.lv, nrow = p)
+          lambda2 <- matrix(sqrt(quad.start), ncol = num.lv, nrow = p)
         }else if(quadratic==FALSE){
           lambda2 <- 0
         }
@@ -1769,9 +1769,9 @@ trait.TMB <- function(
       if(p>1) {
         theta[lower.tri(theta,diag=F)] <- param[li];
         if(quadratic!=FALSE){
-          theta<-cbind(theta,matrix(-abs(param[li2]),ncol=num.lv,nrow=p,byrow=T))
+          theta<-cbind(theta,matrix(-param[li2]^2,ncol=num.lv,nrow=p,byrow=T))
         }
-      } else {theta <- c(as.matrix(1),-abs(param[li2]))}
+      } else {theta <- c(as.matrix(1),-param[li2]^2)}
       # diag(theta) <- exp(diag(theta))#!!!
     }
     
