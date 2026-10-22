@@ -62,6 +62,7 @@
 #'  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
 #'  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
 #'  \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to 10.}
+#'  \item{\emph{bound}: }{ \code{TRUE}, \code{FALSE} or \code{"hybrid"}, which data augmentation gives the variational lower bound for families with logit link (\code{"binomial"}, \code{"ZIB"}, \code{"ZNIB"}, \code{"ordinal"}, and the zero and one categories of \code{"orderedBeta"}) and for \code{"negative.binomial"} and \code{"ZINB"} when \code{method = "VA"}. If \code{TRUE} (default), the Polya-gamma augmentation is used for the logit link, and the Poisson-gamma augmentation for the negative binomial and ZINB. If \code{FALSE}, the Poisson-gamma augmentation is used for the logit link, representing a success or a failure as the truncation of a latent geometric count, whichever is tighter for each observation, so that results do not depend on which outcome is coded as a success; for the negative binomial and ZINB the Polya-gamma augmentation is used. If \code{"hybrid"}, the tightest of the Polya-gamma and the two Poisson-gamma augmentations is used for each observation (for each cut-off with \code{"ordinal"}). With cloglog link (\code{"binomial"}, \code{"ZIB"}, \code{"ZNIB"} and \code{"ordinal"}), \code{TRUE} and \code{"hybrid"} use an extreme value (Gumbel) latent variable, and \code{FALSE} a latent Poisson count. Has no effect for other families or methods.}
 #' }
 #' @param control.start A list with the following arguments controlling the starting values:
 #' \describe{
@@ -446,7 +447,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
                   control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optimizer.trace = 0, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
-                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
+                  control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10, bound = TRUE),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"), setMap=NULL, ...
                   ) {
   # Dthreshold=0,
@@ -571,6 +572,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
         x$Lambda.start = c(0.3, 0.3, 0.3)
       if (!("NN" %in% names(x)))
         x$NN = 10   
+      if (!("bound" %in% names(x)))
+        x$bound = TRUE
       x
     }
     fill_control.start = function(x){
@@ -691,9 +694,12 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     #   control.start$start.struc <- "all"
     # }
     reltol = control$reltol; reltol.c = control$reltol.c; TMB = control$TMB; optimizer = control$optimizer; max.iter = control$max.iter; maxit = control$maxit; trace = control$trace; optimizer.trace = control$optimizer.trace; optim.method = control$optim.method; nn.colMat = control$nn.colMat; colMat.approx = control$colMat.approx;
-    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN;
+    Lambda.struc = control.va$Lambda.struc; Ab.struct = control.va$Ab.struct; Ab.struct.rank = control.va$Ab.struct.rank; Ar.struc = control.va$Ar.struc; diag.iter = control.va$diag.iter; Ab.diag.iter=control.va$Ab.diag.iter; Lambda.start = control.va$Lambda.start; NN = control.va$NN; bound = control.va$bound;
     starting.val = control.start$starting.val; n.init = control.start$n.init; n.init.max = control.start$n.init.max; jitter.var = control.start$jitter.var; jitter.var.br = control.start$jitter.var.br; start.fit = control.start$start.fit; start.lvs = control.start$start.lvs; randomX.start = control.start$randomX.start
     start.struc = control.start$start.struc;quad.start=control.start$quad.start; scalmax=control.start$scalmax; rangeP=control.start$rangeP; MaternKappa=control.start$MaternKappa; zetacutoff=control.start$zetacutoff; start.optimizer = control.start$start.optimizer; start.optim.method = control.start$start.optim.method;
+    
+    if(!(isTRUE(bound) || isFALSE(bound) || identical(bound, "hybrid"))) stop("'bound' must be TRUE, FALSE, or \"hybrid\".")
+    bound <- if(identical(bound, "hybrid")) 2L else as.integer(bound)
     
     # For tweedie & optim, optim.method always "L-BFGS-B"
     if(is.null(optim.method) && optimizer == "optim") optim.method <- ifelse(any(family == "tweedie"), "L-BFGS-B", "BFGS")
@@ -1715,7 +1721,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             zeta.struc = zeta.struc,
             quadratic = quadratic,
             optim.method=optim.method, 
-            dr=dr,dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, 
+            dr=dr,dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, bound = bound, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap = setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,
@@ -1780,7 +1786,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             quadratic = quadratic,
             randomB = randomB,
             optim.method=optim.method, 
-            dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, 
+            dr=dr, dLV=dLV, cstruc = cstruc, cstruclv = cstruclv, dist =dist, distLV = distLV, corWithinLV = corWithinLV, NN=NN, bound = bound, 
             scalmax = scalmax, MaternKappa = MaternKappa, rangeP = rangeP,
             setMap=setMap, #Dthreshold=Dthreshold,
             disp.group = disp.group,

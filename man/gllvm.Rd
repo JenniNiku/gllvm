@@ -47,7 +47,7 @@ gllvm(
     colMat.approx = "NNGP"),
   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),
     "blockdiagonal", "MNunstructured"), Ab.struct.rank = 1, Ar.struc = "diagonal",
-    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
+    diag.iter = 1, Ab.diag.iter = 0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10, bound = TRUE),
   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0,
     jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res",
     quad.start = 0.01, start.struc = "LV", scalmax = 10, MaternKappa = 1.5, rangeP =
@@ -153,6 +153,7 @@ gllvm(
  \item{\emph{Ab.diag.iter}: }{ As above, but for variational covariance of random slopes.}
  \item{\emph{Lambda.start}: }{ starting values for variances in VA distributions for latent variables, random row effects and random slopes in variational approximation method. Defaults to 0.3.}
  \item{\emph{NN}: }{ Number of nearest neighbors for NN variational covariance. Defaults to 10.}
+ \item{\emph{bound}: }{ \code{TRUE}, \code{FALSE} or \code{"hybrid"}, which data augmentation gives the variational lower bound for families with logit link (\code{"binomial"}, \code{"ZIB"}, \code{"ZNIB"}, \code{"ordinal"}, and the zero and one categories of \code{"orderedBeta"}) and for \code{"negative.binomial"} and \code{"ZINB"} when \code{method = "VA"}. If \code{TRUE} (default), the Polya-gamma augmentation is used for the logit link, and the Poisson-gamma augmentation for the negative binomial and ZINB. If \code{FALSE}, the Poisson-gamma augmentation is used for the logit link, representing a success or a failure as the truncation of a latent geometric count, whichever is tighter for each observation, so that results do not depend on which outcome is coded as a success; for the negative binomial and ZINB the Polya-gamma augmentation is used. If \code{"hybrid"}, the tightest of the Polya-gamma and the two Poisson-gamma augmentations is used for each observation (for each cut-off with \code{"ordinal"}). With cloglog link (\code{"binomial"}, \code{"ZIB"}, \code{"ZNIB"} and \code{"ordinal"}), \code{TRUE} and \code{"hybrid"} use an extreme value (Gumbel) latent variable, and \code{FALSE} a latent Poisson count. Has no effect for other families or methods.}
 }}
 
 \item{control.start}{A list with the following arguments controlling the starting values:
