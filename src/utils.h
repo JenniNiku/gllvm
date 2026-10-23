@@ -320,6 +320,21 @@ Type logsinh(Type x) {
   return x - Type(log(2.0)) + log(-expminus1(-2*x));
 }
 
+template<class Type>
+Type pgtilt(Type m, Type v, int K) {
+  Type T = m*m + v;
+  Type out = 0;
+  for(int k=1; k<=K; k++){
+    Type d = Type((2*k-1)*(2*k-1))*Type(M_PI*M_PI);
+    Type kap = 1/(d + T);
+    Type den = 1 + 2*kap*v;
+    Type md = m/den;
+    Type delta = kap*T - 0.5*log(den) - kap*m*m/den + log1plus((md*md + v/den)/d) - log1plus(T/d);
+    out += CppAD::CondExpLt(delta, Type(0), delta, Type(0));
+  }
+  return out;
+}
+
 extern "C" {
   /* See 'R-API: entry points to C-code' (Writing R-extensions) */
   void Rf_pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p);
