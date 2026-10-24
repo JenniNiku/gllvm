@@ -3065,13 +3065,13 @@ Type objective_function<Type>::operator() ()
               is_group2 = false;
             }
             
-            // sign only if Poisson/NB/gamma/exponential/ZIP/Tweedie
+            // sign only if Poisson/NB/gamma/exponential/ZIP/ZINB/Tweedie/cloglog
             int sign = 0;
             if (is_group1) {
-              if ((family(j) > 0) && (family(j) != 6) && (family(j) != 5) && !(is_cloglog && (family(j) != 7)))
-                sign = 1;   // NB, gamma, exponential, ZIP
+              if ((family(j) > 0) && (family(j) != 6) && (family(j) != 5) && !(is_cloglog && (family(j) != 7)) && !((family(j)==1) && (extra(j)==1) && (method<1)))
+                sign = 1;   // NB2, gamma, exponential, ZINB, ordinal cloglog
               else
-                sign = -1;  // Poisson, ZIP, Tweedie
+                sign = -1;  // Poisson, ZIP, Tweedie, NB1, binomial/ZIB/ZNIB cloglog
             }
             
             //   //this implementation does not follow calculation from van der Veen et al. 2021
