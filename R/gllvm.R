@@ -2010,7 +2010,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(is.null(out$sd)){
       out$sd <- FALSE
     }
-    if(TMB && !isFALSE(quadratic)){
+    if(TMB && !isFALSE(quadratic) && is.finite(out$logL)){
     # check if quadratic coefs have converged or have stuck to "LV"
     if(isTRUE(quadratic)){
       if(length(unique(round(out$params$theta[,-c(1:(num.RR+num.lv.c+num.lv)),drop=F],6)))==(num.RR+num.lv.c+num.lv)){
