@@ -5,7 +5,7 @@
 trait.TMB <- function(
       y, X = NULL, xr = matrix(0), TR=NULL, formula = NULL, num.lv = 2, family = "poisson", num.lv.cor = 0, corWithinLV = FALSE, LVgroups = NULL,
       Lambda.struc = "unstructured", Ab.struct = "blockdiagonal", Ab.struct.rank = NULL, Ar.struc = "diagonal", row.eff = FALSE, reltol = 1e-6,
-      maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL, trace = FALSE, optimizer.trace = 0,
+      maxit = 3000, max.iter = 200, start.lvs = NULL, offset = NULL, trace = FALSE, optimizer.trace = 0, xbSparse = FALSE,
       link = "logit", n.init = 1, n.init.max = 10, start.params = NULL, start0 = FALSE, optimizer = "optim", dr = matrix(0), proptoMats = list(list(matrix(0))), csR = matrix(0), trmsize = matrix(0), dLV = NULL, cstruc = "diag", cstruclv  = "diag", dist = list(matrix(0)), distLV = matrix(0), scalmax = 10, MaternKappa = 1.5,
       starting.val = "res", method = "VA", randomX = NULL, RElist = list(Zt = matrix(0)), Power = 1.5, diag.iter = 1, Ab.diag.iter = 0,colMat = NULL, nn.colMat = NULL, colMat.approx = "NNGP", colMat.rho.struct = "single",
       Lambda.start = c(0.2, 0.5), jitter.var = 0, jitter.var.br = 0, yXT = NULL, scale.X = FALSE, randomX.start = "zero", beta0com = FALSE, rangeP = NULL, zetacutoff = NULL,
@@ -14,6 +14,7 @@ trait.TMB <- function(
   
   n <- nu <- dim(y)[1]; 
   p <- dim(y)[2];
+  xbD <- matrix(0); xbSp <- as(matrix(0), "TsparseMatrix")
   p_betaH =  sum(family %in% c("betaH"))/2
   
   if(length(family)==1) family <- rep(family, p)
@@ -21,6 +22,8 @@ trait.TMB <- function(
 
   if(all(cstruc == "diag"))Ar.struc = "diagonal"
   if(is.null(colMat) && !(Ab.struct %in% c("diagonal","blockdiagonal")))Ab.struct <- "blockdiagonal"
+  if(xbSparse && !Ab.struct %in% c("diagonal", "blockdiagonal", "MNdiagonal", "MNunstructured"))
+    stop("'xbSparse = TRUE' is only available for Ab.struct 'diagonal', 'blockdiagonal', 'MNdiagonal' or 'MNunstructured'.")
   
   objrFinal <- optrFinal <- NULL
   
@@ -428,6 +431,13 @@ trait.TMB <- function(
       Abstruc <- Abranks <- 0
       blocks <- list(matrix(0))
       rhoSP <- FALSE
+    }
+    if(xbSparse){
+      xbD <- matrix(nrow = 0, ncol = 0)
+      xbSp <- as(xb, "TsparseMatrix")
+    }else{
+      xbD <- xb
+      xbSp <- as(matrix(0), "TsparseMatrix")
     }
     if(is.null(randomX) || Ab.struct%in%c("diagonal","MNdiagonal","diagonalCL1")) Ab.diag.iter <- 0
     
@@ -1351,7 +1361,7 @@ trait.TMB <- function(
       parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
 
       objr <- TMB::MakeADFun(
-        data = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, randomB = 0, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0)), silent=!trace,
+        data = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xbD, xbS = xbSp, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, family=familyn, extra=extra, quadratic = 1, randomB = 0, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = times, cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0)), silent=!trace,
         parameters = parameter.list, map = map.list2,
         inner.control=list(mgcmax = 1e+200),
         DLL = "gllvm", silent=TRUE)
@@ -1375,7 +1385,7 @@ trait.TMB <- function(
     
     if( (method %in% c("VA", "EVA")) && (num.lv>0 || (nrow(dr)==n) || !is.null(randomX) || any(family =="orderedBeta")) ){
       parameter.list <- list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a),  b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, bH=bH, thetaH = thetaH
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset=offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr=xr, xb=xbD, xbS = xbSp, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset=offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE,1,0), randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -1387,7 +1397,7 @@ trait.TMB <- function(
       map.list$Au <- map.list$Abb <- map.list$lg_Ar <- factor(NA)
       
       parameter.list = list(r0r = matrix(r0r), sigmaijr = sigmaijr, r0f = matrix(r0f), b = rbind(a), b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=matrix(B), Br=Br, lambda = theta, lambda2 = t(lambda2), sigmaLV = (sigma.lv), u = u, lg_phi=log(phi), sigmaB=sigmaB, sigmaij=sigmaij, log_sigma=c(sigma), rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = log(ZINBphi)) #, scaledc=scaledc, thetaH = thetaH, bH=bH
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, randomB = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xbD, xbS = xbSp, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = 0, randomB = 0, family=familyn,extra=extra,method=1,model=1,random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       if(any(family %in% c("ordinal"))){
         data.list$method = 0
@@ -1558,7 +1568,7 @@ trait.TMB <- function(
       
       parameter.list <- list(r0r = r0r1, sigmaijr = sigmaijr1, r0f = r0f1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B = B1, Br = Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = (sigma.lv1), u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au1, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), randomB = 0,family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
+      data.list <- list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xbD, xbS = xbSp, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, num_corlv=num.lv.cor, quadratic = ifelse(quadratic!=FALSE&num.lv>0,1,0), randomB = 0,family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,
@@ -1622,7 +1632,7 @@ trait.TMB <- function(
       
         parameter.list = list(r0r = r0r1, sigmaijr = sigmaijr, r0f = r0f1, b = b1, b_lv = matrix(0), sigmab_lv = 0, Ab_lv = 0, B=B1, Br = Br1, lambda = lambda1, lambda2 = t(lambda2), sigmaLV = sigma.lv1, u = u1, lg_phi=lg_phi1, sigmaB=sigmaB1, sigmaij=sigmaij1, log_sigma=log_sigma1, rho_lvc=rho_lvc, Au=Au, lg_Ar=lg_Ar, Abb=Abb, zeta=zeta, ePower = ePower, lg_phiZINB = lg_phiZINB1) #, scaledc=scaledc, thetaH = thetaH, bH=bH
 
-      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xb, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
+      data.list = list(y = y, x = Xd, x_lv = matrix(0), xr = xr, xb = xbD, xbS = xbSp, dr0 = dr, csR = csR, proptoMats = proptoMats, dLV = dLV, offset = offset, trmsize = trmsize, num_lv = num.lv, num_RR = 0, num_lv_c = 0, quadratic = 1, randomB = 0, family=familyn, extra=extra, method=switch(method, VA=0, EVA=2), model=1, random=randoml, zetastruc = ifelse(zeta.struc=="species",1,0), times = matrix(times, nrow = 1), cstruc=cstrucn, cstruclv = cstruclvn, dc=dist, dc_lv = distLV, Astruc=Astruc, NN = NN, Ntrials = Ntrials, colMatBlocksI = blocks,  Abranks = Abranks, Abstruc = Abstruc, cs = cs, nncolMat = nncolMat, csb_lv = matrix(0), cw = corWithinLV*1, p_betaH = p_betaH)
 
       objr <- TMB::MakeADFun(
         data = data.list, silent=TRUE,

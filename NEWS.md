@@ -4,6 +4,13 @@ Version 2.0.16
 * Minor numerical improvements to ordinal link = "logit"
 * Numerical improvements for quadratic != FALSE. This fixed inefficiencies introduced by V2.0.7 (mixed-response types), but also improvements relative to the code prior that version.
 * Implements quadratic with lvCor
+* New argument `xbSparse` in `gllvm()` that treats the design matrix of the species random effects as sparse
+* Faster VA for species random effects with `Ab.struct = "diagonal"` and when the species random effects covariance matrix is diagonal
+* Minor numerical improvements to ordinal link = "logit"
+* Numerical improvements for quadratic != FALSE. This fixed inefficiencies introduced by V2.0.7 (mixed-response types), but also improvements relative to the code prior that version.
+* Implements quadratic with lvCor
+* New argument `xbSparse` in `gllvm()` that treats the design matrix of the species random effects as sparse
+* Faster VA for species random effects with `Ab.struct = "diagonal"` and when the species random effects covariance matrix is diagonal
 
 
 ## Bugfixes

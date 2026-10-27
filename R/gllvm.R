@@ -34,6 +34,7 @@
 #' @param zeta.struc structure for cut-offs in the ordinal model. Either "common", for the same cut-offs for all species, or "species" for species-specific cut-offs. For the latter, classes are arbitrary per species, each category per species needs to have at least one observations. Defaults to "species".
 #' @param randomX  formula for species specific random effects of environmental variables in fourth corner model. Defaults to \code{NULL}, so that no random slopes are included by default.
 #' @param beta0com logical. If \code{FALSE} column-specific intercepts are assumed. If \code{TRUE}, column-specific intercepts are collected to a common value.
+#' @param xbSparse logical. If \code{TRUE} the design matrix of the species random effects is passed to TMB as a sparse matrix, which can save time and memory when it has many columns and few non-zeroes, as with factors Defaults to \code{FALSE}.
 #' @param scale.X logical. If \code{TRUE}, covariates are scaled when fourth corner model is fitted.
 #' @param return.terms logical. If \code{TRUE} 'terms' object is returned.
 #' @param gradient.check logical. If \code{TRUE} gradients are checked for large values (>0.01) even if the optimization algorithm did converge.
@@ -428,7 +429,7 @@
 #'@importFrom graphics abline axis par plot segments text points boxplot barplot panel.smooth lines polygon arrows image layout mtext
 #'@importFrom grDevices rainbow hcl colorRampPalette dev.size
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma ppois rpois runif pchisq qchisq qqnorm lm AIC binomial constrOptim factanal glm model.extract model.frame model.matrix model.response nlminb optim optimHess reshape residuals terms BIC qqline sd formula ppoints quantile gaussian cov princomp as.formula residuals.lm coef printCoefmat nobs predict cov2cor reformulate update.formula aggregate setNames contrasts cor na.omit getCall plogis model.offset
-#'@importFrom Matrix bdiag chol2inv diag t isSymmetric
+#'@importFrom Matrix bdiag chol2inv diag t isSymmetric solve
 #'@importFrom MASS ginv polr mvrnorm
 #'@importFrom mgcv gam predict.gam
 #'@importFrom nloptr nloptr
@@ -441,7 +442,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   num.lv = NULL, num.lv.c = 0, num.RR = 0, lv.formula = NULL,
                   lvCor = NULL, studyDesign=NULL, dist = list(matrix(0)), distLV = matrix(0), colMat = NULL, colMat.rho.struct = "single", corWithin = FALSE, corWithinLV = FALSE,
                   quadratic = FALSE, row.eff = FALSE, sd.errors = TRUE, offset = NULL, method = "VA", randomB = FALSE,
-                  randomX = NULL, beta0com = FALSE, zeta.struc = "species",
+                  randomX = NULL, beta0com = FALSE, xbSparse = FALSE, zeta.struc = "species",
                   plot = FALSE, link = "probit", Ntrials = matrix(1),
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
@@ -793,7 +794,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
 
       nocorrSP <- corstruc(expandDoubleVerts2(col.eff.formula))
-      RElistSP<- mkReTrms1(bar.f, mf) #still add find double bars
+      REmeans <- !(isTRUE(row.eff) || identical(row.eff, "fixed") || (inherits(row.eff, "formula") && inherits(nobars1_(row.eff), "formula")))
+      RElistSP<- mkReTrms1(bar.f, mf, means = REmeans) #still add find double bars
       RElistSP$cs <- csIndices(RElistSP$grps, nocorrSP)
       
       if(is.null(formula) && is.null(lv.formula)){
@@ -903,7 +905,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
             nocorrLV <- corstruc(expandDoubleVerts2(lv.formula))
-            RElistLV <- mkReTrms1(bar.f,lv.X) #still add find double bars
+            RElistLV <- mkReTrms1(bar.f,lv.X, means = FALSE) #still add find double bars
             RElistLV$cs <- csIndices(RElistLV$grps, nocorrLV)
             lv.X.design = t(as.matrix(RElistLV$Zt))
             if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
@@ -937,7 +939,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             bar.f <- findbars1(lv.formula) # list with 3 terms
             lv.X <- model.frame(subbars1(reformulate(sprintf("(%s)", sapply(findbars1(lv.formula), deparse1)))),data=data.frame(datayx))
             nocorrLV <- corstruc(expandDoubleVerts2(lv.formula))
-            RElistLV<- mkReTrms1(bar.f,lv.X) #still add find double bars
+            RElistLV<- mkReTrms1(bar.f,lv.X, means = FALSE) #still add find double bars
             RElistLV$cs <- csIndices(RElistLV$grps, nocorrLV)
             lv.X.design = t(as.matrix(RElistLV$Zt))
             if((ncol(csBlv) == 2) && randomB%in%c("iid","single")){
@@ -1221,7 +1223,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
           mf.new[, corWithin] <- apply(mf[, corWithin, drop=F],2,function(x)order(order(x)))
         }
         colnames(mf.new) <- colnames(mf)
-        RElistRow <- mkReTrms1(bar.f, mf.new)
+        RElistRow <- mkReTrms1(bar.f, mf.new, means = FALSE)
         dr <- Matrix::t(RElistRow$Zt)
 
         # This line errs for formulations such as (cov|1), which includes an intercept
@@ -1394,7 +1396,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             }
           }
           colnames(mf.new) <- colnames(mf)
-          RElistLV <- mkReTrms1(bar.lv, mf.new)
+          RElistLV <- mkReTrms1(bar.lv, mf.new, means = FALSE)
           dLV <- Matrix::t(RElistLV$Zt)
           dLV <- dLV[,colSums(as.matrix(dLV))>0]
           
@@ -1711,6 +1713,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             RElist = RElistSP,
             randomX.start = randomX.start,
             beta0com = beta0com, 
+            xbSparse = xbSparse,
             scale.X = scale.X,
             zeta.struc = zeta.struc,
             quadratic = quadratic,
@@ -1789,6 +1792,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
             # spdr = spdr,
             # cs = cs,
             beta0com = beta0com,
+            xbSparse = xbSparse,
             zetacutoff = zetacutoff,
             start.optimizer = start.optimizer,
             start.optim.method = start.optim.method,

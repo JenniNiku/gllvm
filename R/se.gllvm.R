@@ -2,6 +2,7 @@
 #' @description Calculates Hessian and standard errors for gllvm model.
 #'
 #' @param object an object of class 'gllvm'.
+#' @param sparse logical. If \code{TRUE}, for models fitted with \code{method = "VA"} or \code{"EVA"} the Hessian is calculated as a sparse matrix, from a copy of the model with all parameters profiled, and the variational parameters are profiled out of it with sparse matrix algebra. This saves time and memory when the model has many variational parameters, for example with many random effects. \code{Hess$Hess.full} is then returned as a sparse matrix. Ignored for \code{method = "LA"}. Defaults to \code{FALSE}.
 #' @param ... not used.
 #'
 #' @details
@@ -33,7 +34,7 @@
 #'@export
 #'@export se.gllvm
 
-se.gllvm <- function(object, ...){
+se.gllvm <- function(object, sparse = FALSE, ...){
   if(!is.finite(object$logL)) stop("Standard errors can not be calculated if log-likelihood value is not finite.")
   if(object$TMB == FALSE) stop("Function is not implemented for TMB = FALSE.")
   if(isNullPointer(object$TMBfn$env$ADFun$ptr)) stop("This model object is no longer valid, as it was loaded from file. Refit the model with gllvm() in the current session before calling se().")
@@ -56,6 +57,7 @@ se.gllvm <- function(object, ...){
   n <- nrow(object$y)
   p <- ncol(object$y)
   method <- object$method
+  sparse <- isTRUE(sparse) && method %in% c("VA", "EVA")
   num.lv <- object$num.lv
   num.lv.c <- object$num.lv.c
   num.lv.cor <- object$num.lvcor
@@ -88,7 +90,7 @@ se.gllvm <- function(object, ...){
   if (!is.null(object$TR)) {
     {
       if((method %in% c("VA", "EVA"))){
-        sdr <- objrFinal$he(objrFinal$par)
+        sdr <- if(sparse) sparseHess(objrFinal, objrFinal$par) else objrFinal$he(objrFinal$par)
       }
       if(method == "LA"){
         pars <- objrFinal$par
@@ -144,13 +146,14 @@ se.gllvm <- function(object, ...){
         incl[names(objrFinal$par)%in%c("Br","sigmaB","sigmaij")] <- FALSE
       } else {
         xb <- objrFinal$env$data$xb
+        if(is.null(xb) || nrow(xb) == 0) xb <- as.matrix(objrFinal$env$data$xbS)
         incl[names(objrFinal$par)=="Abb"] <- FALSE; incld[names(objrFinal$par)=="Abb"] <- TRUE
         incl[names(objrFinal$par)=="Br"] <- FALSE; incld[names(objrFinal$par)=="Br"] <- TRUE
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
       }
       
       if(method=="LA" || (num.lv==0 && (is.null(object$params$row.params.random) && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
-        cov.mat.mod <- try(MASS::ginv(sdr[incl,incl]), silent = TRUE)
+        cov.mat.mod <- try(MASS::ginv(as.matrix(sdr[incl,incl])), silent = TRUE)
         if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
         d <- diag(cov.mat.mod)
         if(any(d < 0)){
@@ -192,18 +195,26 @@ se.gllvm <- function(object, ...){
         if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
         if(any(!is.finite(sds) | sds<1e-12, na.rm=TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
-        sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
+        if(sparse){
+          sdr.s <- Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds)
+          A.mat <- as.matrix(sdr.s[incl,incl])
+          D.mat <- sdr.s[incld,incld]
+          B.mat <- sdr.s[incl,incld]
+          I <- A.mat-as.matrix(B.mat%*%solve(D.mat, t(B.mat)))
+        }else{
+          sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
-        A.mat <- sdr.s[incl,incl] # a x a
-        D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
-        B.mat <- sdr.s[incl,incld] # a x d
-        I <-A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+          A.mat <- sdr.s[incl,incl] # a x a
+          D.mat <- as(sdr.s[incld,incld],"TsparseMatrix") # d x d
+          B.mat <- sdr.s[incl,incld] # a x d
+          I <-A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+        }
         if(!isSymmetric(I)) I <- 0.5*I + 0.5*t(I)
         cov.mat.mod<- try(MASS::ginv(I),silent=T)
         if(inherits(cov.mat.mod,"try-error")){
           # block inversion via inverse of fixed-effects block
           Ai <- try(solve(A.mat),silent=T)
-          cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
+          cov.mat.mod <- try(as.matrix(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai),silent=T)
         }
         cov.mat.mod <- try(sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE)
 
@@ -551,7 +562,7 @@ se.gllvm <- function(object, ...){
       pars[p0i] <- p0
     }
     if((method %in% c("VA", "EVA"))){
-      sdr <- objrFinal$he(pars)
+      sdr <- if(sparse) sparseHess(objrFinal, pars) else objrFinal$he(pars)
     }
     if(method == "LA"){
       sdr <- optimHess(pars, objrFinal$fn, objrFinal$gr)
@@ -636,7 +647,7 @@ se.gllvm <- function(object, ...){
     }
     
     if(method=="LA" || ((num.lv+num.lv.c)==0 && (method %in% c("VA", "EVA")) && is.null(object$params$row.params.random) && isFALSE(object$randomB)) && object$col.eff$col.eff!="random"){
-      cov.mat.mod <- try(if(constrained) cov_constrained(sdr[incl,incl], Jcon[,incl,drop=FALSE]) else MASS::ginv(sdr[incl,incl]), silent = TRUE)
+      cov.mat.mod <- try(if(constrained) cov_constrained(as.matrix(sdr[incl,incl]), Jcon[,incl,drop=FALSE]) else MASS::ginv(as.matrix(sdr[incl,incl])), silent = TRUE)
       if(inherits(cov.mat.mod, "try-error")) { stop("Standard errors for parameters could not be calculated, due to singular fit.\n") }
       d <- diag(cov.mat.mod)
       if(any(d < 0)){
@@ -686,13 +697,21 @@ se.gllvm <- function(object, ...){
       if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
       if(any(!is.finite(sds) | sds<1e-12, na.rm = TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
-      sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
+      if(sparse){
+        sdr.s <- Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds)
+        A.mat <- as.matrix(sdr.s[incl, incl])
+        D.mat <- sdr.s[incld, incld]
+        B.mat <- sdr.s[incl, incld]
+        I <- A.mat-as.matrix(B.mat%*%solve(D.mat, t(B.mat)))
+      }else{
+        sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
-      A.mat <- sdr.s[incl, incl] # a x a
-      D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
-      B.mat <- sdr.s[incl, incld] # a x d
+        A.mat <- sdr.s[incl, incl] # a x a
+        D.mat <- as(sdr.s[incld, incld], "TsparseMatrix") # d x d
+        B.mat <- sdr.s[incl, incld] # a x d
 
-      I <- A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+        I <- A.mat-B.mat%*%as.matrix(solve(D.mat, t(B.mat)))
+      }
       if(!isSymmetric(I)) I <- 0.5*I + 0.5*t(I)
       # jacobian on the scaled parameters, dc/dphi = (dc/dtheta)/sds
       Jcon.s <- if(constrained) sweep(Jcon[,incl,drop=FALSE], 2, sds[incl], "/") else NULL
@@ -700,7 +719,7 @@ se.gllvm <- function(object, ...){
       if(inherits(cov.mat.mod,"try-error")){
         # block inversion via inverse of fixed-effects block
         Ai <- try(solve(A.mat),silent=T)
-        cov.mat.mod <- try(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai,silent=T)
+        cov.mat.mod <- try(as.matrix(Ai+Ai%*%B.mat%*%MASS::ginv(as.matrix(D.mat-t(B.mat)%*%Ai%*%B.mat))%*%t(B.mat)%*%Ai),silent=T)
       }
       cov.mat.mod <- try(sweep(sweep(cov.mat.mod, 2, sds[incl],"/"),1,sds[incl],"/"), silent = TRUE)
 
@@ -1118,6 +1137,14 @@ se.gllvm <- function(object, ...){
 se <- function(object, ...)
 {
   UseMethod(generic = "se")
+}
+
+sparseHess <- function(obj, pars) {
+  objS <- TMB::MakeADFun(data = obj$env$data, parameters = obj$env$parList(pars), map = obj$env$map,
+                         profile = unique(names(pars)), DLL = obj$env$DLL, silent = TRUE)
+  H <- objS$env$spHess(pars, random = TRUE)
+  dimnames(H) <- list(names(pars), names(pars))
+  H
 }
 
 isNullPointer <- function(x) {

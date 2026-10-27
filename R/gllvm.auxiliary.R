@@ -2059,8 +2059,6 @@ sdrandom<-function(obj, Vtheta, incl, ignore.u = FALSE,return.covb = FALSE, type
   num.RR <- obj$env$data$num_RR
   nu<-nrow(obj$env$data$y)
   
-  xb<- obj$env$data$xb
-  
   random <- obj$env$data$random
   radidx <- sum(names(obj$env$last.par.best[r])%in%c("r0r","Br","b_lv"))
   
@@ -2478,6 +2476,9 @@ CMSEPf <- function(fit, return.covb = FALSE, type = NULL){
   B<- fit$Hess$Hess.full[fit$Hess$incl, fit$Hess$incla]
   C<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incl]
   D<- fit$Hess$Hess.full[fit$Hess$incla, fit$Hess$incla]
+  if(inherits(B, "Matrix")) B <- as.matrix(B)
+  if(inherits(C, "Matrix")) C <- as.matrix(C)
+  if(inherits(D, "Matrix")) D <- as.matrix(D)
   num.lv.cor <- fit$num.lvcor
   radidx <- 0
   
@@ -2890,7 +2891,7 @@ RRse <- function(object, return.covb = FALSE){
       # covariance of parameters via block inversion
       incl=object$Hess$incl;incld=object$Hess$incld
       
-      sdr = object$Hess$Hess.full
+      sdr = as.matrix(object$Hess$Hess.full)
       sds <- diag(sqrt(abs(sdr)))
       if(any(sds<1e-12))sds[sds<1e-12]<-1
       sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
