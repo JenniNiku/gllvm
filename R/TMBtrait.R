@@ -282,7 +282,7 @@ trait.TMB <- function(
       rnam <- colnames(xb)[!(colnames(xb) %in% c("(Intercept)"))]
       xb <- as.matrix(xb[, rnam]); #as.matrix(X.new[, rnam])
       if(NCOL(xb) == 1) colnames(xb) <- rnam
-      bstart <- start_values_randomX(y, X, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, bound = bound, Ntrials = Ntrials, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
+      bstart <- start_values_randomX(y, X, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, bound = bound, pg.K = pg.K, Ntrials = Ntrials, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
       Br <- bstart$Br
       if(jitter.var.br>0)Br <- Br + matrix(rnorm(prod(dim(B)), sd=sqrt(jitter.var.br)), nrow(Br), ncol(Br))
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
@@ -311,7 +311,7 @@ trait.TMB <- function(
       out$randomX <- randomX <- formula(paste0("~", paste(colnames(xb), collapse="+")))
       if(num.lv>0 && randomX.start == "res" && starting.val == "res") {randomXb <- randomX}
       
-      bstart <- start_values_randomX(y, xb, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, bound = bound, Ntrials = Ntrials, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
+      bstart <- start_values_randomX(y, xb, family, formula=randomX, starting.val = randomX.start, Power = Power, link = link, bound = bound, pg.K = pg.K, Ntrials = Ntrials, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
       Br <- bstart$Br
       if(jitter.var.br>0)Br <- Br + matrix(rnorm(prod(dim(B)), sd=sqrt(jitter.var.br)), nrow(Br), ncol(Br))
       sigmaB <- log(sqrt(diag(bstart$sigmaB)))
@@ -444,7 +444,7 @@ trait.TMB <- function(
     }
 
     res <- start_values_gllvm_TMB(y = y, X = data[data$species==1,, drop=FALSE], TR = TR1, xr = xr, dr = dr, csR = csR, proptoMats = proptoMats, trmsize = trmsize, cstruc = cstruc, family = family, offset=offset, trial.size = trial.size, num.lv = num.lv, start.lvs = start.lvs, starting.val=starting.val,Power=Power,formula = formula, jitter.var=jitter.var, #!!!
-                                  yXT = yXT, TMB = TRUE, link=link, bound = bound, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
+                                  yXT = yXT, TMB = TRUE, link=link, bound = bound, pg.K = pg.K, randomX = randomXb, beta0com = beta0com, zeta.struc = zeta.struc, disp.group = disp.group, method=method, Ntrials = Ntrials, Ab.struct = Ab.struct, Ab.struct.rank = Ab.struct.rank, colMat = colMat.old, nn.colMat = nn.colMat, start.optimizer = start.optimizer, start.optim.method = start.optim.method)
     
     if(is.null(res$Power) && any(family == "tweedie"))res$Power=1.1
     if(any(family=="tweedie")){
@@ -455,6 +455,7 @@ trait.TMB <- function(
       ePower = 0
     }
     ## Set initial values
+    lg_Ar.start <- NULL
     
     if(!is.null(start.params)){
       if(all(dim(start.params$y)==dim(y))){
@@ -537,6 +538,7 @@ trait.TMB <- function(
         row.params.fixed <- res$row.params.fixed
         sigma <- res$sigma
         sigmaijr <- res$sigmaijr
+        lg_Ar.start <- res$lg_Ar
       }
       
       vameans <- theta <- lambda <- NULL
@@ -606,9 +608,9 @@ trait.TMB <- function(
             famstart =family
             famstart[family %in% c("ZIP","ZINB")] <- "poisson"
             famstart[family %in% c("ZIB", "ZNIB", "beta.binomial")] <- "binomial"
-            lastart <- FAstart(res$mu, family=famstart, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1],  zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link, bound = bound)
+            lastart <- FAstart(res$mu, family=famstart, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1],  zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link, bound = bound, pg.K = pg.K)
           } else {
-            lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link, bound = bound)
+            lastart <- FAstart(res$mu, family=family, y=y, num.lv = num.lv, phis = res$phi, jitter.var = jitter.var[1], zeta.struc=zeta.struc, zeta = res$zeta, disp.group=disp.group, link = link, bound = bound, pg.K = pg.K)
           }
           # lastart$gamma = lastart$gamma*0.5
           # lastart$index = lastart$index*0.5
@@ -1025,6 +1027,7 @@ trait.TMB <- function(
       if(any(grepl("ustruc", cstruc) & cstruc != "ustruc")){
         lg_Ar <- c(lg_Ar, rep(log(Lambda.start[2]), sum(trmsize[2,grepl("ustruc", cstruc) & cstruc != "ustruc"]) + sum(trmsize[1,grepl("ustruc", cstruc) & cstruc != "ustruc"])-sum(grepl("ustruc", cstruc) & cstruc != "ustruc")))
       }
+      if(!is.null(lg_Ar.start) && length(lg_Ar.start) == length(lg_Ar)) lg_Ar <- lg_Ar.start
       
       if(Ar.struc!="diagonal" && diag.iter == 0){
         if(any(!grepl("ustruc", cstruc)& !cstruc %in% c("diag","ustruc"))){

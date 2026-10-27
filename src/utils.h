@@ -321,15 +321,20 @@ Type logsinh(Type x) {
 }
 
 template<class Type>
-Type pgtilt(Type m, Type v, int K) {
+Type pgtilt(Type m, Type v, int K, int sgn, Type tDD, Type hDh, Type hDADh) {
   Type T = m*m + v;
+  Type s2 = v - 2*tDD;
   Type out = 0;
   for(int k=1; k<=K; k++){
     Type d = Type((2*k-1)*(2*k-1))*Type(M_PI*M_PI);
     Type kap = 1/(d + T);
-    Type den = 1 + 2*kap*v;
-    Type md = m/den;
-    Type delta = kap*T - 0.5*log(den) - kap*m*m/den + log1plus((md*md + v/den)/d) - log1plus(T/d);
+    Type den = 1 + 2*kap*s2;
+    Type t = 2*kap*m/den;
+    Type c = 2*kap/den;
+    Type sh = s2 + 2*Type(sgn)*t*hDh;
+    Type mr = m - t*s2 + Type(sgn)*(c - t*t)*hDh;
+    Type vr = s2 + 4*Type(sgn)*t*hDh + 4*t*t*hDADh - c*sh*sh + 2*tDD - 4*c*hDADh + 2*c*c*hDh*hDh;
+    Type delta = kap*(m*m + s2) - 0.5*log(den) - kap*m*m/den + log1plus((mr*mr + vr)/d) - log1plus(T/d);
     out += CppAD::CondExpLt(delta, Type(0), delta, Type(0));
   }
   return out;
@@ -370,6 +375,69 @@ Type logit_pnorm(Type x) {
 }
 
 VECTORIZE1_t(logit_pnorm)
+
+template<class Type>
+Type probitscale(Type m, Type v, int sgn, Type tDD, Type hDh, int bnd) {
+  Type s2 = v - 2*tDD;
+  Type kap = 1/sqrt(6 + m*m + v);
+  Type nu = (m + kap*s2 - Type(sgn)*kap*kap*hDh)*exp(-0.5*kap*kap*s2);
+  Type delta = logspace_add(Type(0), -logit_pnorm(m)) - logspace_add(Type(0), -logit_pnorm(nu)) + 0.5*(nu*nu - m*m) - kap*kap*s2;
+  if(bnd>1){
+    return CppAD::CondExpGt(delta, Type(0), delta, Type(0));
+  }else{
+    return delta;
+  }
+}
+
+template<class Type>
+Type pnormlogup(Type z) {
+  Type za = CppAD::CondExpLt(z, Type(-30), z, Type(-30));
+  Type zb = CppAD::CondExpLt(z, Type(-30), Type(-30), z);
+  Type asym = -0.5*za*za - 0.5*log(2*M_PI) - log(-za) + log(1 - 1/(za*za) + 3/(za*za*za*za));
+  return CppAD::CondExpLt(z, Type(-30), asym, log(pnorm(zb)));
+}
+
+template<class Type>
+Type cloglogBt(Type th, Type ta, Type t) {
+  return exp(-t*th + 0.5*t*t*ta*ta + pnormlogup(Type(th/ta - t*ta)));
+}
+
+template<class Type>
+Type cloglogshape3q(Type ma, Type s2, Type vs, Type ld, Type Ee) {
+  Type th = log(Type(3)) - Type(1.0/6.0);
+  Type t2 = Type(1.0/3.0);
+  Type kap = Type(1);
+  for(int it=0; it<2; it++){
+    Type tht = th - kap*ma;
+    Type tat = sqrt(t2 + kap*kap*s2);
+    Type B1 = cloglogBt(tht, tat, Type(1));
+    Type B2 = cloglogBt(tht, tat, Type(2));
+    Type B3 = cloglogBt(tht, tat, Type(3));
+    Type Ew = 2 + pnorm(Type(-tht/tat)) + 0.5*B1 + 0.25*B2 + 0.25*B3;
+    t2 = 1/(2 + pnorm(Type(-tht/tat)) + B1 + 0.75*B2 + B3);
+    kap = t2*Ew*(vs + Type(1e-12))/(s2 + Type(1e-12) - t2*Ew*(s2 - vs));
+    th = log(Ew) - 0.5*t2 - (1 - kap)*ma + 0.5*ld - 0.5*(1 - kap)*(1 - kap)*vs;
+  }
+  Type tht = th - kap*ma;
+  Type tat = sqrt(t2 + kap*kap*s2);
+  Type P0 = pnorm(Type(-tht/tat));
+  Type out = 3*Ee + 2*tht + tht*P0 - tat*dnorm(Type(tht/tat), Type(0), Type(1), false) - P0*log(Type(2)) + 0.5*log(2*M_PI*t2) + 0.5;
+  out -= exp(th + 0.5*t2 + (1 - kap)*ma - 0.5*ld + 0.5*(1 - kap)*(1 - kap)*vs);
+  Type lz = pnormlogup(Type(tht/tat));
+  Type sk = 0;
+  Type e = Type(1);
+  for(int k=0; k<7; k++){
+    sk += log(1 + exp(-e*log(Type(2)) - e*tht + 0.5*e*e*tat*tat + pnormlogup(Type(tht/tat - e*tat)) - lz));
+    e = 2*e;
+  }
+  out -= pnorm(Type(tht/tat))*sk;
+  return out;
+}
+
+template<class Type>
+Type cloglogshape3(Type m, Type v) {
+  return cloglogshape3q(m, v, v, Type(0), m);
+}
 
 }
 
