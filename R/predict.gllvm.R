@@ -60,7 +60,7 @@
 #'@export
 #'@export predict.gllvm
 predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type ="link", level = 1, offset = TRUE, se.fit = FALSE, alpha = 0.95, seed = 42, ordinal.cat = NULL, spp = NULL, ...){
-
+  
   # if((is.numeric(se.fit)||se.fit) && any(object$family == "ordinal"))warning("Confidence intervals for ordinal models can be sensitive to the number of simulations.")
   if(type=="class" & all(!(object$family %in% c("binomial", "ordinal")))) {
     stop("type='class' can be calculated only for ordinal or binary data.")
@@ -81,16 +81,16 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   newdata <- newX
   p <- ncol(object$y)
   if(length(object$family) != p) object$family = rep(object$family,p) [1:p]
-
+  
   spp_idx <- if(!is.null(spp)) spp else seq_len(p)
   
   if(any(object$family == "betaH"))
-  if(any(object$family == "betaH")) {
-    spp_idx <- c(spp_idx, p+spp_idx[object$family[spp_idx] == "betaH"])
-    p <- p+ sum(object$family == "betaH")
-    object$link = c(object$link, object$link[object$family == "betaH"])
-    object$family = c(object$family, rep("betaH", sum(object$family == "betaH")))
-  }
+    if(any(object$family == "betaH")) {
+      spp_idx <- c(spp_idx, p+spp_idx[object$family[spp_idx] == "betaH"])
+      p <- p+ sum(object$family == "betaH")
+      object$link = c(object$link, object$link[object$family == "betaH"])
+      object$family = c(object$family, rep("betaH", sum(object$family == "betaH")))
+    }
   
   n <- max(nrow(object$y), nrow(newdata), nrow(newLV))
   if (!is.null(newdata)) 
@@ -113,7 +113,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   else {
     formula <- NULL
   }
-
+  
   b0_full <- object$params$beta0
   b0 <- b0_full[spp_idx]
   eta <- matrix(b0, n, length(spp_idx), byrow = TRUE)
@@ -144,7 +144,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         formula1 <- formula(formula1)
         Xnew <- as.matrix(model.matrix(formula1, data = data.frame(newdata)))
         X.d <- as.matrix(Xnew[, !(colnames(Xnew) %in% c("(Intercept)")), 
-                            drop = F])
+                              drop = F])
       } else {
         formula <- as.formula(nobars1_(object$call$formula)) # due to potential REs
         xb <- as.matrix(model.matrix(formula, data = data.frame(Xnew)))
@@ -321,7 +321,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         lv.X <- object$lv.X.design
       }
       theta <- (object$params$theta[spp_idx, 1:(object$num.lv +
-                                          (object$num.lv.c + object$num.RR)), drop = F])
+                                                  (object$num.lv.c + object$num.RR)), drop = F])
       eta <- eta + lvs %*% t(theta)
       if ((object$num.lv.c + object$num.RR) > 0) {
         eta <- eta + lv.X %*% object$params$LvXcoef %*% 
@@ -400,15 +400,13 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     
     r0 <- NULL
-      if(!is.null(object$params$row.params.random) && level>0){
-        object$params$row.params.random = dr%*%object$params$row.params.random # !!!
-        r0 <- cbind(r0, as.matrix(object$params$row.params.random))
-      } 
-      if(!is.null(object$params$row.params.fixed)){
-        object$params$row.params.fixed = xr%*%as.matrix(object$params$row.params.fixed)
-        r0 <- cbind(r0, as.matrix(object$params$row.params.fixed))
-      }
-      
+    if(!is.null(object$params$row.params.random) && level>0){
+      r0 <- cbind(r0, as.matrix(dr%*%object$params$row.params.random ))
+    } 
+    if(!is.null(object$params$row.params.fixed)){
+      r0 <- cbind(r0, as.matrix(xr%*%as.matrix(object$params$row.params.fixed)))
+    }
+    
     eta <- eta + as.matrix(rowSums(r0))%*%rep(1, length(spp_idx))
     
   }
@@ -434,7 +432,7 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     eta <- eta + as.matrix(spdr%*%object$params$Br[, spp_idx, drop = FALSE])
     if(!is.null(object$params[["B"]]) && length(object$params[["B"]]>0))eta <- eta + as.matrix(spdr[,names(object$params$B),drop=FALSE]%*%matrix(object$params$B, ncol = length(spp_idx), nrow = length(object$params$B)))
   }
-
+  
   if(!is.null(object$offset)){
     if(!isFALSE(offset)){
       if(is.matrix(offset)){
@@ -447,11 +445,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
         } else {
           eta <- eta+object$offset[, spp_idx, drop = FALSE]
         }
-        } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
+      } else {warning(paste("Could not include offset values as 'object$offset' has incorrect dimension, set 'offset = FALSE' or include new offset values"))}
     }
   }
-
-
+  
+  
   fam_pred <- object$family[spp_idx]
   famgroup1 <- fam_pred %in% c("poisson", "negative.binomial","negative.binomial1", "tweedie", "gamma", "exponential")
   famgroup2 <- fam_pred %in% c("binomial", "beta", "betaH", "orderedBeta", "ordinal", "ZIB", "ZNIB", "beta.binomial")
@@ -520,20 +518,20 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     out <- object$logL
   if (any(fam_pred == "ordinal") && (type == "response" | type == "class")) {
     if(is.null(out)){ out <- eta; out[] <- NA}
-
+    
     ordi_ind <- which(fam_pred == "ordinal")   # column indices into eta/out (1-based within spp_idx)
     if (object$zeta.struc == "species") {
       k.max <- apply(object$params$zeta[spp_idx, , drop = FALSE], 1, function(x) length(x[!is.na(x)])) + 1
       preds <- array(NA, dim = c(max(k.max, na.rm = TRUE), nrow(eta),
                                  length(spp_idx)), dimnames = list(paste("level", 1:max(k.max, na.rm = TRUE),
-                                                           sep = ""), NULL, NULL))
+                                                                         sep = ""), NULL, NULL))
       if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
       for (iter in ordi_ind) {
         j_full <- spp_idx[iter]  # index into object$params$zeta and object$family
         probK <- matrix(nrow=k.max[iter],ncol=n)
         probK[1:(k.max[iter]-1),] <- ilinkfun[[pointer[iter]]](outer(object$params$zeta[j_full,1:k.max[iter]-1], eta[,iter], function(zeta, eta)zeta-eta))
         if(k.max[iter]>2){
-        probK[2:(k.max[iter]-1), ] <- probK[2:(k.max[iter]-1),,drop=FALSE] - probK[1:(k.max[iter]-2),,drop=FALSE]
+          probK[2:(k.max[iter]-1), ] <- probK[2:(k.max[iter]-1),,drop=FALSE] - probK[1:(k.max[iter]-2),,drop=FALSE]
         }
         probK[k.max[iter],] <- 1 - ilinkfun[[pointer[iter]]](object$params$zeta[j_full,k.max[iter] - 1] - eta[, iter])
         preds[1:k.max[iter],, iter] <- probK
@@ -545,15 +543,15 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
                      dimnames = list(paste("level", 1:max(k.max),
                                            sep = ""), NULL, NULL))
       if(!all(fam_pred == "orderedBeta")) preds[1,,] <- out
-        for (iter in ordi_ind) {
-          probK <- matrix(nrow=k.max,ncol=n)
-          probK[1:(k.max-1),] <- ilinkfun[[pointer[iter]]](outer(tail(object$params$zeta,k.max-1), eta[,iter], function(zeta, eta)zeta-eta))
-          if(k.max>2){
+      for (iter in ordi_ind) {
+        probK <- matrix(nrow=k.max,ncol=n)
+        probK[1:(k.max-1),] <- ilinkfun[[pointer[iter]]](outer(tail(object$params$zeta,k.max-1), eta[,iter], function(zeta, eta)zeta-eta))
+        if(k.max>2){
           probK[2:(k.max-1), ] <- probK[2:(k.max-1),,drop=FALSE] - probK[1:(k.max-2),,drop=FALSE]
-          }
-          probK[k.max,] <- 1 - ilinkfun[[pointer[iter]]](object$params$zeta[k.max - 1 + kz] - eta[, iter])
-          preds[1:k.max,, iter] <- probK
         }
+        probK[k.max,] <- 1 - ilinkfun[[pointer[iter]]](object$params$zeta[k.max - 1 + kz] - eta[, iter])
+        preds[1:k.max,, iter] <- probK
+      }
       dimnames(preds)[[3]] <- colnames(object$y)[spp_idx]
     }
     if(type == "response") {
@@ -580,11 +578,11 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
   }else if(is.numeric(se.fit) || se.fit){
     R <- 1e3
     if(is.numeric(se.fit))R <- se.fit
-
+    
     params <- simulate_params_gllvm(object, R, seed, level, n = n)
     
     predSims <- array(0.0, dim = c(R, dim(out)))
-
+    
     for(r in 1:R){
       newobject <- perturb.gllvm(object, params, r, type)
       pred_r <- predict(newobject, newX = newX, newTR = newTR, newLV = newLV,
@@ -597,12 +595,12 @@ predict.gllvm <- function(object, newX = NULL, newTR = NULL, newLV = NULL, type 
     }
     
     if(!any(object$family == "ordinal") || !is.null(alpha) && type == "link" || is.null(alpha) || !is.null(ordinal.cat)){
-    if(is.null(alpha)){
-    out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
-    }else if(!is.null(alpha)){
-    ci <- apply(predSims, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
-    out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
-    }
+      if(is.null(alpha)){
+        out <- list(fit = out, ci.sim = predSims) # so that we can access this for predictSR and predictPairwise
+      }else if(!is.null(alpha)){
+        ci <- apply(predSims, 2:3, quantile, prob = c((1-alpha)/2, 1-(1-alpha)/2))
+        out <- list(fit = out, lower = ci[1,,], upper = ci[2,,])
+      }
     }else if(any(object$family == "ordinal") && type == "response" && !is.null(alpha)){
       ci <- array(dim=c(2,nrow(out), n, length(spp_idx)))
       for(j in seq_len(length(spp_idx))){
@@ -754,15 +752,15 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
   rfs   <- params$rfs
   incl  <- params$incl
   incla <- params$incla
-
+  
   num.lv    <- object$num.lv
   num.RR    <- object$num.RR
   num.lv.c  <- object$num.lv.c
   quadratic <- object$quadratic
   p         <- ncol(object$y)
-
+  
   if(is.null(skeleton)) skeleton <- object$TMBfn$env$parList()
-
+  
   # blank all params so nothing leaks from the fitted values
   if(!is.null(template)){
     newobject <- template
@@ -771,7 +769,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
     newobject$params <- lapply(object$params, function(x){ if(is.numeric(x)) x[] <- NA; x })
     if(!is.null(newobject$lvs)) newobject$lvs[] <- NA
   }
-
+  
   if(sum(incl) > 0){
     newpars <- relist_gllvm(ffs[r, ], skeleton)
     
@@ -782,7 +780,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
       rownames(newobject$params$Xcoef) <- rownames(object$params$Xcoef)
       colnames(newobject$params$Xcoef) <- colnames(object$params$Xcoef)
     }
-
+    
     if((num.lv + num.lv.c) > 0){
       newobject$params$sigma.lv <- abs(newpars$sigmaLV)
       names(newobject$params$sigma.lv) <- names(object$params$sigma.lv)
@@ -828,7 +826,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
       colnames(theta) <- colnames(object$params$theta)
       newobject$params$theta <- theta
     }
-
+    
     if(any(object$family %in% c("ZIP","ZINB"))){
       lp0 <- newpars$lg_phi[object$disp.group]
       newobject$params$phi <- object$params$phi
@@ -879,7 +877,7 @@ perturb.gllvm <- function(object, params, r, type = "response", skeleton = NULL,
       colnames(newobject$params$LvXcoef) <- colnames(object$params$LvXcoef)
     }
   }
-
+  
   if(sum(incla) > 0){
     newrfs <- relist_gllvm(rfs[r, ], skeleton)
     if(!is.null(newrfs$Br)){
