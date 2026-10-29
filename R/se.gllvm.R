@@ -196,7 +196,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
         if(any(!is.finite(sds) | sds<1e-12, na.rm=TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
         if(sparse){
-          sdr.s <- Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds)
+          sdr.s <-  Matrix::forceSymmetric(Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds))
           A.mat <- as.matrix(sdr.s[incl,incl])
           D.mat <- sdr.s[incld,incld]
           B.mat <- sdr.s[incl,incld]
@@ -698,7 +698,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
       if(any(!is.finite(sds) | sds<1e-12, na.rm = TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
       if(sparse){
-        sdr.s <- Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds)
+        sdr.s <-  Matrix::forceSymmetric(Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds))
         A.mat <- as.matrix(sdr.s[incl, incl])
         D.mat <- sdr.s[incld, incld]
         B.mat <- sdr.s[incl, incld]
