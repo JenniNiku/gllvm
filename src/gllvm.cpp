@@ -385,6 +385,14 @@ Type objective_function<Type>::operator() ()
     pgDD.setZero();
     pghDh.setZero();
     pghDADh.setZero();
+    vector<matrix<Type>> phM(n*p);
+    vector<matrix<Type>> phr(n*p);
+    for(int k=0; k<(n*p); k++){
+      phM(k) = matrix<Type>(1,1);
+      phM(k).setZero();
+      phr(k) = matrix<Type>(1,1);
+      phr(k).setZero();
+    }
     matrix<Type> cltr(n,p);
     matrix<Type> cls2(n,p);
     matrix<Type> clvs(n,p);
@@ -3146,6 +3154,11 @@ Type objective_function<Type>::operator() ()
                   pghDh(i,j) = (hpg.transpose()*Dhpg).value();
                   pghDADh(i,j) = (Dhpg.transpose()*Acov*Dhpg).value();
                 }
+                if ((bound>0) && (extra(j)==1)) {
+                  matrix<Type> Rh = Acov.llt().matrixL();
+                  phM(i+j*n) = Rh.transpose()*D(j)*Rh;
+                  phr(i+j*n) = Rh.transpose()*(newlam.col(j) - 2*(D(j)*u.row(i).transpose()));
+                }
               }
 
               if (is_group1) cQ(i,j) += cq1;
@@ -3443,20 +3456,11 @@ Type objective_function<Type>::operator() ()
         for (int i=0; i<n; i++) {
           // for (int j=0; j<p;j++){
             if(!gllvmutils::isNA(y(i,j))){
-              Type mu = pnorm(Type(eta(i,j)),Type(0),Type(1));
-              mu = Type(CppAD::CondExpEq(mu, Type(1), mu-Type(1e-12), mu));//check if on the boundary
-              if(y(i,j)>0){ // reduce overhead for y == 0
-              mu = Type(CppAD::CondExpEq(mu, Type(0), mu+Type(1e-12), mu));//check if on the boundary
-              nll -= y(i,j)*log(mu);
-              }
-              if(Ntrials(i,j)>y(i,j)) nll -= log(1-mu)*(Ntrials(i,j)-y(i,j));
+              nll -= dbinom_robust(y(i,j), Type(Ntrials(i,j)), gllvmutils::logit_pnorm(Type(eta(i,j))), 1);
               nll += cQ(i,j)*Ntrials(i,j);
               if(bound>0){
-                if(y(i,j)>0) nll -= y(i,j)*gllvmutils::probitscale(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
-                if(Ntrials(i,j)>y(i,j)) nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitscale(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
-              }
-              if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+                if(y(i,j)>0) nll -= y(i,j)*gllvmutils::probitimp(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
+                if(Ntrials(i,j)>y(i,j)) nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitimp(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
               }
             }
           // }
@@ -3793,7 +3797,7 @@ Type objective_function<Type>::operator() ()
                     // mu(i,j) = pnorm(zetanew(j,0) - eta(i,j), Type(0), Type(1));
                     mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                     nll -= log(mu(i,j));
-                    if(bound>0) nll -= gllvmutils::probitscale(Type(zetanew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
+                    if(bound>0) nll -= gllvmutils::probitimp(Type(zetanew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                   }else if(y(i,j)==ymaxj){
                     //maximum category
                     int idxj = ymaxj-2;
@@ -3801,7 +3805,7 @@ Type objective_function<Type>::operator() ()
                     // mu(i,j) = pnorm(zetanew(j,idx) - eta(i,j), Type(0), Type(1));
                     mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
-                    if(bound>0) nll -= gllvmutils::probitscale(Type(eta(i,j) - zetanew(idxj)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
+                    if(bound>0) nll -= gllvmutils::probitimp(Type(eta(i,j) - zetanew(idxj)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                   }else if(ymaxj>2){
                     int idxj = CppAD::Integer(y(i,j));
                     mu(i,j) = pnorm(zetanew(idxj-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(idxj-2)-eta(i,j), Type(0), Type(1));
@@ -4004,14 +4008,14 @@ Type objective_function<Type>::operator() ()
                     mu(i,j) = pnorm(zetanew(0) - eta(i,j), Type(0), Type(1));
                     mu(i,j) = Type(CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+Type(1e-12), mu(i,j)));
                     nll -= log(mu(i,j));
-                    if(bound>0) nll -= gllvmutils::probitscale(Type(zetanew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
+                    if(bound>0) nll -= gllvmutils::probitimp(Type(zetanew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                   }else if(y(i,j)==ymax){
                     //maximum category
                     int idxj = ymax-2;
                     mu(i,j) = pnorm(zetanew(idxj) - eta(i,j), Type(0), Type(1));
                     mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));
                     nll -= log(1 - mu(i,j));
-                    if(bound>0) nll -= gllvmutils::probitscale(Type(eta(i,j) - zetanew(idxj)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
+                    if(bound>0) nll -= gllvmutils::probitimp(Type(eta(i,j) - zetanew(idxj)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                   }else if(ymax>2){
                     int idxj = CppAD::Integer(y(i,j));
                     mu(i,j) = pnorm(zetanew(idxj-1)-eta(i,j), Type(0), Type(1))-pnorm(zetanew(idxj-2)-eta(i,j), Type(0), Type(1));
@@ -4463,12 +4467,12 @@ Type objective_function<Type>::operator() ()
                   mu(i,j) = pnorm(zetacutoffnew(0) - eta(i,j), Type(0), Type(1));
                   mu(i,j) = CppAD::CondExpLt(mu(i,j), Type(1e-12), mu(i,j)+1e-12, mu(i,j));
                   nll -= (1-y(i,j))*log(mu(i,j)) - cQ(i,j); //
-                  if((bound>0) && (quadratic<1)) nll -= gllvmutils::probitscale(Type(zetacutoffnew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
+                  if((bound>0) && (quadratic<1)) nll -= gllvmutils::probitimp(Type(zetacutoffnew(0) - eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 } else if((y(i,j)==1)){
                   mu(i,j) = pnorm(zetacutoffnew(1) - eta(i,j), Type(0), Type(1));
                   mu(i,j) = CppAD::CondExpGt(mu(i,j), Type(1.0-1e-12), mu(i,j)-1e-12, mu(i,j));
                   nll -= y(i,j)*log(1.0 - mu(i,j)) - cQ(i,j); //
-                  if((bound>0) && (quadratic<1)) nll -= gllvmutils::probitscale(Type(eta(i,j) - zetacutoffnew(1)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
+                  if((bound>0) && (quadratic<1)) nll -= gllvmutils::probitimp(Type(eta(i,j) - zetacutoffnew(1)), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 } else{
                   // if (extra(j) == 1) { // probit
                   // if(zetacutoff.size()>p) {
@@ -4858,32 +4862,21 @@ Type objective_function<Type>::operator() ()
       }else if(method == 0 && extra(j)==1){
         // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            Type lp = gllvmutils::logit_pnorm(Type(eta(i,j)));
             
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
                 nll -= log(1-iphij);
-                nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
+                nll -= dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
                 nll += cQ(i,j)*Ntrials(i,j);
                 if(bound>0){
-                  nll -= y(i,j)*gllvmutils::probitscale(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
-                  if(Ntrials(i,j)>y(i,j)) nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitscale(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
-                }
-                
-                if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                  nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+                  nll -= y(i,j)*gllvmutils::probitimp(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
+                  if(Ntrials(i,j)>y(i,j)) nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitimp(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 }
               }else{
-                Type LL = 0;
-                LL += log(1-mu(i,j))*Ntrials(i,j);
+                Type LL = dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
                 LL -= cQ(i,j)*Ntrials(i,j);
-                if(bound>0) LL += Ntrials(i,j)*gllvmutils::probitscale(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
-
-                if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                  LL += lgamma(Ntrials(i,j)+1.) - lgamma(Ntrials(i,j)+1.);//norm.const.
-                }
+                if(bound>0) LL += Ntrials(i,j)*gllvmutils::probitimp(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 
                 pVA = logspace_add(log(iphij), log(1-iphij) + LL);
                 nll -= pVA;
@@ -5035,37 +5028,29 @@ Type objective_function<Type>::operator() ()
       }else if(method == 0 && extra(j)==1){
         // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            mu(i,j) = pnorm(Type(eta(i,j)),Type(0),Type(1));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            Type lp = gllvmutils::logit_pnorm(Type(eta(i,j)));
             
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j)< Ntrials(i,j)){
                 nll -= log(1-iphi3);
-                nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
+                nll -= dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
                 nll += cQ(i,j)*Ntrials(i,j);
                 if(bound>0){
-                  nll -= y(i,j)*gllvmutils::probitscale(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
-                  nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitscale(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
-                }
-
-                if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                  nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
+                  nll -= y(i,j)*gllvmutils::probitimp(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
+                  nll -= (Ntrials(i,j)-y(i,j))*gllvmutils::probitimp(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 }
               }else if(y(i,j)==0){
-                Type LL = 0;
-                LL += log(1-mu(i,j))*Ntrials(i,j);
+                Type LL = dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
                 LL -= cQ(i,j)*Ntrials(i,j);
-                if(bound>0) LL += Ntrials(i,j)*gllvmutils::probitscale(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), bound);
+                if(bound>0) LL += Ntrials(i,j)*gllvmutils::probitimp(Type(-eta(i,j)), 2*cQ(i,j), -1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
 
 
                 pVA = logspace_add(log(iphij), log(1-iphi3) + LL);
                 nll -= pVA;
               }else if(y(i,j) == Ntrials(i,j)){
-                Type LL = 0;
-                LL += y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
+                Type LL = dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
                 LL -= cQ(i,j)*Ntrials(i,j);
-                if(bound>0) LL += y(i,j)*gllvmutils::probitscale(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), bound);
+                if(bound>0) LL += y(i,j)*gllvmutils::probitimp(eta(i,j), 2*cQ(i,j), 1, pgDD(i,j), pghDh(i,j), phM(i+j*n), phr(i+j*n), bound);
                 
                 pVA2 = logspace_add(log(iphi2), log(1-iphi3) + LL);
                 nll -= pVA2;
@@ -5740,16 +5725,16 @@ Type objective_function<Type>::operator() ()
       
       case BINOMIAL: {//binomial family 2
           for (int i=0; i<n; i++) {
-            if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else if(extra(j)==1){mu(i,j) = pnorm(eta(i,j));
-            }else if(extra(j)==2)mu(i,j) = 1-exp(-exp(eta(i,j)));
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            Type lp;
+            if(extra(j)<1){
+              lp = eta(i,j);
+            }else if(extra(j)==1){
+              lp = gllvmutils::logit_pnorm(eta(i,j));
+            }else{
+              lp = gllvmutils::logit_cloglog(eta(i,j));
+            }
             if(!gllvmutils::isNA(y(i,j))){
-              nll -= y(i,j)*log(mu(i,j))+log(1-mu(i,j))*(Ntrials(i,j)-y(i,j));
-              if(Ntrials(i,j)>1 && (Ntrials(i,j)>y(i,j))){
-                nll -= lgamma(Ntrials(i,j)+1.) - lgamma(y(i,j)+1.) - lgamma(Ntrials(i,j)-y(i,j)+1.);//norm.const.
-              }
+              nll -= dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
             }
           }
         break;
@@ -6103,15 +6088,19 @@ Type objective_function<Type>::operator() ()
       case ZIB: { // Zero-Inflated-Binomial, ZIB 13
         Type iphij=iphi(j)/(1+iphi(j));
           for (int i=0; i<n; i++) {
-            if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {mu(i,j) = pnorm(eta(i,j));}
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            Type lp;
+            if(extra(j)<1){
+              lp = eta(i,j);
+            }else if(extra(j)==1){
+              lp = gllvmutils::logit_pnorm(eta(i,j));
+            }else{
+              lp = gllvmutils::logit_cloglog(eta(i,j));
+            }
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0){
-                nll -= log(1-iphij) + dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 1);
+                nll -= log(1-iphij) + dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
               }else{
-                nll -= log(iphij + (Type(1)-iphij)*dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 0)); 
+                nll -= logspace_add(Type(log(iphij)), Type(log(1-iphij) + dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1)));
               }
             }
           }
@@ -6125,17 +6114,21 @@ Type objective_function<Type>::operator() ()
         Type iphi3 = iphij+iphi2;
         // for (int j=0; j<p;j++){
           for (int i=0; i<n; i++) {
-            if(extra(j)<1) {mu(i,j) = mu(i,j)/(mu(i,j)+1);
-            } else {mu(i,j) = pnorm(eta(i,j));}
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(1), mu(i,j)-Type(1e-12), mu(i,j)));//check if on the boundary
-            mu(i,j) = Type(CppAD::CondExpEq(mu(i,j), Type(0), mu(i,j)+Type(1e-12), mu(i,j)));//check if on the boundary
+            Type lp;
+            if(extra(j)<1){
+              lp = eta(i,j);
+            }else if(extra(j)==1){
+              lp = gllvmutils::logit_pnorm(eta(i,j));
+            }else{
+              lp = gllvmutils::logit_cloglog(eta(i,j));
+            }
             if(!gllvmutils::isNA(y(i,j))){
               if(y(i,j)>0 && y(i,j) < Ntrials(i,j)){
-                nll -= log(1-iphi3) + dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 1);
+                nll -= log(1-iphi3) + dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1);
               }else if(y(i,j)==0){
-                nll -= log(iphij + (Type(1)-iphi3)*dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 0)); 
+                nll -= logspace_add(Type(log(iphij)), Type(log(1-iphi3) + dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1)));
               }else if(y(i,j) == Ntrials(i,j)){
-                nll -= log(iphi2 + (Type(1)-iphi3)*dbinom(y(i,j), Type(Ntrials(i,j)), mu(i,j), 0)); 
+                nll -= logspace_add(Type(log(iphi2)), Type(log(1-iphi3) + dbinom_robust(y(i,j), Type(Ntrials(i,j)), lp, 1)));
                 
               }
             }

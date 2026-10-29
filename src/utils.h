@@ -377,6 +377,16 @@ Type logit_pnorm(Type x) {
 VECTORIZE1_t(logit_pnorm)
 
 template<class Type>
+Type logit_cloglog(Type eta) {
+  Type x = exp(eta);
+  Type xl = CppAD::CondExpLt(x, Type(30), x, Type(30));
+  Type xh = CppAD::CondExpLt(x, Type(30), Type(30), x);
+  Type lo = log(expminus1(xl));
+  Type hi = xh + log1plus(-exp(-xh));
+  return CppAD::CondExpLt(x, Type(30), lo, hi);
+}
+
+template<class Type>
 Type probitscale(Type m, Type v, int sgn, Type tDD, Type hDh, int bnd) {
   Type s2 = v - 2*tDD;
   Type kap = 1/sqrt(6 + m*m + v);
@@ -395,6 +405,128 @@ Type pnormlogup(Type z) {
   Type zb = CppAD::CondExpLt(z, Type(-30), Type(-30), z);
   Type asym = -0.5*za*za - 0.5*log(2*M_PI) - log(-za) + log(1 - 1/(za*za) + 3/(za*za*za*za));
   return CppAD::CondExpLt(z, Type(-30), asym, log(pnorm(zb)));
+}
+
+template<class Type>
+Type millsratio(Type x) {
+  return exp(-0.5*x*x - 0.5*log(2*M_PI) - pnormlogup(x));
+}
+
+template<class Type>
+vector<Type> hingetilt(Type t, Type s, Type e, Type etat, matrix<Type> M, matrix<Type> r, Type vo) {
+  int k = M.rows();
+  matrix<Type> Id(k,k);
+  Id.setIdentity();
+  Eigen::LDLT<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>> ldlt(Id + 2*s*M);
+  Type ld = ldlt.vectorD().array().log().sum();
+  matrix<Type> Gr = ldlt.solve(r);
+  matrix<Type> GM = ldlt.solve(M);
+  Type S0 = GM.trace();
+  Type S1 = (r.transpose()*Gr).value() + vo + Type(1e-12);
+  Type S2 = (Gr.transpose()*M*Gr).value();
+  Type lbar = etat + t*S1;
+  Type q0 = S0 - S2/S1 + t*t*S2;
+  Type q1 = 2*t*S2/S1;
+  Type q2 = S2/(S1*S1);
+  Type sd = sqrt(S1);
+  Type ep = e - lbar;
+  Type f = dnorm(Type(ep/sd), Type(0), Type(1), false)/sd;
+  vector<Type> out(13);
+  out(0) = t*etat - 0.5*ld + 0.5*t*t*S1;
+  out(1) = lbar;
+  out(2) = lbar - q0;
+  out(3) = 1 - q1;
+  out(4) = -q2;
+  out(5) = pnorm(Type(-ep/sd));
+  out(6) = S1*f;
+  out(7) = S1*out(5) + S1*ep*f;
+  out(8) = 2*S1*out(6) + S1*ep*ep*f;
+  out(9) = 1 - out(5);
+  out(10) = -out(6);
+  out(11) = S1 - out(7);
+  out(12) = -out(8);
+  return out;
+}
+
+template<class Type>
+vector<Type> hingebound(Type a, Type b, Type e, Type etat, matrix<Type> M, matrix<Type> r, Type vo, Type trM, Type trM2, Type rr, int hinge) {
+  vector<Type> T2 = hingetilt(Type(2*a), Type(2*b), e, etat, M, r, vo);
+  vector<Type> Tab = hingetilt(a, b, e, etat, M, r, vo);
+  Type A;
+  Type Ecn;
+  Type Ecd = 0;
+  Type Ed2 = 0;
+  Type Ede = 0;
+  Type Epos = 0;
+  if(hinge>0){
+    vector<Type> T02 = hingetilt(Type(0), Type(2*b), e, etat, M, r, vo);
+    vector<Type> T0b = hingetilt(Type(0), b, e, etat, M, r, vo);
+    vector<Type> T00 = hingetilt(Type(0), Type(0), e, etat, M, r, vo);
+    A = exp(T2(0))*T2(9) + exp(2*a*e + T02(0))*T02(5);
+    Ecn = exp(Tab(0))*(Tab(2)*Tab(9) + Tab(3)*Tab(10) + Tab(4)*Tab(11)) + exp(a*e + T0b(0))*(T0b(2)*T0b(5) + T0b(3)*T0b(6) + T0b(4)*T0b(7));
+    Ecd = exp(a*e + T0b(0))*((T0b(1) - e)*T0b(5) + T0b(6));
+    Type dl = T00(1) - e;
+    Ed2 = dl*dl*T00(5) + 2*dl*T00(6) + T00(7);
+    Ede = dl*T00(2)*T00(5) + (dl*T00(3) + T00(2))*T00(6) + (dl*T00(4) + T00(3))*T00(7) + T00(4)*T00(8);
+    Epos = dl*T00(5) + T00(6);
+  }else{
+    A = exp(T2(0));
+    Ecn = exp(Tab(0))*(Tab(2) + Tab(4)*(Tab(7) + Tab(11)));
+  }
+  Type Elogc = a*(etat - Epos) - b*trM;
+  Type Ee2 = (etat - trM)*(etat - trM) + rr + vo + 2*trM2;
+  Type nu = (Ecn - Ecd)/sqrt(A);
+  vector<Type> out(2);
+  out(0) = pnormlogup(nu) + 0.5*nu*nu - 0.5*log(A) - 0.5*(Ed2 - 2*Ede + Ee2) + Elogc;
+  out(1) = nu;
+  return out;
+}
+
+template<class Type>
+Type probithinge(Type m, Type v, int sgn, matrix<Type> M0, matrix<Type> r0) {
+  matrix<Type> M = Type(sgn)*M0;
+  Type trM = M.trace();
+  Type trM2 = (M*M).trace();
+  Type rr = (r0.transpose()*r0).value();
+  Type vo = v - rr - 2*trM2;
+  vo = CppAD::CondExpGt(vo, Type(0), vo, Type(0));
+  Type etat = m + trM;
+  Type sv = sqrt(v);
+  Type kap = 1/sqrt(6 + m*m + v);
+  Type bmax = Type(0.225)/(CppAD::abs(trM) + Type(1e-12));
+  Type b = kap;
+  if(sgn<0) b = CppAD::CondExpLt(b, bmax, b, bmax);
+  vector<Type> res = hingebound(kap, b, Type(0), etat, M, r0, vo, trM, trM2, rr, 0);
+  Type nu = res(1);
+  Type out = res(0);
+  for(int it=0; it<3; it++){
+    Type lam = millsratio(nu);
+    Type m1 = nu + lam;
+    Type m2 = 1 + nu*m1;
+    Type den = 1 - lam*m1;
+    den = CppAD::CondExpGt(den, Type(1e-8), den, Type(1e-8));
+    Type ee = m1/sqrt(den);
+    Type xb = m - sv*millsratio(Type((ee - m)/sv));
+    Type a = m1/sqrt(m1*m1*xb*xb + 4*m2);
+    b = a;
+    if(sgn<0) b = CppAD::CondExpLt(b, bmax, b, bmax);
+    res = hingebound(a, b, Type(ee + trM), etat, M, r0, vo, trM, trM2, rr, 1);
+    out = res(0);
+    nu = res(1);
+  }
+  return out;
+}
+
+template<class Type>
+Type probitimp(Type m, Type v, int sgn, Type tDD, Type hDh, matrix<Type> M0, matrix<Type> r0, int bnd) {
+  Type hin = probithinge(m, v, sgn, M0, r0) - pnormlogup(m) + 0.5*v;
+  if(bnd>1){
+    Type kd = probitscale(m, v, sgn, tDD, hDh, 1);
+    Type mx = CppAD::CondExpGt(hin, kd, hin, kd);
+    return CppAD::CondExpGt(mx, Type(0), mx, Type(0));
+  }else{
+    return hin;
+  }
 }
 
 template<class Type>
