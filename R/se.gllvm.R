@@ -197,10 +197,12 @@ se.gllvm <- function(object, sparse = FALSE, ...){
 
         if(sparse){
           sdr.s <-  Matrix::forceSymmetric(Matrix::Diagonal(x = 1/sds) %*% sdr %*% Matrix::Diagonal(x = 1/sds))
-          A.mat <- as.matrix(sdr.s[incl,incl])
-          D.mat <- sdr.s[incld,incld]
-          B.mat <- sdr.s[incl,incld]
-          I <- A.mat-as.matrix(B.mat%*%solve(D.mat, t(B.mat)))
+          A.mat <- as.matrix(sdr.s[incl, incl])
+          D.mat <- sdr.s[incld, incld]
+          B.mat <- sdr.s[incl, incld]
+          L <- Matrix::Cholesky(D.mat, LDL = FALSE) # D = PLL'P'
+          W <- Matrix::solve(L, Matrix::solve(L, Matrix::t(B.mat), system = "P"), system = "L") # L^-1 P B'
+          I <- A.mat - as.matrix(Matrix::crossprod(W)) # A -  B P' L^-' L^-1 PB'
         }else{
           sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
@@ -693,7 +695,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
       out$Hess <- list(Hess.full=sdr, incl=incl, cov.mat.mod=cov.mat.mod)
 
     } else {
-      sds <- sqrt(abs(diag(sdr)))
+      sds <- sqrt(abs(Matrix::diag(sdr)))
       if(any(!is.finite(sds))) warning("Hessian calculation produced na/nan's.")
       if(any(!is.finite(sds) | sds<1e-12, na.rm = TRUE)) sds[!is.finite(sds) | sds<1e-12] <- 1
 
@@ -702,7 +704,9 @@ se.gllvm <- function(object, sparse = FALSE, ...){
         A.mat <- as.matrix(sdr.s[incl, incl])
         D.mat <- sdr.s[incld, incld]
         B.mat <- sdr.s[incl, incld]
-        I <- A.mat-as.matrix(B.mat%*%solve(D.mat, t(B.mat)))
+        L <- Matrix::Cholesky(D.mat, LDL = FALSE) # D = PLL'P'
+        W <- Matrix::solve(L, Matrix::solve(L, Matrix::t(B.mat), system = "P"), system = "L") # L^-1 P B'
+        I <- A.mat - as.matrix(Matrix::crossprod(W)) # A -  B P' L^-' L^-1 PB'
       }else{
         sdr.s <- sweep(sweep(sdr,1,sds,"/"),2,sds,"/")
 
