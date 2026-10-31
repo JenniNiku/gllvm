@@ -1,6 +1,10 @@
 //-----------------------------------------------------------------------------
-// Adapted by Bert van der Veen, with optimisation by chatGPT
-// code originally from 'poisbinom.R' in the recordTest package by Jorge Castillo-Mateo
+// Probability mass function of the Poisson-binomial distribution, computed with
+// the discrete Fourier transform of its characteristic function (DFT-CF) of
+// Hong (2013), Computational Statistics & Data Analysis 59(1), 41-51,
+// doi:10.1016/j.csda.2012.10.006. Reference implementation: the 'poibin' R
+// package by Yili Hong (GPL-2).
+// Implemented by Bert van der Veen, with optimisation by chatGPT
 //-----------------------------------------------------------------------------
 
 #include <unsupported/Eigen/FFT> // Use Eigen's native FFT
