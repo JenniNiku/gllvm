@@ -3,6 +3,7 @@
 #'
 #' @param object an object of class 'gllvm'.
 #' @param sparse logical. If \code{TRUE}, for models fitted with \code{method = "VA"} or \code{"EVA"} the Hessian is calculated as a sparse matrix, from a copy of the model with all parameters profiled, and the variational parameters are profiled out of it with sparse matrix algebra. This saves time and memory when the model has many variational parameters, for example with many random effects. \code{Hess$Hess.full} is then returned as a sparse matrix. Ignored for \code{method = "LA"}. Defaults to \code{FALSE}.
+#' @param sd.sigmaB logical. If \code{FALSE}, the variances of the random effects in \code{formula} (\code{sigmaB}) are profiled out together with the random effects, so that no standard errors are returned for them. This keeps the block of fixed parameters small when the random effects have many terms, for example \code{diag()} terms of factors with many levels. Defaults to \code{TRUE}.
 #' @param ... not used.
 #'
 #' @details
@@ -34,7 +35,7 @@
 #'@export
 #'@export se.gllvm
 
-se.gllvm <- function(object, sparse = FALSE, ...){
+se.gllvm <- function(object, sparse = FALSE, sd.sigmaB = TRUE, ...){
   if(!is.finite(object$logL)) stop("Standard errors can not be calculated if log-likelihood value is not finite.")
   if(object$TMB == FALSE) stop("Function is not implemented for TMB = FALSE.")
   if(isNullPointer(object$TMBfn$env$ADFun$ptr)) stop("This model object is no longer valid, as it was loaded from file. Refit the model with gllvm() in the current session before calling se().")
@@ -150,6 +151,9 @@ se.gllvm <- function(object, sparse = FALSE, ...){
         incl[names(objrFinal$par)=="Abb"] <- FALSE; incld[names(objrFinal$par)=="Abb"] <- TRUE
         incl[names(objrFinal$par)=="Br"] <- FALSE; incld[names(objrFinal$par)=="Br"] <- TRUE
         if(NCOL(xb)==1) incl[names(objrFinal$par) == "sigmaij"] <- FALSE
+        if(!sd.sigmaB){
+          incl[names(objrFinal$par)=="sigmaB"] <- FALSE; incld[names(objrFinal$par)=="sigmaB"] <- TRUE
+        }
       }
       
       if(method=="LA" || (num.lv==0 && (is.null(object$params$row.params.random) && is.null(object$randomX)) && object$col.eff$col.eff!="random")){
@@ -380,12 +384,14 @@ se.gllvm <- function(object, sparse = FALSE, ...){
       
       if(!is.null(object$randomX)){
         n.xb <- ncol(xb)
+        if(sd.sigmaB){
         if(length(se$sigmaB)>n.xb && !is.null(object$params$rho.sp)){
           out$sd$rho.sp <- tail(se$sigmaB,ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.xb))
           se$sigmaB <- head(se$sigmaB, -ifelse(object$col.eff$colMat.rho.struct == "single", 1, n.xb))
         }
         out$sd$sigmaB <- se$sigmaB*c(sqrt(diag(object$params$sigmaB))); 
         names(out$sd$sigmaB) <- c(paste("sd",colnames(xb),sep = "."))
+        }
         if(n.xb>1){
           out$sd$corrpar <- se$sigmaij
         }
@@ -643,6 +649,10 @@ se.gllvm <- function(object, sparse = FALSE, ...){
       incld[names(objrFinal$par)=="Abb"] <- TRUE
       incld[names(objrFinal$par)=="Br"] <- TRUE
       if(is.null(object$params$B))incl[names(objrFinal$par)=="B"] <- FALSE
+      if(!sd.sigmaB){
+        incl[names(objrFinal$par)=="sigmaB"] <- FALSE
+        incld[names(objrFinal$par)=="sigmaB"] <- TRUE
+      }
     } else {
       incl[names(objrFinal$par)=="sigmaB"] <- FALSE
       incl[names(objrFinal$par)=="B"] <- FALSE
@@ -958,6 +968,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
       if(object$randomB=="single")names(out$sd$sigmaLvXcoef) <- NULL
     }
     if(object$col.eff$col.eff=="random"){
+      if(sd.sigmaB){
       n.ce <- ncol(object$col.eff$spdr)
       sigma.sp <- 2*diag(object$params$sigmaB)*se$sigmaB[1:n.ce]
       covsigma.sp <- se$sigmaB[-c(1:n.ce)]
@@ -970,6 +981,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
         sigma.sp[object$TMBfn$env$data$cs] <- sigma.sp[object$TMBfn$env$data$cs[,c(2,1),drop=F]] <- covsigma.sp
       }
       out$sd$sigmaB <- sigma.sp
+      }
       if(!is.null(object$params[["B"]])){
       out$sd$B <- se$B
       names(out$sd$B) <- names(out$params$B)
