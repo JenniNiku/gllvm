@@ -840,6 +840,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       map.list$B <- factor(map.list$B)
       B <- as.matrix(B)
       B[!colnames(spdr)%in%colnames(Xt)] <- 0
+    }else if(col.eff == "random"){
+      map.list$B <- factor(rep(NA, length(B)))
     }
     if(beta0com){
       if(is.null(map.list[["b"]])){
