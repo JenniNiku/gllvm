@@ -85,6 +85,7 @@ logLik.gllvm <- function(object, ...)
   attributes(logL)$df <- length(unlist(object$params)[!is.na(unlist(object$params))])
   if(length(unique(object$disp.group))<ncol(object$y)){
     attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
+    if(!is.null(object$params$ZINB.phi)) attributes(logL)$df <- attributes(logL)$df + length(unique(object$disp.group)) - ncol(object$y)
   }
   attributes(logL)$nobs <- sum(!is.na(object$y))
   }
