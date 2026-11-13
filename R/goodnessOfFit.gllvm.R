@@ -60,6 +60,33 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
       }
     }
   }
+  pred0 <- pred
+  if(mispred && any(object$family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial", "orderedBeta"))){
+    if(any(object$family == "ZIB")){
+      pz <- matrix(object$params$phi, NROW(pred), NCOL(pred), byrow = TRUE)
+      pred[, object$family == "ZIB"] <- ((1 - pz)*pred)[, object$family == "ZIB"]
+    }
+    if(any(object$family == "ZNIB")){
+      p0 <- matrix(object$params$phi/(1 + object$params$phi + object$params$ZINB.phi), NROW(pred), NCOL(pred), byrow = TRUE)
+      pN <- matrix(object$params$ZINB.phi/(1 + object$params$phi + object$params$ZINB.phi), NROW(pred), NCOL(pred), byrow = TRUE)
+      pred[, object$family == "ZNIB"] <- (pN + (1 - p0 - pN)*pred)[, object$family == "ZNIB"]
+    }
+    if(any(object$family == "orderedBeta")){
+      ob <- object$family == "orderedBeta"
+      ilink <- switch(object$link[ob][1], logit = plogis, probit = pnorm)
+      eta <- predict(object, type = "link")
+      z <- if(is.matrix(object$params$zeta)) object$params$zeta[, 1:2, drop = FALSE] else matrix(object$params$zeta[1:2], NCOL(pred), 2, byrow = TRUE)
+      rho0 <- ilink(matrix(z[, 1], NROW(pred), NCOL(pred), byrow = TRUE) - eta)
+      rhoN <- ilink(eta - matrix(z[, 2], NROW(pred), NCOL(pred), byrow = TRUE))
+      pred[, ob] <- ((1 - rho0 - rhoN)*pred + rhoN)[, ob]
+    }
+    bf <- object$family %in% c("binomial", "ZIB", "ZNIB", "beta.binomial")
+    if(any(bf)){
+      Nt <- object$Ntrials
+      if(!is.matrix(Nt)) Nt <- matrix(Nt, NROW(pred), NCOL(pred), byrow = length(Nt) == NCOL(pred))
+      pred[, bf] <- pred[, bf]*Nt[, bf]
+    }
+  }
   if(is.null(y)){
     if(is.null(object)) stop("If 'y' is not given the model fit for 'object' need to be given.")
     y <- object$y
@@ -129,7 +156,7 @@ goodnessOfFit <- function(object = NULL, y = NULL, pred = NULL, measure = c("cor
     hasntrials <- !is.null(object) && any(object$family %in% ntrialsfams)
     # binarize observed y for Tjur R2: presence = y > 0
     ybin <- if(hasntrials) (y > 0) * 1L else y
-    predbin <- if(hasntrials) gllvm.presence.prob(pred, object) else pred
+    predbin <- if(hasntrials) gllvm.presence.prob(pred0, object) else pred
     if(all(unique(ybin) %in% c(0,1,NA))){
       tjurR2 <- function(y,pred){mean(pred[y==1], na.rm = TRUE) - mean(pred[y==0], na.rm = TRUE)}
       if(species) {
