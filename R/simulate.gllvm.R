@@ -126,6 +126,10 @@ simulate.gllvm = function (object, nsim = 1, seed = NULL, conditional = FALSE, n
     
     
   }
+  if(any(object$family %in% c("ZIP","ZINB"))){
+    zi <- object$family %in% c("ZIP","ZINB")
+    prs[, zi] <- prs[, zi]/(1 - phis[, zi])
+  }
   if(any(object$family=="ZNIB")){
     phis2 = matrix(rep(object$params$ZINB.phi, each = nsim*nRows), ncol = nCols)
     
