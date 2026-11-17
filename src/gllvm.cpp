@@ -3099,12 +3099,13 @@ Type objective_function<Type>::operator() ()
             
             // group Poisson, ZIP, Tweedie, NB, gamma, exponential
             bool is_group1 =
-              (family(j)==0 || family(j)==1 || family(j)==4 ||family(j)==5 || 
+              (family(j)==0 || family(j)==1 || family(j)==4 || 
               family(j)==6 || family(j)==8 || family(j)==11);
             
             // group Binomial/Gaussian/Ordinal
             bool is_group2 =
               (family(j)==2 || family(j)==3 || family(j)==7 || family(j)==13 || family(j)==14);
+            bool is_tweedie = (family(j)==5) && (method<1);
             bool is_cloglog = (extra(j)==2) && (family(j)==2 || family(j)==7 || family(j)==13 || family(j)==14);
             if(is_cloglog){
               is_group1 = true;
@@ -3166,6 +3167,41 @@ Type objective_function<Type>::operator() ()
               
               // Eta-update
               eta(i,j) +=-(u.row(i)*D(j)*u.row(i).transpose()).sum() - (D(j)*Acov).trace();
+              
+              if (is_tweedie && !gllvmutils::isNA(y(i,j))) {
+                R = Acov.llt().matrixL();
+                DR = D(j)*R;
+                int nk = 1;
+                if (y(i,j)>0) nk = 2;
+                Type p1 = invlogit(ePower);
+                for (int ik=0; ik<nk; ik++) {
+                  Type k;
+                  Type cf;
+                  if (ik==0) {
+                    k = 1 - p1;
+                    cf = 1;
+                  } else {
+                    k = -p1;
+                    cf = -y(i,j);
+                  }
+                  Eigen::LDLT<Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic>> ldlt(Id + k*2*R.transpose()*DR);
+                  Type logdetC = -ldlt.vectorD().array().log().sum();
+                  z = -k*Acov*newlam.col(j) - u.row(i).transpose();
+                  Type vBinvv;
+                  if(lambda2.cols()==1){
+                    BinvD = -k*2*DR*ldlt.solve(DR.transpose());
+                    BinvD.diagonal() += D(j).diagonal();
+                    vBinvv = -2*k*(z.transpose()*BinvD*z).value();
+                  }else{
+                    w = DR.transpose()*z;
+                    vBinvv = -2*k*(z.transpose()*D(j)*z).value() + 4*k*k*(w.transpose()*ldlt.solve(w)).value();
+                  }
+                  
+                  Type cQt = 0.5*(vBinvv+logdetC);
+                  cQt +=  k*(D(j)*Acov).trace() + k*(u.row(i)*D(j)*u.row(i).transpose()).sum();
+                  nll += cf*exp(k*eta(i,j) + k*k*cQ(i,j))*(exp(cQt) - 1)/(iphi(j)*k);
+                }
+              }
               
             } //end for i
           } //end for j
