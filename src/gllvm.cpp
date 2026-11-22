@@ -2130,7 +2130,7 @@ Type objective_function<Type>::operator() ()
 
                 matrix<Type> ArmMat = Arm*Arm.transpose();
               
-              cQ += (0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
+              cQ += (0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
               
               if(re==0){
                 nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)))).sum());  
@@ -2217,7 +2217,7 @@ Type objective_function<Type>::operator() ()
                   matrix<Type> ArmMatP = ArmP*ArmP.transpose();
                   
                   for (int q=0; q<trmsize(1,re); q++){//loop over blocks
-                  cQ += ((0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmMatP.diagonal()(q)).replicate(1,p);
+                  cQ += ((0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmMatP.diagonal()(q)).replicate(1,p);
                   }
                   
                   if(re==0){
@@ -2344,7 +2344,7 @@ Type objective_function<Type>::operator() ()
 
                 matrix<Type> ArmMat = Arm*Arm.transpose();
                 
-                cQ += (0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
+                cQ += (0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal()).replicate(1,p);
                 
                 if(re==0){
                   nll -= Arm.diagonal().array().log().sum() - 0.5*((invSr*ArmMat).trace()+(r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)).transpose()*(invSr*r0r.col(0).segment(trmsize(0,re)*q,trmsize(0,re)))).sum());  
@@ -2412,7 +2412,7 @@ Type objective_function<Type>::operator() ()
               }
 
               for (int q=0; q<trmsize(1,re); q++){//loop over blocks
-                cQ += ((0.5*(dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmP(q)*ArmP(q)).replicate(1,p);
+                cQ += ((0.5*(dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re))*ArmMat*dr0.middleCols(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum()+trmsize(0,re)*q, trmsize(0,re)).transpose()).diagonal())*ArmP(q)*ArmP(q)).replicate(1,p);
               }
               
               if(re==0){
