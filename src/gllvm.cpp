@@ -5039,7 +5039,7 @@ Type objective_function<Type>::operator() ()
         if(cstruc(re) < 5){
         if(cstruc(re) == 0){
           Sr.diagonal().array() = pow(sigma(sigmacounter), 2);
-          sigmacounter++;
+          sigmacounter += trmsize(0,re);
         }else if(cstruc(re) == 1){ // corAR1
           Sr = gllvm::corAR1(sigma(sigmacounter), log_sigma(sigmacounter+1), trmsize(1,re));
           sigmacounter+=2;
@@ -5062,16 +5062,20 @@ Type objective_function<Type>::operator() ()
         if(cstruc(re)==0){
           //independence of REs
           if(re==0){
-          vector<Type> r0s = r0r.col(0).segment(0,trmsize(1,re));
+          vector<Type> r0s = r0r.col(0).segment(0,trmsize(0,re)*trmsize(1,re));
             
-          for(int ir=0; ir<r0s.size(); ir++){
-            nll -= dnorm(r0s(ir), Type(0), sigma(sigmacounter-1), true);
+          for(int q=0; q<trmsize(1,re); q++){
+            for(int d=0; d<trmsize(0,re); d++){
+              nll -= dnorm(r0s(q*trmsize(0,re)+d), Type(0), sigma(sigmacounter-trmsize(0,re)+d), true);
+            }
           }
           }else{
-            vector<Type> r0s = r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(1,re));
+            vector<Type> r0s = r0r.col(0).segment(trmsize.row(1).cwiseProduct(trmsize.row(0)).head(re).sum(),trmsize(0,re)*trmsize(1,re));
 
-            for(int ir=0; ir<r0s.size(); ir++){
-              nll -= dnorm(r0s(ir), Type(0), sigma(sigmacounter-1), true);
+            for(int q=0; q<trmsize(1,re); q++){
+              for(int d=0; d<trmsize(0,re); d++){
+                nll -= dnorm(r0s(q*trmsize(0,re)+d), Type(0), sigma(sigmacounter-trmsize(0,re)+d), true);
+              }
             }
           }
         }else{
