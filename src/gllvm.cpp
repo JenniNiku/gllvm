@@ -2107,8 +2107,7 @@ Type objective_function<Type>::operator() ()
               matrix <Type> Ir = Eigen::MatrixXd::Identity(SrL.cols(),SrL.cols());
               matrix <Type> SrIL(SrL.cols(),SrL.cols());
               SrIL = SrL.template triangularView<Eigen::Lower>().solve(Ir);
-              SrIL = SrIL.transpose()*SrIL;
-              invSr=SrIL*SrIL.transpose();
+              invSr=SrIL.transpose()*SrIL;
               logdetSr = 2*SrL.diagonal().array().log().sum();
               
               matrix<Type> Arm(trmsize(0,re),trmsize(0,re));
@@ -2331,8 +2330,7 @@ Type objective_function<Type>::operator() ()
             matrix <Type> Ir = Eigen::MatrixXd::Identity(SrL.cols(),SrL.cols());
             matrix <Type> SrIL(SrL.cols(),SrL.cols());
             SrIL = SrL.template triangularView<Eigen::Lower>().solve(Ir);
-            SrIL = SrIL.transpose()*SrIL;
-            invSr=SrIL*SrIL.transpose();
+            invSr=SrIL.transpose()*SrIL;
             logdetSr = 2*SrL.diagonal().array().log().sum();
             
             matrix<Type> Arm(trmsize(0,re),trmsize(0,re));
@@ -4981,8 +4979,7 @@ Type objective_function<Type>::operator() ()
         matrix <Type> Ir = Eigen::MatrixXd::Identity(SrL.cols(),SrL.cols());
         matrix <Type> SrIL(SrL.cols(),SrL.cols());
         SrIL = SrL.template triangularView<Eigen::Lower>().solve(Ir);
-        SrIL = SrIL.transpose()*SrIL;
-        invSr=SrIL*SrIL.transpose();
+        invSr=SrIL.transpose()*SrIL;
         
         Type logdetSr = 2*SrL.diagonal().array().log().sum();
         matrix<Type>invMat(trmsize(1,re), trmsize(1,re));
