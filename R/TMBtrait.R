@@ -1222,8 +1222,8 @@ trait.TMB <- function(
             # propto
             sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
           }else if(re == 0){
-            # diag
-            sigmanew = c(sigmanew, log(sigma[1]))
+            # diag: one sigma per LHS covariate
+            sigmanew = c(sigmanew, rep(log(sigma[1]), trmsize[1, i]))
           }
           
           # ustruc terms
