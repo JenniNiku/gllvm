@@ -1153,6 +1153,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       # both paths consistent: diag(LHS|RHS) is one term for both functions.
       dbl2diag <- function(term) {
         if (is.name(term) || !is.language(term)) return(term)
+        if (is.call(term) && term[[1]] == as.name("(") && is.call(term[[2]]) && term[[2]][[1]] == as.name("||"))
+          return(dbl2diag(term[[2]]))
         if (is.call(term) && term[[1]] == as.name("||"))
           return(as.call(list(as.name("diag"),
                               as.call(list(as.name("|"),
