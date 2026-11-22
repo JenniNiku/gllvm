@@ -389,8 +389,7 @@ start_values_gllvm_TMB <- function(
     }else{
       linko <- link[pmin(which(family == "ordinal"), length(link))][1]
       cw.fit <- MASS::polr(factor(y[,family == "ordinal",drop=FALSE]) ~ 1, method = switch(linko, "logit" = "logistic", "probit" = "probit", "cloglog" = "cloglog"))
-      zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta
-      zeta[(length(zeta)-length(cw.fit$zeta)+1)] <- 0
+      zeta[(length(zeta)-length(cw.fit$zeta)+1):length(zeta)] <- cw.fit$zeta - cw.fit$zeta[1]
     }
 
     # if(starting.val=="res"){
