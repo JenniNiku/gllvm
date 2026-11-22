@@ -1494,8 +1494,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           }
           lg_Ar<- log(exp(param1[nam=="lg_Ar"][1:sum(trmsize[2,!(grepl("ustruc", cstruc) & cstruc != "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[1,(grepl("ustruc", cstruc) & cstruc != "ustruc")], trmsize[2,(grepl("ustruc", cstruc) & cstruc != "ustruc")]-sum((grepl("ustruc", cstruc) & cstruc != "ustruc")))])+1e-3)
           if(Ar.struc=="unstructured"){
-            if(any(!(grepl("ustruc", cstruc)|cstruc == "ustruc"))){
-              lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "ustruc")]-1)/2)))  
+            if(any(!(grepl("ustruc", cstruc)|cstruc == "diag"))){
+              lg_Ar<-c(lg_Ar, rep(1e-3, sum(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "diag")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "diag")]*(trmsize[2,!(grepl("ustruc", cstruc)|cstruc == "diag")]*trmsize[1,!(grepl("ustruc", cstruc)|cstruc == "diag")]-1)/2)))  
             }
             # block diagonal for "unstructured" REs
             if(any(cstruc == "ustruc")){
@@ -3083,8 +3083,8 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
 
           for(re in 1:ncol(trmsize)){
             if(!(grepl("ustruc", cstruc[re])|cstruc[re] == "ustruc")){
-            Ar[[re]] <- diag(Ar.sds[1:trmsize[2,re]*trmsize[1,re]])
-            Ar.sds <- Ar.sds[-c(1:trmsize[2,re]*trmsize[1,re])]
+            Ar[[re]] <- diag(Ar.sds[1:(trmsize[2,re]*trmsize[1,re])])
+            Ar.sds <- Ar.sds[-c(1:(trmsize[2,re]*trmsize[1,re]))]
             }else if(cstruc[re] == "ustruc"){
               for(i in 1:trmsize[2,re]){
                 Ar[[re]][[i]] <- diag(Ar.sds[1:trmsize[1,re]])
@@ -3101,7 +3101,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             if(length(lg_Ar)>0){
               k=1;
               for(re in 1:ncol(trmsize)){
-                if(!grepl("ustruc", cstruc[re])&cstruc[re]!="ustruc"){
+                if(!grepl("ustruc", cstruc[re])&cstruc[re]!="diag"){
                   for(d in 1:(trmsize[2,re]*trmsize[1,re]-1)){
                     for(r in (d+1):(trmsize[2,re]*trmsize[1,re])){
                       Ar[[re]][r,d] = lg_Ar[k];
