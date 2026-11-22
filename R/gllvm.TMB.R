@@ -2824,7 +2824,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
         out$params$B <- B
         names(out$params$B) <- colnames(Xt)
         }
-        out$params$sigmaB <- if(ncol(cs)==2) diag(sigma.sp[1:ncol(spdr)], ncol(spdr)) else Matrix::Diagonal(x = sigma.sp[1:ncol(spdr)])
+        out$params$sigmaB <- if(ncol(cs)==2) diag(sigma.sp[1:ncol(spdr)], ncol(spdr)) else Matrix::Diagonal(x = sigma.sp[1:ncol(spdr)]^2)
         if(any(colMat[row(colMat)!=col(colMat)]!=0)){
           if(colMat.rho.struct == "term"){
             names(rho.sp) <- colnames(spdr)

@@ -75,7 +75,7 @@ confint.gllvm <- function(object, parm=NULL, level = 0.95, ...) {
     if (!is.null(object$params$sigmaB)) {
       object$params$sigmaB <- sqrt(diag(object$params$sigmaB))
       if(object$col.eff$col.eff=="random"){
-        object$sd$sigmaB <- diag(object$sd$sigmaB)
+        object$sd$sigmaB <- diag(object$sd$sigmaB)/(2*object$params$sigmaB)
       }
       object$sd$corrpar <- NULL
     }
