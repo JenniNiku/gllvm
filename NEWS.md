@@ -1,3 +1,20 @@
+Version 2.0.17
+=============
+
+* Relaxed orthogonality constraint of canonical coefficients with num.lv.c. For z_i'L^-1LGamma' with L = [(1,c),(0,1)], z_i = B'x_i is not identified, but z_i = B'x_i + epsilon_i is as epsilon_i is forced to have diagonal covariance.
+* Adjusted goodnessOfFit for binomial-type distributions. In some cases, additional zeros/ones and Ntrials were ignored.
+
+## Bugfixes
+
+* Multiple bugs fixed in models with correlated random row effects
+* Fixed Tweedie VA likelihood for quadratic models
+* Fixed a crash with multiple 
+* Fixed a bug in simulate for ZIP/ZINB
+* LogLik ignored common dispersion parameters for ZINB/ZNIB, causing inflated parameter counts
+* Fixed a crash in trait models with multiple independent random row effects due to a single term in formula
+* Fixed a bug that caused species' random effect variances to be displayed as standard deviations in summary
+
+
 Version 2.0.16
 =============
 
