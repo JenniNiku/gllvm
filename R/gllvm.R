@@ -1545,7 +1545,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     # better inform the user this might be a bad idea
     if(!is.null(lv.X.design)){
       if(num.lv.c>0&(num.lv>0)&((num.RR+num.lv.c)<ncol(lv.X.design))){
-        warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. \n")
+        warning("Are you sure you want to fit this model? It might be better to increase num.RR or num.lv.c until the number of predictors is reached, before adding unconstrained LVs. As B goes to 0, this model is rotationally invariant. \n")
       }
     }
     #  if(num.lv>=p){ stop("Number of latent variables (",num.lv,") must be less than number of response variables (",p,").");}
