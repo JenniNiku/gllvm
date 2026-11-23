@@ -884,7 +884,7 @@ FAstart <- function(eta, family, y, num.lv = 0, num.lv.c = 0, num.RR = 0, zeta =
     if(all(family!=c("ordinal", "orderedBeta"))){
       zeta.struc<-"species"
     }
-    if(num.lv.c>1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = "alabama", method = method, Ntrials = Ntrials, optim.method = start.optim.method, link = link)), silent = TRUE)
+    if(num.lv.c>1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method, link = link)), silent = TRUE)
     if(num.lv.c<=1)start.fit <- try(suppressWarnings(gllvm.TMB(y, lv.X = lv.X, num.lv = 0, num.lv.c = num.lv.c, family = family, starting.val = "zero", zeta.struc = zeta.struc, offset = eta, disp.group = disp.group, optimizer = start.optimizer, method = method, Ntrials = Ntrials, optim.method = start.optim.method, link = link)), silent = TRUE)
 
     if(inherits(start.fit, "try-error") || is.null(start.fit$params$LvXcoef)) {
@@ -2979,9 +2979,9 @@ RRse <- function(object, return.covb = FALSE){
 eval_eq_c <- function(x, obj, ...){ #alabama requires a ... argument
   B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
   con<-NULL
-  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  d <- obj$env$data$num_RR
   nc <- d*(d-1)/2# number of constraints
-  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  combs <- combn(seq_len(obj$env$data$num_RR),2) + obj$env$data$num_lv_c
   con <- colSums(B[,combs[1,],drop=F]*B[,combs[2,],drop=F])
   return(con)
 }
@@ -2990,11 +2990,11 @@ eval_eq_j <- function(x, obj, ...){
   B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
   jacob <- NULL
   
-  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  d <- obj$env$data$num_RR
   nc <- d*(d-1)/2#number of constraints
   
   #LV constraint combinations
-  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  combs <- combn(seq_len(obj$env$data$num_RR),2) + obj$env$data$num_lv_c
   
   #Build jacobian
   jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
@@ -3023,10 +3023,10 @@ eval_g_eq <- function(x, obj = NULL){
   B <- matrix(x[names(obj$par)=="b_lv"],ncol=obj$env$data$num_lv_c+obj$env$data$num_RR)
   jacob <- NULL
   con<-NULL
-  d <- obj$env$data$num_lv_c+obj$env$data$num_RR
+  d <- obj$env$data$num_RR
   nc <- d*(d-1)/2#number of constraints
   
-  combs <- combn(1:(obj$env$data$num_RR+obj$env$data$num_lv_c),2)
+  combs <- combn(seq_len(obj$env$data$num_RR),2) + obj$env$data$num_lv_c
   con <- colSums(B[,combs[1,],drop=F]*B[,combs[2,],drop=F])
   jacob.B <- matrix(0,nrow=nc,ncol=sum(names(obj$par)=="b_lv"))
   

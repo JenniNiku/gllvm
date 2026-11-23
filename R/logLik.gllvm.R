@@ -74,7 +74,7 @@ logLik.gllvm <- function(object, ...)
     }
   }else if(object$randomB==F&(object$num.RR+object$num.lv.c)>0){
     #correct nr. df. given orthogonality constraints
-    object$params$LvXcoef[upper.tri(object$params$LvXcoef)] <- NA
+    object$params$LvXcoef[, object$num.lv.c + seq_len(object$num.RR)][upper.tri(object$params$LvXcoef[, object$num.lv.c + seq_len(object$num.RR)])] <- NA
   }
   if(object$quadratic=="LV"){
     object$params$theta[-1,-c(1:(object$num.lv+object$num.RR+object$num.lv.c))]<-NA

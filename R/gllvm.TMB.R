@@ -1426,7 +1426,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       if(!is.finite(objr$fn(objr$par))) warning("Starting values do not give finite starting point for log-likelihood.")
       if(any(!is.finite(objr$gr(objr$par)))) warning("Gradients are not finite with the starting values.")
       #### Fit model 
-      if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
+      if(num.RR<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
         }
@@ -1450,12 +1450,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
                               "maxeval" = maxit,
-                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+                              "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2))
           
           opts <- list( "algorithm" = optimizer,
                         "xtol_rel" = reltol,
                         "maxeval" = maxit,
-                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                        "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2),
                         "local_opts" = local_opts)
           timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
           if(!inherits(optr,"try-error")){
@@ -1637,7 +1637,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           parameters = parameter.list, map = map.list,
           DLL = "gllvm")
         
-        if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
+        if(num.RR<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
             timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit, trace = optimizer.trace))),silent = TRUE), gcFirst = FALSE)
           }
@@ -1661,12 +1661,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
                                 "maxeval" = maxit,
-                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+                                "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2))
             
             opts <- list( "algorithm" = optimizer,
                           "xtol_rel" = reltol,
                           "maxeval" = maxit,
-                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                          "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2),
                           "local_opts" = local_opts)
             timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
             if(!inherits(optr,"try-error")){
@@ -2158,7 +2158,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
       #   low[names(objr$par)=="lg_phi"]=0.0; upp[names(objr$par)=="lg_phi"]=1#0.99
       #   timeo <- system.time(optr <- try(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit),lower = low,upper = upp),silent = TRUE))
       # }
-      if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
+      if(num.RR<=1|!isFALSE(randomB)){
         if(optimizer=="nlminb") {
           timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
         }
@@ -2182,12 +2182,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           local_opts <- list( "algorithm" = optim.method,
                               "xtol_rel" = reltol,
                               "maxeval" = maxit,
-                              "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+                              "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2))
           
           opts <- list( "algorithm" = optimizer,
                         "xtol_rel" = reltol,
                         "maxeval" = maxit,
-                        "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                        "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2),
                         "local_opts" = local_opts)
           timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
           if(!inherits(optr,"try-error")){
@@ -2235,7 +2235,7 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
           random = randomp, DLL = "gllvm")
         
         
-        if((num.lv.c+num.RR)<=1|!isFALSE(randomB)){
+        if(num.RR<=1|!isFALSE(randomB)){
           if(optimizer=="nlminb") {
             timeo <- system.time(optr <- try(suppressWarnings(nlminb(objr$par, objr$fn, objr$gr,control = list(rel.tol=reltol,iter.max=max.iter,eval.max=maxit))),silent = TRUE), gcFirst = FALSE)
           }
@@ -2259,12 +2259,12 @@ gllvm.TMB <- function(y, X = NULL, lv.X = NULL, xr = matrix(0), formula = NULL, 
             local_opts <- list( "algorithm" = optim.method,
                                 "xtol_rel" = reltol,
                                 "maxeval" = maxit,
-                                "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2))
+                                "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2))
             
             opts <- list( "algorithm" = optimizer,
                           "xtol_rel" = reltol,
                           "maxeval" = maxit,
-                          "tol_constraints_eq" = rep(reltol.c,(num.lv.c+num.RR)*(num.lv.c+num.RR-1)/2),
+                          "tol_constraints_eq" = rep(reltol.c,num.RR*(num.RR-1)/2),
                           "local_opts" = local_opts)
             timeo <- system.time(optr <- try(nloptr(x0 = objr$par, eval_f=eval_f, eval_g_eq=eval_g_eq, opts=opts, obj = objr),silent = TRUE), gcFirst = FALSE)
             if(!inherits(optr,"try-error")){

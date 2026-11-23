@@ -43,14 +43,14 @@
 #' @param control A list with the following arguments controlling the optimization:
 #' \describe{
 #'  \item{\emph{reltol}: }{ convergence criteria for log-likelihood, defaults to 1e-10.}
-#'  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in ordination with predictors, defaults to 1e-8.}  
+#'  \item{\emph{reltol.c}: }{ convergence criteria for equality constraints in constrained ordination with num.RR>1, defaults to 1e-8.}  
 #'  \item{\emph{TMB}: }{ logical, if \code{TRUE} model will be fitted using Template Model Builder (TMB). TMB is always used if \code{method = "LA"}.  Defaults to \code{TRUE}.}
-#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For ordination with predictors (num.RR>0 or num.lv.c>0) this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
+#'  \item{\emph{optimizer}: }{ if \code{TMB=TRUE}, log-likelihood can be optimized using \code{"\link{optim}"} (default) or \code{"\link{nlminb}"}. For constrained ordination with num.RR>1 this can additionally be one of \code{alabama}(default), \code{nloptr(agl)} or \code{nloptr(sqp)}.}
 #'  \item{\emph{max.iter}: }{ maximum number of iterations when \code{TMB = FALSE} or for \code{optimizer = "nlminb"} when \code{TMB = TRUE}, defaults to 6000.}
 #'  \item{\emph{maxit}: }{ maximum number of iterations for optimizer, defaults to 6000.}
 #'  \item{\emph{trace}: }{ logical, if \code{TRUE} in each iteration step information on current step will be printed. Defaults to \code{FALSE}.}
 #'  \item{\emph{optimizer.trace}: }{ numeric, see the trace argument that is specific to each optimizer, what is printed is specific to the optimizer that is used.}
-#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link[nloptr:nloptr]{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR+num.lv.c>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
+#'  \item{\emph{optim.method}: }{ optimization method to be used if optimizer is \code{"\link{optim}"},\code{"alabama"}, or  \code{"\link[nloptr:nloptr]{nloptr}"}, but the latter two are only available in combination with at least two latent variables (i.e., num.RR>1). Defaults to \code{"BFGS"}, but to \code{"L-BFGS-B"} for Tweedie family due the limited-memory use. For optimizer='alabama' this can be any \code{"\link{optim}"} method, or  \code{"\link{nlminb}"}. If optimizer = 'nloptr(agl)' this can be one of: "NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND" (default), "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA".}
 #'  \item{\emph{nn.colMat}: }{number of nearest neighbours for calculating inverse of "colMat" when \code{colMat.approx = "NNGP"}, defaults to 10. Otherwise, if \code{colMat.approx = "band"}, nn.colMat is the bandwidth of the approximation. If set to the number of columns in the response data, a standard inverse is used instead.}
 #' }
 #' @param control.va A list with the following arguments controlling the variational approximation method:
@@ -446,7 +446,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
                   plot = FALSE, link = "probit", Ntrials = matrix(1),
                   Power = 1.1, seed = NULL, scale.X = TRUE, return.terms = TRUE, 
                   gradient.check = FALSE, disp.formula = NULL,
-                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse((num.RR+num.lv.c)<=1 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optimizer.trace = 0, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
+                  control = list(reltol = 1e-10, reltol.c = 1e-8, TMB = TRUE, optimizer = ifelse(num.RR<=1 | randomB!=FALSE,"optim","alabama"), max.iter = 6000, maxit = 6000, trace = FALSE, optimizer.trace = 0, optim.method = NULL, nn.colMat = 10, colMat.approx = "NNGP"), 
                   control.va = list(Lambda.struc = "unstructured", Ab.struct = ifelse(is.null(colMat),"blockdiagonal","MNunstructured"), Ab.struct.rank = 1, Ar.struc="diagonal", diag.iter = 1, Ab.diag.iter=0, Lambda.start = c(0.3, 0.3, 0.3), NN = 10),
                   control.start = list(starting.val = "res", n.init = 1, n.init.max = 10, jitter.var = 0, jitter.var.br = 0, start.fit = NULL, start.lvs = NULL, randomX.start = "res", quad.start=0.01, start.struc = "LV", scalmax = 10, MaternKappa=1.5, rangeP=NULL, zetacutoff = NULL, start.optimizer = "nlminb", start.optim.method = "BFGS"), setMap=NULL, ...
                   ) {
@@ -532,11 +532,11 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       if (!("TMB" %in% names(x))) 
         x$TMB = TRUE
       if (!("optimizer" %in% names(x))) 
-        x$optimizer = ifelse((num.RR+num.lv.c)<=1 | !isFALSE(randomB),"optim","alabama")
-      if((num.lv.c+num.RR)>1 && any(family =="tweedie") && isFALSE(randomB)) x$optimizer = "alabama"
+        x$optimizer = ifelse(num.RR<=1 | !isFALSE(randomB),"optim","alabama")
+      if(num.RR>1 && any(family =="tweedie") && isFALSE(randomB)) x$optimizer = "alabama"
       if (!("optim.method" %in% names(x)) | is.null(x$optim.method)) {
         if(any(family=="tweedie")) x$optim.method = "L-BFGS-B" else x$optim.method = "BFGS"
-        if((num.RR+num.lv.c)>1 && randomB == FALSE && all(family!="tweedie") && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
+        if(num.RR>1 && randomB == FALSE && all(family!="tweedie") && x$optimizer%in%c("nloptr(agl)","nloptr(sqp)")) x$optim.method = "NLOPT_LD_TNEWTON_PRECOND"
       }
       if (!("max.iter" %in% names(x))) 
         x$max.iter = 6000
@@ -642,7 +642,7 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     if(control$optimizer=="nloptr(sqp)"){control$optimizer <- "NLOPT_LD_SLSQP"}else if(control$optimizer=="nloptr(agl)"){control$optimizer <- "NLOPT_LD_AUGLAG_EQ"}
   }
   # cannot use alabama or nloptr without num.lv.c or num.RR for now
-    if((num.lv.c+num.RR)<=1 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
+    if(num.RR<=1 && control$optimizer %in% c("alabama","nloptr(sqp)","nloptr(agl)")){
       warning("Selected optimizer not available for this model. Using optim instead.")
       control$optimizer <- "optim"
       if(all(family!="tweedie"))control$optim.method <- "BFGS"
@@ -650,18 +650,18 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
     }
 
 
-  if((num.RR+num.lv.c)>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
+  if(num.RR>1 && control$optimizer%in%c("optim","nlminb") && randomB == FALSE){
     warning("Cannot fit ordination with predictors using 'optim' or 'nlminb', using 'nloptr(agl)' instead.")
     control$optimizer <- "nloptr(agl)"
   }
-  if(any(family=="tweedie") && (num.lv.c+num.RR)>1 && control$optimizer != "alabama" && isFALSE(randomB)){
+  if(any(family=="tweedie") && num.RR>1 && control$optimizer != "alabama" && isFALSE(randomB)){
     warning("Due to memory issues only optimizer 'alabama' with optim.method='L-BFGS-B' can be used with Tweedie.")
     control$optimizer <- "alabama"
     control$optim.method <- "L-BFGS-B"
   }
     
     # Check if local solver for nloptr augmented lagranian algorithm is one of the defined options
-    if((num.RR+num.lv.c)>1 && isFALSE(randomB) && control$optimizer == "nloptr(agl)"){
+    if(num.RR>1 && isFALSE(randomB) && control$optimizer == "nloptr(agl)"){
       if(!control$optim.method%in%c("NLOPT_LD_CCSAQ", "NLOPT_LD_SLSQP", "NLOPT_LD_TNEWTON_PRECOND", "NLOPT_LD_TNEWTON", "NLOPT_LD_MMA"))control$optim.method <- "NLOPT_LD_TNEWTON_PRECOND"
     }
     
@@ -2002,8 +2002,8 @@ gllvm <- function(y = NULL, X = NULL, TR = NULL, data = NULL, formula = NULL, fa
       }
       # check if constraints on Bs hold, otherwise indicates lack of convergence
       # out$convergence should usually catch this (status code 5 in nloptr, maxeval was reached), but sometimes doesn't.
-      if((num.RR+num.lv.c)>1 && out$convergence && randomB==FALSE){
-        BB <- t(out$params$LvXcoef)%*%out$params$LvXcoef
+      if(num.RR>1 && out$convergence && randomB==FALSE){
+        BB <- t(out$params$LvXcoef[, num.lv.c + 1:num.RR])%*%out$params$LvXcoef[, num.lv.c + 1:num.RR]
         if(any(abs(unique(BB[col(BB)!=row(BB)]))>=1e-2)) warning("Canonical coefficients are not orthogonal, refit the model with a different set of starting values, fit with a different optimizer, or change the optimization criteria for e.g. 'reltol.c'.")
 
       }

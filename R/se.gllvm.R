@@ -570,7 +570,7 @@ se.gllvm <- function(object, sparse = FALSE, ...){
     rownames(sdr) <- colnames(sdr) <- names(pars)
     # with fixed b_lv the LVs are orthogonalised, so the covariance is that of
     # an equality-constrained MLE and is projected onto the constraint's null space
-    constrained <- (object$num.RR+object$num.lv.c)>1 && isFALSE(object$randomB)
+    constrained <- object$num.RR>1 && isFALSE(object$randomB)
     Jcon <- if(constrained) eval_eq_j(pars, objrFinal) else NULL
 
     m <- dim(sdr)[1]; incl <- rep(TRUE,m); incld <- rep(FALSE,m); inclr <- rep(FALSE,m)
