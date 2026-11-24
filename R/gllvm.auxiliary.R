@@ -520,7 +520,7 @@ start_values_gllvm_TMB <- function(
         qr.gamma <- qr(t(gamma))
         if(num.lv.c>0)b.lv <- b.lv%*%qr.Q(qr.gamma)
         params[,(ncol(params) - num.lv - num.lv.c - num.RR + 1):ncol(params)]<-t(qr.R(qr.gamma))
-        if(num.lv.c>1)index<-(index%*%qr.Q(qr.gamma)[1:num.lv.c,1:num.lv.c])
+        if((num.lv.c+num.lv)>1)index<-(index%*%qr.Q(qr.gamma)[1:(num.lv.c+num.lv),1:(num.lv.c+num.lv)])
       }else if((num.lv.c+num.RR)>1 && num.lv>1 && p>2){
         gamma<-as.matrix(params[,(ncol(params) - num.lv.c - num.lv - num.RR + 1):ncol(params)])
         qr.gamma1 <- qr(t(gamma[,1:(num.lv.c+num.RR)]))
@@ -571,7 +571,7 @@ start_values_gllvm_TMB <- function(
       try({
         gamma.new <- params[,(ncol(params) - num.lv + 1):(ncol(params)),drop=F];
         sigma.lv <- diag(gamma.new)
-        sign <- sign(diag(gamma.new))
+        sig <- sign(diag(gamma.new))
         params[,(ncol(params) - num.lv + 1):(ncol(params))] <- t(t(gamma.new)/sigma.lv)
         index <- t(t(index)*sig)}, silent = TRUE)  
     }else if(num.lv==0 & (num.lv.c+num.RR) >0){
